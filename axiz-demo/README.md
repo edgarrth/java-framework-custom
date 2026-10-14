@@ -51,12 +51,15 @@ redelivered events and sagas resumed after a crash never repeat an effect.
 ## Run it locally
 
 Requirements: JDK 25, Docker, `jq`; Bruno to explore the APIs. The axiz artifacts must be
-reachable: `./mvnw install` in axiz-framework once, or the Nexus mirror in `~/.m2/settings.xml`.
+reachable: `./mvnw install -DskipTests` in axiz-framework once, or the Nexus mirror in
+`~/.m2/settings.xml`. The README at the root of the delivery walks through a clean installation
+and every test with `curl`, including what to check in each response.
 
 ```bash
 scripts/demo.sh up       # infrastructure (local/compose.yaml) + dev secrets + every service
+scripts/demo.sh status   # health of every service; repeat until 7/7 services UP
 scripts/demo.sh smoke    # pays a beneficiary through the channel API and waits for COMPLETED
-scripts/demo.sh down
+scripts/demo.sh down     # stops services, removes containers and volumes
 ```
 
 | | |

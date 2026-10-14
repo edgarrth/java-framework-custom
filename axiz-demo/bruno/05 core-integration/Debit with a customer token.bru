@@ -1,0 +1,34 @@
+meta {
+  name: Debit with a customer token
+  type: http
+  seq: 22
+}
+
+post {
+  url: {{core}}/v1/debits
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "accountId": "{{debtorAccount}}",
+    "amount": 10.5,
+    "currency": "PEN",
+    "holderId": "{{customerId}}",
+    "reference": "BRUNO-5"
+  }
+}
+
+tests {
+  // only the payment process (payments:process) moves money
+  test("status 403", function () { expect(res.status).to.equal(403); });
+}

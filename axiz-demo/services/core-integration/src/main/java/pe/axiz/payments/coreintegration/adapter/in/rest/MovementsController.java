@@ -2,6 +2,7 @@ package pe.axiz.payments.coreintegration.adapter.in.rest;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,9 +16,11 @@ import pe.axiz.payments.coreintegration.application.usecase.ReverseDebitUseCase;
 
 /**
  * REST adapter of the {@code movements} operations of the contract (src/main/openapi). The
- * Idempotency-Key travels to the core, which de-duplicates movements by it.
+ * Idempotency-Key travels to the core, which de-duplicates movements by it. Only the payment
+ * process moves money: customer tokens never reach these operations, even with a valid token.
  */
 @RestController
+@PreAuthorize("hasAuthority('SCOPE_payments:process')")
 public class MovementsController {
 
   private final DebitAccountUseCase debitAccountUseCase;

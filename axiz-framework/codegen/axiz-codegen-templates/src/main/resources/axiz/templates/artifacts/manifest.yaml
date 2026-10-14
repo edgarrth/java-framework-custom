@@ -12,10 +12,12 @@ files:
   - {template: java/EventPayload.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}.java", when: type.handler}
   - {template: java/EventHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}Handler.java", when: type.handler}
   - {template: test/EventHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}HandlerTest.java", when: type.handler}
-  - {template: java/JpaEntity.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Entity.java", when: type.entity && persistence.aurora}
+  - {template: java/JpaEntity.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Entity.java", when: type.entity && persistence.aurora && stack.servlet}
+  - {template: java/R2dbcEntity.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Entity.java", when: type.entity && persistence.aurora && stack.reactive}
   - {template: java/DynamoItem.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Item.java", when: type.entity && persistence.dynamodb}
   - {template: sql/entity.sql.mustache, path: "src/main/resources/db/migration/V{{artifact.version}}__create_{{artifact.table}}.sql", when: type.entity && persistence.aurora}
-  - {template: java/JpaRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora}
+  - {template: java/JpaRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora && stack.servlet}
+  - {template: java/R2dbcRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora && stack.reactive}
   - {template: java/DynamoRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.dynamodb}
   - {template: java/Controller.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/{{artifact.className}}Controller.java", when: type.controller}
   - {template: java/Dto.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/dto/{{artifact.className}}.java", when: type.dto}

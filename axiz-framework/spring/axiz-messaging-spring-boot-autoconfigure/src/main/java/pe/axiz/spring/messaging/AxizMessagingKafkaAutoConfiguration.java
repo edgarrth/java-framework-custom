@@ -28,9 +28,9 @@ import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
-import org.springframework.util.backoff.FixedBackOff;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
+import org.springframework.util.backoff.FixedBackOff;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.PayloadException;
 import pe.axiz.core.messaging.kafka.KafkaEnvelopes;
@@ -131,8 +131,7 @@ public class AxizMessagingKafkaAutoConfiguration {
                         (MessageListener<String, byte[]>) record -> handle(dispatcher, record));
                     DefaultErrorHandler errors = new DefaultErrorHandler(recoverer, backOff);
                     // busy records wait for the inbox lease instead of using the retry budget
-                    errors.setBackOffFunction(
-                        (rec, ex) -> deferred(ex) ? deferBackOff(p) : null);
+                    errors.setBackOffFunction((rec, ex) -> deferred(ex) ? deferBackOff(p) : null);
                     errors.setResetStateOnExceptionChange(true);
                     errors.addNotRetryableExceptions(
                         PayloadException.class, DeadLetterException.class);

@@ -105,3 +105,15 @@ Si ya creaste tablas o stores propios con el paquete preliminar:
   un repositorio temporal y `lib-promote` publica cuando pasaron todos los gates. Un repositorio
   que llame a `lib-publish` directamente debe pasar a ese esquema; ver
   [CI/CD](../operacion/ci-cd.md).
+- **Tokens de aplicación:** `ClaimMapping` suma el parámetro `machine` y
+  `axiz.security.claims.machine` define las marcas de los tokens de client credentials. Los
+  valores por defecto cubren Keycloak y Microsoft Entra. Revisa la guía de
+  [seguridad](../guias/seguridad.md#resource-server) si usas otro proveedor. Un realm de Keycloak
+  importado con scopes propios debe declarar el scope `basic` (claim `sub`) y el mapper de
+  `preferred_username`, como `axiz-demo/local/keycloak/axiz-realm.json`.
+- **Build local y gate de CI:** `./mvnw verify` ya no corre Checkstyle, Error Prone + NullAway
+  ni la convergencia de dependencias; esos controles se corren con `-Pquality`, que es lo que
+  ejecutan los workflows compartidos, y también la revisión de formato (Spotless). Ejecuta
+  `./mvnw spotless:apply` antes de subir cambios. Spotless usa google-java-format 1.30, la primera
+  versión que corre sobre JDK 25, y dejó de ordenar los POM (sortpom).
+  `-Daxiz.errorprone.skip` ya no existe.

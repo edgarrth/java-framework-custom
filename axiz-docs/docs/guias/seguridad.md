@@ -30,6 +30,26 @@ authorities quedan como `SCOPE_<scope>` y `ROLE_<ROL>`:
 @PreAuthorize("hasAuthority('SCOPE_payments:write')")
 ```
 
+**Personas y aplicaciones.** Un token de client credentials es de una aplicación, no de una
+persona, y las políticas de acceso dependen de esa diferencia (`Caller.isMachine()`). El framework
+lo reconoce de tres formas:
+
+- cuando `sub` es igual al client id (RFC 9068, Cognito, Okta);
+- cuando no hay `sub`;
+- cuando el token tiene una de las marcas de `axiz.security.claims.machine`.
+
+Las marcas por defecto son `idtyp=app` (Microsoft Entra) y
+`preferred_username^=service-account-` (cuentas de servicio de Keycloak, cuyo `sub` es el id de
+un usuario técnico). Cada marca puede tener una de estas formas:
+
+- `claim`: el claim está presente;
+- `claim=valor`: el claim tiene ese valor;
+- `claim^=prefijo`: el claim empieza con ese prefijo.
+
+Con otro proveedor, configura la marca que distinga sus tokens de aplicación. Si no la
+configuras, una cuenta de servicio se tratará como una persona y las políticas le negarán el
+acceso.
+
 En servlet se configura un `SecurityFilterChain` y en reactivo un `SecurityWebFilterChain`;
 health e info son las únicas rutas anónimas del actuator.
 

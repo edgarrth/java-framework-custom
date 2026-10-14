@@ -1,0 +1,30 @@
+package {{project.basePackage}}.{{fw.entityPackage}};
+
+import org.springframework.data.relational.core.mapping.Table;
+import pe.axiz.spring.r2dbc.AuditableRow;
+
+/**
+ * {{artifact.title}} stored in {@code {{artifact.table}}} (Spring Data R2DBC, reactive). Id
+ * (UUIDv7), optimistic locking and audit columns come from {@link AuditableRow}; the table is
+ * created by the Flyway migration generated with it.
+ */
+@Table("{{artifact.table}}")
+public class {{artifact.className}}Entity extends AuditableRow {
+
+  private String name = "";
+
+  /** Used by Spring Data to read rows. */
+  protected {{artifact.className}}Entity() {}
+
+  public {{artifact.className}}Entity(String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public void rename(String newName) {
+    this.name = newName;
+  }
+}

@@ -4,7 +4,32 @@
   "displayName": "axiz demo (local only)",
   "accessTokenLifespan": 900,
   "sslRequired": "none",
+  "defaultDefaultClientScopes": [
+    "basic",
+    "audience",
+    "profile"
+  ],
   "clientScopes": [
+    {
+      "name": "basic",
+      "description": "Subject of the token (sub). Keycloak 25+ adds sub through this scope; a realm imported with its own scopes must declare it",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
     {
       "name": "audience",
       "description": "Every local token is valid for every service (audience local-services)",
@@ -26,7 +51,27 @@
     },
     {
       "name": "profile",
-      "protocol": "openid-connect"
+      "protocol": "openid-connect",
+      "description": "Username of the caller (preferred_username): service-account-<client> marks client-credentials tokens",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
     },
     {
       "name": "payments:process",
@@ -65,6 +110,7 @@
         "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
+        "basic",
         "audience",
         "profile"
       ]
@@ -79,6 +125,7 @@
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "defaultClientScopes": [
+        "basic",
         "audience",
         "profile",
         "payments:process"
@@ -94,6 +141,7 @@
       "standardFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "defaultClientScopes": [
+        "basic",
         "audience",
         "profile"
       ]

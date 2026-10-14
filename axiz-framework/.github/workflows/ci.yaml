@@ -53,6 +53,8 @@ jobs:
         run: .github/scripts/test-mvnw.sh
       - name: Publication waits for every gate
         run: python3 .github/scripts/check-publish-gates.py .github/workflows/ci.yaml
+      - name: One version per third-party library, defined once
+        run: python3 .github/scripts/check-dependency-governance.py .
       - name: Checksum pinned for the release
         if: startsWith(github.ref, 'refs/tags/v')
         run: |

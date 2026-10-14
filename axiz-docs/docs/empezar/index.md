@@ -80,10 +80,11 @@ que implementas cada operación (ver [Contrato primero](../herramientas/contrato
 ./mvnw verify
 ```
 
-`verify` revisa formato (Spotless), convenciones (Checkstyle), errores y nulos (Error Prone +
-NullAway), corre las pruebas unitarias, las reglas de arquitectura del estilo
-(`ArchitectureTest`) y la prueba de arranque contra dependencias reales en contenedores.
-`./mvnw -Pquality verify` agrega SpotBugs/FindSecBugs y los umbrales de cobertura.
+`verify` corre las pruebas unitarias, las reglas de arquitectura
+del estilo (`ArchitectureTest`) y la prueba de arranque contra dependencias reales en
+contenedores. `./mvnw -Pquality verify` agrega formato (Spotless), convenciones (Checkstyle), errores y nulos
+(Error Prone + NullAway), SpotBugs/FindSecBugs y los umbrales de cobertura: es el gate que corre
+CI en cada PR.
 
 ## 5. Correr en local
 

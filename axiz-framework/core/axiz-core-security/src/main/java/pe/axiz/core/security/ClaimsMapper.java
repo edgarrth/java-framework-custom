@@ -39,6 +39,10 @@ public final class ClaimsMapper {
     if (clientId == null) {
       throw AccessException.unauthenticated("token without client id");
     }
+    if (subject != null && !subject.equals(clientId) && isMachineToken(claims)) {
+      // a service account with its own user id: the caller is the application, not a person
+      subject = clientId;
+    }
     Map<String, Object> attributes = new LinkedHashMap<>();
     for (String path : mapping.attributes()) {
       Object v = resolve(claims, path);
@@ -55,6 +59,28 @@ public final class ClaimsMapper {
         firstSet(claims, mapping.roles()),
         first(claims, mapping.tenant()),
         attributes);
+  }
+
+  private boolean isMachineToken(Map<String, Object> claims) {
+    for (String marker : mapping.machine()) {
+      int prefix = marker.indexOf("^=");
+      int equals = marker.indexOf('=');
+      if (prefix > 0) {
+        String v = string(resolve(claims, marker.substring(0, prefix)));
+        if (v != null && v.startsWith(marker.substring(prefix + 2))) {
+          return true;
+        }
+      } else if (equals > 0) {
+        if (marker
+            .substring(equals + 1)
+            .equals(string(resolve(claims, marker.substring(0, equals))))) {
+          return true;
+        }
+      } else if (resolve(claims, marker) != null) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static @Nullable String first(Map<String, Object> claims, List<String> paths) {

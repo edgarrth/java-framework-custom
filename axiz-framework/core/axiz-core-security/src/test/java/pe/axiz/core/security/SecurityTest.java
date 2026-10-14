@@ -72,6 +72,41 @@ class SecurityTest {
     assertEquals("ops", c.attributes().get("department"));
   }
 
+  /** A Keycloak service account has its own user id in sub: it is still the application. */
+  @Test
+  void serviceAccountTokensAreMachinesEvenWhenSubIsAUserId() {
+    AxizPrincipal keycloak =
+        mapper.map(
+            Map.of(
+                "iss", "i",
+                "sub", "5f0c4e8a-service-account-user",
+                "azp", "payment-process",
+                "preferred_username", "service-account-payment-process"));
+    assertTrue(keycloak.isMachine());
+    assertEquals("payment-process", keycloak.subject());
+    AxizPrincipal entra =
+        mapper.map(Map.of("iss", "i", "sub", "object-id", "azp", "app", "idtyp", "app"));
+    assertTrue(entra.isMachine());
+    AxizPrincipal user =
+        mapper.map(
+            Map.of(
+                "iss", "i", "sub", "C-1001", "azp", "payments-web", "preferred_username", "ana"));
+    assertFalse(user.isMachine());
+    assertEquals("C-1001", user.subject());
+    ClaimsMapper presence =
+        new ClaimsMapper(
+            new ClaimMapping(
+                List.of("sub"),
+                List.of("azp"),
+                List.of("scope"),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of("client_id")));
+    assertTrue(
+        presence.map(Map.of("iss", "i", "sub", "u-1", "azp", "c", "client_id", "c")).isMachine());
+  }
+
   @Test
   void issuerPolicyIsAnAllowList() {
     IssuerPolicy policy =

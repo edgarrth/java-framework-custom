@@ -82,4 +82,30 @@
       <optional>true</optional>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- this starter is the test toolkit: services add it with <scope>test</scope>, so JUnit,
+           Mockito and Testcontainers are compile dependencies here on purpose -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>axiz-spring-layer-rules</id>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <message>The test starter must not pull Quarkus</message>
+                  <excludes combine.self="override">
+                    <exclude>io.quarkus:*</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

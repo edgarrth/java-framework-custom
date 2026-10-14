@@ -1,0 +1,35 @@
+meta {
+  name: Debit of another customer's account
+  type: http
+  seq: 21
+}
+
+post {
+  url: {{core}}/v1/debits
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+body:json {
+  {
+    "accountId": "{{debtorAccount}}",
+    "amount": 10.5,
+    "currency": "PEN",
+    "holderId": "C-1002",
+    "reference": "BRUNO-4"
+  }
+}
+
+tests {
+  // the core checks that the account belongs to the customer of the payment
+  test("status 422", function () { expect(res.status).to.equal(422); });
+  test("code PAYMENTS-COREINTEGRATION-0004", function () { expect(res.body.code).to.equal("PAYMENTS-COREINTEGRATION-0004"); });
+}

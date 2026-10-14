@@ -34,6 +34,15 @@ Cada tipo se ubica en el paquete que manda el estilo (por ejemplo, un `http-clie
 `adapter/out/<cliente>` en hexagonal y a `client/<cliente>` en layered) y no sobrescribe archivos
 existentes salvo con `--force`.
 
+Antes de escribir archivos, `generate` revisa que el servicio tenga lo que el código generado
+necesita para compilar:
+
+- `handler` y `event-handler` piden una capacidad de mensajería (`axiz add messaging-kafka` o
+  `messaging-sqs`).
+- `entity` y `repository` piden persistencia. En servicios servlet generan JPA; en servicios
+  reactivos sobre Aurora generan Spring Data R2DBC (`AuditableRow` y `ReactiveCrudRepository`).
+- `mapper` agrega MapStruct al `pom.xml`. El procesador ya viene configurado en el parent.
+
 `http-client` genera una interfaz `@HttpExchange` desde el contrato del proveedor, solo con sus
 modelos, y la registra como cliente con nombre en `axiz.http-client.clients.<nombre>` (timeouts,
 reintentos, autenticación). Ver [Clientes HTTP y SOAP](../guias/clientes.md).

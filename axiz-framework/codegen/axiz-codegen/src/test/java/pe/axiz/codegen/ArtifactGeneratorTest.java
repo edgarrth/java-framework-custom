@@ -62,7 +62,7 @@ class ArtifactGeneratorTest {
                 : "none";
         ArtifactGenerator.Result r =
             generator.generate(
-                project(f, Stack.SERVLET, persistence, List.of()),
+                project(f, Stack.SERVLET, persistence, List.of("messaging-kafka")),
                 type,
                 "payment-order",
                 ArtifactGenerator.Options.none(),
@@ -136,7 +136,7 @@ class ArtifactGeneratorTest {
 
     ArtifactGenerator.Result hexHandler =
         generator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
+            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of("messaging-sqs")),
             "handler",
             "payment-approved",
             ArtifactGenerator.Options.none(),
@@ -144,7 +144,32 @@ class ArtifactGeneratorTest {
     assertTrue(
         text(hexHandler, "adapter/in/messaging/PaymentApprovedHandler.java")
             .contains("implements EventHandler<PaymentApproved>"));
-    assertTrue(hexHandler.notes().stream().anyMatch(n -> n.contains("axiz add messaging-kafka")));
+    // without a messaging capability the handler would not compile: generation is refused
+    ProjectManifest noMessaging = project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    IllegalArgumentException refused =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                generator.generate(
+                    noMessaging, "handler", "x", ArtifactGenerator.Options.none(), null));
+    assertTrue(refused.getMessage().contains("axiz add messaging-kafka"));
+
+    // reactive services on Aurora get Spring Data R2DBC types, never JPA
+    ArtifactGenerator.Result reactiveEntity =
+        generator.generate(
+            project(Framework.EDA, Stack.REACTIVE, "aurora", List.of("messaging-kafka")),
+            "entity",
+            "payment",
+            ArtifactGenerator.Options.none(),
+            null);
+    String row =
+        reactiveEntity.created().entrySet().stream()
+            .filter(e -> e.getKey().endsWith("PaymentEntity.java"))
+            .map(e -> new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(row.contains("extends AuditableRow"));
+    assertTrue(!row.contains("jakarta.persistence"));
 
     ArtifactGenerator.Result mapper =
         generator.generate(

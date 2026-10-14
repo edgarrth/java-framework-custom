@@ -17,11 +17,12 @@ Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for the 
 ## Build
 
 ```bash
-./mvnw verify                      # build, unit tests, enforcer, Spotless check, Checkstyle, Error Prone + NullAway
-./mvnw -Pquality verify            # + SpotBugs/FindSecBugs, JaCoCo thresholds, PIT on core
+./mvnw install -DskipTests         # installs BOM, parents and starters in ~/.m2 (what services need)
+./mvnw verify                      # build, unit tests, enforcer base rules
+./mvnw -Pquality verify            # CI gate: + Spotless check, Checkstyle, Error Prone + NullAway, dependency
+                                   # convergence, SpotBugs/FindSecBugs, JaCoCo thresholds, PIT on core
 ./mvnw -Prelease deploy -Daxiz.nexus.url=https://nexus.example   # sources, javadoc, CycloneDX, Nexus
 ./mvnw spotless:apply              # format (google-java-format)
-./mvnw -Daxiz.errorprone.skip      # local escape hatch to compile without Error Prone
 ```
 
 Requirements: JDK 25, Maven 3.9.x (wrapper included). Maven settings with the Nexus mirror and

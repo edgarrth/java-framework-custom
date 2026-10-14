@@ -24,8 +24,8 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 /**
  * Long-polling SQS consumer, one virtual thread per queue. ACK deletes the message, RETRY extends
- * its visibility with exponential backoff, DEFER (another delivery holds it in the inbox) extends it
- * until that lease may have ended, DEAD_LETTER sends it to the configured dead-letter queue (or
+ * its visibility with exponential backoff, DEFER (another delivery holds it in the inbox) extends
+ * it until that lease may have ended, DEAD_LETTER sends it to the configured dead-letter queue (or
  * leaves it to the queue's redrive policy).
  *
  * <p>Only a message that cannot be decoded goes to the dead-letter path immediately; a failure of

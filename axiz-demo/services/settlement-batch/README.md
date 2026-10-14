@@ -32,9 +32,10 @@ scheduled runs never overlap. The pod exits with the job's exit code.
 ## Build and test
 
 ```bash
-./mvnw verify                 # format check, Checkstyle, Error Prone + NullAway, tests, coverage
-./mvnw spotless:apply         # formats code and pom
-./mvnw -Pquality verify       # also SpotBugs/FindSecBugs and coverage thresholds
+./mvnw verify                 # enforcer rules, tests and architecture rules
+./mvnw spotless:apply         # formats the code (run it before pushing)
+./mvnw -Pquality verify       # CI gate: + format check, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs,
+                              # dependency convergence and coverage thresholds
 ./mvnw -Pnative native:compile  # GraalVM native image
 ```
 

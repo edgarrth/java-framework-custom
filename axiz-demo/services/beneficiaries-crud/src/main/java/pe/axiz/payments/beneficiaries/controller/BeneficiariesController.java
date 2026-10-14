@@ -3,6 +3,7 @@ package pe.axiz.payments.beneficiaries.controller;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,10 +23,14 @@ import pe.axiz.spring.web.Paging;
 
 /**
  * REST adapter of the {@code beneficiaries} operations of the contract (src/main/openapi).
- * Validation of formats comes from the contract models; business rules live in the service.
+ * Validation of formats comes from the contract models; business rules live in the service. Every
+ * operation is limited to the customer of the path, before idempotency replays.
  */
 @RestController
 public class BeneficiariesController {
+
+  /** Only the customer named in the path (see {@link CustomerAccess}). */
+  static final String CUSTOMER_ONLY = "@customerAccess.isCustomer(authentication, #customerId)";
 
   private final BeneficiariesService service;
 
@@ -36,6 +41,7 @@ public class BeneficiariesController {
   /**
    * Beneficiaries of a customer (cursor pagination) (GET /v1/customers/{customerId}/beneficiaries).
    */
+  @PreAuthorize(CUSTOMER_ONLY)
   @GetMapping("/v1/customers/{customerId}/beneficiaries")
   public ResponseEntity<BeneficiaryPage> listBeneficiaries(
       @PathVariable("customerId") String customerId,
@@ -47,6 +53,7 @@ public class BeneficiariesController {
 
   /** Registers a beneficiary (POST /v1/customers/{customerId}/beneficiaries). */
   @Idempotent
+  @PreAuthorize(CUSTOMER_ONLY)
   @PostMapping("/v1/customers/{customerId}/beneficiaries")
   public ResponseEntity<Beneficiary> createBeneficiary(
       @PathVariable("customerId") String customerId, @Valid @RequestBody BeneficiaryRequest body) {
@@ -55,6 +62,7 @@ public class BeneficiariesController {
   }
 
   /** Gets a beneficiary (GET /v1/customers/{customerId}/beneficiaries/{beneficiaryId}). */
+  @PreAuthorize(CUSTOMER_ONLY)
   @GetMapping("/v1/customers/{customerId}/beneficiaries/{beneficiaryId}")
   public ResponseEntity<Beneficiary> getBeneficiary(
       @PathVariable("customerId") String customerId,
@@ -66,6 +74,7 @@ public class BeneficiariesController {
    * Updates the alias of a beneficiary (PUT
    * /v1/customers/{customerId}/beneficiaries/{beneficiaryId}).
    */
+  @PreAuthorize(CUSTOMER_ONLY)
   @PutMapping("/v1/customers/{customerId}/beneficiaries/{beneficiaryId}")
   public ResponseEntity<Beneficiary> updateBeneficiary(
       @PathVariable("customerId") String customerId,
@@ -79,6 +88,7 @@ public class BeneficiariesController {
    * Removes a beneficiary (soft delete) (DELETE
    * /v1/customers/{customerId}/beneficiaries/{beneficiaryId}).
    */
+  @PreAuthorize(CUSTOMER_ONLY)
   @DeleteMapping("/v1/customers/{customerId}/beneficiaries/{beneficiaryId}")
   public ResponseEntity<Void> deleteBeneficiary(
       @PathVariable("customerId") String customerId,

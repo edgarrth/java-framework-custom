@@ -18,8 +18,11 @@ beneficiary=$(curl -sf "${auth[@]}" -H "Idempotency-Key: $(key)" \
   "${CRUD_URL:-http://localhost:8082}/v1/customers/C-1001/beneficiaries" | jq -r '.items[0].id')
 echo "beneficiary $beneficiary"
 
+# a different amount per run: the same amount to the same beneficiary on the same day is rejected
+# as a probable duplicate (PAYMENTS-PAYMENTSEXPERIENCE-0004)
+amount=$(printf '1%02d.%02d' $((RANDOM % 100)) $((RANDOM % 100)))
 payment=$(curl -sf "${auth[@]}" -H "Idempotency-Key: $(key)" "${CHANNEL_URL:-http://localhost:8080}/v1/payments" \
-  -d "{\"beneficiaryId\":\"$beneficiary\",\"debtorAccount\":\"1910012345678\",\"amount\":150.75,\"currency\":\"PEN\",\"description\":\"Rent\"}")
+  -d "{\"beneficiaryId\":\"$beneficiary\",\"debtorAccount\":\"1910012345678\",\"amount\":$amount,\"currency\":\"PEN\",\"description\":\"Rent\"}")
 id=$(echo "$payment" | jq -r .paymentId)
 echo "payment $id: $(echo "$payment" | jq -c .)"
 

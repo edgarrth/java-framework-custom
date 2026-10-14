@@ -12,6 +12,11 @@ import java.util.List;
  * @param roles role claims (list or space separated string)
  * @param tenant tenant claims
  * @param attributes extra claims copied to the principal attributes
+ * @param machine markers of a token issued to an application without an end user (client
+ *     credentials) whose {@code sub} is not the client id: {@code claim} (present), {@code
+ *     claim=value} or {@code claim^=prefix}. Such tokens are mapped with the client id as subject
+ *     (RFC 9068), so they are never mistaken for an end user. Defaults: Microsoft Entra ({@code
+ *     idtyp=app}) and Keycloak service accounts ({@code preferred_username^=service-account-}).
  */
 public record ClaimMapping(
     List<String> subject,
@@ -19,7 +24,22 @@ public record ClaimMapping(
     List<String> scopes,
     List<String> roles,
     List<String> tenant,
-    List<String> attributes) {
+    List<String> attributes,
+    List<String> machine) {
+
+  /** Keycloak service accounts and Microsoft Entra application tokens. */
+  public static final List<String> DEFAULT_MACHINE_MARKERS =
+      List.of("idtyp=app", "preferred_username^=service-account-");
+
+  public ClaimMapping(
+      List<String> subject,
+      List<String> clientId,
+      List<String> scopes,
+      List<String> roles,
+      List<String> tenant,
+      List<String> attributes) {
+    this(subject, clientId, scopes, roles, tenant, attributes, DEFAULT_MACHINE_MARKERS);
+  }
 
   public ClaimMapping {
     subject = List.copyOf(subject);
@@ -28,6 +48,7 @@ public record ClaimMapping(
     roles = List.copyOf(roles);
     tenant = List.copyOf(tenant);
     attributes = List.copyOf(attributes);
+    machine = List.copyOf(machine);
   }
 
   /** Defaults that work with standard OIDC providers. */

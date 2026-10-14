@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 MODE="${MODE:-defaults}"
 revision=$(./mvnw -q -N help:evaluate -Dexpression=revision -DforceStdout)
-./mvnw -B -ntp install -DskipTests -Daxiz.errorprone.skip
+./mvnw -B -ntp install -DskipTests
 ./mvnw -B -ntp -q -pl codegen/axiz-codegen \
   org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=pe.axiz.codegen.tools.SampleProjects \

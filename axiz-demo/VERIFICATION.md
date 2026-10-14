@@ -6,7 +6,7 @@ contenedores, el entorno local y el e2e en kind corren en CI (`ci.yaml`, `e2e.ya
 | Qué | Resultado local |
 |---|---|
 | Compilación (main y pruebas) de los 8 servicios | OK |
-| Pruebas unitarias + `ArchitectureTest` | 92 OK: payments-business 15, beneficiaries-crud 13, payments-experience 10, core-integration 13, payment-process 12, notifications-processor 6, settlement-batch 11, payments-history 12 |
+| Pruebas unitarias + `ArchitectureTest` | 94 OK: payments-business 15, beneficiaries-crud 15, payments-experience 10, core-integration 13, payment-process 12, notifications-processor 6, settlement-batch 11, payments-history 12 |
 | Cobertura de capacidades (`coverage/`) | 2 OK: todas las capacidades del catálogo están usadas y su evidencia existe |
 | Charts (8 servicios × dev/qa/prod) | kubeconform estricto y kube-linter sin hallazgos |
 | Workflows y scripts | actionlint + shellcheck sin hallazgos |

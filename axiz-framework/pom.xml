@@ -92,6 +92,7 @@
 
     <!-- Maven plugins -->
     <maven-enforcer-plugin.version>3.6.2</maven-enforcer-plugin.version>
+    <extra-enforcer-rules.version>1.8.0</extra-enforcer-rules.version>
     <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
     <maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
@@ -101,6 +102,8 @@
     <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
+    <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
+    <maven-site-plugin.version>3.21.0</maven-site-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <flatten-maven-plugin.version>1.7.0</flatten-maven-plugin.version>
     <spotless-maven-plugin.version>3.10.4</spotless-maven-plugin.version>
@@ -113,7 +116,6 @@
     <native-maven-plugin.version>0.11.4</native-maven-plugin.version>
     <axiz.readme.skip>false</axiz.readme.skip>
     <rewrite-maven-plugin.version>6.49.0</rewrite-maven-plugin.version>
-    <sortpom-maven-plugin.version>4.0.0</sortpom-maven-plugin.version>
 
     <!-- Must match axiz-dependencies -->
     <spring-boot.version>4.1.1</spring-boot.version>
@@ -124,7 +126,7 @@
     <findsecbugs.version>1.14.0</findsecbugs.version>
     <errorprone.version>2.49.0</errorprone.version>
     <nullaway.version>0.14.1</nullaway.version>
-    <google-java-format.version>1.28.0</google-java-format.version>
+    <google-java-format.version>1.30.0</google-java-format.version>
   </properties>
 
   <dependencyManagement>
@@ -231,6 +233,16 @@
           <version>${maven-deploy-plugin.version}</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>${maven-site-plugin.version}</version>
+        </plugin>
+        <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>flatten-maven-plugin</artifactId>
           <version>${flatten-maven-plugin.version}</version>
@@ -248,15 +260,6 @@
               <removeUnusedImports />
               <formatAnnotations />
             </java>
-            <pom>
-              <sortPom>
-                <expandEmptyElements>false</expandEmptyElements>
-                <keepBlankLines>true</keepBlankLines>
-                <nrOfIndentSpace>2</nrOfIndentSpace>
-                <sortDependencies>none</sortDependencies>
-                <sortPlugins>none</sortPlugins>
-              </sortPom>
-            </pom>
           </configuration>
         </plugin>
         <plugin>
@@ -393,8 +396,6 @@
                   <version>[3.9.6,)</version>
                 </requireMavenVersion>
                 <banDuplicatePomDependencyVersions />
-                <dependencyConvergence />
-                <requireUpperBoundDeps />
                 <requirePluginVersions />
                 <bannedDependencies>
                   <excludes>
@@ -411,8 +412,9 @@
                     <exclude>io.github.openfeign:*</exclude>
                     <exclude>org.springframework.cloud:spring-cloud-starter-openfeign</exclude>
                     <exclude>log4j:log4j</exclude>
-                    <exclude>commons-logging:commons-logging</exclude>
                     <exclude>junit:junit</exclude>
+                    <!-- commons-logging is allowed: since Spring Framework 7 it is the logging facade of
+                         spring-core (1.3+, routed to SLF4J by Spring Boot); spring-jcl no longer exists -->
                   </excludes>
                   <searchTransitive>true</searchTransitive>
                 </bannedDependencies>
@@ -443,32 +445,17 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>spotless-check</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
   <profiles>
-    <!-- Error Prone + NullAway (JSpecify) on production code; tests are excluded (fakes and
-         assertions use nulls on purpose). Disable locally with -Daxiz.errorprone.skip=true -->
+    <!-- Full quality gate, run by CI on every pull request and before publishing (-Pquality):
+         Error Prone + NullAway (JSpecify) on production code (tests are excluded: fakes and
+         assertions use nulls on purpose), Checkstyle (parents), dependency convergence,
+         Spotless format check, SpotBugs, JaCoCo thresholds and mutation testing on core. The
+         default build stays fast: compile, tests and enforcer base rules. -->
     <profile>
-      <id>errorprone</id>
-      <activation>
-        <property>
-          <name>!axiz.errorprone.skip</name>
-        </property>
-      </activation>
+      <id>quality</id>
       <build>
         <pluginManagement>
           <plugins>
@@ -497,14 +484,59 @@
             </plugin>
           </plugins>
         </pluginManagement>
-      </build>
-    </profile>
-
-    <!-- Full quality gate used by CI: SpotBugs, JaCoCo thresholds, mutation testing on core -->
-    <profile>
-      <id>quality</id>
-      <build>
         <plugins>
+          <!-- format check: run ./mvnw spotless:apply before pushing -->
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>spotless-check</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>extra-enforcer-rules</artifactId>
+                <version>${extra-enforcer-rules.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <!-- one version of each library and no class shipped by two different jars -->
+                <id>axiz-dependency-convergence</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <dependencyConvergence />
+                    <requireUpperBoundDeps />
+                    <banDuplicateClasses>
+                      <findAllDuplicates>true</findAllDuplicates>
+                      <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                      <scopes>
+                        <scope>compile</scope>
+                        <scope>runtime</scope>
+                      </scopes>
+                      <ignoreClasses>
+                        <ignoreClass>module-info</ignoreClass>
+                        <ignoreClass>META-INF.versions.*</ignoreClass>
+                      </ignoreClasses>
+                    </banDuplicateClasses>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>

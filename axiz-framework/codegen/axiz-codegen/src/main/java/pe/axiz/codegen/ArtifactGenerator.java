@@ -137,6 +137,13 @@ public final class ArtifactGenerator {
       throw new IllegalArgumentException(
           type + " needs persistence (aurora or dynamodb); the project has none");
     }
+    if ((type.equals("handler") || type.equals("event-handler"))
+        && project.capabilities().stream().noneMatch(cap -> cap.startsWith("messaging-"))) {
+      // the handler would not compile without the messaging API
+      throw new IllegalArgumentException(
+          "Consuming events needs a messaging capability: run axiz add messaging-kafka (or"
+              + " messaging-sqs) first");
+    }
     if (type.equals("migration") && !aurora) {
       throw new IllegalArgumentException("Flyway migrations need Aurora persistence");
     }
@@ -156,11 +163,6 @@ public final class ArtifactGenerator {
         type.equals("mapper") ? List.of("org.mapstruct:mapstruct") : List.of();
     List<String> notes = new java.util.ArrayList<>();
     if (type.equals("handler") || type.equals("event-handler")) {
-      if (project.capabilities().stream().noneMatch(cap -> cap.startsWith("messaging-"))) {
-        notes.add(
-            "Consuming events needs a messaging capability: axiz add messaging-kafka (or"
-                + " messaging-sqs)");
-      }
       notes.add(
           "Subscribe the service to the topic or queue (axiz.messaging.kafka.topics /"
               + " axiz.messaging.sqs.queues)");

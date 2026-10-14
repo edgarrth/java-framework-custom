@@ -128,8 +128,11 @@ class SqsEventConsumerTest {
         sqs,
         new ObservedDispatcher(dispatcher, ObservationRegistry.NOOP, Clock.systemUTC()),
         new AxizMessagingProperties.Sqs(
-            List.of("https://sqs/q"), Map.of("https://sqs/q", "https://sqs/q-dlq"),
-            Duration.ofSeconds(20), 10, Duration.ofSeconds(60)),
+            List.of("https://sqs/q"),
+            Map.of("https://sqs/q", "https://sqs/q-dlq"),
+            Duration.ofSeconds(20),
+            10,
+            Duration.ofSeconds(60)),
         Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(5)));
   }
 
