@@ -1,0 +1,278 @@
+package pe.axiz.spring.security;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationManagerResolver;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
+import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
+import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerReactiveAuthenticationManagerResolver;
+import org.springframework.security.oauth2.server.resource.authentication.JwtReactiveAuthenticationManager;
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
+import pe.axiz.core.errors.ProblemFactory;
+import pe.axiz.core.security.ClaimsMapper;
+import pe.axiz.core.security.InMemoryRateLimiter;
+import pe.axiz.core.security.IssuerPolicy;
+import pe.axiz.core.security.RateLimiter;
+import pe.axiz.core.security.TrustedIssuer;
+
+/**
+ * OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS,
+ * audience and algorithm checks, claims mapped to {@code AxizPrincipal}, method security, security
+ * headers, protected actuator, problem responses for 401/403/429 and optional per-caller rate
+ * limits. Services may declare their own {@code SecurityFilterChain} to take over.
+ */
+@AutoConfiguration(
+    afterName = "pe.axiz.spring.errors.AxizErrorsAutoConfiguration",
+    beforeName = {
+      "org.springframework.boot.security.autoconfigure.web.servlet.ServletWebSecurityAutoConfiguration",
+      "org.springframework.boot.security.autoconfigure.web.reactive.ReactiveWebSecurityAutoConfiguration",
+      "org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration",
+      "org.springframework.boot.security.autoconfigure.ReactiveUserDetailsServiceAutoConfiguration",
+      "org.springframework.boot.security.oauth2.server.resource.autoconfigure.OAuth2ResourceServerAutoConfiguration",
+      "org.springframework.boot.security.oauth2.server.resource.autoconfigure.reactive."
+          + "ReactiveOAuth2ResourceServerAutoConfiguration",
+      "org.springframework.boot.security.autoconfigure.actuate.web.servlet.ManagementWebSecurityAutoConfiguration",
+      "org.springframework.boot.security.autoconfigure.actuate.web.reactive."
+          + "ReactiveManagementWebSecurityAutoConfiguration"
+    })
+@ConditionalOnWebApplication
+@ConditionalOnBooleanProperty(name = "axiz.security.enabled", matchIfMissing = true)
+@EnableConfigurationProperties(AxizSecurityProperties.class)
+public class AxizSecurityAutoConfiguration {
+
+  static final String CSP = "default-src 'none'; frame-ancestors 'none'";
+
+  @Bean
+  @ConditionalOnMissingBean
+  IssuerPolicy axizIssuerPolicy(AxizSecurityProperties p) {
+    List<TrustedIssuer> trusted = new ArrayList<>();
+    for (AxizSecurityProperties.Issuer i : p.issuers()) {
+      String jwks = i.jwkSetUri();
+      trusted.add(
+          new TrustedIssuer(
+              i.issuer(), jwks == null || jwks.isBlank() ? null : URI.create(jwks), i.audiences()));
+    }
+    return new IssuerPolicy(trusted);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  ClaimsMapper axizClaimsMapper(AxizSecurityProperties p) {
+    return new ClaimsMapper(p.claims().toMapping());
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  TrustedIssuerDecoders axizTrustedIssuerDecoders(IssuerPolicy policy, AxizSecurityProperties p) {
+    return new TrustedIssuerDecoders(policy, p.algorithms(), p.clockSkew());
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  AxizJwtConverter axizJwtConverter(ClaimsMapper mapper) {
+    return new AxizJwtConverter(mapper);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  SecurityProblems axizSecurityProblems(ObjectProvider<ProblemFactory> factory) {
+    return new SecurityProblems(factory.getIfAvailable());
+  }
+
+  /** Single-instance fallback; the Redis limiter replaces it when Redis is configured. */
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
+  RateLimiter axizRateLimiter(ObjectProvider<Clock> clock) {
+    org.slf4j.LoggerFactory.getLogger(AxizSecurityAutoConfiguration.class)
+        .warn("Rate limits use an in-memory store: limits apply per instance, not per cluster");
+    return new InMemoryRateLimiter(clock.getIfAvailable(Clock::systemUTC));
+  }
+
+  static String actuatorBase(Environment env) {
+    String base = env.getProperty("management.endpoints.web.base-path", "/actuator");
+    return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
+  @ConditionalOnClass(name = "org.springframework.security.web.SecurityFilterChain")
+  @EnableWebSecurity
+  @EnableMethodSecurity
+  static class ServletConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    AuthenticationManagerResolver<HttpServletRequest> axizAuthenticationManagerResolver(
+        TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
+      AuthenticationManagerResolver<String> byIssuer =
+          issuer -> {
+            NimbusJwtDecoder decoder = decoders.servlet(issuer);
+            if (decoder == null) {
+              return null;
+            }
+            JwtAuthenticationProvider provider = new JwtAuthenticationProvider(decoder);
+            provider.setJwtAuthenticationConverter(converter);
+            AuthenticationManager manager = provider::authenticate;
+            return manager;
+          };
+      return new JwtIssuerAuthenticationManagerResolver(byIssuer);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(SecurityFilterChain.class)
+    SecurityFilterChain axizSecurityFilterChain(
+        HttpSecurity http,
+        Environment env,
+        AxizSecurityProperties p,
+        AuthenticationManagerResolver<HttpServletRequest> resolver,
+        SecurityProblems problems,
+        ObjectProvider<RateLimiter> limiter)
+        throws Exception {
+      String actuator = actuatorBase(env);
+      ProblemAuthenticationEntryPoint handlers = new ProblemAuthenticationEntryPoint(problems);
+      http.csrf(AbstractHttpConfigurer::disable)
+          .httpBasic(AbstractHttpConfigurer::disable)
+          .formLogin(AbstractHttpConfigurer::disable)
+          .logout(AbstractHttpConfigurer::disable)
+          .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+          .headers(
+              h ->
+                  h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .referrerPolicy(
+                          r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
+          .authorizeHttpRequests(
+              a -> {
+                a.requestMatchers(actuator + "/health", actuator + "/health/**", actuator + "/info")
+                    .permitAll();
+                a.requestMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
+                if (!p.publicPaths().isEmpty()) {
+                  a.requestMatchers(p.publicPaths().toArray(String[]::new)).permitAll();
+                }
+                a.anyRequest().authenticated();
+              })
+          .oauth2ResourceServer(
+              o ->
+                  o.authenticationManagerResolver(resolver)
+                      .authenticationEntryPoint(handlers)
+                      .accessDeniedHandler(handlers))
+          .exceptionHandling(
+              e -> e.authenticationEntryPoint(handlers).accessDeniedHandler(handlers))
+          .addFilterAfter(new CallerContextFilter(), BearerTokenAuthenticationFilter.class);
+      RateLimiter rl = limiter.getIfAvailable();
+      if (p.rateLimit().enabled() && rl != null) {
+        http.addFilterAfter(
+            new RateLimitFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            CallerContextFilter.class);
+      }
+      return http.build();
+    }
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  @ConditionalOnClass(name = "org.springframework.security.web.server.SecurityWebFilterChain")
+  @EnableWebFluxSecurity
+  @EnableReactiveMethodSecurity
+  static class ReactiveConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    JwtIssuerReactiveAuthenticationManagerResolver axizReactiveAuthenticationManagerResolver(
+        TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
+      return new JwtIssuerReactiveAuthenticationManagerResolver(
+          issuer -> {
+            NimbusReactiveJwtDecoder decoder = decoders.reactive(issuer);
+            if (decoder == null) {
+              return reactor.core.publisher.Mono.empty();
+            }
+            JwtReactiveAuthenticationManager manager =
+                new JwtReactiveAuthenticationManager(decoder);
+            manager.setJwtAuthenticationConverter(
+                new ReactiveJwtAuthenticationConverterAdapter(converter::convert));
+            return reactor.core.publisher.Mono.<ReactiveAuthenticationManager>just(manager);
+          });
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(SecurityWebFilterChain.class)
+    SecurityWebFilterChain axizSecurityWebFilterChain(
+        ServerHttpSecurity http,
+        Environment env,
+        AxizSecurityProperties p,
+        JwtIssuerReactiveAuthenticationManagerResolver resolver,
+        SecurityProblems problems,
+        ObjectProvider<RateLimiter> limiter) {
+      String actuator = actuatorBase(env);
+      ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems);
+      http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+          .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+          .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+          .logout(ServerHttpSecurity.LogoutSpec::disable)
+          .headers(
+              h ->
+                  h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .referrerPolicy(
+                          r ->
+                              r.policy(
+                                  ReferrerPolicyServerHttpHeadersWriter.ReferrerPolicy
+                                      .NO_REFERRER)))
+          .authorizeExchange(
+              a -> {
+                a.pathMatchers(actuator + "/health", actuator + "/health/**", actuator + "/info")
+                    .permitAll();
+                a.pathMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
+                if (!p.publicPaths().isEmpty()) {
+                  a.pathMatchers(p.publicPaths().toArray(String[]::new)).permitAll();
+                }
+                a.anyExchange().authenticated();
+              })
+          .oauth2ResourceServer(
+              o ->
+                  o.authenticationManagerResolver(resolver)
+                      .authenticationEntryPoint(handlers)
+                      .accessDeniedHandler(handlers))
+          .exceptionHandling(
+              e -> e.authenticationEntryPoint(handlers).accessDeniedHandler(handlers))
+          .addFilterAfter(new CallerContextWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION);
+      RateLimiter rl = limiter.getIfAvailable();
+      if (p.rateLimit().enabled() && rl != null) {
+        http.addFilterAfter(
+            new RateLimitWebFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            SecurityWebFiltersOrder.AUTHORIZATION);
+      }
+      return http.build();
+    }
+  }
+}

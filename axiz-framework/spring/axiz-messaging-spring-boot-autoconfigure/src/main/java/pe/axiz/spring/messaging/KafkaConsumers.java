@@ -1,0 +1,38 @@
+package pe.axiz.spring.messaging;
+
+import java.util.List;
+import org.springframework.context.SmartLifecycle;
+import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
+
+/** Starts the listener containers after the context is ready and stops them on shutdown. */
+public class KafkaConsumers implements SmartLifecycle {
+
+  private final List<ConcurrentMessageListenerContainer<String, byte[]>> containers;
+  private volatile boolean running;
+
+  public KafkaConsumers(List<ConcurrentMessageListenerContainer<String, byte[]>> containers) {
+    this.containers = List.copyOf(containers);
+  }
+
+  @Override
+  public void start() {
+    containers.forEach(ConcurrentMessageListenerContainer::start);
+    running = true;
+  }
+
+  @Override
+  public void stop() {
+    containers.forEach(ConcurrentMessageListenerContainer::stop);
+    running = false;
+  }
+
+  @Override
+  public boolean isRunning() {
+    return running;
+  }
+
+  @Override
+  public int getPhase() {
+    return Integer.MAX_VALUE - 100;
+  }
+}

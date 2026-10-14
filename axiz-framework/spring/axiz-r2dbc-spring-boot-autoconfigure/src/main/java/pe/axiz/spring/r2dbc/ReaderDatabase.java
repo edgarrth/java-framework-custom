@@ -1,0 +1,52 @@
+package pe.axiz.spring.r2dbc;
+
+import io.r2dbc.spi.Closeable;
+import io.r2dbc.spi.ConnectionFactory;
+import java.time.Duration;
+import java.util.Objects;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.r2dbc.core.DatabaseClient;
+import pe.axiz.core.persistence.r2dbc.ReactiveSql;
+import reactor.core.publisher.Mono;
+
+/**
+ * The reader endpoint of the Aurora cluster ({@code axiz.r2dbc.reader.url}): a separate pool for
+ * queries that tolerate replica lag. It is deliberately not a {@link ConnectionFactory} bean, so
+ * the writer stays the only candidate for transactions, repositories and migrations; statements run
+ * here never take part in a transaction.
+ */
+public final class ReaderDatabase implements DisposableBean {
+
+  private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(10);
+
+  private final ConnectionFactory connectionFactory;
+  private final DatabaseClient client;
+  private final ReactiveSql sql;
+
+  public ReaderDatabase(ConnectionFactory connectionFactory) {
+    this.connectionFactory = Objects.requireNonNull(connectionFactory);
+    this.client = DatabaseClient.create(connectionFactory);
+    this.sql = new DatabaseClientReactiveSql(client);
+  }
+
+  /** Spring's client on the reader pool. */
+  public DatabaseClient client() {
+    return client;
+  }
+
+  /** Named-parameter SQL on the reader pool. */
+  public ReactiveSql sql() {
+    return sql;
+  }
+
+  public ConnectionFactory connectionFactory() {
+    return connectionFactory;
+  }
+
+  @Override
+  public void destroy() {
+    if (connectionFactory instanceof Closeable closeable) {
+      Mono.from(closeable.close()).block(CLOSE_TIMEOUT);
+    }
+  }
+}

@@ -1,0 +1,15 @@
+# Profile "platform": the whole demo on one machine (../../local/compose.yaml), with the profile
+# "local". Ports and addresses of the sibling services; nothing here applies to real environments.
+server:
+  port: 8080
+axiz:
+  http-client:
+    clients:
+      payments-business:
+        base-url: http://localhost:8081
+      beneficiaries-crud:
+        base-url: http://localhost:8082
+  feature-flags:
+    flags:
+      payments-usd:
+        enabled: true

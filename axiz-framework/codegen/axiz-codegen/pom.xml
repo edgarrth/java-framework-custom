@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-codegen</artifactId>
+  <name>axiz :: codegen :: engine</name>
+  <description>Generation engine shared by axiz-initializr and axiz-cli: OpenAPI model and lint, compatibility rules, templates and safe output</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.codegen</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-archetypes</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-codegen-templates</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.samskivert</groupId>
+      <artifactId>jmustache</artifactId>
+    </dependency>
+  </dependencies>
+</project>

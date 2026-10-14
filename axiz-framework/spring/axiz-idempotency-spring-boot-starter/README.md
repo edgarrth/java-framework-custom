@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-idempotency-spring-boot-starter
+
+@Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-idempotency-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

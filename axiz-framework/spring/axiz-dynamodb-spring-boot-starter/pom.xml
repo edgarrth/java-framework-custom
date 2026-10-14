@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-spring-lib</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-dynamodb-spring-boot-starter</artifactId>
+  <name>axiz :: spring :: dynamodb :: starter</name>
+  <description>DynamoDB Enhanced Client, table naming per environment and generic repositories</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.spring.dynamodb.starter</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-dynamodb-spring-boot-autoconfigure</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.awspring.cloud</groupId>
+      <artifactId>spring-cloud-aws-starter-dynamodb</artifactId>
+    </dependency>
+  </dependencies>
+</project>

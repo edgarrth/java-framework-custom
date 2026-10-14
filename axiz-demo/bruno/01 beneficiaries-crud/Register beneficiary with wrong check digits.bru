@@ -1,0 +1,34 @@
+meta {
+  name: Register beneficiary with wrong check digits
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{crud}}/v1/customers/{{customerId}}/beneficiaries
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "alias": "Typo",
+    "holderName": "Ana Torres",
+    "cci": "00219100123456789099",
+    "currency": "PEN"
+  }
+}
+
+tests {
+  test("status 422", function () { expect(res.status).to.equal(422); });
+  test("code PAYMENTS-BENEFICIARIESCRUD-0001", function () { expect(res.body.code).to.equal("PAYMENTS-BENEFICIARIESCRUD-0001"); });
+}

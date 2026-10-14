@@ -1,0 +1,62 @@
+package pe.axiz.core.idempotency;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.commons.json.JsonWriter;
+
+/** Serializes records for key-value stores (Redis, DynamoDB string attribute). */
+public final class StoredResponseCodec {
+
+  private StoredResponseCodec() {}
+
+  public static String write(IdempotencyRecord r) {
+    Map<String, @Nullable Object> m = new LinkedHashMap<>();
+    m.put("fingerprint", r.fingerprint());
+    m.put("status", r.status().name());
+    if (r.owner() != null) {
+      m.put("owner", r.owner());
+    }
+    m.put("expiresAt", r.expiresAt().toString());
+    StoredResponse resp = r.response();
+    if (resp != null) {
+      m.put("httpStatus", resp.status());
+      m.put("headers", resp.headers());
+      m.put("body", Base64.getEncoder().encodeToString(resp.body()));
+    }
+    return JsonWriter.write(m);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static IdempotencyRecord read(String key, String json) {
+    Map<String, @Nullable Object> m = JsonReader.parseObject(json);
+    StoredResponse response = null;
+    if (m.get("httpStatus") instanceof BigDecimal status) {
+      Map<String, String> headers = new LinkedHashMap<>();
+      if (m.get("headers") instanceof Map<?, ?> h) {
+        h.forEach((k, v) -> headers.put(String.valueOf(k), String.valueOf(v)));
+      }
+      Object body = m.get("body");
+      response =
+          new StoredResponse(
+              status.intValue(),
+              headers,
+              body == null ? new byte[0] : Base64.getDecoder().decode(body.toString()));
+    }
+    return new IdempotencyRecord(
+        key,
+        String.valueOf(m.get("fingerprint")),
+        IdempotencyRecord.Status.valueOf(String.valueOf(m.get("status"))),
+        m.get("owner") == null ? null : String.valueOf(m.get("owner")),
+        response,
+        java.time.Instant.parse(String.valueOf(m.get("expiresAt"))));
+  }
+
+  static String utf8(byte[] b) {
+    return new String(b, StandardCharsets.UTF_8);
+  }
+}

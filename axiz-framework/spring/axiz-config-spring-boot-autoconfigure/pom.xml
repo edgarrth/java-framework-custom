@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-spring-lib</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-config-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: spring :: config :: autoconfigure</name>
+  <description>ConfigMaps through Spring Cloud Kubernetes and Parameter Store conventions with fail-fast validation (auto-configuration)</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.spring.config</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot</artifactId>
+    </dependency>
+  </dependencies>
+</project>

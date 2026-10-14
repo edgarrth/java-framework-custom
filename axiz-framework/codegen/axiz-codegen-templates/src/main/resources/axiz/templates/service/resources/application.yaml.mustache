@@ -1,0 +1,5 @@
+# {{project.title}}: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, {{project.name}} and {{project.name}}-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+{{{config.applicationYaml}}}

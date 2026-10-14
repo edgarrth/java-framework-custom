@@ -1,0 +1,62 @@
+# Nightly native compilation: builds and runs the tests of each listed module as a GraalVM native
+# image, so AOT and reachability problems show up the day they are introduced. Used by the demo
+# (every service) and by the framework (one generated service per archetype).
+name: native-nightly
+on:
+  workflow_call:
+    inputs:
+      modules:
+        description: JSON list of Maven project directories, e.g. ["services/payments-business"]
+        type: string
+        required: true
+      generate-script:
+        description: Optional script that prepares the modules first (e.g. generates services)
+        type: string
+        default: ""
+      runner:
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      NEXUS_URL:
+        required: true
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(inputs.modules) }}
+    runs-on: ${{ inputs.runner }}
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      MODULE: ${{ matrix.module }}
+      GENERATE: ${{ inputs.generate-script }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          distribution: graalvm
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Prepare
+        if: inputs.generate-script != ''
+        run: bash "$GENERATE"
+      - name: Native image and native tests
+        working-directory: ${{ matrix.module }}
+        run: mvn -B -ntp -Pnative package native:compile native:test
+      - name: Binary size
+        working-directory: ${{ matrix.module }}
+        run: |
+          for bin in target/*; do
+            [ -f "$bin" ] && [ -x "$bin" ] && echo "- \`$MODULE\`: $(du -h "$bin" | cut -f1) ($(basename "$bin"))" >> "$GITHUB_STEP_SUMMARY"
+          done
+          true

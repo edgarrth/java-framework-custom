@@ -1,0 +1,32 @@
+<!-- generated -->
+# axiz-core-idempotency
+
+API idempotency: key and fingerprint, stored responses, conflict detection.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-idempotency</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `IdempotencyErrors` | Errors of the API idempotency capability. |
+| `IdempotencyRecord` | Stored state of an idempotency key. |
+| `IdempotencyService` | API idempotency: the first request with a key runs, a repeated identical request gets the stored response, a concurrent one gets 409 and the same key with a different request gets 422. |
+| `IdempotencyStore` | Storage of idempotency records (Redis or DynamoDB in production). |
+| `Idempotent` | Marks a non-idempotent endpoint (POST/PATCH) as requiring an `Idempotency-Key`. |
+| `InMemoryIdempotencyStore` | In-memory store for tests and single-instance local runs. |
+| `StoredResponse` | Response saved for replay. |
+| `StoredResponseCodec` | Serializes records for key-value stores (Redis, DynamoDB string attribute). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-idempotency verify`.

@@ -1,0 +1,47 @@
+package pe.axiz.initializr.api;
+
+import jakarta.validation.Valid;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import pe.axiz.codegen.output.GeneratedProject;
+import pe.axiz.initializr.config.InitializrProperties;
+import pe.axiz.initializr.service.GenerationService;
+import pe.axiz.initializr.service.GitHubPublisher;
+
+/**
+ * Creates the repository of a new project in GitHub with the user's own authorization (OAuth client
+ * registration {@code github}); the token is used for this request only.
+ */
+@RestController
+public class GitHubController {
+
+  private final GenerationService generation;
+  private final GitHubPublisher publisher;
+  private final InitializrProperties properties;
+
+  public GitHubController(
+      GenerationService generation, GitHubPublisher publisher, InitializrProperties properties) {
+    this.generation = generation;
+    this.publisher = publisher;
+    this.properties = properties;
+  }
+
+  /** Generates the project and pushes it to a new private repository. */
+  @PostMapping("/v1/projects/github")
+  @ResponseStatus(HttpStatus.CREATED)
+  public Map<String, String> create(
+      @Valid @RequestBody ProjectRequestBody body,
+      @RegisteredOAuth2AuthorizedClient("github") OAuth2AuthorizedClient github) {
+    GeneratedProject project =
+        generation.generate(body.toRequest(generation.catalog(), properties.frameworkVersion()));
+    GitHubPublisher.Repository repo =
+        publisher.publish(project, github.getAccessToken().getTokenValue(), body.description());
+    return Map.of("repository", repo.fullName(), "url", repo.url());
+  }
+}

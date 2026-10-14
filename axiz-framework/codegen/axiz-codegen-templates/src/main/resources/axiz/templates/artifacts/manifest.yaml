@@ -1,0 +1,25 @@
+# Artifacts of `axiz generate <type> <name>`; the generator sets type.<type> = true.
+files:
+  - {template: java/UseCase.java.mustache, path: "src/main/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCase.java", when: type.usecase}
+  - {template: test/UseCaseTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCaseTest.java", when: type.usecase}
+  - {template: java/Command.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{artifact.className}}Command.java", when: type.command}
+  - {template: java/CommandHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{artifact.className}}Handler.java", when: type.command}
+  - {template: test/CommandHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/command/{{artifact.className}}HandlerTest.java", when: type.command}
+  - {template: java/Query.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{artifact.className}}Query.java", when: type.query}
+  - {template: java/QueryHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{artifact.className}}Handler.java", when: type.query}
+  - {template: test/QueryHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/query/{{artifact.className}}HandlerTest.java", when: type.query}
+  - {template: java/Event.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.eventPath}}/{{artifact.className}}.java", when: type.event}
+  - {template: java/EventPayload.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}.java", when: type.handler}
+  - {template: java/EventHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}Handler.java", when: type.handler}
+  - {template: test/EventHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}HandlerTest.java", when: type.handler}
+  - {template: java/JpaEntity.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Entity.java", when: type.entity && persistence.aurora}
+  - {template: java/DynamoItem.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.entityPath}}/{{artifact.className}}Item.java", when: type.entity && persistence.dynamodb}
+  - {template: sql/entity.sql.mustache, path: "src/main/resources/db/migration/V{{artifact.version}}__create_{{artifact.table}}.sql", when: type.entity && persistence.aurora}
+  - {template: java/JpaRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora}
+  - {template: java/DynamoRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.dynamodb}
+  - {template: java/Controller.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/{{artifact.className}}Controller.java", when: type.controller}
+  - {template: java/Dto.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/dto/{{artifact.className}}.java", when: type.dto}
+  - {template: java/Mapper.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/{{artifact.className}}Mapper.java", when: type.mapper}
+  - {template: sql/migration.sql.mustache, path: "src/main/resources/db/migration/V{{artifact.version}}__{{artifact.snake}}.sql", when: type.migration}
+  - {template: errors/Errors.java.mustache, path: "src/main/java/{{project.packagePath}}{{fw.errorsDir}}/{{artifact.errorsClass}}.java", when: type.errorcode}
+  - {template: test/Test.java.mustache, path: "src/test/java/{{project.packagePath}}/{{#artifact.hasSubPackage}}{{artifact.subPath}}/{{/artifact.hasSubPackage}}{{artifact.className}}Test.java", when: type.test}

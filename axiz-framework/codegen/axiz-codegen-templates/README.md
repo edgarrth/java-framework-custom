@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-codegen-templates
+
+Mustache templates of generated services, versioned with the framework.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-codegen-templates</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

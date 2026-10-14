@@ -1,0 +1,380 @@
+# Generated from kind/ (see kustomization.yaml); local stand-ins only, never for real environments.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: axiz-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:17.6-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: app
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+        volumeMounts:
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - app
+          periodSeconds: 5
+      volumes:
+      - name: postgres-init
+        configMap:
+          name: postgres-init
+          defaultMode: 493
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - name: p5432
+    port: 5432
+    targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: valkey
+  labels:
+    app: valkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: valkey
+  template:
+    metadata:
+      labels:
+        app: valkey
+    spec:
+      containers:
+      - name: valkey
+        image: valkey/valkey:8.1-alpine
+        ports:
+        - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: valkey
+spec:
+  selector:
+    app: valkey
+  ports:
+  - name: p6379
+    port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka
+  labels:
+    app: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: apache/kafka:4.1.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_NODE_ID
+          value: '1'
+        - name: KAFKA_PROCESS_ROLES
+          value: broker,controller
+        - name: KAFKA_LISTENERS
+          value: PLAINTEXT://:9092,CONTROLLER://:9093
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: PLAINTEXT://kafka:9092
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: CONTROLLER
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: 1@localhost:9093
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: '1'
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: '1'
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: '1'
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: 'false'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+spec:
+  selector:
+    app: kafka
+  ports:
+  - name: p9092
+    port: 9092
+    targetPort: 9092
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topics
+spec:
+  backoffLimit: 20
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: topics
+        image: apache/kafka:4.1.0
+        command:
+        - /bin/bash
+        - /scripts/topics.sh
+        volumeMounts:
+        - name: kafka-topics
+          mountPath: /scripts
+      volumes:
+      - name: kafka-topics
+        configMap:
+          name: kafka-topics
+          defaultMode: 493
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: localstack
+  labels:
+    app: localstack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: localstack
+  template:
+    metadata:
+      labels:
+        app: localstack
+    spec:
+      containers:
+      - name: localstack
+        image: localstack/localstack:4.9
+        ports:
+        - containerPort: 4566
+        env:
+        - name: SERVICES
+          value: dynamodb,s3,sqs,sns,kms,secretsmanager
+        - name: AWS_DEFAULT_REGION
+          value: us-east-1
+        volumeMounts:
+        - name: localstack-init
+          mountPath: /etc/localstack/init/ready.d
+      volumes:
+      - name: localstack-init
+        configMap:
+          name: localstack-init
+          defaultMode: 493
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: localstack
+spec:
+  selector:
+    app: localstack
+  ports:
+  - name: p4566
+    port: 4566
+    targetPort: 4566
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:26.4
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: admin
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          value: local-only
+        - name: KC_HOSTNAME
+          value: http://localhost:8180
+        - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+          value: 'true'
+        args:
+        - start-dev
+        - --import-realm
+        volumeMounts:
+        - name: keycloak-realm
+          mountPath: /opt/keycloak/data/import
+      volumes:
+      - name: keycloak-realm
+        configMap:
+          name: keycloak-realm
+          defaultMode: 493
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+  - name: p8080
+    port: 8080
+    targetPort: 8080
+    nodePort: 30180
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wiremock
+  labels:
+    app: wiremock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wiremock
+  template:
+    metadata:
+      labels:
+        app: wiremock
+    spec:
+      containers:
+      - name: wiremock
+        image: wiremock/wiremock:3.13.1
+        ports:
+        - containerPort: 8080
+        args:
+        - --global-response-templating
+        volumeMounts:
+        - name: wiremock-mappings
+          mountPath: /home/wiremock/mappings
+      volumes:
+      - name: wiremock-mappings
+        configMap:
+          name: wiremock-mappings
+          defaultMode: 493
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wiremock
+spec:
+  selector:
+    app: wiremock
+  ports:
+  - name: p8080
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-lgtm
+  labels:
+    app: otel-lgtm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-lgtm
+  template:
+    metadata:
+      labels:
+        app: otel-lgtm
+    spec:
+      containers:
+      - name: otel-lgtm
+        image: grafana/otel-lgtm:0.11.10
+        ports:
+        - containerPort: 3000
+        - containerPort: 4317
+        - containerPort: 4318
+        volumeMounts:
+        - name: grafana-dashboards
+          mountPath: /otel-lgtm/axiz-dashboards
+        - name: grafana-provisioning
+          mountPath: /otel-lgtm/grafana/conf/provisioning/dashboards/axiz.yaml
+          subPath: dashboards.yaml
+      volumes:
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+          defaultMode: 493
+      - name: grafana-provisioning
+        configMap:
+          name: grafana-provisioning
+          defaultMode: 493
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-lgtm
+spec:
+  selector:
+    app: otel-lgtm
+  ports:
+  - name: p3000
+    port: 3000
+    targetPort: 3000
+    nodePort: 30300
+  - name: p4317
+    port: 4317
+    targetPort: 4317
+  - name: p4318
+    port: 4318
+    targetPort: 4318
+  type: NodePort

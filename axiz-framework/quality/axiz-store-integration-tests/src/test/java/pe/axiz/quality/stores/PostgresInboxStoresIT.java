@@ -1,0 +1,92 @@
+package pe.axiz.quality.stores;
+
+import io.r2dbc.spi.ConnectionFactories;
+import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryOptions;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.Statement;
+import java.time.Duration;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.TestFactory;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
+import pe.axiz.core.commons.jdbc.JdbcTransactions;
+import pe.axiz.core.contracts.InboxStoreContract;
+import pe.axiz.core.inbox.JdbcInboxStore;
+import pe.axiz.core.inbox.r2dbc.R2dbcInboxStore;
+import pe.axiz.core.persistence.r2dbc.R2dbcSql;
+
+/**
+ * Inbox contract on PostgreSQL (Aurora) through JDBC and R2DBC: row locks, conditional updates,
+ * timestamps and the shipped DDL.
+ */
+class PostgresInboxStoresIT {
+
+  private static final PostgreSQLContainer POSTGRES =
+      new PostgreSQLContainer(DockerImageName.parse(Docker.POSTGRES))
+          .withDatabaseName("app")
+          .withUsername("app")
+          .withPassword("local-only");
+
+  private static PGSimpleDataSource dataSource;
+  private static ConnectionFactory connections;
+
+  @BeforeAll
+  static void start() throws Exception {
+    Docker.require();
+    POSTGRES.start();
+    dataSource = new PGSimpleDataSource();
+    dataSource.setUrl(POSTGRES.getJdbcUrl());
+    dataSource.setUser(POSTGRES.getUsername());
+    dataSource.setPassword(POSTGRES.getPassword());
+    try (Connection c = dataSource.getConnection();
+        Statement s = c.createStatement();
+        InputStream in =
+            JdbcInboxStore.class.getResourceAsStream("/axiz/sql/inbox-postgresql.sql")) {
+      for (String sql : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";")) {
+        if (!sql.replaceAll("--.*", "").isBlank()) {
+          s.execute(sql);
+        }
+      }
+    }
+    connections =
+        ConnectionFactories.get(
+            ConnectionFactoryOptions.builder()
+                .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+                .option(ConnectionFactoryOptions.HOST, POSTGRES.getHost())
+                .option(ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(5432))
+                .option(ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
+                .option(ConnectionFactoryOptions.USER, POSTGRES.getUsername())
+                .option(ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
+                .build());
+  }
+
+  @AfterAll
+  static void stop() {
+    POSTGRES.stop();
+  }
+
+  @TestFactory
+  Stream<DynamicTest> jdbcContract() {
+    return InboxStoreContract.checks(
+            () -> new JdbcInboxStore(new JdbcTransactions(dataSource), "axiz_inbox"))
+        .stream()
+        .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> r2dbcContract() {
+    return InboxStoreContract.checks(
+            () ->
+                new R2dbcInboxStore(
+                    new R2dbcSql(connections), "axiz_inbox", Duration.ofSeconds(10)))
+        .stream()
+        .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
+  }
+}

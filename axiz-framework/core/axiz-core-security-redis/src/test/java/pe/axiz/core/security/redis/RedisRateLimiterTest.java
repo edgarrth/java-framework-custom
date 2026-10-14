@@ -1,0 +1,59 @@
+package pe.axiz.core.security.redis;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import io.lettuce.core.RedisException;
+import io.lettuce.core.ScriptOutputType;
+import io.lettuce.core.api.sync.RedisCommands;
+import java.lang.reflect.Proxy;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.api.Test;
+
+class RedisRateLimiterTest {
+
+  @SuppressWarnings("unchecked")
+  private static RedisCommands<String, String> fake(AtomicLong counter, boolean down) {
+    return (RedisCommands<String, String>)
+        Proxy.newProxyInstance(
+            RedisCommands.class.getClassLoader(),
+            new Class<?>[] {RedisCommands.class},
+            (proxy, method, args) -> {
+              if (method.getName().equals("eval")) {
+                if (down) {
+                  throw new RedisException("down");
+                }
+                assertEquals(ScriptOutputType.MULTI, args[1]);
+                assertEquals("rl:test:k", ((String[]) args[2])[0]);
+                return List.of(counter.incrementAndGet(), 900L);
+              }
+              throw new UnsupportedOperationException(method.getName());
+            });
+  }
+
+  @Test
+  void allowsUpToLimitThenRejectsWithRetryAfter() {
+    RedisRateLimiter limiter =
+        new RedisRateLimiter(fake(new AtomicLong(), false), "rl:test:", false);
+    assertTrue(limiter.tryAcquire("k", 2, Duration.ofSeconds(1)).allowed());
+    assertTrue(limiter.tryAcquire("k", 2, Duration.ofSeconds(1)).allowed());
+    var rejected = limiter.tryAcquire("k", 2, Duration.ofSeconds(1));
+    assertFalse(rejected.allowed());
+    assertEquals(Duration.ofMillis(900), rejected.retryAfter());
+  }
+
+  @Test
+  void failurePolicy() {
+    assertTrue(
+        new RedisRateLimiter(fake(new AtomicLong(), true), "rl:test:", true)
+            .tryAcquire("k", 1, Duration.ofSeconds(1))
+            .allowed());
+    assertFalse(
+        new RedisRateLimiter(fake(new AtomicLong(), true), "rl:test:", false)
+            .tryAcquire("k", 1, Duration.ofSeconds(1))
+            .allowed());
+  }
+}

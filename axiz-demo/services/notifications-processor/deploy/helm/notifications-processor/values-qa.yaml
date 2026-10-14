@@ -1,0 +1,39 @@
+# notifications-processor in qa
+environment: qa
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/notifications-processor-qa
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+externalSecret:
+  remotePrefix: qa/notifications-processor
+
+# Environment values (no secrets: those come from the ExternalSecret). Business calendar
+# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
+config:
+  axiz.config.environment: qa
+  management.tracing.sampling.probability: '1.0'
+  spring.kafka.bootstrap-servers: b-1.payments-qa.kafka.us-east-1.amazonaws.com:9098,b-2.payments-qa.kafka.us-east-1.amazonaws.com:9098
+  axiz.messaging.destinations:
+    customer-notifications: arn:aws:sns:us-east-1:222222222222:customer-notifications-qa
+  axiz.dynamodb.table-prefix: qa-
+  axiz.messaging.sqs.queues:
+  - https://sqs.us-east-1.amazonaws.com/222222222222/axiz-demo-audit-qa
+  axiz.messaging.sqs.dead-letter-queues:
+    https://sqs.us-east-1.amazonaws.com/222222222222/axiz-demo-audit-qa: https://sqs.us-east-1.amazonaws.com/222222222222/axiz-demo-audit-qa-dlq
+  axiz.storage.bucket: axiz-demo-archive-qa
+
+errors: []

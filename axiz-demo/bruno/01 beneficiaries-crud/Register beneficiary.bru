@@ -1,0 +1,37 @@
+meta {
+  name: Register beneficiary
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{crud}}/v1/customers/{{customerId}}/beneficiaries
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "alias": "Landlord",
+    "holderName": "Ana Torres",
+    "cci": "00219100123456789053",
+    "currency": "PEN"
+  }
+}
+
+script:post-response {
+  if (res.status === 201) bru.setVar("beneficiaryId", res.body.id);
+}
+
+tests {
+  test("created or already registered", function () { expect([201, 409]).to.include(res.status); });
+}

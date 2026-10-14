@@ -1,0 +1,56 @@
+openapi: 3.1.0
+info:
+  title: Clearing payment network (simulated)
+  version: 1.0.0
+  description: >
+    Transfer API of the interbank network as simulated with WireMock (API key authentication).
+    Rejections use codes NET-R01 (invalid account), NET-R02 (account closed), NET-R09 (limit).
+tags:
+  - name: transfers
+paths:
+  /api/transfers:
+    post:
+      operationId: submitTransfer
+      tags: [transfers]
+      summary: Submits an immediate interbank transfer
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NetworkTransfer'}
+            example: {destinationCci: '00219100123456789053', amount: 150.75, currency: PEN, endToEndId: OP20261011-00000001}
+      responses:
+        '201':
+          description: Accepted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NetworkReceipt'}
+              example: {id: NET-55, result: SETTLED, endToEndId: OP20261011-00000001}
+        '422':
+          description: Rejected
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NetworkError'}
+components:
+  schemas:
+    NetworkTransfer:
+      type: object
+      required: [destinationCci, amount, currency, endToEndId]
+      properties:
+        destinationCci: {type: string}
+        amount: {type: number}
+        currency: {type: string}
+        endToEndId: {type: string}
+    NetworkReceipt:
+      type: object
+      properties:
+        id: {type: string}
+        result: {type: string, enum: [SETTLED, PENDING]}
+        endToEndId: {type: string}
+    NetworkError:
+      type: object
+      properties:
+        code: {type: string}
+        message: {type: string}

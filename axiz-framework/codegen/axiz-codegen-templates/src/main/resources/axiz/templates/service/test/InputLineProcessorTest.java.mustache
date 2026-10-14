@@ -1,0 +1,21 @@
+package {{project.basePackage}}.job;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
+class InputLineProcessorTest {
+
+  private final InputLineProcessor processor = new InputLineProcessor();
+
+  @Test
+  void normalizesRecords() {
+    assertThat(processor.process(new InputLine(" R-1 ", " 10.50 ")))
+        .isEqualTo(new InputLine("R-1", "10.50"));
+  }
+
+  @Test
+  void filtersRecordsWithoutReference() {
+    assertThat(processor.process(new InputLine("  ", "x"))).isNull();
+  }
+}

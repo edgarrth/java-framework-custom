@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+  <!-- Generated code is not ours to style -->
+  <suppress files="[\\/]target[\\/]generated-(test-)?sources[\\/]" checks=".*"/>
+  <!-- Tests: no Javadoc requirement, descriptive names allowed -->
+  <suppress files="[\\/]src[\\/]test[\\/]" checks="MissingJavadocType|JavadocStyle|AbbreviationAsWordInName|MethodName|HideUtilityClassConstructor"/>
+  <!-- CLI tools print to the console by design -->
+  <suppress files="[\\/]axiz-cli[\\/]" id="noSystemOut"/>
+</suppressions>

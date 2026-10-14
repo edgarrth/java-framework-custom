@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-codegen-templates</artifactId>
+  <name>axiz :: codegen :: templates</name>
+  <description>Mustache templates of generated services, versioned with the framework</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.codegen.templates</axiz.module.name>
+  </properties>
+</project>

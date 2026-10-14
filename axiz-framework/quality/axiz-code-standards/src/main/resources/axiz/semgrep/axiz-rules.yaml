@@ -1,0 +1,73 @@
+# axiz Semgrep rules (section 16 anti-patterns). Run: semgrep --config axiz-rules.yaml --error
+rules:
+  - id: axiz-weak-cipher-mode
+    languages: [java]
+    severity: ERROR
+    message: "Forbidden cipher mode. Use AES/GCM/NoPadding (axiz-core-crypto) or KMS envelope encryption."
+    pattern-either:
+      - pattern: javax.crypto.Cipher.getInstance("AES")
+      - pattern-regex: Cipher\.getInstance\("(AES|DES|DESede)/ECB/
+      - pattern-regex: Cipher\.getInstance\("(AES|DES|DESede)/CBC/PKCS5Padding"\)
+      - pattern-regex: Cipher\.getInstance\("RSA/ECB/PKCS1Padding"\)
+      - pattern-regex: Cipher\.getInstance\("RSA"\)
+  - id: axiz-fixed-iv
+    languages: [java]
+    severity: ERROR
+    message: "Fixed IV/nonce. Generate a random IV per encryption (SecureRandom)."
+    patterns:
+      - pattern: new javax.crypto.spec.GCMParameterSpec($LEN, $IV)
+      - pattern-inside: |
+          static final byte[] $IV = ...;
+          ...
+  - id: axiz-path-from-user-input
+    languages: [java]
+    severity: ERROR
+    message: "File paths must not be built from request data. Use Files.createTempDirectory and generated names."
+    patterns:
+      - pattern-either:
+          - pattern: java.nio.file.Path.of(..., ($REQ $X).$GET(...), ...)
+          - pattern: java.nio.file.Paths.get(..., ($REQ $X).$GET(...), ...)
+          - pattern: new java.io.File(..., ($REQ $X).$GET(...), ...)
+      - metavariable-regex:
+          metavariable: $REQ
+          regex: (HttpServletRequest|ServerHttpRequest|.*Request|.*Command)
+  - id: axiz-redis-keys-command
+    languages: [java]
+    severity: ERROR
+    message: "KEYS blocks Redis. Use SCAN."
+    pattern-either:
+      - pattern: $C.keys(...)
+    paths:
+      include: ["**/*redis*/**", "**/*Redis*.java"]
+  - id: axiz-reactor-global-hooks
+    languages: [java]
+    severity: ERROR
+    message: "Global Reactor hooks are forbidden. Use Micrometer context-propagation."
+    pattern-either:
+      - pattern: reactor.core.publisher.Hooks.onEachOperator(...)
+      - pattern: reactor.core.publisher.Hooks.onLastOperator(...)
+  - id: axiz-testing-authentication-token
+    languages: [java]
+    severity: ERROR
+    message: "TestingAuthenticationToken must never be used outside tests."
+    pattern: new org.springframework.security.authentication.TestingAuthenticationToken(...)
+    paths:
+      exclude: ["**/src/test/**"]
+  - id: axiz-random-fifo-dedup-id
+    languages: [java]
+    severity: ERROR
+    message: "FIFO deduplication id must be deterministic (the event id), not random."
+    pattern-either:
+      - pattern: $B.messageDeduplicationId(java.util.UUID.randomUUID().toString())
+  - id: axiz-hardcoded-secret
+    languages: [java]
+    severity: ERROR
+    message: "Possible hard-coded secret. Use SecretResolver / AWS Secrets Manager."
+    patterns:
+      - pattern: String $NAME = "$VALUE";
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: (?i).*(password|secret|apikey|api_key|token|private_key).*
+      - metavariable-regex:
+          metavariable: $VALUE
+          regex: .{8,}

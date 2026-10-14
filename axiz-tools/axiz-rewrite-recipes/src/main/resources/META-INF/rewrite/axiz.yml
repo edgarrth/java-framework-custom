@@ -1,0 +1,60 @@
+# axiz upgrade recipes. `pe.axiz.UpgradeToAxiz` runs every migration up to the version of this
+# artifact; each migration is idempotent, so running the chain on an up-to-date project is a no-op.
+# A release that renames properties, moves types or changes conventions adds a migration here
+# (and its case to RecipesTest) in the same pull request.
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: pe.axiz.UpgradeToAxiz
+displayName: Upgrade to the latest axiz
+description: Applies every axiz migration in order, then the platform baseline.
+recipeList:
+  - pe.axiz.Axiz_0_1_Baseline
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: pe.axiz.Axiz_0_1_Baseline
+displayName: axiz 0.1 baseline
+description: >-
+  Java 25, Spring Boot 4.1 and the axiz conventions every service must follow (constructor
+  injection, no field injection, JSpecify instead of other nullness annotations, no Spring
+  Boot 3 property names).
+recipeList:
+  - org.openrewrite.java.migrate.UpgradeToJava25
+  - org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0
+  - org.openrewrite.java.jspecify.JSpecifyBestPractices
+  - pe.axiz.AxizPropertyNames
+  - pe.axiz.AxizRemovedDependencies
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: pe.axiz.AxizPropertyNames
+displayName: axiz property names
+description: Renames configuration keys of earlier axiz drafts and of the frameworks that axiz replaced.
+recipeList:
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: axiz.featureflags
+      newPropertyKey: axiz.feature-flags
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: axiz.httpclient
+      newPropertyKey: axiz.http-client
+  - org.openrewrite.java.spring.ChangeSpringPropertyKey:
+      oldPropertyKey: axiz.idempotence
+      newPropertyKey: axiz.idempotency
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: pe.axiz.AxizRemovedDependencies
+displayName: Dependencies axiz replaces
+description: >-
+  Removes libraries whose job is done by axiz (the OpenTelemetry Java agent, Hazelcast, Vault
+  and GCP clients are not part of the platform; tracing goes through Micrometer).
+recipeList:
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: io.opentelemetry.javaagent
+      artifactId: "*"
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: com.hazelcast
+      artifactId: "*"
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: org.springframework.vault
+      artifactId: "*"
+  - org.openrewrite.maven.RemoveDependency:
+      groupId: com.google.cloud
+      artifactId: "*"

@@ -1,0 +1,25 @@
+<!-- generated -->
+# axiz-notification-spring-boot-autoconfigure
+
+Notification requests published as events to the delivering service (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-notification-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizNotificationAutoConfiguration` | Notifications (email, SMS, push) as `notification.requested.v1` events to the service that delivers them; the destination is `axiz.notification.destination` (default `notifications`). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-notification-spring-boot-autoconfigure verify`.

@@ -1,0 +1,10 @@
+# Profile "platform": the whole demo on one machine (../../local/compose.yaml), with "local".
+server:
+  port: 8084
+axiz:
+  http-client:
+    clients:
+      payments-business:
+        base-url: http://localhost:8081
+      core-integration:
+        base-url: http://localhost:8083

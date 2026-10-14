@@ -1,0 +1,68 @@
+package pe.axiz.framework.bff.spring;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
+import pe.axiz.framework.bff.Composition;
+import reactor.core.publisher.Mono;
+
+/**
+ * Reactive composition for WebFlux BFFs: parts subscribe in parallel, optional parts fall back on
+ * error or timeout, nothing blocks.
+ */
+public final class ReactiveComposer {
+
+  private static final Object NONE = new Object();
+
+  private final Duration timeout;
+  private final List<String> degraded = new CopyOnWriteArrayList<>();
+  private final Map<String, Mono<Object>> parts = new LinkedHashMap<>();
+
+  private ReactiveComposer(Duration timeout) {
+    this.timeout = Objects.requireNonNull(timeout);
+  }
+
+  public static ReactiveComposer within(Duration timeout) {
+    return new ReactiveComposer(timeout);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> ReactiveComposer required(String name, Mono<T> call) {
+    parts.put(name, (Mono<Object>) call.timeout(timeout));
+    return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public <T> ReactiveComposer optional(String name, Mono<T> call, Supplier<@Nullable T> fallback) {
+    parts.put(
+        name,
+        ((Mono<Object>) call.timeout(timeout))
+            .onErrorResume(
+                e -> {
+                  degraded.add(name);
+                  Object v = fallback.get();
+                  return v == null ? Mono.just(NONE) : Mono.just(v);
+                }));
+    return this;
+  }
+
+  public Mono<Composition> run() {
+    List<String> names = new ArrayList<>(parts.keySet());
+    List<Mono<Object>> monos = names.stream().map(n -> parts.get(n).defaultIfEmpty(NONE)).toList();
+    return Mono.zip(
+        monos,
+        results -> {
+          Map<String, @Nullable Object> values = new LinkedHashMap<>();
+          for (int i = 0; i < names.size(); i++) {
+            values.put(names.get(i), results[i] == NONE ? null : results[i]);
+          }
+          return new Composition(values, degraded);
+        });
+  }
+}

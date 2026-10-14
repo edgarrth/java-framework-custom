@@ -1,0 +1,23 @@
+meta {
+  name: List beneficiaries (cursor)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{crud}}/v1/customers/{{customerId}}/beneficiaries?size=10
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+script:post-response {
+  if (res.body.items.length) bru.setVar("beneficiaryId", res.body.items[0].id);
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+}

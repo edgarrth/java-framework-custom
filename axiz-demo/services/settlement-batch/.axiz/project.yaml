@@ -1,0 +1,27 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
+schema: 1
+name: settlement-batch
+groupId: pe.axiz.payments
+basePackage: pe.axiz.payments.settlement
+archetype: batch
+framework: batch
+stack: servlet
+persistence: aurora
+axizVersion: 0.1.0-SNAPSHOT
+contract:
+  openapi: null
+  asyncapi: null
+capabilities:
+  - foundation
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - storage-s3
+  - audit
+  - jpa
+  - scheduling
+operations:
+  []

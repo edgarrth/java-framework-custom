@@ -1,0 +1,39 @@
+<!-- generated -->
+# axiz-security-spring-boot-autoconfigure
+
+OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-security-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AudienceValidator` | Accepts a token only when one of its audiences is configured for its issuer. |
+| `AxizAuthentication` | Authentication backed by a validated JWT whose principal is an `AxizPrincipal`, so controllers can declare `@AuthenticationPrincipal AxizPrincipal caller`. |
+| `AxizJwtConverter` | Maps a validated JWT to an `AxizAuthentication` with scope and role authorities. |
+| `AxizSecurityAutoConfiguration` | OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS, audience and algorithm checks, claims mapped to `AxizPrincipal`, method security, security headers, protected actuator, problem responses for 401/403/429 and optional per-caller rate limits. |
+| `AxizSecurityProperties` | Resource server settings (`axiz.security.*`). |
+| `AxizSecurityRedisAutoConfiguration` | Cluster-wide rate limits on ElastiCache (Redis/Valkey), using the connection settings of Boot's Redis support (`spring.data.redis.*`, including TLS with certificate verification). |
+| `CallerContextFilter` | Adds the authenticated caller (client, subject, tenant) to the request context after token validation, so logs, audit, metrics and outbound calls see it. |
+| `CallerContextWebFilter` | Reactive counterpart of `CallerContextFilter`: enriches the Reactor context. |
+| `ProblemAuthenticationEntryPoint` | Servlet 401 and 403 handling: problem body plus `WWW-Authenticate: Bearer`. |
+| `RateLimitFilter` | Per-caller rate limit after authentication. |
+| `RateLimitRules` | Resolves the rate-limit rule and key of a request; the key always comes from the token. |
+| `RateLimitWebFilter` | Reactive rate limit; the limiter call runs off the event loop. |
+| `ReactiveProblemHandlers` | Reactive 401 and 403 handling with problem bodies. |
+| `SecurityProblems` | Renders 401, 403 and 429 responses as RFC 9457 problems with catalog codes. |
+| `TrustedIssuerDecoders` | One decoder per trusted issuer, created lazily and reused. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-security-spring-boot-autoconfigure verify`.

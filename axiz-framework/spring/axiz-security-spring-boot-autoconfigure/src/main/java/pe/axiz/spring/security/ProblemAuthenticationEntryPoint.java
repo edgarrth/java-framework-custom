@@ -1,0 +1,59 @@
+package pe.axiz.spring.security;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import pe.axiz.core.errors.Problem;
+
+/**
+ * Servlet 401 and 403 handling: problem body plus {@code WWW-Authenticate: Bearer}. The reason a
+ * token was rejected is logged by Spring Security at debug level and never sent to the client.
+ */
+public class ProblemAuthenticationEntryPoint
+    implements AuthenticationEntryPoint, AccessDeniedHandler {
+
+  private final SecurityProblems problems;
+
+  public ProblemAuthenticationEntryPoint(SecurityProblems problems) {
+    this.problems = Objects.requireNonNull(problems);
+  }
+
+  @Override
+  public void commence(
+      HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
+      throws IOException {
+    boolean hadToken = request.getHeader(HttpHeaders.AUTHORIZATION) != null;
+    response.setHeader(
+        HttpHeaders.WWW_AUTHENTICATE, hadToken ? "Bearer error=\"invalid_token\"" : "Bearer");
+    write(
+        response,
+        401,
+        problems.unauthorized(LocaleContextHolder.getLocale(), request.getRequestURI()));
+  }
+
+  @Override
+  public void handle(
+      HttpServletRequest request, HttpServletResponse response, AccessDeniedException e)
+      throws IOException {
+    response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer error=\"insufficient_scope\"");
+    write(
+        response,
+        403,
+        problems.forbidden(LocaleContextHolder.getLocale(), request.getRequestURI()));
+  }
+
+  static void write(HttpServletResponse response, int status, String body) throws IOException {
+    response.setStatus(status);
+    response.setContentType(Problem.MEDIA_TYPE);
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response.getWriter().write(body);
+  }
+}

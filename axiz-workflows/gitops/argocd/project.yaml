@@ -1,0 +1,47 @@
+# Argo CD project of the axiz services: sources limited to the organization's repositories and
+# Nexus, destinations limited to the service namespaces, no cluster-scoped resources.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: axiz-services
+  namespace: argocd
+spec:
+  description: axiz microservices (one Application per service and environment)
+  sourceRepos:
+    - https://github.com/axiz/*
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: axiz-dev
+    - server: https://kubernetes.default.svc
+      namespace: axiz-qa
+    - server: https://kubernetes.default.svc
+      namespace: axiz-prod
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: apps
+      kind: Deployment
+    - group: batch
+      kind: CronJob
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+    - group: external-secrets.io
+      kind: ExternalSecret
+  roles:
+    - name: ci-read
+      description: Read-only token used by service-cd to wait for a release
+      policies:
+        - p, proj:axiz-services:ci-read, applications, get, axiz-services/*, allow

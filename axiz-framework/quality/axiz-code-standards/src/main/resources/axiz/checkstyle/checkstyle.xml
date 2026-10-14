@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  axiz Checkstyle configuration.
+  Formatting (indentation, whitespace, braces, wrapping) is NOT checked here: Spotless with
+  google-java-format owns it. Checkstyle only checks what a formatter cannot: naming, imports,
+  public API Javadoc and forbidden APIs. Every violation is an error.
+
+  Property expansion (maven-checkstyle-plugin <propertyExpansion>):
+    axiz.packagePattern  - allowed package names (services may set their own root package)
+    axiz.lineLength      - hard limit for lines google-java-format cannot wrap (long literals)
+-->
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+  <property name="fileExtensions" value="java"/>
+
+  <module name="SuppressWarningsFilter"/>
+
+  <!-- Since Checkstyle 8.24 LineLength is a child of Checker, not of TreeWalker -->
+  <module name="LineLength">
+    <property name="max" value="${axiz.lineLength}" default="120"/>
+    <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+  </module>
+
+  <module name="TreeWalker">
+    <module name="SuppressWarningsHolder"/>
+    <module name="SuppressionCommentFilter">
+      <property name="offCommentFormat" value="CHECKSTYLE.OFF\: ([\w\|]+)"/>
+      <property name="onCommentFormat" value="CHECKSTYLE.ON\: ([\w\|]+)"/>
+      <property name="checkFormat" value="$1"/>
+    </module>
+
+    <!-- Structure -->
+    <module name="OuterTypeFilename"/>
+    <module name="OneTopLevelClass"/>
+    <module name="OneStatementPerLine"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="UpperEll"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="EqualsHashCode"/>
+    <module name="NoFinalizer"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="FallThrough"/>
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignored"/>
+    </module>
+    <module name="StringLiteralEquality"/>
+    <module name="SimplifyBooleanReturn"/>
+
+    <!-- Imports -->
+    <module name="AvoidStarImport"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports"/>
+    <module name="CustomImportOrder">
+      <property name="sortImportsInGroupAlphabetically" value="true"/>
+      <property name="separateLineBetweenGroups" value="true"/>
+      <property name="customImportOrderRules" value="STATIC###THIRD_PARTY_PACKAGE"/>
+      <property name="tokens" value="IMPORT, STATIC_IMPORT, PACKAGE_DEF"/>
+    </module>
+    <!-- JDK internals, JUnit 4, javax.* where Jakarta applies, Spring nullability (JSpecify is the standard), AWS SDK v1 -->
+    <module name="IllegalImport">
+      <property name="regexp" value="true"/>
+      <property name="illegalPkgs" value="sun, jdk\.internal, com\.amazonaws"/>
+      <property name="illegalClasses"
+                value="^org\.junit\.(Test|Assert|Assume|Before|BeforeClass|After|AfterClass|Rule|ClassRule|Ignore)$,
+                       ^org\.junit\.runner\..*,
+                       ^javax\.(persistence|validation|servlet|inject|ws\.rs|xml\.bind)\..*,
+                       ^javax\.annotation\.(PostConstruct|PreDestroy|Nonnull|Nullable|CheckForNull)$,
+                       ^org\.springframework\.lang\.(Nullable|NonNull|NonNullApi|NonNullFields)$"/>
+    </module>
+
+    <!-- Forbidden APIs -->
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="noSystemOut"/>
+      <property name="format" value="System\.(out|err)\.(print|println|printf|format)\("/>
+      <property name="ignoreComments" value="true"/>
+      <property name="message" value="Use SLF4J logging instead of System.out/System.err"/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="noPrintStackTrace"/>
+      <property name="format" value="\.printStackTrace\(\s*\)"/>
+      <property name="ignoreComments" value="true"/>
+      <property name="message" value="Log the exception instead of printStackTrace()"/>
+    </module>
+    <module name="RegexpSinglelineJava">
+      <property name="id" value="noWeakCipher"/>
+      <property name="format" value="Cipher\.getInstance\(\s*&quot;(DES|DESede|RC4|AES)?(/ECB/|/CBC/PKCS5Padding|&quot;)|RSA/ECB/PKCS1Padding"/>
+      <property name="ignoreComments" value="true"/>
+      <property name="message" value="Forbidden cipher: use AES/GCM/NoPadding or RSA/ECB/OAEPWithSHA-256AndMGF1Padding"/>
+    </module>
+
+    <!-- Naming -->
+    <module name="PackageName">
+      <property name="format" value="${axiz.packagePattern}" default="^pe\.axiz(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+    <module name="TypeName"/>
+    <module name="MethodName">
+      <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
+    </module>
+    <module name="ConstantName"/>
+    <module name="StaticVariableName"/>
+    <module name="MemberName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="ParameterName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="LambdaParameterName">
+      <property name="format" value="^([a-z][a-zA-Z0-9]*|_)$"/>
+    </module>
+    <module name="CatchParameterName">
+      <property name="format" value="^([a-z][a-zA-Z0-9]*|_)$"/>
+    </module>
+    <module name="LocalVariableName">
+      <property name="format" value="^([a-z][a-zA-Z0-9]*|_)$"/>
+    </module>
+    <module name="PatternVariableName">
+      <property name="format" value="^([a-z][a-zA-Z0-9]*|_)$"/>
+    </module>
+    <module name="RecordComponentName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="ClassTypeParameterName">
+      <property name="format" value="^[A-Z][A-Z0-9]?$|^[A-Z][a-zA-Z0-9]*T$"/>
+    </module>
+    <module name="MethodTypeParameterName">
+      <property name="format" value="^[A-Z][A-Z0-9]?$|^[A-Z][a-zA-Z0-9]*T$"/>
+    </module>
+    <module name="InterfaceTypeParameterName">
+      <property name="format" value="^[A-Z][A-Z0-9]?$|^[A-Z][a-zA-Z0-9]*T$"/>
+    </module>
+    <module name="RecordTypeParameterName">
+      <property name="format" value="^[A-Z][A-Z0-9]?$|^[A-Z][a-zA-Z0-9]*T$"/>
+    </module>
+    <module name="AbbreviationAsWordInName">
+      <property name="ignoreFinal" value="false"/>
+      <property name="allowedAbbreviationLength" value="3"/>
+      <property name="allowedAbbreviations" value="AWS,KMS,SQS,SNS,JWT,JWS,JWE,HTTP,SOAP,JSON,UUID,ULID,JDBC,JPA,ISO,IBAN,CCI,RUC,DNI,OTP,MFA,BFF,CQRS,EDA,AES,GCM,RSA,OAEP,HMAC,SHA,URL,URI,API,TTL,SLO,PII,SSE"/>
+    </module>
+
+    <!-- Public API documentation (layers 1 and 2); tests are excluded in suppressions.xml -->
+    <module name="MissingJavadocType">
+      <property name="scope" value="public"/>
+      <property name="skipAnnotations" value="Generated"/>
+      <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, RECORD_DEF, ANNOTATION_DEF"/>
+    </module>
+    <module name="JavadocStyle">
+      <property name="checkEmptyJavadoc" value="true"/>
+      <property name="checkFirstSentence" value="false"/>
+    </module>
+    <module name="NonEmptyAtclauseDescription"/>
+    <module name="AtclauseOrder"/>
+  </module>
+</module>

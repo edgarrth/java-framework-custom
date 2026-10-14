@@ -1,0 +1,37 @@
+<!-- generated -->
+# axiz-core-crypto
+
+AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-crypto</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AesGcm` | AES-256-GCM authenticated encryption with a random 96-bit IV per message and optional additional authenticated data (AAD). |
+| `BlindIndex` | Blind index for searching encrypted columns by equality: HMAC-SHA256 of the normalized value with a dedicated key (never the encryption key), truncated to limit leakage. |
+| `CryptoException` | Cryptographic operation failed (wrong key, tampered data, unavailable provider). |
+| `DataKeyProvider` | Port for envelope encryption data keys (AWS KMS in production). |
+| `EncryptionRegistry` | Field encryptor and blind index used by persistence converters (JPA, DynamoDB) when the provider creates them without dependency injection. |
+| `EnvelopeEncryptor` | Envelope encryption: data is encrypted locally with a data key that is itself encrypted by the master key (KMS). |
+| `FieldEncryptor` | Encrypts individual values (database fields) with AES-256-GCM. |
+| `Hashing` | SHA-2 hashes and HMAC with constant-time verification. |
+| `KeyProvider` | Supplies symmetric keys by id. |
+| `PasswordHasher` | Password hashing port. |
+| `Pbkdf2PasswordHasher` | PBKDF2-HMAC-SHA256 password hasher available in any JDK (FIPS friendly). |
+| `Rsa` | RSA with OAEP-SHA256 encryption and RSASSA-PSS-SHA256 signatures. |
+| `StaticKeyProvider` | Key provider over keys loaded at startup (for example from Secrets Manager). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-crypto verify`.

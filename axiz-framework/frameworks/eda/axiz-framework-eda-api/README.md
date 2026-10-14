@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-framework-eda-api
+
+Event-driven style: typed event handlers, idempotent consumption, outbox publication, retries and DLQ (contracts, plain Java).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-framework-eda-api</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `EventRoutes` | Choreography routes: the logical destination of each event type a service emits in reaction to the events it consumes. |
+| `HandlesEvent` | CloudEvents type handled by a `TypedEventHandler`, e.g. |
+| `ReactiveTypedEventHandler` | Base class of non-blocking event handlers for reactive services (R2DBC, WebClient): `#on` returns a publisher that completes when the event is handled. |
+| `TypedEventHandler` | Base class of event handlers: the event type comes from `HandlesEvent` and the payload type from the generic argument, so subclasses only implement `#on`. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl frameworks/eda/axiz-framework-eda-api verify`.

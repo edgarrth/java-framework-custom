@@ -1,0 +1,81 @@
+package pe.axiz.spring.web;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.commons.Sort;
+import pe.axiz.core.errors.FieldViolation;
+import pe.axiz.core.errors.ValidationException;
+
+/**
+ * Parses {@code page}, {@code size} and {@code sort} query parameters. Pages are zero-based;
+ * invalid values are rejected with a 400 problem instead of being silently corrected.
+ */
+public final class PageRequestParser {
+
+  private static final Pattern FIELD = Pattern.compile("^[A-Za-z][A-Za-z0-9_.]{0,63}$");
+
+  private final int defaultSize;
+  private final int maxSize;
+
+  public PageRequestParser(int defaultSize, int maxSize) {
+    this.maxSize = Math.min(maxSize, PageRequest.MAX_SIZE);
+    this.defaultSize = Math.min(defaultSize, this.maxSize);
+  }
+
+  public PageRequest parse(
+      @Nullable String page,
+      @Nullable String size,
+      @Nullable List<String> sort,
+      @Nullable Paging rules) {
+    List<FieldViolation> violations = new ArrayList<>();
+    int p = number(page, 0, "page", violations);
+    int fallbackSize =
+        rules != null && rules.defaultSize() > 0
+            ? Math.min(rules.defaultSize(), maxSize)
+            : defaultSize;
+    int s = number(size, fallbackSize, "size", violations);
+    if (p < 0) {
+      violations.add(FieldViolation.of("page", "Min", "page must be zero or greater"));
+    }
+    if (s < 1 || s > maxSize) {
+      violations.add(FieldViolation.of("size", "Range", "size must be between 1 and " + maxSize));
+    }
+    List<String> expressions =
+        sort == null || sort.isEmpty()
+            ? (rules != null ? Arrays.asList(rules.defaultSort()) : List.of())
+            : sort;
+    Sort parsed = Sort.parse(expressions);
+    Set<String> allowed = rules != null ? Set.of(rules.sortable()) : Set.of();
+    for (Sort.Order o : parsed.orders()) {
+      boolean ok =
+          allowed.isEmpty() ? FIELD.matcher(o.field()).matches() : allowed.contains(o.field());
+      if (!ok) {
+        violations.add(
+            FieldViolation.of("sort", "Sortable", "sorting by this field is not allowed"));
+        break;
+      }
+    }
+    if (!violations.isEmpty()) {
+      throw new ValidationException(violations);
+    }
+    return new PageRequest(p, s, parsed);
+  }
+
+  private static int number(
+      @Nullable String value, int fallback, String field, List<FieldViolation> violations) {
+    if (value == null || value.isBlank()) {
+      return fallback;
+    }
+    try {
+      return Integer.parseInt(value.strip());
+    } catch (NumberFormatException e) {
+      violations.add(FieldViolation.of(field, "Integer", field + " must be an integer"));
+      return fallback;
+    }
+  }
+}

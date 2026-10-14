@@ -1,0 +1,26 @@
+# Read-only access to the ConfigMaps of the namespace (Spring Cloud Kubernetes config)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "service.fullname" . }}-config-reader
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "service.fullname" . }}-config-reader
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "service.fullname" . }}-config-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "service.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

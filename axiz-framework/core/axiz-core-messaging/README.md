@@ -1,0 +1,40 @@
+<!-- generated -->
+# axiz-core-messaging
+
+EventPublisher and EventHandler over CloudEvents 1.0, business headers, retry and DLQ policies.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-messaging</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `CloudEventHeaders` | CloudEvents binary mode mapping to transport headers/attributes with a prefix (`ce_` for Kafka and SQS/SNS attributes). |
+| `CloudEventJson` | CloudEvents JSON format (structured mode), used where transport attributes are limited (SQS, SNS) and for outbox storage. |
+| `ConsumerRetryPolicy` | Consumer retry policy: transient failures are retried with backoff up to `maxAttempts`; permanent failures (business rejections, malformed payloads) go to the DLQ immediately. |
+| `Deduplicator` | Port used by the dispatcher to process each message once per consumer (implemented by the inbox). |
+| `DeliveryDecision` | What a consumer does with a message after processing it. |
+| `EventDispatcher` | Routes envelopes to handlers by type, decoding the payload and deduplicating through the inbox. |
+| `EventEnvelope` | CloudEvents 1.0 envelope. |
+| `EventFactory` | Builds envelopes with the service source, a type prefix and context extensions (correlation, tenant and propagated business headers). |
+| `EventHandler` | Handles one event type. |
+| `EventPublisher` | Publishes events and waits for the broker confirmation. |
+| `MessageKeys` | Identity of a message for deduplication. |
+| `PayloadCodec` | Encodes and decodes event payloads (JSON with the service's mapper in the starter). |
+| `PayloadException` | The payload could not be decoded: retrying will not help. |
+| `PublishException` | The broker did not confirm the event: the failure is always visible to the caller. |
+| `PublishResult` | Confirmation of a published event. |
+| `RoutingEventPublisher` | Delegates to the first publisher that supports the destination. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-messaging verify`.

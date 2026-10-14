@@ -1,0 +1,53 @@
+# axiz initializr. Environment values (issuer, client ids, organization) come from the ConfigMap;
+# client secrets from the mounted secrets (/var/run/secrets/axiz), never from this file.
+spring:
+  application:
+    name: axiz-initializr
+  threads:
+    virtual:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 5MB
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+      client:
+        registration:
+          sso:
+            provider: sso
+            client-id: ${AXIZ_SSO_CLIENT_ID:axiz-initializr}
+            client-secret: ${AXIZ_SSO_CLIENT_SECRET:}
+            scope: [openid, profile, email]
+          github:
+            client-id: ${AXIZ_GITHUB_CLIENT_ID:axiz-initializr-local}
+            client-secret: ${AXIZ_GITHUB_CLIENT_SECRET:}
+            scope: [repo]
+        provider:
+          sso:
+            issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+server:
+  port: 8080
+  shutdown: graceful
+  tomcat:
+    max-swallow-size: 6MB
+    max-http-form-post-size: 6MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+axiz:
+  initializr:
+    framework-version: ${AXIZ_FRAMEWORK_VERSION:0.1.0-SNAPSHOT}
+    github-organization: ${AXIZ_GITHUB_ORGANIZATION:}
+  audit:
+    async:
+      enabled: true

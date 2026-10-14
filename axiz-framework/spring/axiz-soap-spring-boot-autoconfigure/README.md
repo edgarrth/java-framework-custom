@@ -1,0 +1,27 @@
+<!-- generated -->
+# axiz-soap-spring-boot-autoconfigure
+
+SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-soap-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizSoapAutoConfiguration` | SOAP clients with safe XML parsing, WS-Security, fault mapping, masking and observations. |
+| `AxizSoapProperties` | SOAP clients for legacy systems (`axiz.soap.clients.<name>`). |
+| `SoapClients` | Named SOAP clients. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-soap-spring-boot-autoconfigure verify`.

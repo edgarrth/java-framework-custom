@@ -1,0 +1,25 @@
+<!-- generated -->
+# axiz-core-audit-sqs
+
+Audit publisher for Amazon SQS.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-audit-sqs</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `SqsAuditPublisher` | Publishes audit events to an Amazon SQS queue. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-audit-sqs verify`.

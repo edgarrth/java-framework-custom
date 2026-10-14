@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-i18n-spring-boot-autoconfigure
+
+Message bundles, Accept-Language resolution and error message localization (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-i18n-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AcceptLanguageLocaleContextResolver` | Reactive locale resolver driven only by `Accept-Language`. |
+| `AcceptLanguageLocaleResolver` | Servlet locale resolver driven only by `Accept-Language`; the locale cannot be changed. |
+| `AxizI18nAutoConfiguration` | Message bundles and `Accept-Language` handling. |
+| `AxizI18nProperties` | Localization settings (`axiz.i18n.*`). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-i18n-spring-boot-autoconfigure verify`.

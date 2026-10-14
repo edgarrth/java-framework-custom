@@ -1,0 +1,103 @@
+# axiz-tools pipeline (shared axiz workflows):
+#   pull request  pr checks + build of the CLI, the initializr and the recipes
+#   develop       SNAPSHOT of the recipes and the CLI published to Nexus
+#   main          initializr image, deployed to dev and qa (GitOps, applied by Argo CD)
+#   tag v*        release: recipes to Nexus, CLI jar and native binaries attached to the GitHub
+#                 release, initializr image deployed to prod after approval
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr:
+    if: github.event_name == 'pull_request'
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    secrets: inherit
+
+  build:
+    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1
+    with:
+      stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
+    secrets: inherit
+
+  # recipes and CLI reach Nexus only after the build and the initializr checks passed (and, on
+  # tags, the native binaries): the staged artifacts of this run are promoted, never rebuilt
+  publish:
+    needs: [build, initializr, cli-native]
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && needs.initializr.result == 'success'
+      && (needs.cli-native.result == 'success' || needs.cli-native.result == 'skipped')
+      && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1
+    secrets: inherit
+
+  cli-native:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: axiz/axiz-workflows/.github/workflows/native.yaml@v1
+    with:
+      module: axiz-cli
+      binary: axiz
+      release: true
+    secrets: inherit
+
+  initializr:
+    needs: build
+    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1
+    with:
+      service: axiz-initializr
+      module: axiz-initializr
+      openapi: axiz-initializr/docs/openapi.yaml
+      chart: axiz-initializr/deploy/helm/axiz-initializr
+    secrets: inherit
+
+  initializr-dev:
+    needs: initializr
+    if: github.ref == 'refs/heads/main'
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    with:
+      service: axiz-initializr
+      environment: dev
+      chart: axiz-initializr/deploy/helm/axiz-initializr
+      image-tag: ${{ needs.initializr.outputs.image-tag }}
+      image-digest: ${{ needs.initializr.outputs.image-digest }}
+    secrets: inherit
+
+  initializr-qa:
+    needs: [initializr, initializr-dev]
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    with:
+      service: axiz-initializr
+      environment: qa
+      chart: axiz-initializr/deploy/helm/axiz-initializr
+      image-tag: ${{ needs.initializr.outputs.image-tag }}
+      image-digest: ${{ needs.initializr.outputs.image-digest }}
+    secrets: inherit
+
+  initializr-prod:
+    needs: initializr
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    with:
+      service: axiz-initializr
+      environment: prod
+      chart: axiz-initializr/deploy/helm/axiz-initializr
+      image-tag: ${{ needs.initializr.outputs.image-tag }}
+      image-digest: ${{ needs.initializr.outputs.image-digest }}
+    secrets: inherit

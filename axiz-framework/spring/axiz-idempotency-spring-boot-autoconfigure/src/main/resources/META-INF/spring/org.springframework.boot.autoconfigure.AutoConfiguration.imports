@@ -1,0 +1,3 @@
+pe.axiz.spring.idempotency.AxizIdempotencyRedisAutoConfiguration
+pe.axiz.spring.idempotency.AxizIdempotencyDynamoDbAutoConfiguration
+pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration

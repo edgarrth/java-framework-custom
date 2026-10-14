@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- {{project.title}}: the starter services add. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-spring-lib</artifactId>
+    <version>{{axizVersion}}</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>{{project.groupId}}</groupId>
+  <artifactId>{{project.artifactId}}-spring-boot-starter</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>{{project.title}} (starter)</name>
+  <description>{{project.descriptionXml}}</description>
+
+  <properties>
+    <axiz.module.name>{{platform.springPackage}}.starter</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>{{project.groupId}}</groupId>
+      <artifactId>{{project.artifactId}}-spring-boot-autoconfigure</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-lock-spring-boot-autoconfigure
+
+Distributed locks on Redis or DynamoDB with the lock template (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-lock-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizLockAutoConfiguration` | Leased locks with renewal (`LockTemplate`) on Redis or DynamoDB. |
+| `AxizLockDynamoDbAutoConfiguration` | DynamoDB locks (conditional writes with lease expiry). |
+| `AxizLockProperties` | Distributed locks (`axiz.lock.*`) to serialize work on one resource (e.g. |
+| `AxizLockRedisAutoConfiguration` | Redis locks (SET NX PX with owner token, atomic release and renewal). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-lock-spring-boot-autoconfigure verify`.

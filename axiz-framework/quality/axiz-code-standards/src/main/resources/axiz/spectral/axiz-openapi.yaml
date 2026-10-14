@@ -1,0 +1,64 @@
+# Spectral ruleset for axiz contracts (OpenAPI 3.1 and AsyncAPI). Usage: spectral lint -r axiz-openapi.yaml openapi.yaml
+extends:
+  - [spectral:oas, recommended]
+  - [spectral:asyncapi, recommended]
+rules:
+  axiz-operation-id-camel-case:
+    description: operationId must be lowerCamelCase (it names the generated use case / handler).
+    severity: error
+    given: $.paths[*][get,put,post,delete,patch].operationId
+    then:
+      function: casing
+      functionOptions: { type: camel }
+  axiz-paths-kebab-case:
+    description: Path segments must be kebab-case.
+    severity: error
+    given: $.paths
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        match: "^(/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+$"
+  axiz-versioned-paths:
+    description: Paths must start with a version segment (/v1/...).
+    severity: error
+    given: $.paths
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions: { match: "^/v[0-9]+/" }
+  axiz-problem-json-errors:
+    description: 4xx/5xx responses must use application/problem+json (RFC 9457).
+    severity: error
+    given: $.paths[*][*].responses[?(@property >= '400')].content
+    then:
+      field: application/problem+json
+      function: truthy
+  axiz-examples-required:
+    description: Request and response bodies need examples (used for contract tests).
+    severity: warn
+    given: $.paths[*][*][requestBody,responses][*].content[*]
+    then:
+      function: xor
+      functionOptions: { properties: [example, examples] }
+  axiz-no-business-ids-in-query:
+    description: Do not send document numbers or card numbers as query parameters.
+    severity: error
+    given: $.paths[*][*].parameters[?(@.in == 'query')].name
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "(?i)(card|pan|documentNumber|password|otp)"
+  axiz-pagination-params:
+    description: Collection GET operations must accept page and size.
+    severity: warn
+    given: $.paths[*].get.responses['200'].content['application/json'].schema
+    then:
+      function: truthy
+  axiz-idempotency-key-on-post:
+    description: Non-idempotent POST operations should declare the Idempotency-Key header.
+    severity: warn
+    given: $.paths[*].post
+    then:
+      field: parameters
+      function: truthy

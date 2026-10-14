@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ArchUnit rules that services (and the framework) run in their tests. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-archunit-rules</artifactId>
+  <name>axiz :: quality :: archunit rules</name>
+  <description>Architecture rules for axiz services: general hygiene and one rule set per architectural style</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.quality.archunit</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <!-- compile scope on purpose: this artifact is itself only used in test scope by services -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit</artifactId>
+    </dependency>
+  </dependencies>
+</project>

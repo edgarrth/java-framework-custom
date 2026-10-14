@@ -1,0 +1,9 @@
+# Grafana provisioning of the axiz dashboards (mounted into the otel-lgtm container)
+apiVersion: 1
+providers:
+  - name: axiz
+    folder: axiz
+    type: file
+    disableDeletion: false
+    options:
+      path: /otel-lgtm/axiz-dashboards

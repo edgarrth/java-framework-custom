@@ -1,0 +1,29 @@
+# settlement-batch in prod
+environment: prod
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/settlement-batch-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+
+externalSecret:
+  remotePrefix: prod/settlement-batch
+
+# Environment values (no secrets: those come from the ExternalSecret). Business calendar
+# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
+config:
+  axiz.config.environment: prod
+  management.tracing.sampling.probability: '0.1'
+  axiz.storage.bucket: axiz-demo-settlement-prod
+  spring.datasource.url: jdbc:aws-wrapper:postgresql://payments-prod.cluster-demo.us-east-1.rds.amazonaws.com:5432/settlement_batch
+  spring.datasource.username: settlement-batch-app
+  axiz.jpa.aws-wrapper.enabled: true
+  axiz.jpa.aws-wrapper.iam: true
+
+errors: []

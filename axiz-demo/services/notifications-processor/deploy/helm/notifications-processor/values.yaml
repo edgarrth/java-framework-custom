@@ -1,0 +1,74 @@
+# Defaults of the notifications-processor chart; values-<env>.yaml override them per environment.
+nameOverride: ""
+environment: dev
+
+image:
+  repository: nexus-docker.axiz.internal/axiz/notifications-processor
+  tag: ""          # set by the deployment (GitOps): the commit of the image
+  digest: ""       # set by the deployment (GitOps): pins the signed image
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}  # eks.amazonaws.com/role-arn per environment (IRSA)
+
+javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+env: []
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+replicaCount: 2
+terminationGracePeriodSeconds: 30
+service:
+  port: 80
+probes:
+  startupFailureThreshold: 30
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+pdb:
+  enabled: true
+  maxUnavailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressNamespaces: []   # namespaces allowed to call the service (ingress, gateway, callers)
+
+# ConfigMap notifications-processor (application.yaml): environment values, flat Spring Boot keys
+config: {}
+
+# ConfigMap notifications-processor-errors: error catalog (code, category, title, detail keys...)
+errors: []
+
+# Secret files mounted in /var/run/secrets/axiz (one per key). enabled: the External Secrets
+# Operator creates the Secret <fullname>-secrets from AWS Secrets Manager; disabled: the Secret is
+# created by other means (kind and local clusters, see the demo kind/ scripts).
+externalSecret:
+  enabled: true
+  storeName: aws-secrets-manager
+  refreshInterval: 1h
+  remotePrefix: dev/notifications-processor
+  keys:
+    []

@@ -1,0 +1,34 @@
+package {{project.basePackage}}.application.usecase;
+
+{{#item.usesList}}
+import java.util.List;
+{{/item.usesList}}
+{{#item.optionalQuery}}
+import org.jspecify.annotations.Nullable;
+{{/item.optionalQuery}}
+{{#item.paged}}
+import pe.axiz.core.commons.PageRequest;
+{{/item.paged}}
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.framework.hexagonal.annotation.UseCase;
+{{#item.models}}
+import {{item.modelPackage}}.{{name}};
+{{/item.models}}
+
+/**
+ * {{item.summary}} ({{item.httpMethod}} {{item.path}}). Runs in a{{#item.readOnly}} read-only{{/item.readOnly}}
+ * transaction with an observation; domain events raised here are published at commit.
+ */
+@UseCase{{#item.readOnly}}(readOnly = true){{/item.readOnly}}
+public class {{item.className}}UseCase
+    implements pe.axiz.framework.hexagonal.UseCase<{{item.className}}UseCase.Input, {{item.responseType}}> {
+
+  /** Input of the use case: path and query parameters, paging and request body. */
+  public record Input({{{item.inputComponents}}}) {}
+
+  @Override
+  public {{item.responseType}} execute(Input input) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet");
+  }
+}

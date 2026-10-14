@@ -1,0 +1,20 @@
+meta {
+  name: Payment status
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{experience}}/v1/payments/{{paymentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+  test("known status", function () { expect(["RECEIVED","PROCESSING","COMPLETED","REJECTED"]).to.include(res.body.status); });
+}

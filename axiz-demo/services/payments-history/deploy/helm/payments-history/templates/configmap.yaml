@@ -1,0 +1,14 @@
+# Environment configuration read by Spring Cloud Kubernetes (source named after the service)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+data:
+  application.yaml: |
+    {{- if .Values.config }}
+    {{- toYaml .Values.config | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}

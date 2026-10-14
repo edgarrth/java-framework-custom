@@ -1,0 +1,54 @@
+package pe.axiz.spring.inbox;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.core.inbox.InboxStore;
+import pe.axiz.core.inbox.r2dbc.R2dbcInboxStore;
+import pe.axiz.core.messaging.Deduplicator;
+import pe.axiz.core.persistence.r2dbc.R2dbcSql;
+import pe.axiz.core.persistence.r2dbc.ReactiveSql;
+import pe.axiz.core.test.r2dbc.FakeR2dbc;
+
+class InboxR2dbcTest {
+
+  @Test
+  void reactiveServicesDeduplicateOverR2dbc() {
+    Set<String> rows = ConcurrentHashMap.newKeySet();
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onUpdate("INSERT INTO axiz_inbox", b -> rows.add(b.get(0) + "/" + b.get(1)) ? 1L : 0L)
+            .onUpdate("SET owner", b -> 0L)
+            .onQuery(
+                "SELECT status, lease_until",
+                b -> List.of(Map.of("status", "PROCESSED", "lease_until", Instant.EPOCH)))
+            .onUpdate("SET status = 'PROCESSED'", b -> 1L);
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                AxizInboxR2dbcAutoConfiguration.class, AxizInboxAutoConfiguration.class))
+        .withPropertyValues("axiz.inbox.store=r2dbc")
+        .withBean(ReactiveSql.class, () -> new R2dbcSql(db))
+        .run(
+            ctx -> {
+              assertInstanceOf(R2dbcInboxStore.class, ctx.getBean(InboxStore.class));
+              Deduplicator d = ctx.getBean(Deduplicator.class);
+              Deduplicator.Claim billing = d.claim("billing", "e-1");
+              assertEquals(Deduplicator.Claim.Status.ACQUIRED, billing.status());
+              assertTrue(d.completed("billing", "e-1", billing.token()));
+              assertEquals(
+                  Deduplicator.Claim.Status.ALREADY_PROCESSED, d.claim("billing", "e-1").status());
+              assertEquals(Deduplicator.Claim.Status.ACQUIRED, d.claim("ledger", "e-1").status());
+              assertEquals(2, rows.size());
+            });
+  }
+}

@@ -1,0 +1,36 @@
+<!-- generated -->
+# axiz-core-metrics
+
+Generic event metrics: seven instruments parameterized by the event tag with cardinality protection.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-metrics</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `EventDefinition` | Optional catalog entry for an event: fixes its category, the unit of its value and the histogram buckets (SLOs) of its distributions. |
+| `EventMetrics` | Generic event metrics: seven instruments parameterized by the `event` tag. |
+| `EventMetricsMeterFilter` | Meter filter for the `axiz.events*` instruments: denies meters with undeclared tag keys (defense in depth against ad-hoc tags) and applies the histogram buckets of the event catalog. |
+| `FailureClassifier` | Derives outcome and reason of a failed operation. |
+| `Metered` | Counts and times a method as an event. |
+| `MetricEvent` | Description of one occurrence of an event. |
+| `MetricNames` | Names of the seven generic instruments (OpenTelemetry style; Prometheus adds suffixes). |
+| `MetricSource` | Implemented by results (or commands) that contribute to the metric recorded by `Metered`: amount, value and tags. |
+| `MetricTags` | Standard tag keys of the generic event instruments. |
+| `MetricsSettings` | Settings of the generic event metrics (bound from `axiz.metrics.*`). |
+| `Outcome` | Standard outcome tag values. |
+| `TagPolicy` | Policy of a tag: an explicit set of allowed values or, when empty, a maximum of distinct values. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-metrics verify`.

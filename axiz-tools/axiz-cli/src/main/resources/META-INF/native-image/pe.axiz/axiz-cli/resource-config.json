@@ -1,0 +1,9 @@
+{
+  "resources": {
+    "includes": [
+      {"pattern": "\\Qaxiz/cli.properties\\E"},
+      {"pattern": "axiz/archetypes/.*\\.yaml"},
+      {"pattern": "axiz/templates/.*"}
+    ]
+  }
+}

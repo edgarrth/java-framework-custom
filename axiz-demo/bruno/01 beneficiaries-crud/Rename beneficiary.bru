@@ -1,0 +1,25 @@
+meta {
+  name: Rename beneficiary
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{crud}}/v1/customers/{{customerId}}/beneficiaries/{{beneficiaryId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "alias": "Home rent"
+  }
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+}

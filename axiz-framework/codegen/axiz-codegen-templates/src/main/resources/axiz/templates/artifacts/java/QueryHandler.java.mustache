@@ -1,0 +1,16 @@
+package {{project.basePackage}}.application.query;
+
+import org.springframework.stereotype.Component;
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.framework.cqrs.QueryHandler;
+
+/** Handles {@link {{artifact.className}}Query} on the read side. */
+@Component
+public class {{artifact.className}}Handler implements QueryHandler<{{artifact.className}}Query, String> {
+
+  @Override
+  public String handle({{artifact.className}}Query query) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{artifact.camel}} is not implemented yet");
+  }
+}

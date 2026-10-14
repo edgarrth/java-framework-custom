@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-spring-lib</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-soap-spring-boot-starter</artifactId>
+  <name>axiz :: spring :: soap :: starter</name>
+  <description>SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.spring.soap.starter</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-soap-spring-boot-autoconfigure</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

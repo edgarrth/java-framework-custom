@@ -1,0 +1,20 @@
+meta {
+  name: Order
+  type: http
+  seq: 14
+}
+
+get {
+  url: {{business}}/v1/payment-orders/{{paymentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+  test("account masked", function () { expect(res.body.creditorCci).to.match(/^\*+\d{4}$/); });
+}

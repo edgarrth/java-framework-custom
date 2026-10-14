@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-code-standards
+
+Checkstyle, SpotBugs, Semgrep, Spectral and gitleaks configuration.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-code-standards</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

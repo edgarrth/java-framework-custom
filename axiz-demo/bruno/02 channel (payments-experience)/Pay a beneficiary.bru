@@ -1,0 +1,38 @@
+meta {
+  name: Pay a beneficiary
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{experience}}/v1/payments
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "beneficiaryId": "{{beneficiaryId}}",
+    "debtorAccount": "{{debtorAccount}}",
+    "amount": 150.75,
+    "currency": "PEN",
+    "description": "Rent"
+  }
+}
+
+script:post-response {
+  bru.setVar("paymentId", res.body.paymentId);
+}
+
+tests {
+  test("status 201", function () { expect(res.status).to.equal(201); });
+}

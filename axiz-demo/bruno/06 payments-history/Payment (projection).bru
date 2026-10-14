@@ -1,0 +1,25 @@
+meta {
+  name: Payment (projection)
+  type: http
+  seq: 22
+}
+
+get {
+  url: {{history}}/v1/payments/{{paymentId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+docs {
+  Projected state of the payment created by "02 channel / Pay a beneficiary" (404 until its first
+  event reaches the projection).
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+  test("same payment", function () { expect(res.body.paymentId).to.equal(bru.getVar("paymentId")); });
+}

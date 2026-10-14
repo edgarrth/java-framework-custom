@@ -1,0 +1,10 @@
+# markdownlint (CI): tables and code blocks make long lines unavoidable
+default: true
+MD013: false            # line length
+MD033:                  # inline HTML used by mkdocs-material grids
+  allowed_elements: [div, br]
+MD041: false            # generated pages start with a comment
+MD046:
+  style: fenced
+MD024:
+  siblings_only: true

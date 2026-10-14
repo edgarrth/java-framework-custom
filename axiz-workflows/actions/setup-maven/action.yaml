@@ -1,0 +1,49 @@
+name: setup-maven
+description: >-
+  JDK 25 (Temurin or GraalVM), Maven cache and Nexus as the only repository. Credentials are read
+  by Maven from the NEXUS_USERNAME and NEXUS_PASSWORD environment variables of the job (secrets);
+  they are never written to disk.
+inputs:
+  java-version:
+    description: JDK version
+    default: "25"
+  distribution:
+    description: temurin or graalvm
+    default: temurin
+  nexus-url:
+    description: Nexus base URL
+    required: true
+runs:
+  using: composite
+  steps:
+    - if: inputs.distribution == 'temurin'
+      uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+        cache: maven
+    - if: inputs.distribution == 'graalvm'
+      uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: graalvm-community
+        cache: maven
+        github-token: ${{ github.token }}
+    - name: Maven settings (Nexus mirror; credentials resolved from the environment at run time)
+      shell: bash
+      env:
+        NEXUS_URL: ${{ inputs.nexus-url }}
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml <<XML
+        <settings>
+          <mirrors>
+            <mirror><id>nexus</id><mirrorOf>*</mirrorOf><url>${NEXUS_URL}/repository/maven-public/</url></mirror>
+          </mirrors>
+          <servers>
+            <server><id>nexus</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
+            <server><id>nexus-releases</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
+            <server><id>nexus-snapshots</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
+          </servers>
+        </settings>
+        XML

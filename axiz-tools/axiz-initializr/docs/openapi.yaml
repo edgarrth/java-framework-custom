@@ -1,0 +1,174 @@
+openapi: 3.1.0
+info:
+  title: axiz initializr API
+  version: 1.0.0
+  description: >-
+    Generates axiz projects. Authentication with a bearer token of the corporate identity provider
+    (CLI, automations) or the SSO session of the web UI.
+security:
+  - bearer: []
+tags:
+  - name: catalog
+  - name: projects
+paths:
+  /v1/metadata:
+    get:
+      operationId: getMetadata
+      tags: [catalog]
+      summary: Archetypes, styles and capabilities with their rules
+      responses:
+        '200':
+          description: Catalog
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Metadata'}
+              example: {frameworkVersion: 0.1.0, archetypes: [], frameworks: [], capabilities: []}
+        '401':
+          description: Not authenticated
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/projects:
+    post:
+      operationId: generateProject
+      tags: [projects]
+      summary: Generates a project as a ZIP
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business, openApi: "openapi: 3.1.0 ..."}
+      responses:
+        '200':
+          description: The project
+          content:
+            application/zip:
+              schema: {type: string, format: binary}
+        '422':
+          description: The request cannot be generated (problems and contract findings)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/projects/validate:
+    post:
+      operationId: validateProject
+      tags: [projects]
+      summary: Validates a request without generating it
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business}
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Validation'}
+              example: {valid: false, problems: ["Archetype business exposes REST: an OpenAPI 3.1 contract is required"], findings: []}
+        '400':
+          description: Malformed request
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/projects/github:
+    post:
+      operationId: createRepository
+      tags: [projects]
+      summary: Generates the project into a new private GitHub repository (user's own authorization)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProjectRequest'}
+            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Repository'}
+              example: {repository: acme/payments-business, url: https://github.com/acme/payments-business}
+        '422':
+          description: The request cannot be generated
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/contracts/lint:
+    post:
+      operationId: lintContract
+      tags: [catalog]
+      summary: Lints a contract with the corporate rules
+      requestBody:
+        required: true
+        content:
+          application/yaml:
+            schema: {type: string}
+            example: "openapi: 3.1.0"
+      responses:
+        '200':
+          description: Findings
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Validation'}
+              example: {valid: true, findings: []}
+        '400':
+          description: Not an OpenAPI 3 document
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+  schemas:
+    ProjectRequest:
+      type: object
+      required: [name, groupId, basePackage, archetype]
+      properties:
+        name: {type: string, pattern: '^[a-z][a-z0-9]*(-[a-z0-9]+)*$', maxLength: 60}
+        groupId: {type: string, maxLength: 120}
+        basePackage: {type: string, maxLength: 120}
+        description: {type: string, maxLength: 300}
+        archetype: {type: string}
+        framework: {type: string}
+        stack: {type: string, enum: [servlet, reactive]}
+        persistence: {type: string, enum: [none, aurora, dynamodb]}
+        capabilities: {type: array, maxItems: 30, items: {type: string}}
+        openApi: {type: string, maxLength: 2097152}
+        asyncApi: {type: string, maxLength: 2097152}
+        frameworkVersion: {type: string}
+    Metadata:
+      type: object
+      properties:
+        frameworkVersion: {type: string}
+        archetypes: {type: array, items: {type: object}}
+        frameworks: {type: array, items: {type: object}}
+        capabilities: {type: array, items: {type: object}}
+    Validation:
+      type: object
+      properties:
+        valid: {type: boolean}
+        problems: {type: array, items: {type: string}}
+        findings: {type: array, items: {$ref: '#/components/schemas/Finding'}}
+    Finding:
+      type: object
+      properties:
+        rule: {type: string}
+        severity: {type: string, enum: [error, warn]}
+        location: {type: string}
+        message: {type: string}
+    Repository:
+      type: object
+      properties:
+        repository: {type: string}
+        url: {type: string, format: uri}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        problems: {type: array, items: {type: string}}

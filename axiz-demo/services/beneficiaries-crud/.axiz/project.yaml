@@ -1,0 +1,35 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
+schema: 1
+name: beneficiaries-crud
+groupId: pe.axiz.payments
+basePackage: pe.axiz.payments.beneficiaries
+archetype: crud
+framework: layered
+stack: servlet
+persistence: dynamodb
+axizVersion: 0.1.0-SNAPSHOT
+contract:
+  openapi: src/main/openapi/openapi.yaml
+  asyncapi: null
+capabilities:
+  - foundation
+  - web
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - i18n
+  - sensitive
+  - security
+  - dynamodb
+  - cache
+  - idempotency
+  - idempotency-dynamodb
+operations:
+  - listBeneficiaries
+  - createBeneficiary
+  - getBeneficiary
+  - updateBeneficiary
+  - deleteBeneficiary

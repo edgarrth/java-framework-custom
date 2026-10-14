@@ -1,0 +1,34 @@
+{
+  "mappings": [
+    {
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "url": "/api/transfers",
+        "bodyPatterns": [{"matchesJsonPath": "$[?(@.destinationCci == '00219100123456780052')]"}]
+      },
+      "response": {
+        "status": 422,
+        "headers": {"Content-Type": "application/json"},
+        "jsonBody": {"code": "NET-R02", "message": "account closed"}
+      }
+    },
+    {
+      "priority": 5,
+      "request": {
+        "method": "POST",
+        "url": "/api/transfers",
+        "headers": {
+          "X-Api-Key": {"matches": ".+"},
+          "Idempotency-Key": {"matches": ".+"}
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {"Content-Type": "application/json"},
+        "body": "{\"id\": \"NET-{{randomValue length=6 type='NUMERIC'}}\", \"result\": \"SETTLED\", \"endToEndId\": \"{{jsonPath request.body '$.endToEndId'}}\"}",
+        "fixedDelayMilliseconds": 250
+      }
+    }
+  ]
+}

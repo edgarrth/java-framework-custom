@@ -1,0 +1,15 @@
+package {{project.basePackage}}{{fw.errorsSuffix}};
+
+import pe.axiz.core.errors.ErrorCategory;
+import pe.axiz.core.errors.ErrorDefinition;
+
+/**
+ * Error catalog of {{project.name}}: codes {@code {{project.errorPrefix}}-NNNN}. The detail message of
+ * each code is the {@code error.<code>} key of the message bundles; the ConfigMap {{project.name}}-errors
+ * can override titles per environment.
+ */
+public final class {{artifact.errorsClass}} {
+
+{{> errors/constant}}
+  private {{artifact.errorsClass}}() {}
+}

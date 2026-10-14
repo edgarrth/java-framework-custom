@@ -1,0 +1,13 @@
+package {{project.basePackage}}{{#artifact.hasSubPackage}}.{{artifact.subPackage}}{{/artifact.hasSubPackage}};
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.Test;
+
+class {{artifact.className}}Test {
+
+  @Test
+  void behavesAsExpected() {
+    assertThat(true).as("replace with the behavior under test").isTrue();
+  }
+}

@@ -1,0 +1,117 @@
+# Payments Business: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, payments-business and payments-business-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+spring:
+  application:
+    name: payments-business
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/app}
+    username: ${DB_USERNAME:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  cqrs:
+    authorization:
+      # every command and query must declare RequiresAuthority, an AccessPolicy or OpenAccess
+      unprotected: fail
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  messaging:
+    type-prefix: pe.axiz.payments.
+    kafka:
+      iam: ${AXIZ_KAFKA_IAM:false}
+    destinations:
+      payments: ${AXIZ_PAYMENTS_TOPIC:kafka:payments}
+      audit: ${AXIZ_AUDIT_DESTINATION:kafka:audit}
+  foundation:
+    zone: America/Lima
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - ${spring.application.name}
+  audit:
+    async:
+      enabled: true
+    # audit of committed payment orders is written to the outbox in their transaction
+    durable:
+      enabled: true
+      destination: audit
+    kafka:
+      topic: ${AXIZ_AUDIT_TOPIC:audit}
+  jpa:
+    aws-wrapper:
+      enabled: ${AXIZ_JPA_AWS_WRAPPER:false}
+      iam: ${AXIZ_JPA_IAM:false}
+  secrets:
+    directory: /var/run/secrets/axiz
+  crypto:
+    kms:
+      key-id: ${AXIZ_KMS_KEY_ID:alias/local}
+    fields:
+      current-key-id: v1
+      key-ids:
+      - v1
+      blind-index-secret: blind-index-key
+  outbox:
+    relay:
+      enabled: true
+  sequence:
+    sequences:
+      operation:
+        prefix: OP
+        reset: DAILY
+        width: 8
+management:
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+payments:
+  cutoff: '18:00'
+  daily-limits:
+    PEN: 30000
+    USD: 8000

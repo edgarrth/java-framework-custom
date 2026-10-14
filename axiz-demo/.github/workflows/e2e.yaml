@@ -1,0 +1,41 @@
+# End-to-end run of the whole demo in kind every night (and on demand): deploys every service with
+# its chart, then pays a beneficiary through the channel API and waits for the saga to finish.
+name: e2e
+
+on:
+  schedule:
+    - cron: "17 6 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
+        with:
+          install_only: true
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+      - name: Deploy the demo
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: kind/up.sh
+      - name: Smoke test
+        run: |
+          kubectl -n axiz-demo port-forward svc/beneficiaries-crud 8082:80 &
+          kubectl -n axiz-demo port-forward svc/payments-history 8086:80 &
+          sleep 3
+          scripts/smoke.sh
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n axiz-demo get pods -o wide
+          for d in $(kubectl -n axiz-demo get deploy -o name); do kubectl -n axiz-demo logs "$d" --tail=200 || true; done

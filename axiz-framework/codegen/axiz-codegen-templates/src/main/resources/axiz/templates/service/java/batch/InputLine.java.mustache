@@ -1,0 +1,10 @@
+package {{project.basePackage}}.job;
+
+/**
+ * One record of the input file. Replace it with the layout of the real file (CSV, or fixed width
+ * with {@code FixedWidthRecordReader}).
+ *
+ * @param reference unique reference of the record (makes reprocessing idempotent)
+ * @param value record value
+ */
+public record InputLine(String reference, String value) {}

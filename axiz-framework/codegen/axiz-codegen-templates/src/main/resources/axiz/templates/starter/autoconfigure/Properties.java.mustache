@@ -1,0 +1,14 @@
+package {{platform.springPackage}};
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.DefaultValue;
+
+/**
+ * Configuration of {{project.name}} ({@code {{platform.prefix}}.*}).
+ *
+ * @param enabled whether the capability is active
+ * @param name name used by the example bean
+ */
+@ConfigurationProperties("{{platform.prefix}}")
+public record {{platform.propertiesClass}}(
+    @DefaultValue("true") boolean enabled, @DefaultValue("axiz") String name) {}

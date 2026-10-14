@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "axiz base preset: weekly batches, semantic commits, security updates right away",
+  "extends": ["config:recommended", ":semanticCommits", ":dependencyDashboard", "helpers:pinGitHubActionDigestsToSemver"],
+  "timezone": "America/Lima",
+  "schedule": ["before 7am on monday"],
+  "prConcurrentLimit": 5,
+  "vulnerabilityAlerts": { "enabled": true, "schedule": ["at any time"], "labels": ["security"] },
+  "packageRules": [
+    {
+      "description": "Minor and patch updates of build plugins and test libraries are grouped",
+      "matchDepTypes": ["build", "test"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "build and test dependencies"
+    },
+    {
+      "description": "GitHub Actions grouped",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+pe.axiz.spring.tenancy.AxizTenancyAutoConfiguration
+pe.axiz.spring.tenancy.AxizTenancyHibernateAutoConfiguration

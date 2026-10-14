@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-core-inbox
+
+Idempotent consumer: processed-message registry with JDBC store.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-inbox</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `InboxDeduplicator` | Connects the inbox to the event dispatcher: a message is processed once per consumer within the retention period. |
+| `InboxException` | Inbox persistence failure. |
+| `InboxStore` | Registry of consumed messages per consumer (idempotent consumer pattern). |
+| `JdbcInboxStore` | JDBC inbox (Aurora PostgreSQL). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-inbox verify`.

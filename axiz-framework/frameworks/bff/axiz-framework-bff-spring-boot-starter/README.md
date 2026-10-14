@@ -1,0 +1,27 @@
+<!-- generated -->
+# axiz-framework-bff-spring-boot-starter
+
+Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-framework-bff-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizBffAutoConfiguration` | BFF style: context-aware parallel composition. |
+| `Compositions` | Creates `Composer`s whose parallel tasks carry the caller's context (request metadata, tenant, MDC, trace) through Micrometer context-propagation. |
+| `ReactiveComposer` | Reactive composition for WebFlux BFFs: parts subscribe in parallel, optional parts fall back on error or timeout, nothing blocks. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl frameworks/bff/axiz-framework-bff-spring-boot-starter verify`.

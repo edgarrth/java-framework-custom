@@ -1,0 +1,46 @@
+# payment-process in prod
+environment: prod
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/payment-process-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+externalSecret:
+  remotePrefix: prod/payment-process
+
+# Environment values (no secrets: those come from the ExternalSecret). Business calendar
+# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
+config:
+  axiz.config.environment: prod
+  management.tracing.sampling.probability: '0.1'
+  axiz.security.issuers:
+  - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+    audiences:
+    - ${spring.application.name}
+  spring.datasource.url: jdbc:aws-wrapper:postgresql://payments-prod.cluster-demo.us-east-1.rds.amazonaws.com:5432/payment_process
+  spring.datasource.username: payment-process-app
+  axiz.jpa.aws-wrapper.enabled: true
+  axiz.jpa.aws-wrapper.iam: true
+  axiz.http-client.clients:
+    payments-business:
+      base-url: http://payments-business.payments-prod.svc.cluster.local
+    core-integration:
+      base-url: http://core-integration.payments-prod.svc.cluster.local
+  spring.kafka.bootstrap-servers: b-1.payments-prod.kafka.us-east-1.amazonaws.com:9098,b-2.payments-prod.kafka.us-east-1.amazonaws.com:9098
+  axiz.messaging.destinations:
+    payments: kafka:payments
+
+errors: []

@@ -1,0 +1,17 @@
+# Local hooks (https://pre-commit.com): `pre-commit install` once per clone. CI runs the same
+# secret scan on every pull request.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: (^|/)deploy/helm/.*/templates/|/templates/.*\.yaml$
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key

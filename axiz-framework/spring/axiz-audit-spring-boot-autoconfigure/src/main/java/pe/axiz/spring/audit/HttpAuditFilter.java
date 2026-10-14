@@ -1,0 +1,71 @@
+package pe.axiz.spring.audit;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Objects;
+import org.springframework.core.Ordered;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
+import pe.axiz.core.audit.AuditTrail;
+
+/**
+ * Audits mutating HTTP requests. The resource is the matched route pattern (bounded), never the raw
+ * path; the outcome follows the response status.
+ */
+public class HttpAuditFilter extends OncePerRequestFilter implements Ordered {
+
+  private final AuditTrail trail;
+  private final AuditContextResolver context;
+  private final HttpAuditRules rules;
+
+  public HttpAuditFilter(
+      AuditTrail trail, AuditContextResolver context, AxizAuditProperties.Http http) {
+    this.trail = Objects.requireNonNull(trail);
+    this.context = Objects.requireNonNull(context);
+    this.rules = new HttpAuditRules(http);
+  }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    return !rules.audited(
+        request.getMethod(), request.getRequestURI().substring(request.getContextPath().length()));
+  }
+
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws ServletException, IOException {
+    AuditTrail.Context ctx = context.current(request.getRemoteAddr());
+    boolean failed = true;
+    try {
+      chain.doFilter(request, response);
+      failed = response.getStatus() >= 400;
+    } finally {
+      Object pattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+      AuditTrail.Builder record =
+          trail
+              .record(
+                  "http." + request.getMethod().toLowerCase(java.util.Locale.ROOT),
+                  pattern != null ? pattern.toString() : "unmatched")
+              .context(ctx)
+              .detail("status", response.getStatus());
+      try {
+        if (failed) {
+          record.failure("HTTP-" + response.getStatus());
+        } else {
+          record.success();
+        }
+      } catch (RuntimeException e) {
+        logger.warn("Audit event could not be recorded", e);
+      }
+    }
+  }
+
+  @Override
+  public int getOrder() {
+    return Ordered.LOWEST_PRECEDENCE - 100;
+  }
+}

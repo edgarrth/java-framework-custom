@@ -1,0 +1,73 @@
+# Settlement Batch: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, settlement-batch and settlement-batch-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+spring:
+  application:
+    name: settlement-batch
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  main:
+    web-application-type: none
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: never
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/app}
+    username: ${DB_USERNAME:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+axiz:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  foundation:
+    zone: America/Lima
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+  storage:
+    bucket: ${AXIZ_STORAGE_BUCKET:local-bucket}
+  audit:
+    async:
+      enabled: true
+  jpa:
+    aws-wrapper:
+      enabled: ${AXIZ_JPA_AWS_WRAPPER:false}
+      iam: ${AXIZ_JPA_IAM:false}
+  scheduling:
+    default-lock-at-most-for: 10m
+management:
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+settlement:
+  input-key: ${SETTLEMENT_INPUT_KEY:}
+  input-prefix: in/settlement/
+  max-duration: 2h

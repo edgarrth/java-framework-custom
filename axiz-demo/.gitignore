@@ -1,0 +1,19 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store
+# local secrets never go to the repository
+local/secrets/
+.env
+*.pem
+*.key
+
+# local demo runtime
+.run/

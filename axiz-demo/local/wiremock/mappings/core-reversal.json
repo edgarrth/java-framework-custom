@@ -1,0 +1,26 @@
+{
+  "mappings": [
+    {
+      "priority": 1,
+      "request": {"method": "POST", "urlPath": "/core/v2/movements/MV-404/reversal"},
+      "response": {
+        "status": 404,
+        "headers": {"Content-Type": "application/json"},
+        "jsonBody": {"code": "CB-14", "message": "movimiento no existe"}
+      }
+    },
+    {
+      "priority": 5,
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/core/v2/movements/[A-Z0-9-]+/reversal",
+        "headers": {"Authorization": {"equalTo": "Bearer local-core-token"}}
+      },
+      "response": {
+        "status": 200,
+        "headers": {"Content-Type": "application/json"},
+        "body": "{\"mvId\": \"MV-R{{randomValue length=7 type='NUMERIC'}}\", \"state\": \"R\"}"
+      }
+    }
+  ]
+}

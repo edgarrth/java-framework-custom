@@ -1,0 +1,34 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
+schema: 1
+name: payments-history
+groupId: pe.axiz.payments
+basePackage: pe.axiz.payments.history
+archetype: business
+framework: cqrs
+stack: reactive
+persistence: aurora
+axizVersion: 0.1.0-SNAPSHOT
+contract:
+  openapi: src/main/openapi/openapi.yaml
+  asyncapi: src/main/asyncapi/asyncapi.yaml
+capabilities:
+  - foundation
+  - web
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - i18n
+  - sensitive
+  - security
+  - audit
+  - r2dbc
+  - inbox
+  - messaging-kafka
+  - secrets
+  - crypto
+operations:
+  - listCustomerPayments
+  - getPayment

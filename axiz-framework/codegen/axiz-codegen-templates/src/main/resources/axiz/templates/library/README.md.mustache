@@ -1,0 +1,13 @@
+# {{project.title}}
+
+{{project.description}}.
+
+Plain Java library for the axiz ecosystem (layer 1): it depends on no framework, so it can be used
+from Spring, Quarkus or plain Java. Build with `./mvnw verify` (format, Checkstyle, Error Prone +
+NullAway, tests and coverage); releases are published to Nexus from `v*` tags.
+
+## Rules
+
+- Public API documented with Javadoc; packages `@NullMarked` (JSpecify).
+- No Spring, Quarkus, AWS SDK v1 nor test libraries in compile scope (the parent enforces it).
+- Immutable values (records), no global state, no `System.out`.

@@ -1,0 +1,34 @@
+# {{project.name}} in {{item.name}}
+environment: {{item.name}}
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/{{project.name}}-{{item.name}}
+
+resources:
+  requests:
+    cpu: {{item.cpu}}
+    memory: {{item.memory}}
+  limits:
+    memory: {{item.memory}}
+{{#archetype.deployment}}
+
+autoscaling:
+  enabled: true
+  minReplicas: {{item.minReplicas}}
+  maxReplicas: {{item.maxReplicas}}
+  targetCPUUtilizationPercentage: 70
+{{/archetype.deployment}}
+
+externalSecret:
+  remotePrefix: {{item.name}}/{{project.name}}
+
+config:
+  axiz.config.environment: {{item.name}}
+  management.tracing.sampling.probability: "{{item.samplingProbability}}"
+  # Keys this service needs in {{item.name}} (set their values, then remove the comment):
+{{#config.configMapKeys}}
+  # {{.}}:
+{{/config.configMapKeys}}
+
+errors: []

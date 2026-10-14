@@ -1,0 +1,47 @@
+# Admission policy (Kyverno): pods of the service namespaces only run images from the Nexus
+# registry signed by the CI key in AWS KMS (cosign, see service-ci). The policy is managed by the
+# platform team; the public key is exported once from KMS (cosign public-key --key awskms:///...).
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: axiz-verify-images
+  annotations:
+    policies.kyverno.io/title: Signed axiz images
+    policies.kyverno.io/description: Only images signed by the axiz CI run in the service namespaces.
+spec:
+  validationFailureAction: Enforce
+  webhookTimeoutSeconds: 15
+  background: false
+  rules:
+    - name: signed-by-axiz-ci
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [axiz-dev, axiz-qa, axiz-prod]
+      verifyImages:
+        - imageReferences:
+            - "nexus-docker.axiz.internal/axiz/*"
+          mutateDigest: true
+          verifyDigest: true
+          required: true
+          attestors:
+            - entries:
+                - keys:
+                    kms: awskms:///alias/axiz-image-signing
+                    rekor:
+                      ignoreTlog: true
+                    ctlog:
+                      ignoreSCT: true
+    - name: only-nexus-registry
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [axiz-dev, axiz-qa, axiz-prod]
+      validate:
+        message: Images must come from the Nexus registry.
+        pattern:
+          spec:
+            containers:
+              - image: "nexus-docker.axiz.internal/*"

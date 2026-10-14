@@ -1,0 +1,31 @@
+<!-- generated -->
+# axiz-core-outbox
+
+Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-outbox</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `Dialect` | SQL differences between the supported databases. |
+| `JdbcOutboxStore` | JDBC outbox store (Aurora PostgreSQL in production; schema in `axiz/sql/outbox.sql`). |
+| `OutboxException` | Outbox persistence failure. |
+| `OutboxRecord` | A pending (or processed) outbox entry. |
+| `OutboxRelay` | Moves outbox entries to the broker (at-least-once). |
+| `OutboxStore` | Persistence port of the outbox. |
+| `OutboxWriter` | Registers events in the outbox within the caller's transaction. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-outbox verify`.

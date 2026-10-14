@@ -1,0 +1,54 @@
+package {{project.basePackage}}.handler;
+
+{{#stack.reactive}}
+import org.reactivestreams.Publisher;
+{{/stack.reactive}}
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.framework.eda.HandlesEvent;
+{{#stack.reactive}}
+import pe.axiz.framework.eda.ReactiveTypedEventHandler;
+import reactor.core.publisher.Mono;
+{{/stack.reactive}}
+{{^stack.reactive}}
+import pe.axiz.framework.eda.TypedEventHandler;
+{{/stack.reactive}}
+import {{project.basePackage}}.event.ExampleCreated;
+
+/**
+ * Reacts to {@code example.created} events. Delivery is at least once: the handler must be
+ * idempotent (the inbox capability de-duplicates by event id); a failure is retried with backoff
+ * and dead-lettered after the configured attempts.
+{{#stack.reactive}}
+ * Non-blocking: the returned publisher runs in a reactive transaction{{#persistence.r2dbc}} (R2DBC
+ * writes and outbox events commit together){{/persistence.r2dbc}} and the consumer waits for it,
+ * bounded by {@code axiz.eda.handler-timeout}.
+{{/stack.reactive}}
+ */
+@Component
+@HandlesEvent("{{project.groupId}}.example.created.v1")
+{{#stack.reactive}}
+public class ExampleCreatedHandler extends ReactiveTypedEventHandler<ExampleCreated> {
+
+  private static final Logger log = LoggerFactory.getLogger(ExampleCreatedHandler.class);
+
+  @Override
+  protected Publisher<Void> on(ExampleCreated payload, EventEnvelope envelope) {
+    return Mono.fromRunnable(
+        () -> log.info("example created: exampleId={} eventId={}", payload.id(), envelope.id()));
+  }
+}
+{{/stack.reactive}}
+{{^stack.reactive}}
+public class ExampleCreatedHandler extends TypedEventHandler<ExampleCreated> {
+
+  private static final Logger log = LoggerFactory.getLogger(ExampleCreatedHandler.class);
+
+  @Override
+  protected void on(ExampleCreated payload, EventEnvelope envelope) {
+    log.info("example created: exampleId={} eventId={}", payload.id(), envelope.id());
+  }
+}
+{{/stack.reactive}}

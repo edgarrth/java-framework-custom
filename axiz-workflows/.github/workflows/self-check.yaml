@@ -1,0 +1,37 @@
+# Checks this repository: workflow and action syntax (actionlint with shellcheck), third-party
+# actions pinned by commit, Renovate presets and the GitOps references.
+name: self-check
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          curl -fsSL https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            | tar xz actionlint
+          ./actionlint -color
+      - name: Third-party actions pinned by commit SHA
+        run: |
+          unpinned=$(grep -rnE 'uses: [^ ]+@' .github/workflows actions \
+            | grep -v 'uses: axiz/axiz-workflows/' | grep -vE '@[0-9a-f]{40}( |$)' || true)
+          [ -z "$unpinned" ] || { echo "::error::actions must be pinned by commit SHA"; echo "$unpinned"; exit 1; }
+      - name: Renovate presets
+        run: npx --yes --package renovate@41 -- renovate-config-validator renovate/*.json
+      - name: GitOps references (schemas of Argo CD and Kyverno resources)
+        run: |
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          ./kubeconform -strict -summary \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            gitops/

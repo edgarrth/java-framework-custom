@@ -1,0 +1,295 @@
+# Services: build and quality gates, contract checks, chart checks and, on main or a tag, the image
+# (Jib; also native when asked) pushed to the Nexus Docker registry, scanned, signed with cosign
+# (key in AWS KMS) and with its SBOM attested. Called by every generated service
+# (.github/workflows/ci.yaml) with `secrets: inherit`.
+name: service-ci
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: Service name (image and chart release)
+        type: string
+        required: true
+      module:
+        description: Maven module of the service in a multi-module repository
+        type: string
+        default: ""
+      openapi:
+        description: OpenAPI contract (lint and breaking-change check)
+        type: string
+        default: ""
+      asyncapi:
+        description: AsyncAPI contract (lint)
+        type: string
+        default: ""
+      chart:
+        description: Helm chart directory
+        type: string
+        default: ""
+      native:
+        description: Also build, test and publish the native image
+        type: boolean
+        default: false
+      runner:
+        description: Runner label (e.g. an Actions Runner Controller scale set inside EKS)
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      NEXUS_URL:
+        required: true
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
+      NEXUS_DOCKER_REGISTRY:
+        required: false
+      SONAR_HOST_URL:
+        required: false
+      SONAR_TOKEN:
+        required: false
+    outputs:
+      image-tag:
+        description: Immutable tag of the published image (the commit)
+        value: ${{ jobs.image.outputs.tag }}
+      image-digest:
+        description: Digest of the published JVM image
+        value: ${{ jobs.image.outputs.digest }}
+
+permissions:
+  contents: read
+  security-events: write
+  id-token: write
+
+env:
+  MODULE_ARGS: ${{ inputs.module != '' && format('-pl {0} -am', inputs.module) || '' }}
+  MODULE_DIR: ${{ inputs.module != '' && inputs.module || '.' }}
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Build, standards (Spotless, Checkstyle, Error Prone + NullAway, SpotBugs), ArchUnit, tests, coverage
+        run: |
+          # shellcheck disable=SC2086 # Maven arguments are split on purpose
+          mvn -B -ntp verify -Pquality $MODULE_ARGS
+      - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
+        if: env.SONAR_TOKEN != ''
+        run: |
+          # shellcheck disable=SC2086 # arguments are split on purpose
+          mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar $MODULE_ARGS \
+            -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.qualitygate.wait=true
+      - name: OpenRewrite static analysis (report only, pull requests)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          # shellcheck disable=SC2086 # arguments are split on purpose
+          mvn -B -ntp org.openrewrite.maven:rewrite-maven-plugin:6.49.0:dryRun $MODULE_ARGS \
+            -Drewrite.recipeArtifactCoordinates=org.openrewrite.recipe:rewrite-static-analysis:2.43.0 \
+            -Drewrite.activeRecipes=org.openrewrite.staticanalysis.CommonStaticAnalysis \
+            -Drewrite.failOnDryRunResults=false
+          find . -path '*/target/rewrite/rewrite.patch' -exec cat {} + > rewrite.patch
+          if [ -s rewrite.patch ]; then
+            echo "### OpenRewrite suggestions: $(grep -c '^diff --git' rewrite.patch) files (artifact reports/rewrite.patch)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: SBOM (CycloneDX)
+        run: |
+          # shellcheck disable=SC2086 # Maven arguments are split on purpose
+          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json $MODULE_ARGS
+      - name: Vulnerabilities, secrets and misconfigurations
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: reports
+          path: |
+            **/target/surefire-reports
+            **/target/failsafe-reports
+            **/target/site/jacoco*
+            rewrite.patch
+            **/target/bom.json
+
+  contract:
+    if: inputs.openapi != '' || inputs.asyncapi != ''
+    runs-on: ${{ inputs.runner }}
+    env:
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      OPENAPI: ${{ inputs.openapi }}
+      ASYNCAPI: ${{ inputs.asyncapi }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: axiz rulesets (from axiz-code-standards)
+        run: |
+          mkdir -p .axiz-ci
+          curl -fsSL -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
+            "$NEXUS_URL/service/rest/v1/search/assets/download?repository=maven-public&group=pe.axiz&name=axiz-code-standards&sort=version&maven.extension=jar" \
+            -o .axiz-ci/standards.jar
+          unzip -o -q .axiz-ci/standards.jar 'axiz/spectral/*' -d .axiz-ci
+      - name: Lint OpenAPI (Spectral, axiz ruleset)
+        if: inputs.openapi != ''
+        run: npx --yes @stoplight/spectral-cli@6.15.0 lint -r .axiz-ci/axiz/spectral/axiz-openapi.yaml "$OPENAPI" --fail-severity error
+      - name: Lint AsyncAPI (Spectral)
+        if: inputs.asyncapi != ''
+        run: |
+          ruleset=.axiz-ci/axiz/spectral/axiz-asyncapi.yaml
+          [ -f "$ruleset" ] || { echo 'extends: ["spectral:asyncapi"]' > .axiz-ci/asyncapi.yaml; ruleset=.axiz-ci/asyncapi.yaml; }
+          npx --yes @stoplight/spectral-cli@6.15.0 lint -r "$ruleset" "$ASYNCAPI" --fail-severity error
+      - name: Breaking changes against the target branch
+        if: github.event_name == 'pull_request' && inputs.openapi != ''
+        uses: oasdiff/oasdiff-action/breaking@1c611ffb1253a72924624aa4fb662e302b3565d3 # v0.0.21
+        with:
+          base: origin/${{ github.base_ref }}:${{ inputs.openapi }}
+          revision: HEAD:${{ inputs.openapi }}
+          fail-on: ERR
+
+  chart:
+    if: inputs.chart != ''
+    runs-on: ${{ inputs.runner }}
+    env:
+      CHART: ${{ inputs.chart }}
+      SERVICE: ${{ inputs.service }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.19.0
+      - name: helm lint, schema validation (kubeconform) and best practices (kube-linter) per environment
+        run: |
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          curl -fsSL https://github.com/stackrox/kube-linter/releases/download/v0.7.6/kube-linter-linux.tar.gz | tar xz kube-linter
+          for values in "$CHART"/values-*.yaml; do
+            echo "::group::$values"
+            helm lint "$CHART" -f "$CHART/values.yaml" -f "$values"
+            helm template "$SERVICE" "$CHART" -f "$CHART/values.yaml" -f "$values" > rendered.yaml
+            ./kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 rendered.yaml
+            config=()
+            [ -f "$CHART/.kube-linter.yaml" ] && config=(--config "$CHART/.kube-linter.yaml")
+            ./kube-linter lint "${config[@]}" rendered.yaml
+            echo "::endgroup::"
+          done
+
+  native:
+    if: inputs.native
+    runs-on: ${{ inputs.runner }}
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          distribution: graalvm
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Native image and native tests
+        run: |
+          # shellcheck disable=SC2086 # Maven arguments are split on purpose
+          mvn -B -ntp -Pnative package native:compile native:test $MODULE_ARGS
+
+  image:
+    needs: [build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      tag: ${{ github.sha }}
+      digest: ${{ steps.jvm.outputs.digest }}
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      REGISTRY: ${{ secrets.NEXUS_DOCKER_REGISTRY }}
+      SERVICE: ${{ inputs.service }}
+      SIGNING_KEY: ${{ vars.COSIGN_KMS_KEY }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          distribution: ${{ inputs.native && 'graalvm' || 'temurin' }}
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: JVM image (Jib, non-root), immutable tag = commit
+        id: jvm
+        run: |
+          # shellcheck disable=SC2086 # arguments are split on purpose
+          mvn -B -ntp package jib:build -DskipTests $MODULE_ARGS \
+            -Daxiz.image.registry="$REGISTRY" -Daxiz.image.tag="$GITHUB_SHA" \
+            -Djib.to.auth.username="$NEXUS_USERNAME" -Djib.to.auth.password="$NEXUS_PASSWORD"
+          echo "digest=$(cat "$MODULE_DIR/target/jib-image.digest")" >> "$GITHUB_OUTPUT"
+      - name: Native image (GraalVM + Jib native extension), tag = commit-native
+        id: native
+        if: inputs.native
+        run: |
+          # shellcheck disable=SC2086 # arguments are split on purpose
+          mvn -B -ntp -Pnative package native:compile jib:build -DskipTests $MODULE_ARGS \
+            -Daxiz.image.registry="$REGISTRY" -Daxiz.image.tag="$GITHUB_SHA" \
+            -Djib.to.auth.username="$NEXUS_USERNAME" -Djib.to.auth.password="$NEXUS_PASSWORD"
+          echo "digest=$(cat "$MODULE_DIR/target/jib-image.digest")" >> "$GITHUB_OUTPUT"
+      - name: Image scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ secrets.NEXUS_DOCKER_REGISTRY }}/axiz/${{ inputs.service }}@${{ steps.jvm.outputs.digest }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+        env:
+          TRIVY_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      - name: AWS credentials for the signing key (OIDC)
+        if: env.SIGNING_KEY != ''
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: ${{ vars.COSIGN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        if: env.SIGNING_KEY != ''
+      - name: Sign the images and attest the SBOM (cosign, key in AWS KMS, private transparency)
+        if: env.SIGNING_KEY != ''
+        env:
+          JVM_DIGEST: ${{ steps.jvm.outputs.digest }}
+          NATIVE_DIGEST: ${{ steps.native.outputs.digest }}
+        run: |
+          echo "$NEXUS_PASSWORD" | cosign login "$REGISTRY" -u "$NEXUS_USERNAME" --password-stdin
+          # shellcheck disable=SC2086 # arguments are split on purpose
+          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json $MODULE_ARGS
+          for digest in "$JVM_DIGEST" "$NATIVE_DIGEST"; do
+            [ -n "$digest" ] || continue
+            ref="$REGISTRY/axiz/$SERVICE@$digest"
+            cosign sign --yes --tlog-upload=false --key "$SIGNING_KEY" \
+              -a "repository=$GITHUB_REPOSITORY" -a "commit=$GITHUB_SHA" "$ref"
+            cosign attest --yes --tlog-upload=false --key "$SIGNING_KEY" \
+              --type cyclonedx --predicate "$MODULE_DIR/target/bom.json" "$ref"
+          done
+      - name: Summary
+        env:
+          DIGEST: ${{ steps.jvm.outputs.digest }}
+        run: |
+          {
+            echo "### $SERVICE image"
+            echo "- tag: \`$GITHUB_SHA\`"
+            echo "- digest: \`$DIGEST\`"
+            [ -n "$SIGNING_KEY" ] && echo "- signed with cosign (AWS KMS) and SBOM attested" || echo "- not signed: COSIGN_KMS_KEY is not defined"
+          } >> "$GITHUB_STEP_SUMMARY"

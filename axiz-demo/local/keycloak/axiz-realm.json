@@ -1,0 +1,136 @@
+{
+  "realm": "axiz",
+  "enabled": true,
+  "displayName": "axiz demo (local only)",
+  "accessTokenLifespan": 900,
+  "sslRequired": "none",
+  "clientScopes": [
+    {
+      "name": "audience",
+      "description": "Every local token is valid for every service (audience local-services)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "local-services",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "protocol": "openid-connect"
+    },
+    {
+      "name": "payments:process",
+      "description": "Moves payment orders through their statuses",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "payments:read",
+      "description": "Reads payment orders and history of any customer",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "payments-web",
+      "description": "Web channel (public client). Direct grants only for local tests with Bruno.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "audience",
+        "profile"
+      ]
+    },
+    {
+      "clientId": "payment-process",
+      "description": "payment-process calling payments-business and core-integration (client credentials)",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "local-only-payment-process",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": [
+        "audience",
+        "profile",
+        "payments:process"
+      ]
+    },
+    {
+      "clientId": "local-client",
+      "description": "Generic machine client for local tests",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "local-only",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": [
+        "audience",
+        "profile"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "C-1001",
+      "username": "ana",
+      "firstName": "Ana",
+      "lastName": "Demo",
+      "email": "ana.demo@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-only-ana",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "C-1002",
+      "username": "luis",
+      "firstName": "Luis",
+      "lastName": "Demo",
+      "email": "luis.demo@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-only-luis",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

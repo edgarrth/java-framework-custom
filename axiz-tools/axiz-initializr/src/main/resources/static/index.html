@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>axiz initializr</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <h1>axiz <span>initializr</span></h1>
+  <p>Genera un servicio listo para compilar a partir de su contrato OpenAPI.</p>
+</header>
+<main>
+  <form id="project" novalidate>
+    <section>
+      <h2>Proyecto</h2>
+      <label>Nombre <input name="name" required pattern="^[a-z][a-z0-9]*(-[a-z0-9]+)*$" placeholder="payments-business"></label>
+      <label>Grupo Maven <input name="groupId" required placeholder="pe.axiz.payments"></label>
+      <label>Paquete base <input name="basePackage" required placeholder="pe.axiz.payments.business"></label>
+      <label>Descripción <input name="description" maxlength="300"></label>
+    </section>
+    <section>
+      <h2>Arquitectura</h2>
+      <label>Arquetipo <select name="archetype" required></select></label>
+      <p id="role" class="hint"></p>
+      <label>Framework <select name="framework"></select></label>
+      <label>Stack <select name="stack"></select></label>
+      <label>Persistencia <select name="persistence"></select></label>
+    </section>
+    <section>
+      <h2>Contratos</h2>
+      <label>OpenAPI 3.1 <span id="openapi-required" class="hint">(obligatorio para este arquetipo)</span>
+        <input type="file" name="openapiFile" accept=".yaml,.yml,.json"></label>
+      <label>AsyncAPI (opcional) <input type="file" name="asyncapiFile" accept=".yaml,.yml,.json"></label>
+    </section>
+    <section>
+      <h2>Capacidades</h2>
+      <p class="hint">El arquetipo ya incluye: <span id="included"></span></p>
+      <div id="capabilities" class="grid"></div>
+    </section>
+    <div class="actions">
+      <button type="button" id="validate">Validar</button>
+      <button type="submit" id="generate" class="primary">Generar ZIP</button>
+      <button type="button" id="github">Crear repositorio en GitHub</button>
+    </div>
+  </form>
+  <section id="result" aria-live="polite"></section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

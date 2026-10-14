@@ -1,0 +1,16 @@
+package {{project.basePackage}}.application.command;
+
+import org.springframework.stereotype.Component;
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.framework.cqrs.CommandHandler;
+
+/** Handles {@link {{artifact.className}}Command} inside the command pipeline (validation to metrics). */
+@Component
+public class {{artifact.className}}Handler implements CommandHandler<{{artifact.className}}Command, String> {
+
+  @Override
+  public String handle({{artifact.className}}Command command) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{artifact.camel}} is not implemented yet");
+  }
+}

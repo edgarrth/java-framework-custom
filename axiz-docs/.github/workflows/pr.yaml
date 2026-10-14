@@ -1,0 +1,16 @@
+# Shared pull request checks of the axiz repositories (title, secrets, dependencies, Semgrep, Trivy,
+# actionlint). The site itself is checked by docs.yaml.
+name: pr
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  pr:
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    secrets: inherit

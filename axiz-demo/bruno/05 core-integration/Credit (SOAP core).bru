@@ -1,0 +1,33 @@
+meta {
+  name: Credit (SOAP core)
+  type: http
+  seq: 19
+}
+
+post {
+  url: {{core}}/v1/credits
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+body:json {
+  {
+    "accountId": "{{debtorAccount}}",
+    "amount": 5,
+    "currency": "PEN",
+    "reference": "BRUNO-3"
+  }
+}
+
+tests {
+  test("status 201", function () { expect(res.status).to.equal(201); });
+}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-core-errors</artifactId>
+  <name>axiz :: core :: errors</name>
+  <description>Error model: types, categories with HTTP mapping, AxizException, RFC 9457 problem, externalized catalog</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.core.errors</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-saga-spring-boot-autoconfigure
+
+Saga orchestrator with persistent state on PostgreSQL and recovery of stale sagas (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-saga-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizSagaAutoConfiguration` | Saga orchestrator with state on Aurora, retries of transient failures and compensations. |
+| `AxizSagaProperties` | Orchestrated sagas (`axiz.saga.*`) with persisted state and compensation. |
+| `JacksonContextCodec` | JSON saga contexts with the service's `JsonMapper`: contexts should be records with plain values (ids, amounts, flags), never secrets, since they are persisted with the saga state. |
+| `MeteredSagaListener` | Saga metrics: completed steps, compensations, steps left in doubt (alert on `axiz.saga.in_doubt`) and finished sagas by status. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-saga-spring-boot-autoconfigure verify`.

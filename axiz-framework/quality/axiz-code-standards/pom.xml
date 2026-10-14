@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Shared configuration of every quality tool. Referenced by the parents; services never copy these files. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-code-standards</artifactId>
+  <name>axiz :: quality :: code standards</name>
+  <description>Checkstyle, SpotBugs, Semgrep, Spectral and gitleaks configuration</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.quality.standards</axiz.module.name>
+  </properties>
+</project>

@@ -1,0 +1,20 @@
+# Nightly: every demo service compiled and tested as a GraalVM native image.
+name: native-nightly
+
+on:
+  schedule:
+    - cron: "47 6 * * *" # 01:47 in Lima
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v1
+    with:
+      modules: >-
+        ["services/payments-experience", "services/payments-business",
+         "services/beneficiaries-crud", "services/core-integration", "services/payment-process", "services/payments-history",
+         "services/notifications-processor", "services/settlement-batch"]
+    secrets: inherit

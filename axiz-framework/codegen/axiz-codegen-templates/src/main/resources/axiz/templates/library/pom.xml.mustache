@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  {{project.title}}: {{project.descriptionXml}}
+  Plain Java library (axiz layer 1 rules: no Spring, no cloud SDK v1, no test libraries in compile scope).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>{{axizVersion}}</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>{{project.groupId}}</groupId>
+  <artifactId>{{project.artifactId}}</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>{{project.title}}</name>
+  <description>{{project.descriptionXml}}</description>
+
+  <properties>
+    <axiz.module.name>{{project.basePackage}}</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

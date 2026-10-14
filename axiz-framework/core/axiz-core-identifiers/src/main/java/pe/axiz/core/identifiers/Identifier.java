@@ -1,0 +1,30 @@
+package pe.axiz.core.identifiers;
+
+import java.util.Objects;
+
+/**
+ * Validated identifier value object.
+ *
+ * @param type type name
+ * @param value normalized value
+ */
+public record Identifier(String type, String value) {
+
+  public Identifier {
+    Objects.requireNonNull(type, "type");
+    Objects.requireNonNull(value, "value");
+  }
+
+  /** Masked text, safe for logs. */
+  public String masked(IdentifierRegistry registry) {
+    return registry.require(type).mask(value);
+  }
+
+  @Override
+  public String toString() {
+    return type
+        + ":"
+        + "*".repeat(Math.max(0, value.length() - 4))
+        + value.substring(Math.max(0, value.length() - 4));
+  }
+}

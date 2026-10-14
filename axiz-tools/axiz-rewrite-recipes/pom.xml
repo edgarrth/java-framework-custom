@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OpenRewrite recipes that `axiz upgrade` applies when a project moves to another axiz version:
+  rewrite-maven-plugin with -Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:<version>
+  -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz. Each release adds its migration to the chain.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-core</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+
+  <artifactId>axiz-rewrite-recipes</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>axiz :: tools :: rewrite recipes</name>
+  <description>Declarative OpenRewrite recipes to upgrade services between axiz versions</description>
+
+  <properties>
+    <axiz.module.name>pe.axiz.rewrite</axiz.module.name>
+    <rewrite-recipe-bom.version>3.20.0</rewrite-recipe-bom.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.openrewrite.recipe</groupId>
+        <artifactId>rewrite-recipe-bom</artifactId>
+        <version>${rewrite-recipe-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- recipes referenced by the declarative ones; resolved by rewrite-maven-plugin with this artifact -->
+    <dependency>
+      <groupId>org.openrewrite.recipe</groupId>
+      <artifactId>rewrite-spring</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite.recipe</groupId>
+      <artifactId>rewrite-migrate-java</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

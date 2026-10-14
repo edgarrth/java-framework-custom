@@ -1,0 +1,140 @@
+# Checks shared by every pull request of any axiz repository: Conventional Commits title, secret
+# scanning, dependency review, static security analysis (Semgrep), filesystem scan (Trivy) and the
+# repository's own workflows (actionlint). Build, tests and quality gates run in lib-publish or
+# service-ci, which callers also trigger on pull requests.
+name: pr
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner label (e.g. an Actions Runner Controller scale set inside EKS)
+        type: string
+        default: ubuntu-24.04
+      semgrep-config:
+        description: Semgrep rule sets, separated by spaces
+        type: string
+        default: p/java p/owasp-top-ten p/secrets
+      fail-severity:
+        description: Lowest vulnerability severity that fails the check
+        type: string
+        default: high
+    secrets:
+      NEXUS_URL:
+        required: false
+      NEXUS_USERNAME:
+        required: false
+      NEXUS_PASSWORD:
+        required: false
+      AXIZ_NAMING_GUARD:
+        description: Forbidden identifiers, one extended regex per line (kept outside every repository)
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+jobs:
+  hygiene:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Conventional title (feat, fix, docs, refactor, test, build, ci, chore, perf, revert)
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "$TITLE" | grep -Eq '^(feat|fix|docs|refactor|test|build|ci|chore|perf|revert)(\([a-z0-9-]+\))?!?: .+' \
+            || { echo "::error::PR title must follow Conventional Commits"; exit 1; }
+      - name: Secret scanning (gitleaks, commits of the pull request)
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          config=()
+          [ -f .gitleaks.toml ] && config=(--config /repo/.gitleaks.toml)
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git /repo "${config[@]}" --log-opts="$BASE..$HEAD" --redact --verbose
+      - name: Naming guard (identifiers that must never appear in axiz code)
+        env:
+          PATTERNS: ${{ secrets.AXIZ_NAMING_GUARD }}
+        run: |
+          if [ -z "$PATTERNS" ]; then echo "AXIZ_NAMING_GUARD not defined: skipped"; exit 0; fi
+          printf '%s\n' "$PATTERNS" | sed '/^[[:space:]]*$/d' > "$RUNNER_TEMP/guard.txt"
+          if git grep -I -n -i -E -f "$RUNNER_TEMP/guard.txt" -- . ':!*.lock' > "$RUNNER_TEMP/hits.txt"; then
+            echo "::error::forbidden identifiers found (patterns are not printed)"
+            cut -d: -f1,2 "$RUNNER_TEMP/hits.txt"
+            exit 1
+          fi
+      - name: Dependency review (licenses and known vulnerabilities)
+        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
+        with:
+          fail-on-severity: ${{ inputs.fail-severity }}
+          deny-licenses: AGPL-3.0-only, AGPL-3.0-or-later, GPL-3.0-only, GPL-3.0-or-later, SSPL-1.0
+
+  security:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - name: axiz Semgrep rules (from axiz-code-standards in Nexus)
+        env:
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          if [ -z "$NEXUS_URL" ]; then echo "NEXUS_URL not available: public rule sets only"; exit 0; fi
+          mkdir -p "$RUNNER_TEMP/axiz"
+          curl -fsSL -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
+            "$NEXUS_URL/service/rest/v1/search/assets/download?repository=maven-public&group=pe.axiz&name=axiz-code-standards&sort=version&maven.extension=jar" \
+            -o "$RUNNER_TEMP/axiz/standards.jar"
+          unzip -o -q "$RUNNER_TEMP/axiz/standards.jar" 'axiz/semgrep/*' -d "$RUNNER_TEMP/axiz"
+      - name: Static security analysis (Semgrep, public rule sets and axiz rules)
+        env:
+          CONFIG: ${{ inputs.semgrep-config }}
+        run: |
+          python -m pip install --quiet semgrep==1.180.0
+          args=()
+          for c in $CONFIG; do args+=(--config "$c"); done
+          rules="$RUNNER_TEMP/axiz/axiz/semgrep/axiz-rules.yaml"
+          [ -f "$rules" ] && args+=(--config "$rules")
+          [ -f .semgrep.yml ] && args+=(--config .semgrep.yml)
+          semgrep scan "${args[@]}" --error --metrics=off --sarif --output semgrep.sarif \
+            --exclude 'target' --exclude '**/src/test/**'
+      - name: Filesystem scan (Trivy, vulnerabilities, secrets and misconfigurations)
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy.sarif
+          exit-code: "1"
+      - name: Results to code scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@9f759ee644a3e7c15c1390abf49868036c00067b # v3.38.3
+        with:
+          sarif_file: .
+          category: axiz-pr
+
+  workflows:
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: actionlint (workflows of the repository)
+        run: |
+          if ls .github/workflows/*.y*ml > /dev/null 2>&1; then
+            curl -fsSL https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+              | tar xz actionlint
+            ./actionlint -color
+          fi

@@ -1,0 +1,19 @@
+meta {
+  name: Orders of the customer
+  type: http
+  seq: 13
+}
+
+get {
+  url: {{business}}/v1/payment-orders?customerId={{customerId}}&page=0&size=20
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+}

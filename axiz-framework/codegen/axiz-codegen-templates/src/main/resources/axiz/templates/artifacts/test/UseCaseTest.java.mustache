@@ -1,0 +1,17 @@
+package {{project.basePackage}}.application.usecase;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import pe.axiz.core.errors.AxizException;
+
+class {{artifact.className}}UseCaseTest {
+
+  private final {{artifact.className}}UseCase useCase = new {{artifact.className}}UseCase();
+
+  @Test
+  void isNotImplementedYet() {
+    assertThatThrownBy(() -> useCase.execute(new {{artifact.className}}UseCase.Input("1")))
+        .isInstanceOf(AxizException.class);
+  }
+}

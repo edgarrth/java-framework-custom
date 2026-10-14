@@ -1,0 +1,4 @@
+pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration
+pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration
+pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration
+pe.axiz.spring.r2dbc.AxizR2dbcAuditingAutoConfiguration

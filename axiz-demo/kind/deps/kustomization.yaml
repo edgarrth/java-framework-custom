@@ -1,0 +1,32 @@
+# Infrastructure of the demo inside kind (stand-ins of Aurora, ElastiCache, MSK, AWS services,
+# the identity provider, the core banking system and the observability stack). The data files
+# are the same ones docker compose uses (../../local).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: axiz-demo
+resources:
+  - deps.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: postgres-init
+    files: [../../local/postgres/init.sql]
+  - name: kafka-topics
+    files: [../../local/kafka/topics.sh]
+  - name: localstack-init
+    files: [../../local/localstack/init.sh, ../../local/localstack/NET-SETTLE-SAMPLE.txt]
+  - name: keycloak-realm
+    files: [../../local/keycloak/axiz-realm.json]
+  - name: wiremock-mappings
+    files:
+      - ../../local/wiremock/mappings/core-token.json
+      - ../../local/wiremock/mappings/core-debit.json
+      - ../../local/wiremock/mappings/core-reversal.json
+      - ../../local/wiremock/mappings/core-credit-soap.json
+      - ../../local/wiremock/mappings/network-transfer.json
+  - name: grafana-dashboards
+    files:
+      - ../../local/grafana/dashboards/axiz-services.json
+      - ../../local/grafana/dashboards/axiz-payments.json
+  - name: grafana-provisioning
+    files: [../../local/grafana/dashboards.yaml]

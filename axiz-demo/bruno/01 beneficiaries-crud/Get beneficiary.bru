@@ -1,0 +1,19 @@
+meta {
+  name: Get beneficiary
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{crud}}/v1/customers/{{customerId}}/beneficiaries/{{beneficiaryId}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+}

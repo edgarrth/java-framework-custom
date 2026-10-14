@@ -1,0 +1,23 @@
+package {{project.basePackage}};
+
+import java.util.Objects;
+
+/**
+ * Entry point of the {{project.name}} library. Replace this example with the library API.
+ *
+ * @param name a non-blank name
+ */
+public record {{platform.mainClass}}(String name) {
+
+  public {{platform.mainClass}} {
+    Objects.requireNonNull(name, "name");
+    if (name.isBlank()) {
+      throw new IllegalArgumentException("name must not be blank");
+    }
+  }
+
+  /** Greeting for the name. */
+  public String greeting() {
+    return "Hello " + name;
+  }
+}

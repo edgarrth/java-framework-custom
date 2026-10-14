@@ -1,0 +1,39 @@
+-- {{project.name}}: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
+{{#persistence.jpa}}
+-- environment; Hibernate only validates it (spring.jpa.hibernate.ddl-auto=validate).
+{{/persistence.jpa}}
+{{#persistence.r2dbc}}
+-- environment: it runs over JDBC at startup, the service itself only uses R2DBC.
+{{/persistence.r2dbc}}
+-- Add domain tables in new migrations (V2__..., never edit an applied one).
+{{#caps.outbox}}
+
+{{> sql/outbox}}
+{{/caps.outbox}}
+{{#caps.inbox}}
+
+{{> sql/inbox}}
+{{/caps.inbox}}
+{{#caps.saga}}
+
+{{> sql/saga}}
+{{/caps.saga}}
+{{#caps.sequence}}
+
+{{> sql/sequence}}
+{{/caps.sequence}}
+{{#caps.scheduling}}
+
+{{> sql/shedlock}}
+{{/caps.scheduling}}
+{{#fw.batch}}
+
+{{> sql/batch}}
+
+-- Input records loaded by the job (the reference makes reloading idempotent)
+CREATE TABLE IF NOT EXISTS input_line (
+  reference  VARCHAR(64)  PRIMARY KEY,
+  line_value VARCHAR(500) NOT NULL,
+  loaded_at  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+{{/fw.batch}}

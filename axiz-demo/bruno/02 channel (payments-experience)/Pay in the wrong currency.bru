@@ -1,0 +1,34 @@
+meta {
+  name: Pay in the wrong currency
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{experience}}/v1/payments
+  body: json
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "beneficiaryId": "{{beneficiaryId}}",
+    "debtorAccount": "{{debtorAccount}}",
+    "amount": 10,
+    "currency": "USD"
+  }
+}
+
+tests {
+  test("status 422", function () { expect(res.status).to.equal(422); });
+  test("code PAYMENTS-PAYMENTSEXPERIENCE-0001", function () { expect(res.body.code).to.equal("PAYMENTS-PAYMENTSEXPERIENCE-0001"); });
+}

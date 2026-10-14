@@ -1,0 +1,13 @@
+package {{project.basePackage}};
+
+import org.junit.jupiter.api.Test;
+import pe.axiz.quality.archunit.AxizArchitecture;
+
+/** Rules of the {{fw.id}} style plus the general axiz rules; breaking one fails the build. */
+class ArchitectureTest {
+
+  @Test
+  void followsTheArchitecture() {
+    AxizArchitecture.verify("{{project.basePackage}}", AxizArchitecture.Style.{{fw.enum}});
+  }
+}

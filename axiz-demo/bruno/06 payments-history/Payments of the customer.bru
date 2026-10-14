@@ -1,0 +1,33 @@
+meta {
+  name: Payments of the customer
+  type: http
+  seq: 21
+}
+
+get {
+  url: {{history}}/v1/customers/{{customerId}}/payments?page=0&size=20
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+docs {
+  Read model projected from the payment order events (Kafka -> R2DBC). Eventually consistent:
+  a payment paid a moment ago may still show RECEIVED or PROCESSING.
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+  test("latest change first", function () {
+    const items = res.body.items;
+    for (let i = 1; i < items.length; i++) {
+      expect(items[i - 1].lastChangeAt >= items[i].lastChangeAt).to.equal(true);
+    }
+  });
+  test("creditor account masked", function () {
+    res.body.items.forEach((p) => { if (p.creditorCci) expect(p.creditorCci).to.match(/^\*+\d{4}$/); });
+  });
+}

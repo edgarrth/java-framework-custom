@@ -1,0 +1,88 @@
+# Native binaries (GraalVM) for Linux, macOS and Windows; attached to the GitHub release.
+name: native
+on:
+  workflow_call:
+    inputs:
+      module:
+        description: Maven module to compile natively
+        type: string
+        required: true
+      binary:
+        description: Binary name (imageName of the native profile)
+        type: string
+        required: true
+      release:
+        description: Attach the binaries to the release of the tag
+        type: boolean
+        default: false
+    secrets:
+      NEXUS_URL:
+        required: true
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            suffix: linux-x64
+          - os: macos-15
+            suffix: macos-arm64
+          - os: windows-2025
+            suffix: windows-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          distribution: graalvm
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Native image
+        shell: bash
+        run: mvn -B -ntp -Pnative -pl "${{ inputs.module }}" -am package -DskipTests
+      - name: Smoke test
+        shell: bash
+        run: |
+          bin="${{ inputs.module }}/target/${{ inputs.binary }}"
+          [ -f "$bin.exe" ] && bin="$bin.exe"
+          "$bin" --version
+          "$bin" catalog > /dev/null
+      - name: Package
+        shell: bash
+        run: |
+          cd "${{ inputs.module }}/target"
+          name="${{ inputs.binary }}-${GITHUB_REF_NAME}-${{ matrix.suffix }}"
+          if [ -f "${{ inputs.binary }}.exe" ]; then 7z a "$name.zip" "${{ inputs.binary }}.exe"; else tar czf "$name.tar.gz" "${{ inputs.binary }}"; fi
+          sha256sum "$name".* > "$name.sha256" 2>/dev/null || shasum -a 256 "$name".* > "$name.sha256"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ inputs.binary }}-${{ matrix.suffix }}
+          path: |
+            ${{ inputs.module }}/target/${{ inputs.binary }}-*.tar.gz
+            ${{ inputs.module }}/target/${{ inputs.binary }}-*.zip
+            ${{ inputs.module }}/target/${{ inputs.binary }}-*.sha256
+
+  release:
+    needs: build
+    if: inputs.release && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber

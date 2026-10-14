@@ -1,0 +1,33 @@
+{
+  "realm": "axiz",
+  "enabled": true,
+  "accessTokenLifespan": 900,
+  "clientScopes": [
+    {
+      "name": "audience",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "false" },
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": { "included.custom.audience": "local-services", "access.token.claim": "true" }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "local-client",
+      "description": "Local development only",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "local-only",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": ["audience", "profile"]
+    }
+  ]
+}

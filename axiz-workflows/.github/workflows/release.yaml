@@ -1,0 +1,83 @@
+# Releases with release-please: every push to main updates a release pull request with the next
+# semantic version and the changelog derived from Conventional Commits; merging it creates the tag
+# v<x.y.z> and the GitHub release. The tag then triggers the repository's publication (Nexus,
+# images, native binaries, prod deployment).
+#
+# Tags created with the default GITHUB_TOKEN do not trigger other workflows, so the organization
+# provides a GitHub App (secrets RELEASE_APP_ID and RELEASE_APP_PRIVATE_KEY) allowed to write
+# contents and pull requests. Each repository keeps release-please-config.json and
+# .release-please-manifest.json at its root.
+name: release
+on:
+  workflow_call:
+    inputs:
+      config-file:
+        type: string
+        default: release-please-config.json
+      manifest-file:
+        type: string
+        default: .release-please-manifest.json
+      move-major-tag:
+        description: Also move the major tag (v1) to the new release (used by axiz-workflows)
+        type: boolean
+        default: false
+      runner:
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      RELEASE_APP_ID:
+        required: true
+      RELEASE_APP_PRIVATE_KEY:
+        required: true
+    outputs:
+      released:
+        description: Whether a release was created by this run
+        value: ${{ jobs.release.outputs.released }}
+      tag:
+        description: Tag of the created release
+        value: ${{ jobs.release.outputs.tag }}
+      version:
+        description: Version of the created release
+        value: ${{ jobs.release.outputs.version }}
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      released: ${{ steps.please.outputs.release_created }}
+      tag: ${{ steps.please.outputs.tag_name }}
+      version: ${{ steps.please.outputs.version }}
+    steps:
+      - name: Token (GitHub App, short-lived)
+        id: token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - name: Release pull request or release
+        id: please
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        with:
+          token: ${{ steps.token.outputs.token }}
+          config-file: ${{ inputs.config-file }}
+          manifest-file: ${{ inputs.manifest-file }}
+      - name: Move the major tag
+        if: inputs.move-major-tag && steps.please.outputs.release_created == 'true'
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+          TAG: ${{ steps.please.outputs.tag_name }}
+          MAJOR: ${{ steps.please.outputs.major }}
+        run: |
+          git init -q release && cd release
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch -q --depth 1 origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          git tag -f "v${MAJOR}" "${TAG}^{commit}"
+          git push -q -f origin "refs/tags/v${MAJOR}"
+      - name: Summary
+        if: steps.please.outputs.release_created == 'true'
+        env:
+          TAG: ${{ steps.please.outputs.tag_name }}
+        run: echo "### Released $TAG" >> "$GITHUB_STEP_SUMMARY"

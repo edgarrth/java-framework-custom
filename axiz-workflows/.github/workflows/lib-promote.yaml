@@ -1,0 +1,62 @@
+# Promotes to Nexus the artifacts that lib-publish verified and staged in this same run: the
+# staging repository is checked against its SHA-256 manifest and uploaded file by file, so what is
+# published is byte for byte what passed the gates. Call it from a job that "needs" every gate.
+name: lib-promote
+on:
+  workflow_call:
+    inputs:
+      artifact:
+        description: Name of the staging artifact uploaded by lib-publish
+        type: string
+        default: staging-repo
+      runner:
+        description: Runner label
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      NEXUS_URL:
+        required: true
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    runs-on: ${{ inputs.runner }}
+    env:
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - name: Only develop (SNAPSHOT) and v* tags (releases) publish
+        run: |
+          if [[ "$GITHUB_REF" != refs/tags/v* && "$GITHUB_REF" != refs/heads/develop ]]; then
+            echo "::error::only develop (SNAPSHOT) and v* tags (releases) publish"; exit 1
+          fi
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        with:
+          name: ${{ inputs.artifact }}
+          path: staging-repo
+      - name: Verify the staged files
+        working-directory: staging-repo
+        run: sha256sum --check --strict --quiet SHA256SUMS
+      - name: Upload to Nexus (artifacts first, metadata last)
+        working-directory: staging-repo
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then repo=maven-releases; else repo=maven-snapshots; fi
+          upload() {
+            curl -fsS --retry 3 --user "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
+              --upload-file "$1" "$NEXUS_URL/repository/$repo/${1#./}"
+          }
+          find . -type f ! -name SHA256SUMS ! -name 'maven-metadata.xml*' | sort | while read -r f; do upload "$f"; done
+          find . -type f -name 'maven-metadata.xml*' | sort | while read -r f; do upload "$f"; done
+          {
+            echo "### Published to $repo (commit $GITHUB_SHA)"
+            echo '```'
+            cat SHA256SUMS
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

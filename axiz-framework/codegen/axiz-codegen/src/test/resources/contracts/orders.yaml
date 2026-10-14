@@ -1,0 +1,156 @@
+openapi: 3.1.0
+info:
+  title: Orders API
+  version: 1.0.0
+tags:
+  - name: orders
+paths:
+  /v1/orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: Lists orders
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - name: status
+          in: query
+          schema: {type: string}
+      responses:
+        '200':
+          description: Page of orders
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/OrderPage'}
+              example: {items: [], page: 0, size: 20, totalElements: 0}
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Creates an order
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateOrderRequest'}
+            example: {customerId: c-1, amount: 10.5, currency: PEN}
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Order'}
+              example: {id: o-1, customerId: c-1, amount: 10.5, currency: PEN, status: CREATED}
+        '422':
+          description: Business rule violated
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/orders/{orderId}:
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema: {type: string}
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Gets an order
+      responses:
+        '200':
+          description: The order
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Order'}
+              example: {id: o-1, customerId: c-1, amount: 10.5, currency: PEN, status: CREATED}
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+    delete:
+      operationId: cancelOrder
+      tags: [orders]
+      summary: Cancels an order
+      responses:
+        '204':
+          description: Cancelled
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/customers/{customerId}/orders:
+    get:
+      operationId: listCustomerOrders
+      tags: [customers]
+      summary: Orders of a customer
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema: {type: string}
+        - name: from
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        '200':
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/Order'}
+              example: []
+components:
+  parameters:
+    page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 0}
+    size:
+      name: size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 200}
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required: [customerId, amount, currency]
+      properties:
+        customerId: {type: string}
+        amount: {type: number}
+        currency: {type: string, pattern: '^[A-Z]{3}$'}
+    Order:
+      type: object
+      properties:
+        id: {type: string}
+        customerId: {type: string}
+        amount: {type: number}
+        currency: {type: string}
+        status: {type: string}
+    OrderPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Order'}
+        page: {type: integer}
+        size: {type: integer}
+        totalElements: {type: integer, format: int64}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}

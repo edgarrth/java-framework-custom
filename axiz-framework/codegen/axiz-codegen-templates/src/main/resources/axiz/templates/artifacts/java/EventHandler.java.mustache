@@ -1,0 +1,51 @@
+package {{project.basePackage}}.{{fw.handlerPackage}};
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import pe.axiz.core.messaging.EventEnvelope;
+{{#fw.eda}}
+import pe.axiz.framework.eda.HandlesEvent;
+import pe.axiz.framework.eda.TypedEventHandler;
+{{/fw.eda}}
+{{^fw.eda}}
+import pe.axiz.core.messaging.EventHandler;
+{{/fw.eda}}
+
+/**
+ * Reacts to {@code {{artifact.eventType}}}. Delivery is at least once: keep it idempotent (the
+ * inbox capability de-duplicates by event id); failures are retried and then dead-lettered.
+ */
+@Component
+{{#fw.eda}}
+@HandlesEvent("{{artifact.eventType}}")
+public class {{artifact.className}}Handler extends TypedEventHandler<{{artifact.className}}> {
+{{/fw.eda}}
+{{^fw.eda}}
+public class {{artifact.className}}Handler implements EventHandler<{{artifact.className}}> {
+{{/fw.eda}}
+
+  private static final Logger log = LoggerFactory.getLogger({{artifact.className}}Handler.class);
+{{^fw.eda}}
+
+  @Override
+  public String eventType() {
+    return "{{artifact.eventType}}";
+  }
+
+  @Override
+  public Class<{{artifact.className}}> payloadType() {
+    return {{artifact.className}}.class;
+  }
+{{/fw.eda}}
+
+  @Override
+{{#fw.eda}}
+  protected void on({{artifact.className}} payload, EventEnvelope envelope) {
+{{/fw.eda}}
+{{^fw.eda}}
+  public void handle({{artifact.className}} payload, EventEnvelope envelope) {
+{{/fw.eda}}
+    log.info("{{artifact.kebab}} received: id={} eventId={}", payload.id(), envelope.id());
+  }
+}

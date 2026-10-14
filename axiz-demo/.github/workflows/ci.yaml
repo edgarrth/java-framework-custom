@@ -1,0 +1,62 @@
+# CI of the demo repository: every service through the shared axiz pipeline (build, tests,
+# linters, contract checks, chart validation, image), plus the capability coverage check.
+# Each service folder also carries its own ci/cd workflows for when it lives in its own repository.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+  id-token: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr:
+    if: github.event_name == 'pull_request'
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    secrets: inherit
+
+  service:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {service: payments-experience, openapi: true}
+          - {service: payments-business, openapi: true}
+          - {service: beneficiaries-crud, openapi: true}
+          - {service: core-integration, openapi: true}
+          - {service: payment-process, openapi: true}
+          - {service: payments-history, openapi: true, asyncapi: true}
+          - {service: notifications-processor, openapi: false, asyncapi: true}
+          - {service: settlement-batch, openapi: false}
+    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1
+    with:
+      service: ${{ matrix.service }}
+      module: services/${{ matrix.service }}
+      openapi: ${{ matrix.openapi && format('services/{0}/src/main/openapi/openapi.yaml', matrix.service) || '' }}
+      asyncapi: ${{ matrix.asyncapi && format('services/{0}/src/main/asyncapi/asyncapi.yaml', matrix.service) || '' }}
+      chart: services/${{ matrix.service }}/deploy/helm/${{ matrix.service }}
+    secrets: inherit
+
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Capability coverage
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: ./mvnw -B -pl coverage verify

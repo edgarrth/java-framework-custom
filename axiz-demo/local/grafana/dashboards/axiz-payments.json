@@ -1,0 +1,270 @@
+{
+ "uid": "axiz-payments",
+ "title": "axiz \u00b7 payments (business)",
+ "description": "Business view of the demo from the axiz event metrics: orders, amounts, saga results, core and network, notifications and settlement.",
+ "tags": [
+  "axiz"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "refresh": "30s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "service",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "query": "label_values(target_info, job)",
+    "includeAll": true,
+    "multi": true,
+    "current": {
+     "text": "All",
+     "value": "$__all"
+    }
+   }
+  ]
+ },
+ "panels": [
+  {
+   "id": 1,
+   "type": "timeseries",
+   "title": "Payment orders created (per minute)",
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (stage) (rate(axiz_events_total{event=\"payment.order.created\"}[5m])) * 60",
+     "legendFormat": "{{stage}}"
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "type": "timeseries",
+   "title": "Amount paid per minute by currency",
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (currency) (rate(axiz_events_amount_sum{event=\"payment.order.created\"}[5m])) * 60",
+     "legendFormat": "{{currency}}"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "type": "barchart",
+   "title": "Payment processes by result",
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (outcome, stage) (increase(axiz_events_total{event=\"payment.process\"}[1h]))",
+     "legendFormat": "{{stage}}"
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "type": "barchart",
+   "title": "Saga compensations by step",
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (step) (increase(axiz_saga_compensations_total[1h]))",
+     "legendFormat": "{{step}}"
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "type": "timeseries",
+   "title": "Core movements and network transfers",
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (category) (rate(axiz_events_total{event=\"core.movement\"}[5m])) * 60",
+     "legendFormat": "core {{category}}"
+    },
+    {
+     "refId": "B",
+     "expr": "sum by (stage) (rate(axiz_events_total{event=\"network.transfer\"}[5m])) * 60",
+     "legendFormat": "network {{stage}}"
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "type": "barchart",
+   "title": "Channel rejections (beneficiaries, payments)",
+   "gridPos": {
+    "x": 12,
+    "y": 16,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (event, reason) (increase(axiz_events_total{outcome=\"rejected\"}[1h]))",
+     "legendFormat": "{{event}} {{reason}}"
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "type": "barchart",
+   "title": "Notifications sent by channel",
+   "gridPos": {
+    "x": 0,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (channel, stage) (increase(axiz_events_total{event=\"notification.payment\"}[1h]))",
+     "legendFormat": "{{channel}} {{stage}}"
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "type": "table",
+   "title": "Settlement file: lines and amounts",
+   "gridPos": {
+    "x": 12,
+    "y": 24,
+    "w": 12,
+    "h": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (stage) (axiz_events_value_sum{event=\"settlement.file\"})",
+     "legendFormat": "lines {{stage}}"
+    },
+    {
+     "refId": "B",
+     "expr": "sum by (currency, stage) (axiz_events_amount_sum{event=\"settlement.file\"})",
+     "legendFormat": "{{currency}} {{stage}}"
+    }
+   ]
+  }
+ ]
+}

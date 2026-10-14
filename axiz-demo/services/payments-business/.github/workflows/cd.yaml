@@ -1,0 +1,36 @@
+# Manual deployment of an image that CI already built and signed: promotion, redeploy or rollback.
+# The release is written to the GitOps repository and applied by Argo CD; prod still needs the
+# approval of the `prod` environment. Automatic deployments run from ci.yaml.
+name: cd
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [dev, qa, prod]
+        required: true
+      image-tag:
+        description: Image tag (the commit SHA built by CI)
+        type: string
+        required: true
+      image-digest:
+        description: Image digest (sha256:..., shown in the CI summary)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    with:
+      service: payments-business
+      environment: ${{ inputs.environment }}
+      chart: deploy/helm/payments-business
+      image-tag: ${{ inputs.image-tag }}
+      revision: ${{ inputs.image-tag }}
+      image-digest: ${{ inputs.image-digest }}
+    secrets: inherit

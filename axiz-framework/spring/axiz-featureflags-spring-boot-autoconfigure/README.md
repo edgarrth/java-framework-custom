@@ -1,0 +1,29 @@
+<!-- generated -->
+# axiz-featureflags-spring-boot-autoconfigure
+
+Feature flags from ConfigMap or Parameter Store exposed through OpenFeature (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-featureflags-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizFeatureFlagsAutoConfiguration` | Feature flags from configuration: activation by channel, tenant, attributes or percentage. |
+| `AxizFeatureFlagsProperties` | Feature flags (`axiz.feature-flags.flags.<name>`) from the service ConfigMap or Parameter Store (both reach the environment as properties). |
+| `AxizOpenFeatureAutoConfiguration` | Registers the axiz provider with OpenFeature and exposes a `Client`. |
+| `AxizOpenFeatureProvider` | OpenFeature provider backed by the configured flags. |
+| `FlagContexts` | Evaluation context of the current request: user (or client) as targeting key, channel, tenant. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-featureflags-spring-boot-autoconfigure verify`.

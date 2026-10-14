@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Credit service of the core banking system (simulated with WireMock). SOAP 1.1, document/literal,
+     WS-Security UsernameToken (digest). Called only by core-integration. -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="urn:core:credit:v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="urn:core:credit:v1" name="CoreCredit">
+  <types>
+    <xsd:schema targetNamespace="urn:core:credit:v1" elementFormDefault="qualified">
+      <xsd:element name="CreditRequest">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="account" type="xsd:string"/>
+          <xsd:element name="amount" type="xsd:decimal"/>
+          <xsd:element name="currency" type="xsd:string"/>
+          <xsd:element name="reference" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CreditResponse">
+        <xsd:complexType><xsd:sequence>
+          <xsd:element name="movementId" type="xsd:string"/>
+          <xsd:element name="status" type="xsd:string"/>
+        </xsd:sequence></xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </types>
+  <message name="CreditIn"><part name="body" element="tns:CreditRequest"/></message>
+  <message name="CreditOut"><part name="body" element="tns:CreditResponse"/></message>
+  <portType name="CreditPort">
+    <operation name="Credit"><input message="tns:CreditIn"/><output message="tns:CreditOut"/></operation>
+  </portType>
+  <binding name="CreditBinding" type="tns:CreditPort">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="Credit">
+      <soap:operation soapAction="urn:core:credit:v1:Credit"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+  <service name="CoreCreditService">
+    <port name="CreditPort" binding="tns:CreditBinding">
+      <soap:address location="http://core.example.internal/soap/credit"/>
+    </port>
+  </service>
+</definitions>

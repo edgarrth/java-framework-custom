@@ -1,0 +1,120 @@
+# axiz archetypes: the role of a service in the ecosystem and what it preselects.
+# The first framework, stack and persistence of each list is the default.
+# Layering of service archetypes: experience -> process -> business -> integration
+# (dependencies only go down, never up and never skipping to the channel).
+#
+#   frameworks   allowed architectural styles (layer 3)
+#   stacks       servlet | reactive (the framework must support it too)
+#   persistence  none | aurora | dynamodb (empty list: the archetype has no persistence)
+#   starters     capabilities always included (see capabilities.yaml)
+#   deployment   deployment (Kubernetes Deployment) | cronjob | none (platform archetypes)
+#   rest         exposes a REST API: an OpenAPI 3.1 contract is required
+#   properties   application.yaml defaults of the archetype (flat keys)
+archetypes:
+  - name: experience
+    role: Channel API (web, mobile, partners); adapts and aggregates, owns no domain
+    kind: service
+    frameworks: [bff]
+    stacks: [servlet, reactive]
+    persistence: []
+    starters: [foundation, web, errors, logging, observability, metrics, config, i18n, sensitive, security, http-client, resilience, cache]
+    deployment: deployment
+    rest: true
+    properties:
+      axiz.web.api-version.enabled: true
+      axiz.web.api-version.supported: ["1"]
+      axiz.bff.timeout: 3s
+
+  - name: business
+    role: Owner of a domain and its data; business rules
+    kind: service
+    frameworks: [hexagonal, cqrs, layered]
+    stacks: [servlet, reactive]
+    persistence: [aurora, dynamodb]
+    starters: [foundation, web, errors, logging, observability, metrics, config, i18n, sensitive, security, audit]
+    deployment: deployment
+    rest: true
+    properties: {}
+
+  - name: process
+    role: Orchestrates long-running processes across domains (sagas)
+    kind: service
+    frameworks: [hexagonal, cqrs]
+    stacks: [servlet]
+    persistence: [aurora]
+    starters: [foundation, web, errors, logging, observability, metrics, config, i18n, sensitive, security, saga, http-client, resilience]
+    deployment: deployment
+    rest: true
+    properties: {}
+
+  - name: integration
+    role: Anti-corruption layer in front of systems of record, legacy and third parties
+    kind: service
+    frameworks: [hexagonal, cqrs]
+    stacks: [servlet, reactive]
+    persistence: [none, dynamodb]
+    starters: [foundation, web, errors, logging, observability, metrics, config, i18n, sensitive, security, http-client, resilience, secrets]
+    deployment: deployment
+    rest: true
+    properties: {}
+
+  - name: event-processor
+    role: Consumes and reacts to events, without a public API
+    kind: service
+    frameworks: [eda]
+    stacks: [servlet, reactive]
+    persistence: [none, aurora, dynamodb]
+    starters: [foundation, web, errors, logging, observability, metrics, config, sensitive, messaging-kafka]
+    deployment: deployment
+    rest: false
+    properties:
+      axiz.messaging.consumer.max-attempts: 5
+      axiz.messaging.kafka.topics: [example-events]
+
+  - name: batch
+    role: File processing and reconciliations, run as a Kubernetes CronJob
+    kind: service
+    frameworks: [batch]
+    stacks: [servlet]
+    persistence: [aurora]
+    starters: [foundation, errors, logging, observability, metrics, config, storage-s3, audit]
+    deployment: cronjob
+    rest: false
+    properties:
+      spring.main.web-application-type: none
+      spring.batch.job.enabled: true
+      spring.batch.jdbc.initialize-schema: never
+      job.input-key: ${JOB_INPUT_KEY:in/input.csv}
+
+  - name: crud
+    role: Simple maintenance tables and catalogs
+    kind: service
+    frameworks: [layered]
+    stacks: [servlet]
+    persistence: [aurora, dynamodb]
+    starters: [foundation, web, errors, logging, observability, metrics, config, i18n, sensitive, security]
+    deployment: deployment
+    rest: true
+    properties: {}
+
+  - name: library
+    role: Plain Java library for the ecosystem (layer 1 rules apply)
+    kind: library
+    frameworks: [none]
+    stacks: [servlet]
+    persistence: []
+    starters: []
+    deployment: none
+    rest: false
+    properties: {}
+
+  - name: starter
+    role: New axiz capability (layer 1 library + layer 2 Spring Boot starter)
+    kind: starter
+    frameworks: [none]
+    stacks: [servlet]
+    persistence: []
+    starters: []
+    deployment: none
+    rest: false
+    properties: {}

@@ -1,0 +1,38 @@
+package {{project.basePackage}}.handler;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Map;
+import org.junit.jupiter.api.Test;
+import pe.axiz.core.messaging.EventEnvelope;
+import {{project.basePackage}}.event.ExampleCreated;
+
+class ExampleCreatedHandlerTest {
+
+  private final ExampleCreatedHandler handler = new ExampleCreatedHandler();
+
+  @Test
+  void declaresTypeAndPayload() {
+    assertThat(handler.eventType()).isEqualTo("{{project.groupId}}.example.created.v1");
+    assertThat(handler.payloadType()).isEqualTo(ExampleCreated.class);
+  }
+
+  @Test
+  void handlesTheEvent() {
+    EventEnvelope envelope =
+        new EventEnvelope(
+            "evt-1",
+            "urn:axiz:test",
+            handler.eventType(),
+            Instant.parse("2026-01-01T00:00:00Z"),
+            null,
+            "application/json",
+            "{}".getBytes(StandardCharsets.UTF_8),
+            Map.of());
+    assertThatCode(() -> handler.handle(new ExampleCreated("1", "first"), envelope))
+        .doesNotThrowAnyException();
+  }
+}

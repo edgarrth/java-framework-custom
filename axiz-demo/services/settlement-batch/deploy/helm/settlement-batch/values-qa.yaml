@@ -1,0 +1,29 @@
+# settlement-batch in qa
+environment: qa
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/settlement-batch-qa
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+
+externalSecret:
+  remotePrefix: qa/settlement-batch
+
+# Environment values (no secrets: those come from the ExternalSecret). Business calendar
+# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
+config:
+  axiz.config.environment: qa
+  management.tracing.sampling.probability: '1.0'
+  axiz.storage.bucket: axiz-demo-settlement-qa
+  spring.datasource.url: jdbc:aws-wrapper:postgresql://payments-qa.cluster-demo.us-east-1.rds.amazonaws.com:5432/settlement_batch
+  spring.datasource.username: settlement-batch-app
+  axiz.jpa.aws-wrapper.enabled: true
+  axiz.jpa.aws-wrapper.iam: true
+
+errors: []

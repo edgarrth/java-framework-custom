@@ -1,0 +1,84 @@
+package {{project.basePackage}}.job;
+
+import java.nio.charset.StandardCharsets;
+import javax.sql.DataSource;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.parameters.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.Step;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.infrastructure.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.infrastructure.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.transaction.PlatformTransactionManager;
+import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.framework.batch.CsvRecordReader;
+import pe.axiz.framework.batch.spring.StorageRecordItemReader;
+
+/**
+ * The {@code {{project.name}}} job: loads the input file from S3 into Aurora in chunks. The reader
+ * saves its position in the step context, so a failed run restarts after the last committed chunk;
+ * the insert ignores references already loaded, so reprocessing is idempotent. Job metrics, audit
+ * and the summary line are added by the batch starter.
+ */
+@Configuration(proxyBeanMethods = false)
+public class {{project.className}}JobConfiguration {
+
+  static final int CHUNK_SIZE = 500;
+
+  @Bean
+  Job {{project.camelName}}Job(JobRepository jobRepository, Step loadStep) {
+    return new JobBuilder("{{project.name}}", jobRepository)
+        .incrementer(new RunIdIncrementer())
+        .start(loadStep)
+        .build();
+  }
+
+  @Bean
+  Step loadStep(
+      JobRepository jobRepository,
+      PlatformTransactionManager transactionManager,
+      StorageRecordItemReader<InputLine> inputReader,
+      InputLineProcessor processor,
+      JdbcBatchItemWriter<InputLine> inputWriter) {
+    return new StepBuilder("load", jobRepository)
+        .<InputLine, InputLine>chunk(CHUNK_SIZE)
+        .reader(inputReader)
+        .processor(processor)
+        .writer(inputWriter)
+        .transactionManager(transactionManager)
+        .build();
+  }
+
+  @Bean
+  StorageRecordItemReader<InputLine> inputReader(
+      ObjectStorage storage, @Value("${job.input-key:in/input.csv}") String inputKey) {
+    return new StorageRecordItemReader<>(
+        "inputReader",
+        storage,
+        inputKey,
+        in ->
+            new CsvRecordReader<>(
+                in, StandardCharsets.UTF_8, ';', true, f -> new InputLine(f.get(0), f.get(1))));
+  }
+
+  @Bean
+  JdbcBatchItemWriter<InputLine> inputWriter(DataSource dataSource) {
+    return new JdbcBatchItemWriterBuilder<InputLine>()
+        .dataSource(dataSource)
+        .sql(
+            "INSERT INTO input_line (reference, line_value) VALUES (:reference, :value)"
+                + " ON CONFLICT (reference) DO NOTHING")
+        .itemSqlParameterSourceProvider(
+            line ->
+                new MapSqlParameterSource()
+                    .addValue("reference", line.reference())
+                    .addValue("value", line.value()))
+        .assertUpdates(false)
+        .build();
+  }
+}

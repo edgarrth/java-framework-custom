@@ -1,0 +1,10 @@
+package {{project.basePackage}}.application.command;
+
+import pe.axiz.framework.cqrs.Command;
+
+/**
+ * {{artifact.title}}.
+ *
+ * @param id identifier of the target
+ */
+public record {{artifact.className}}Command(String id) implements Command<String> {}

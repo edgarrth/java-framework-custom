@@ -1,0 +1,25 @@
+<!-- generated -->
+# axiz-core-idempotency-redis
+
+Idempotency store on Redis (ElastiCache).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-idempotency-redis</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `RedisIdempotencyStore` | Idempotency store on Redis/Valkey: `SET NX PX` to start; completion and release run as Lua scripts that check, in the same atomic step, that the record is still IN_PROGRESS and held by the caller's owner token. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-idempotency-redis verify`.

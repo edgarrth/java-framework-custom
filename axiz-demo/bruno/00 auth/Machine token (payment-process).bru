@@ -1,0 +1,25 @@
+meta {
+  name: Machine token (payment-process)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{keycloak}}/realms/axiz/protocol/openid-connect/token
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  grant_type: client_credentials
+  client_id: payment-process
+  client_secret: {{clientSecret}}
+}
+
+script:post-response {
+  bru.setVar("m2mToken", res.body.access_token);
+}
+
+tests {
+  test("status 200", function () { expect(res.status).to.equal(200); });
+}

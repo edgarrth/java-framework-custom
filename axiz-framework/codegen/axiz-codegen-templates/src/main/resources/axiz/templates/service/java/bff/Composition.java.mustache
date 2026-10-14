@@ -1,0 +1,50 @@
+package {{project.basePackage}}.composition;
+
+{{#item.usesList}}
+import java.util.List;
+{{/item.usesList}}
+{{#item.usesNullable}}
+import org.jspecify.annotations.Nullable;
+{{/item.usesNullable}}
+import org.springframework.stereotype.Component;
+{{#item.usesPaging}}
+import pe.axiz.core.commons.PageRequest;
+{{/item.usesPaging}}
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+{{#stack.reactive}}
+import reactor.core.publisher.Mono;
+{{/stack.reactive}}
+{{#item.models}}
+import {{item.modelPackage}}.{{name}};
+{{/item.models}}
+
+/**
+ * Compositions of the {@code {{item.name}}} channel operations: each one calls downstream services
+{{#stack.servlet}}
+ * in parallel with {@code Compositions#compose()} (virtual threads, one deadline, required and
+ * optional parts) and adapts the result to the channel contract.
+{{/stack.servlet}}
+{{#stack.reactive}}
+ * with {@code ReactiveComposer} (one deadline, required and optional parts) and adapts the result
+ * to the channel contract.
+{{/stack.reactive}}
+ */
+@Component
+public class {{item.className}}Composition {
+{{#item.operations}}
+
+  /** {{summary}}. */
+{{#stack.servlet}}
+  public {{returnType}} {{methodName}}({{{inputComponents}}}) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet");
+  }
+{{/stack.servlet}}
+{{#stack.reactive}}
+  public Mono<{{responseType}}> {{methodName}}({{{inputComponents}}}) {
+    return Mono.error(
+        new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet"));
+  }
+{{/stack.reactive}}
+{{/item.operations}}
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "axiz demo",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

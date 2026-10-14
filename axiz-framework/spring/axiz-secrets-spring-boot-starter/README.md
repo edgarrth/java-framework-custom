@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-secrets-spring-boot-starter
+
+SecretResolver over mounted files, environment and AWS Secrets Manager / Parameter Store.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-secrets-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

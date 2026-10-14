@@ -1,0 +1,19 @@
+# Releases with release-please (shared axiz workflow): merging the release pull request creates the
+# tag v<x.y.z>, which runs ci.yaml to publish the release (Nexus, binaries, prod).
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    uses: axiz/axiz-workflows/.github/workflows/release.yaml@v1
+    secrets: inherit

@@ -1,0 +1,98 @@
+package {{project.basePackage}};
+
+{{#fw.batch}}
+import static org.assertj.core.api.Assertions.assertThat;
+{{/fw.batch}}
+{{#caps.web}}
+{{#stack.servlet}}
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+{{/stack.servlet}}
+{{/caps.web}}
+
+import org.junit.jupiter.api.Test;
+{{#stack.reactive}}
+import org.junit.jupiter.api.extension.ExtendWith;
+{{/stack.reactive}}
+{{#fw.batch}}
+import org.springframework.batch.core.job.Job;
+{{/fw.batch}}
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+{{#caps.web}}
+{{#stack.servlet}}
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+{{/stack.reactive}}
+{{/caps.web}}
+{{#infra.any}}
+import org.springframework.context.annotation.Import;
+{{/infra.any}}
+{{#caps.web}}
+{{#stack.servlet}}
+import org.springframework.test.web.servlet.MockMvc;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.test.web.reactive.server.WebTestClient;
+{{/stack.reactive}}
+{{/caps.web}}
+{{#stack.reactive}}
+import pe.axiz.spring.test.BlockHoundExtension;
+{{/stack.reactive}}
+{{#infra.kafka}}
+import pe.axiz.spring.test.KafkaTestConfiguration;
+{{/infra.kafka}}
+{{#infra.localstack}}
+import pe.axiz.spring.test.LocalStackTestConfiguration;
+{{/infra.localstack}}
+{{#infra.postgres}}
+import pe.axiz.spring.test.PostgresTestConfiguration;
+{{/infra.postgres}}
+{{#infra.redis}}
+import pe.axiz.spring.test.RedisTestConfiguration;
+{{/infra.redis}}
+
+/**
+ * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
+ * configuration, migrations and health. Needs Docker.
+ */
+@SpringBootTest{{#fw.batch}}(properties = "spring.batch.job.enabled=false"){{/fw.batch}}
+{{#caps.web}}
+{{#stack.servlet}}
+@AutoConfigureMockMvc
+{{/stack.servlet}}
+{{#stack.reactive}}
+@AutoConfigureWebTestClient
+{{/stack.reactive}}
+{{/caps.web}}
+{{#infra.any}}
+@Import({{infra.importList}})
+{{/infra.any}}
+{{#stack.reactive}}
+@ExtendWith(BlockHoundExtension.class)
+{{/stack.reactive}}
+class {{project.className}}ApplicationTest {
+
+{{#caps.web}}
+{{#stack.servlet}}
+  @Test
+  void startsAndReportsHealth(@Autowired MockMvc mvc) throws Exception {
+    mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+  }
+{{/stack.servlet}}
+{{#stack.reactive}}
+  @Test
+  void startsAndReportsHealth(@Autowired WebTestClient client) {
+    client.get().uri("/actuator/health").exchange().expectStatus().isOk();
+  }
+{{/stack.reactive}}
+{{/caps.web}}
+{{#fw.batch}}
+  @Test
+  void definesTheJob(@Autowired Job {{project.camelName}}Job) {
+    assertThat({{project.camelName}}Job.getName()).isEqualTo("{{project.name}}");
+  }
+{{/fw.batch}}
+}

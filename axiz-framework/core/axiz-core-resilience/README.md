@@ -1,0 +1,29 @@
+<!-- generated -->
+# axiz-core-resilience
+
+Retry policies with backoff and jitter, idempotency-aware retry decisions and timeouts.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-resilience</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `Backoff` | Exponential backoff with full jitter: `random(0, min(maxDelay, initial * multiplier^n))`. |
+| `Retry` | Executes an operation with a retry policy. |
+| `RetryDecider` | Decides whether a failed call may be repeated. |
+| `RetryPolicy` | How an operation is retried. |
+| `TimeoutSettings` | Timeouts that every outbound client must define (there is no "infinite" default). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-resilience verify`.

@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Payment process
+  version: 1.0.0
+  description: Orchestrates the payment saga (reserve funds, send to the network, confirm or compensate).
+tags:
+  - name: payment-processes
+paths:
+  /v1/payment-processes:
+    post:
+      operationId: startPaymentProcess
+      tags: [payment-processes]
+      summary: Starts the payment saga of an order
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ProcessRequest'}
+            example: {paymentOrderId: 0190a1b2-0000-7000-8000-000000000001, operationNumber: OP20261011-00000001, debtorAccount: '1910012345678', creditorCci: '00219100123456789053', amount: 150.75, currency: PEN}
+      responses:
+        '201':
+          description: Finished (completed or compensated)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProcessView'}
+              example: {processId: 0190a1b2-0000-7000-8000-000000000001, status: COMPLETED, failedStep: null}
+        '422':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/payment-processes/{processId}:
+    get:
+      operationId: getPaymentProcess
+      tags: [payment-processes]
+      summary: State of a payment saga
+      parameters:
+        - {name: processId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The process
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ProcessView'}
+              example: {processId: 0190a1b2-0000-7000-8000-000000000001, status: COMPLETED, failedStep: null}
+        '404':
+          description: Unknown process
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+components:
+  schemas:
+    ProcessRequest:
+      type: object
+      required: [paymentOrderId, operationNumber, debtorAccount, creditorCci, amount, currency]
+      properties:
+        paymentOrderId: {type: string}
+        operationNumber: {type: string}
+        debtorAccount: {type: string, pattern: '^[0-9]{10,20}$'}
+        creditorCci: {type: string, pattern: '^[0-9]{20}$'}
+        amount: {type: number, minimum: 0.01}
+        currency: {type: string, pattern: '^(PEN|USD)$'}
+    ProcessView:
+      type: object
+      properties:
+        processId: {type: string}
+        status: {type: string}
+        failedStep: {type: string}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        code: {type: string}
+

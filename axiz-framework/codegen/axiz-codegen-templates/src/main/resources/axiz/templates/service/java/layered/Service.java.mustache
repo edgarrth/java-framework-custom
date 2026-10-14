@@ -1,0 +1,43 @@
+package {{project.basePackage}}.service;
+
+{{#item.usesList}}
+import java.util.List;
+{{/item.usesList}}
+{{#item.usesNullable}}
+import org.jspecify.annotations.Nullable;
+{{/item.usesNullable}}
+import org.springframework.stereotype.Service;
+{{#persistence.aurora}}
+import org.springframework.transaction.annotation.Transactional;
+{{/persistence.aurora}}
+{{#item.usesPaging}}
+import pe.axiz.core.commons.PageRequest;
+{{/item.usesPaging}}
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+{{#item.models}}
+import {{item.modelPackage}}.{{name}};
+{{/item.models}}
+
+/**
+ * Business operations of {@code {{item.name}}}. Simple resources can extend {@code JpaCrudService}
+ * (layered starter) instead of writing each operation.
+ */
+@Service
+{{#persistence.aurora}}
+@Transactional
+{{/persistence.aurora}}
+public class {{item.className}}Service {
+{{#item.operations}}
+
+  /** {{summary}}. */
+{{#persistence.aurora}}
+{{#readOnly}}
+  @Transactional(readOnly = true)
+{{/readOnly}}
+{{/persistence.aurora}}
+  public {{returnType}} {{methodName}}({{{inputComponents}}}) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet");
+  }
+{{/item.operations}}
+}

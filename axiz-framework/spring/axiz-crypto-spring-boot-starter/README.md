@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-crypto-spring-boot-starter
+
+Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-crypto-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

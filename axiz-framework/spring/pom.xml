@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Aggregator only (generated list of modules); it is never deployed. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-spring-aggregator</artifactId>
+  <packaging>pom</packaging>
+  <name>axiz :: spring</name>
+
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+    <maven.install.skip>true</maven.install.skip>
+  </properties>
+
+  <modules>
+    <module>axiz-audit-spring-boot-autoconfigure</module>
+    <module>axiz-audit-spring-boot-starter</module>
+    <module>axiz-cache-spring-boot-autoconfigure</module>
+    <module>axiz-cache-spring-boot-starter</module>
+    <module>axiz-config-spring-boot-autoconfigure</module>
+    <module>axiz-config-spring-boot-starter</module>
+    <module>axiz-crypto-spring-boot-autoconfigure</module>
+    <module>axiz-crypto-spring-boot-starter</module>
+    <module>axiz-dynamodb-spring-boot-autoconfigure</module>
+    <module>axiz-dynamodb-spring-boot-starter</module>
+    <module>axiz-errors-spring-boot-autoconfigure</module>
+    <module>axiz-errors-spring-boot-starter</module>
+    <module>axiz-featureflags-spring-boot-autoconfigure</module>
+    <module>axiz-featureflags-spring-boot-starter</module>
+    <module>axiz-foundation-spring-boot-autoconfigure</module>
+    <module>axiz-foundation-spring-boot-starter</module>
+    <module>axiz-http-client-spring-boot-autoconfigure</module>
+    <module>axiz-http-client-spring-boot-starter</module>
+    <module>axiz-i18n-spring-boot-autoconfigure</module>
+    <module>axiz-i18n-spring-boot-starter</module>
+    <module>axiz-idempotency-spring-boot-autoconfigure</module>
+    <module>axiz-idempotency-spring-boot-starter</module>
+    <module>axiz-inbox-spring-boot-autoconfigure</module>
+    <module>axiz-inbox-spring-boot-starter</module>
+    <module>axiz-jpa-spring-boot-autoconfigure</module>
+    <module>axiz-jpa-spring-boot-starter</module>
+    <module>axiz-lock-spring-boot-autoconfigure</module>
+    <module>axiz-lock-spring-boot-starter</module>
+    <module>axiz-logging-spring-boot-autoconfigure</module>
+    <module>axiz-logging-spring-boot-starter</module>
+    <module>axiz-messaging-spring-boot-autoconfigure</module>
+    <module>axiz-messaging-spring-boot-starter</module>
+    <module>axiz-metrics-spring-boot-autoconfigure</module>
+    <module>axiz-metrics-spring-boot-starter</module>
+    <module>axiz-notification-spring-boot-autoconfigure</module>
+    <module>axiz-notification-spring-boot-starter</module>
+    <module>axiz-observability-spring-boot-autoconfigure</module>
+    <module>axiz-observability-spring-boot-starter</module>
+    <module>axiz-outbox-spring-boot-autoconfigure</module>
+    <module>axiz-outbox-spring-boot-starter</module>
+    <module>axiz-r2dbc-spring-boot-autoconfigure</module>
+    <module>axiz-r2dbc-spring-boot-starter</module>
+    <module>axiz-resilience-spring-boot-autoconfigure</module>
+    <module>axiz-resilience-spring-boot-starter</module>
+    <module>axiz-saga-spring-boot-autoconfigure</module>
+    <module>axiz-saga-spring-boot-starter</module>
+    <module>axiz-scheduling-spring-boot-autoconfigure</module>
+    <module>axiz-scheduling-spring-boot-starter</module>
+    <module>axiz-secrets-spring-boot-autoconfigure</module>
+    <module>axiz-secrets-spring-boot-starter</module>
+    <module>axiz-security-spring-boot-autoconfigure</module>
+    <module>axiz-security-spring-boot-starter</module>
+    <module>axiz-sensitive-spring-boot-autoconfigure</module>
+    <module>axiz-sensitive-spring-boot-starter</module>
+    <module>axiz-sequence-spring-boot-autoconfigure</module>
+    <module>axiz-sequence-spring-boot-starter</module>
+    <module>axiz-soap-spring-boot-autoconfigure</module>
+    <module>axiz-soap-spring-boot-starter</module>
+    <module>axiz-storage-spring-boot-autoconfigure</module>
+    <module>axiz-storage-spring-boot-starter</module>
+    <module>axiz-tenancy-spring-boot-autoconfigure</module>
+    <module>axiz-tenancy-spring-boot-starter</module>
+    <module>axiz-test-spring-boot-starter</module>
+    <module>axiz-web-spring-boot-autoconfigure</module>
+    <module>axiz-web-spring-boot-starter</module>
+  </modules>
+</project>

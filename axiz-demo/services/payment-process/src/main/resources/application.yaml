@@ -1,0 +1,113 @@
+# Payment Process: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, payment-process and payment-process-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+spring:
+  application:
+    name: payment-process
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/app}
+    username: ${DB_USERNAME:app}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  messaging:
+    type-prefix: pe.axiz.payments.
+    kafka:
+      iam: ${AXIZ_KAFKA_IAM:false}
+      topics:
+      - payments
+      group-id: payment-process
+  foundation:
+    zone: America/Lima
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - ${spring.application.name}
+  jpa:
+    aws-wrapper:
+      enabled: ${AXIZ_JPA_AWS_WRAPPER:false}
+      iam: ${AXIZ_JPA_IAM:false}
+  saga:
+    step-attempts: 3
+  resilience:
+    defaults:
+      timeouts:
+        total: 15s
+  tenancy:
+    enabled: true
+  scheduling:
+    default-lock-at-most-for: 10m
+  http-client:
+    clients:
+      payments-business:
+        base-url: ${PAYMENTS_BUSINESS_BASE_URL:http://localhost:8081}
+        read-timeout: 5s
+        total-timeout: 12s
+        auth:
+          type: CLIENT_CREDENTIALS
+          token-uri: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}/protocol/openid-connect/token
+          client-id: ${PAYMENT_PROCESS_CLIENT_ID:payment-process}
+          client-secret-ref: payment-process-client-secret
+      core-integration:
+        base-url: ${CORE_INTEGRATION_BASE_URL:http://localhost:8083}
+        read-timeout: 5s
+        total-timeout: 12s
+        auth:
+          type: CLIENT_CREDENTIALS
+          token-uri: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}/protocol/openid-connect/token
+          client-id: ${PAYMENT_PROCESS_CLIENT_ID:payment-process}
+          client-secret-ref: payment-process-client-secret
+  secrets:
+    directory: /var/run/secrets/axiz
+management:
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+payments:
+  process:
+    recovery-interval: 60s

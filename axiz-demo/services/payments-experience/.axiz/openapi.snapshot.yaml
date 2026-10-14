@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Payments channel API
+  version: 1.0.0
+  description: Payments API for the web and mobile channels of the demo.
+tags:
+  - name: payments
+  - name: beneficiaries
+paths:
+  /v1/payments:
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Pays a frequent beneficiary
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PaymentRequest'}
+            example: {beneficiaryId: B-01, debtorAccount: '1910012345678', amount: 150.75, currency: PEN, description: Rent}
+      responses:
+        '201':
+          description: Payment registered
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaymentView'}
+              example: {paymentId: 0190a1b2-0000-7000-8000-000000000001, operationNumber: OP20261011-00000001, status: RECEIVED, amount: 150.75, currency: PEN, beneficiaryAlias: Landlord, creditorCci: '****************9053', processingDate: '2026-10-12'}
+        '422':
+          description: The payment cannot be made
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/payments/{paymentId}:
+    get:
+      operationId: getPayment
+      tags: [payments]
+      summary: A payment with its beneficiary
+      parameters:
+        - {name: paymentId, in: path, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: The payment
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaymentView'}
+              example: {paymentId: 0190a1b2-0000-7000-8000-000000000001, operationNumber: OP20261011-00000001, status: COMPLETED, amount: 150.75, currency: PEN, beneficiaryAlias: Landlord, creditorCci: '****************9053', processingDate: '2026-10-12'}
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/beneficiaries:
+    get:
+      operationId: listMyBeneficiaries
+      tags: [beneficiaries]
+      summary: Frequent beneficiaries of the signed-in customer
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+      responses:
+        '200':
+          description: Beneficiaries
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BeneficiaryList'}
+              example: {items: [{id: B-01, alias: Landlord, holderName: A** T*****, creditorCci: '****************9053', currency: PEN}], nextCursor: null}
+        '401':
+          description: Not authenticated
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+components:
+  schemas:
+    PaymentRequest:
+      type: object
+      required: [beneficiaryId, debtorAccount, amount, currency]
+      properties:
+        beneficiaryId: {type: string}
+        debtorAccount: {type: string, pattern: '^[0-9]{10,20}$'}
+        amount: {type: number, minimum: 0.01}
+        currency: {type: string, pattern: '^(PEN|USD)$'}
+        description: {type: string, maxLength: 140}
+    PaymentView:
+      type: object
+      properties:
+        paymentId: {type: string}
+        operationNumber: {type: string}
+        status: {type: string}
+        amount: {type: number}
+        currency: {type: string}
+        beneficiaryAlias: {type: string}
+        creditorCci: {type: string}
+        processingDate: {type: string, format: date}
+    BeneficiaryView:
+      type: object
+      properties:
+        id: {type: string}
+        alias: {type: string}
+        holderName: {type: string}
+        creditorCci: {type: string}
+        currency: {type: string}
+    BeneficiaryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/BeneficiaryView'}
+        nextCursor: {type: string}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        code: {type: string}
+

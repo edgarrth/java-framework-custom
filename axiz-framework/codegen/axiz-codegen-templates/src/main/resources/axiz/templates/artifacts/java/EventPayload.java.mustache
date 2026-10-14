@@ -1,0 +1,8 @@
+package {{project.basePackage}}.{{fw.handlerPackage}};
+
+/**
+ * Payload of the {@code {{artifact.eventType}}} event consumed by this service.
+ *
+ * @param id identifier of the resource the event is about
+ */
+public record {{artifact.className}}(String id) {}

@@ -1,0 +1,57 @@
+# One Argo CD Application per file environments/<env>/<service>.yaml of the GitOps repository
+# (written by the service-cd workflow). The chart comes from the service repository at the exact
+# commit that was built; values.yaml + values-<env>.yaml come from the same commit, and the image
+# tag and digest from the GitOps file. Rollback = revert the commit in the GitOps repository.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: axiz-services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/axiz/axiz-gitops
+        revision: main
+        files:
+          - path: "environments/*/*.yaml"
+  template:
+    metadata:
+      name: "{{ .service }}-{{ .environment }}"
+      labels:
+        axiz.pe/service: "{{ .service }}"
+        axiz.pe/environment: "{{ .environment }}"
+    spec:
+      project: axiz-services
+      source:
+        repoURL: "{{ .source.repoURL }}"
+        targetRevision: "{{ .source.revision }}"
+        path: "{{ .source.chart }}"
+        helm:
+          releaseName: "{{ .service }}"
+          valueFiles:
+            - values.yaml
+            - "values-{{ .environment }}.yaml"
+          parameters:
+            - name: image.tag
+              value: "{{ .image.tag }}"
+            - name: image.digest
+              value: "{{ .image.digest }}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "axiz-{{ .environment }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+          - PrunePropagationPolicy=foreground
+        retry:
+          limit: 3
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+      revisionHistoryLimit: 10

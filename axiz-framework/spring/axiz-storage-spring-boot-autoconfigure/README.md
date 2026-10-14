@@ -1,0 +1,27 @@
+<!-- generated -->
+# axiz-storage-spring-boot-autoconfigure
+
+Object storage on Amazon S3 with SSE-KMS and presigned URLs (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-storage-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizStorageAutoConfiguration` | In-memory storage for tests and local runs (`axiz.storage.type=memory`). |
+| `AxizStorageProperties` | Object storage (`axiz.storage.*`). |
+| `AxizStorageS3AutoConfiguration` | Amazon S3 storage: streaming upload/download, SSE-KMS, presigned URLs with bounded validity. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-storage-spring-boot-autoconfigure verify`.

@@ -1,0 +1,36 @@
+<!-- generated -->
+# axiz-core-domain
+
+DDD building blocks: aggregate root, entity, value object, domain events, typed ids, common value objects.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-domain</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AggregateRoot` | Aggregate root: consistency boundary that records domain events while it changes. |
+| `DomainErrors` | Errors raised by the domain building blocks. |
+| `DomainEvent` | Something that happened in the domain. |
+| `EmailAddress` | Validated, normalized (lowercase) email address. |
+| `Entity` | Domain entity with identity. |
+| `EventTypes` | Event type naming helpers. |
+| `PersonalDocument` | Identity document of a person or company (DNI, RUC or foreigner card). |
+| `PhoneNumber` | Phone number in E.164 format. |
+| `Rules` | Guard clauses for aggregates that raise business errors from the catalog. |
+| `Specification` | Business rule over a candidate, composable with `and`, `or` and `not`. |
+| `TypedId` | Typed identifier backed by a UUID, implemented by records:. |
+| `ValueObject` | Marker for immutable value objects compared by value (normally records). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-domain verify`.

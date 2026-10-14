@@ -1,0 +1,25 @@
+meta {
+  name: Reverse the debit
+  type: http
+  seq: 17
+}
+
+post {
+  url: {{core}}/v1/debits/{{movementId}}/reversal
+  body: none
+  auth: bearer
+}
+
+script:pre-request {
+  // a new key per run; repeat the request with the same key to see the stored response replayed
+  req.setHeader("Idempotency-Key", `bruno-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+auth:bearer {
+  token: {{m2mToken}}
+}
+
+tests {
+  test("status 201", function () { expect(res.status).to.equal(201); });
+  test("reversed", function () { expect(res.body.status).to.equal("REVERSED"); });
+}

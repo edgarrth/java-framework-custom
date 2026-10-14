@@ -1,0 +1,38 @@
+package {{project.basePackage}}.{{fw.repositoryPackage}};
+
+import java.util.Optional;
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Repository;
+import pe.axiz.core.commons.Page;
+import pe.axiz.core.persistence.dynamodb.DynamoRepository;
+import pe.axiz.spring.dynamodb.DynamoRepositories;
+{{#fw.layered}}
+import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Item;
+{{/fw.layered}}
+
+/** Data access of {@link {{artifact.className}}Item} (table {@code <prefix>{{artifact.plural}}}). */
+@Repository
+public class {{artifact.className}}Repository {
+
+  private final DynamoRepository<{{artifact.className}}Item> items;
+
+  public {{artifact.className}}Repository(DynamoRepositories repositories) {
+    this.items = repositories.create("{{artifact.plural}}", {{artifact.className}}Item.class);
+  }
+
+  public Optional<{{artifact.className}}Item> findById(String id) {
+    return items.findById(id);
+  }
+
+  public void save({{artifact.className}}Item item) {
+    items.save(item);
+  }
+
+  public void delete(String id) {
+    items.delete(id);
+  }
+
+  public Page<{{artifact.className}}Item> byPartition(String partitionKey, int limit, @Nullable String cursor) {
+    return items.query(partitionKey, limit, cursor);
+  }
+}

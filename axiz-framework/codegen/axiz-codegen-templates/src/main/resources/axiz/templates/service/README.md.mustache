@@ -1,0 +1,125 @@
+# {{project.title}}
+
+{{project.description}}.
+
+| | |
+|---|---|
+| Archetype | `{{archetype.name}}`: {{archetype.role}} |
+| Style | `{{fw.id}}` |
+| Stack | `{{stack.id}}` |
+| Persistence | `{{persistence.id}}` |
+| axiz | `{{axizVersion}}` |
+| Base package | `{{project.basePackage}}` |
+
+## Requirements
+
+- JDK 25 (Maven comes with the wrapper `./mvnw`)
+- Docker, for `docker compose` and the Testcontainers tests
+- Access to the Nexus repository that publishes axiz
+
+## Build and test
+
+```bash
+./mvnw verify                 # format check, Checkstyle, Error Prone + NullAway, tests, coverage
+./mvnw spotless:apply         # formats code and pom
+./mvnw -Pquality verify       # also SpotBugs/FindSecBugs and coverage thresholds
+./mvnw -Pnative native:compile  # GraalVM native image
+```
+
+`ArchitectureTest` enforces the rules of the `{{fw.id}}` style and the general axiz rules;
+`{{project.className}}ApplicationTest` starts the service against real dependencies in containers.
+{{#hasExamples}}
+`ContractExamplesTest` checks that every request example of the contract is a valid request.
+{{/hasExamples}}
+
+## Run locally
+
+```bash
+local/dev-secrets.sh       # random development-only secrets in local/secrets (git-ignored)
+docker compose up -d
+{{#infra.localstack}}
+export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack, not real credentials
+{{/infra.localstack}}
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+```
+
+Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
+http://localhost:3000 (OpenTelemetry collector on ports 4317/4318).
+{{#infra.keycloak}}
+Keycloak (http://localhost:8180, realm `axiz`) issues local tokens:
+
+```bash
+curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
+  http://localhost:8180/realms/axiz/protocol/openid-connect/token
+```
+{{/infra.keycloak}}
+{{#api.present}}
+
+## Contract first
+
+`src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
+build time into `{{project.basePackage}}.api.model` (never versioned). Controllers were generated once
+as skeletons that answer `501 Not Implemented` until each operation is implemented.
+
+- `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
+  changes against the previous version (openapi-diff).
+- Lint the contract with the axiz Spectral ruleset before publishing it.
+
+| Operation | Method | Path |
+|---|---|---|
+{{#operations}}
+| `{{operationId}}` | {{httpMethod}} | `{{path}}` |
+{{/operations}}
+{{/api.present}}
+
+## Structure
+
+{{#fw.packages}}
+- `{{project.basePackage}}.{{name}}`: {{description}}
+{{/fw.packages}}
+
+## Capabilities
+
+| Capability | Starter | What it brings |
+|---|---|---|
+{{#capabilities}}
+| `{{name}}` | `{{starter}}` | {{description}} |
+{{/capabilities}}
+
+Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
+usage example.
+
+## Configuration
+
+- `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
+  `{{project.name}}` and `{{project.name}}-errors`, read by Spring Cloud Kubernetes
+  (`deploy/helm/{{project.name}}/values-<env>.yaml`, keys `config` and `errors`).
+- Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
+  the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
+- AWS access uses the pod identity (IRSA or EKS Pod Identity); there are no AWS keys anywhere.
+{{#config.hasConfigMapKeys}}
+
+Keys each environment must define:
+
+{{#config.configMapKeys}}
+- `{{.}}`
+{{/config.configMapKeys}}
+{{/config.hasConfigMapKeys}}
+
+## Deployment
+
+`deploy/helm/{{project.name}}` contains the chart: {{#archetype.deployment}}Deployment with probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
+ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
+The pipelines in `.github/workflows` call the shared axiz workflows (`@v1`):
+
+- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
+  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
+  to prod after the approval of the `prod` environment.
+- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
+  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
+- `release.yaml`: release-please keeps a release pull request with the next version and the
+  changelog; merging it creates the tag.
+
+## Decisions
+
+Architecture decisions are recorded in `docs` (see `docs/template.md`).

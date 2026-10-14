@@ -1,0 +1,25 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
+schema: 1
+name: {{project.name}}
+groupId: {{project.groupId}}
+basePackage: {{project.basePackage}}
+archetype: {{archetype.name}}
+framework: {{fw.id}}
+stack: {{stack.id}}
+persistence: {{persistence.id}}
+axizVersion: {{axizVersion}}
+contract:
+  openapi: {{#api.present}}src/main/openapi/openapi.yaml{{/api.present}}{{^api.present}}null{{/api.present}}
+  asyncapi: {{#api.hasAsyncapi}}src/main/asyncapi/asyncapi.yaml{{/api.hasAsyncapi}}{{^api.hasAsyncapi}}null{{/api.hasAsyncapi}}
+capabilities:
+{{#capabilities}}
+  - {{name}}
+{{/capabilities}}
+operations:
+{{#operations}}
+  - {{operationId}}
+{{/operations}}
+{{^operations}}
+  []
+{{/operations}}

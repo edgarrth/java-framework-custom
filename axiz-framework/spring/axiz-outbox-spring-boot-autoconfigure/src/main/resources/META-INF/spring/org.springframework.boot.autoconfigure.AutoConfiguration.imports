@@ -1,0 +1,2 @@
+pe.axiz.spring.outbox.AxizOutboxAutoConfiguration
+pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration

@@ -1,0 +1,10 @@
+# kind cluster of the demo: one node, host ports for the channel API, Keycloak and Grafana.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: axiz-demo
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - {containerPort: 30080, hostPort: 8080}   # payments-experience
+      - {containerPort: 30180, hostPort: 8180}   # keycloak (issuer http://localhost:8180)
+      - {containerPort: 30300, hostPort: 3000}   # grafana

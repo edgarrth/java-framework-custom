@@ -1,0 +1,10 @@
+package {{project.basePackage}}.application.query;
+
+import pe.axiz.framework.cqrs.Query;
+
+/**
+ * {{artifact.title}}.
+ *
+ * @param id identifier to look up
+ */
+public record {{artifact.className}}Query(String id) implements Query<String> {}

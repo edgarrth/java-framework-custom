@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/soap/credit",
+    "headers": {"SOAPAction": {"contains": "urn:core:credit:v1:Credit"}},
+    "bodyPatterns": [{"contains": "CreditRequest"}, {"contains": "wsse:Security"}]
+  },
+  "response": {
+    "status": 200,
+    "headers": {"Content-Type": "text/xml; charset=utf-8"},
+    "body": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><cc:CreditResponse xmlns:cc=\"urn:core:credit:v1\"><cc:movementId>MV-C{{randomValue length=7 type='NUMERIC'}}</cc:movementId><cc:status>POSTED</cc:status></cc:CreditResponse></soapenv:Body></soapenv:Envelope>"
+  }
+}

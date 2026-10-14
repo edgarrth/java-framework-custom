@@ -1,0 +1,16 @@
+package {{project.basePackage}}.{{fw.restPackage}};
+
+import org.mapstruct.Mapper;
+
+/**
+ * MapStruct mapper ({@code {{artifact.className}}Mapper}) between the API models and the
+ * application types; generated at compile time, unmapped target properties fail the build.
+ */
+@Mapper
+public interface {{artifact.className}}Mapper {
+{{#artifact.hasMapping}}
+
+  /** Maps {@code {{artifact.source}}} to {@code {{artifact.target}}}. */
+  {{artifact.target}} to{{artifact.targetSimple}}({{artifact.source}} source);
+{{/artifact.hasMapping}}
+}

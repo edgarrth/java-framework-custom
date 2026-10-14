@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-sequence-spring-boot-autoconfigure
+
+Formatted atomic sequences on PostgreSQL or DynamoDB (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-sequence-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizSequenceAutoConfiguration` | Atomic business sequences on Aurora (counter table) or DynamoDB (atomic counter). |
+| `AxizSequenceDynamoDbAutoConfiguration` | DynamoDB atomic counters (`axiz.sequence.store=dynamodb`). |
+| `AxizSequenceProperties` | Business sequences (`axiz.sequence.*`), e.g. |
+| `Sequences` | Generators for the configured sequences; unknown names fail fast. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-sequence-spring-boot-autoconfigure verify`.

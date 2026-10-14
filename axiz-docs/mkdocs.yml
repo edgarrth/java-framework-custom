@@ -1,0 +1,137 @@
+site_name: axiz
+site_description: Plataforma backend para microservicios Java 25 sobre Spring Boot 4.1, EKS y AWS
+site_url: https://docs.axiz.internal/
+repo_url: https://github.com/axiz/axiz-docs
+edit_uri: edit/main/docs/
+copyright: axiz · equipo de plataforma
+strict: true
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+theme:
+  name: material
+  language: es
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Modo oscuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Modo claro
+
+plugins:
+  - search:
+      lang: es
+
+extra:
+  version:
+    provider: mike
+    default: latest
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Inicio: index.md
+  - Empezar:
+      - empezar/index.md
+      - Entorno local: empezar/entorno-local.md
+      - Agregar funcionalidad: empezar/evolucionar.md
+  - Arquitectura:
+      - arquitectura/index.md
+      - Capas: arquitectura/capas.md
+      - Repositorios y versiones: arquitectura/repositorios.md
+      - Servlet y reactivo: arquitectura/stack.md
+      - Configuración y secretos: arquitectura/configuracion.md
+      - Infraestructura AWS: arquitectura/aws.md
+      - Arquetipos: arquetipos/index.md
+      - Catálogo de arquetipos: arquetipos/catalogo.md
+  - Estilos:
+      - estilos/index.md
+      - Layered: estilos/layered.md
+      - Hexagonal: estilos/hexagonal.md
+      - CQRS: estilos/cqrs.md
+      - EDA: estilos/eda.md
+      - BFF: estilos/bff.md
+      - Batch: estilos/batch.md
+  - Guías:
+      - guias/index.md
+      - Errores: guias/errores.md
+      - Seguridad: guias/seguridad.md
+      - Datos sensibles y auditoría: guias/datos-sensibles.md
+      - Clientes HTTP y SOAP: guias/clientes.md
+      - Eventos, outbox e inbox: guias/eventos.md
+      - Idempotencia: guias/idempotencia.md
+      - Sagas: guias/sagas.md
+      - Persistencia: guias/persistencia.md
+      - Caché, locks y secuencias: guias/cache-locks.md
+      - Archivos y batch: guias/archivos.md
+      - Métricas por evento: guias/metricas.md
+      - Feature flags: guias/feature-flags.md
+      - Pruebas: guias/pruebas.md
+  - Capacidades: capacidades/index.md
+  - Herramientas:
+      - herramientas/index.md
+      - CLI: herramientas/cli.md
+      - Referencia de la CLI: herramientas/cli-referencia.md
+      - Initializr: herramientas/initializr.md
+      - Contrato primero: herramientas/contratos.md
+  - Operación:
+      - operacion/index.md
+      - CI/CD: operacion/ci-cd.md
+      - Despliegue GitOps: operacion/despliegue.md
+      - Observabilidad: operacion/observabilidad.md
+  - Calidad:
+      - calidad/index.md
+      - Reglas de arquitectura: calidad/arquitectura.md
+      - Anti-patrones: calidad/anti-patrones.md
+  - Migración:
+      - migracion/index.md
+  - architecture contract: adr/index.md
+  - Demo: demo.md
+  - Referencia: referencia/index.md
+
+not_in_nav: |
+  /capacidades/*.md
+  /adr/0*.md
+  /referencia/*/*.md

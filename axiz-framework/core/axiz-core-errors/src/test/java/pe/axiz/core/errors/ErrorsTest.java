@@ -1,0 +1,214 @@
+package pe.axiz.core.errors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+class ErrorsTest {
+
+  private static final Clock CLOCK =
+      Clock.fixed(Instant.parse("2026-05-01T12:00:00Z"), ZoneOffset.UTC);
+
+  @Test
+  void errorCodeFormat() {
+    assertEquals("AXZ", ErrorCode.of("AXZ-HTTP-0001").prefix());
+    assertThrows(IllegalArgumentException.class, () -> ErrorCode.of("axz-http-1"));
+    assertThrows(IllegalArgumentException.class, () -> ErrorCode.of("AXZ-HTTP-01"));
+    assertThrows(IllegalArgumentException.class, () -> new ErrorCode(null));
+  }
+
+  @Test
+  void everyCategoryHasStatusAndDefaultDefinition() {
+    for (ErrorCategory c : ErrorCategory.values()) {
+      assertTrue(c.httpStatus() >= 400 && c.httpStatus() < 600);
+      assertEquals(c, ErrorCategory.fromHttpStatus(c.httpStatus()));
+      CoreErrors.forCategory(c);
+    }
+    assertEquals(ErrorCategory.UNPROCESSABLE, ErrorCategory.fromHttpStatus(418));
+    assertEquals(ErrorCategory.BAD_GATEWAY, ErrorCategory.fromHttpStatus(599));
+    assertEquals(ErrorCategory.GATEWAY_TIMEOUT, ErrorCategory.fromHttpStatus(408));
+    assertEquals(ErrorCategory.INTERNAL, ErrorCategory.fromHttpStatus(302));
+    assertTrue(ErrorCategory.SERVICE_UNAVAILABLE.retryable());
+    assertFalse(ErrorCategory.CONFLICT.retryable());
+  }
+
+  @Test
+  void externalStatusMapping() {
+    assertEquals(ErrorCategory.BAD_GATEWAY, ErrorCategory.forExternalStatus(401));
+    assertEquals(ErrorCategory.NOT_FOUND, ErrorCategory.forExternalStatus(404));
+    assertEquals(ErrorCategory.CONFLICT, ErrorCategory.forExternalStatus(409));
+    assertEquals(ErrorCategory.GATEWAY_TIMEOUT, ErrorCategory.forExternalStatus(504));
+    assertEquals(ErrorCategory.SERVICE_UNAVAILABLE, ErrorCategory.forExternalStatus(429));
+    assertEquals(ErrorCategory.UNPROCESSABLE, ErrorCategory.forExternalStatus(400));
+    assertEquals(ErrorCategory.BAD_GATEWAY, ErrorCategory.forExternalStatus(500));
+  }
+
+  @Test
+  void catalogLoadsFromPropertiesAndOverrides() {
+    ErrorCatalog catalog =
+        ErrorCatalog.builder()
+            .addProperties(
+                Map.of(
+                    "PAY-ORDER-0001.category", "unprocessable",
+                    "PAY-ORDER-0001.title", "Daily limit exceeded",
+                    "AXZ-CORE-0404.category", "NOT_FOUND",
+                    "AXZ-CORE-0404.title", "No existe el recurso",
+                    "AXZ-CORE-0404.type", "business"))
+            .build();
+    ErrorDefinition def = catalog.require("PAY-ORDER-0001");
+    assertEquals(ErrorCategory.UNPROCESSABLE, def.category());
+    assertEquals(ErrorType.BUSINESS, def.type());
+    assertEquals("error.PAY-ORDER-0001", def.messageKey());
+    assertEquals("No existe el recurso", catalog.require("AXZ-CORE-0404").title());
+    assertEquals(CoreErrors.all().size() + 1, catalog.size());
+    assertThrows(IllegalArgumentException.class, () -> catalog.require("PAY-ORDER-9999"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> ErrorCatalog.builder().addProperties(Map.of("PAY-X-0001.title", "no category")));
+  }
+
+  @Test
+  void problemFromBusinessExceptionUsesLocalizedDetail() {
+    ErrorDefinition limit =
+        ErrorDefinition.of("PAY-ORDER-0001", ErrorCategory.UNPROCESSABLE, "Limit");
+    ErrorCatalog catalog = ErrorCatalog.builder().add(limit).build();
+    ErrorMessageResolver resolver =
+        (key, locale, params) ->
+            key.equals("error.PAY-ORDER-0001") && locale.getLanguage().equals("es")
+                ? Optional.of("Supera el límite de " + params.get("limit"))
+                : Optional.empty();
+    ProblemFactory factory =
+        new ProblemFactory(
+            catalog,
+            resolver,
+            List.of(),
+            new ProblemFactory.Settings("https://errors.example/", false),
+            CLOCK);
+    Problem p =
+        factory.create(
+            new BusinessException(limit, "limit exceeded for account", Map.of("limit", 5000)),
+            Locale.forLanguageTag("es-PE"),
+            "/v1/orders",
+            "c-1");
+    assertEquals(422, p.status());
+    assertEquals("Supera el límite de 5000", p.detail());
+    assertEquals("https://errors.example/pay-order-0001", p.type());
+    assertEquals("PAY-ORDER-0001", p.code());
+    assertEquals("c-1", p.correlationId());
+    assertEquals(Instant.parse("2026-05-01T12:00:00Z"), p.timestamp());
+    Problem en = factory.create(new BusinessException(limit, "x"), Locale.ENGLISH, null, null);
+    assertEquals("Limit", en.detail());
+  }
+
+  @Test
+  void unknownExceptionNeverLeaksItsMessage() {
+    ProblemFactory factory = defaultFactory(List.of());
+    Problem p =
+        factory.create(
+            new IllegalStateException("SELECT * FROM accounts failed: password=x"),
+            Locale.ROOT,
+            "/x",
+            null);
+    assertEquals(500, p.status());
+    assertEquals("AXZ-CORE-0500", p.code());
+    assertEquals("Unexpected error", p.detail());
+    assertEquals("about:blank", p.type());
+    assertFalse(p.detail().contains("password"));
+  }
+
+  @Test
+  void mappersTranslateThirdPartyExceptionsInCauseChain() {
+    ExceptionMapper mapper =
+        ExceptionMapper.byClassName(IllegalArgumentException.class.getName(), CoreErrors.CONFLICT);
+    ProblemFactory factory = defaultFactory(List.of(mapper));
+    Problem p =
+        factory.create(
+            new RuntimeException("wrapper", new IllegalArgumentException("inner")),
+            Locale.ROOT,
+            null,
+            null);
+    assertEquals(409, p.status());
+    // subclasses match by class hierarchy
+    Problem p2 = factory.create(new NumberFormatException("n"), Locale.ROOT, null, null);
+    assertEquals(409, p2.status());
+  }
+
+  @Test
+  void validationProblemCarriesViolations() {
+    ProblemFactory factory = defaultFactory(List.of());
+    Problem p =
+        factory.create(
+            new ValidationException(
+                List.of(FieldViolation.of("amount", "Positive", "must be > 0"))),
+            Locale.ROOT,
+            null,
+            null);
+    assertEquals(400, p.status());
+    assertEquals(1, p.violations().size());
+    assertEquals("amount", p.violations().get(0).field());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"503,503", "504,504", "500,502", "404,404", "401,502", "-1,503"})
+  void externalErrorsKeepEmptyBodyAndCategory(int remoteStatus, int expectedStatus) {
+    ExternalErrorDetail detail =
+        new ExternalErrorDetail("core-ledger", remoteStatus, null, null, "");
+    ExternalServiceException ex = ExternalServiceException.from(detail);
+    assertTrue(ex.detail().emptyBody());
+    assertEquals(expectedStatus, ex.category().httpStatus());
+    Problem p = defaultFactory(List.of()).create(ex, Locale.ROOT, null, null);
+    assertEquals(expectedStatus, p.status());
+    assertNull(p.external());
+  }
+
+  @Test
+  void externalDetailIsExposedOnlyWhenEnabled() {
+    ProblemFactory factory =
+        new ProblemFactory(
+            ErrorCatalog.defaults(),
+            ErrorMessageResolver.none(),
+            List.of(),
+            new ProblemFactory.Settings("", true),
+            CLOCK);
+    ExternalErrorDetail detail =
+        new ExternalErrorDetail("card-network", 400, "R05", "Do not honor", "x".repeat(5000));
+    assertEquals(ExternalErrorDetail.MAX_BODY, detail.body().length());
+    Problem p = factory.create(ExternalServiceException.from(detail), Locale.ROOT, null, null);
+    assertEquals(Map.of("system", "card-network", "status", 400, "code", "R05"), p.external());
+  }
+
+  @Test
+  void frameworkDetectedErrors() {
+    Problem p =
+        defaultFactory(List.of())
+            .of(CoreErrors.MISSING_HEADER, Locale.ROOT, Map.of("header", "X-Channel"), "/v1", "c");
+    assertEquals(400, p.status());
+    assertEquals("AXZ-CORE-0002", p.code());
+    NotFoundException nf = new NotFoundException("Order", 42);
+    assertEquals("42", nf.parameters().get("id"));
+    assertEquals(401, AccessException.unauthenticated("no token").category().httpStatus());
+    assertEquals(403, AccessException.forbidden("scope").category().httpStatus());
+  }
+
+  private static ProblemFactory defaultFactory(List<ExceptionMapper> mappers) {
+    return new ProblemFactory(
+        ErrorCatalog.defaults(),
+        ErrorMessageResolver.none(),
+        mappers,
+        ProblemFactory.Settings.defaults(),
+        CLOCK);
+  }
+}

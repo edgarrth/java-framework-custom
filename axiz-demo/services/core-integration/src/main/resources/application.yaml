@@ -1,0 +1,105 @@
+# Core Integration: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, core-integration and core-integration-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+spring:
+  application:
+    name: core-integration
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  foundation:
+    zone: America/Lima
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - ${spring.application.name}
+  resilience:
+    defaults:
+      timeouts:
+        total: 15s
+  http-client:
+    clients:
+      core-banking:
+        base-url: ${CORE_BANKING_BASE_URL:http://localhost:8089}
+        read-timeout: 4s
+        total-timeout: 8s
+        max-attempts: 2
+        max-concurrent-calls: 40
+        auth:
+          type: CLIENT_CREDENTIALS
+          token-uri: ${CORE_BANKING_TOKEN_URI:http://localhost:8089/oauth/token}
+          client-id: ${CORE_BANKING_CLIENT_ID:core-integration}
+          client-secret-ref: core-banking-client-secret
+          scopes:
+          - movements
+      payment-network:
+        base-url: ${PAYMENT_NETWORK_BASE_URL:http://localhost:8089}
+        read-timeout: 5s
+        total-timeout: 10s
+        auth:
+          type: API_KEY
+          api-key-header: X-Api-Key
+          api-key-ref: payment-network-api-key
+  secrets:
+    directory: /var/run/secrets/axiz
+  soap:
+    clients:
+      core-credit:
+        endpoint: ${CORE_CREDIT_SOAP_ENDPOINT:http://localhost:8089/soap/credit}
+        timeout: 8s
+        username: ${CORE_CREDIT_SOAP_USER:core-integration}
+        password-ref: core-soap-password
+        password-mode: DIGEST
+  lock:
+    store: redis
+  audit:
+    async:
+      enabled: true
+    sqs:
+      queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+management:
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

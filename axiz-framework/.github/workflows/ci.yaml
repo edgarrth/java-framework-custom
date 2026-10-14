@@ -1,0 +1,90 @@
+# axiz-framework pipeline (shared axiz workflows):
+#   pull request   pr checks + build with every quality gate + generated sample projects
+#   develop        the same, then the SNAPSHOT is published to Nexus
+#   tag v*         release published to Nexus (tags come from release.yaml)
+# Publication is a separate job that needs every gate (build, wrapper, samples) and promotes the
+# artifacts the build verified; a failing gate never publishes.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [develop, main, "release/**", "hotfix/**"]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  pr:
+    if: github.event_name == 'pull_request'
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    secrets: inherit
+
+  build:
+    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1
+    with:
+      # store contracts against PostgreSQL, Valkey and DynamoDB containers must run, not skip
+      maven-args: -Daxiz.it.requireDocker=true
+      stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
+    secrets: inherit
+
+  publish:
+    needs: [build, wrapper, samples]
+    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v')
+    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1
+    secrets: inherit
+
+  wrapper:
+    # the Maven wrapper (also copied into every generated project) verifies the distribution
+    # before running it; a release requires the official checksum to be pinned
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Wrapper verification scenarios
+        run: .github/scripts/test-mvnw.sh
+      - name: Publication waits for every gate
+        run: python3 .github/scripts/check-publish-gates.py .github/workflows/ci.yaml
+      - name: Checksum pinned for the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          for f in .mvn/wrapper/maven-wrapper.properties \
+                   codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvn/wrapper/maven-wrapper.properties; do
+            grep -q '^distributionSha512Sum=' "$f" || { echo "::error::$f: run ./mvnw --pin-checksum"; exit 1; }
+          done
+
+  samples:
+    # every archetype generated with its defaults and built with its own wrapper: tests,
+    # architecture rules and quality gates of a real team project
+    runs-on: ubuntu-24.04
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Install the framework and generate the samples
+        run: .github/scripts/samples.sh
+      - name: Build every sample (verify)
+        run: |
+          failed=()
+          for dir in target/samples/*/; do
+            echo "::group::${dir}"
+            (cd "$dir" && ./mvnw -B -ntp verify) || failed+=("$dir")
+            echo "::endgroup::"
+          done
+          if [ "${#failed[@]}" -gt 0 ]; then
+            echo "::error::samples failed: ${failed[*]}"; exit 1
+          fi

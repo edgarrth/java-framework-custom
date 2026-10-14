@@ -1,0 +1,39 @@
+# payments-history in prod
+environment: prod
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/payments-history-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+externalSecret:
+  remotePrefix: prod/payments-history
+
+config:
+  axiz.config.environment: prod
+  management.tracing.sampling.probability: "0.1"
+  # Keys this service needs in prod (set their values, then remove the comment):
+  # axiz.foundation.calendar.holidays:
+  # axiz.security.issuers:
+  # spring.r2dbc.url:
+  # spring.r2dbc.username:
+  # axiz.r2dbc.iam.enabled:
+  # spring.kafka.bootstrap-servers:
+  # axiz.messaging.destinations:
+  # axiz.crypto.kms.key-id:
+  # axiz.crypto.fields.current-key-id:
+  # axiz.crypto.fields.key-ids:
+
+errors: []

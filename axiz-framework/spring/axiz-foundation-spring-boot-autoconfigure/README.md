@@ -1,0 +1,34 @@
+<!-- generated -->
+# axiz-foundation-spring-boot-autoconfigure
+
+Money, time and business calendar, ids and identifier validation for Spring Boot (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizFoundationAutoConfiguration` | Clock, business calendar, id generation, identifier registry and Money JSON support. |
+| `AxizFoundationProperties` | Foundation settings (`axiz.foundation.*`), normally in the `axiz-common` ConfigMap. |
+| `IdentifierConstraintValidator` | Validator of `ValidIdentifier` backed by the identifier registry. |
+| `IdentifierValidation` | Registry used by `IdentifierConstraintValidator`. |
+| `MoneyJacksonModule` | Jackson module for `Money`: the amount is written as a string so clients never parse it as a binary floating point number. |
+| `ValidIdentifier` | Bean Validation constraint for any registered identifier type, e.g. |
+| `SchemaInitializer` | Creates framework tables from `axiz/sql/<name>-<dialect>.sql`. |
+| `SpringConnectionProvider` | Connection provider bound to Spring transactions: inside a transaction the transaction's connection is returned and left open on release. |
+| `SpringTransactionRunner` | Runs work in a new or joined Spring transaction; checked exceptions roll back too. |
+| `SqlDialects` | Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-foundation-spring-boot-autoconfigure verify`.

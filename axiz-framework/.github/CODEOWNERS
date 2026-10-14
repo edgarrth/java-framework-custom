@@ -1,0 +1,5 @@
+# The platform team owns the framework; capability owners review their modules.
+*                       @axiz-pe/platform
+/core/**/*crypto*       @axiz-pe/platform @axiz-pe/security
+/core/**/*security*     @axiz-pe/platform @axiz-pe/security
+/quality/               @axiz-pe/platform

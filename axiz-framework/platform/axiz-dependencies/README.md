@@ -1,0 +1,5 @@
+# axiz-dependencies
+
+Versions of every third-party library the platform uses (Spring Boot and Spring Cloud trains, AWS
+SDK v2, Testcontainers, analysis tools...). The only place where a third-party version is decided;
+users.

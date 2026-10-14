@@ -1,0 +1,17 @@
+package {{project.basePackage}}.application.query;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.junit.jupiter.api.Test;
+import pe.axiz.core.errors.AxizException;
+
+class {{artifact.className}}HandlerTest {
+
+  private final {{artifact.className}}Handler handler = new {{artifact.className}}Handler();
+
+  @Test
+  void isNotImplementedYet() {
+    assertThatThrownBy(() -> handler.handle(new {{artifact.className}}Query("1")))
+        .isInstanceOf(AxizException.class);
+  }
+}

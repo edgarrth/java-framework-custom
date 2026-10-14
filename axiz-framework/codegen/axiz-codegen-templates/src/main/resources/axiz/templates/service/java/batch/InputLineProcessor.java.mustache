@@ -1,0 +1,22 @@
+package {{project.basePackage}}.job;
+
+import org.jspecify.annotations.Nullable;
+import org.springframework.batch.infrastructure.item.ItemProcessor;
+import org.springframework.stereotype.Component;
+
+/**
+ * Normalizes each record; returning {@code null} filters it out (counted as filtered in the job
+ * metrics). Business validation that must stop the job throws instead.
+ */
+@Component
+public class InputLineProcessor implements ItemProcessor<InputLine, InputLine> {
+
+  @Override
+  public @Nullable InputLine process(InputLine line) {
+    String reference = line.reference().strip();
+    if (reference.isEmpty()) {
+      return null;
+    }
+    return new InputLine(reference, line.value().strip());
+  }
+}

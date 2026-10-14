@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SpotBugs exclusions shared by all axiz modules. Keep this list short and justified. -->
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/3.0.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/master/spotbugs/etc/findbugsfilter.xsd">
+  <!-- Records and immutable collections are exposed by design; defensive copies are made at construction -->
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <!-- Spring configuration classes legitimately throw from constructors during validation -->
+  <Match>
+    <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+  </Match>
+  <!-- Generated sources (OpenAPI, MapStruct, AOT) -->
+  <Match>
+    <Source name="~.*[\\/]generated-sources[\\/].*"/>
+  </Match>
+  <Match>
+    <Class name="~.*__(BeanDefinitions|BeanFactoryRegistrations|TestContext\d+_.*)"/>
+  </Match>
+</FindBugsFilter>

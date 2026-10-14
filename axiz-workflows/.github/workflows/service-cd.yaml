@@ -1,0 +1,121 @@
+# Deployment of a service to one environment through GitOps: the pipeline never runs helm against
+# the cluster. It writes the release (chart revision, image tag and digest) to the GitOps repository
+# and Argo CD applies it to EKS (see gitops/ in this repository). Every deployment is a commit, so
+# it is audited in Git and a rollback is a revert.
+#
+# The GitHub environment holds the approval rules (required reviewers for prod). Organization
+# settings: variable GITOPS_REPOSITORY (repository name in the same organization, default
+# axiz-gitops), secrets GITOPS_APP_ID and GITOPS_APP_PRIVATE_KEY (a GitHub App allowed to push to
+# that repository only). Optional: variable ARGOCD_SERVER and secret
+# ARGOCD_AUTH_TOKEN (read-only project token) to wait until Argo CD reports the release healthy.
+name: service-cd
+on:
+  workflow_call:
+    inputs:
+      service:
+        type: string
+        required: true
+      environment:
+        description: dev, qa or prod
+        type: string
+        required: true
+      chart:
+        description: Chart directory inside the service repository
+        type: string
+        required: true
+      image-tag:
+        description: "Image to deploy (default: the commit)"
+        type: string
+        default: ""
+      revision:
+        description: "Commit of the chart and values (default: the commit of the run; rollbacks pass the image commit)"
+        type: string
+        default: ""
+      image-digest:
+        description: Digest of the signed image (recommended; the cluster admission policy verifies it)
+        type: string
+        default: ""
+      wait:
+        description: Wait for Argo CD to report the application synced and healthy
+        type: boolean
+        default: true
+      runner:
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      GITOPS_APP_ID:
+        required: true
+      GITOPS_APP_PRIVATE_KEY:
+        required: true
+      ARGOCD_AUTH_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.service }}-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ${{ inputs.runner }}
+    environment:
+      name: ${{ inputs.environment }}
+    steps:
+      - name: Release values
+        id: release
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          TAG: ${{ inputs.image-tag }}
+          REVISION: ${{ inputs.revision }}
+        run: |
+          case "$ENVIRONMENT" in dev|qa|prod) ;; *) echo "::error::unknown environment $ENVIRONMENT"; exit 1;; esac
+          echo "tag=${TAG:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "revision=${REVISION:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Token for the GitOps repository (GitHub App, short-lived)
+        id: token
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        with:
+          app-id: ${{ secrets.GITOPS_APP_ID }}
+          private-key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ vars.GITOPS_REPOSITORY || 'axiz-gitops' }}
+      - name: Update the release in the GitOps repository
+        uses: axiz/axiz-workflows/actions/gitops-update@v1
+        with:
+          token: ${{ steps.token.outputs.token }}
+          repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY || 'axiz-gitops' }}
+          service: ${{ inputs.service }}
+          environment: ${{ inputs.environment }}
+          source-repository: ${{ github.server_url }}/${{ github.repository }}
+          revision: ${{ steps.release.outputs.revision }}
+          chart: ${{ inputs.chart }}
+          image-tag: ${{ steps.release.outputs.tag }}
+          image-digest: ${{ inputs.image-digest }}
+      - name: Wait for Argo CD (synced and healthy)
+        if: inputs.wait && vars.ARGOCD_SERVER != ''
+        env:
+          ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
+          ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+          APP: ${{ inputs.service }}-${{ inputs.environment }}
+        run: |
+          curl -fsSL -o argocd "https://$ARGOCD_SERVER/download/argocd-linux-amd64" && chmod +x argocd
+          ./argocd app get "$APP" --grpc-web --refresh > /dev/null
+          ./argocd app wait "$APP" --grpc-web --sync --health --timeout 900
+          deployed=$(./argocd app get "$APP" --grpc-web -o json | jq -r '.status.sync.revisions // [] | join(" ")')
+          echo "Argo CD revisions: $deployed"
+      - name: Summary
+        env:
+          SERVICE: ${{ inputs.service }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          TAG: ${{ steps.release.outputs.tag }}
+          DIGEST: ${{ inputs.image-digest }}
+          REVISION: ${{ steps.release.outputs.revision }}
+        run: |
+          {
+            echo "### $SERVICE → $ENVIRONMENT"
+            echo "- image tag: \`$TAG\`${DIGEST:+ (digest \`$DIGEST\`)}"
+            echo "- chart revision: \`$REVISION\`"
+            echo "- applied by Argo CD from the GitOps repository"
+          } >> "$GITHUB_STEP_SUMMARY"

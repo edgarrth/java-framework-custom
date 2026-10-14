@@ -1,0 +1,15 @@
+<!-- generated -->
+# axiz-errors-spring-boot-starter
+
+RFC 9457 error responses with the externalized error catalog for servlet and reactive stacks.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-errors-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).

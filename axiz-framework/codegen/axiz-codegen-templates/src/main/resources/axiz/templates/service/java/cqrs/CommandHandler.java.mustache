@@ -1,0 +1,47 @@
+package {{project.basePackage}}.application.command;
+
+{{#item.responseIsList}}
+import java.util.List;
+{{/item.responseIsList}}
+import org.springframework.stereotype.Component;
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+{{#fw.reactiveHandlers}}
+import pe.axiz.framework.cqrs.ReactiveCommandHandler;
+import reactor.core.publisher.Mono;
+{{/fw.reactiveHandlers}}
+{{^fw.reactiveHandlers}}
+import pe.axiz.framework.cqrs.CommandHandler;
+{{/fw.reactiveHandlers}}
+{{#item.hasResponseModel}}
+import {{item.modelPackage}}.{{item.responseModel}};
+{{/item.hasResponseModel}}
+
+/**
+ * Handles {@link {{item.commandName}}}. The command pipeline adds validation, authorization,
+ * idempotency, the transaction, audit and metrics around it.
+{{#fw.reactiveHandlers}}
+ * Non-blocking: return a {@code Mono} built from reactive collaborators (R2DBC repositories,
+ * WebClient); the transaction is a reactive one.
+{{/fw.reactiveHandlers}}
+ */
+@Component
+{{#fw.reactiveHandlers}}
+public class {{item.className}}Handler implements ReactiveCommandHandler<{{item.commandName}}, {{item.responseType}}> {
+
+  @Override
+  public Mono<{{item.responseType}}> handle({{item.commandName}} command) {
+    return Mono.error(
+        new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet"));
+  }
+}
+{{/fw.reactiveHandlers}}
+{{^fw.reactiveHandlers}}
+public class {{item.className}}Handler implements CommandHandler<{{item.commandName}}, {{item.responseType}}> {
+
+  @Override
+  public {{item.responseType}} handle({{item.commandName}} command) {
+    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet");
+  }
+}
+{{/fw.reactiveHandlers}}

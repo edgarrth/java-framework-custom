@@ -1,0 +1,77 @@
+openapi: 3.1.0
+info:
+  title: Core banking (simulated)
+  version: 2.3.0
+  description: >
+    REST facade of the core banking system as the demo simulates it with WireMock. Only
+    core-integration calls it (anti-corruption layer); errors use the core's own codes
+    (CB-51 insufficient funds, CB-62 blocked account, CB-14 unknown movement).
+tags:
+  - name: core
+paths:
+  /core/v2/accounts/{account}/debits:
+    post:
+      operationId: postDebit
+      tags: [core]
+      summary: Holds and posts a debit
+      parameters:
+        - {name: account, in: path, required: true, schema: {type: string}}
+        - {name: X-Request-Ref, in: header, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CoreDebit'}
+            example: {amt: '150.75', ccy: PEN, ref: OP20261011-00000001}
+      responses:
+        '200':
+          description: Posted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CoreMovement'}
+              example: {mvId: MV-778899, state: P}
+        '422':
+          description: Rejected
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CoreError'}
+  /core/v2/movements/{mvId}/reversal:
+    post:
+      operationId: postReversal
+      tags: [core]
+      summary: Reverses a posted movement
+      parameters:
+        - {name: mvId, in: path, required: true, schema: {type: string}}
+        - {name: X-Request-Ref, in: header, required: true, schema: {type: string}}
+      responses:
+        '200':
+          description: Reversed
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CoreMovement'}
+              example: {mvId: MV-778900, state: R}
+        '404':
+          description: Unknown movement
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/CoreError'}
+components:
+  schemas:
+    CoreDebit:
+      type: object
+      required: [amt, ccy, ref]
+      properties:
+        amt: {type: string, description: decimal amount as text}
+        ccy: {type: string}
+        ref: {type: string}
+        holder: {type: string, description: 'customer who must own the account; CB-17 otherwise'}
+    CoreMovement:
+      type: object
+      properties:
+        mvId: {type: string}
+        state: {type: string, description: 'P posted, R reversed'}
+    CoreError:
+      type: object
+      properties:
+        code: {type: string}
+        message: {type: string}

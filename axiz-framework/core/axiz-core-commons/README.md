@@ -1,0 +1,46 @@
+<!-- generated -->
+# axiz-core-commons
+
+Result type, request and page metadata, header catalog, dates and preconditions.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-core-commons</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `ApiResponse` | Optional response envelope for services whose consumers require one. |
+| `Checks` | Argument preconditions that fail fast with `IllegalArgumentException`. |
+| `Dates` | Date helpers. |
+| `Environments` | Operational profile of a deployment (`axiz.config.environment`). |
+| `HeaderCatalog` | Catalog of business headers a service accepts, validates and propagates. |
+| `HeaderDefinition` | Declares a business header in the header catalog. |
+| `Page` | A page of results. |
+| `PageMetadata` | Pagination metadata returned with a page. |
+| `PageRequest` | Page request with zero-based page index. |
+| `PageResponse` | Standard paginated response body. |
+| `RequestContext` | Metadata of the request or message being processed by the current thread. |
+| `RequestMetadata` | Immutable metadata of the request or message being processed. |
+| `Result` | Outcome of an operation that either succeeds with a value or fails with a business error. |
+| `Sort` | Sort specification parsed from `field,asc;other,desc` or repeated `field,dir`. |
+| `StandardHeaders` | Names of standard headers used across HTTP and messaging. |
+| `Strings` | Small string helpers that the JDK lacks. |
+| `JsonReader` | Minimal, strict JSON parser (RFC 8259) producing `Map<String, Object>`, `List`, `String`, `BigDecimal`, `Boolean` and `null`. |
+| `JsonWriter` | Minimal JSON writer for maps, collections, strings, numbers, booleans, enums, dates and UUIDs. |
+| `ConnectionProvider` | Supplies the JDBC connection to use. |
+| `JdbcTransactions` | Plain JDBC transactions for layer 1 and tests: binds a connection to the current thread for the duration of `#inTransaction(Callable)` and hands it out through `#get()`. |
+| `SqlStates` | SQLSTATE helpers (portable across PostgreSQL and H2). |
+| `TransactionRunner` | Runs work inside a transaction (Spring: `TransactionTemplate`). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-commons verify`.

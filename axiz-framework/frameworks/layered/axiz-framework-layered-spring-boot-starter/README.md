@@ -1,0 +1,26 @@
+<!-- generated -->
+# axiz-framework-layered-spring-boot-starter
+
+Layered style for simple CRUD services: controller, service and repository.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-framework-layered-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `CrudController` | REST endpoints of a simple resource on top of a `CrudService`. |
+| `JpaCrudService` | `CrudService` over a Spring Data JPA repository. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl frameworks/layered/axiz-framework-layered-spring-boot-starter verify`.

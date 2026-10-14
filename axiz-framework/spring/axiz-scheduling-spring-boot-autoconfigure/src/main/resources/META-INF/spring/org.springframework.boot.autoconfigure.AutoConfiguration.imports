@@ -1,0 +1,3 @@
+pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration
+pe.axiz.spring.scheduling.AxizSchedulingR2dbcAutoConfiguration
+pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration

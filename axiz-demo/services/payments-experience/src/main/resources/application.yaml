@@ -1,0 +1,94 @@
+# Payments Experience: defaults shared by every environment.
+# Environment values come from the ConfigMaps axiz-common, payments-experience and payments-experience-errors
+# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# placeholders only serve local runs and tests: never write environment values or secrets here.
+spring:
+  application:
+    name: payments-experience
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  web:
+    api-version:
+      enabled: true
+      supported:
+      - '1'
+    pagination:
+      default-size: 20
+      max-size: 200
+  bff:
+    timeout: 3s
+  foundation:
+    zone: America/Lima
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - ${spring.application.name}
+  resilience:
+    defaults:
+      timeouts:
+        total: 15s
+  http-client:
+    clients:
+      payments-business:
+        base-url: ${PAYMENTS_BUSINESS_BASE_URL:http://localhost:8089}
+        auth:
+          type: TOKEN_RELAY
+        read-timeout: 2s
+        total-timeout: 3s
+      beneficiaries-crud:
+        base-url: ${BENEFICIARIES_CRUD_BASE_URL:http://localhost:8089}
+        auth:
+          type: TOKEN_RELAY
+        read-timeout: 2s
+        total-timeout: 3s
+  cache:
+    default-ttl: 10m
+    redis: true
+    caches:
+      customer-beneficiaries:
+        ttl: 30s
+  idempotency:
+    retention: 24h
+    store: redis
+  feature-flags:
+    flags:
+      payments-usd:
+        enabled: ${AXIZ_FLAG_PAYMENTS_USD:false}
+        percentage: 100
+management:
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

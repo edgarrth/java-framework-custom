@@ -1,0 +1,32 @@
+<!-- generated -->
+# axiz-tenancy-spring-boot-autoconfigure
+
+Tenant resolution from token or trusted header and propagation to HTTP, messaging and Hibernate (auto-configuration).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-tenancy-spring-boot-autoconfigure</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `AxizTenancyAutoConfiguration` | Multi-tenancy, only when `axiz.tenancy.enabled=true`: tenant from the token or a trusted header, bound for the request, propagated to logs, outbound calls and messages, and applied to Hibernate `@TenantId` entities. |
+| `AxizTenancyHibernateAutoConfiguration` | Hibernate `@TenantId` support: the current tenant filters and stamps tenant entities. |
+| `AxizTenancyProperties` | Multi-tenancy (`axiz.tenancy.*`); only active when the service declares it. |
+| `TenantContextAccessor` | Propagates `TenantContext` across threads and Reactor operators (context-propagation). |
+| `TenantFilter` | Binds the tenant for the request (runs after authentication). |
+| `TenantFilterSupport` | Shared logic of the servlet and reactive tenant filters. |
+| `TenantIdentifierResolver` | Hibernate tenant resolver for entities with `@TenantId`: rows are filtered and stamped with the current tenant. |
+| `TenantWebFilter` | Reactive tenant binding through the Reactor context (`TenantContextAccessor#KEY`). |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-tenancy-spring-boot-autoconfigure verify`.

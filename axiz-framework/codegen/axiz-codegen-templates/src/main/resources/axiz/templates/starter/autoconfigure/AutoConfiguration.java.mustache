@@ -1,0 +1,25 @@
+package {{platform.springPackage}};
+
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import {{project.basePackage}}.{{platform.mainClass}};
+
+/**
+ * Auto-configuration of {{project.name}}: every bean backs off when the application defines its
+ * own ({@code @ConditionalOnMissingBean}) and the capability can be switched off with {@code
+ * {{platform.prefix}}.enabled=false}.
+ */
+@AutoConfiguration
+@ConditionalOnProperty(name = "{{platform.prefix}}.enabled", matchIfMissing = true)
+@EnableConfigurationProperties({{platform.propertiesClass}}.class)
+public class {{platform.autoConfigurationClass}} {
+
+  @Bean
+  @ConditionalOnMissingBean
+  {{platform.mainClass}} {{platform.mainCamel}}({{platform.propertiesClass}} properties) {
+    return new {{platform.mainClass}}(properties.name());
+  }
+}

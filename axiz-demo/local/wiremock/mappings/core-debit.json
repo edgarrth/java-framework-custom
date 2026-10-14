@@ -1,0 +1,101 @@
+{
+  "mappings": [
+    {
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "urlPath": "/core/v2/accounts/1910012345678/debits",
+        "headers": {
+          "Authorization": {
+            "equalTo": "Bearer local-core-token"
+          }
+        },
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": {
+              "expression": "$.holder",
+              "doesNotMatch": "^C-1001$"
+            }
+          }
+        ]
+      },
+      "response": {
+        "status": 422,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "code": "CB-17",
+          "message": "la cuenta no pertenece al titular"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "urlPath": "/core/v2/accounts/1910099999999/debits",
+        "headers": {
+          "Authorization": {
+            "equalTo": "Bearer local-core-token"
+          }
+        }
+      },
+      "response": {
+        "status": 422,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "code": "CB-51",
+          "message": "fondos insuficientes"
+        }
+      }
+    },
+    {
+      "priority": 1,
+      "request": {
+        "method": "POST",
+        "urlPath": "/core/v2/accounts/1910088888888/debits",
+        "headers": {
+          "Authorization": {
+            "equalTo": "Bearer local-core-token"
+          }
+        }
+      },
+      "response": {
+        "status": 422,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "code": "CB-62",
+          "message": "cuenta bloqueada"
+        }
+      }
+    },
+    {
+      "priority": 5,
+      "request": {
+        "method": "POST",
+        "urlPathPattern": "/core/v2/accounts/[0-9]+/debits",
+        "headers": {
+          "Authorization": {
+            "equalTo": "Bearer local-core-token"
+          },
+          "X-Request-Ref": {
+            "matches": ".+"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": "{\"mvId\": \"MV-{{randomValue length=8 type='NUMERIC'}}\", \"state\": \"P\"}",
+        "fixedDelayMilliseconds": 120
+      }
+    }
+  ]
+}

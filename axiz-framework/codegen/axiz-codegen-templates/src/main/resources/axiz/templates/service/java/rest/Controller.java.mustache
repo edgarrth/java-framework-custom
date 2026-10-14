@@ -1,0 +1,166 @@
+package {{project.basePackage}}.{{fw.restPackage}};
+
+{{#item.usesRequestBody}}
+import jakarta.validation.Valid;
+{{/item.usesRequestBody}}
+{{#item.usesList}}
+import java.util.List;
+{{/item.usesList}}
+{{#item.usesNullable}}
+import org.jspecify.annotations.Nullable;
+{{/item.usesNullable}}
+import org.springframework.http.ResponseEntity;
+{{#item.usesDelete}}
+import org.springframework.web.bind.annotation.DeleteMapping;
+{{/item.usesDelete}}
+{{#item.usesGet}}
+import org.springframework.web.bind.annotation.GetMapping;
+{{/item.usesGet}}
+{{#item.usesPatch}}
+import org.springframework.web.bind.annotation.PatchMapping;
+{{/item.usesPatch}}
+{{#item.usesPathParams}}
+import org.springframework.web.bind.annotation.PathVariable;
+{{/item.usesPathParams}}
+{{#item.usesPost}}
+import org.springframework.web.bind.annotation.PostMapping;
+{{/item.usesPost}}
+{{#item.usesPut}}
+import org.springframework.web.bind.annotation.PutMapping;
+{{/item.usesPut}}
+{{#item.usesRequestBody}}
+import org.springframework.web.bind.annotation.RequestBody;
+{{/item.usesRequestBody}}
+{{#item.usesQuery}}
+import org.springframework.web.bind.annotation.RequestParam;
+{{/item.usesQuery}}
+import org.springframework.web.bind.annotation.RestController;
+{{#item.usesPaging}}
+import pe.axiz.core.commons.PageRequest;
+{{/item.usesPaging}}
+{{#fw.cqrs}}
+{{^fw.reactiveHandlers}}
+{{#item.usesCommands}}
+import pe.axiz.framework.cqrs.CommandBus;
+{{/item.usesCommands}}
+{{#item.usesQueries}}
+import pe.axiz.framework.cqrs.QueryBus;
+{{/item.usesQueries}}
+{{/fw.reactiveHandlers}}
+{{#fw.reactiveHandlers}}
+{{#item.usesCommands}}
+import pe.axiz.framework.cqrs.spring.ReactiveCommandBus;
+{{/item.usesCommands}}
+{{#item.usesQueries}}
+import pe.axiz.framework.cqrs.spring.ReactiveQueryBus;
+{{/item.usesQueries}}
+{{/fw.reactiveHandlers}}
+{{/fw.cqrs}}
+{{#item.usesPaging}}
+import pe.axiz.spring.web.Paging;
+{{/item.usesPaging}}
+{{#stack.reactive}}
+import reactor.core.publisher.Mono;
+{{#fw.cqrs}}
+{{^fw.reactiveHandlers}}
+import reactor.core.scheduler.Schedulers;
+{{/fw.reactiveHandlers}}
+{{/fw.cqrs}}
+{{/stack.reactive}}
+{{#item.models}}
+import {{item.modelPackage}}.{{name}};
+{{/item.models}}
+{{#fw.hexagonal}}
+{{#item.operations}}
+import {{project.basePackage}}.application.usecase.{{className}}UseCase;
+{{/item.operations}}
+{{/fw.hexagonal}}
+{{#fw.cqrs}}
+{{#item.operations}}
+{{#write}}
+import {{project.basePackage}}.application.command.{{commandName}};
+{{/write}}
+{{#readOnly}}
+import {{project.basePackage}}.application.query.{{queryName}};
+{{/readOnly}}
+{{/item.operations}}
+{{/fw.cqrs}}
+{{#fw.layered}}
+import {{project.basePackage}}.service.{{item.className}}Service;
+{{/fw.layered}}
+{{#fw.bff}}
+import {{project.basePackage}}.composition.{{item.className}}Composition;
+{{/fw.bff}}
+
+/**
+ * REST adapter of the {@code {{item.name}}} operations of the contract (src/main/openapi). Generated
+ * once by axiz: keep the signatures in sync with the contract ({@code axiz contract sync} adds new
+ * operations and reports removed ones); request and response models are generated at build time.
+ */
+@RestController
+public class {{item.className}}Controller {
+
+{{#item.fields}}
+  private final {{type}} {{name}};
+{{/item.fields}}
+
+  public {{item.className}}Controller({{#item.fields}}{{type}} {{name}}{{^last}}, {{/last}}{{/item.fields}}) {
+{{#item.fields}}
+    this.{{name}} = {{name}};
+{{/item.fields}}
+  }
+{{#item.operations}}
+
+  /** {{summary}} ({{httpMethod}} {{path}}). */
+  @{{mapping}}("{{path}}")
+{{#stack.servlet}}
+  public ResponseEntity<{{responseType}}> {{methodName}}({{{controllerParams}}}) {
+{{#hasResponse}}
+    {{responseType}} result = {{> invoke}};
+    return ResponseEntity.status({{status}}).body(result);
+{{/hasResponse}}
+{{^hasResponse}}
+    {{> invoke}};
+    return ResponseEntity.status({{status}}).build();
+{{/hasResponse}}
+  }
+{{/stack.servlet}}
+{{#stack.reactive}}
+  public Mono<ResponseEntity<{{responseType}}>> {{methodName}}({{{controllerParams}}}) {
+{{#fw.cqrs}}
+{{#fw.reactiveHandlers}}
+{{#hasResponse}}
+    return {{> invoke}}.map(result -> ResponseEntity.status({{status}}).body(result));
+{{/hasResponse}}
+{{^hasResponse}}
+    return {{> invoke}}
+        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
+{{/hasResponse}}
+{{/fw.reactiveHandlers}}
+{{^fw.reactiveHandlers}}
+    // the handlers block (DynamoDB client): they run on the bounded elastic scheduler
+{{#hasResponse}}
+    return Mono.fromCallable(() -> {{> invoke}})
+        .subscribeOn(Schedulers.boundedElastic())
+        .map(result -> ResponseEntity.status({{status}}).body(result));
+{{/hasResponse}}
+{{^hasResponse}}
+    return Mono.fromRunnable(() -> {{> invoke}})
+        .subscribeOn(Schedulers.boundedElastic())
+        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
+{{/hasResponse}}
+{{/fw.reactiveHandlers}}
+{{/fw.cqrs}}
+{{#fw.bff}}
+{{#hasResponse}}
+    return {{> invoke}}.map(result -> ResponseEntity.status({{status}}).body(result));
+{{/hasResponse}}
+{{^hasResponse}}
+    return {{> invoke}}
+        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
+{{/hasResponse}}
+{{/fw.bff}}
+  }
+{{/stack.reactive}}
+{{/item.operations}}
+}

@@ -1,0 +1,10 @@
+-- {{artifact.table}}: {{artifact.title}}
+CREATE TABLE IF NOT EXISTS {{artifact.table}} (
+  id         UUID         PRIMARY KEY,
+  version    BIGINT,
+  name       VARCHAR(200) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_by VARCHAR(100),
+  updated_at TIMESTAMP WITH TIME ZONE,
+  updated_by VARCHAR(100)
+);

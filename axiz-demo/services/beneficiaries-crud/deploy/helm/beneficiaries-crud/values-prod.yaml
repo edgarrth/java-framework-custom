@@ -1,0 +1,35 @@
+# beneficiaries-crud in prod
+environment: prod
+
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/beneficiaries-crud-prod
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+externalSecret:
+  remotePrefix: prod/beneficiaries-crud
+
+# Environment values (no secrets: those come from the ExternalSecret). Business calendar
+# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
+config:
+  axiz.config.environment: prod
+  management.tracing.sampling.probability: '0.1'
+  axiz.security.issuers:
+  - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+    audiences:
+    - ${spring.application.name}
+  axiz.dynamodb.table-prefix: prod-
+
+errors: []
