@@ -167,6 +167,26 @@ jar_of() {
     ! -name '*-plain.jar' 2>/dev/null | head -1
 }
 
+# the one-shot infrastructure jobs must have finished well: without the Kafka topics the outbox
+# relays and the audit publisher wait forever and the payment saga never starts
+check_infra() {
+  local compose=(docker compose -f "$root/local/compose.yaml") topics t missing=()
+  if ! timeout 120 "${compose[@]}" wait kafka-topics >/dev/null 2>&1; then
+    red "the Kafka topics were not created. Last lines of the kafka-topics job:"
+    "${compose[@]}" logs --no-color --tail 20 kafka-topics 2>&1 | sed 's/^/  | /'
+    exit 1
+  fi
+  topics=$("${compose[@]}" exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list 2>/dev/null || true)
+  for t in payments payments.dlq audit; do
+    grep -qx "$t" <<<"$topics" || missing+=("$t")
+  done
+  if [ ${#missing[@]} -gt 0 ]; then
+    red "Kafka topics missing: ${missing[*]} (scripts/demo.sh down && scripts/demo.sh up recreates them)"
+    exit 1
+  fi
+  echo "kafka topics ready: payments payments.dlq audit"
+}
+
 # rebuilds the jars that are missing or older than their sources or than the installed framework
 # (all of them with --build)
 m2=${AXIZ_M2_REPOSITORY:-$HOME/.m2/repository}
@@ -258,6 +278,7 @@ case "${1:-}" in
     mkdir -p "$run"
     build "$force"
     docker compose -f "$root/local/compose.yaml" up -d --wait
+    check_infra
     bash "$root/scripts/dev-secrets.sh"
     for s in "${services[@]}"; do start "$s"; done
     if [ "$attach" = 1 ]; then

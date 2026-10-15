@@ -5,10 +5,16 @@ server:
 axiz:
   http-client:
     clients:
+      # on one laptop the first call to a service that just started can take a few seconds (its
+      # JIT is cold): longer timeouts than in the environments, where the defaults apply
       payments-business:
         base-url: http://localhost:8081
+        read-timeout: 8s
+        total-timeout: 12s
       beneficiaries-crud:
         base-url: http://localhost:8082
+        read-timeout: 8s
+        total-timeout: 12s
   feature-flags:
     flags:
       payments-usd:

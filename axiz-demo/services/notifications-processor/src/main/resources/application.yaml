@@ -22,6 +22,9 @@ axiz:
     type-prefix: pe.axiz.payments.
     consumer:
       max-attempts: 5
+      # the payments topic also carries events this service does not handle (created): they are
+      # acknowledged, not dead-lettered
+      ignore-unknown-types: true
       subscriptions:
       - pe.axiz.payments.payment-order.status-changed.v1
       - pe.axiz.audit.event.v1

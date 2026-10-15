@@ -27,6 +27,12 @@ server:
 axiz:
   messaging:
     type-prefix: pe.axiz.payments.
+    consumer:
+      # the payments topic also carries events this service does not handle (status-changed):
+      # they are acknowledged, not dead-lettered
+      ignore-unknown-types: true
+      subscriptions:
+      - pe.axiz.payments.payment-order.created.v1
     kafka:
       iam: ${AXIZ_KAFKA_IAM:false}
       topics:

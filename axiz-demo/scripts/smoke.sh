@@ -114,7 +114,7 @@ echo "payment $id: $(echo "$body" | jq -c .)"
 step "saga: waiting for COMPLETED"
 involved=(payments-experience payments-business payment-process core-integration)
 status=""
-for _ in $(seq 1 30); do
+for _ in $(seq 1 "${SMOKE_POLLS:-60}"); do
   call GET "$CHANNEL_URL/v1/payments/$id" "${auth[@]}"
   expect 200 "get payment"
   status=$(echo "$body" | jq -r .status)
@@ -124,12 +124,32 @@ for _ in $(seq 1 30); do
   check WireMock (http://localhost:8089/__admin/requests) and .run/core-integration.log, .run/payment-process.log"
   sleep "${SMOKE_POLL:-2}"
 done
-[ "$status" = COMPLETED ] || { show_logs; fail "payment still $status after 60s; see .run/payment-process.log and .run/payments-business.log"; }
+# RECEIVED: the saga never started. Shows whether payment-process consumes the payments topic
+# (consumer group, lag) and whether the event reached the topic
+kafka_state() {
+  [ "${SMOKE_LOCAL:-1}" = 1 ] && command -v docker >/dev/null || return 0
+  local compose=(docker compose -f "$root/local/compose.yaml") bin=/opt/kafka/bin
+  printf '\n-- consumer group payment-process (no members or LAG > 0: the event is not being consumed)\n' >&2
+  "${compose[@]}" exec -T kafka "$bin/kafka-consumer-groups.sh" --bootstrap-server localhost:9092 \
+    --describe --group payment-process 2>&1 | tail -n 8 >&2 || true
+  printf '\n-- messages in topic payments (end offsets per partition)\n' >&2
+  "${compose[@]}" exec -T kafka "$bin/kafka-get-offsets.sh" --bootstrap-server localhost:9092 \
+    --topic payments 2>&1 | tail -n 5 >&2 || true
+  if [ -f "$root/.run/payment-process.log" ] \
+    && ! grep -q 'ConsumerConfig values' "$root/.run/payment-process.log"; then
+    printf '\npayment-process created no Kafka consumer: reinstall the framework (README 4.1)\n' >&2
+  fi
+}
+if [ "$status" != COMPLETED ]; then
+  show_logs
+  [ "$status" = RECEIVED ] && kafka_state
+  fail "payment still $status after $(( ${SMOKE_POLLS:-60} * 2 ))s; see .run/payment-process.log and .run/payments-business.log"
+fi
 
 step "history read model (payments-history $HISTORY_URL)"
 involved=(payments-history)
 projected=""
-for _ in $(seq 1 30); do
+for _ in $(seq 1 "${SMOKE_POLLS:-60}"); do
   call GET "$HISTORY_URL/v1/payments/$id" "${auth[@]}"
   [ "$code" = 200 ] || [ "$code" = 404 ] || expect 200 "get history"
   projected=$(echo "$body" | jq -r '.status // empty' 2>/dev/null || true)
@@ -137,6 +157,6 @@ for _ in $(seq 1 30); do
   [ "$projected" = COMPLETED ] && break
   sleep "${SMOKE_POLL:-2}"
 done
-[ "$projected" = COMPLETED ] || { show_logs; fail "payment history did not catch up in 60s; see .run/payments-history.log"; }
+[ "$projected" = COMPLETED ] || { show_logs; fail "payment history did not catch up in $(( ${SMOKE_POLLS:-60} * 2 ))s; see .run/payments-history.log"; }
 
 printf '\n\033[32mOK\033[0m: payment %s completed and projected\n' "$id"

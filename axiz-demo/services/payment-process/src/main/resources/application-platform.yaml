@@ -4,7 +4,12 @@ server:
 axiz:
   http-client:
     clients:
+      # first calls to services that just started are slow on one laptop (cold JIT)
       payments-business:
         base-url: http://localhost:8081
+        read-timeout: 8s
+        total-timeout: 15s
       core-integration:
         base-url: http://localhost:8083
+        read-timeout: 8s
+        total-timeout: 15s
