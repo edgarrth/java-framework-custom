@@ -56,11 +56,23 @@ reachable: `./mvnw install -DskipTests` in axiz-framework once, or the Nexus mir
 and every test with `curl`, including what to check in each response.
 
 ```bash
-scripts/demo.sh up       # infrastructure (local/compose.yaml) + dev secrets + every service
-scripts/demo.sh status   # health of every service; repeat until 7/7 services UP
-scripts/demo.sh smoke    # pays a beneficiary through the channel API and waits for COMPLETED
+scripts/demo.sh up       # checks (Docker, JDK 25, free ports), builds stale jars, infrastructure
+                         # (local/compose.yaml), dev secrets, every service; waits for 7/7 UP
+scripts/demo.sh status   # state of every service: UP, STARTING, EXITED, BUSY (port taken), STOPPED
+scripts/demo.sh smoke    # waits for 7/7 UP, pays a beneficiary through the channel API, waits for
+                         # COMPLETED and for the history; a failing step prints its HTTP response
+scripts/demo.sh up --attach   # same, then stays showing the logs of every service (Ctrl+C stops them)
+scripts/demo.sh logs          # follows the logs of every service (scripts/demo.sh logs <service>: one)
+scripts/demo.sh restart payments-experience --debug   # one service again, Spring web and axiz at DEBUG
+scripts/demo.sh stop          # stops the services, keeps the infrastructure
 scripts/demo.sh down     # stops services, removes containers and volumes
 ```
+
+`up` runs each service from its jar (`services/<service>/target`), rebuilding the jars that are
+missing or older than their sources or than the axiz framework installed in `~/.m2` (`--build`
+rebuilds all, `--no-wait` returns right away).
+It stops before starting anything when a port is taken, and names the container or process that
+holds it (a kind cluster on 8080 is the usual case).
 
 | | |
 |---|---|
@@ -70,8 +82,9 @@ scripts/demo.sh down     # stops services, removes containers and volumes
 | Grafana | http://localhost:3000 (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz · services* and *axiz · payments*) |
 | WireMock | http://localhost:8089 (core banking REST + SOAP, token endpoint, payment network) |
 
-Each service runs with the profiles `local,platform` (`scripts/run.sh <service>`), so it can be
-started from the IDE and debugged. The simulated core answers `CB-51` (insufficient funds) for
+Each service runs with the profiles `local,platform`, so it can also be started from the IDE and
+debugged, or with Maven through `scripts/run.sh <service>` (stop the copy that `demo.sh up`
+started first: they share the port). The simulated core answers `CB-51` (insufficient funds) for
 account `1910099999999` and `CB-62` (blocked) for `1910088888888`; the network rejects CCI
 `00219100123456780052` (closed account), so the compensations can be seen end to end.
 
@@ -84,6 +97,16 @@ The settlement job loads the sample file the LocalStack init uploads:
 ```bash
 kind/up.sh               # kind cluster, images with Jib, stand-ins (kind/deps), every Helm chart
 kind/up.sh down
+```
+
+The kind cluster publishes the channel API on 9080, Keycloak on 9180 and Grafana on 9300, so it
+can run next to the local demo. The smoke test against it (what `kind/up.sh` prints at the end):
+
+```bash
+kubectl -n axiz-demo port-forward svc/beneficiaries-crud 9082:80 &
+kubectl -n axiz-demo port-forward svc/payments-history 9086:80 &
+SMOKE_LOCAL=0 KC_URL=http://localhost:9180 CHANNEL_URL=http://localhost:9080 \
+  CRUD_URL=http://localhost:9082 HISTORY_URL=http://localhost:9086 scripts/smoke.sh
 ```
 
 The services are deployed with their own charts and `kind/values/<service>.yaml`; secrets are

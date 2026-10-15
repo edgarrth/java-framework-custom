@@ -19,6 +19,8 @@ axiz:
       enabled: true
       supported:
       - '1'
+      # requests without the API-Version header are version 1
+      default-version: '1'
     pagination:
       default-size: 20
       max-size: 200

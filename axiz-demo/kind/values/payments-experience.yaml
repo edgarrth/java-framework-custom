@@ -29,7 +29,7 @@ config:
   management.otlp.tracing.endpoint: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/traces
   management.otlp.metrics.export.url: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/metrics
   axiz.security.issuers:
-  - issuer: http://localhost:8180/realms/axiz
+  - issuer: http://localhost:9180/realms/axiz
     jwk-set-uri: http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs
     audiences:
     - local-services

@@ -11,6 +11,8 @@ contenedores, el entorno local y el e2e en kind corren en CI (`ci.yaml`, `e2e.ya
 | Charts (8 servicios × dev/qa/prod) | kubeconform estricto y kube-linter sin hallazgos |
 | Workflows y scripts | actionlint + shellcheck sin hallazgos |
 | `kind/deps` | manifiestos válidos (kubeconform) |
+| Migraciones y SQL sobre PostgreSQL 16 real | las migraciones de los 4 servicios con base de datos se aplican en orden sin errores; las columnas de `PaymentOrderEntity` coinciden con el tipo que Hibernate valida (encontró `currency CHAR(3)`, corregido con `V4__currency_varchar.sql`); las sentencias SQL de outbox, secuencias, sagas e inbox R2DBC del framework y las consultas nativas del demo se preparan (`PREPARE`) contra esos esquemas sin errores. Las migraciones de los 10 proyectos generados con Aurora también se aplican sin errores |
+| `scripts/demo.sh` y `scripts/smoke.sh` | shellcheck sin hallazgos; ejecutados contra servicios simulados: flujo completo OK, fallos de token, de pago y de servicios caídos con mensaje y código de salida 1, puerto ocupado por un nodo de kind detectado, servicio que se cae al arrancar detectado con el final de su log |
 
 Omitido localmente: `DailyLimitConcurrencyIT` (concurrencia real sobre PostgreSQL), pruebas de arranque (`*ApplicationTest`, Testcontainers; la de payments-history
 recorre Kafka → inbox R2DBC → bus reactivo → PostgreSQL), `ContractExamplesTest`,
