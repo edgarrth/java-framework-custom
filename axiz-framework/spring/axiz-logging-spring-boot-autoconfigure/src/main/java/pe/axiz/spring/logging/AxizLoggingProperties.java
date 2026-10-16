@@ -18,14 +18,22 @@ public record AxizLoggingProperties(@Nullable Boolean json, @DefaultValue Http h
    * HTTP access log.
    *
    * @param enabled whether one line per request is written (logger {@code axiz.http})
-   * @param headers allow-listed headers to include; Authorization and Cookie are never written
+   * @param headers allow-listed headers to include ({@code traceparent} shows which trace the
+   *     caller sent); Authorization and Cookie are never written
    * @param bodies whether JSON bodies are included (masked and truncated; servlet only)
    * @param maxBodyLength maximum logged body length
    * @param excludedPaths path patterns not logged
    */
   public record Http(
       @DefaultValue("true") boolean enabled,
-      @DefaultValue({"Content-Type", "Accept", "User-Agent", "X-Correlation-Id", "X-Request-Id"})
+      @DefaultValue({
+            "Content-Type",
+            "Accept",
+            "User-Agent",
+            "X-Correlation-Id",
+            "X-Request-Id",
+            "traceparent"
+          })
           List<String> headers,
       @DefaultValue("false") boolean bodies,
       @DefaultValue("4000") int maxBodyLength,

@@ -70,7 +70,7 @@ public class PaymentNotificationHandler extends TypedEventHandler<PaymentOrderSt
             envelope.correlationId().orElse(null)));
     metrics.record(
         MetricEvent.of("notification.payment")
-            .channel(channel.name().toLowerCase(Locale.ROOT))
+            .tag("medium", channel.name().toLowerCase(Locale.ROOT))
             .stage(e.status().toLowerCase(Locale.ROOT))
             .outcome(Outcome.SUCCESS));
   }

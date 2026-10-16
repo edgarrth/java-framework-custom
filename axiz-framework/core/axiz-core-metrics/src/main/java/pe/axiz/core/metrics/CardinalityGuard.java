@@ -57,7 +57,9 @@ final class CardinalityGuard {
     if (settings.channels().contains(v)) {
       return v;
     }
-    warnOnce("channel:" + v, "Channel not declared in axiz.metrics.channels; recorded as 'other'");
+    warnOnce(
+        "channel:" + v,
+        "Channel '" + clean(v) + "' not declared in axiz.metrics.channels; recorded as 'other'");
     return MetricTags.OTHER;
   }
 

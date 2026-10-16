@@ -18,10 +18,10 @@
 #   scripts/demo.sh down                        stops services and infrastructure (and its volumes)
 #
 # Services run from their executable jars (services/<name>/target/<name>-*.jar). `up` rebuilds a
-# jar when it is missing, older than the service sources or older than the axiz framework installed
-# in ~/.m2 (AXIZ_M2_REPOSITORY); --build rebuilds all of them.
+# jar (clean package) when it is missing, older than the service sources or older than the axiz
+# framework installed in ~/.m2 (AXIZ_M2_REPOSITORY); --build rebuilds all of them.
 # AXIZ_JAVA_OPTS adds JVM options (default: faster startup, modest heap).
-set -euo pipefail
+set -Eeuo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 run="$root/.run"
 services=(payments-business beneficiaries-crud core-integration payment-process notifications-processor payments-history payments-experience)
@@ -34,6 +34,8 @@ infra_ports=(5432 6379 9092 4566 8180 8089 3000 4317 4318)
 red() { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+# -E: functions inherit the ERR trap, so an unexpected failure never ends the script silently
+trap 'red "demo.sh: unexpected failure (exit $?) at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # true when something accepts connections on localhost:<port>
 port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
@@ -44,7 +46,7 @@ port_owner() {
   owner=$(docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}' 2>/dev/null \
     | awk -F'\t' -v p=":$1->" 'index($3, p) { print $1 " (container, image " $2 ")"; exit }')
   if [ -z "$owner" ] && command -v ss >/dev/null; then
-    owner=$(ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'users:(([^)]*' | head -1 | sed 's/users:((//')
+    owner=$(ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'users:(([^)]*' | head -1 | sed 's/users:((//' || true)
   fi
   [ -n "$owner" ] || owner="a process outside Docker (sudo ss -ltnp \"sport = :$1\" shows which)"
   echo "$owner"
@@ -100,6 +102,12 @@ wait_up() {
         echo; red "$s stopped while starting. Last lines of .run/$s.log:"
         tail -40 "$run/$s.log" | sed 's/^/  | /'
         echo "Fix the cause, then: scripts/demo.sh down && scripts/demo.sh up"
+        return 1
+      fi
+      # never started (no process, nothing on its port): waiting cannot help
+      if [ "$st" = STOPPED ]; then
+        echo; red "$s is not running: start the services with scripts/demo.sh up"
+        print_status || true
         return 1
       fi
     done
@@ -165,28 +173,36 @@ check_ports() {
   fi
 }
 
+# the jar of a service, or nothing (fresh checkout: no target/ yet)
 jar_of() {
+  [ -d "$root/services/$1/target" ] || return 0
   find "$root/services/$1/target" -maxdepth 1 -name "$1-*.jar" ! -name '*-sources.jar' ! -name '*-javadoc.jar' \
     ! -name '*-plain.jar' 2>/dev/null | head -1
 }
 
-# the one-shot infrastructure jobs must have finished well: without the Kafka topics the outbox
-# relays and the audit publisher wait forever and the payment saga never starts
+# the Kafka topics must exist before the services start: without them the outbox relays and the
+# audit publisher wait forever and the payment saga never starts. The check asks the broker for
+# the topics (what matters), not the state of the kafka-topics job: `docker compose wait` on a job
+# that already ended behaves differently across Compose versions and failed with every topic in place
 check_infra() {
-  local compose=(docker compose -f "$root/local/compose.yaml") topics t missing=()
-  if ! timeout 120 "${compose[@]}" wait kafka-topics >/dev/null 2>&1; then
-    red "the Kafka topics were not created. Last lines of the kafka-topics job:"
-    "${compose[@]}" logs --no-color --tail 20 kafka-topics 2>&1 | sed 's/^/  | /'
-    exit 1
-  fi
-  topics=$("${compose[@]}" exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list 2>/dev/null || true)
-  for t in payments payments.dlq audit; do
-    grep -qx "$t" <<<"$topics" || missing+=("$t")
+  local compose=(docker compose -f "$root/local/compose.yaml") topics t missing deadline state
+  deadline=$((SECONDS + 120))
+  while :; do
+    topics=$("${compose[@]}" exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list 2>/dev/null || true)
+    missing=()
+    for t in payments payments.dlq audit; do
+      grep -qx "$t" <<<"$topics" || missing+=("$t")
+    done
+    [ ${#missing[@]} -eq 0 ] && break
+    state=$("${compose[@]}" ps -a --format '{{.State}} {{.ExitCode}}' kafka-topics 2>/dev/null | head -1 || true)
+    if [ "${state%% *}" = exited ] && [ "${state##* }" != 0 ] || [ $SECONDS -ge $deadline ]; then
+      red "Kafka topics missing: ${missing[*]} (kafka-topics job: ${state:-not found}). Last lines of the job:"
+      "${compose[@]}" logs --no-color --tail 20 kafka-topics 2>&1 | sed 's/^/  | /'
+      echo "scripts/demo.sh down && scripts/demo.sh up recreates them"
+      exit 1
+    fi
+    sleep 2
   done
-  if [ ${#missing[@]} -gt 0 ]; then
-    red "Kafka topics missing: ${missing[*]} (scripts/demo.sh down && scripts/demo.sh up recreates them)"
-    exit 1
-  fi
   echo "kafka topics ready: payments payments.dlq audit"
 }
 
@@ -198,17 +214,20 @@ build() {
   # settlement-batch is a job, not a service: built here, run by scripts/scenarios.sh settlement
   for s in "${services[@]}" settlement-batch; do
     jar=$(jar_of "$s")
-    # stale: sources changed, or the framework was installed again (./mvnw install in axiz-framework)
+    # stale: sources changed, or the framework was installed again (./mvnw install in axiz-framework).
+    # Directories count too: deleting or renaming a file only touches its directory
     if [ "$force" = 1 ] || [ -z "$jar" ] \
-      || [ -n "$(find "$root/services/$s/src" "$root/services/$s/pom.xml" -type f -newer "$jar" -print -quit)" ] \
+      || [ -n "$(find "$root/services/$s/src" "$root/services/$s/pom.xml" -newer "$jar" -print -quit)" ] \
       || [ -n "$(find "$m2/pe/axiz" -name '*.jar' -newer "$jar" -print -quit 2>/dev/null)" ]; then
       stale+=("services/$s")
     fi
   done
   [ ${#stale[@]} -eq 0 ] && { echo "jars up to date"; return; }
-  echo "building ${stale[*]} (./mvnw package -DskipTests)..."
-  (cd "$root" && ./mvnw -q -DskipTests package -pl "$(IFS=,; echo "${stale[*]}")" -am) || {
-    red "the build failed; run ./mvnw package -DskipTests in axiz-demo to see the error"
+  # clean: an incremental package keeps the .class of a renamed or deleted source in target/ and
+  # the jar would carry it (e.g. two @Configuration classes defining the same bean)
+  echo "building ${stale[*]} (./mvnw clean package -DskipTests)..."
+  (cd "$root" && ./mvnw -q -DskipTests clean package -pl "$(IFS=,; echo "${stale[*]}")" -am) || {
+    red "the build failed; run ./mvnw clean package -DskipTests in axiz-demo to see the error"
     red "(the framework must be installed first: cd ../axiz-framework && ./mvnw install -DskipTests)"
     exit 1
   }
@@ -218,6 +237,7 @@ start() {
   local s=$1 jar extra=()
   if alive "$s"; then echo "$s already running (pid $(pid_of "$s"))"; return; fi
   jar=$(jar_of "$s")
+  [ -n "$jar" ] || { red "no jar in services/$s/target: scripts/demo.sh up --build compiles it"; exit 1; }
   # the reason of every rejected request (4xx) is logged at DEBUG by axiz.errors: visible locally
   extra+=(--logging.level.axiz.errors=DEBUG)
   if [ "${2:-}" = --debug ]; then
@@ -283,7 +303,7 @@ case "${1:-}" in
     build "$force"
     docker compose -f "$root/local/compose.yaml" up -d --wait
     check_infra
-    bash "$root/scripts/dev-secrets.sh"
+    bash "$root/scripts/dev-secrets.sh" || exit 1
     for s in "${services[@]}"; do start "$s"; done
     if [ "$attach" = 1 ]; then
       # like `docker compose up`: logs in the terminal, Ctrl+C stops the services
@@ -293,7 +313,7 @@ case "${1:-}" in
           || printf '\n\033[31m==== not every service is UP: scripts/demo.sh status ====\033[0m\n\n' ) &
       AXIZ_LOG_LINES=1000 follow "${services[@]}"
     elif [ "$wait" = 1 ]; then
-      wait_up "${AXIZ_UP_TIMEOUT:-300}"
+      wait_up "${AXIZ_UP_TIMEOUT:-300}" || exit 1
       echo "next: scripts/demo.sh smoke, then scripts/demo.sh scenarios (scripts/demo.sh logs follows the logs)"
     else
       echo "services starting: scripts/demo.sh wait (or status) before smoke"
@@ -304,7 +324,7 @@ case "${1:-}" in
     [ -n "${ports[$svc]:-}" ] || { echo "unknown service $svc (one of: ${services[*]})"; exit 2; }
     stop "$svc"
     start "$svc" "${3:-}"
-    wait_up "${AXIZ_UP_TIMEOUT:-300}"
+    wait_up "${AXIZ_UP_TIMEOUT:-300}" || exit 1
     ;;
   stop)
     for s in "${services[@]}"; do stop "$s"; done
@@ -323,17 +343,18 @@ case "${1:-}" in
     docker compose -f "$root/local/compose.yaml" down -v
     ;;
   status)
-    print_status
+    # exit code 1 unless every service is UP (already explained by the table)
+    print_status || exit 1
     ;;
   wait)
-    wait_up "${2:-300}"
+    wait_up "${2:-300}" || exit 1
     ;;
   smoke)
-    bash "$root/scripts/smoke.sh"
+    exec bash "$root/scripts/smoke.sh"
     ;;
   scenarios)
     shift
-    bash "$root/scripts/scenarios.sh" "$@"
+    exec bash "$root/scripts/scenarios.sh" "$@"
     ;;
   logs)
     trap 'unfollow; exit 0' INT TERM

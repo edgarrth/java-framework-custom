@@ -10,7 +10,7 @@ contenedor `otel-lgtm` (Grafana, Prometheus, Tempo y Loki).
 | Punto | Observación | Atributos de baja cardinalidad |
 |---|---|---|
 | HTTP de entrada | `http.server.requests` | `method`, `uri`, `status`, `outcome` |
-| Clientes HTTP | `http.client.requests` | `client.name` (nombre lógico), `status`, `outcome` |
+| Clientes HTTP (`RestClient` y `WebClient`) | `http.client.requests` | `client.name` (nombre lógico), `status`, `outcome` |
 | Clientes SOAP | `axiz.soap.client` | `axiz.client`, `axiz.operation` |
 | AWS SDK v2 | `axiz.aws.sdk` | `aws.service`, `aws.operation`, `outcome` |
 | Casos de uso | `axiz.usecase` | `axiz.operation`, `axiz.outcome` |
@@ -47,14 +47,31 @@ dispatch` → `publish` → handler del consumidor → sus llamadas. Vale para t
 (eventos de dominio, reacciones de EDA, auditoría durable). Requiere propagación W3C, la que Spring
 Boot usa por defecto; con B3 la traza se corta en el outbox como antes.
 
+Las llamadas HTTP salientes de los clientes de `axiz.http-client` se observan con el
+`ObservationRegistry` de la aplicación en los dos stacks: el span del cliente es hijo del span
+actual y su contexto viaja en `traceparent`. En Spring Boot 4 el soporte de `WebClient` es un
+módulo aparte (`spring-boot-starter-webclient`), que los servicios reactivos con clientes HTTP
+deben declarar; sin él las llamadas igual se observan, pero con el `WebClient` sin la
+configuración de Boot (codecs). El log de cada request de entrada incluye el `traceparent`
+recibido, así se ve en qué salto se cortó una traza.
+
 ## Configuración
 
 | Propiedad | Por defecto |
 |---|---|
-| `management.otlp.tracing.endpoint` | `${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}` |
+| `management.opentelemetry.tracing.export.otlp.endpoint` | `${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT}` |
 | `management.otlp.metrics.export.url` | `${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT}` |
 | `management.tracing.sampling.probability` | `${AXIZ_TRACE_SAMPLING:1.0}` (en el ConfigMap de cada ambiente) |
 | `management.endpoints.web.exposure.include` | `health,info,prometheus` |
+
+En Spring Boot 4 la propiedad del endpoint de trazas es
+`management.opentelemetry.tracing.export.otlp.endpoint`; la de Boot 3,
+`management.otlp.tracing.endpoint`, se ignora (Boot la marca como eliminada).
+
+La exportación de métricas OTLP (`micrometer-registry-otlp`) usa `protobuf-java`. Hasta la 4.35 su
+runtime llama a métodos de `sun.misc.Unsafe` marcados para eliminación (Java 24+ avisa al
+arrancar); `axiz-dependencies` fija la 4.36.2, la primera cuyo runtime completo (el que usa el
+código generado de OpenTelemetry) ya no los usa.
 
 ## Dashboards base
 

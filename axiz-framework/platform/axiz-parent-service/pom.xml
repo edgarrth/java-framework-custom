@@ -27,7 +27,8 @@
     <axiz.image.repository>${axiz.image.registry}/axiz/${project.artifactId}</axiz.image.repository>
     <axiz.image.base>eclipse-temurin:25-jre-noble</axiz.image.base>
     <!-- BlockHound (reactive services) redefines JDK classes; ignored where the JVM lacks the flag -->
-    <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods</axiz.test.argLine>
+    <!-- native access: see Enable-Native-Access below; the tests start the same Netty servers -->
+    <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED</axiz.test.argLine>
     <!-- native images: glibc base without a JVM, non-root -->
     <axiz.image.native-base>gcr.io/distroless/base-debian12:nonroot</axiz.image.native-base>
     <jib-native-image-extension.version>0.1.0</jib-native-image-extension.version>
@@ -97,6 +98,22 @@
     </pluginManagement>
 
     <plugins>
+      <!-- Netty (WebFlux, Reactor Netty, Lettuce) loads its native transport with System.loadLibrary,
+           a restricted method since JDK 24: without native access the JVM warns ("Restricted methods
+           will be blocked in a future release") and a future release refuses it. The executable jar
+           grants it to the class path (JEP 472 manifest attribute; repackage keeps it) and the image
+           does the same with the JVM flag, because Jib starts the main class, not the jar -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -156,6 +173,7 @@
               <jvmFlag>-XX:MaxRAMPercentage=75</jvmFlag>
               <jvmFlag>-XX:+ExitOnOutOfMemoryError</jvmFlag>
               <jvmFlag>-Djava.security.egd=file:/dev/urandom</jvmFlag>
+              <jvmFlag>--enable-native-access=ALL-UNNAMED</jvmFlag>
             </jvmFlags>
             <ports>
               <port>8080</port>

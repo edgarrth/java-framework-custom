@@ -85,7 +85,9 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
 
   int launch(String key) throws Exception {
     JobParameters params =
-        new JobParametersBuilder().addString(SettlementJob.INPUT_KEY, key).toJobParameters();
+        new JobParametersBuilder()
+            .addString(SettlementJobConfiguration.INPUT_KEY, key)
+            .toJobParameters();
     try {
       JobExecution execution = jobs.start(settlementJob, params);
       log.info("Settlement job for {} ended {}", key, execution.getStatus());

@@ -29,7 +29,10 @@ import pe.axiz.core.security.redis.RedisRateLimiter;
 @EnableConfigurationProperties(AxizSecurityProperties.class)
 public class AxizSecurityRedisAutoConfiguration {
 
-  @Bean(destroyMethod = "close")
+  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
+  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
+  // made Lettuce warn "Connection is already closed" at every shutdown
+  @Bean(destroyMethod = "")
   StatefulRedisConnection<String, String> axizRateLimitRedisConnection(
       LettuceConnectionFactory factory) {
     return ((RedisClient) factory.getRequiredNativeClient()).connect();

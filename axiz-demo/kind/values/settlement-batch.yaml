@@ -26,7 +26,7 @@ externalSecret:
   enabled: false
 config:
   axiz.config.environment: local
-  management.otlp.tracing.endpoint: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/traces
+  management.opentelemetry.tracing.export.otlp.endpoint: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/traces
   management.otlp.metrics.export.url: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/metrics
   spring.datasource.url: jdbc:postgresql://postgres.axiz-demo.svc.cluster.local:5432/settlement_batch
   spring.datasource.username: app

@@ -25,9 +25,14 @@ Fuera de AWS: Nexus Repository (artefactos Maven e imágenes), GitHub Actions (C
 
 ## Convenciones de los clientes AWS
 
-- Un solo SDK: AWS SDK v2 (el v1 está prohibido). Los clientes se construyen con `AwsClients`, que
-  agrega el interceptor de observación (un span CLIENT por llamada con servicio y operación) y el
-  endpoint de LocalStack cuando `axiz.aws.endpoint` está definido.
+- Un solo SDK: AWS SDK v2 (el v1 está prohibido). Todo cliente que crea el framework (SQS, SNS, S3,
+  DynamoDB, KMS, Secrets Manager, Parameter Store) se construye con `AwsClients`, que agrega el
+  interceptor de observación (un span CLIENT por llamada con servicio y operación), la región de
+  `axiz.aws.region` y el endpoint de `axiz.aws.<servicio>.endpoint` o, si no está,
+  `axiz.aws.endpoint` (LocalStack en local). Claves de servicio: `sqs`, `sns`, `s3`, `dynamodb`,
+  `kms`, `secretsmanager`, `ssm`. Un bean propio del cliente reemplaza al del framework.
+  El módulo adaptador (`axiz-core-*-sqs`, `-dynamodb`, `-kms`, `-aws`, `-s3`, `-sns`) trae
+  `axiz-core-observability-awssdk`, así el cliente nunca se crea sin esa configuración.
 - Credenciales siempre por la cadena por defecto: IRSA o EKS Pod Identity en el clúster, variables
   `test`/`test` contra LocalStack. Nunca llaves en propiedades.
 - Nombres de tablas, colas y tópicos por convención con prefijo de ambiente

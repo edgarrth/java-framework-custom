@@ -2,6 +2,7 @@ package pe.axiz.core.observability.awssdk;
 
 import io.micrometer.observation.ObservationRegistry;
 import java.net.URI;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -29,5 +30,26 @@ public final class AwsClients {
       builder.endpointOverride(URI.create(endpoint));
     }
     return builder.build();
+  }
+
+  /**
+   * Same as {@link #build}, with region and endpoint taken from the framework properties: {@code
+   * axiz.aws.region}, and {@code axiz.aws.<service>.endpoint} or else {@code axiz.aws.endpoint}.
+   * Modules that create a client go through here, so a local run against LocalStack never reaches
+   * real AWS because one module skipped the endpoint.
+   *
+   * @param properties property lookup, e.g. {@code environment::getProperty}
+   * @param service endpoint key of the service: {@code sqs}, {@code dynamodb}, {@code kms}...
+   */
+  public static <B extends AwsClientBuilder<B, C>, C> C configured(
+      B builder,
+      ObservationRegistry registry,
+      Function<String, @Nullable String> properties,
+      String service) {
+    String endpoint = properties.apply("axiz.aws." + service + ".endpoint");
+    if (endpoint == null || endpoint.isBlank()) {
+      endpoint = properties.apply("axiz.aws.endpoint");
+    }
+    return build(builder, registry, properties.apply("axiz.aws.region"), endpoint);
   }
 }

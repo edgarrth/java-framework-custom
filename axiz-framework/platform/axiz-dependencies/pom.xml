@@ -52,6 +52,8 @@
     <mapstruct.version>1.6.3</mapstruct.version>
     <bouncycastle.version>1.81</bouncycastle.version>
     <jspecify.version>1.0.0</jspecify.version>
+    <!-- first protobuf-java whose full runtime does not use sun.misc.Unsafe (see dependencyManagement) -->
+    <protobuf.version>4.36.2</protobuf.version>
     <!-- same version as Spring Security 7.1 (not managed by Spring Boot) -->
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
   </properties>
@@ -207,6 +209,15 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
+      </dependency>
+      <!-- OTLP metrics (micrometer-registry-otlp → opentelemetry-proto) carry protobuf-java. Up to
+           4.35.x its runtime calls the terminally deprecated memory methods of sun.misc.Unsafe
+           (warning on Java 24+, slated for removal); from 4.36 (protobuf v36) the full runtime
+           used by generated code no longer does. -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jspecify</groupId>

@@ -28,7 +28,11 @@ public class ControlTotalsTasklet implements Tasklet {
       throws Exception {
     String key =
         Objects.requireNonNull(
-            (String) context.getStepContext().getJobParameters().get(SettlementJob.INPUT_KEY),
+            (String)
+                context
+                    .getStepContext()
+                    .getJobParameters()
+                    .get(SettlementJobConfiguration.INPUT_KEY),
             "input.key job parameter");
     verify(storage, key);
     return RepeatStatus.FINISHED;

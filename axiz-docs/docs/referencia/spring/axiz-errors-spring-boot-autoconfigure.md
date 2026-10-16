@@ -22,7 +22,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizErrorsProperties` | Error handling settings (`axiz.errors.*`). |
 | `ProblemControllerAdvice` | Converts every exception raised by MVC handlers into an RFC 9457 response. |
 | `ProblemErrorController` | Replaces Boot's whitelabel error controller: errors raised in filters or by the container are rendered as RFC 9457 problems too. |
-| `ProblemResponder` | Turns any failure into a problem and logs it once: server errors at ERROR with the stack trace, rejections and client errors at WARN or DEBUG without it. |
+| `ProblemResponder` | Turns any failure into a problem and logs it once: server errors at ERROR with the stack trace, failed dependencies (timeout, 5xx, no response) and denied access at WARN, conflicts at INFO and other client errors at DEBUG, without it. |
 | `ProblemWebExceptionHandler` | WebFlux exception handler producing RFC 9457 problems (runs before Boot's default handler). |
 
 ## Tests

@@ -3,11 +3,11 @@ files:
   - {template: java/UseCase.java.mustache, path: "src/main/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCase.java", when: type.usecase}
   - {template: test/UseCaseTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/usecase/{{artifact.className}}UseCaseTest.java", when: type.usecase}
   - {template: java/Command.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{artifact.className}}Command.java", when: type.command}
-  - {template: java/CommandHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{artifact.className}}Handler.java", when: type.command}
-  - {template: test/CommandHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/command/{{artifact.className}}HandlerTest.java", when: type.command}
+  - {template: java/CommandHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{artifact.className}}CommandHandler.java", when: type.command}
+  - {template: test/CommandHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/command/{{artifact.className}}CommandHandlerTest.java", when: type.command}
   - {template: java/Query.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{artifact.className}}Query.java", when: type.query}
-  - {template: java/QueryHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{artifact.className}}Handler.java", when: type.query}
-  - {template: test/QueryHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/query/{{artifact.className}}HandlerTest.java", when: type.query}
+  - {template: java/QueryHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{artifact.className}}QueryHandler.java", when: type.query}
+  - {template: test/QueryHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/application/query/{{artifact.className}}QueryHandlerTest.java", when: type.query}
   - {template: java/Event.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.eventPath}}/{{artifact.className}}.java", when: type.event}
   - {template: java/EventPayload.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}.java", when: type.handler}
   - {template: java/EventHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.handlerPath}}/{{artifact.className}}Handler.java", when: type.handler}

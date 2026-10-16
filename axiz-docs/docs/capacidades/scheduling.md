@@ -53,4 +53,5 @@ void purge() { ... }
 ## Módulos
 
 - [`axiz-scheduling-spring-boot-autoconfigure`](../referencia/spring/axiz-scheduling-spring-boot-autoconfigure.md)
+- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)
 - [`axiz-core-test`](../referencia/core/axiz-core-test.md)

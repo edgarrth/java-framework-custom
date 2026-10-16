@@ -39,6 +39,15 @@
     </dependency>
 {{/stack.reactive}}
 {{/caps.web}}
+{{#caps.httpclient}}
+{{#stack.reactive}}
+    <!-- Spring Boot's WebClient support (builder, codecs, observation) for the reactive HTTP clients -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webclient</artifactId>
+    </dependency>
+{{/stack.reactive}}
+{{/caps.httpclient}}
 {{#fw.batch}}
     <dependency>
       <groupId>org.springframework.boot</groupId>

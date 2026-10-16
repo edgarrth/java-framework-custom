@@ -4,15 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.SocketTimeoutException;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.dao.DuplicateKeyException;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ErrorCatalog;
 import pe.axiz.core.errors.ErrorCode;
+import pe.axiz.core.errors.ExternalErrorDetail;
+import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.errors.Problem;
 
 class ErrorsTest {
@@ -56,5 +62,34 @@ class ErrorsTest {
                       new DuplicateKeyException("uk_payment"), Locale.ENGLISH, "/payments", null)
                   .status());
         });
+  }
+
+  @Test
+  @ExtendWith(OutputCaptureExtension.class)
+  void failedDependencyIsAWarningWithItsCauseButNoStackTrace(CapturedOutput output) {
+    runner.run(
+        ctx -> {
+          Problem timeout =
+              ctx.getBean(ProblemResponder.class)
+                  .problem(
+                      ExternalServiceException.from(
+                          new ExternalErrorDetail(
+                              "core-banking", -1, "SocketTimeoutException", null, ""),
+                          new SocketTimeoutException("Read timed out")),
+                      Locale.ENGLISH,
+                      "/v1/debits",
+                      null);
+          assertEquals(504, timeout.status());
+          assertEquals("AXZ-EXT-0504", timeout.code());
+        });
+    String log = output.getOut();
+    assertTrue(log.contains("WARN"), log);
+    assertTrue(
+        log.contains(
+            "error=Call to core-banking got no response (SocketTimeoutException)"
+                + " cause=SocketTimeoutException: Read timed out"),
+        log);
+    assertFalse(log.contains("ERROR"), log);
+    assertFalse(log.contains("\tat "), log);
   }
 }

@@ -7,7 +7,7 @@ import pe.axiz.framework.cqrs.QueryHandler;
 
 /** Handles {@link {{artifact.className}}Query} on the read side. */
 @Component
-public class {{artifact.className}}Handler implements QueryHandler<{{artifact.className}}Query, String> {
+public class {{artifact.className}}QueryHandler implements QueryHandler<{{artifact.className}}Query, String> {
 
   @Override
   public String handle({{artifact.className}}Query query) {

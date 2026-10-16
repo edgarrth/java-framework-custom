@@ -28,7 +28,10 @@ import pe.axiz.core.cache.redis.RedisByteCache;
 @ConditionalOnBean(LettuceConnectionFactory.class)
 public class AxizCacheRedisAutoConfiguration {
 
-  @Bean(destroyMethod = "close")
+  // no destroy method: the connection belongs to the factory's RedisClient, which closes it when
+  // the factory stops (a lifecycle phase that runs before beans are destroyed); closing it again
+  // made Lettuce warn "Connection is already closed" at every shutdown
+  @Bean(destroyMethod = "")
   StatefulRedisConnection<String, byte[]> axizCacheRedisConnection(
       LettuceConnectionFactory factory) {
     return ((RedisClient) factory.getRequiredNativeClient())

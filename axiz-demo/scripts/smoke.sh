@@ -7,7 +7,9 @@
 # Elsewhere, point it at the deployment and skip the local wait:
 #   SMOKE_LOCAL=0 KC_URL=... CHANNEL_URL=... CRUD_URL=... HISTORY_URL=... scripts/smoke.sh
 # Every step prints what it checks; a failing step prints the HTTP status and body and exits 1.
-set -euo pipefail
+set -Eeuo pipefail
+# -E: functions inherit the ERR trap, so an unexpected failure never ends the script silently
+trap 'printf "\\033[31m%s: unexpected failure (exit %s) at line %s: %s\\033[0m\\n" "${0##*/}" "$?" "$LINENO" "$BASH_COMMAND" >&2' ERR
 root=$(cd "$(dirname "$0")/.." && pwd)
 KC_URL=${KC_URL:-http://localhost:8180}
 CHANNEL_URL=${CHANNEL_URL:-http://localhost:8080}

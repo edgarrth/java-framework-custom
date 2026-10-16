@@ -163,4 +163,31 @@ class HttpClientTest {
     assertEquals("bank", e.detail().system());
     assertTrue(e.getCause() instanceof java.net.ConnectException);
   }
+
+  @Test
+  void servletTimeoutIsAGatewayTimeoutThatKeepsItsCause() {
+    AxizRestClientInterceptor interceptor =
+        new AxizRestClientInterceptor(
+            new ClientResilience(settings(0), CircuitBreakerRegistry.ofDefaults()),
+            OutboundAuth.create(settings(0), null, Duration.ofSeconds(30), Clock.systemUTC()),
+            null);
+    org.springframework.mock.http.client.MockClientHttpRequest request =
+        new org.springframework.mock.http.client.MockClientHttpRequest(
+            HttpMethod.POST, URI.create("https://bank.example.com/v1/debits"));
+    java.io.IOException e =
+        assertThrows(
+            java.io.IOException.class,
+            () ->
+                interceptor.intercept(
+                    request,
+                    new byte[0],
+                    (req, body) -> {
+                      throw new java.net.SocketTimeoutException("Read timed out");
+                    }));
+    pe.axiz.core.errors.ExternalServiceException dependency =
+        (pe.axiz.core.errors.ExternalServiceException) e.getCause();
+    assertEquals(504, dependency.category().httpStatus());
+    assertEquals("Call to bank got no response (SocketTimeoutException)", dependency.getMessage());
+    assertTrue(dependency.getCause() instanceof java.net.SocketTimeoutException);
+  }
 }

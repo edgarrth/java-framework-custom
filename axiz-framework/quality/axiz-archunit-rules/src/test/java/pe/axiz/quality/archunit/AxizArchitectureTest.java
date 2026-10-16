@@ -31,6 +31,35 @@ class AxizArchitectureTest {
   }
 
   @Test
+  void aComponentSharingItsNameWithABeanIsReported() {
+    ArchRule rule =
+        GeneralRules.uniqueBeanNames(
+            "pe.axiz.quality.archunit.sample.beans.Component",
+            "pe.axiz.quality.archunit.sample.beans.Bean",
+            "pe.axiz.quality.archunit.sample.beans.AutoConfiguration");
+    String report =
+        rule.evaluate(
+                new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.beans"))
+            .getFailureReport()
+            .toString();
+    assertTrue(report.contains("bean name 'settlementJob' is defined by"), report);
+    assertTrue(report.contains("@Bean SettlementJob.settlementJob()"), report);
+    assertTrue(report.contains("bean name 'payments'"), report);
+    // explicit names, auto-configurations (registered by class name) and clean classes pass
+    assertFalse(report.contains("'stepsConfiguration'"), report);
+    assertFalse(report.contains("'clean'"), report);
+    assertFalse(report.contains("jobsAutoConfiguration"), report);
+    assertEquals(
+        2,
+        rule.evaluate(
+                new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.beans"))
+            .getFailureReport()
+            .getDetails()
+            .size(),
+        report);
+  }
+
+  @Test
   void generalRulesPassOnCleanCode() {
     for (ArchRule rule : GeneralRules.all()) {
       assertFalse(

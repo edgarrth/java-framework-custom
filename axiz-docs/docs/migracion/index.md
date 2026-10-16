@@ -180,3 +180,54 @@ Si ya creaste tablas o stores propios con el paquete preliminar:
   quedan en una sola traza. Aparecen dos observaciones nuevas, `axiz.outbox.write` y
   `axiz.outbox.dispatch` (spans y timers). Sin cambios en los servicios. Si tienes un
   `EventPublisher` propio en lugar del de axiz, quita esas extensiones antes de publicar.
+- **Clientes AWS con endpoint y región:** la auditoría por SQS, Secrets Manager, Parameter Store,
+  KMS y los stores en DynamoDB (locks, inbox, idempotencia, secuencias, ShedLock) creaban su
+  cliente con `XxxClient.create()` cuando no había un bean: ignoraban `axiz.aws.endpoint` y la
+  región, iban a AWS real desde local (`403 The security token included in the request is
+  invalid`) y no se observaban. Ahora todos usan `AwsClients.configured(...)`, que lee
+  `axiz.aws.region` y `axiz.aws.<servicio>.endpoint` o `axiz.aws.endpoint`, y se registran como
+  beans que se cierran al apagar. Los adaptadores AWS (`axiz-core-*-sqs`, `-sns`, `-s3`,
+  `-dynamodb`, `-kms`, `axiz-core-secrets-aws`) traen `axiz-core-observability-awssdk`; antes un
+  servicio sin el starter de DynamoDB fallaba con `NoClassDefFoundError: AwsClients` al crear el
+  cliente de S3. Sin cambios en los servicios.
+- **`protobuf-java` 4.36.2:** `axiz-dependencies` fija esta versión (la exportación de métricas
+  OTLP la trae por `opentelemetry-proto`). Hasta la 4.35 el runtime llamaba a métodos de
+  `sun.misc.Unsafe` marcados para eliminación y Java 25 lo avisaba al arrancar cada servicio.
+- **Endpoint de trazas:** usa `management.opentelemetry.tracing.export.otlp.endpoint`.
+  `management.otlp.tracing.endpoint` es de Spring Boot 3 y en Boot 4 se ignora; los servicios
+  generados y el demo ya usan la nueva.
+- **Clientes HTTP observados en los dos stacks:** los grupos de `axiz.http-client` reciben el
+  `ObservationRegistry` de la aplicación también en `WebClient`. Sin `spring-boot-starter-webclient`
+  (módulo aparte en Boot 4) las llamadas de un servicio reactivo salían sin span ni `traceparent`
+  y la traza se cortaba en el primer salto. Los servicios reactivos con clientes HTTP declaran ese
+  starter (los generados ya lo hacen).
+- **Nombres de bean únicos:** `GeneralRules.UNIQUE_BEAN_NAMES` (en el `ArchitectureTest` de cada
+  servicio) falla si una clase `@Configuration`/`@Component` se llama como un método `@Bean` u otro
+  componente (`SettlementJob` con `Job settlementJob()`): compila y pasa las pruebas unitarias, pero
+  el contexto no arranca. Renombra la clase (por ejemplo `SettlementJobConfiguration`). La regla
+  encontró el mismo error en el generador: `axiz generate command x` y `axiz generate query x`
+  creaban dos clases `XHandler` (en `application/command` y `application/query`) y el servicio no
+  arrancaba. Ahora se llaman `XCommandHandler` y `XQueryHandler`; si ya tienes ese par, renombra
+  una.
+- **Logs:** los stores en memoria (idempotencia, locks), permitidos solo en `local` y `test`, se
+  informan en INFO, no en WARN; los conflictos (409) se registran en INFO y los accesos denegados
+  siguen en WARN. Las conexiones Redis propias de axiz las cierra el `RedisClient` de la fábrica
+  de conexiones (Lettuce ya no avisa `Connection is already closed` al apagar). El log de cada
+  request incluye el header `traceparent`.
+- **Dependencia que no contesta:** un timeout de un cliente HTTP (`RestClient`, `WebClient`,
+  `SoapClient`) es ahora una `ExternalServiceException` 504 (`AXZ-EXT-0504`); una conexión
+  rechazada o reiniciada, un circuito abierto o un bulkhead lleno siguen en 503. Antes los
+  clientes REST respondían 503 también ante un timeout. El mensaje dice
+  `Call to <sistema> got no response (<tipo>)` en vez de `failed with status -1`, y el cliente
+  servlet conserva la causa. Para las sagas, 503 y 504 siguen siendo un resultado incierto. Si
+  un cliente tuyo del servicio esperaba 503 ante un timeout, acepta también 504.
+- **Log de errores de dependencias:** `ProblemResponder` registra una falla de dependencia (5xx de
+  tipo `EXTERNAL`) en WARN, con `cause=<tipo>: <mensaje>` y sin stack trace; las fallas internas
+  siguen en ERROR con su stack trace. Si una alerta contaba los ERROR de `axiz.errors` para
+  detectar dependencias caídas, cámbiala a la métrica `http.client.requests` (ver
+  [Errores](../guias/errores.md#que-se-registra)).
+- **Acceso nativo:** `axiz-parent-service` concede acceso nativo al classpath
+  (`Enable-Native-Access: ALL-UNNAMED` en el manifiesto del jar y `--enable-native-access` en la
+  imagen de Jib y en las pruebas). Netty lo necesita para su transporte nativo; sin él, Java 25
+  avisa al arrancar y una versión futura lo bloqueará. Si un servicio arranca con un comando
+  propio (`java -cp ...` sin `-jar`), agrega `--enable-native-access=ALL-UNNAMED`.

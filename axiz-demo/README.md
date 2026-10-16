@@ -97,7 +97,7 @@ group of the scenarios runs it.
 ### Functional scenarios
 
 `scripts/demo.sh scenarios` (or `scripts/scenarios.sh`) checks what the demo promises, beyond the
-single payment of the smoke test: 86 checks in 14 groups, each printing PASS or FAIL, with the
+single payment of the smoke test: 87 checks in 14 groups, each printing PASS or FAIL, with the
 reason and the last warnings of the services involved when a check fails.
 
 | Group | What it checks |
@@ -112,7 +112,7 @@ reason and the last warnings of the services involved when a check fails.
 | `events` | outbox published, encrypted accounts, saga states, Kafka consumer groups caught up, empty DLQ, CloudEvents headers |
 | `notifications` | notification requests on SNS for completed and rejected payments |
 | `audit` | audit through SQS archived on S3 with its manifest, audit topic on Kafka, empty audit DLQ |
-| `observability` | business and HTTP metrics in Prometheus, traces in Tempo |
+| `observability` | business and HTTP metrics in Prometheus; traces looked up in Tempo by the trace ID in the logs: payment-process and core-integration in one trace, and one trace from the channel request to the saga |
 | `settlement` | the batch loads the sample file, reruns load nothing, summary on S3 |
 | `dlq` | a malformed message ends in `payments.dlq` once per consumer group |
 | `recovery` | a debit that times out leaves the saga VERIFYING; the recovery job completes it (about 4 minutes) |

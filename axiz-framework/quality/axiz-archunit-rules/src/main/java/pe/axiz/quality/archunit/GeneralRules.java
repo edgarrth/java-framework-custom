@@ -1,5 +1,6 @@
 package pe.axiz.quality.archunit;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
@@ -111,7 +112,24 @@ public final class GeneralRules {
   public static final ArchRule NO_DEPRECATED_API =
       GeneralCodingRules.DEPRECATED_API_SHOULD_NOT_BE_USED;
 
+  /**
+   * Every scanned component has a bean name of its own. A {@code @Configuration} class named like
+   * one of its {@code @Bean} methods (class {@code SettlementJob} with {@code Job settlementJob()})
+   * compiles and passes unit tests, and the application does not start.
+   */
+  public static final ArchRule UNIQUE_BEAN_NAMES =
+      uniqueBeanNames(
+          "org.springframework.stereotype.Component",
+          "org.springframework.context.annotation.Bean",
+          "org.springframework.boot.autoconfigure.AutoConfiguration");
+
   private GeneralRules() {}
+
+  static ArchRule uniqueBeanNames(String component, String bean, String autoConfiguration) {
+    return classes()
+        .should(new BeanNames(component, bean, autoConfiguration))
+        .because("two beans with one name stop the application at startup");
+  }
 
   /** Every general rule, for {@code @ArchTest} fields or manual checks. */
   public static List<ArchRule> all() {
@@ -127,7 +145,8 @@ public final class GeneralRules {
         NO_TESTING_AUTHENTICATION,
         NO_PARALLEL_HTTP_CLIENTS,
         NO_AWS_SDK_V1,
-        NO_DEPRECATED_API);
+        NO_DEPRECATED_API,
+        UNIQUE_BEAN_NAMES);
   }
 
   static DescribedPredicate<JavaClass> annotatedWithAny(List<String> annotationNames) {

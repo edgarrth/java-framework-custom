@@ -16,6 +16,9 @@ Procesos de archivos, conciliaciones y cargas sobre **Spring Batch 6**, ejecutad
 - **Observación de cada job**: `ObservedJobListener` registra el evento `batch.run` con duración y
   registros, audita la ejecución y deja una línea de resumen.
 - **Esquema por Flyway** fuera del perfil local (`spring.batch.jdbc.initialize-schema: never`).
+- **Clase de configuración con otro nombre que el job** (`SettlementJobConfiguration` declara
+  `settlementJob()`): dos beans con el mismo nombre detienen el arranque, y la regla
+  `UNIQUE_BEAN_NAMES` del `ArchitectureTest` lo marca.
 
 ```java
 @Bean

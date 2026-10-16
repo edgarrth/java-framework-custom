@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -172,6 +175,40 @@ class ErrorsTest {
     Problem p = defaultFactory(List.of()).create(ex, Locale.ROOT, null, null);
     assertEquals(expectedStatus, p.status());
     assertNull(p.external());
+  }
+
+  @Test
+  void transportFailuresAreTimeoutsOrUnavailableAndSaySo() {
+    ExternalErrorDetail noAnswer =
+        new ExternalErrorDetail("core-banking", -1, "SocketTimeoutException", null, "");
+    ExternalServiceException timeout =
+        ExternalServiceException.from(
+            noAnswer, new IOException("I/O error", new SocketTimeoutException("Read")));
+    assertEquals(504, timeout.category().httpStatus());
+    assertEquals("AXZ-EXT-0504", timeout.code().value());
+    assertEquals(
+        "Call to core-banking got no response (SocketTimeoutException)", timeout.getMessage());
+    // a client library timeout this module does not know, recognized by its type name
+    assertEquals(
+        504,
+        ExternalServiceException.from(noAnswer, new ReadTimeoutException())
+            .category()
+            .httpStatus());
+    ExternalServiceException refused =
+        ExternalServiceException.from(
+            new ExternalErrorDetail("core-banking", -1, "ConnectException", null, ""),
+            new ConnectException("Connection refused"));
+    assertEquals(503, refused.category().httpStatus());
+    assertEquals("Call to core-banking got no response (ConnectException)", refused.getMessage());
+    assertEquals(
+        "Call to core-banking failed with status 500",
+        ExternalServiceException.from(new ExternalErrorDetail("core-banking", 500, null, null, ""))
+            .getMessage());
+  }
+
+  /** Stands for a client library timeout type (e.g. Netty's), unrelated to the JDK ones. */
+  private static final class ReadTimeoutException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
   }
 
   @Test

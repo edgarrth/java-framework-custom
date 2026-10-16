@@ -29,6 +29,12 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
     </dependency>
+    <!-- Spring Boot's WebClient support (builder, codecs, observation) for the HTTP clients: in
+         Boot 4 it is its own module, not part of the WebFlux starter -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webclient</artifactId>
+    </dependency>
     <!-- annotations used by the models generated from the OpenAPI contract -->
     <dependency>
       <groupId>jakarta.annotation</groupId>

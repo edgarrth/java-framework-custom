@@ -74,3 +74,26 @@ Los clientes HTTP y SOAP convierten las respuestas de error en `ExternalServiceE
 `ExternalErrorDetail` (sistema, status, código y mensaje del proveedor). El adaptador decide qué
 significa para el dominio: en el demo, `CoreBankingAdapter` convierte `CB-51` en
 "fondos insuficientes" (422) y `CB-62`/`CB-63` en "cuenta no operativa".
+
+Si la dependencia no contesta, `ExternalErrorDetail` lleva status `-1` y el tipo de la falla
+(`SocketTimeoutException`, `ConnectException`, `circuit-open`...). Un timeout responde **504**
+(`AXZ-EXT-0504`); una conexión rechazada o reiniciada, un circuito abierto o un bulkhead lleno,
+**503**. El mensaje para el log lo dice así: `Call to core-banking got no response
+(SocketTimeoutException)`.
+
+## Qué se registra
+
+`ProblemResponder` registra cada error una sola vez, en el logger `axiz.errors`:
+
+| Error | Nivel | Stack trace |
+|---|---|---|
+| Falla interna (5xx, tipo `TECHNICAL`) | ERROR | sí |
+| Falla de una dependencia (5xx, tipo `EXTERNAL`) | WARN, con `cause=<tipo>: <mensaje>` | no |
+| Acceso denegado (tipo `SECURITY`) | WARN | no |
+| Conflicto (409) | INFO | no |
+| Otros errores del cliente (400, 404, 422...) | DEBUG | no |
+
+Una dependencia caída no es un defecto del servicio: su stack trace no agrega nada y, con cada
+request, inundaría el log con ERROR. El cliente HTTP ya registró cada intento
+(`axiz.http.client ... status=-1 durationMs=4005 attempt=1`), la traza muestra la llamada fallida
+y las métricas `http.client.requests` alimentan las alertas.

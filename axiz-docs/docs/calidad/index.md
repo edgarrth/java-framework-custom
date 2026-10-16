@@ -13,6 +13,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Capas | `bannedDependencies` por parent (la capa 1 prohíbe Spring, Quarkus, AWS SDK v1, Hazelcast, GCP, Vault, agentes de OTel, Retrofit, Feign y librerías de test en compile) | falla el build |
 | Arquitectura | ArchUnit: reglas del estilo y [reglas generales](arquitectura.md) | falla el build |
 | Sin APIs deprecadas | ArchUnit (`NO_DEPRECATED_API`, en cada `ArchitectureTest`): ninguna clase usa una API marcada `@Deprecated`; el compilador corre con `-Xlint:all` y el código del framework, del demo y de los proyectos generados compila sin advertencias. Los modelos que genera openapi-generator usan `@Nullable` de JSpecify | falla el build |
+| Nombres de bean únicos | ArchUnit (`UNIQUE_BEAN_NAMES`, en cada `ArchitectureTest`): una clase `@Configuration` o `@Component` no puede llamarse como un método `@Bean` u otro componente; el error no lo ve el compilador ni una prueba unitaria y el servicio no arranca | falla el build |
 | Formato | Spotless con google-java-format (Java); `./mvnw spotless:apply` formatea (`-Pquality`) | falla con archivos sin formatear |
 | Convenciones | Checkstyle: nombres, imports, Javadoc de la API pública, APIs prohibidas (`-Pquality`) | severidad error |
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |

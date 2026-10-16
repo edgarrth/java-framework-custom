@@ -84,7 +84,7 @@ axiz:
 | card | `card.issue`, `card.activate`, `card.block`, `card.limit.change`, `card.authorization`, `pin.change` |
 | credit | `loan.application`, `loan.disbursement`, `installment.payment`, `credit.score` |
 | risk | `fraud.check`, `fraud.alert`, `aml.screening` |
-| notification | `notification.send` (con `channel`) |
+| notification | `notification.send` (con un tag propio, p. ej. `medium`: email, sms, push; `channel` es el canal del cliente) |
 | operation | `file.load`, `batch.run`, `reconciliation.mismatch`, `queue.pending` |
 
 Las métricas son operativas: las cifras contables salen del registro transaccional. Para totales

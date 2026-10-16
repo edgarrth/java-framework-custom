@@ -150,8 +150,8 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                               ? Mono.delay(resilience.delay((int) s.totalRetries() + 1))
                               : Mono.error(s.failure());
                         })))
-        // like the servlet client: a transport failure (timeout, refused or reset connection)
-        // becomes a dependency error, so the service answers 503 instead of an unknown failure
+        // like the servlet client: a transport failure becomes a dependency error, so the service
+        // answers 504 (timeout) or 503 (refused or reset connection) instead of an unknown failure
         .onErrorMap(e -> !(e instanceof AxizException), e -> transport(settings, e));
   }
 

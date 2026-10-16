@@ -84,7 +84,8 @@ public class AxizRestClientInterceptor implements ClientHttpRequestInterceptor {
   private static IOException transport(ClientSettings settings, IOException e) {
     ExternalServiceException ex =
         ExternalServiceException.from(
-            new ExternalErrorDetail(settings.name(), -1, e.getClass().getSimpleName(), null, ""));
+            new ExternalErrorDetail(settings.name(), -1, e.getClass().getSimpleName(), null, ""),
+            e);
     return new IOException(ex.getMessage(), ex);
   }
 

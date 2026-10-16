@@ -29,6 +29,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `HttpClientRegistry` | Validated settings and shared per-client components (resilience, credentials, transport). |
 | `OutboundAuth` | Adds the outbound credentials of a client: OAuth2 client credentials (cached, renewed early), token relay of the inbound bearer token, or an API key from the secret store. |
 | `OutboundHeaders` | Headers forwarded to a dependency from the current request: correlation id, language and the catalog headers in the client's allow-list. |
+| `ReactiveClientNameObservationConvention` | Uses the logical client name as `client.name` in metrics and spans of a WebClient. |
 
 ## Tests
 

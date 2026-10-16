@@ -31,7 +31,7 @@ import pe.axiz.framework.batch.spring.StorageRecordItemReader;
  * </ol>
  */
 @Configuration(proxyBeanMethods = false)
-public class SettlementJob {
+public class SettlementJobConfiguration {
 
   public static final String NAME = "settlement";
   public static final String INPUT_KEY = "input.key";

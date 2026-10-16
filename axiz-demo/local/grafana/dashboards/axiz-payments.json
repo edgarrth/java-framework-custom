@@ -228,8 +228,8 @@
    "targets": [
     {
      "refId": "A",
-     "expr": "sum by (channel, stage) (increase(axiz_events_total{event=\"notification.payment\"}[1h]))",
-     "legendFormat": "{{channel}} {{stage}}"
+     "expr": "sum by (medium, stage) (increase(axiz_events_total{event=\"notification.payment\"}[1h]))",
+     "legendFormat": "{{medium}} {{stage}}"
     }
    ]
   },

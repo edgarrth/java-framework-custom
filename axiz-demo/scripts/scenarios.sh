@@ -167,9 +167,14 @@ lag_report() {
   kafka kafka-consumer-groups.sh --describe --group "$1" | awk 'NF && $1 != ""' | head -n 6
 }
 
+# objects archived today under audit/. The CLI paginates list-objects-v2 and merges the pages,
+# which drops KeyCount (it printed None): count the merged Contents instead
 audit_objects() {
-  awsl s3api list-objects-v2 --bucket local-bucket --prefix "audit/$(date -u +%Y/%m/%d)/" \
-    --query KeyCount --output text | tr -dc '0-9'
+  local n
+  # shellcheck disable=SC2016 # JMESPath literal, not a shell expansion
+  n=$(awsl s3api list-objects-v2 --bucket local-bucket --prefix "audit/$(date -u +%Y/%m/%d)/" \
+    --query 'length(Contents || `[]`)' --output text | tr -dc '0-9')
+  echo "${n:-0}"
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -646,6 +651,23 @@ traceql() {
   grafana "/api/datasources/proxy/uid/$TEMPO_UID/api/search?q=$(jq -rn --arg q "$1" '$q|@uri')&start=$((now - 3600))&end=$now&limit=5" \
     | jq -e '(.traces // []) | length > 0'
 }
+# log_trace SERVICE REGEX: trace ID of the last line of .run/SERVICE.log matching REGEX (the log
+# pattern prints [traceId-spanId] of the current span; empty when the line ran outside a trace)
+log_trace() {
+  grep -E "$2" "$root/.run/$1.log" 2>/dev/null | grep -oE '\[[0-9a-f]{32}-[0-9a-f]{16}\]' | tail -1 | cut -c2-33
+}
+# trace_services TRACE-ID: service names of the spans Tempo holds for that trace
+trace_services() {
+  grafana "/api/datasources/proxy/uid/$TEMPO_UID/api/traces/$1" | jq -r '
+    [ (.batches // .resourceSpans // [])[] | .resource.attributes[]?
+      | select(.key == "service.name") | .value.stringValue ] | unique | join(" ")' 2>/dev/null
+}
+# trace_has TRACE-ID SERVICE...: the trace holds spans of every service
+trace_has() {
+  local t=$1 have s; shift
+  have=" $(trace_services "$t") "
+  for s in "$@"; do [[ "$have" == *" $s "* ]] || return 1; done
+}
 g_observability() {
   involved=()
   local ds
@@ -663,14 +685,37 @@ g_observability() {
   q='sum({__name__=~"http_server_request.*_count", job=~".*payments-experience.*"})'
   poll 60 prom_positive "$q" && pass "HTTP server metrics of payments-experience (OTLP)" \
     || bad "HTTP server metrics of payments-experience (OTLP)" "$q = $(promql "$q")"
-  q='{resource.service.name="payment-process"} && {resource.service.name="core-integration"}'
-  poll 90 traceql "$q" && pass "one trace spans payment-process and core-integration (HTTP)" \
-    || bad "one trace spans payment-process and core-integration (HTTP)" "no trace for $q"
+  # the trace IDs come from the logs ([traceId-spanId] on every line written inside a span), so a
+  # failure says where the trace broke: no ID in the caller, another ID in the callee, or spans
+  # missing in Tempo
+  local t
+  t=$(log_trace payment-process 'client=core-integration ')
+  if [ -z "$t" ]; then
+    bad "payment-process calls core-integration inside a trace" \
+      "no 'client=core-integration' line with a trace ID in .run/payment-process.log"
+  elif ! grep -q "\[$t-" "$root/.run/core-integration.log"; then
+    bad "core-integration continues the trace of payment-process (HTTP traceparent)" \
+      "trace $t of payment-process is not in .run/core-integration.log; its last request line:
+$(grep -E 'axiz.http .*path=/v1/' "$root/.run/core-integration.log" | tail -1 | cut -c1-400)"
+  else
+    pass "core-integration continues the trace of payment-process (trace $t in both logs)"
+    poll 60 trace_has "$t" payment-process core-integration \
+      && pass "  ... and Tempo holds that trace with both services" \
+      || bad "  ... and Tempo holds that trace with both services" "services in trace $t: $(trace_services "$t")"
+  fi
   # the request that registers the payment and its saga are one trace: the outbox keeps the
   # context of the write, the relay continues it and Kafka carries it to the consumers
-  q='{resource.service.name="payments-experience"} && {resource.service.name="payment-process"} && {resource.service.name="core-integration"}'
-  poll 90 traceql "$q" && pass "one trace from the channel request to the saga (outbox -> Kafka -> core-integration)" \
-    || bad "one trace from the channel request to the saga (outbox -> Kafka -> core-integration)" "no trace for $q"
+  local want=(payments-experience payments-business payment-process core-integration)
+  t=$(log_trace payments-business 'path=/v1/payment-orders status=201')
+  if [ -z "$t" ]; then
+    bad "one trace from the channel request to the saga" \
+      "no 'path=/v1/payment-orders status=201' line with a trace ID in .run/payments-business.log"
+  else
+    poll 90 trace_has "$t" "${want[@]}" \
+      && pass "one trace from the channel request to the saga: ${want[*]}" \
+      || bad "one trace from the channel request to the saga: ${want[*]}" \
+        "trace $t of the last order created has: $(trace_services "$t")"
+  fi
   q='{name="outbox write payments"} && {name="outbox dispatch payments"}'
   poll 30 traceql "$q" && pass "  ... with the outbox write and its dispatch by the relay" \
     || bad "  ... with the outbox write and its dispatch by the relay" "no trace for $q"
@@ -692,7 +737,7 @@ g_settlement() {
   jar=$(find "$root/services/settlement-batch/target" -maxdepth 1 -name 'settlement-batch-*.jar' \
     ! -name '*-sources.jar' ! -name '*-plain.jar' 2>/dev/null | head -1)
   if [ -z "$jar" ]; then
-    bad "settlement-batch jar" "missing: scripts/demo.sh up builds it (or ./mvnw package -DskipTests -pl services/settlement-batch -am)"
+    bad "settlement-batch jar" "missing: scripts/demo.sh up builds it (or ./mvnw clean package -DskipTests -pl services/settlement-batch -am)"
     return
   fi
   settle "$jar" "$log"; rc=$?

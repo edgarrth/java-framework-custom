@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
@@ -13,7 +12,6 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.sensitive.ObjectMasker;
@@ -90,14 +88,10 @@ public final class SoapClient {
             masker.maskByKey("body", maskXml(response.body()), OutputChannel.LOG));
       }
       return SoapResponse.payload(system, response.statusCode(), response.body());
-    } catch (HttpTimeoutException e) {
-      throw new ExternalServiceException(
-          CoreErrors.EXTERNAL_TIMEOUT,
-          new ExternalErrorDetail(system, 504, null, "timeout", ""),
-          e);
     } catch (IOException e) {
+      // no answer: a timeout (HttpTimeoutException) is 504, any other transport failure 503
       throw ExternalServiceException.from(
-          new ExternalErrorDetail(system, -1, null, e.getClass().getSimpleName(), ""));
+          new ExternalErrorDetail(system, -1, e.getClass().getSimpleName(), null, ""), e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new SoapException("Interrupted SOAP call to " + system, e);

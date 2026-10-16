@@ -15,7 +15,8 @@ import pe.axiz.core.errors.ProblemJson;
 
 /**
  * Turns any failure into a problem and logs it once: server errors at ERROR with the stack trace,
- * rejections and client errors at WARN or DEBUG without it.
+ * failed dependencies (timeout, 5xx, no response) and denied access at WARN, conflicts at INFO and
+ * other client errors at DEBUG, without it.
  */
 public class ProblemResponder {
 
@@ -45,7 +46,18 @@ public class ProblemResponder {
 
   private static void log(AxizException axiz, Problem problem, @Nullable String path) {
     ErrorCategory category = axiz.category();
-    if (problem.status() >= 500) {
+    if (problem.status() >= 500 && axiz.type() == ErrorType.EXTERNAL) {
+      // the fault is in the dependency, not in this code: its stack trace says nothing new. The
+      // client already logged each attempt (axiz.http.client) and the trace shows the failed call
+      Throwable cause = axiz.getCause();
+      LOG.warn(
+          "status={} code={} path={} error={} cause={}",
+          problem.status(),
+          problem.code(),
+          path,
+          axiz.getMessage(),
+          cause != null ? summary(cause) : "-");
+    } else if (problem.status() >= 500) {
       Throwable cause = axiz.getCause() != null ? axiz.getCause() : axiz;
       LOG.error(
           "status={} code={} path={} error={}",
@@ -54,8 +66,17 @@ public class ProblemResponder {
           path,
           axiz.getMessage(),
           cause);
-    } else if (axiz.type() == ErrorType.SECURITY || category == ErrorCategory.CONFLICT) {
+    } else if (axiz.type() == ErrorType.SECURITY) {
+      // denied access stays visible: repeated denials are how probing shows up
       LOG.warn(
+          "status={} code={} path={} error={}",
+          problem.status(),
+          problem.code(),
+          path,
+          axiz.getMessage());
+    } else if (category == ErrorCategory.CONFLICT) {
+      // a conflict (duplicate, concurrent change) is an expected business answer, not a fault
+      LOG.info(
           "status={} code={} path={} error={}",
           problem.status(),
           problem.code(),
@@ -69,5 +90,16 @@ public class ProblemResponder {
           path,
           axiz.getMessage());
     }
+  }
+
+  // type and message of the innermost cause (the transport failure), without the stack trace
+  private static String summary(Throwable failure) {
+    Throwable root = failure;
+    while (root.getCause() != null && root.getCause() != root) {
+      root = root.getCause();
+    }
+    return root.getMessage() != null
+        ? root.getClass().getSimpleName() + ": " + root.getMessage()
+        : root.getClass().getSimpleName();
   }
 }

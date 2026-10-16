@@ -196,14 +196,18 @@ cd ..
 
 ```bash
 cd axiz-demo
-./mvnw package -DskipTests
+./mvnw clean package -DskipTests
 ```
 
 **Qué hace.** Compila los 8 servicios y la verificación de cobertura de capacidades, y deja un
 jar ejecutable en `services/<servicio>/target`. `demo.sh up` arranca los servicios desde esos
-jars. Si falta un jar, o es más antiguo que el código de su servicio, `up` lo vuelve a compilar.
-Por eso este paso es opcional, pero hacerlo aquí muestra cualquier error de compilación por
-separado.
+jars. Si falta un jar, o es más antiguo que el código de su servicio, `up` lo vuelve a compilar
+(también con `clean`). Por eso este paso es opcional, pero hacerlo aquí muestra cualquier error
+de compilación por separado.
+
+`clean` importa: un `package` incremental deja en `target/classes` el `.class` de un archivo que
+se renombró o se borró (por ejemplo al extraer una revisión nueva sobre la anterior), y el jar lo
+incluye.
 
 **Qué validar:** `BUILD SUCCESS` y un `target/<servicio>-0.1.0-SNAPSHOT.jar` en cada carpeta de
 `services/`.
@@ -416,7 +420,7 @@ scripts/demo.sh scenarios
 | `events` | outbox publicado, cuentas cifradas en la base (`axz1:`), sagas de la corrida en `COMPLETED` o `COMPENSATED`, los 3 grupos de consumidores de Kafka conectados y al día, nada en `payments.dlq`, eventos CloudEvents |
 | `notifications` | notifications-processor publica en SNS la notificación del pago completado y la del rechazado |
 | `audit` | la auditoría de core-integration llega por SQS y se archiva en S3 con su manifiesto; la de payments-business llega al topic `audit`; la DLQ de auditoría está vacía |
-| `observability` | métricas de negocio y HTTP en Prometheus; en Tempo, una sola traza desde la request del canal hasta la saga, con la escritura en el outbox y su publicación |
+| `observability` | métricas de negocio y HTTP en Prometheus; trazas por su ID (tomado de los logs): payment-process y core-integration en la misma traza, y una sola traza desde la request del canal hasta la saga (payments-experience, payments-business, payment-process, core-integration), con la escritura en el outbox y su publicación |
 | `settlement` | `settlement-batch` carga el archivo de ejemplo (3 líneas, totales de control), una segunda ejecución no carga nada (idempotente) y deja el resumen en S3 |
 | `dlq` | un mensaje malformado en `payments` termina en `payments.dlq` una vez por consumidor, y los consumidores siguen procesando |
 | `recovery` | un débito que tarda más que el timeout deja la saga en `VERIFYING` sin compensar; cuando el core vuelve a responder, el job de recuperación la completa |
@@ -444,7 +448,7 @@ Las pruebas se pueden repetir: reutilizan los beneficiarios y usan montos distin
   PASS   ... the order is COMPLETED
   PASS   ... payment-process logged the resumption
 
-86 checks passed, 0 failed (473 s)
+87 checks passed, 0 failed (473 s)
 OK: every scenario passed
 ```
 
@@ -900,6 +904,8 @@ auditoría, sus objetos también aparecen en este bucket.
   orden; el `outbox dispatch payments` cuando el relay la publica; y, por Kafka, payment-process
   (la saga), core-integration, payments-history y notifications-processor. Busca con TraceQL
   `{resource.service.name="payments-experience"} && {resource.service.name="core-integration"}`.
+- Cada línea de log lleva `[traceId-spanId]`, y la de cada request de entrada (`axiz.http`) muestra
+  el `traceparent` que mandó el llamador: con eso se ve en qué salto se corta una traza.
 
 ### 5.10 Liquidación diaria (batch)
 
@@ -954,7 +960,7 @@ No hace falta reinstalar el framework, salvo que cambies su código.
 | `scripts/demo.sh scenarios` termina con `the tokens have no claim "tenant"` | Keycloak conserva el realm anterior a review19. `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | El grupo `notifications` falla con `probe queue ... missing` | LocalStack se inicializó con un demo anterior a review19, que no creaba la cola que copia las notificaciones. `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | `GET /v1/payment-processes/...` responde `400` con `tenant is required` | El token no trae el claim `tenant` (realm anterior a review19). `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El grupo `settlement` falla con `settlement-batch jar missing` | El jar del batch no se compiló. `scripts/demo.sh up` lo compila; también `./mvnw package -DskipTests -pl services/settlement-batch -am`. |
+| El grupo `settlement` falla con `settlement-batch jar missing` | El jar del batch no se compiló. `scripts/demo.sh up` lo compila; también `./mvnw clean package -DskipTests -pl services/settlement-batch -am`. |
 | `payments-experience` muestra `NoClassDefFoundError: jakarta/servlet/ServletException` y el pago no responde | El framework instalado es anterior a review13. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | El pago responde `404` con `AXZ-CORE-0404` y el log de payments-experience dice `NoResourceFoundException` | El framework instalado es anterior a review14: con el header `API-Version` opcional y sin versión por defecto, WebFlux no encontraba ninguna ruta. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | El pago queda en `RECEIVED`, sin errores, y `.run/payment-process.log` no tiene `ConsumerConfig values` | El framework instalado es anterior a review17: con `axiz.messaging.kafka.topics` escrito como lista YAML no se creaba ningún consumidor, y payment-process nunca leía el evento. El smoke lo detecta y muestra el grupo de consumidores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
@@ -964,6 +970,16 @@ No hace falta reinstalar el framework, salvo que cambies su código.
 | `payments-business` termina con `Schema validation: wrong column type encountered in column [currency]` | Es el demo de review10 o anterior: la migración creaba `currency` como `CHAR(3)` y la entidad la valida como `VARCHAR(3)`. Con review11, la migración `V4__currency_varchar.sql` la corrige. Ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | `notifications-processor` termina con `At least one trusted issuer is required` | El framework instalado es anterior a review10: el starter de EDA incluía el resource server de seguridad, y un procesador de eventos no configura emisores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | `beneficiaries-crud` o `notifications-processor` terminan con `Failed to configure a DataSource` | El framework instalado es anterior a review9: sus starters layered y EDA traían un pool de conexiones. Reinstala el framework (sección 4.1) y ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| Al arrancar cada servicio aparece `WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil` | El framework instalado es anterior a review21 (`protobuf-java` 4.35, que trae la exportación de métricas OTLP). Reinstala el framework (sección 4.1) y vuelve a compilar el demo: `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
+| El grupo `rules` falla porque el pago en USD responde `201` | Demo anterior a review21: el perfil `platform` encendía el flag `payments-usd` por encima de `AXIZ_FLAG_PAYMENTS_USD`. Con review21, `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
+| `core-integration` registra `SqsException: The security token included in the request is invalid` y el grupo `audit` falla | El framework instalado es anterior a review21: el cliente SQS de la auditoría ignoraba `axiz.aws.endpoint` y salía a AWS real. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
+| `settlement-batch` termina con `The bean 'settlementJob' ... could not be registered` | La clase de configuración y su `@Bean` se llamaban igual (antes de review21), o el jar todavía lleva el `SettlementJob.class` de esa versión: la clase se renombró a `SettlementJobConfiguration` y un `package` sin `clean` dejó el `.class` anterior en `target/classes` (el log muestra `SettlementJob.class` dentro del jar). Desde review23 `demo.sh` compila con `clean package`; ejecuta `scripts/demo.sh up --build`. La regla `UNIQUE_BEAN_NAMES` del `ArchitectureTest` detecta los nombres repetidos al ejecutar las pruebas. |
+| `scenarios` falla en `audit of core-integration archived on S3 (SQS -> S3)` aunque el objeto existe | Antes de review23 el escenario contaba con `--query KeyCount`: el AWS CLI pagina `list-objects-v2`, une las páginas y `KeyCount` sale `None`. Ahora cuenta `length(Contents)`. |
+| Falla `one trace from the channel request to the saga` | El mensaje dice qué servicios tiene la traza de la última orden. Si falta `payments-experience`, el demo es anterior a review21 (sin `spring-boot-starter-webclient` las llamadas del canal salían sin `traceparent`). Si falla `core-integration continues the trace of payment-process`, compara el `traceparent` de la línea `axiz.http` de core-integration que muestra el mensaje con el trace ID de payment-process. |
+| `scripts/demo.sh up` termina con `the Kafka topics were not created` aunque el log del job muestra `Created topic payments.` | Versión de review21 o anterior: el script esperaba el job con `docker compose wait`, que en algunas versiones de Compose falla con un job que ya terminó. Desde review22 pregunta al broker por los topics. Reemplaza `axiz-demo/scripts/demo.sh` y vuelve a ejecutar `scripts/demo.sh up --build`. |
+| `scripts/demo.sh up --build` termina enseguida sin mostrar nada y luego `smoke` espera 300 s con todo `STOPPED` | Versión de review23 o anterior en una copia nueva (sin carpetas `target/`, por ejemplo al extraer el zip en otra carpeta): el script buscaba el jar en `target/`, la búsqueda fallaba y `set -e` lo cerraba sin mensaje. Desde review24 compila los jars que faltan, cualquier falla inesperada de los scripts muestra la línea y el comando, y `wait`/`smoke` fallan de inmediato si un servicio no se arrancó. |
+| `payments-experience` o `payments-history` muestran `WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil` | El framework instalado es anterior a review23: el jar no declaraba `Enable-Native-Access`. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
+| `core-integration` registra `ERROR ... status=503 code=AXZ-EXT-0502 ... failed with status -1` con un stack trace largo durante el grupo `recovery` | Es el timeout simulado del core (esperado), registrado con el framework anterior a review23. Con review23 sale una línea `WARN ... status=504 code=AXZ-EXT-0504 ... got no response (SocketTimeoutException) cause=...` sin stack trace. |
 | `<servicio> stopped while starting` o estado `EXITED` | El servicio se cayó al arrancar. El mensaje muestra el final de su log; el log completo está en `.run/<servicio>.log`. |
 | Un servicio sigue en `STARTING` después de 5 minutos | La máquina está saturada. Revisa memoria (sección 3) y `.run/<servicio>.log`. |
 | `401` en todas las llamadas | El token venció (15 minutos). Vuelve a obtener los tokens (5.0). |
@@ -1150,3 +1166,66 @@ Esta entrega incluye las correcciones de dos revisiones externas. El detalle est
   los handlers reales de Micrometer Tracing: request → `outbox write` → `outbox dispatch` →
   `publish` → handler del consumidor, todo en la misma traza. El grupo `observability` de los
   escenarios lo verifica en Tempo.
+- **Advertencias de arranque y fallas de los escenarios (review21):**
+  - `protobuf-java` 4.36.2 en `axiz-dependencies`. La exportación de métricas OTLP lo trae y, hasta
+    la 4.35, su runtime llamaba a métodos de `sun.misc.Unsafe` marcados para eliminación: Java 25
+    lo avisaba al arrancar cada servicio. La 4.36 (protobuf v36, agosto de 2026) ya no los usa en
+    el runtime completo; se revisó en sus fuentes que ninguna clase de ese camino llega a
+    `UnsafeUtil`. No se ocultó con `--sun-misc-unsafe-memory-access`.
+  - Clientes AWS: la auditoría por SQS, KMS, Secrets Manager, Parameter Store y los stores en
+    DynamoDB creaban su cliente sin endpoint ni región cuando no había un bean. Desde local iban a
+    AWS real (`403` en la auditoría de core-integration, sin archivo en S3). Ahora todos usan
+    `AwsClients.configured(...)` (`axiz.aws.<servicio>.endpoint` o `axiz.aws.endpoint`), observados
+    y cerrados al apagar; prueba ejecutada con un `SqsClient` real.
+  - `settlement-batch` no arrancaba: la clase `SettlementJob` y su `@Bean settlementJob()` daban el
+    mismo nombre de bean. La clase es ahora `SettlementJobConfiguration`, y la nueva regla
+    `UNIQUE_BEAN_NAMES` de ArchUnit (en el `ArchitectureTest` de todo servicio) detecta ese error.
+    Ejecutada sobre los 27 servicios generados, encontró el mismo problema en el generador:
+    `axiz generate command x` y `axiz generate query x` creaban dos `XHandler` en paquetes
+    distintos. Ahora son `XCommandHandler` y `XQueryHandler`.
+    Además el adaptador de S3 trae ahora la librería con la que se construye su cliente: sin ella
+    el batch habría fallado después con `NoClassDefFoundError`.
+  - Pagos en USD: el perfil `platform` de payments-experience encendía el flag por encima de
+    `AXIZ_FLAG_PAYMENTS_USD`. Se quitó; el flag está apagado en local y encendido en kind.
+  - Trazas: las llamadas de `WebClient` del canal salían sin observación (en Boot 4 el soporte de
+    `WebClient` es `spring-boot-starter-webclient`, que el demo no tenía), así que la traza se
+    cortaba entre payments-experience y payments-business. Los clientes de `axiz.http-client`
+    reciben ahora el `ObservationRegistry` en los dos stacks (con `RestClient` se ejecutó en un
+    contexto de Spring Boot con un servidor HTTP: el `traceparent` llega con la traza del
+    llamador; `WebClient` no se pudo ejecutar aquí, sin Reactor Netty), los servicios
+    reactivos generados declaran ese starter y el demo también. El endpoint de trazas usaba la
+    propiedad de Boot 3 (`management.otlp.tracing.endpoint`, ignorada en Boot 4); en kind las
+    trazas no salían. Las verificaciones de trazas de los escenarios toman el trace ID de los logs
+    y lo buscan en Tempo, y si fallan dicen en qué salto se cortó.
+  - Logs: los stores en memoria (solo permitidos en `local` y `test`) informan en INFO; los 409 se
+    registran en INFO; Lettuce ya no avisa `Connection is already closed` al apagar (la conexión
+    la cierra el cliente Redis); las notificaciones registran el medio en un tag propio
+    (`medium`) en vez de `channel`, que es el canal del cliente.
+- **Fallas de los escenarios y logs (review23):**
+  - `settlement`: el jar del batch todavía llevaba el `SettlementJob.class` anterior al cambio de
+    nombre. `package` sin `clean` no borra de `target/classes` las clases cuyo fuente se renombró
+    o se borró. `demo.sh` compila ahora con `clean package` y también detecta archivos borrados
+    (la fecha de su carpeta cambia).
+  - `audit ... archived on S3`: el objeto existía, pero el AWS CLI pagina `list-objects-v2` y, al
+    unir las páginas, `--query KeyCount` devuelve `None`. El escenario cuenta `length(Contents)`.
+  - Dependencia que no contesta: un timeout se respondía 503 con el mensaje
+    `failed with status -1` y se registraba en ERROR con ~190 líneas de stack trace por intento.
+    Ahora un timeout es 504 (`AXZ-EXT-0504`, como ya hacían el cliente SOAP y la BFF), una
+    conexión rechazada sigue en 503, el mensaje dice `got no response (SocketTimeoutException)` y
+    el cliente HTTP conserva la causa. Las fallas de dependencias se registran en WARN con
+    `cause=<tipo>: <mensaje>` y sin stack trace; las fallas internas siguen en ERROR con él
+    (detalle en `axiz-docs`, guía de errores). Para la saga, 503 y 504 siguen siendo un resultado
+    incierto (`IN_DOUBT`).
+  - `WARNING: A restricted method in java.lang.System has been called` en los servicios
+    reactivos: Netty carga su transporte nativo con `System.loadLibrary`, que desde Java 24 exige
+    acceso nativo y que una versión futura bloqueará. `axiz-parent-service` lo concede de forma
+    explícita (JEP 472): atributo `Enable-Native-Access: ALL-UNNAMED` en el manifiesto del jar
+    ejecutable, `--enable-native-access=ALL-UNNAMED` en la imagen de Jib (que no arranca con
+    `java -jar`) y en las pruebas.
+- **Scripts del demo en una copia nueva (review24):** `scripts/demo.sh up` terminaba sin mensaje
+  cuando aún no existía ninguna carpeta `target/`: la búsqueda del jar fallaba y `set -e` cerraba el
+  script. Ahora compila los jars que faltan. `demo.sh`, `smoke.sh`, `dev-secrets.sh` y `run.sh`
+  usan `set -E` con un `trap ERR` que muestra la línea y el comando de cualquier falla inesperada,
+  y `scripts/demo.sh wait` (y por lo tanto `smoke`) falla de inmediato si un servicio no se
+  arrancó, en vez de esperar 300 s.
+

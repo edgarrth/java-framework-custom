@@ -49,7 +49,7 @@ transactionalEvents.enqueue(
   publicados tras `retention`.
 - La traza no se corta: el evento guarda el contexto de la escritura y el relay lo continúa al
   publicar, así la request, la publicación y los consumidores quedan en una sola traza (ver
-  [Observabilidad](../operacion/observabilidad.md#contexto-y-correlación)).
+  [Observabilidad](../operacion/observabilidad.md#contexto-y-correlacion)).
 - En hexagonal, los eventos de dominio registrados por el agregado van al outbox automáticamente
   con la capacidad `outbox` (ver [Hexagonal](../estilos/hexagonal.md)).
 - En SQS FIFO el id del evento es el id de deduplicación.

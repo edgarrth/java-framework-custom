@@ -56,10 +56,12 @@ public class AxizIdempotencyAutoConfiguration {
         "axiz.idempotency.store=memory",
         "redis or dynamodb",
         "keys kept per replica let a retry on another replica execute twice");
+    // allowed only where one process runs (local, test): the check above fails anywhere else, so
+    // this is information, not a warning
     org.slf4j.LoggerFactory.getLogger(AxizIdempotencyAutoConfiguration.class)
-        .warn(
-            "Idempotency keys are kept in memory: use redis or dynamodb with more than one"
-                + " replica");
+        .info(
+            "Idempotency keys are kept in memory (single process); replicas need redis or"
+                + " dynamodb");
     return new InMemoryIdempotencyStore(clock.getIfAvailable(Clock::systemUTC));
   }
 

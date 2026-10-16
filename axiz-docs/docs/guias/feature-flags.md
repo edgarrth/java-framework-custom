@@ -28,4 +28,7 @@ String layout = featureFlags.variant("home-layout", ctx, "classic");
   en caliente, Parameter Store.
 - Un flag es temporal: cuando la funcionalidad se estabiliza, se borra el flag y su código.
 
-En el demo, `payments-experience` habilita pagos en dólares con `payments-usd`.
+En el demo, los pagos en dólares de `payments-experience` están detrás de `payments-usd`: apagado
+al correr en local (`AXIZ_FLAG_PAYMENTS_USD=true` lo enciende) y encendido en el despliegue en kind
+(`kind/values/payments-experience.yaml`). Ningún perfil fija el flag: si lo hiciera, la variable
+quedaría sin efecto.

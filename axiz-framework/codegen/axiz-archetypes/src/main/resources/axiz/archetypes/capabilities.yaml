@@ -53,7 +53,7 @@ capabilities:
     starter: axiz-observability-spring-boot-starter
     description: OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent
     properties:
-      management.otlp.tracing.endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+      management.opentelemetry.tracing.export.otlp.endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
       management.otlp.metrics.export.url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
       management.tracing.sampling.probability: ${AXIZ_TRACE_SAMPLING:1.0}
     example: |

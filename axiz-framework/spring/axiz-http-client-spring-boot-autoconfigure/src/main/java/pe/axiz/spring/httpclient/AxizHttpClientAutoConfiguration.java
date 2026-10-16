@@ -1,6 +1,7 @@
 package pe.axiz.spring.httpclient;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -25,7 +26,9 @@ import pe.axiz.core.secrets.SecretResolver;
  * Declarative HTTP clients ({@code @HttpExchange}) on Spring's HTTP service groups: every group
  * whose name matches {@code axiz.http-client.clients.<name>} gets the axiz transport, timeouts,
  * credentials, resilience, propagation, error translation and logging. Boot's builders are
- * customized, never replaced.
+ * customized, never replaced. Every client is observed with the application's {@link
+ * ObservationRegistry}, so its spans and the {@code traceparent} it sends never depend on which of
+ * Boot's client modules ({@code spring-boot-restclient}, {@code spring-boot-webclient}) is present.
  */
 @AutoConfiguration(
     afterName = {
@@ -72,18 +75,35 @@ public class AxizHttpClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     AxizHttpClients axizHttpClients(
-        HttpClientRegistry registry, ObjectProvider<RestClient.Builder> builders) {
-      return new AxizHttpClients(registry, () -> builders.getIfAvailable(RestClient::builder));
+        HttpClientRegistry registry,
+        ObjectProvider<RestClient.Builder> builders,
+        ObjectProvider<ObservationRegistry> observations) {
+      return new AxizHttpClients(
+          registry,
+          () ->
+              builders
+                  .getIfAvailable(RestClient::builder)
+                  .observationRegistry(
+                      observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
     }
 
     @Bean
     RestClientHttpServiceGroupConfigurer axizRestClientGroups(
-        HttpClientRegistry registry, AxizHttpClients clients) {
+        HttpClientRegistry registry,
+        AxizHttpClients clients,
+        ObjectProvider<ObservationRegistry> observations) {
       return groups ->
           groups.forEachClient(
               (HttpServiceGroupConfigurer.ClientCallback<RestClient.Builder>)
                   (group, builder) ->
-                      registry.find(group.name()).ifPresent(s -> clients.configure(s, builder)));
+                      registry
+                          .find(group.name())
+                          .ifPresent(
+                              s -> {
+                                builder.observationRegistry(
+                                    observations.getIfAvailable(() -> ObservationRegistry.NOOP));
+                                clients.configure(s, builder);
+                              }));
     }
   }
 
@@ -93,7 +113,8 @@ public class AxizHttpClientAutoConfiguration {
   static class WebClientConfiguration {
 
     @Bean
-    WebClientHttpServiceGroupConfigurer axizWebClientGroups(HttpClientRegistry registry) {
+    WebClientHttpServiceGroupConfigurer axizWebClientGroups(
+        HttpClientRegistry registry, ObjectProvider<ObservationRegistry> observations) {
       return groups ->
           groups.forEachClient(
               (HttpServiceGroupConfigurer.ClientCallback<WebClient.Builder>)
@@ -104,6 +125,10 @@ public class AxizHttpClientAutoConfiguration {
                               s -> {
                                 HttpClientSettings transport = registry.transport(s);
                                 builder
+                                    .observationRegistry(
+                                        observations.getIfAvailable(() -> ObservationRegistry.NOOP))
+                                    .observationConvention(
+                                        new ReactiveClientNameObservationConvention(s.name()))
                                     .baseUrl(s.baseUrl().toString())
                                     .clientConnector(
                                         ClientHttpConnectorBuilder.detect().build(transport))

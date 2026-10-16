@@ -47,7 +47,11 @@ public class SettlementSummaryTasklet implements Tasklet {
   public @Nullable RepeatStatus execute(StepContribution contribution, ChunkContext context) {
     String key =
         Objects.requireNonNull(
-            (String) context.getStepContext().getJobParameters().get(SettlementJob.INPUT_KEY),
+            (String)
+                context
+                    .getStepContext()
+                    .getJobParameters()
+                    .get(SettlementJobConfiguration.INPUT_KEY),
             "input.key job parameter");
     List<Total> totals =
         jdbc.sql(

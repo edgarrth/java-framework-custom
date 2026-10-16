@@ -38,8 +38,9 @@ public class AxizLockAutoConfiguration {
         "axiz.lock.store=memory",
         "redis or dynamodb",
         "a lock held in one replica does not exclude the others");
+    // allowed only where one process runs (local, test): the check above fails anywhere else
     org.slf4j.LoggerFactory.getLogger(AxizLockAutoConfiguration.class)
-        .warn("Locks are kept in memory: they do not coordinate several replicas");
+        .info("Locks are kept in memory (single process); replicas need redis or dynamodb");
     return new InMemoryDistributedLock(clock.getIfAvailable(Clock::systemUTC));
   }
 

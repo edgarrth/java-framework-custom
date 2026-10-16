@@ -67,7 +67,7 @@ de canal, llamadas máquina a máquina y casos de error.
 
 ## Escenarios funcionales
 
-`scripts/demo.sh scenarios` verifica lo que el demo promete, más allá del pago del smoke: 86
+`scripts/demo.sh scenarios` verifica lo que el demo promete, más allá del pago del smoke: 87
 verificaciones en 14 grupos, cada una con `PASS` o `FAIL`. Una falla muestra el motivo y las últimas
 advertencias de los servicios del grupo.
 
@@ -83,7 +83,7 @@ advertencias de los servicios del grupo.
 | `events` | outbox, cifrado en la base, estados de las sagas, consumidores de Kafka al día, DLQ vacía, CloudEvents |
 | `notifications` | notificaciones en SNS de pagos completados y rechazados |
 | `audit` | auditoría por SQS archivada en S3 con su manifiesto, topic `audit`, DLQ de auditoría |
-| `observability` | métricas en Prometheus y trazas en Tempo |
+| `observability` | métricas en Prometheus; trazas buscadas en Tempo por el trace ID de los logs: payment-process y core-integration en la misma traza, y una sola traza desde la request del canal hasta la saga |
 | `settlement` | el batch carga el archivo de ejemplo, no repite cargas, deja el resumen en S3 |
 | `dlq` | un mensaje malformado termina en `payments.dlq`, una vez por consumidor |
 | `recovery` | un débito con timeout deja la saga en `VERIFYING`; el job de recuperación la completa |
