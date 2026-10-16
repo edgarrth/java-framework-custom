@@ -33,6 +33,7 @@ class OutboxTest {
   private JdbcOutboxStore store;
   private final MutableClock clock = new MutableClock();
   private final List<String> published = new ArrayList<>();
+  private final List<EventEnvelope> relayed = new ArrayList<>();
   private boolean brokerDown;
 
   private final EventPublisher publisher =
@@ -41,6 +42,7 @@ class OutboxTest {
           throw new PublishException("down", new RuntimeException());
         }
         published.add(destination + ":" + event.id());
+        relayed.add(event);
         return new PublishResult(event.id(), destination, null);
       };
 
@@ -90,6 +92,20 @@ class OutboxTest {
                   throw new IllegalStateException("business failure after writing");
                 }));
     assertEquals(1, store.countPending());
+  }
+
+  @Test
+  void theTraceContextOfTheWriteTravelsWithTheStoredEvent() throws Exception {
+    String parent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+    OutboxWriteTracing tracing =
+        (destination, event, write) ->
+            write.accept(event.withExtension(EventEnvelope.OUTBOX_TRACEPARENT, parent));
+    new OutboxWriter(store, clock, tracing).write("t", event("e-1"), "order");
+    new OutboxRelay(store, publisher, tx, clock, 10, 3, Backoff.fixed(Duration.ofSeconds(10)))
+        .relayOnce();
+    // the relay hands it to the (observed) publisher, which continues that trace
+    assertEquals(
+        parent, relayed.getFirst().extension(EventEnvelope.OUTBOX_TRACEPARENT).orElseThrow());
   }
 
   @Test

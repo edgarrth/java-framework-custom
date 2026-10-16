@@ -23,7 +23,7 @@ import pe.axiz.core.secrets.SecretResolver;
  */
 public final class OutboundAuth {
 
-  private static final boolean SECURITY =
+  static final boolean SECURITY =
       ClassUtils.isPresent(
           "org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken",
           null);
@@ -72,7 +72,11 @@ public final class OutboundAuth {
     return new OutboundAuth(a, tokens, secrets);
   }
 
-  /** Applies the credentials; blocking (call from a worker thread in reactive code). */
+  /**
+   * Applies the credentials; blocking (call from a worker thread in reactive code). Token relay
+   * reads the servlet security context here; reactive clients add the relayed token themselves
+   * ({@link AxizExchangeFilter}), because it lives in the Reactor context.
+   */
   public void apply(BiConsumer<String, String> header) {
     switch (settings.type()) {
       case CLIENT_CREDENTIALS ->

@@ -69,8 +69,11 @@ public class AxizOutboxR2dbcAutoConfiguration {
   @ConditionalOnMissingBean
   @ConditionalOnBean(EventFactory.class)
   ReactiveTransactionalEvents axizReactiveTransactionalEvents(
-      EventFactory factory, ReactiveOutboxWriter writer) {
-    return new ReactiveTransactionalEvents(factory, writer);
+      EventFactory factory,
+      ReactiveOutboxWriter writer,
+      ObjectProvider<ObservationRegistry> registry) {
+    return new ReactiveTransactionalEvents(
+        factory, writer, registry.getIfAvailable(() -> ObservationRegistry.NOOP));
   }
 
   @Configuration(proxyBeanMethods = false)

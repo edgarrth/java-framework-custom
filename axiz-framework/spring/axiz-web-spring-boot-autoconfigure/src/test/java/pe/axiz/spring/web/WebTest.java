@@ -91,4 +91,24 @@ class WebTest {
               assertNotNull(ctx.getBean(AxizWebMvcConfigurer.class));
             });
   }
+
+  @Test
+  void anOptionalApiVersionHeaderAlwaysHasADefault() {
+    // without a default, Spring WebFlux finds no handler for requests without the header (404)
+    assertEquals(
+        "1",
+        new AxizWebProperties.ApiVersion(true, "API-Version", null, List.of("2", "1.1", "1"), false)
+            .effectiveDefaultVersion());
+    assertEquals(
+        "2",
+        new AxizWebProperties.ApiVersion(true, "API-Version", "2", List.of("1", "2"), false)
+            .effectiveDefaultVersion());
+    assertEquals(
+        null,
+        new AxizWebProperties.ApiVersion(true, "API-Version", null, List.of("1"), true)
+            .effectiveDefaultVersion());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new AxizWebProperties.ApiVersion(true, "API-Version", null, List.of(), false));
+  }
 }

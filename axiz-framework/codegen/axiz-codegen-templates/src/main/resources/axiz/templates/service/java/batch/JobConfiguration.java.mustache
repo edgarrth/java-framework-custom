@@ -57,7 +57,7 @@ public class {{project.className}}JobConfiguration {
   @Bean
   StorageRecordItemReader<InputLine> inputReader(
       ObjectStorage storage, @Value("${job.input-key:in/input.csv}") String inputKey) {
-    return new StorageRecordItemReader<>(
+    return StorageRecordItemReader.named(
         "inputReader",
         storage,
         inputKey,

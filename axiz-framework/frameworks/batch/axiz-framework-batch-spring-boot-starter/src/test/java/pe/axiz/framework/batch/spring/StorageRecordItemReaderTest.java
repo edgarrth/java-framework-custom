@@ -35,7 +35,7 @@ class StorageRecordItemReaderTest {
   }
 
   private static StorageRecordItemReader<String> reader(InMemoryObjectStorage storage) {
-    return new StorageRecordItemReader<>(
+    return StorageRecordItemReader.named(
         "movements",
         storage,
         "in/file.csv",

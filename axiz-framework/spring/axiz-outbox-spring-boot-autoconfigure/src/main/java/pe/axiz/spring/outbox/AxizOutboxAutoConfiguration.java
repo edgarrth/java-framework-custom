@@ -59,8 +59,15 @@ public class AxizOutboxAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  OutboxWriter axizOutboxWriter(OutboxStore store, ObjectProvider<Clock> clock) {
-    return new OutboxWriter(store, clock.getIfAvailable(Clock::systemUTC));
+  OutboxWriter axizOutboxWriter(
+      OutboxStore store,
+      ObjectProvider<Clock> clock,
+      ObjectProvider<ObservationRegistry> registry) {
+    // every write keeps the trace of the caller: the relay continues it when it publishes
+    return new OutboxWriter(
+        store,
+        clock.getIfAvailable(Clock::systemUTC),
+        OutboxTrace.tracing(registry.getIfAvailable(() -> ObservationRegistry.NOOP)));
   }
 
   @Bean

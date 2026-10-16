@@ -25,6 +25,7 @@ Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`web`](../
 axiz.web.api-version.enabled: true
 axiz.web.api-version.supported:
 - '1'
+axiz.web.api-version.default-version: '1'
 axiz.bff.timeout: 3s
 ```
 

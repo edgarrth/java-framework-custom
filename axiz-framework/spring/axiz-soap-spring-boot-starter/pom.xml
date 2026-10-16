@@ -15,6 +15,8 @@
   <description>SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.soap.starter</axiz.module.name>
   </properties>
 

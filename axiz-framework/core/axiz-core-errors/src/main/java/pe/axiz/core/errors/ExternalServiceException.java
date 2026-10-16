@@ -27,6 +27,18 @@ public class ExternalServiceException extends AxizException {
    * @return the exception
    */
   public static ExternalServiceException from(ExternalErrorDetail detail) {
+    return from(detail, null);
+  }
+
+  /**
+   * Builds the exception from the dependency response or transport failure, keeping the cause.
+   *
+   * @param detail what the dependency answered (status -1 when it did not answer)
+   * @param cause the transport failure, if any
+   * @return the exception
+   */
+  public static ExternalServiceException from(
+      ExternalErrorDetail detail, @Nullable Throwable cause) {
     ErrorCategory category =
         detail.transportError()
             ? ErrorCategory.SERVICE_UNAVAILABLE
@@ -41,7 +53,7 @@ public class ExternalServiceException extends AxizException {
     if (category == ErrorCategory.GATEWAY_TIMEOUT) {
       def = CoreErrors.EXTERNAL_TIMEOUT;
     }
-    return new ExternalServiceException(def, detail, null);
+    return new ExternalServiceException(def, detail, cause);
   }
 
   public ExternalErrorDetail detail() {

@@ -15,6 +15,8 @@
   <description>@Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS)</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.audit.starter</axiz.module.name>
   </properties>
 

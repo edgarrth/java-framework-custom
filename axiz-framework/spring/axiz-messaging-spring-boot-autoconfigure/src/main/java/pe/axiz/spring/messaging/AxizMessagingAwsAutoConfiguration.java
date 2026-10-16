@@ -4,7 +4,6 @@ import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -50,7 +49,7 @@ public class AxizMessagingAwsAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnExpression("'${axiz.messaging.sqs.queues:}' != ''")
+    @ConditionalOnListProperty("axiz.messaging.sqs.queues")
     SqsEventConsumer axizSqsEventConsumer(
         SqsClient sqs, ObservedDispatcher dispatcher, AxizMessagingProperties p) {
       AxizMessagingProperties.Consumer c = p.consumer();

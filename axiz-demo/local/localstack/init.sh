@@ -31,7 +31,15 @@ awslocal sqs create-queue --queue-name axiz-demo-audit \
   --attributes "{\"RedrivePolicy\":\"{\\\"deadLetterTargetArn\\\":\\\"$dlq_arn\\\",\\\"maxReceiveCount\\\":\\\"5\\\"}\"}" >/dev/null || true
 
 # notification requests (consumed by the notifications platform; here only a topic)
-awslocal sns create-topic --name local-customer-notifications >/dev/null || true
+topic_arn=$(awslocal sns create-topic --name local-customer-notifications --query TopicArn --output text)
+# local only: a queue subscribed to the topic keeps a copy of every notification request, so
+# scripts/scenarios.sh can check what notifications-processor sent (raw delivery: the body is the
+# message as published)
+probe_url=$(awslocal sqs create-queue --queue-name local-customer-notifications-probe --query QueueUrl --output text)
+probe_arn=$(awslocal sqs get-queue-attributes --queue-url "$probe_url" --attribute-names QueueArn \
+  --query Attributes.QueueArn --output text)
+awslocal sns subscribe --topic-arn "$topic_arn" --protocol sqs --notification-endpoint "$probe_arn" \
+  --attributes RawMessageDelivery=true >/dev/null || true
 
 # bucket of the audit archive and the settlement files, with a sample settlement file
 awslocal s3 mb s3://local-bucket || true

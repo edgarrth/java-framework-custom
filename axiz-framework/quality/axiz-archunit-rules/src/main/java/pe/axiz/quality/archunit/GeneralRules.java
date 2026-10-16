@@ -104,6 +104,13 @@ public final class GeneralRules {
   public static final ArchRule NO_AWS_SDK_V1 =
       noClasses().should().dependOnClassesThat().resideInAPackage("com.amazonaws..");
 
+  /**
+   * A new framework starts without deprecated code: nothing may call, extend or annotate with an
+   * API its owner marked {@code @Deprecated} (Spring, AWS SDK, Jackson, axiz itself).
+   */
+  public static final ArchRule NO_DEPRECATED_API =
+      GeneralCodingRules.DEPRECATED_API_SHOULD_NOT_BE_USED;
+
   private GeneralRules() {}
 
   /** Every general rule, for {@code @ArchTest} fields or manual checks. */
@@ -119,7 +126,8 @@ public final class GeneralRules {
         NO_BLOCK_IN_REACTIVE_CODE,
         NO_TESTING_AUTHENTICATION,
         NO_PARALLEL_HTTP_CLIENTS,
-        NO_AWS_SDK_V1);
+        NO_AWS_SDK_V1,
+        NO_DEPRECATED_API);
   }
 
   static DescribedPredicate<JavaClass> annotatedWithAny(List<String> annotationNames) {

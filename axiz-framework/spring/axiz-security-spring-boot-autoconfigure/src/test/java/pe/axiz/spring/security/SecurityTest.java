@@ -3,6 +3,7 @@ package pe.axiz.spring.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
@@ -97,5 +98,21 @@ class SecurityTest {
     assertEquals("Bearer error=\"invalid_token\"", response.getHeader("WWW-Authenticate"));
     assertTrue(response.getContentAsString().contains("AXZ-SEC-0401"));
     assertFalse(response.getContentAsString().contains("expired"));
+  }
+
+  @Test
+  void anEmptyIssuerListFailsWithTheSettingToFix() {
+    IllegalStateException e =
+        assertThrows(
+            IllegalStateException.class,
+            () -> AxizSecurityAutoConfiguration.issuerPolicy(List.of()));
+    assertTrue(e.getMessage().startsWith("axiz.security.issuers is empty"));
+    assertEquals(
+        ISSUER,
+        AxizSecurityAutoConfiguration.issuerPolicy(
+                List.of(new AxizSecurityProperties.Issuer(ISSUER, null, List.of("payments-api"))))
+            .find(ISSUER)
+            .orElseThrow()
+            .issuer());
   }
 }

@@ -9,7 +9,7 @@ import pe.axiz.core.sequence.SequenceGenerator;
 import pe.axiz.core.sequence.SequenceStore;
 
 /** Generators for the configured sequences; unknown names fail fast. */
-public class Sequences {
+public final class Sequences {
 
   private final AxizSequenceProperties properties;
   private final SequenceStore store;

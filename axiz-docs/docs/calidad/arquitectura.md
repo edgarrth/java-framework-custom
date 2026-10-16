@@ -28,6 +28,7 @@ generales, fallando con **todas** las violaciones a la vez.
 | Sin `TestingAuthenticationToken` en código productivo | autenticación real siempre |
 | Sin Retrofit, Feign ni OkHttp | un solo tipo de cliente: `@HttpExchange` |
 | Sin AWS SDK v1 | un solo SDK: v2 |
+| Sin APIs `@Deprecated` (Spring, AWS SDK, Jackson, axiz) | un framework nuevo no arranca con deuda: lo deprecado se reemplaza, no se suprime |
 
 ## Reglas por estilo
 

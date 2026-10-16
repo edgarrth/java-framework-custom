@@ -76,8 +76,19 @@ public class AxizSecurityAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   IssuerPolicy axizIssuerPolicy(AxizSecurityProperties p) {
+    return issuerPolicy(p.issuers());
+  }
+
+  /** The allow-list of issuers; a resource server without one would reject every token. */
+  static IssuerPolicy issuerPolicy(List<AxizSecurityProperties.Issuer> issuers) {
+    if (issuers.isEmpty()) {
+      throw new IllegalStateException(
+          "axiz.security.issuers is empty: list the trusted token issuers of this service, or"
+              + " remove axiz-security-spring-boot-starter if it exposes no API (event"
+              + " processors), or set axiz.security.enabled=false");
+    }
     List<TrustedIssuer> trusted = new ArrayList<>();
-    for (AxizSecurityProperties.Issuer i : p.issuers()) {
+    for (AxizSecurityProperties.Issuer i : issuers) {
       String jwks = i.jwkSetUri();
       trusted.add(
           new TrustedIssuer(

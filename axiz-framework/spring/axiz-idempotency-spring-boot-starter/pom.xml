@@ -15,6 +15,8 @@
   <description>@Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.idempotency.starter</axiz.module.name>
   </properties>
 

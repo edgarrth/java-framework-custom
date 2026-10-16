@@ -7,7 +7,8 @@
   "defaultDefaultClientScopes": [
     "basic",
     "audience",
-    "profile"
+    "profile",
+    "tenant"
   ],
   "clientScopes": [
     {
@@ -90,6 +91,30 @@
         "include.in.token.scope": "true",
         "display.on.consent.screen": "false"
       }
+    },
+    {
+      "name": "tenant",
+      "description": "Tenant of the caller (claim tenant): payment-process is multi-tenant and rejects requests without one",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "tenant",
+            "claim.value": "demo",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "clients": [
@@ -112,7 +137,8 @@
       "defaultClientScopes": [
         "basic",
         "audience",
-        "profile"
+        "profile",
+        "tenant"
       ]
     },
     {
@@ -128,7 +154,8 @@
         "basic",
         "audience",
         "profile",
-        "payments:process"
+        "payments:process",
+        "tenant"
       ]
     },
     {
@@ -143,7 +170,8 @@
       "defaultClientScopes": [
         "basic",
         "audience",
-        "profile"
+        "profile",
+        "tenant"
       ]
     }
   ],

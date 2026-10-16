@@ -38,5 +38,12 @@
       <artifactId>sdk</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- compile only: the OpenFeature classes are annotated with @SuppressFBWarnings, which javac
+         warns about (one line per annotated member) when the annotation is not on the classpath -->
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 </project>

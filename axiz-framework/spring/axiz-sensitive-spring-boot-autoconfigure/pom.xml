@@ -37,5 +37,21 @@
       <artifactId>spring-boot-jackson</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- masking of server responses: JSON converter (servlet) or encoder (reactive) -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-http-converter</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webflux</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 </project>

@@ -91,10 +91,6 @@
                 <artifactId>mapstruct-processor</artifactId>
               </path>
             </annotationProcessorPaths>
-            <compilerArgs combine.children="append">
-              <arg>-Amapstruct.defaultComponentModel=spring</arg>
-              <arg>-Amapstruct.unmappedTargetPolicy=ERROR</arg>
-            </compilerArgs>
           </configuration>
         </plugin>
       </plugins>
@@ -215,12 +211,39 @@
                     <useTags>true</useTags>
                     <skipDefaultInterface>true</skipDefaultInterface>
                     <openApiNullable>false</openApiNullable>
+                    <!-- inclusion and null handling stay with the global JsonMapper (axiz-web) -->
+                    <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
+                    <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
                     <dateLibrary>java8</dateLibrary>
                     <documentationProvider>none</documentationProvider>
                     <annotationLibrary>none</annotationLibrary>
                     <useResponseEntity>true</useResponseEntity>
                     <sourceFolder>src/main/java</sourceFolder>
                   </configOptions>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <!-- generated models use JSpecify's @Nullable, the null-safety annotations of Spring 7
+                 and of axiz, instead of the deprecated org.springframework.lang.Nullable -->
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>openapi-jspecify</id>
+                <phase>generate-sources</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <replace dir="${project.build.directory}/generated-sources/openapi/src/main/java"
+                             token="import org.springframework.lang.Nullable;"
+                             value="import org.jspecify.annotations.Nullable;">
+                      <include name="**/*.java" />
+                    </replace>
+                  </target>
                 </configuration>
               </execution>
             </executions>

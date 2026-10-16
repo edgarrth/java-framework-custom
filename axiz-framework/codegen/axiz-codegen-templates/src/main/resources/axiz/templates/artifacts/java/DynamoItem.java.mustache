@@ -3,7 +3,7 @@ package {{project.basePackage}}.{{fw.entityPackage}};
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbVersionAttribute;
+import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 
 /** {{artifact.title}} item of the {@code {{artifact.plural}}} table (optimistic locking by version). */
 @DynamoDbBean

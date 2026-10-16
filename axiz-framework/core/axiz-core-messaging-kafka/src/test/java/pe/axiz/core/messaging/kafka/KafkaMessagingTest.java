@@ -56,6 +56,18 @@ class KafkaMessagingTest {
   }
 
   @Test
+  void theKafkaSchemeOfADestinationIsNotPartOfTheTopic() {
+    // axiz.messaging.destinations documents kafka:<topic>; "kafka:payments" is not a valid topic
+    MockProducer<String, byte[]> producer =
+        new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());
+    KafkaEventPublisher publisher = new KafkaEventPublisher(producer, Duration.ofSeconds(1));
+    assertTrue(publisher.supports("kafka:payments"));
+    var result = publisher.publish("kafka:payments", event());
+    assertEquals("payments", producer.history().get(0).topic());
+    assertEquals("payments", result.destination());
+  }
+
+  @Test
   void unacknowledgedSendFails() {
     MockProducer<String, byte[]> producer =
         new MockProducer<>(false, null, new StringSerializer(), new ByteArraySerializer());

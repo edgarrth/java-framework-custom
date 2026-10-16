@@ -27,6 +27,9 @@ final class SpringExceptionMappers {
   private static final boolean SECURITY =
       present("org.springframework.security.access.AccessDeniedException");
   private static final boolean DAO = present("org.springframework.dao.DataAccessException");
+  // Spring MVC's binding exceptions extend jakarta.servlet.ServletException: a reactive service
+  // has no servlet API, so they are only referenced when it is present
+  private static final boolean SERVLET = present("jakarta.servlet.ServletException");
 
   private SpringExceptionMappers() {}
 
@@ -130,10 +133,15 @@ final class SpringExceptionMappers {
                                       message(e.getDefaultMessage())))));
       return Optional.of(new ValidationException(out));
     }
-    if (failure instanceof org.springframework.web.bind.MissingRequestHeaderException mh) {
-      return Optional.of(
-          new BusinessException(
-              CoreErrors.MISSING_HEADER, "missing header", Map.of("header", mh.getHeaderName())));
+    if (SERVLET) {
+      Optional<AxizException> servlet = ServletErrors.map(failure);
+      if (servlet.isPresent()) {
+        return servlet;
+      }
+    }
+    if (failure instanceof org.springframework.web.server.MissingRequestValueException mv
+        && "header".equals(mv.getLabel())) {
+      return Optional.of(missingHeader(mv.getName()));
     }
     if (failure instanceof org.springframework.http.converter.HttpMessageNotReadableException
         || failure instanceof org.springframework.core.codec.DecodingException) {
@@ -144,9 +152,29 @@ final class SpringExceptionMappers {
       ErrorCategory category = ErrorCategory.fromHttpStatus(status);
       return Optional.of(
           new AxizException(
-              CoreErrors.forCategory(category), failure.getClass().getSimpleName(), failure));
+              CoreErrors.forCategory(category),
+              // logged as the reason of the problem: "NoResourceFoundException: No static resource"
+              failure.getClass().getSimpleName() + ": " + failure.getMessage(),
+              failure));
     }
     return Optional.empty();
+  }
+
+  private static AxizException missingHeader(String header) {
+    return new BusinessException(
+        CoreErrors.MISSING_HEADER, "missing header", Map.of("header", header));
+  }
+
+  /** Servlet-only exceptions, loaded only when the servlet API is on the classpath. */
+  private static final class ServletErrors {
+    private ServletErrors() {}
+
+    static Optional<AxizException> map(Throwable failure) {
+      if (failure instanceof org.springframework.web.bind.MissingRequestHeaderException mh) {
+        return Optional.of(missingHeader(mh.getHeaderName()));
+      }
+      return Optional.empty();
+    }
   }
 
   private static String last(String[] codes) {

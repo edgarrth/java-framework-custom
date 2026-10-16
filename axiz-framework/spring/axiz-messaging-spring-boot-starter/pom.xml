@@ -15,6 +15,8 @@
   <description>CloudEvents publishers and consumers for MSK, SQS and SNS with retries, DLQ and inbox integration</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.messaging.starter</axiz.module.name>
   </properties>
 

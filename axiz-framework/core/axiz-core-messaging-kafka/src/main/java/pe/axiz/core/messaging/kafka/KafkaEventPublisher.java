@@ -18,9 +18,13 @@ import pe.axiz.core.messaging.PublishResult;
 /**
  * Publishes CloudEvents (binary mode) to Amazon MSK. The key is the subject (aggregate) so events
  * of the same aggregate stay ordered; each send waits for the broker acknowledgement. Destinations
- * are topic names (anything that is not an SQS URL or an SNS ARN).
+ * are {@code kafka:<topic>} (the documented form of {@code axiz.messaging.destinations}) or a bare
+ * topic name (anything that is not an SQS URL or an SNS ARN).
  */
 public final class KafkaEventPublisher implements EventPublisher {
+
+  /** Scheme of Kafka destinations: {@code kafka:payments} is the topic {@code payments}. */
+  public static final String SCHEME = "kafka:";
 
   private final Producer<String, byte[]> producer;
   private final Duration timeout;
@@ -32,25 +36,31 @@ public final class KafkaEventPublisher implements EventPublisher {
 
   @Override
   public boolean supports(String destination) {
-    return !destination.startsWith("https://") && !destination.startsWith("arn:");
+    return destination.startsWith(SCHEME)
+        || (!destination.startsWith("https://") && !destination.startsWith("arn:"));
+  }
+
+  /** The topic of a destination, without the {@code kafka:} scheme. */
+  static String topic(String destination) {
+    return destination.startsWith(SCHEME) ? destination.substring(SCHEME.length()) : destination;
   }
 
   @Override
   public PublishResult publish(String destination, EventEnvelope event) {
     String key = event.subject() != null ? event.subject() : event.id();
+    String topic = topic(destination);
     ProducerRecord<String, byte[]> record =
-        new ProducerRecord<>(destination, null, event.time().toEpochMilli(), key, event.data());
+        new ProducerRecord<>(topic, null, event.time().toEpochMilli(), key, event.data());
     CloudEventHeaders.toHeaders(event)
         .forEach((k, v) -> record.headers().add(k, v.getBytes(StandardCharsets.UTF_8)));
     try {
       RecordMetadata md = producer.send(record).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-      return new PublishResult(event.id(), destination, md.partition() + "-" + md.offset());
+      return new PublishResult(event.id(), topic, md.partition() + "-" + md.offset());
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new PublishException("Interrupted publishing " + event.id(), e);
     } catch (ExecutionException | TimeoutException e) {
-      throw new PublishException(
-          "Event " + event.id() + " not acknowledged by topic " + destination, e);
+      throw new PublishException("Event " + event.id() + " not acknowledged by topic " + topic, e);
     }
   }
 }

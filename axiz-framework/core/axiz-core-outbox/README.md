@@ -24,6 +24,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `OutboxRecord` | A pending (or processed) outbox entry. |
 | `OutboxRelay` | Moves outbox entries to the broker (at-least-once). |
 | `OutboxStore` | Persistence port of the outbox. |
+| `OutboxWriteTracing` | Keeps the trace of the caller with each event written to the outbox. |
 | `OutboxWriter` | Registers events in the outbox within the caller's transaction. |
 
 ## Tests

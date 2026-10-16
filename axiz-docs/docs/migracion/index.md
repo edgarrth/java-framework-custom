@@ -117,3 +117,66 @@ Si ya creaste tablas o stores propios con el paquete preliminar:
   `./mvnw spotless:apply` antes de subir cambios. Spotless usa google-java-format 1.30, la primera
   versión que corre sobre JDK 25, y dejó de ordenar los POM (sortpom).
   `-Daxiz.errorprone.skip` ya no existe.
+- **`StorageRecordItemReader`:** se crea con `StorageRecordItemReader.named(nombre, storage, key,
+  formato)`. El constructor ya no recibe el nombre, porque fijarlo dentro del constructor expone
+  el objeto antes de terminar de construirse (advertencia `this-escape`).
+- **MapStruct:** los mappers declaran `componentModel` y `unmappedTargetPolicy` en `@Mapper`; el
+  parent ya no pasa opciones `-Amapstruct.*` al compilador.
+- **Modelos OpenAPI:** el parent reemplaza en el código generado `org.springframework.lang.Nullable`
+  (deprecado en Spring 7) por `org.jspecify.annotations.Nullable`.
+- **Persistencia de los estilos:** `axiz-framework-layered-spring-boot-starter` ya no trae
+  `axiz-jpa-spring-boot-starter`, y `axiz-framework-eda-spring-boot-starter` ya no trae
+  `spring-boot-starter-jdbc` (solo la configuración del outbox). Un pool de conexiones en el
+  classpath hace que Spring Boot exija una base de datos, así que un servicio sobre DynamoDB no
+  arrancaba (`Failed to configure a DataSource`). Los servicios con Aurora ya declaran
+  `axiz-jpa-spring-boot-starter` (capacidad `jpa`). Si un servicio tuyo usaba JPA o el outbox sin
+  declararlos, agrega `axiz-jpa-spring-boot-starter` o `axiz-outbox-spring-boot-starter`.
+- **Seguridad en EDA:** `axiz-framework-eda-spring-boot-starter` ya no trae
+  `axiz-security-spring-boot-starter`. Un procesador de eventos no tiene API, y sin
+  `axiz.security.issuers` el resource server impedía arrancar. Si tu procesador expone endpoints
+  propios, declara el starter de seguridad y sus emisores. Con la lista vacía, el error ahora dice
+  qué configurar (`axiz.security.issuers is empty: ...`).
+- **Token relay reactivo:** los clientes reactivos (`WebClient`) con `auth.type: TOKEN_RELAY` toman
+  el token entrante del contexto de seguridad de Reactor. Antes lo buscaban en el contexto del
+  hilo, que en WebFlux está vacío, y la llamada salía sin `Authorization`. No requiere cambios en
+  los servicios.
+- **Errores en WebFlux:** los servicios reactivos ya no quedan sin responder cuando ocurre un
+  error: el traductor de excepciones solo carga las clases del API de servlets si están
+  presentes, y `ProblemFactory` omite un traductor que falle (su error queda como `suppressed`
+  en la excepción original). Las fallas de red de `WebClient` (timeout, conexión rechazada o
+  cortada) llegan como `ExternalServiceException` (503), igual que con `RestClient`.
+- **Versión de API por defecto:** con `axiz.web.api-version.enabled: true` y el header opcional, la
+  versión de una request sin header es `default-version` o, si falta, la menor de `supported`. En
+  Spring WebFlux 7.0, sin versión por defecto, una request sin el header no encuentra ninguna ruta
+  (404). Si el header es opcional y no hay ni `default-version` ni `supported`, el servicio no
+  arranca. Los servicios experience generados declaran `default-version: "1"`.
+- **Idempotencia en WebFlux:** `IdempotencyWebFilter` registra la respuesta en un worker
+  independiente de la request, al terminar de escribirla. El servidor cancela el trabajo de una
+  request cuando el cliente cierra la conexión, y un registro hecho en ese trabajo se
+  interrumpía: la llave quedaba `IN_PROGRESS` hasta vencer. Si la escritura no termina, se
+  registra el resultado sin cuerpo, porque la operación ya tuvo efecto. Sin cambios en los
+  servicios.
+- **Destinos `kafka:<topic>`:** `KafkaEventPublisher` quita el prefijo `kafka:` del destino; antes
+  publicaba en un topic llamado `kafka:<topic>`, inválido en Kafka. Los nombres de topic sin
+  prefijo siguen funcionando.
+- **Consumidores Kafka y SQS:** los listeners se crean cuando `axiz.messaging.kafka.topics` (o
+  `axiz.messaging.sqs.queues`) tiene elementos, se escriba como lista YAML, con índices o separado
+  por comas. Antes la condición solo veía la forma separada por comas: con una lista YAML no se
+  creaba ningún consumidor, el servicio arrancaba sin consumir y los eventos quedaban en el topic.
+  Sin cambios en los servicios.
+- **Enmascaramiento solo en respuestas:** `@Sensitive` y `@Mask` se aplican en el conversor JSON de
+  las respuestas del servidor (servlet) o en su encoder (reactivo), ya no en el `JsonMapper` de la
+  aplicación. Antes el módulo estaba en ese mapper, que también serializa los payloads de eventos,
+  el contexto de las sagas, la caché, los resultados idempotentes y los cuerpos de las llamadas
+  salientes: una cuenta marcada viajaba enmascarada en el evento. Si serializas con el `JsonMapper`
+  inyectado y necesitas el valor enmascarado, registra `SensitiveJacksonModule` en una copia del
+  mapper.
+- **Scheduler:** `axiz-scheduling` se configura antes que el `TaskScheduler` de Spring Boot, así que
+  las tareas `@Scheduled` usan el scheduler de Boot (hilos virtuales, apagado ordenado) en vez de un
+  scheduler privado de un hilo. Sin cambios en los servicios.
+- **Trazas a través del outbox:** `OutboxWriter` guarda con cada evento el contexto de traza de la
+  escritura (extensión `outboxtraceparent`), y `ObservedEventPublisher` lo continúa al publicar y lo
+  quita antes de enviarlo. La request que escribe en el outbox, la publicación y los consumidores
+  quedan en una sola traza. Aparecen dos observaciones nuevas, `axiz.outbox.write` y
+  `axiz.outbox.dispatch` (spans y timers). Sin cambios en los servicios. Si tienes un
+  `EventPublisher` propio en lugar del de axiz, quita esas extensiones antes de publicar.

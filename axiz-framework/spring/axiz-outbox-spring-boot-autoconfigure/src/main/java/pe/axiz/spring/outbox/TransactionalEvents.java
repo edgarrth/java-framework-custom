@@ -11,7 +11,8 @@ import pe.axiz.core.outbox.OutboxWriter;
 /**
  * Records events in the outbox inside the caller's transaction; the relay publishes them after
  * commit. Calling it outside a transaction is an error, because the event could be stored without
- * the business change (or the opposite).
+ * the business change (or the opposite). The writer keeps the trace of the caller with the event
+ * ({@link pe.axiz.core.outbox.OutboxWriteTracing}).
  */
 public class TransactionalEvents {
 

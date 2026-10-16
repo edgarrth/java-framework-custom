@@ -74,7 +74,8 @@ public record AxizWebProperties(
    *
    * @param enabled whether versioning is configured
    * @param header header carrying the version
-   * @param defaultVersion version assumed when the header is absent
+   * @param defaultVersion version assumed when the header is absent; when the header is optional
+   *     and this is empty, the lowest supported version
    * @param supported supported versions
    * @param required whether the header is mandatory
    */
@@ -83,7 +84,51 @@ public record AxizWebProperties(
       @DefaultValue("API-Version") String header,
       @Nullable String defaultVersion,
       @DefaultValue List<String> supported,
-      @DefaultValue("false") boolean required) {}
+      @DefaultValue("false") boolean required) {
+
+    public ApiVersion {
+      if (enabled
+          && !required
+          && (defaultVersion == null || defaultVersion.isBlank())
+          && supported.isEmpty()) {
+        throw new IllegalArgumentException(
+            "axiz.web.api-version: with an optional header, set default-version or supported");
+      }
+    }
+
+    /**
+     * Version of a request without the header. Spring WebFlux finds no handler for such a request
+     * when there is no default version (every route answers 404), so an optional header always has
+     * one: the configured default or the lowest supported version.
+     */
+    public @Nullable String effectiveDefaultVersion() {
+      if (defaultVersion != null && !defaultVersion.isBlank()) {
+        return defaultVersion;
+      }
+      if (required) {
+        return null;
+      }
+      return supported.stream().min(ApiVersion::compareVersions).orElse(null);
+    }
+
+    /** Compares dotted numeric versions ("1" < "1.1" < "2" < "10"); other text compares as text. */
+    static int compareVersions(String a, String b) {
+      String[] x = a.split("\\.");
+      String[] y = b.split("\\.");
+      for (int i = 0; i < Math.max(x.length, y.length); i++) {
+        String p = i < x.length ? x[i] : "0";
+        String q = i < y.length ? y[i] : "0";
+        int c =
+            p.chars().allMatch(Character::isDigit) && q.chars().allMatch(Character::isDigit)
+                ? Long.compare(Long.parseLong(p), Long.parseLong(q))
+                : p.compareTo(q);
+        if (c != 0) {
+          return c;
+        }
+      }
+      return 0;
+    }
+  }
 
   /**
    * CORS policy, disabled unless declared.

@@ -6,7 +6,11 @@ Fails when:
   the BOMs it imports, or a property of the root POM for plugin dependencies);
 - a module declares the same dependency twice;
 - a version property is defined in more than one POM with different values (the root POM needs a
-  few versions for its plugins that axiz-dependencies also manages: they must stay equal).
+  few versions for its plugins that axiz-dependencies also manages: they must stay equal);
+- a style starter (frameworks/*) brings a connection pool on its own. Persistence is the service's
+  choice: a pool on the classpath makes Spring Boot require a database, so a service on DynamoDB, or
+  without persistence, would not start. The batch style is exempt (Spring Batch keeps its job
+  repository in Aurora, which the batch archetype always has).
 
 Usage: check-dependency-governance.py [repository root ...]   (default: current directory)
 """
@@ -19,6 +23,10 @@ from collections import defaultdict
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
 # POMs that own versions: the dependency catalogue and the root build POM (plugin dependencies)
 OWNERS = ("platform/axiz-dependencies/pom.xml", "pom.xml")
+# artifacts that make Spring Boot create a DataSource or a ConnectionFactory
+POOLS = {"spring-boot-starter-jdbc", "spring-boot-starter-data-jpa", "spring-boot-starter-data-r2dbc",
+         "HikariCP", "r2dbc-pool"}
+STYLES_WITH_DATABASE = {"axiz-framework-batch-spring-boot-starter"}
 
 
 def text(element, tag):
@@ -26,15 +34,49 @@ def text(element, tag):
     return found.text.strip() if found is not None and found.text else None
 
 
+def runtime_dependencies(project):
+    """(groupId, artifactId) of the dependencies a consumer inherits: not optional, not test/provided."""
+    result = []
+    for dep in project.findall("m:dependencies/m:dependency", NS):
+        if text(dep, "optional") == "true" or text(dep, "scope") in ("test", "provided"):
+            continue
+        result.append((text(dep, "groupId"), text(dep, "artifactId")))
+    return result
+
+
+def check_style_starters(modules, errors):
+    for artifact, (path, deps) in sorted(modules.items()):
+        if not ("/frameworks/" in path and artifact.endswith("-spring-boot-starter")):
+            continue
+        if artifact in STYLES_WITH_DATABASE:
+            continue
+        seen, stack, trail = set(), [(d, [artifact]) for d in deps], None
+        while stack:
+            (group, name), via = stack.pop()
+            if name in seen:
+                continue
+            seen.add(name)
+            if name in POOLS:
+                trail = " -> ".join(via + [name])
+                break
+            if group and group.startswith("pe.axiz") and name in modules:
+                stack += [(d, via + [name]) for d in modules[name][1]]
+        if trail:
+            errors.append(f"{path}: the style starter brings a connection pool ({trail}); make that "
+                          "dependency optional and let the service choose its persistence")
+
+
 def main(roots):
     errors = []
     properties = defaultdict(list)
+    modules = {}
     for root in roots:
         for path in sorted(glob.glob(os.path.join(root, "**", "pom.xml"), recursive=True)):
             relative = os.path.relpath(path, root)
             if "/target/" in path or "/src/" in path:
                 continue
             project = ET.parse(path).getroot()
+            modules[text(project, "artifactId")] = (path, runtime_dependencies(project))
             props = project.find("m:properties", NS)
             if props is not None:
                 for prop in props:
@@ -64,6 +106,7 @@ def main(roots):
                         errors.append(
                             f"{path}: manages {group}:{text(dep, 'artifactId')}; third-party versions "
                             "belong to platform/axiz-dependencies/pom.xml")
+    check_style_starters(modules, errors)
     for name, definitions in properties.items():
         if len({value for _, value in definitions}) > 1:
             where = ", ".join(f"{p}={v}" for p, v in definitions)

@@ -41,6 +41,8 @@
     <aws-msk-iam-auth.version>2.3.8</aws-msk-iam-auth.version>
     <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
     <openfeature.version>1.23.0</openfeature.version>
+    <!-- annotations the OpenFeature SDK classes carry; same version as the root build's SpotBugs -->
+    <spotbugs.version>4.10.3</spotbugs.version>
     <archunit.version>1.5.1</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
     <blockhound.version>1.0.16.RELEASE</blockhound.version>
@@ -240,6 +242,11 @@
         <groupId>dev.openfeature</groupId>
         <artifactId>sdk</artifactId>
         <version>${openfeature.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-annotations</artifactId>
+        <version>${spotbugs.version}</version>
       </dependency>
       <dependency>
         <groupId>com.tngtech.archunit</groupId>

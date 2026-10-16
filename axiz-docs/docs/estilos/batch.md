@@ -27,7 +27,7 @@ Job settlementJob(JobRepository jobs, Step validateStep, Step loadStep, Step sum
 @StepScope
 StorageRecordItemReader<SettlementLine> settlementReader(
     ObjectStorage storage, @Value("#{jobParameters['input.key']}") String inputKey) {
-  return new StorageRecordItemReader<>("settlementReader", storage, inputKey, SettlementFile::reader);
+  return StorageRecordItemReader.named("settlementReader", storage, inputKey, SettlementFile::reader);
 }
 ```
 

@@ -30,6 +30,14 @@ Máscaras: `EMAIL`, `PHONE`, `DOCUMENT`, `CARD`, `PARTIAL`, `NAME` (inicial de c
 | Logs (incluido el log HTTP) | `axiz.sensitive.log` | `LOW` (todo lo marcado) |
 | Eventos de auditoría | `axiz.sensitive.audit` | `MEDIUM` |
 
+Las respuestas de la API se enmascaran en el conversor JSON de las respuestas del servidor (servlet)
+o en su encoder (reactivo). El `JsonMapper` de la aplicación **no** enmascara: con él se serializan
+los payloads de eventos, el contexto de las sagas, los valores en caché, los resultados idempotentes
+y los cuerpos de las llamadas salientes, que deben conservar el valor real (una cuenta enmascarada en
+un evento llegaría al consumidor, y de ahí al core, como `*********5678`). Si una clase necesita el
+JSON enmascarado fuera de una respuesta, registra `SensitiveJacksonModule` en su propio mapper
+(`mapper.rebuild().addModule(new SensitiveJacksonModule(policy)).build()`).
+
 Desde `axiz.sensitive.full-mask-level` (por defecto `CRITICAL`) el valor siempre se enmascara
 completo. Para datos sin
 anotaciones (mapas, cuerpos HTTP crudos, headers) `axiz.sensitive.keys` declara nombres de

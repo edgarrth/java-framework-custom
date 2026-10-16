@@ -45,10 +45,12 @@ La saga de `payment-process`:
 ## Correrlo
 
 ```bash
-scripts/demo.sh up       # infraestructura local + secretos de desarrollo + todos los servicios
+scripts/demo.sh up       # verifica Docker, JDK y puertos; levanta todo y espera 7/7 UP
+scripts/demo.sh status   # estado de cada servicio
 scripts/demo.sh smoke    # paga un beneficiario por la API de canal y espera COMPLETED
+scripts/demo.sh scenarios   # todos los escenarios funcionales (unos 8 minutos)
 scripts/demo.sh down
-kind/up.sh               # o todo dentro de Kubernetes con los charts reales
+kind/up.sh               # o todo dentro de Kubernetes con los charts reales (puertos 9080, 9180, 9300)
 ```
 
 | | |
@@ -62,3 +64,29 @@ El core simulado responde `CB-51` (fondos insuficientes) para la cuenta `1910099
 (cuenta bloqueada) para `1910088888888`; la red rechaza el CCI `00219100123456780052`, así se ven las
 compensaciones de punta a punta. La colección de **Bruno** (`bruno/`) cubre autenticación, el flujo
 de canal, llamadas máquina a máquina y casos de error.
+
+## Escenarios funcionales
+
+`scripts/demo.sh scenarios` verifica lo que el demo promete, más allá del pago del smoke: 86
+verificaciones en 14 grupos, cada una con `PASS` o `FAIL`. Una falla muestra el motivo y las últimas
+advertencias de los servicios del grupo.
+
+| Grupo | Qué prueba |
+|---|---|
+| `beneficiaries` | dígitos de control del CCI, un beneficiario activo por cuenta, renombrar, borrado lógico, idempotencia sobre DynamoDB, paginación por cursor, enmascaramiento |
+| `payment` | un pago de punta a punta: canal, saga, vista del proceso, historial, orden |
+| `idempotency` | reintento con la misma llave, misma llave con otro cuerpo, sin llave |
+| `rules` | duplicado, límite diario, feature flag de USD (mensajes en español e inglés), moneda distinta |
+| `saga` | sin fondos, cuenta bloqueada, destino cerrado (se revierte el débito), cuenta de otro cliente |
+| `security` | 401, datos de otro cliente (404/403), operaciones reservadas a payment-process, actuator |
+| `integration` | core-integration: titular, crédito SOAP, movimiento inexistente, rechazo de la red |
+| `events` | outbox, cifrado en la base, estados de las sagas, consumidores de Kafka al día, DLQ vacía, CloudEvents |
+| `notifications` | notificaciones en SNS de pagos completados y rechazados |
+| `audit` | auditoría por SQS archivada en S3 con su manifiesto, topic `audit`, DLQ de auditoría |
+| `observability` | métricas en Prometheus y trazas en Tempo |
+| `settlement` | el batch carga el archivo de ejemplo, no repite cargas, deja el resumen en S3 |
+| `dlq` | un mensaje malformado termina en `payments.dlq`, una vez por consumidor |
+| `recovery` | un débito con timeout deja la saga en `VERIFYING`; el job de recuperación la completa |
+
+`scripts/demo.sh scenarios saga security` ejecuta solo esos grupos, y
+`SCENARIOS_SKIP="recovery"` salta uno. Usan la infraestructura local, no kind.

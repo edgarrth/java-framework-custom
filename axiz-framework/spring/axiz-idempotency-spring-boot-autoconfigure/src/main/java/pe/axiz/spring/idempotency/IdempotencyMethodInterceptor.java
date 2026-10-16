@@ -40,6 +40,12 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       ClassUtils.isPresent(
           "reactor.core.publisher.Mono", IdempotencyMethodInterceptor.class.getClassLoader());
 
+  // servlet types are only touched when the servlet API is present (reactive services lack it)
+  private static final boolean SERVLET =
+      ClassUtils.isPresent(
+          "jakarta.servlet.http.HttpServletRequest",
+          IdempotencyMethodInterceptor.class.getClassLoader());
+
   private final Supplier<IdempotencyService> service;
 
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
@@ -57,9 +63,11 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       return invocation.proceed();
     }
     String operation = IdempotencySupport.operation(method, targetClass);
-    RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
-    if (attributes instanceof ServletRequestAttributes servlet) {
-      return servlet(invocation, servlet.getRequest(), rule, operation);
+    if (SERVLET) {
+      HttpServletRequest request = ServletRequests.current();
+      if (request != null) {
+        return servlet(invocation, request, rule, operation);
+      }
     }
     if (REACTOR && ReactiveIdempotency.handles(method.getReturnType())) {
       return ReactiveIdempotency.apply(invocation, rule, operation, service);
@@ -89,5 +97,15 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
     }
     request.setAttribute(IdempotencySupport.KEY_ATTRIBUTE, decision);
     return invocation.proceed();
+  }
+
+  /** Current servlet request; only loaded when the servlet API is present. */
+  private static final class ServletRequests {
+    private ServletRequests() {}
+
+    static @Nullable HttpServletRequest current() {
+      RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+      return attributes instanceof ServletRequestAttributes servlet ? servlet.getRequest() : null;
+    }
   }
 }

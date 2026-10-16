@@ -75,7 +75,15 @@ public final class ProblemFactory {
         return axiz;
       }
       for (ExceptionMapper mapper : mappers) {
-        Optional<AxizException> mapped = mapper.map(current);
+        Optional<AxizException> mapped;
+        try {
+          mapped = mapper.map(current);
+        } catch (RuntimeException | LinkageError e) {
+          // a broken mapper must never stop the error response: it is skipped and its failure
+          // travels with the original exception, so the log shows both
+          throwable.addSuppressed(e);
+          continue;
+        }
         if (mapped.isPresent()) {
           return mapped.get();
         }

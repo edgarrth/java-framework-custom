@@ -16,6 +16,8 @@
   <description>ArchUnit checks of the framework itself: layer dependencies, plain-Java core, starter isolation and cycles</description>
 
   <properties>
+    <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.tests</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.install.skip>true</maven.install.skip>

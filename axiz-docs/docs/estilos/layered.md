@@ -11,6 +11,10 @@ Para tablas de mantenimiento, catálogos y recursos con poca lógica. Es el esti
 └── model/          entidades
 ```
 
+El starter no trae persistencia. Con Aurora, el servicio declara `axiz-jpa-spring-boot-starter`
+(capacidad `jpa`, que habilita `JpaCrudService`); con DynamoDB, `axiz-dynamodb-spring-boot-starter`.
+Así, un servicio sobre DynamoDB arranca sin `DataSource`.
+
 **Reglas** (`LayeredRules`): el controlador no es accedido por nadie, el servicio solo por el
 controlador y el repositorio solo por el servicio; los `*Controller` viven en `controller` y los
 `*Repository` en `repository`.

@@ -78,10 +78,13 @@
       <artifactId>axiz-web-spring-boot-starter</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- persistence is the service's choice (Aurora adds axiz-jpa-spring-boot-starter, DynamoDB
+         axiz-dynamodb-spring-boot-starter): a style starter never brings a DataSource -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-jpa-spring-boot-starter</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

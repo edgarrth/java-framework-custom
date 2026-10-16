@@ -35,6 +35,18 @@ public record EventEnvelope(
   public static final String SPEC_VERSION = "1.0";
   public static final String CORRELATION_ID = "correlationid";
   public static final String TRACEPARENT = "traceparent";
+  public static final String TRACESTATE = "tracestate";
+
+  /**
+   * Trace context (W3C {@code traceparent}) of the outbox write that stored the event. The relay
+   * publishes the event later, outside the request: it continues this trace and removes the
+   * extension, so it never reaches the broker.
+   */
+  public static final String OUTBOX_TRACEPARENT = "outboxtraceparent";
+
+  /** {@code tracestate} that goes with {@link #OUTBOX_TRACEPARENT}. */
+  public static final String OUTBOX_TRACESTATE = "outboxtracestate";
+
   public static final String TENANT = "tenant";
   private static final Pattern EXTENSION_NAME = Pattern.compile("^[a-z0-9]{1,20}$");
 
@@ -71,6 +83,17 @@ public record EventEnvelope(
     Map<String, String> ext = new LinkedHashMap<>(extensions);
     ext.put(name.toLowerCase(Locale.ROOT), value);
     return new EventEnvelope(id, source, type, time, subject, dataContentType, data, ext);
+  }
+
+  /** Copy without the given extensions. */
+  public EventEnvelope withoutExtensions(String... names) {
+    Map<String, String> ext = new LinkedHashMap<>(extensions);
+    for (String n : names) {
+      ext.remove(n.toLowerCase(Locale.ROOT));
+    }
+    return ext.size() == extensions.size()
+        ? this
+        : new EventEnvelope(id, source, type, time, subject, dataContentType, data, ext);
   }
 
   @Override

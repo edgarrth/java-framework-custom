@@ -12,6 +12,9 @@
   </parent>
 
   <artifactId>axiz-coverage-report</artifactId>
+  <!-- only aggregates the reports of the other modules: no classes of its own, so no jar
+       (with jar packaging Maven warns "JAR will be empty") -->
+  <packaging>pom</packaging>
   <name>axiz :: quality :: coverage report</name>
   <description>Aggregated JaCoCo report of the whole reactor (published to the CI run, not to Nexus)</description>
 

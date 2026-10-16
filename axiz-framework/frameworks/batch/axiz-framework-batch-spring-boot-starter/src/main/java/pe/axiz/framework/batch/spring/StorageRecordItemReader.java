@@ -24,22 +24,38 @@ public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamIt
   private @Nullable RecordReader<T> reader;
 
   /**
-   * Creates the reader.
+   * Creates a reader whose saved state is stored under {@code name} (restarts resume from it).
    *
    * @param name reader name (key of the saved state)
    * @param storage object storage
    * @param key object key
    * @param format builds the record reader for the stream (CSV, fixed width...)
+   * @param <T> record type
+   * @return the reader
    */
-  public StorageRecordItemReader(
+  public static <T> StorageRecordItemReader<T> named(
       String name,
       ObjectStorage storage,
       String key,
       Function<InputStream, RecordReader<T>> format) {
+    StorageRecordItemReader<T> reader = new StorageRecordItemReader<>(storage, key, format);
+    reader.setName(Objects.requireNonNull(name));
+    return reader;
+  }
+
+  /**
+   * Creates an unnamed reader; prefer {@link #named}, or call {@code setName} before the step opens
+   * it. The constructor stays visible for step-scope proxies.
+   *
+   * @param storage object storage
+   * @param key object key
+   * @param format builds the record reader for the stream (CSV, fixed width...)
+   */
+  public StorageRecordItemReader(
+      ObjectStorage storage, String key, Function<InputStream, RecordReader<T>> format) {
     this.storage = Objects.requireNonNull(storage);
     this.key = Objects.requireNonNull(key);
     this.format = Objects.requireNonNull(format);
-    setName(name);
   }
 
   @Override

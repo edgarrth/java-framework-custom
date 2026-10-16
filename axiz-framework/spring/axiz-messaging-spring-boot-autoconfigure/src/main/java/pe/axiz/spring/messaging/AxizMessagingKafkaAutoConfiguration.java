@@ -85,7 +85,7 @@ public class AxizMessagingKafkaAutoConfiguration {
 
   /** Listener containers, one per configured topic. */
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnExpression("'${axiz.messaging.kafka.topics:}' != ''")
+  @ConditionalOnListProperty("axiz.messaging.kafka.topics")
   static class ConsumerConfiguration {
 
     @Bean

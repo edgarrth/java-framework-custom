@@ -15,6 +15,8 @@
   <description>Structured JSON logging, operation logging with masking and HTTP request logs</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.logging.starter</axiz.module.name>
   </properties>
 

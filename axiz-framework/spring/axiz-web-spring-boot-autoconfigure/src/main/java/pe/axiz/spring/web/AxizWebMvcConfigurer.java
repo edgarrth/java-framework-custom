@@ -46,7 +46,7 @@ public class AxizWebMvcConfigurer implements WebMvcConfigurer {
       configurer
           .useRequestHeader(v.header())
           .setVersionRequired(v.required())
-          .setDefaultVersion(v.defaultVersion())
+          .setDefaultVersion(v.effectiveDefaultVersion())
           .addSupportedVersions(v.supported().toArray(String[]::new));
     }
   }

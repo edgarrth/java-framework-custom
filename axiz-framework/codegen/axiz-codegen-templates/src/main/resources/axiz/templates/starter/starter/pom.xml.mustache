@@ -18,6 +18,8 @@
   <description>{{project.descriptionXml}}</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>{{platform.springPackage}}.starter</axiz.module.name>
   </properties>
 

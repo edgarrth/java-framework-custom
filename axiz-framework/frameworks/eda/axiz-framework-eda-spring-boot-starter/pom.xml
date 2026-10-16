@@ -68,10 +68,13 @@
       <artifactId>axiz-sensitive-spring-boot-starter</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- an event processor has no API, so no resource server: the security capability adds it
+         (with axiz.security.issuers) when the service also exposes endpoints -->
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-security-spring-boot-starter</artifactId>
       <version>${project.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -83,9 +86,12 @@
       <artifactId>axiz-inbox-spring-boot-starter</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- the outbox wiring only: it turns on when the service has a database (the outbox capability
+         or Aurora persistence bring the JDBC or R2DBC pool). An event processor on DynamoDB, or
+         without persistence, starts without a DataSource -->
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-outbox-spring-boot-starter</artifactId>
+      <artifactId>axiz-outbox-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

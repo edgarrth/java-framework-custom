@@ -61,6 +61,7 @@ scripts/demo.sh up       # checks (Docker, JDK 25, free ports), builds stale jar
 scripts/demo.sh status   # state of every service: UP, STARTING, EXITED, BUSY (port taken), STOPPED
 scripts/demo.sh smoke    # waits for 7/7 UP, pays a beneficiary through the channel API, waits for
                          # COMPLETED and for the history; a failing step prints its HTTP response
+scripts/demo.sh scenarios   # every functional scenario (about 8 minutes, see below)
 scripts/demo.sh up --attach   # same, then stays showing the logs of every service (Ctrl+C stops them)
 scripts/demo.sh logs          # follows the logs of every service (scripts/demo.sh logs <service>: one)
 scripts/demo.sh restart payments-experience --debug   # one service again, Spring web and axiz at DEBUG
@@ -90,7 +91,40 @@ account `1910099999999` and `CB-62` (blocked) for `1910088888888`; the network r
 
 The settlement job loads the sample file the LocalStack init uploads:
 `scripts/run.sh settlement-batch` (the profile `platform` points it to
-`in/settlement/NET-SETTLE-SAMPLE.txt`).
+`in/settlement/NET-SETTLE-SAMPLE.txt`). `demo.sh up` builds its jar too, and the `settlement`
+group of the scenarios runs it.
+
+### Functional scenarios
+
+`scripts/demo.sh scenarios` (or `scripts/scenarios.sh`) checks what the demo promises, beyond the
+single payment of the smoke test: 86 checks in 14 groups, each printing PASS or FAIL, with the
+reason and the last warnings of the services involved when a check fails.
+
+| Group | What it checks |
+|---|---|
+| `beneficiaries` | CCI check digits, one active beneficiary per account, rename (cache evicted), soft delete, idempotency on DynamoDB, cursor pages, masking in the channel |
+| `payment` | a payment end to end: channel, saga, process view, history, order |
+| `idempotency` | replay with the same key, same key with another body, missing key |
+| `rules` | duplicate payment, daily limit, USD feature flag (Spanish and English messages), currency mismatch |
+| `saga` | no funds, blocked account, closed destination (the debit is reversed), another customer's account; the daily limit is released |
+| `security` | 401, other customers' data (404/403), status changes and money movements only for payment-process, protected actuator |
+| `integration` | core-integration: holder check, SOAP credit, unknown movement, network rejection |
+| `events` | outbox published, encrypted accounts, saga states, Kafka consumer groups caught up, empty DLQ, CloudEvents headers |
+| `notifications` | notification requests on SNS for completed and rejected payments |
+| `audit` | audit through SQS archived on S3 with its manifest, audit topic on Kafka, empty audit DLQ |
+| `observability` | business and HTTP metrics in Prometheus, traces in Tempo |
+| `settlement` | the batch loads the sample file, reruns load nothing, summary on S3 |
+| `dlq` | a malformed message ends in `payments.dlq` once per consumer group |
+| `recovery` | a debit that times out leaves the saga VERIFYING; the recovery job completes it (about 4 minutes) |
+
+```bash
+scripts/demo.sh scenarios saga security          # only some groups (they create the data they need)
+SCENARIOS_SKIP="recovery" scripts/demo.sh scenarios
+```
+
+The scenarios read the local infrastructure (PostgreSQL, Kafka, LocalStack, WireMock, Grafana), so
+they run against `demo.sh up`, not kind. They need the realm and the LocalStack init of this
+version: after an upgrade, `scripts/demo.sh down` and `scripts/demo.sh up` once.
 
 ### Inside Kubernetes (kind)
 

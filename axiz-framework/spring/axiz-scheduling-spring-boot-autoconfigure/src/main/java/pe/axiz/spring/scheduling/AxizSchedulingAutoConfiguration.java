@@ -25,7 +25,11 @@ import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
     afterName = {
       "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
       "pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration"
-    })
+    },
+    // @EnableScheduling must be seen before Boot decides whether to create its TaskScheduler
+    // (virtual threads, graceful shutdown); otherwise Spring falls back to a private
+    // single-thread scheduler ("No TaskScheduler/ScheduledExecutorService bean found")
+    beforeName = "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration")
 @ConditionalOnBooleanProperty(name = "axiz.scheduling.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizSchedulingProperties.class)
 @EnableScheduling

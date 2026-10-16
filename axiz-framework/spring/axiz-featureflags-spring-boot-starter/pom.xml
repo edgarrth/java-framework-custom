@@ -15,6 +15,8 @@
   <description>Feature flags from ConfigMap or Parameter Store exposed through OpenFeature</description>
 
   <properties>
+    <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.spring.featureflags.starter</axiz.module.name>
   </properties>
 

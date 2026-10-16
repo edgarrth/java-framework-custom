@@ -45,7 +45,7 @@ public class AxizWebFluxConfigurer implements WebFluxConfigurer {
       configurer
           .useRequestHeader(v.header())
           .setVersionRequired(v.required())
-          .setDefaultVersion(v.defaultVersion())
+          .setDefaultVersion(v.effectiveDefaultVersion())
           .addSupportedVersions(v.supported().toArray(String[]::new));
     }
   }

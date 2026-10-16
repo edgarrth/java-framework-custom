@@ -47,6 +47,9 @@ transactionalEvents.enqueue(
 - El relay toma lotes con `FOR UPDATE SKIP LOCKED` (varias réplicas sin pisarse), reintenta con
   backoff hasta `axiz.outbox.relay.max-attempts`, marca como fallidos los que no salen y purga los
   publicados tras `retention`.
+- La traza no se corta: el evento guarda el contexto de la escritura y el relay lo continúa al
+  publicar, así la request, la publicación y los consumidores quedan en una sola traza (ver
+  [Observabilidad](../operacion/observabilidad.md#contexto-y-correlación)).
 - En hexagonal, los eventos de dominio registrados por el agregado van al outbox automáticamente
   con la capacidad `outbox` (ver [Hexagonal](../estilos/hexagonal.md)).
 - En SQS FIFO el id del evento es el id de deduplicación.

@@ -16,7 +16,7 @@ import tools.jackson.databind.ser.std.StdSerializer;
  * Jackson module for {@link Money}: the amount is written as a string so clients never parse it as
  * a binary floating point number. Reading accepts the object form or {@code "PEN 150.00"}.
  */
-public class MoneyJacksonModule extends SimpleModule {
+public final class MoneyJacksonModule extends SimpleModule {
 
   private static final long serialVersionUID = 1L;
 

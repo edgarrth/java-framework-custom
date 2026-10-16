@@ -61,6 +61,9 @@ axiz:
 - **Errores**: las respuestas de error se convierten en `ExternalServiceException` con el detalle del
   proveedor, para que el adaptador las traduzca al dominio.
 - **Secretos por referencia** (`*-ref`), resueltos con `SecretResolver` desde Secrets Manager.
+- **Token relay** (`TOKEN_RELAY`): reenvía el token de la request entrante. En servlet se toma del
+  contexto de seguridad del hilo; en reactivo, del contexto de Reactor de la request, así que
+  funciona igual aunque la llamada cambie de hilo.
 
 ## SOAP
 

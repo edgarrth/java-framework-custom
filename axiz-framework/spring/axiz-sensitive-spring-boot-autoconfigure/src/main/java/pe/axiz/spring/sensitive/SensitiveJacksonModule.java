@@ -22,7 +22,7 @@ import tools.jackson.databind.ser.ValueSerializerModifier;
  * the {@link OutputChannel#RESPONSE} policy. Values below the masking threshold keep their JSON
  * type; masked values are written as strings.
  */
-public class SensitiveJacksonModule extends SimpleModule {
+public final class SensitiveJacksonModule extends SimpleModule {
 
   private static final long serialVersionUID = 1L;
 

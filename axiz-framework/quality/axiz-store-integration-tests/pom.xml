@@ -16,6 +16,8 @@
   <description>Store contracts run against real backends in containers: PostgreSQL (JDBC and R2DBC inbox), Valkey (idempotency) and LocalStack DynamoDB (idempotency and inbox)</description>
 
   <properties>
+    <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
+    <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.stores</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
     <maven.install.skip>true</maven.install.skip>

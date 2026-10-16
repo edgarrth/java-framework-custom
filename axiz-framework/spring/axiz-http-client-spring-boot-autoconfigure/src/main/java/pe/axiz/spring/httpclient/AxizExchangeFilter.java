@@ -2,9 +2,14 @@ package pe.axiz.spring.httpclient;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -12,6 +17,9 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.ExternalErrorDetail;
+import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.http.ExternalErrorTranslator;
 import reactor.core.publisher.Mono;
@@ -41,28 +49,52 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
   @Override
   public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
     ClientSettings settings = resilience.settings();
-    return Mono.deferContextual(
-        ctx -> {
-          RequestMetadata m = ctx.getOrDefault(RequestContext.KEY, null);
-          Mono<ClientRequest> prepared =
-              Mono.fromCallable(
-                      () -> {
-                        ClientRequest.Builder b = ClientRequest.from(request);
-                        b.headers(
-                            h -> {
-                              for (Map.Entry<String, String> e :
-                                  OutboundHeaders.of(m, settings, tenantHeader).entrySet()) {
-                                if (!h.containsHeader(e.getKey())) {
-                                  h.set(e.getKey(), e.getValue());
-                                }
-                              }
-                              auth.apply(h::set);
-                            });
-                        return b.build();
-                      })
-                  .subscribeOn(Schedulers.boundedElastic());
-          return prepared.flatMap(req -> attempt(req, next, settings));
-        });
+    // token relay: in a reactive service the inbound token lives in the Reactor context, not in a
+    // thread-local, so it is read here, on the subscriber's context, before switching threads
+    Mono<Optional<String>> relayed =
+        auth.relay() && OutboundAuth.SECURITY
+            ? ReactiveRelay.token().map(Optional::of).defaultIfEmpty(Optional.empty())
+            : Mono.just(Optional.empty());
+    return relayed.flatMap(
+        token ->
+            Mono.deferContextual(
+                ctx -> {
+                  RequestMetadata m = ctx.getOrDefault(RequestContext.KEY, null);
+                  Mono<ClientRequest> prepared =
+                      Mono.fromCallable(
+                              () -> {
+                                ClientRequest.Builder b = ClientRequest.from(request);
+                                b.headers(
+                                    h -> {
+                                      for (Map.Entry<String, String> e :
+                                          OutboundHeaders.of(m, settings, tenantHeader)
+                                              .entrySet()) {
+                                        if (!h.containsHeader(e.getKey())) {
+                                          h.set(e.getKey(), e.getValue());
+                                        }
+                                      }
+                                      auth.apply(h::set);
+                                      token.ifPresent(
+                                          t -> h.set(HttpHeaders.AUTHORIZATION, "Bearer " + t));
+                                    });
+                                return b.build();
+                              })
+                          .subscribeOn(Schedulers.boundedElastic());
+                  return prepared.flatMap(req -> attempt(req, next, settings));
+                }));
+  }
+
+  /** Spring Security access, isolated so the dependency stays optional. */
+  static final class ReactiveRelay {
+    private ReactiveRelay() {}
+
+    /** Bearer token of the inbound request, from the reactive security context. */
+    static Mono<String> token() {
+      return ReactiveSecurityContextHolder.getContext()
+          .mapNotNull(SecurityContext::getAuthentication)
+          .filter(AbstractOAuth2TokenAuthenticationToken.class::isInstance)
+          .map(a -> ((AbstractOAuth2TokenAuthenticationToken<?>) a).getToken().getTokenValue());
+    }
   }
 
   private Mono<ClientResponse> attempt(
@@ -78,7 +110,11 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
               long start = System.nanoTime();
               return next.exchange(req)
                   .timeout(settings.timeouts().read())
-                  .doOnError(e -> resilience.release(start, e, -1))
+                  .doOnError(
+                      e -> {
+                        resilience.release(start, e, -1);
+                        log(settings, method, req, -1, start, attempt[0]);
+                      })
                   .flatMap(
                       res -> {
                         int status = res.statusCode().value();
@@ -113,7 +149,15 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                           return again
                               ? Mono.delay(resilience.delay((int) s.totalRetries() + 1))
                               : Mono.error(s.failure());
-                        })));
+                        })))
+        // like the servlet client: a transport failure (timeout, refused or reset connection)
+        // becomes a dependency error, so the service answers 503 instead of an unknown failure
+        .onErrorMap(e -> !(e instanceof AxizException), e -> transport(settings, e));
+  }
+
+  static ExternalServiceException transport(ClientSettings settings, Throwable e) {
+    return ExternalServiceException.from(
+        new ExternalErrorDetail(settings.name(), -1, e.getClass().getSimpleName(), null, ""), e);
   }
 
   private static void log(

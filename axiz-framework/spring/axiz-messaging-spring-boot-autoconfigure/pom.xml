@@ -90,5 +90,11 @@
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
+    <!-- real Micrometer tracing handlers (with a test tracer) for the trace through the outbox -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-tracing-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

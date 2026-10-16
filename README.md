@@ -129,6 +129,11 @@ verifica su checksum. Docker se instala con Docker Desktop (Windows y macOS) o D
 - Valkey: 6379;
 - Kafka: 9092.
 
+`scripts/demo.sh up` revisa estos puertos antes de arrancar y dice qué contenedor o proceso ocupa
+cada uno. El caso más común es un clúster de kind (contenedor `<nombre>-control-plane`) que publica
+el 8080. El clúster de kind del propio demo usa 9080, 9180 y 9300, así que puede convivir con el
+demo local.
+
 **Windows con WSL2.** Ejecuta todo dentro de WSL, con Docker Desktop y la integración WSL activa.
 Copia los repositorios al sistema de archivos de Linux (por ejemplo `~/axiz`) en lugar de
 `/mnt/c` o `/mnt/d`. Sobre `/mnt` Maven y la compilación son varias veces más lentos.
@@ -194,11 +199,14 @@ cd axiz-demo
 ./mvnw package -DskipTests
 ```
 
-**Qué hace.** Compila los 8 servicios y la verificación de cobertura de capacidades. Este paso es
-opcional, porque `demo.sh up` compila cada servicio al arrancarlo. Hacerlo antes evita que 7
-compilaciones corran a la vez la primera vez.
+**Qué hace.** Compila los 8 servicios y la verificación de cobertura de capacidades, y deja un
+jar ejecutable en `services/<servicio>/target`. `demo.sh up` arranca los servicios desde esos
+jars. Si falta un jar, o es más antiguo que el código de su servicio, `up` lo vuelve a compilar.
+Por eso este paso es opcional, pero hacerlo aquí muestra cualquier error de compilación por
+separado.
 
-**Qué validar:** `BUILD SUCCESS` y un `target/*.jar` en cada carpeta de `services/`.
+**Qué validar:** `BUILD SUCCESS` y un `target/<servicio>-0.1.0-SNAPSHOT.jar` en cada carpeta de
+`services/`.
 
 ### 4.4 Levantar la infraestructura y los servicios
 
@@ -217,7 +225,18 @@ scripts/demo.sh up
 
 **Qué hace.**
 
-1. `docker compose -f local/compose.yaml up -d --wait` levanta y espera la infraestructura:
+1. Verifica los requisitos y se detiene con un mensaje claro si algo falta (después de levantar la
+   infraestructura, verifica además que existan los topics de Kafka):
+   - Docker está corriendo;
+   - el JDK es 25;
+   - `curl` y `jq` están instalados;
+   - los puertos de la sección 3 están libres. Si uno está ocupado, dice qué contenedor o proceso
+     lo tiene y cómo liberarlo.
+2. Compila los jars que falten o estén desactualizados: más antiguos que el código del servicio o
+   que el framework instalado en `~/.m2`. Así, después de reinstalar el framework, `up` recompila
+   los servicios sin que tengas que pedirlo. `--build` los recompila todos. También compila el job
+   `settlement-batch`, que no queda corriendo: lo ejecutan las pruebas funcionales (sección 4.7).
+3. `docker compose -f local/compose.yaml up -d --wait` levanta y espera la infraestructura:
 
    | Contenedor | Qué simula | Puerto |
    |---|---|---|
@@ -229,14 +248,53 @@ scripts/demo.sh up
    | WireMock | core bancario y red de pagos | 8089 |
    | Grafana + OTel | métricas y trazas | 3000 |
 
-2. `scripts/dev-secrets.sh` genera los secretos de desarrollo de cada servicio en
+4. `scripts/dev-secrets.sh` genera los secretos de desarrollo de cada servicio en
    `services/*/local/secrets`. Son valores aleatorios, salvo el client secret de
    `payment-process`, que coincide con el realm.
-3. Arranca los 7 servicios con `./mvnw spring-boot:run` y los perfiles `local,platform`, en
-   segundo plano. Cada servicio deja su log en `.run/<servicio>.log`.
+5. Arranca los 7 servicios en segundo plano (`java -jar` con los perfiles `local,platform`). Cada
+   servicio deja su log en `.run/<servicio>.log`.
+6. Espera a que los 7 respondan `UP` en `/actuator/health`. Suele tardar entre 30 segundos y
+   2 minutos. Si un servicio se cae al arrancar, se detiene y muestra las últimas líneas de su log.
+   Si pasan 5 minutos (`AXIZ_UP_TIMEOUT`, en segundos), muestra el estado de cada servicio.
 
-El comando termina enseguida, pero los servicios tardan entre 1 y 3 minutos en compilar y
-arrancar.
+**Qué validar.** La salida termina con:
+
+```text
+  7/7 UP after 64s
+all services UP
+next: scripts/demo.sh smoke
+```
+
+Con `scripts/demo.sh up --no-wait` el comando termina apenas arranca los procesos. En ese caso usa
+`scripts/demo.sh wait` antes del smoke.
+
+**Ver los logs en la terminal.** Con `scripts/demo.sh up --attach` el comando se queda en la terminal
+mostrando los logs de los 7 servicios, cada línea con el nombre del servicio en color, como
+`docker compose up`. Avisa cuando los 7 están `UP`, y `Ctrl+C` detiene los servicios (la
+infraestructura sigue arriba). El smoke se ejecuta en otra terminal.
+
+Otros comandos útiles:
+
+| Comando | Qué hace |
+|---|---|
+| `scripts/demo.sh logs` | sigue los logs de todos los servicios; `Ctrl+C` deja de seguirlos, los servicios siguen corriendo |
+| `scripts/demo.sh logs payment-process` | sigue el log de un servicio |
+| `scripts/demo.sh restart payments-experience --debug` | reinicia un servicio con los logs de Spring web y de axiz en DEBUG |
+| `scripts/demo.sh stop` | detiene los servicios y deja la infraestructura |
+
+Los servicios del demo registran en DEBUG el motivo de cada request rechazada (4xx, logger
+`axiz.errors`), así el log explica un 404 o un 400.
+
+Si `up` se detiene porque el puerto 8080 está ocupado por un clúster de kind, verás algo así:
+
+```text
+port 8080 (payments-experience) is taken by: axiz-control-plane (container, image kindest/node:v1.36.4)
+axiz-control-plane is the node of the kind cluster 'axiz'. Stop it while you use the local demo:
+  docker stop axiz-control-plane        (docker start axiz-control-plane brings it back)
+```
+
+Detén ese contenedor (o borra el clúster con `kind delete cluster --name axiz`) y vuelve a
+ejecutar `scripts/demo.sh up`.
 
 ### 4.5 Verificar que todo está arriba
 
@@ -244,7 +302,7 @@ arrancar.
 scripts/demo.sh status
 ```
 
-**Qué validar.** Repite el comando hasta que muestre:
+**Qué validar.** Debe mostrar:
 
 ```text
 payments-business         8081  UP
@@ -257,7 +315,18 @@ payments-experience       8080  UP
 7/7 services UP
 ```
 
-Si un servicio sigue en `DOWN`, revisa su log, por ejemplo con `tail -100 .run/payment-process.log`.
+Cada servicio aparece en uno de estos estados:
+
+| Estado | Significado | Qué hacer |
+|---|---|---|
+| `UP` | listo | nada |
+| `STARTING` | el proceso vive pero todavía no responde | esperar (`scripts/demo.sh wait`) |
+| `DOWN` u `OUT_OF_SERVICE` | responde, pero una dependencia (base de datos, Kafka...) falla | revisar el log y `docker compose -f local/compose.yaml ps` |
+| `EXITED` | el proceso terminó | `tail -50 .run/<servicio>.log` |
+| `BUSY` | otro programa ocupa el puerto | liberar el puerto; el mensaje dice quién lo tiene |
+| `STOPPED` | no está corriendo | `scripts/demo.sh up` |
+
+Para seguir el log de un servicio: `scripts/demo.sh logs payment-process`.
 
 ### 4.6 Prueba automática de punta a punta
 
@@ -267,6 +336,8 @@ scripts/demo.sh smoke
 
 **Qué hace.**
 
+0. Espera a que los 7 servicios estén `UP` (hasta 5 minutos, `SMOKE_WAIT` en segundos). Si no lo
+   logran, muestra el estado de cada uno y termina con error.
 1. Obtiene el token de la clienta `ana`.
 2. Registra un beneficiario, o reutiliza el que ya existe.
 3. Paga por el canal.
@@ -276,17 +347,121 @@ scripts/demo.sh smoke
 **Qué validar.** La salida termina así:
 
 ```text
-beneficiary 0e6c...
+== token of the customer ana (Keycloak http://localhost:8180)
+token ok (1432 chars)
+
+== beneficiary of C-1001 (beneficiaries-crud http://localhost:8082)
+registered 0e6c...                (o "reusing 0e6c..." desde la segunda ejecución)
+
+== payment through the channel API (payments-experience http://localhost:8080)
 payment 0193...: {"paymentId":"0193...","operationNumber":"OP2026...","status":"RECEIVED",...}
-status RECEIVED
+
+== saga: waiting for COMPLETED
 status PROCESSING
 status COMPLETED
+
+== history read model (payments-history http://localhost:8086)
 history COMPLETED
-OK
+
+OK: payment 0193... completed and projected
 ```
 
 El historial puede mostrar `not projected yet` unas veces antes de `COMPLETED`, porque es
 eventualmente consistente.
+
+Si un paso falla, el smoke termina con `FAILED:`, el paso, el código HTTP y el cuerpo de la
+respuesta (o, si no hubo respuesta, el motivo). Antes muestra las últimas advertencias y errores
+de los servicios que participan en ese paso, tomados de `.run/<servicio>.log`. Por ejemplo:
+
+```text
+FAILED: token request: no answer: connection refused: nothing listens on http://localhost:8180/...
+FAILED: create payment: HTTP 403
+{ "title": "Forbidden", ... }
+```
+
+La sección [8](#8-problemas-frecuentes) explica las causas más comunes.
+
+### 4.7 Pruebas funcionales completas
+
+El smoke prueba un pago exitoso. Estas pruebas recorren todo lo que el demo promete: rechazos y
+compensaciones, reglas del canal, idempotencia, seguridad, eventos, notificaciones, auditoría,
+observabilidad, el batch, la cola de errores de Kafka y la recuperación de sagas.
+
+**Antes de la primera ejecución** con esta versión, baja y levanta el demo una vez. Keycloak debe
+importar el realm nuevo (los tokens traen el claim `tenant`) y LocalStack debe crear la cola que
+recibe una copia de las notificaciones:
+
+```bash
+scripts/demo.sh down
+scripts/demo.sh up
+```
+
+Después:
+
+```bash
+scripts/demo.sh scenarios
+```
+
+**Qué hace.** Ejecuta 14 grupos en este orden. Cada verificación imprime `PASS` o `FAIL`:
+
+| Grupo | Qué prueba |
+|---|---|
+| `beneficiaries` | registro, dígitos de control del CCI, un beneficiario activo por cuenta, renombrar (caché invalidada), borrado lógico y nuevo registro, idempotencia sobre DynamoDB, paginación por cursor, enmascaramiento en el canal |
+| `payment` | un pago de punta a punta: canal, saga `COMPLETED`, vista del proceso (solo aplicaciones), historial (Kafka → R2DBC), orden en payments-business |
+| `idempotency` | reintento con la misma llave (`Idempotent-Replayed: true`, mismo pago), misma llave con otro cuerpo (`AXZ-IDEM-0422`), sin llave (400) |
+| `rules` | pago duplicado (`-0004`), límite diario (`-0003`), pagos en USD apagados por feature flag (`-0002`, mensaje en español y en inglés), moneda distinta a la del beneficiario (`-0001`) |
+| `saga` | sin fondos y cuenta bloqueada (falla `debit`), cuenta destino cerrada (falla `transfer` y el débito se revierte en el core), luis paga desde la cuenta de ana (el core rechaza al titular); el rechazo devuelve el monto al límite diario y el historial muestra el motivo |
+| `security` | 401 sin token o con token inválido, recursos de otro cliente (404 o 403), cambios de estado y movimientos de dinero reservados a payment-process, actuator protegido |
+| `integration` | core-integration directo: titular distinto (`-0004`), crédito por SOAP con WS-Security, reverso de un movimiento inexistente (404), transferencia rechazada por la red (`-0003`) |
+| `events` | outbox publicado, cuentas cifradas en la base (`axz1:`), sagas de la corrida en `COMPLETED` o `COMPENSATED`, los 3 grupos de consumidores de Kafka conectados y al día, nada en `payments.dlq`, eventos CloudEvents |
+| `notifications` | notifications-processor publica en SNS la notificación del pago completado y la del rechazado |
+| `audit` | la auditoría de core-integration llega por SQS y se archiva en S3 con su manifiesto; la de payments-business llega al topic `audit`; la DLQ de auditoría está vacía |
+| `observability` | métricas de negocio y HTTP en Prometheus; en Tempo, una sola traza desde la request del canal hasta la saga, con la escritura en el outbox y su publicación |
+| `settlement` | `settlement-batch` carga el archivo de ejemplo (3 líneas, totales de control), una segunda ejecución no carga nada (idempotente) y deja el resumen en S3 |
+| `dlq` | un mensaje malformado en `payments` termina en `payments.dlq` una vez por consumidor, y los consumidores siguen procesando |
+| `recovery` | un débito que tarda más que el timeout deja la saga en `VERIFYING` sin compensar; cuando el core vuelve a responder, el job de recuperación la completa |
+
+Tarda unos 8 minutos; `recovery` toma unos 4, porque el job retoma las sagas inactivas por más de
+2 minutos. Para ejecutar solo algunos grupos, o saltar alguno:
+
+```bash
+scripts/demo.sh scenarios saga security
+SCENARIOS_SKIP="recovery" scripts/demo.sh scenarios
+```
+
+Cada grupo crea los datos que necesita (beneficiarios, un pago), así que puede ejecutarse solo.
+Las pruebas se pueden repetir: reutilizan los beneficiarios y usan montos distintos en cada pago.
+
+**Qué validar.** La salida termina así:
+
+```text
+== recovery
+       payment 0193...: its debit times out in the core (12 s answer, 4 s read timeout)
+  PASS uncertain debit: the process waits VERIFYING, nothing compensated
+  PASS   ... the order stays PROCESSING
+       the core answers again; the recovery job resumes sagas idle for 2 minutes (every 60 s)...
+  PASS the recovery job verifies the debit and completes the payment (151 s)
+  PASS   ... the order is COMPLETED
+  PASS   ... payment-process logged the resumption
+
+86 checks passed, 0 failed (473 s)
+OK: every scenario passed
+```
+
+Una verificación que falla muestra el motivo (código HTTP y cuerpo, o el valor encontrado) y las
+últimas advertencias y errores de los servicios del grupo. Al final aparece la lista de fallas y el
+comando termina con código 1. Por ejemplo:
+
+```text
+  FAIL closed destination account (NET-R02): REJECTED, failed step transfer, compensated
+         response does not satisfy: .failedStep == "transfer"
+         {"processId":"0193...","status":"NEEDS_ATTENTION","failedStep":"transfer"}
+         -- last warnings/errors of payment-process (.run/payment-process.log)
+           ... WARN ... Saga payment 0193... failed at step transfer: ...
+```
+
+Las pruebas leen la infraestructura local (PostgreSQL, Kafka, LocalStack, WireMock y Grafana), así
+que solo funcionan con `scripts/demo.sh up`, no contra kind.
 
 ## 5. Probar el demo con curl
 
@@ -336,8 +511,8 @@ tokens.
 ### 5.1 Tokens
 
 ```bash
-jwt "$ANA" | jq '{sub, azp, preferred_username, aud, scope}'
-jwt "$M2M" | jq '{sub, azp, preferred_username, scope}'
+jwt "$ANA" | jq '{sub, azp, preferred_username, aud, scope, tenant}'
+jwt "$M2M" | jq '{sub, azp, preferred_username, scope, tenant}'
 ```
 
 **Qué validar:**
@@ -348,13 +523,15 @@ jwt "$M2M" | jq '{sub, azp, preferred_username, scope}'
   - `"azp": "payments-web"`;
   - `"preferred_username": "ana"`;
   - `aud` incluye `local-services`.
+- En los dos, `"tenant": "demo"`. payment-process es multi-tenant y rechaza con `400` una request
+  sin tenant.
 - En `M2M`:
   - `"azp": "payment-process"`;
   - `"preferred_username": "service-account-payment-process"`; esto es lo que marca el token como
     de una aplicación y no de una persona;
   - `scope` incluye `payments:process`.
 
-Si falta `sub` o `preferred_username`, Keycloak conserva un realm anterior. Ejecuta
+Si falta `sub`, `preferred_username` o `tenant`, Keycloak conserva un realm anterior. Ejecuta
 `scripts/demo.sh down` y `scripts/demo.sh up`.
 
 ### 5.2 Salud de los servicios
@@ -572,14 +749,31 @@ api -X POST "$EXP/v1/payments" -H "Authorization: Bearer $ANA" "${JSON[@]}" -H "
 
 **Qué validar:** `HTTP 422` con `code` igual a `PAYMENTS-PAYMENTSEXPERIENCE-0003`.
 
-**Moneda distinta a la del beneficiario:**
+**Pagos en dólares** (apagados por el feature flag `payments-usd`):
 
 ```bash
 api -X POST "$EXP/v1/payments" -H "Authorization: Bearer $ANA" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
+  -H "Accept-Language: en" \
   -d "{\"beneficiaryId\":\"$BEN\",\"debtorAccount\":\"1910012345678\",\"amount\":10,\"currency\":\"USD\"}"
 ```
 
-**Qué validar:** `HTTP 422` con `code` igual a `PAYMENTS-PAYMENTSEXPERIENCE-0001`.
+**Qué validar:** `HTTP 422` con `code` igual a `PAYMENTS-PAYMENTSEXPERIENCE-0002` y `detail`
+`Payments in USD are not available.` Sin `Accept-Language`, el mensaje sale en español (`es-PE`).
+El canal rechaza la moneda antes de mirar el beneficiario. Con `AXIZ_FLAG_PAYMENTS_USD=true` en el
+entorno de payments-experience, los pagos en USD se aceptan.
+
+**Moneda distinta a la del beneficiario:** registra un beneficiario en dólares y págale en soles.
+
+```bash
+USDBEN=$(curl -s -X POST "$CRUD/v1/customers/C-1001/beneficiaries" -H "Authorization: Bearer $ANA" "${JSON[@]}" \
+  -H "Idempotency-Key: $(key)" \
+  -d '{"alias":"Dolares","holderName":"Ana Torres","cci":"00219100123456781159","currency":"USD"}' | jq -r .id)
+api -X POST "$EXP/v1/payments" -H "Authorization: Bearer $ANA" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
+  -d "{\"beneficiaryId\":\"$USDBEN\",\"debtorAccount\":\"1910012345678\",\"amount\":10,\"currency\":\"PEN\"}"
+```
+
+**Qué validar:** `HTTP 422` con `code` igual a `PAYMENTS-PAYMENTSEXPERIENCE-0001`. Si el
+beneficiario ya existía, `USDBEN` queda vacío; tómalo de la lista de beneficiarios.
 
 ### 5.8 Autorización: cada quien solo accede a lo suyo
 
@@ -701,9 +895,11 @@ auditoría, sus objetos también aparecen en este bucket.
 
 - Dashboards *axiz · payments* y *axiz · services*: aparecen los pagos, la tasa de éxito y la
   latencia por servicio.
-- *Explore → Tempo*: una traza de `POST /v1/payments` muestra el recorrido por
-  payments-experience, beneficiaries-crud y payments-business. Después, por Kafka, continúa en
-  payment-process y core-integration.
+- *Explore → Tempo*: una sola traza de `POST /v1/payments` muestra todo el pago:
+  payments-experience, beneficiaries-crud y payments-business; el `outbox write payments` de la
+  orden; el `outbox dispatch payments` cuando el relay la publica; y, por Kafka, payment-process
+  (la saga), core-integration, payments-history y notifications-processor. Busca con TraceQL
+  `{resource.service.name="payments-experience"} && {resource.service.name="core-integration"}`.
 
 ### 5.10 Liquidación diaria (batch)
 
@@ -751,7 +947,25 @@ No hace falta reinstalar el framework, salvo que cambies su código.
 | `'dependencies.dependency.version' for ... is missing` al compilar el framework | Versión no gobernada por el BOM. Está corregido en esta entrega; si aparece otra, la dependencia debe declararse en `platform/axiz-dependencies/pom.xml`. |
 | `Could not find artifact pe.axiz:axiz-parent-service:pom:0.1.0-SNAPSHOT` en el demo | No se instaló el framework. Ejecuta la sección 4.1. |
 | `Rule ... RequireJavaVersion failed` | El JDK no es 25. Revisa `java -version` y `JAVA_HOME`. |
-| Un servicio no llega a `UP` | Revisa `.run/<servicio>.log`. La primera vez puede tardar porque compila; si dice `Address already in use`, libera el puerto. |
+| `failed to connect to the docker API at unix:///var/run/docker.sock` o `Docker is not running` | Docker no está iniciado. Abre Docker Desktop (con la integración WSL activa) o, en WSL sin Docker Desktop, ejecuta `sudo service docker start`. |
+| `port 8080 (payments-experience) is taken by: <nombre>-control-plane` | Un clúster de kind publica el 8080. Detén su nodo con `docker stop <nombre>-control-plane` (lo recuperas con `docker start`) o bórralo con `kind delete cluster --name <nombre>`. |
+| `port ... is taken by: a process outside Docker` | Otro programa usa el puerto. `sudo ss -ltnp 'sport = :<puerto>'` muestra cuál. |
+| `scripts/demo.sh smoke` no muestra nada | Era la versión anterior del script, que fallaba en silencio si los servicios aún no arrancaban. La actual espera a los servicios y explica cada fallo. |
+| `scripts/demo.sh scenarios` termina con `the tokens have no claim "tenant"` | Keycloak conserva el realm anterior a review19. `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El grupo `notifications` falla con `probe queue ... missing` | LocalStack se inicializó con un demo anterior a review19, que no creaba la cola que copia las notificaciones. `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| `GET /v1/payment-processes/...` responde `400` con `tenant is required` | El token no trae el claim `tenant` (realm anterior a review19). `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El grupo `settlement` falla con `settlement-batch jar missing` | El jar del batch no se compiló. `scripts/demo.sh up` lo compila; también `./mvnw package -DskipTests -pl services/settlement-batch -am`. |
+| `payments-experience` muestra `NoClassDefFoundError: jakarta/servlet/ServletException` y el pago no responde | El framework instalado es anterior a review13. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El pago responde `404` con `AXZ-CORE-0404` y el log de payments-experience dice `NoResourceFoundException` | El framework instalado es anterior a review14: con el header `API-Version` opcional y sin versión por defecto, WebFlux no encontraba ninguna ruta. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El pago queda en `RECEIVED`, sin errores, y `.run/payment-process.log` no tiene `ConsumerConfig values` | El framework instalado es anterior a review17: con `axiz.messaging.kafka.topics` escrito como lista YAML no se creaba ningún consumidor, y payment-process nunca leía el evento. El smoke lo detecta y muestra el grupo de consumidores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El pago queda en `RECEIVED` y payments-business dice `INVALID_TOPIC_EXCEPTION` para `kafka:payments` | El framework instalado es anterior a review16: el publicador de Kafka usaba `kafka:payments` como nombre de topic en vez de `payments`. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| El pago queda en `RECEIVED` y payments-business repite `UNKNOWN_TOPIC_OR_PARTITION` | Los topics de Kafka no se crearon (demo anterior a review15: el broker solo se anunciaba como `localhost` y el job `kafka-topics` no podía conectarse). Con review15, `scripts/demo.sh down` y `scripts/demo.sh up`; `up` verifica que existan `payments`, `payments.dlq` y `audit`. |
+| El smoke falla con `no answer: ...` | El texto que sigue dice qué pasó: `connection refused` (el servicio no escucha), `no response in 30s` (no respondió a tiempo) o `closed the connection` (cerró la conexión). Encima, el smoke muestra las últimas advertencias y errores de los servicios que participan en ese paso. Con eso puedes revisar el log completo en `.run/<servicio>.log`. |
+| `payments-business` termina con `Schema validation: wrong column type encountered in column [currency]` | Es el demo de review10 o anterior: la migración creaba `currency` como `CHAR(3)` y la entidad la valida como `VARCHAR(3)`. Con review11, la migración `V4__currency_varchar.sql` la corrige. Ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| `notifications-processor` termina con `At least one trusted issuer is required` | El framework instalado es anterior a review10: el starter de EDA incluía el resource server de seguridad, y un procesador de eventos no configura emisores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| `beneficiaries-crud` o `notifications-processor` terminan con `Failed to configure a DataSource` | El framework instalado es anterior a review9: sus starters layered y EDA traían un pool de conexiones. Reinstala el framework (sección 4.1) y ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
+| `<servicio> stopped while starting` o estado `EXITED` | El servicio se cayó al arrancar. El mensaje muestra el final de su log; el log completo está en `.run/<servicio>.log`. |
+| Un servicio sigue en `STARTING` después de 5 minutos | La máquina está saturada. Revisa memoria (sección 3) y `.run/<servicio>.log`. |
 | `401` en todas las llamadas | El token venció (15 minutos). Vuelve a obtener los tokens (5.0). |
 | `403` donde se espera `200` con el token del proceso | El realm de Keycloak es anterior a esta entrega. Ejecuta `scripts/demo.sh down` y `up`. |
 | El smoke falla con `payment rejected` | La cuenta debitada no es `1910012345678` o el core simulado no responde. Revisa WireMock en <http://localhost:8089/__admin/requests>. |
@@ -843,3 +1057,96 @@ Esta entrega incluye las correcciones de dos revisiones externas. El detalle est
   - publicación solo después de todos los gates;
   - migración del inbox;
   - stores en memoria prohibidos en ambientes desplegados.
+- **Arranque y smoke del demo:**
+  - `demo.sh up` revisa Docker, el JDK y los puertos antes de arrancar, y nombra a quien ocupa un
+    puerto;
+  - los servicios arrancan desde sus jars y `up` espera a que los 7 estén `UP`;
+  - `smoke` espera a los servicios y muestra el código HTTP y la respuesta de cualquier paso que
+    falle;
+  - el clúster de kind del demo usa los puertos 9080, 9180 y 9300 para convivir con el demo
+    local.
+- **Persistencia de los starters de estilo:** el starter layered ya no trae JPA y el de EDA ya no
+  trae un pool JDBC. Con ese pool, un servicio sobre DynamoDB no arrancaba
+  (`beneficiaries-crud`: `Failed to configure a DataSource`). Una regla de
+  `check-dependency-governance.py` impide que vuelva a pasar.
+- **Seguridad del estilo EDA:** el starter de EDA ya no incluye el resource server, porque un
+  procesador de eventos no tiene API ni emisores de tokens que configurar
+  (`notifications-processor`: `At least one trusted issuer is required`). Si la lista de emisores
+  queda vacía en un servicio con API, el error indica qué configurar.
+- **Esquema de payments-business:** `currency` pasa de `CHAR(3)` a `VARCHAR(3)` con validación de
+  formato ISO 4217, en una migración nueva (`V4`). Hibernate valida el esquema al arrancar y
+  rechazaba la columna `CHAR`. Todas las migraciones del demo y de los proyectos generados se
+  aplicaron sobre PostgreSQL real, y las consultas SQL del framework y del demo se prepararon
+  contra esos esquemas.
+- **Token relay en servicios reactivos:** un cliente HTTP reactivo con `auth.type: TOKEN_RELAY`
+  (payments-experience hacia beneficiaries-crud y payments-business) buscaba el token en el
+  contexto de seguridad del hilo, que en WebFlux está vacío. Ahora lo toma del contexto de
+  Reactor. El smoke explica además por qué no hubo respuesta y muestra los errores de los
+  servicios involucrados.
+- **Errores en servicios reactivos:** el traductor de excepciones del framework usaba una clase
+  que depende del API de servlets, ausente en WebFlux. Cualquier error en payments-experience
+  hacía fallar el propio manejador de errores y la request quedaba sin respuesta (el smoke
+  esperaba 30 s). Ahora esas clases solo se cargan en servicios servlet, un traductor que falle
+  ya no impide responder, y las fallas de red de los clientes reactivos (timeout, conexión
+  rechazada) se responden como error de dependencia (503), igual que en servlet.
+- **Versión de API por defecto:** en un servicio reactivo con versionado por header opcional y sin
+  versión por defecto, Spring WebFlux no encuentra ninguna ruta para una request sin el header y
+  responde 404 (era el error del pago). El framework usa ahora la versión por defecto configurada
+  o, si falta, la menor soportada, y falla al arrancar si no puede elegir ninguna. El arquetipo
+  experience y payments-experience la declaran (`default-version: '1'`).
+- **Logs del demo:** `scripts/demo.sh up --attach` muestra los logs de todos los servicios en la
+  terminal; `logs`, `restart --debug` y `stop` completan el ciclo, y el smoke muestra las llamadas
+  fallidas además de los errores.
+- **Kafka del demo:** el broker anuncia dos direcciones, `kafka:29092` para los contenedores y
+  `localhost:9092` para los servicios. Con una sola, el job que crea los topics no podía
+  conectarse, faltaban `payments` y `audit` y la saga del pago nunca empezaba. `demo.sh up` ahora
+  verifica los topics antes de arrancar los servicios.
+- **Idempotencia reactiva:** el registro de la respuesta se guarda como parte de escribirla. Antes
+  se hacía después, y el servidor podía cancelar ese trabajo al terminar la respuesta
+  (`RedisCommandInterruptedException`), dejando la llave en curso hasta que venciera.
+- **Destinos de Kafka:** `axiz.messaging.destinations` documenta el formato `kafka:<topic>`, pero
+  el publicador de Kafka enviaba a un topic llamado literalmente `kafka:payments`, que Kafka
+  rechaza. Los eventos de la orden nunca salían del outbox y la saga no empezaba. El publicador
+  ahora quita el prefijo (prueba ejecutada con el `MockProducer` de Kafka).
+- **Idempotencia reactiva (segunda parte):** la respuesta se registra en un worker independiente
+  de la request. Cuando el cliente cierra la conexión apenas recibe la respuesta, el servidor
+  cancela el trabajo de esa request; el registro ya no depende de ella y no se interrumpe.
+- **Consumidores de Kafka:** la condición que crea los listeners leía `axiz.messaging.kafka.topics`
+  como un texto; escrita como lista YAML (como en todos los servicios) parecía vacía y ningún
+  servicio consumía. El evento quedaba en el topic y el pago en `RECEIVED`. Ahora la lista se lee
+  con el binder de Spring Boot (prueba ejecutada con las tres formas de escribirla). Lo mismo
+  aplicaba a las colas SQS de `notifications-processor`.
+- **Datos sensibles en eventos:** el enmascaramiento de `@Sensitive` estaba en el `JsonMapper` de
+  la aplicación, que también arma el payload de los eventos. La cuenta a debitar viajaba como
+  `*********5678` y el débito habría fallado en el siguiente paso de la saga. Ahora solo se
+  enmascaran las respuestas HTTP (ejecutado con Jackson 3: el evento conserva la cuenta y la
+  respuesta la enmascara).
+- **Tipos sin handler:** el topic `payments` lleva `created` y `status-changed`.
+  `payment-process` y `notifications-processor` procesan uno solo y mandaban el otro a la DLQ;
+  ahora lo confirman sin procesarlo (`ignore-unknown-types: true`).
+- **Advertencias del build:** `axiz-featureflags-spring-boot-autoconfigure` declara
+  `spotbugs-annotations` como `provided`. Las clases del SDK de OpenFeature traen
+  `@SuppressFBWarnings`, y sin la anotación en el classpath javac avisaba una vez por cada miembro
+  anotado. Los starters (solo dependencias), los módulos que solo tienen pruebas y el reporte de
+  cobertura ya no avisan `JAR will be empty`: los primeros crean el jar a propósito
+  (`maven.jar.forceCreation`) y el reporte de cobertura usa packaging `pom`.
+- **Pruebas funcionales (`scripts/demo.sh scenarios`):** 85 verificaciones en 14 grupos cubren lo que
+  el smoke no toca (sección 4.7). Al escribirlas se encontraron tres problemas del demo:
+  - la vista del proceso (`GET /v1/payment-processes/{id}`) respondía `400`, porque payment-process
+    es multi-tenant y los tokens no traían tenant. El realm ahora agrega el claim `tenant`;
+  - la sección 5.7 y Bruno esperaban `-0001` para un pago en USD, pero el feature flag lo rechaza
+    antes con `-0002`. Se corrigieron, y el caso de moneda distinta ahora usa un beneficiario en
+    dólares;
+  - la sección 5.9 decía que la traza del pago continuaba por Kafka. La saga tiene su propia traza,
+    que empieza en la publicación del outbox.
+  LocalStack crea además una cola suscrita al topic de notificaciones, para verificar lo que se
+  envía, y `demo.sh up` compila el job `settlement-batch`.
+- **Trazas completas a través del outbox:** la request que registra un pago y su saga son ahora una
+  sola traza. Antes el outbox publicaba el evento fuera de la request, y la saga empezaba una traza
+  nueva. El `OutboxWriter` guarda con el evento el contexto de la escritura
+  (`outboxtraceparent`); el relay lo continúa al publicar (span `outbox dispatch`) y lo quita antes
+  de enviar al broker; Kafka lleva el `traceparent` de la publicación a los consumidores. Aplica a
+  todo lo que pasa por el outbox, también la auditoría durable y las reacciones de EDA. Probado con
+  los handlers reales de Micrometer Tracing: request → `outbox write` → `outbox dispatch` →
+  `publish` → handler del consumidor, todo en la misma traza. El grupo `observability` de los
+  escenarios lo verifica en Tempo.

@@ -9,6 +9,13 @@ public final class AxizObservations {
   public static final String EVENT_HANDLER = "axiz.event.handler";
   public static final String EVENT_PUBLISH = "axiz.event.publish";
   public static final String OUTBOX_RELAY = "axiz.outbox.relay";
+
+  /** Writing an event to the outbox: its span is the parent of the later publication. */
+  public static final String OUTBOX_WRITE = "axiz.outbox.write";
+
+  /** One outbox record taken by the relay, continuing the trace of its write. */
+  public static final String OUTBOX_DISPATCH = "axiz.outbox.dispatch";
+
   public static final String INBOX = "axiz.inbox";
   public static final String SAGA_STEP = "axiz.saga.step";
   public static final String BATCH_STEP = "axiz.batch.step";

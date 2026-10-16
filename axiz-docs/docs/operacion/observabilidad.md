@@ -17,7 +17,9 @@ contenedor `otel-lgtm` (Grafana, Prometheus, Tempo y Loki).
 | Commands y queries | `axiz.command`, `axiz.query` | `axiz.operation`, `axiz.outcome` |
 | Handlers de eventos | `axiz.event.handler` | `axiz.event.type` |
 | Publicación de eventos | `axiz.event.publish` | `axiz.destination`, `axiz.event.type` |
-| Relay del outbox | `axiz.outbox.relay` | – |
+| Escritura en el outbox | `axiz.outbox.write` | `axiz.destination`, `axiz.event.type` |
+| Relay del outbox (lote) | `axiz.outbox.relay` | – |
+| Publicación de un evento del outbox | `axiz.outbox.dispatch` | `axiz.destination`, `axiz.event.type` |
 | Pasos de batch | `axiz.batch.step` | – |
 
 Además: `axiz.outbox.pending` (registros esperando), `axiz.saga.steps`, `axiz.saga.compensations`
@@ -35,6 +37,15 @@ Reactor Context), en los headers de las llamadas salientes y en las extensiones 
 cada línea de log lleva `traceId`, `spanId`, `correlationId` y el tenant. Los eventos llevan la
 correlación de la request que los originó (también los que salen por el outbox) y la extensión
 `traceparent` de su publicación, así el consumidor continúa esa traza.
+
+Un evento que pasa por el outbox se publica después de la request, en el hilo del relay. Para que
+la traza no se corte, `OutboxWriter` registra la escritura en una observación `axiz.outbox.write`
+(hija de la request) y guarda su contexto con el evento, en la extensión `outboxtraceparent`. Al
+publicarlo, el relay abre `axiz.outbox.dispatch`, que continúa ese contexto, y quita la extensión
+antes de enviarlo al broker. El resultado es una sola traza: request → `outbox write` → `outbox
+dispatch` → `publish` → handler del consumidor → sus llamadas. Vale para todo lo que usa el outbox
+(eventos de dominio, reacciones de EDA, auditoría durable). Requiere propagación W3C, la que Spring
+Boot usa por defecto; con B3 la traza se corta en el outbox como antes.
 
 ## Configuración
 

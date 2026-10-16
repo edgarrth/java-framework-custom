@@ -1,6 +1,7 @@
 package pe.axiz.spring.idempotency;
 
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.spring.idempotency.ReactiveIdempotency.IdempotencyExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.core.scheduler.Schedulers;
 
 /**
@@ -88,6 +90,7 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
   private Mono<Void> proceed(
       ServerWebExchange exchange, WebFilterChain chain, IdempotencyExchange state, byte[] body) {
     BoundedCapture captured = new BoundedCapture(maxResponseSize);
+    AtomicBoolean settled = new AtomicBoolean();
     ServerHttpRequestDecorator request =
         new ServerHttpRequestDecorator(exchange.getRequest()) {
           @Override
@@ -101,15 +104,16 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
           @Override
           public Mono<Void> writeWith(Publisher<? extends DataBuffer> data) {
             return super.writeWith(
-                Flux.from(data)
-                    .map(
-                        b -> {
-                          byte[] chunk = new byte[b.readableByteCount()];
-                          b.read(chunk);
-                          DataBufferUtils.release(b);
-                          captured.write(chunk);
-                          return exchange.getResponse().bufferFactory().wrap(chunk);
-                        }));
+                    Flux.from(data)
+                        .map(
+                            b -> {
+                              byte[] chunk = new byte[b.readableByteCount()];
+                              b.read(chunk);
+                              DataBufferUtils.release(b);
+                              captured.write(chunk);
+                              return exchange.getResponse().bufferFactory().wrap(chunk);
+                            }))
+                .doFinally(signal -> written(signal, state, this, captured, settled));
           }
 
           @Override
@@ -118,22 +122,62 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
             // streamed (flushed) responses are stored without body: replaying a stream is not
             // supported, its status and headers are
             captured.markOverflowed();
-            return super.writeAndFlushWith(body);
+            return super.writeAndFlushWith(body)
+                .doFinally(signal -> written(signal, state, this, captured, settled));
+          }
+
+          @Override
+          public Mono<Void> setComplete() {
+            return super.setComplete()
+                .doFinally(signal -> written(signal, state, this, captured, settled));
           }
         };
     ServerWebExchange mutated = exchange.mutate().request(request).response(response).build();
     return chain
         .filter(mutated)
         .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, state))
-        .onErrorResume(
-            e ->
-                Mono.fromRunnable(() -> release(state))
-                    .subscribeOn(Schedulers.boundedElastic())
-                    .then(Mono.error(e)))
-        .then(
-            Mono.fromRunnable(() -> finish(state, response, captured))
-                .subscribeOn(Schedulers.boundedElastic())
-                .then());
+        .doOnError(
+            e -> {
+              if (settled.compareAndSet(false, true)) {
+                detached(() -> release(state));
+              }
+            })
+        // a response that was never written (nothing to store) still settles the key
+        .then(Mono.fromRunnable(() -> settle(state, response, captured, settled)));
+  }
+
+  /**
+   * The response was written, or the client went away while it was. The record is settled on a
+   * worker that is not tied to the request: once the response is out the server may cancel the
+   * request's work (for example when the client closes the connection), which would interrupt a
+   * store call made in that work and leave the key in progress until its lease expires. If the
+   * write did not complete, the body may be partial, so the outcome is stored without it: the
+   * request already took effect and must never run again.
+   */
+  private void written(
+      SignalType signal,
+      IdempotencyExchange state,
+      ServerHttpResponseDecorator response,
+      BoundedCapture captured,
+      AtomicBoolean settled) {
+    if (signal != SignalType.ON_COMPLETE) {
+      captured.markOverflowed();
+    }
+    settle(state, response, captured, settled);
+  }
+
+  private void settle(
+      IdempotencyExchange state,
+      ServerHttpResponseDecorator response,
+      BoundedCapture captured,
+      AtomicBoolean settled) {
+    if (settled.compareAndSet(false, true)) {
+      detached(() -> finish(state, response, captured));
+    }
+  }
+
+  private static void detached(Runnable work) {
+    Schedulers.boundedElastic().schedule(work);
   }
 
   private void finish(

@@ -11,6 +11,9 @@
 #   scripts/demo.sh status                      state of every service (exit 0 only when 7/7 UP)
 #   scripts/demo.sh wait [seconds]              waits until 7/7 UP (default 300 s)
 #   scripts/demo.sh smoke                       end-to-end check (pays a beneficiary)
+#   scripts/demo.sh scenarios [group...]        every functional scenario of the demo (rejections,
+#                                               compensations, security, events, notifications,
+#                                               audit, observability, batch, DLQ, saga recovery)
 #   scripts/demo.sh stop                        stops the services, keeps the infrastructure
 #   scripts/demo.sh down                        stops services and infrastructure (and its volumes)
 #
@@ -192,7 +195,8 @@ check_infra() {
 m2=${AXIZ_M2_REPOSITORY:-$HOME/.m2/repository}
 build() {
   local force=$1 s jar stale=()
-  for s in "${services[@]}"; do
+  # settlement-batch is a job, not a service: built here, run by scripts/scenarios.sh settlement
+  for s in "${services[@]}" settlement-batch; do
     jar=$(jar_of "$s")
     # stale: sources changed, or the framework was installed again (./mvnw install in axiz-framework)
     if [ "$force" = 1 ] || [ -z "$jar" ] \
@@ -290,7 +294,7 @@ case "${1:-}" in
       AXIZ_LOG_LINES=1000 follow "${services[@]}"
     elif [ "$wait" = 1 ]; then
       wait_up "${AXIZ_UP_TIMEOUT:-300}"
-      echo "next: scripts/demo.sh smoke   (scripts/demo.sh logs follows the logs of every service)"
+      echo "next: scripts/demo.sh smoke, then scripts/demo.sh scenarios (scripts/demo.sh logs follows the logs)"
     else
       echo "services starting: scripts/demo.sh wait (or status) before smoke"
     fi
@@ -327,9 +331,13 @@ case "${1:-}" in
   smoke)
     bash "$root/scripts/smoke.sh"
     ;;
+  scenarios)
+    shift
+    bash "$root/scripts/scenarios.sh" "$@"
+    ;;
   logs)
     trap 'unfollow; exit 0' INT TERM
     if [ -n "${2:-}" ]; then follow "$2"; else follow "${services[@]}"; fi
     ;;
-  *) echo "usage: $0 up [--attach] [--no-wait] [--build] | logs [service] | restart <service> [--debug] | status | wait [seconds] | smoke | stop | down"; exit 2 ;;
+  *) echo "usage: $0 up [--attach] [--no-wait] [--build] | logs [service] | restart <service> [--debug] | status | wait [seconds] | smoke | scenarios [group...] | stop | down"; exit 2 ;;
 esac

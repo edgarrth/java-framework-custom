@@ -11,7 +11,7 @@ import pe.axiz.core.security.AxizPrincipal;
  * Authentication backed by a validated JWT whose principal is an {@link AxizPrincipal}, so
  * controllers can declare {@code @AuthenticationPrincipal AxizPrincipal caller}.
  */
-public class AxizAuthentication extends AbstractOAuth2TokenAuthenticationToken<Jwt> {
+public final class AxizAuthentication extends AbstractOAuth2TokenAuthenticationToken<Jwt> {
 
   private static final long serialVersionUID = 1L;
 

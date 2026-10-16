@@ -12,6 +12,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Dependencias | maven-enforcer: `banDuplicatePomDependencyVersions`, versiones de plugins fijadas, Java 25, sin SNAPSHOT en releases (siempre); `dependencyConvergence`, `requireUpperBoundDeps` y `banDuplicateClasses` (`-Pquality`); `check-dependency-governance.py` en CI | falla el build |
 | Capas | `bannedDependencies` por parent (la capa 1 prohíbe Spring, Quarkus, AWS SDK v1, Hazelcast, GCP, Vault, agentes de OTel, Retrofit, Feign y librerías de test en compile) | falla el build |
 | Arquitectura | ArchUnit: reglas del estilo y [reglas generales](arquitectura.md) | falla el build |
+| Sin APIs deprecadas | ArchUnit (`NO_DEPRECATED_API`, en cada `ArchitectureTest`): ninguna clase usa una API marcada `@Deprecated`; el compilador corre con `-Xlint:all` y el código del framework, del demo y de los proyectos generados compila sin advertencias. Los modelos que genera openapi-generator usan `@Nullable` de JSpecify | falla el build |
 | Formato | Spotless con google-java-format (Java); `./mvnw spotless:apply` formatea (`-Pquality`) | falla con archivos sin formatear |
 | Convenciones | Checkstyle: nombres, imports, Javadoc de la API pública, APIs prohibidas (`-Pquality`) | severidad error |
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |
@@ -42,7 +43,10 @@ Tres controles lo sostienen:
 
 - `check-dependency-governance.py` (CI) falla si un módulo fija la versión de una librería de
   terceros, si declara la misma dependencia dos veces o si una propiedad de versión aparece en
-  dos POM con valores distintos.
+  dos POM con valores distintos. También falla si un starter de estilo trae un pool de conexiones
+  (JDBC, JPA o R2DBC): la persistencia la elige el servicio, y un pool sin base de datos impide
+  arrancar a un servicio sobre DynamoDB. Batch es la excepción, porque Spring Batch guarda su
+  repositorio de jobs en Aurora.
 - `dependencyConvergence` y `requireUpperBoundDeps` (`-Pquality`) fallan si dos caminos del árbol
   piden versiones distintas de la misma librería.
 - `banDuplicateClasses` (`-Pquality`) falla si dos jars distintos traen la misma clase: es el
