@@ -28,7 +28,7 @@ class CatalogCommand extends BaseCommand implements Callable<Integer> {
         if (a.isService()) {
           out()
               .printf(
-                  "  %-16s framework %s · stack %s · persistence %s%n",
+                  "  %-16s framework %s / stack %s / persistence %s%n",
                   "",
                   String.join("|", a.frameworks().stream().map(Framework::id).toList()),
                   String.join("|", a.stacks().stream().map(s -> s.id()).toList()),

@@ -8,4 +8,8 @@
   commits vacíos al repetirse y rechaza entradas inválidas (rutas con `..`, digest o SHA mal formados).
 - `gitops/` (ApplicationSet, AppProject, política de Kyverno): YAML válido; su esquema se valida en
   `self-check` con el catálogo de CRDs.
+- `actions/test-report` ejecutado sobre reportes de Surefire y Failsafe de ejemplo (fallos,
+  errores y omitidas por módulo, pruebas unitarias y de integración por separado). Lo pidió la
+  auditoría de review24: cada ejecución de CI deja el comando, el JDK y los resultados por módulo
+  del commit, también cuando el build falla.
 - No verificable fuera de GitHub: ejecución real de los workflows (OIDC, Nexus, SonarQube, Argo CD).

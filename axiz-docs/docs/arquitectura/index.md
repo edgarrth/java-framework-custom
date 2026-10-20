@@ -9,13 +9,13 @@ flowchart LR
   subgraph S["Servicio (arquetipo + estilo)"]
     code["Código del servicio"]
   end
-  subgraph L3["Capa 3 · frameworks"]
-    fw["layered · hexagonal · cqrs · eda · bff · batch"]
+  subgraph L3["Capa 3: frameworks"]
+    fw["layered / hexagonal / cqrs / eda / bff / batch"]
   end
-  subgraph L2["Capa 2 · Spring Boot"]
+  subgraph L2["Capa 2: Spring Boot"]
     st["axiz-&lt;capacidad&gt;-spring-boot-starter"]
   end
-  subgraph L1["Capa 1 · core"]
+  subgraph L1["Capa 1: core"]
     core["axiz-core-&lt;capacidad&gt;[-&lt;tecnología&gt;]"]
   end
   P["Plataforma: parents y BOMs"]

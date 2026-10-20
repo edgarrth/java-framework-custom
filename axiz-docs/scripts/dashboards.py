@@ -95,7 +95,7 @@ COMMON_VARS = [
 
 
 def events():
-    b = Board('axiz-events', 'axiz · eventos',
+    b = Board('axiz-events', 'axiz: eventos',
               'Métricas genéricas por evento: cualquier evento de negocio con $event, $channel y $product.',
               COMMON_VARS + [
                   var_query('event', 'Evento', f'label_values(axiz_events_total{{{SEL}}}, event)'),
@@ -137,7 +137,7 @@ def events():
 
 
 def red():
-    b = Board('axiz-red', 'axiz · servicios (RED)',
+    b = Board('axiz-red', 'axiz: servicios (RED)',
               'Tasa, errores y duración de cada servicio: HTTP de entrada, casos de uso, commands y queries.',
               COMMON_VARS + [var_query('uri', 'Ruta', f'label_values(http_server_requests_seconds_count{{{SEL}}}, uri)')])
     h = f'{SEL}, uri=~"$uri"'
@@ -173,7 +173,7 @@ def red():
 
 
 def messaging():
-    b = Board('axiz-messaging', 'axiz · mensajería',
+    b = Board('axiz-messaging', 'axiz: mensajería',
               'Publicación y consumo de eventos: handlers, inbox, outbox, lag de Kafka y sagas.',
               COMMON_VARS + [var_query('type', 'Tipo de evento',
                                        f'label_values(axiz_event_handler_seconds_count{{{SEL}}}, axiz_event_type)')])
@@ -208,7 +208,7 @@ def messaging():
 
 
 def dependencies():
-    b = Board('axiz-dependencies', 'axiz · dependencias',
+    b = Board('axiz-dependencies', 'axiz: dependencias',
               'Llamadas salientes: clientes HTTP y SOAP por nombre lógico, servicios de AWS y bases de datos.',
               COMMON_VARS + [var_query('client', 'Cliente', f'label_values(http_client_requests_seconds_count{{{SEL}}}, client_name)')])
     c = f'{SEL}, client_name=~"$client"'

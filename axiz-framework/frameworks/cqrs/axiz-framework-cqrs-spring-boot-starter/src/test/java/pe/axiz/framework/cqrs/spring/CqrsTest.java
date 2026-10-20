@@ -83,19 +83,19 @@ class CqrsTest {
               SecurityContextHolder.clearContext();
               assertThrows(
                   AccessException.class,
-                  () -> bus.send(new IssueCardCommand("ana", "key-00000001")));
+                  () -> bus.send(new IssueCardCommand("ana", "idempotency-key-00000001")));
               SecurityContextHolder.getContext()
                   .setAuthentication(new TestingAuthenticationToken("u", "p", "SCOPE_cards:write"));
               try {
-                String first = bus.send(new IssueCardCommand("ana", "key-00000001"));
-                String again = bus.send(new IssueCardCommand("ana", "key-00000001"));
+                String first = bus.send(new IssueCardCommand("ana", "idempotency-key-00000001"));
+                String again = bus.send(new IssueCardCommand("ana", "idempotency-key-00000001"));
                 assertEquals("card-1-ana", first);
                 assertEquals(first, again);
                 assertEquals(1, handler.calls.get());
                 // report case: another caller reusing the key runs its own command
                 String other;
                 try (RequestContext.Scope ignored = RequestContext.open(caller("bob"))) {
-                  other = bus.send(new IssueCardCommand("ana", "key-00000001"));
+                  other = bus.send(new IssueCardCommand("ana", "idempotency-key-00000001"));
                 }
                 assertEquals("card-2-ana", other);
                 assertEquals(2, handler.calls.get());

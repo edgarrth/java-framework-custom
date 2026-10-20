@@ -24,6 +24,11 @@ class JpaSupportTest {
 
   static final class Customer extends AuditableEntity {}
 
+  static class Account extends AuditableEntity {}
+
+  /** A subclass is another entity type, unless it is a generated proxy. */
+  static final class SavingsAccount extends Account {}
+
   static final class DocumentConverter extends EncryptedConverter {
     @Override
     protected String context() {
@@ -51,6 +56,25 @@ class JpaSupportTest {
   }
 
   @Test
+  void equalityIsByIdWithinOneEntityType() {
+    Account account = new Account();
+    Account same = new Account();
+    same.setId(account.getId());
+    assertEquals(account, account);
+    assertEquals(account, same);
+
+    SavingsAccount savings = new SavingsAccount();
+    savings.setId(account.getId());
+    assertNotEquals(account, savings, "a subclass that is not a proxy is another type");
+    Customer customer = new Customer();
+    customer.setId(account.getId());
+    assertNotEquals(account, customer, "same id, other entity type");
+    assertNotEquals(account, null);
+    assertNotEquals(account, new Object());
+    assertThrows(NullPointerException.class, () -> account.setId(null));
+  }
+
+  @Test
   void auditListenerUsesRegisteredAuditorAndClock() {
     Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
     AuditingRegistry.register(() -> Optional.of("user-1"), Clock.fixed(t1, ZoneOffset.UTC));
@@ -66,6 +90,7 @@ class JpaSupportTest {
     assertEquals(t2, c.getUpdatedAt());
     assertEquals(AuditListener.SYSTEM, c.getUpdatedBy());
     listener.onCreate("not an entity");
+    listener.onUpdate("not an entity");
   }
 
   @Test

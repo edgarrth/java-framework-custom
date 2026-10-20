@@ -21,6 +21,7 @@ public final class CorrelationIds {
 
   /** Reuses the inbound id when valid, otherwise generates a new one. */
   public static String reuseOrCreate(@Nullable String inbound) {
-    return isValid(inbound) ? inbound : newId();
+    // the null check is explicit so the null analysis (NullAway) sees it
+    return inbound != null && isValid(inbound) ? inbound : newId();
   }
 }

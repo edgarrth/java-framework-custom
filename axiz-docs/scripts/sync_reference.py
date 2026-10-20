@@ -26,9 +26,9 @@ STORE_LABELS = {
     'dynamodb': 'DynamoDB',
 }
 LAYERS = [
-    ('core', 'Capa 1 · core (Java puro)'),
-    ('spring', 'Capa 2 · Spring Boot'),
-    ('frameworks', 'Capa 3 · frameworks'),
+    ('core', 'Capa 1: core (Java puro)'),
+    ('spring', 'Capa 2: Spring Boot'),
+    ('frameworks', 'Capa 3: frameworks'),
     ('codegen', 'Generación'),
     ('quality', 'Calidad'),
 ]

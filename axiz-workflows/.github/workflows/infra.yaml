@@ -56,7 +56,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           terraform show -no-color tfplan | tail -c 60000 > plan.txt
-          { echo "### Terraform plan · ${{ inputs.environment }}"; echo '```'; cat plan.txt; echo '```'; } > comment.md
+          { echo "### Terraform plan (${{ inputs.environment }})"; echo '```'; cat plan.txt; echo '```'; } > comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md --edit-last || \
             gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
       - name: Apply (after merge; the environment requires approval)

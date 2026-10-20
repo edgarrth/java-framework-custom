@@ -1,4 +1,4 @@
-# spring · layer 2
+# spring: layer 2
 
 Spring Boot 4.1 wiring of each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans
 registered through `AutoConfiguration.imports`, all `@ConditionalOnMissingBean`, typed

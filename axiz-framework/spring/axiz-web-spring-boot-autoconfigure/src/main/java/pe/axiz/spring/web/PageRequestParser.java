@@ -49,7 +49,17 @@ public final class PageRequestParser {
         sort == null || sort.isEmpty()
             ? (rules != null ? Arrays.asList(rules.defaultSort()) : List.of())
             : sort;
-    Sort parsed = Sort.parse(expressions);
+    Sort parsed;
+    try {
+      parsed = Sort.parse(expressions);
+    } catch (IllegalArgumentException malformed) {
+      // the core keeps rejecting malformed expressions; at the HTTP boundary they are the client's
+      // error (400 with the field), never a 500. The value is not echoed back
+      violations.add(
+          FieldViolation.of(
+              "sort", "Pattern", "sort must be field[,asc|desc] (letters, digits, _ .)"));
+      throw new ValidationException(violations);
+    }
     Set<String> allowed = rules != null ? Set.of(rules.sortable()) : Set.of();
     for (Sort.Order o : parsed.orders()) {
       boolean ok =

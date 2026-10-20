@@ -7,6 +7,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
 import io.r2dbc.spi.ConnectionMetadata;
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.Parameter;
 import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
@@ -47,11 +48,16 @@ public final class FakeR2dbc implements ConnectionFactory {
   /**
    * One executed statement.
    *
-   * @param sql SQL as sent to the driver (positional placeholders)
-   * @param binds bound values by position (null for {@code bindNull})
-   * @param connection id of the connection that ran it
+   * @param sql the SQL as sent to the driver
+   * @param binds values by position (a typed null is {@code null}, as a driver unwraps it)
+   * @param types declared types of the binds given as {@link Parameter} or with {@code bindNull}
+   * @param connection connection that ran it
    */
-  public record Execution(String sql, Map<Integer, @Nullable Object> binds, int connection) {}
+  public record Execution(
+      String sql,
+      Map<Integer, @Nullable Object> binds,
+      Map<Integer, Class<?>> types,
+      int connection) {}
 
   private record Rule(
       Pattern pattern,
@@ -248,6 +254,7 @@ public final class FakeR2dbc implements ConnectionFactory {
     private final String sql;
     private final int connection;
     private final Map<Integer, @Nullable Object> binds = new LinkedHashMap<>();
+    private final Map<Integer, Class<?>> types = new LinkedHashMap<>();
 
     FakeStatement(String sql, int connection) {
       this.sql = sql;
@@ -261,7 +268,13 @@ public final class FakeR2dbc implements ConnectionFactory {
 
     @Override
     public Statement bind(int index, Object value) {
-      binds.put(index, Objects.requireNonNull(value));
+      // Spring binds typed values, null ones included, as Parameter: unwrap it like a driver does
+      if (value instanceof Parameter p) {
+        binds.put(index, p.getValue());
+        types.put(index, p.getType().getJavaType());
+      } else {
+        binds.put(index, Objects.requireNonNull(value));
+      }
       return this;
     }
 
@@ -273,6 +286,7 @@ public final class FakeR2dbc implements ConnectionFactory {
     @Override
     public Statement bindNull(int index, Class<?> type) {
       binds.put(index, null);
+      types.put(index, type);
       return this;
     }
 
@@ -287,7 +301,9 @@ public final class FakeR2dbc implements ConnectionFactory {
           () -> {
             Map<Integer, @Nullable Object> copy =
                 Collections.unmodifiableMap(new LinkedHashMap<>(binds));
-            executions.add(new Execution(sql, copy, connection));
+            executions.add(
+                new Execution(
+                    sql, copy, Collections.unmodifiableMap(new LinkedHashMap<>(types)), connection));
             Rule r = rule(sql);
             if (r.update() != null) {
               return new FakeResult(r.update().apply(copy), List.of());

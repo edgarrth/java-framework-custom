@@ -2,6 +2,7 @@ package pe.axiz.core.messaging.sns;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -65,5 +66,49 @@ class SnsEventPublisherTest {
     assertEquals(e, CloudEventJson.read(sent.get(0).message()));
     fail[0] = true;
     assertThrows(PublishException.class, () -> p.publish(fifo, e));
+  }
+
+  @Test
+  void standardTopicsHaveNoGroupAndFifoGroupsBySubject() {
+    List<PublishRequest> sent = new ArrayList<>();
+    SnsClient sns =
+        new SnsClient() {
+          @Override
+          public PublishResponse publish(PublishRequest r) {
+            sent.add(r);
+            return PublishResponse.builder().messageId("m-" + sent.size()).build();
+          }
+
+          @Override
+          public String serviceName() {
+            return "sns";
+          }
+
+          @Override
+          public void close() {}
+        };
+    EventEnvelope withSubject =
+        new EventEnvelope(
+            "e-2",
+            "urn:s",
+            "t.v1",
+            Instant.EPOCH,
+            "order-7",
+            "application/json",
+            "{}".getBytes(StandardCharsets.UTF_8),
+            Map.of());
+    SnsEventPublisher p = new SnsEventPublisher(sns);
+
+    String standard = "arn:aws:sns:us-east-1:123:payments";
+    assertEquals("m-1", p.publish(standard, withSubject).brokerMessageId());
+    assertNull(sent.get(0).messageGroupId());
+    assertNull(sent.get(0).messageDeduplicationId());
+
+    p.publish("arn:aws:sns:us-east-1:123:payments.fifo", withSubject);
+    assertEquals("order-7", sent.get(1).messageGroupId(), "events of one subject stay in order");
+
+    // an ARN of another service is not an SNS destination
+    assertFalse(p.supports("arn:aws:sqs:us-east-1:123:payments"));
+    assertFalse(p.supports("payments"));
   }
 }

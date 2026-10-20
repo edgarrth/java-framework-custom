@@ -2,6 +2,7 @@ package pe.axiz.quality.archunit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -70,5 +71,55 @@ class AxizArchitectureTest {
               .hasViolation(),
           rule.getDescription());
     }
+  }
+
+  @Test
+  void blockingCallsAndGlobalHooksAreReported() {
+    JavaClasses reactive =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.reactive");
+    String blocking =
+        GeneralRules.NO_BLOCK_IN_REACTIVE_CODE.evaluate(reactive).getFailureReport().toString();
+    assertTrue(blocking.contains("Mono.block()"), blocking);
+    assertTrue(blocking.contains("Flux.blockLast()"), blocking);
+    String hooks =
+        GeneralRules.NO_REACTOR_GLOBAL_HOOKS.evaluate(reactive).getFailureReport().toString();
+    assertTrue(hooks.contains("Hooks.onOperatorDebug()"), hooks);
+
+    JavaClasses clean =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.reactiveclean");
+    assertFalse(GeneralRules.NO_BLOCK_IN_REACTIVE_CODE.evaluate(clean).hasViolation());
+    assertFalse(GeneralRules.NO_REACTOR_GLOBAL_HOOKS.evaluate(clean).hasViolation());
+  }
+
+  @Test
+  void verifyReportsEveryViolatedRuleAtOnce() {
+    ClassFileImporter importer = new ClassFileImporter();
+    AssertionError e =
+        assertThrows(
+            AssertionError.class,
+            () ->
+                AxizArchitecture.verify(
+                    importer.importPackages("pe.axiz.quality.archunit.sample.reactive"),
+                    "pe.axiz.quality.archunit.sample.reactive",
+                    AxizArchitecture.Style.CQRS));
+    assertTrue(e.getMessage().contains("Mono/Flux block"), e.getMessage());
+    assertTrue(e.getMessage().contains("Reactor Hooks"), e.getMessage());
+    AxizArchitecture.verify(
+        importer.importPackages("pe.axiz.quality.archunit.sample.reactiveclean"),
+        "pe.axiz.quality.archunit.sample.reactiveclean",
+        AxizArchitecture.Style.CQRS);
+  }
+
+  @Test
+  void beanNamesFollowSpring() {
+    JavaClasses beans =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.beans");
+    assertEquals(
+        "paymentsSupport",
+        BeanNames.defaultName(beans.get("pe.axiz.quality.archunit.sample.beans.PaymentsSupport")));
+    ClassFileImporter importer = new ClassFileImporter();
+    // two capitals keep the name as is; nested classes keep the outer name
+    assertEquals("URLDecoder", BeanNames.defaultName(importer.importClass(java.net.URLDecoder.class)));
+    assertEquals("map.Entry", BeanNames.defaultName(importer.importClass(java.util.Map.Entry.class)));
   }
 }

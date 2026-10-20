@@ -3,6 +3,7 @@ package pe.axiz.core.logging;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
@@ -10,22 +11,31 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
+import org.slf4j.event.Level;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 class LoggingTest {
 
   @Test
   void scopedMdcRestoresPreviousValues() {
-    // Without an SLF4J binding MDC is a no-op adapter; the API must still be safe to call.
+    MDC.clear();
     MDC.put("k", "outer");
-    try (ScopedMdc scope = ScopedMdc.of("k", "inner").with("other", "x")) {
-      assertTrue(MDC.get("k") == null || MDC.get("k").equals("inner"));
+    try (ScopedMdc scope = ScopedMdc.of("k", "inner").with("other", "x").with("k", "again")) {
+      assertEquals("again", MDC.get("k"));
+      assertEquals("x", MDC.get("other"));
     }
-    assertTrue(MDC.get("k") == null || MDC.get("k").equals("outer"));
-    assertTrue(MDC.get("other") == null);
+    assertEquals("outer", MDC.get("k"), "the value before the first change comes back");
+    assertNull(MDC.get("other"));
     try (ScopedMdc scope = ScopedMdc.of(Map.of("a", "1")).with("k", null)) {
       assertNull(MDC.get("k"));
+      assertEquals("1", MDC.get("a"));
     }
+    assertEquals("outer", MDC.get("k"));
+    assertNull(MDC.get("a"));
+    try (ScopedMdc scope = ScopedMdc.of("k", "line\nforged=entry")) {
+      assertEquals("line_forged=entry", MDC.get("k"));
+    }
+    MDC.clear();
   }
 
   @Test
@@ -63,21 +73,97 @@ class LoggingTest {
   }
 
   @Test
-  void operationLoggerHandlesAllPaths() {
+  void entryMasksArgumentsAndSkipsThoseMarkedNoLog() {
+    CapturedLogs.reset(Level.INFO);
     OperationLogger logger = new OperationLogger(ObjectMasker.defaults());
     logger.entry(
-        "op",
-        List.of("a", "secret"),
-        new Object[] {1, "s"},
+        "transfer",
+        List.of("amount", "pin"),
+        new Object[] {1, "4321", "extra"},
         new boolean[] {false, true},
         LogOperation.Level.INFO);
+
+    String line = only().message();
+    assertTrue(line.startsWith("operation=transfer phase=start args="), line);
+    assertTrue(line.contains("amount=1"), line);
+    assertTrue(line.contains("pin=<not logged>"), line);
+    assertFalse(line.contains("4321"), line);
+    assertTrue(line.contains("arg2="), "arguments without a name are numbered: " + line);
+  }
+
+  @Test
+  void debugOperationsAreSilentUnlessDebugIsEnabled() {
+    CapturedLogs.reset(Level.INFO);
+    OperationLogger logger = new OperationLogger(ObjectMasker.defaults());
     logger.entry("op", LogOperation.Level.DEBUG);
-    logger.success(
-        "op", Duration.ofMillis(5), Map.of("password", "x"), true, LogOperation.Level.INFO);
+    logger.entry("op", List.of("a"), new Object[] {1}, new boolean[0], LogOperation.Level.DEBUG);
+    logger.success("op", Duration.ofMillis(5), "r", true, LogOperation.Level.DEBUG);
+    assertEquals(List.of(), CapturedLogs.events());
+
+    CapturedLogs.reset(Level.DEBUG);
+    logger.entry("op", LogOperation.Level.DEBUG);
     logger.success("op", Duration.ofMillis(5), null, false, LogOperation.Level.DEBUG);
-    logger.failure(
-        "op", Duration.ofMillis(5), new IllegalStateException("x"), false, "AXZ-CORE-0500");
-    logger.failure("op", Duration.ofMillis(5), new IllegalArgumentException("x"), true, null);
+    List<CapturedLogs.Event> events = CapturedLogs.events();
+    assertEquals(2, events.size());
+    assertEquals(Level.DEBUG, events.get(0).level());
+    assertEquals("operation=op phase=start", events.get(0).message());
+    assertEquals("operation=op phase=end outcome=success", events.get(1).message());
+
+    CapturedLogs.reset(Level.WARN);
+    logger.entry("op", LogOperation.Level.INFO);
+    logger.entry("op", List.of(), new Object[0], new boolean[0], LogOperation.Level.INFO);
+    logger.success("op", Duration.ofMillis(5), "r", true, LogOperation.Level.INFO);
+    assertEquals(List.of(), CapturedLogs.events(), "INFO lines are not written at WARN");
+  }
+
+  @Test
+  void successCarriesOutcomeAndDurationAndMasksTheResult() {
+    CapturedLogs.reset(Level.INFO);
+    MDC.clear();
+    new OperationLogger(ObjectMasker.defaults())
+        .success(
+            "login", Duration.ofMillis(42), Map.of("password", "x"), true, LogOperation.Level.INFO);
+
+    CapturedLogs.Event e = only();
+    assertEquals(Level.INFO, e.level());
+    assertTrue(e.message().startsWith("operation=login phase=end outcome=success result="));
+    assertFalse(e.message().contains("password=x"), e.message());
+    assertEquals("success", e.mdc().get(LogFields.OUTCOME));
+    assertEquals("42", e.mdc().get(LogFields.DURATION_MS));
+    assertNull(MDC.get(LogFields.OUTCOME), "the scope is closed after the line");
+  }
+
+  @Test
+  void failuresAreRejectionsAtWarnOrErrorsWithTheirStackTrace() {
+    CapturedLogs.reset(Level.INFO);
+    OperationLogger logger = new OperationLogger(ObjectMasker.defaults());
+    IllegalStateException boom = new IllegalStateException("x");
+    logger.failure("pay", Duration.ofMillis(5), boom, false, "AXZ-CORE-0500");
+    logger.failure("pay", Duration.ofMillis(7), new IllegalArgumentException("y"), true, null);
+
+    List<CapturedLogs.Event> events = CapturedLogs.events();
+    assertEquals(2, events.size());
+    CapturedLogs.Event error = events.get(0);
+    assertEquals(Level.ERROR, error.level());
+    assertEquals("operation=pay phase=end outcome=error", error.message());
+    assertSame(boom, error.error());
+    assertEquals("error", error.mdc().get(LogFields.OUTCOME));
+    assertEquals("AXZ-CORE-0500", error.mdc().get(LogFields.ERROR_CODE));
+
+    CapturedLogs.Event rejected = events.get(1);
+    assertEquals(Level.WARN, rejected.level());
+    assertEquals(
+        "operation=pay phase=end outcome=rejected error=IllegalArgumentException",
+        rejected.message());
+    assertNull(rejected.error(), "a business rejection has no stack trace");
+    assertEquals("rejected", rejected.mdc().get(LogFields.OUTCOME));
+    assertFalse(rejected.mdc().containsKey(LogFields.ERROR_CODE));
     assertEquals("trace_id", LogFields.TRACE_ID);
+  }
+
+  private static CapturedLogs.Event only() {
+    List<CapturedLogs.Event> events = CapturedLogs.events();
+    assertEquals(1, events.size(), events.toString());
+    return events.get(0);
   }
 }

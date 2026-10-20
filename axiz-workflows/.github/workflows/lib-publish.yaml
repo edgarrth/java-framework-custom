@@ -80,6 +80,11 @@ jobs:
             # shellcheck disable=SC2086 # Maven arguments are split on purpose
             mvn -B -ntp verify -Pquality $REVISION_ARG $EXTRA_ARGS
           fi
+      - name: Test results of this commit (job summary)
+        if: always()
+        uses: axiz/axiz-workflows/actions/test-report@v1
+        with:
+          command: mvn -B -ntp verify -Pquality (deploy -Pquality,release when staging) ${{ inputs.maven-args }}
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
         if: env.SONAR_TOKEN != ''
         run: |
@@ -116,6 +121,7 @@ jobs:
           name: reports
           path: |
             **/target/surefire-reports
+            **/target/failsafe-reports
             **/target/site/jacoco*
             rewrite.patch
             **/target/pit-reports

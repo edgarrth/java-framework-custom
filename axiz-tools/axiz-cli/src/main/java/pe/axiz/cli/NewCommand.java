@@ -224,7 +224,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
         warn("Generated without google-java-format: run mvn spotless:apply once");
       }
     }
-    ok("Created " + a.name() + " · " + f.id() + " · " + st.id() + " · " + p + " in " + target);
+    ok("Created " + a.name() + " / " + f.id() + " / " + st.id() + " / " + p + " in " + target);
     out().println();
     out().println("Next steps:");
     out().println("  cd " + projectName);

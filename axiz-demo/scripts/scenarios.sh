@@ -20,7 +20,8 @@
 #   audit          audit trail: SQS -> S3 archive (with manifest), Kafka audit topic, audit DLQ
 #   observability  metrics in Prometheus and traces in Tempo (through Grafana): one trace from the
 #                  channel request to the saga
-#   settlement     settlement-batch: loads the sample file, idempotent rerun, summary on S3
+#   settlement     settlement-batch: loads a new file per run, idempotent rerun, summary on S3,
+#                  a lost summary written again by a rerun
 #   dlq            a malformed message on the payments topic ends in payments.dlq (each consumer)
 #   recovery       a debit that times out leaves the saga VERIFYING; the recovery job completes it
 #                  (takes about 4 minutes)
@@ -722,39 +723,60 @@ $(grep -E 'axiz.http .*path=/v1/' "$root/.run/core-integration.log" | tail -1 | 
 }
 
 settle() {
-  local jar=$1 log=$2
+  local jar=$1 key=$2 log=$3
   (
     cd "$root/services/settlement-batch" || exit 1
     export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1
     # shellcheck disable=SC2086
     timeout 300 java ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1} -jar "$jar" \
-      --spring.profiles.active=local,platform > "$log" 2>&1
+      --spring.profiles.active=local,platform --settlement.input-key="$key" > "$log" 2>&1
   )
+}
+# a settlement file of its own for this run: the sample with end-to-end ids nobody loaded before
+# (same widths, amounts and control totals). Each run checks a fresh load, its rerun and its
+# summary, whatever state earlier runs left in Aurora or S3 (LocalStack keeps no data between
+# restarts, PostgreSQL does)
+settlement_file() {
+  local key=$1 run=$2
+  sed "s/^DOP20261011-/DSC${run}-/" "$root/local/localstack/NET-SETTLE-SAMPLE.txt" \
+    | awsl s3 cp - "s3://local-bucket/$key" >/dev/null
 }
 g_settlement() {
   involved=(settlement-batch)
-  local jar log="$root/.run/settlement-batch.log" rc n
+  local jar log="$root/.run/settlement-batch.log" rc n run key name
   jar=$(find "$root/services/settlement-batch/target" -maxdepth 1 -name 'settlement-batch-*.jar' \
     ! -name '*-sources.jar' ! -name '*-plain.jar' 2>/dev/null | head -1)
   if [ -z "$jar" ]; then
     bad "settlement-batch jar" "missing: scripts/demo.sh up builds it (or ./mvnw clean package -DskipTests -pl services/settlement-batch -am)"
     return
   fi
-  settle "$jar" "$log"; rc=$?
-  if [ "$rc" = 0 ] && grep -qE 'Settlement job for .* ended COMPLETED|Settlement file .* was already loaded' "$log"; then
-    pass "the job loads in/settlement/NET-SETTLE-SAMPLE.txt (exit 0): $(grep -oE 'ended COMPLETED|was already loaded' "$log" | head -1)"
+  # 8 digits replace the 8 characters of "20261011" in the end-to-end id
+  run=$(date +%s | tail -c 9)
+  name="NET-SETTLE-SCN${run}.txt"
+  key="in/settlement/$name"
+  settlement_file "$key" "$run"
+  settle "$jar" "$key" "$log"; rc=$?
+  if [ "$rc" = 0 ] && grep -q 'Settlement job for .* ended COMPLETED' "$log"; then
+    pass "the job loads a new file, $key (exit 0, COMPLETED)"
   else
-    bad "the job loads the sample file (exit 0)" "exit $rc; .run/settlement-batch.log:
+    bad "the job loads a new file, $key (exit 0, COMPLETED)" "exit $rc; .run/settlement-batch.log:
 $(grep -E ' (WARN|ERROR) |Exception|Settlement' "$log" | tail -n 8 | cut -c1-300)"
   fi
-  settle "$jar" "$log.2"; rc=$?
+  settle "$jar" "$key" "$log.2"; rc=$?
   [ "$rc" = 0 ] && grep -q 'was already loaded' "$log.2" && pass "running it again loads nothing twice (already loaded, exit 0)" \
     || bad "running it again loads nothing twice" "exit $rc; $(grep -E 'Settlement|ERROR' "$log.2" | tail -n 4 | cut -c1-300)"
-  n=$(sql settlement_batch "SELECT count(*) FROM settlement_line WHERE file_key = 'in/settlement/NET-SETTLE-SAMPLE.txt'")
+  n=$(sql settlement_batch "SELECT count(*) FROM settlement_line WHERE file_key = '$key'")
   [ "$n" = 3 ] && pass "3 settlement lines in Aurora, control totals matched" || bad "3 settlement lines in Aurora" "$n lines"
-  awsl s3 ls s3://local-bucket/out/settlement/NET-SETTLE-SAMPLE.txt.summary.json | grep -q summary \
-    && pass "summary on S3 (out/settlement/NET-SETTLE-SAMPLE.txt.summary.json)" \
-    || bad "summary on S3" "no out/settlement/NET-SETTLE-SAMPLE.txt.summary.json"
+  awsl s3 ls "s3://local-bucket/out/settlement/$name.summary.json" | grep -q summary \
+    && pass "summary on S3 (out/settlement/$name.summary.json)" \
+    || bad "summary on S3" "no out/settlement/$name.summary.json"
+  # the bucket loses the summary (as when LocalStack restarts): a rerun writes it again from Aurora
+  awsl s3 rm "s3://local-bucket/out/settlement/$name.summary.json" >/dev/null
+  settle "$jar" "$key" "$log.3"; rc=$?
+  [ "$rc" = 0 ] && grep -q 'writing it again' "$log.3" \
+    && awsl s3 ls "s3://local-bucket/out/settlement/$name.summary.json" | grep -q summary \
+    && pass "a rerun writes a lost summary again (exit 0, rows unchanged: $(sql settlement_batch "SELECT count(*) FROM settlement_line WHERE file_key = '$key'"))" \
+    || bad "a rerun writes a lost summary again" "exit $rc; $(grep -E 'Settlement|Summary|ERROR' "$log.3" | tail -n 4 | cut -c1-300)"
 }
 
 dlq_grew() { [ "$(topic_size payments.dlq)" -ge "$1" ]; }

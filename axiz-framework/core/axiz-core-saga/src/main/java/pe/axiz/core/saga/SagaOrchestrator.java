@@ -82,11 +82,12 @@ public final class SagaOrchestrator {
     if (state.status() == SagaStatus.IN_DOUBT) {
       int i = state.stepIndex();
       Resolution<C> r = resolve(definition, codec, state, context, steps.get(i), i, null);
-      if (r.result() != null) {
-        return r.result();
+      if (r instanceof Resolution.Done<C> done) {
+        return done.result();
       }
-      state = r.state();
-      context = r.context();
+      Resolution.Continue<C> next = (Resolution.Continue<C>) r;
+      state = next.state();
+      context = next.context();
     }
     if (state.status() == SagaStatus.RUNNING) {
       for (int i = state.stepIndex(); i < steps.size(); i++) {
@@ -101,11 +102,12 @@ public final class SagaOrchestrator {
           }
           // uncertain: the effect may exist, ask the participant before deciding anything
           Resolution<C> r = resolve(definition, codec, state, context, step, i, e);
-          if (r.result() != null) {
-            return r.result();
+          if (r instanceof Resolution.Done<C> done) {
+            return done.result();
           }
-          state = r.state();
-          context = r.context();
+          Resolution.Continue<C> next = (Resolution.Continue<C>) r;
+          state = next.state();
+          context = next.context();
           continue;
         }
         try {
@@ -143,17 +145,25 @@ public final class SagaOrchestrator {
     return new SagaResult<>(state.sagaId(), state.status(), context, null);
   }
 
-  /** Either a final result, or the state and context to continue with (step {@code i} applied). */
-  private record Resolution<C>(
-      @Nullable SagaResult<C> result, @Nullable SagaState state, @Nullable C context) {
+  /**
+   * Either a final result, or the state and context to continue with (step {@code i} applied). Two
+   * types instead of nullable fields: each case carries exactly what it needs, never a null.
+   */
+  private sealed interface Resolution<C> permits Resolution.Done, Resolution.Continue {
 
     static <C> Resolution<C> done(SagaResult<C> result) {
-      return new Resolution<>(result, null, null);
+      return new Done<>(result);
     }
 
     static <C> Resolution<C> continueWith(SagaState state, C context) {
-      return new Resolution<>(null, state, context);
+      return new Continue<>(state, context);
     }
+
+    /** The saga ended here. */
+    record Done<C>(SagaResult<C> result) implements Resolution<C> {}
+
+    /** The saga goes on from this state. */
+    record Continue<C>(SagaState state, C context) implements Resolution<C> {}
   }
 
   /**

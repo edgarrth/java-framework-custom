@@ -27,12 +27,13 @@ public final class TenantResolver {
    */
   public Optional<String> resolve(
       @Nullable String tokenTenant, Function<String, @Nullable String> headers) {
-    if (TenantContext.isValid(tokenTenant)) {
+    // explicit null checks: the null analysis (NullAway) does not look inside isValid
+    if (tokenTenant != null && TenantContext.isValid(tokenTenant)) {
       return Optional.of(tokenTenant);
     }
     if (trustHeader) {
       String fromHeader = headers.apply(header);
-      if (TenantContext.isValid(fromHeader)) {
+      if (fromHeader != null && TenantContext.isValid(fromHeader)) {
         return Optional.of(fromHeader);
       }
     }

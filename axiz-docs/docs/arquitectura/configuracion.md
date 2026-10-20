@@ -19,8 +19,10 @@ De menor a mayor:
 
 El starter `axiz-config` aplica la convención: dentro del clúster (y fuera de los perfiles `local` y
 `test`) importa `kubernetes:` con esas tres fuentes, con fail-fast, reintentos, sin recarga y sin
-leer Secrets por la API de Kubernetes. Fuera del clúster apaga la integración. Lo que el servicio
-declare explícitamente siempre gana.
+leer Secrets por la API de Kubernetes. Fuera del clúster apaga la integración. El cliente de
+Parameter Store de Spring Cloud AWS sigue a `axiz.config.parameter-store.enabled` (falso por
+defecto), así un servicio que no lo usa no crea un `SsmClient` ni necesita una región de AWS para
+arrancar. Lo que el servicio declare explícitamente siempre gana.
 
 ## Reglas
 

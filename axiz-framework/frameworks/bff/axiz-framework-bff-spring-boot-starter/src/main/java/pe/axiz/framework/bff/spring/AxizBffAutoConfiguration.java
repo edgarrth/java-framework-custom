@@ -5,6 +5,7 @@ import io.micrometer.context.ContextSnapshotFactory;
 import java.time.Duration;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 
@@ -20,7 +21,10 @@ public class AxizBffAutoConfiguration {
   Compositions axizCompositions(Environment env) {
     ContextSnapshotFactory snapshots =
         ContextSnapshotFactory.builder().contextRegistry(ContextRegistry.getInstance()).build();
-    return new Compositions(
-        snapshots, env.getProperty("axiz.bff.timeout", Duration.class, Duration.ofSeconds(3)));
+    // Boot's binder converts "500ms" or "3s" in any context (Environment.getProperty only when the
+    // environment carries Boot's conversion service)
+    Duration timeout =
+        Binder.get(env).bind("axiz.bff.timeout", Duration.class).orElse(Duration.ofSeconds(3));
+    return new Compositions(snapshots, timeout);
   }
 }

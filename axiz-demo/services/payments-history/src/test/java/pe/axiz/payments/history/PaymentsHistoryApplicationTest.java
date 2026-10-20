@@ -1,10 +1,12 @@
 package pe.axiz.payments.history;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -14,7 +16,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.framework.cqrs.spring.ReactiveQueryBus;
@@ -91,11 +97,17 @@ class PaymentsHistoryApplicationTest {
                 "status", "COMPLETED"),
             null));
 
+    // the query runs through the access policy, as the API does: only the owner reads the payment
+    // (another customer gets "not found"). Until the first event is projected it is not found
+    // either, so that is the only error retried
     PaymentHistory projected =
         Mono.defer(() -> queries.ask(new GetPaymentQuery(orderId)))
+            .contextWrite(ReactiveSecurityContextHolder.withAuthentication(customer("C-1001")))
             .filter(h -> h.status() == PaymentStatus.COMPLETED)
             .repeatWhenEmpty(r -> r.delayElements(Duration.ofMillis(200)).take(100))
-            .retryWhen(Retry.fixedDelay(100, Duration.ofMillis(200)))
+            .retryWhen(
+                Retry.fixedDelay(100, Duration.ofMillis(200))
+                    .filter(NotFoundException.class::isInstance))
             .block(T);
 
     assertThat(projected).isNotNull();
@@ -113,5 +125,18 @@ class PaymentsHistoryApplicationTest {
             .block(T);
     // encrypted at rest, audited by the R2DBC starter
     assertThat(stored).doesNotContain("00219100123456789053").doesNotEndWith("|null");
+
+    assertThatThrownBy(
+            () ->
+                queries
+                    .ask(new GetPaymentQuery(orderId))
+                    .contextWrite(
+                        ReactiveSecurityContextHolder.withAuthentication(customer("C-1002")))
+                    .block(T))
+        .isInstanceOf(NotFoundException.class);
+  }
+
+  private static Authentication customer(String id) {
+    return UsernamePasswordAuthenticationToken.authenticated(id, "n/a", List.of());
   }
 }

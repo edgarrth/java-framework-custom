@@ -125,6 +125,8 @@ public final class ReactiveBehaviors {
     }
 
     /**
+     * Authorization for reactive buses.
+     *
      * @param policies blocking policies, called off the event loop
      * @param reactivePolicies non-blocking policies, chained after the blocking ones
      */

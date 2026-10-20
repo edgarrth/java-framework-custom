@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
@@ -92,5 +93,61 @@ class DomainTest {
     assertEquals("payment-authorized", EventTypes.kebab("PaymentAuthorizedEvent"));
     assertEquals("event", EventTypes.kebab("Event"));
     assertEquals("kyc2-passed", EventTypes.kebab("Kyc2Passed"));
+  }
+
+  static final class Gadget extends AggregateRoot<WidgetId> {
+    private final WidgetId id;
+
+    Gadget(WidgetId id) {
+      this.id = id;
+    }
+
+    @Override
+    protected WidgetId id() {
+      return id;
+    }
+  }
+
+  @Test
+  void entitiesOfAnotherTypeOrNothingAreNotEqual() {
+    WidgetId id = new WidgetId(TypedId.newUuid());
+    Widget w = new Widget(id, "a");
+    assertEquals(w, w);
+    assertNotEquals(w, new Gadget(id), "same id, other type");
+    assertNotEquals(w, null);
+  }
+
+  @Test
+  void specificationsShortCircuitLikeBooleans() {
+    Specification<Integer> positive = v -> v > 0;
+    Specification<Integer> never =
+        v -> {
+          throw new AssertionError("must not be evaluated");
+        };
+    assertFalse(positive.and(never).isSatisfiedBy(-1));
+    assertTrue(positive.or(never).isSatisfiedBy(1));
+    assertFalse(positive.or(v -> v % 2 == 0).isSatisfiedBy(-3));
+    assertFalse(positive.not().isSatisfiedBy(1));
+  }
+
+  @Test
+  void rulesCarryTheirParameters() {
+    Rules.check(true, DomainErrors.RULE_VIOLATED, "fine", Map.of("limit", 10));
+    BusinessException e =
+        assertThrows(
+            BusinessException.class,
+            () -> Rules.check(false, DomainErrors.RULE_VIOLATED, "over limit", Map.of("limit", 10)));
+    assertEquals(Map.of("limit", 10), e.parameters());
+  }
+
+  @Test
+  void missingValuesAreRejectedAndPhonesAreMasked() {
+    assertThrows(BusinessException.class, () -> new EmailAddress(null));
+    assertThrows(BusinessException.class, () -> new PhoneNumber(null));
+    assertThrows(
+        BusinessException.class, () -> new PersonalDocument(PersonalDocument.Type.DNI, null));
+    String masked = new PhoneNumber("+51 987-654-321").toString();
+    assertFalse(masked.contains("987654"), masked);
+    assertTrue(masked.endsWith("321"), masked);
   }
 }

@@ -25,7 +25,8 @@ class GitHubPublisherTest {
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     InitializrProperties props =
-        new InitializrProperties("1.0.0", URI.create("https://api.github.test"), "acme", 100);
+        new InitializrProperties(
+            "1.0.0", URI.create("https://api.github.test"), "acme", 100, "axiz-initializr");
     GeneratedProject project =
         new GeneratedProject(
             "orders-business",

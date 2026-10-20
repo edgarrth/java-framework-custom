@@ -3,10 +3,15 @@ package pe.axiz.core.i18n;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
 
 class I18nTest {
@@ -57,5 +62,36 @@ class I18nTest {
     CompositeMessageResolver composite = new CompositeMessageResolver(List.of(first, resolver));
     assertEquals("first", composite.get("a", Locale.ENGLISH));
     assertEquals("Hello Bo", composite.get("greeting", Locale.ENGLISH, Map.of("name", "Bo")));
+  }
+
+  @Test
+  void englishIsServedWhenTheDefaultLocaleIsSpanish() {
+    // the services run with es-PE by default: an English request must not fall to Spanish
+    BundleMessageResolver framework =
+        new BundleMessageResolver(List.of("axiz.i18n.messages"), ES_PE);
+    assertEquals(
+        "The request is not valid.", framework.get("error.AXZ-CORE-0001", Locale.ENGLISH));
+    assertEquals(
+        "The request is not valid.",
+        framework.get("error.AXZ-CORE-0001", Locale.forLanguageTag("en-GB")));
+    assertEquals("La solicitud no es válida.", framework.get("error.AXZ-CORE-0001", ES_PE));
+    // a language without bundle gets the default locale
+    assertEquals("La solicitud no es válida.", framework.get("error.AXZ-CORE-0001", Locale.FRENCH));
+  }
+
+  @Test
+  void frameworkBundlesHaveTheSameKeys() throws IOException {
+    Properties root = load("axiz/i18n/messages.properties");
+    assertEquals(root.keySet(), load("axiz/i18n/messages_en.properties").keySet());
+    assertEquals(root.keySet(), load("axiz/i18n/messages_es.properties").keySet());
+    assertEquals(root, load("axiz/i18n/messages_en.properties"), "root and English agree");
+  }
+
+  private static Properties load(String resource) throws IOException {
+    Properties p = new Properties();
+    try (InputStream in = I18nTest.class.getClassLoader().getResourceAsStream(resource)) {
+      p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+    }
+    return p;
   }
 }

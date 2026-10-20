@@ -83,4 +83,45 @@ class RedisByteCacheTest {
     assertThrows(CacheUnavailableException.class, () -> cache.evict("k"));
     assertThrows(CacheUnavailableException.class, () -> cache.evictByPrefix("k"));
   }
+
+  @Test
+  void evictionByPrefixWalksEveryPageAndSkipsEmptyOnes() {
+    List<List<String>> pages = List.of(List.of(), List.of("svc:c:1", "svc:c:2"), List.of("svc:c:3"));
+    List<String> unlinked = new ArrayList<>();
+    int[] page = {0};
+    @SuppressWarnings("unchecked")
+    RedisCommands<String, byte[]> paging =
+        (RedisCommands<String, byte[]>)
+            Proxy.newProxyInstance(
+                RedisCommands.class.getClassLoader(),
+                new Class<?>[] {RedisCommands.class},
+                (p, m, a) ->
+                    switch (m.getName()) {
+                      case "scan" -> {
+                        int i = page[0]++;
+                        KeyScanCursor<String> c = new KeyScanCursor<>();
+                        c.getKeys().addAll(pages.get(i));
+                        c.setCursor(Integer.toString(i + 1));
+                        c.setFinished(i == pages.size() - 1);
+                        yield c;
+                      }
+                      case "unlink" -> {
+                        for (Object k : (Object[]) a[0]) {
+                          unlinked.add((String) k);
+                        }
+                        yield (long) ((Object[]) a[0]).length;
+                      }
+                      default -> throw new UnsupportedOperationException(m.getName());
+                    });
+
+    assertEquals(3, new RedisByteCache(paging).evictByPrefix("svc:c:"));
+    assertEquals(3, page[0], "one SCAN per page until the cursor is finished");
+    assertEquals(List.of("svc:c:1", "svc:c:2", "svc:c:3"), unlinked);
+  }
+
+  @Test
+  void globCharactersOfThePrefixAreEscaped() {
+    assertEquals("svc\\[1\\]:\\\\", RedisByteCache.escapeGlob("svc[1]:\\"));
+    assertEquals("plain:", RedisByteCache.escapeGlob("plain:"));
+  }
 }

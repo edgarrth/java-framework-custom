@@ -5,11 +5,15 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.oauth2.client.ClientAuthorizationRequiredException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import pe.axiz.codegen.GenerationException;
 
-/** Generation problems as RFC 9457 problem details with every problem and lint finding. */
+/**
+ * Generation problems as RFC 9457 problem details with every problem and lint finding, and the
+ * missing GitHub authorization as a problem the UI can act on (the API never redirects).
+ */
 @RestControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionHandler {
@@ -30,6 +34,23 @@ public class ApiExceptionHandler {
   ProblemDetail badRequest(IllegalArgumentException e) {
     ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     p.setTitle("Invalid request");
+    return p;
+  }
+
+  /**
+   * The user has not authorized GitHub yet. Handled here, before the OAuth client support would
+   * answer the API call with a redirect to GitHub (which a {@code fetch} cannot follow) and
+   * remember the POST to replay it as a GET after the authorization.
+   */
+  @ExceptionHandler(ClientAuthorizationRequiredException.class)
+  ProblemDetail authorizationRequired(ClientAuthorizationRequiredException e) {
+    ProblemDetail p =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.FORBIDDEN, "Authorize GitHub to create repositories in your name");
+    p.setType(URI.create("https://axiz.dev/problems/authorization-required"));
+    p.setTitle("Authorization required");
+    p.setProperty("registration", e.getClientRegistrationId());
+    p.setProperty("authorize", "/oauth2/authorization/" + e.getClientRegistrationId());
     return p;
   }
 }

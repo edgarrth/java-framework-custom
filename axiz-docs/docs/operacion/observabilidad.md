@@ -81,10 +81,10 @@ monta en su Grafana local.
 
 | Dashboard | Variables | Qué muestra |
 |---|---|---|
-| `axiz-events` · eventos | `$env`, `$service`, `$event`, `$channel`, `$product` | volumen, ratio de éxito, motivos de rechazo, montos (total, ticket promedio y p95), duración, valores, niveles, procesos en curso, embudo por etapa |
-| `axiz-red` · servicios | `$env`, `$service`, `$uri` | tasa, errores 5xx y latencia HTTP; casos de uso, commands y queries por resultado; CPU, heap, threads, pool JDBC, 429 y circuit breakers |
-| `axiz-messaging` · mensajería | `$env`, `$service`, `$type` | eventos procesados y fallidos, duración de handlers, lag de Kafka, publicación por destino, outbox pendiente y relay, sagas y compensaciones |
-| `axiz-dependencies` · dependencias | `$env`, `$service`, `$client` | llamadas, latencia y errores por cliente HTTP, circuit breakers, SOAP, AWS por servicio y operación, espera de conexiones JDBC, Redis |
+| `axiz-events`: eventos | `$env`, `$service`, `$event`, `$channel`, `$product` | volumen, ratio de éxito, motivos de rechazo, montos (total, ticket promedio y p95), duración, valores, niveles, procesos en curso, embudo por etapa |
+| `axiz-red`: servicios | `$env`, `$service`, `$uri` | tasa, errores 5xx y latencia HTTP; casos de uso, commands y queries por resultado; CPU, heap, threads, pool JDBC, 429 y circuit breakers |
+| `axiz-messaging`: mensajería | `$env`, `$service`, `$type` | eventos procesados y fallidos, duración de handlers, lag de Kafka, publicación por destino, outbox pendiente y relay, sagas y compensaciones |
+| `axiz-dependencies`: dependencias | `$env`, `$service`, `$client` | llamadas, latencia y errores por cliente HTTP, circuit breakers, SOAP, AWS por servicio y operación, espera de conexiones JDBC, Redis |
 
 ## Alertas sugeridas
 

@@ -108,11 +108,11 @@ public final class ContractDiff {
       Map<String, Object> op,
       List<Change> out) {
     Set<String> oldNames = new LinkedHashSet<>();
-    for (Object p : (List<?>) old.get("parameters")) {
+    for (Object p : list(old.get("parameters"))) {
       Map<String, Object> param = OpenApiDocument.deref(prev.raw(), OpenApiDocument.map(p));
       oldNames.add(param.get("in") + ":" + param.get("name"));
     }
-    for (Object p : (List<?>) op.get("parameters")) {
+    for (Object p : list(op.get("parameters"))) {
       Map<String, Object> param = OpenApiDocument.deref(cur.raw(), OpenApiDocument.map(p));
       String id = param.get("in") + ":" + param.get("name");
       if (!oldNames.contains(id)
@@ -270,5 +270,10 @@ public final class ContractDiff {
       l.forEach(x -> out.add(String.valueOf(x)));
     }
     return out;
+  }
+
+  /** The list value, or an empty list when the key is absent or holds something else. */
+  private static List<?> list(@Nullable Object value) {
+    return value instanceof List<?> l ? l : List.of();
   }
 }

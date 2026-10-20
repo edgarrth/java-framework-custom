@@ -12,9 +12,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import org.springframework.core.MethodParameter;
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.reactive.BindingContext;
+import org.springframework.web.server.ServerWebExchange;
 import pe.axiz.core.commons.HeaderCatalog;
 import pe.axiz.core.commons.HeaderDefinition;
 import pe.axiz.core.commons.PageRequest;
@@ -40,8 +46,47 @@ class WebTest {
     assertEquals(20, p.size());
     assertEquals(Sort.Direction.DESC, p.sort().orders().get(0).direction());
     assertThrows(ValidationException.class, () -> parser.parse("x", "500", List.of(), null));
-    assertThrows(
-        ValidationException.class, () -> parser.parse("0", "10", List.of("name;drop table"), null));
+    // malformed sort expressions are the client's error: 400 with a violation on "sort", as the
+    // audit reproduced over HTTP (sort=name;drop table, sort=$invalid answered 500 before)
+    for (String sort : List.of("name;drop table", "$invalid", "a b,desc")) {
+      ValidationException e =
+          assertThrows(
+              ValidationException.class, () -> parser.parse("0", "10", List.of(sort), null));
+      assertEquals("sort", e.violations().get(0).field());
+      assertEquals(400, e.category().httpStatus());
+    }
+  }
+
+  /** Controller method shape the resolvers serve. */
+  @SuppressWarnings("unused")
+  private void list(PageRequest page) {}
+
+  @Test
+  void bothWebStacksAnswerAMalformedSortWithAViolation() throws Exception {
+    PageRequestParser parser = new PageRequestParser(20, 100);
+    MethodParameter parameter =
+        new MethodParameter(WebTest.class.getDeclaredMethod("list", PageRequest.class), 0);
+
+    MockHttpServletRequest servlet = new MockHttpServletRequest("GET", "/v1/items");
+    servlet.addParameter("sort", "$invalid");
+    ValidationException mvc =
+        assertThrows(
+            ValidationException.class,
+            () ->
+                new PageRequestArgumentResolver(parser)
+                    .resolveArgument(parameter, null, new ServletWebRequest(servlet), null));
+    assertEquals("sort", mvc.violations().get(0).field());
+
+    ServerWebExchange exchange =
+        MockServerWebExchange.from(
+            MockServerHttpRequest.get("/v1/items?sort={s}", "name;drop table").build());
+    ValidationException webflux =
+        assertThrows(
+            ValidationException.class,
+            () ->
+                new ReactivePageRequestArgumentResolver(parser)
+                    .resolveArgumentValue(parameter, new BindingContext(), exchange));
+    assertEquals("sort", webflux.violations().get(0).field());
   }
 
   @Test

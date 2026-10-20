@@ -61,6 +61,14 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-tracing</artifactId>
       <optional>true</optional>
+      <exclusions>
+        <!-- spring-aop already ships these classes (repackaged); keeping both breaks
+             BanDuplicateClasses. Spring Boot's tracing modules exclude it the same way. -->
+        <exclusion>
+          <groupId>aopalliance</groupId>
+          <artifactId>aopalliance</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

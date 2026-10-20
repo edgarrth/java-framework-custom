@@ -11,16 +11,16 @@ All names, accounts and data are fictitious. Local credentials are placeholders 
 
 ## Services
 
-| Service | Archetype · style · stack | Persistence | What it shows |
+| Service | Archetype / style / stack | Persistence | What it shows |
 |---|---|---|---|
-| [payments-experience](services/payments-experience) | experience · bff · reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
-| [payments-business](services/payments-business) | business · cqrs · servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
-| [beneficiaries-crud](services/beneficiaries-crud) | crud · layered · servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
-| [core-integration](services/core-integration) | integration · hexagonal · servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, API keys from secrets, Redis locks, audit to SQS |
-| [payment-process](services/payment-process) | process · hexagonal · servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
-| [notifications-processor](services/notifications-processor) | event-processor · eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
-| [settlement-batch](services/settlement-batch) | batch · batch · CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
-| [payments-history](services/payments-history) | business · cqrs · reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
+| [payments-experience](services/payments-experience) | experience / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
+| [payments-business](services/payments-business) | business / cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
+| [beneficiaries-crud](services/beneficiaries-crud) | crud / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
+| [core-integration](services/core-integration) | integration / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, API keys from secrets, Redis locks, audit to SQS |
+| [payment-process](services/payment-process) | process / hexagonal / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
+| [notifications-processor](services/notifications-processor) | event-processor / eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
+| [settlement-batch](services/settlement-batch) | batch / batch / CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
+| [payments-history](services/payments-history) | business / cqrs / reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
 
 Contracts live in [`contracts/`](contracts): OpenAPI of every REST service, the AsyncAPI of the
 events and the (simulated) external systems in `contracts/external`.
@@ -78,9 +78,9 @@ holds it (a kind cluster on 8080 is the usual case).
 | | |
 |---|---|
 | Channel API | http://localhost:8080 (payments-experience) |
-| Services | business 8081 · crud 8082 · core-integration 8083 · process 8084 · notifications 8085 · history 8086 |
+| Services | business 8081 / crud 8082 / core-integration 8083 / process 8084 / notifications 8085 / history 8086 |
 | Keycloak | http://localhost:8180 (realm `axiz`, users `ana` / `luis`, passwords `local-only-<user>`) |
-| Grafana | http://localhost:3000 (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz · services* and *axiz · payments*) |
+| Grafana | http://localhost:3000 (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz: services* and *axiz: payments*) |
 | WireMock | http://localhost:8089 (core banking REST + SOAP, token endpoint, payment network) |
 
 Each service runs with the profiles `local,platform`, so it can also be started from the IDE and
@@ -97,7 +97,7 @@ group of the scenarios runs it.
 ### Functional scenarios
 
 `scripts/demo.sh scenarios` (or `scripts/scenarios.sh`) checks what the demo promises, beyond the
-single payment of the smoke test: 87 checks in 14 groups, each printing PASS or FAIL, with the
+single payment of the smoke test: 88 checks in 14 groups, each printing PASS or FAIL, with the
 reason and the last warnings of the services involved when a check fails.
 
 | Group | What it checks |
@@ -113,7 +113,7 @@ reason and the last warnings of the services involved when a check fails.
 | `notifications` | notification requests on SNS for completed and rejected payments |
 | `audit` | audit through SQS archived on S3 with its manifest, audit topic on Kafka, empty audit DLQ |
 | `observability` | business and HTTP metrics in Prometheus; traces looked up in Tempo by the trace ID in the logs: payment-process and core-integration in one trace, and one trace from the channel request to the saga |
-| `settlement` | the batch loads the sample file, reruns load nothing, summary on S3 |
+| `settlement` | the batch loads a file of its own per run, reruns load nothing, summary on S3, a lost summary is written again by a rerun |
 | `dlq` | a malformed message ends in `payments.dlq` once per consumer group |
 | `recovery` | a debit that times out leaves the saga VERIFYING; the recovery job completes it (about 4 minutes) |
 

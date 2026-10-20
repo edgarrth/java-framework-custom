@@ -29,7 +29,9 @@ config:
   # spring.security.oauth2.resourceserver.jwt.issuer-uri: https://sso.example/realms/axiz
   # spring.security.oauth2.client.provider.sso.issuer-uri: https://sso.example/realms/axiz
   # spring.security.oauth2.client.registration.sso.client-id: axiz-initializr
+  # axiz.initializr.audience: axiz-initializr   (aud that the API accepts in bearer tokens)
   # spring.security.oauth2.client.registration.github.client-id: <GitHub OAuth app>
+  #   (callback of that OAuth app: https://<initializr host>/authorized/github)
   # axiz.initializr.github-organization: <organization>
 
 errors: []

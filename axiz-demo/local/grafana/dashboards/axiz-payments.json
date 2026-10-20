@@ -1,6 +1,6 @@
 {
  "uid": "axiz-payments",
- "title": "axiz \u00b7 payments (business)",
+ "title": "axiz: payments (business)",
  "description": "Business view of the demo from the axiz event metrics: orders, amounts, saga results, core and network, notifications and settlement.",
  "tags": [
   "axiz"

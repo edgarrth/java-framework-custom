@@ -30,7 +30,11 @@ y cómo ejecutar y probar el demo desde una máquina sin nada instalado.
 
 ## 1. Los cinco repositorios
 
-Cada carpeta es un repositorio independiente, con su propio pipeline y su propio `README.md`.
+Cada carpeta está pensada como un repositorio independiente, con su propio pipeline y su propio
+`README.md`. Esta entrega las distribuye juntas en un zip, así que en tu copia son carpetas de un
+mismo directorio (o de un solo repositorio Git, si lo versionas así): no hay submódulos. Para
+publicarlas, cada carpeta se sube a su propio repositorio; los workflows de cada una ya asumen
+esa separación (`axiz/axiz-workflows/...@v1`).
 
 | Repositorio | Qué contiene | Lo necesitas para el demo |
 |---|---|---|
@@ -421,7 +425,7 @@ scripts/demo.sh scenarios
 | `notifications` | notifications-processor publica en SNS la notificación del pago completado y la del rechazado |
 | `audit` | la auditoría de core-integration llega por SQS y se archiva en S3 con su manifiesto; la de payments-business llega al topic `audit`; la DLQ de auditoría está vacía |
 | `observability` | métricas de negocio y HTTP en Prometheus; trazas por su ID (tomado de los logs): payment-process y core-integration en la misma traza, y una sola traza desde la request del canal hasta la saga (payments-experience, payments-business, payment-process, core-integration), con la escritura en el outbox y su publicación |
-| `settlement` | `settlement-batch` carga el archivo de ejemplo (3 líneas, totales de control), una segunda ejecución no carga nada (idempotente) y deja el resumen en S3 |
+| `settlement` | `settlement-batch` carga un archivo propio de esa ejecución (3 líneas, totales de control), una segunda ejecución no carga nada (idempotente), deja el resumen en S3 y, si S3 pierde el resumen, una nueva ejecución lo vuelve a escribir desde Aurora |
 | `dlq` | un mensaje malformado en `payments` termina en `payments.dlq` una vez por consumidor, y los consumidores siguen procesando |
 | `recovery` | un débito que tarda más que el timeout deja la saga en `VERIFYING` sin compensar; cuando el core vuelve a responder, el job de recuperación la completa |
 
@@ -448,7 +452,7 @@ Las pruebas se pueden repetir: reutilizan los beneficiarios y usan montos distin
   PASS   ... the order is COMPLETED
   PASS   ... payment-process logged the resumption
 
-87 checks passed, 0 failed (473 s)
+88 checks passed, 0 failed (473 s)
 OK: every scenario passed
 ```
 
@@ -897,7 +901,7 @@ auditoría, sus objetos también aparecen en este bucket.
 **Observabilidad.** Abre <http://localhost:3000>. Si Grafana pide credenciales, usa
 `admin` / `admin`. Valida lo siguiente:
 
-- Dashboards *axiz · payments* y *axiz · services*: aparecen los pagos, la tasa de éxito y la
+- Dashboards *axiz: payments* y *axiz: services*: aparecen los pagos, la tasa de éxito y la
   latencia por servicio.
 - *Explore → Tempo*: una sola traza de `POST /v1/payments` muestra todo el pago:
   payments-experience, beneficiaries-crud y payments-business; el `outbox write payments` de la
@@ -978,8 +982,14 @@ No hace falta reinstalar el framework, salvo que cambies su código.
 | Falla `one trace from the channel request to the saga` | El mensaje dice qué servicios tiene la traza de la última orden. Si falta `payments-experience`, el demo es anterior a review21 (sin `spring-boot-starter-webclient` las llamadas del canal salían sin `traceparent`). Si falla `core-integration continues the trace of payment-process`, compara el `traceparent` de la línea `axiz.http` de core-integration que muestra el mensaje con el trace ID de payment-process. |
 | `scripts/demo.sh up` termina con `the Kafka topics were not created` aunque el log del job muestra `Created topic payments.` | Versión de review21 o anterior: el script esperaba el job con `docker compose wait`, que en algunas versiones de Compose falla con un job que ya terminó. Desde review22 pregunta al broker por los topics. Reemplaza `axiz-demo/scripts/demo.sh` y vuelve a ejecutar `scripts/demo.sh up --build`. |
 | `scripts/demo.sh up --build` termina enseguida sin mostrar nada y luego `smoke` espera 300 s con todo `STOPPED` | Versión de review23 o anterior en una copia nueva (sin carpetas `target/`, por ejemplo al extraer el zip en otra carpeta): el script buscaba el jar en `target/`, la búsqueda fallaba y `set -e` lo cerraba sin mensaje. Desde review24 compila los jars que faltan, cualquier falla inesperada de los scripts muestra la línea y el comando, y `wait`/`smoke` fallan de inmediato si un servicio no se arrancó. |
+| El initializr no arranca con `Unable to resolve Configuration with the provided Issuer` | Keycloak no está levantado o aún no responde en `http://localhost:8180`. Levanta el demo (sección 4.4) y espera a que `scripts/demo.sh status` muestre los servicios UP. |
+| Keycloak muestra `Client not found` o `Invalid parameter: redirect_uri` al entrar al initializr | El realm se importó con una versión anterior a review25, sin el cliente `axiz-initializr`. `scripts/demo.sh down` y `scripts/demo.sh up` recrean Keycloak con el realm actual. Comprueba también que el initializr corre con `--spring.profiles.active=local` (puerto 8090). |
 | `payments-experience` o `payments-history` muestran `WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil` | El framework instalado es anterior a review23: el jar no declaraba `Enable-Native-Access`. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
 | `core-integration` registra `ERROR ... status=503 code=AXZ-EXT-0502 ... failed with status -1` con un stack trace largo durante el grupo `recovery` | Es el timeout simulado del core (esperado), registrado con el framework anterior a review23. Con review23 sale una línea `WARN ... status=504 code=AXZ-EXT-0504 ... got no response (SocketTimeoutException) cause=...` sin stack trace. |
+| `scripts/demo.sh up` aborta con `port 4317 (infrastructure) is taken by: a process outside Docker` aunque es el `otel-lgtm` del demo | Versión de review25 o anterior: el script no reconocía los puertos publicados en rango (`0.0.0.0:4317-4318->4317-4318/tcp`). Desde review26 los reconoce y considera propios los contenedores del proyecto de Compose `axiz-demo`. |
+| `scenarios` falla en `summary on S3` con `no out/settlement/NET-SETTLE-SAMPLE.txt.summary.json` | Antes de review26 el escenario reutilizaba siempre el mismo archivo: PostgreSQL lo tenía como cargado y LocalStack, recreado, ya no tenía su resumen. Ahora cada ejecución usa un archivo propio y una nueva ejecución de un archivo ya cargado vuelve a escribir su resumen. |
+| Las pruebas de arranque (`...ApplicationTest`) fallan con `Error creating bean with name 'ssmClient'` o `Unable to load region from any of the providers in the chain` | El framework instalado es anterior a review26: Spring Cloud AWS creaba un cliente de Parameter Store sin que se usara y sin región de AWS en la máquina no arrancaba. Reinstala el framework (sección 4.1). |
+| `./mvnw -Pquality verify` falla con `cannot initialize module JavadocStyle` | Versión anterior a review26: Checkstyle 14.2 ya no tiene ese módulo. Las reglas de review26 usan `SummaryJavadoc`. |
 | `<servicio> stopped while starting` o estado `EXITED` | El servicio se cayó al arrancar. El mensaje muestra el final de su log; el log completo está en `.run/<servicio>.log`. |
 | Un servicio sigue en `STARTING` después de 5 minutos | La máquina está saturada. Revisa memoria (sección 3) y `.run/<servicio>.log`. |
 | `401` en todas las llamadas | El token venció (15 minutos). Vuelve a obtener los tokens (5.0). |
@@ -1038,6 +1048,37 @@ El servicio generado ya trae:
 
 La guía completa está en `axiz-docs` (*Empezar*).
 
+### 10.1 Desde la web: initializr
+
+`axiz-initializr` es la versión web del generador, con la misma API que usa la CLI. En local
+inicia sesión contra el Keycloak del demo, así que primero levanta el demo (sección 4.4) y luego,
+en otra terminal:
+
+```bash
+cd axiz-tools
+./mvnw -pl axiz-initializr -am clean package -DskipTests
+java -jar axiz-initializr/target/axiz-initializr-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+```
+
+Abre <http://localhost:8090> e inicia sesión con `ana` / `local-only-ana`. Desde ahí eliges
+arquetipo, estilo, stack, persistencia y capacidades, cargas el contrato y descargas el ZIP del
+proyecto.
+
+**Qué validar:** la página te lleva directo al login de Keycloak (realm `axiz`) y, al volver,
+muestra el formulario con el catálogo. **Validar** responde "Listo para generar" con un contrato
+correcto y **Generar ZIP** descarga `<nombre>.zip`.
+
+- El perfil `local` usa el puerto 8090 (del 8080 al 8086 están los servicios del demo) y el cliente
+  `axiz-initializr` del realm del demo, con un secreto `local-only`.
+- Keycloak importa el realm solo cuando se crea su contenedor. Si el demo ya estaba levantado con
+  una versión anterior a review25, ejecuta `scripts/demo.sh down` y `scripts/demo.sh up` para que
+  aparezca el cliente.
+- **Crear repositorio en GitHub** necesita una OAuth App propia en GitHub con el callback
+  `http://localhost:8090/authorized/github`. Exporta `AXIZ_GITHUB_CLIENT_ID` y
+  `AXIZ_GITHUB_CLIENT_SECRET` antes de arrancar. El repositorio se crea en tu cuenta, o en la
+  organización de `AXIZ_GITHUB_ORGANIZATION` si la defines. Sin eso, el resto del initializr
+  funciona igual.
+
 ## 11. Documentación
 
 ```bash
@@ -1058,7 +1099,8 @@ Secciones principales:
 
 ## 12. Revisiones incorporadas
 
-Esta entrega incluye las correcciones de dos revisiones externas. El detalle está en `axiz-docs`:
+Esta entrega incluye las correcciones de dos revisiones externas y de una auditoría de código. El
+seguridad, y la guía de migración.
 
 - **Primera revisión.** Llaves de idempotencia e inbox con dueño y *fencing*. Mensajes ocupados
   que no se confirman. Sagas que compensan lo que ejecutaron. Contratos de stores probados contra
@@ -1228,4 +1270,42 @@ Esta entrega incluye las correcciones de dos revisiones externas. El detalle est
   usan `set -E` con un `trap ERR` que muestra la línea y el comando de cualquier falla inesperada,
   y `scripts/demo.sh wait` (y por lo tanto `smoke`) falla de inmediato si un servicio no se
   arrancó, en vez de esperar 300 s.
+- **Initializr (review25):**
+  - Con dos registros OAuth (`sso` para iniciar sesión y `github` para crear repositorios), el
+    login aceptaba GitHub como proveedor de identidad. Mostraba una página para elegir entre
+    ambos, y la autorización de GitHub reemplazaba la sesión del usuario del SSO. Ahora solo `sso`
+    inicia sesión: la página va directo al SSO y el servicio de usuario del login rechaza
+    cualquier otro registro. GitHub usa su propio callback (`/authorized/github`), que guarda la
+    autorización para el usuario ya autenticado.
+  - El botón de GitHub no funcionaba desde la UI: la API respondía con una redirección a GitHub
+    que `fetch` no puede seguir y que además guardaba el POST para repetirlo como GET. Ahora
+    responde 403 con `authorize`; la UI abre esa URL y al volver pide crear el repositorio otra vez.
+  - Nuevo perfil `local` (puerto 8090) y cliente `axiz-initializr` en el realm del demo, para
+    probarlo en local (sección 10.1).
 
+- **Auditoría de código sobre review24 (review26).** Cada hallazgo que aplica se corrigió con una
+  prueba que reproduce el caso; el detalle está en la guía de migración de `axiz-docs`
+  ("Cambios de la tercera revisión").
+  - Perfil `quality`: Checkstyle 14.2 ya no tiene `JavadocStyle` (se usa `SummaryJavadoc`);
+    JSpecify 1.0.1 para converger con Micrometer; `aopalliance` excluido de la observabilidad
+    (clases duplicadas con `spring-aop`); los avisos de NullAway corregidos en el código, sin
+    suprimirlos; pruebas nuevas para `cache-redis`, `logging`, `batch-api` y `eda-api`, que no
+    llegaban a los umbrales de cobertura (los umbrales no cambian).
+  - Pruebas de integración: Failsafe usa `target/classes` (después de `repackage` no encontraba
+    las clases del servicio).
+  - Proyectos generados: 13 de 29 combinaciones no arrancaban sin región de AWS, porque Spring
+    Cloud AWS creaba un `SsmClient` aunque Parameter Store no se usara. Ahora sigue a
+    `axiz.config.parameter-store.enabled` (falso por defecto). Un workflow nocturno nuevo
+    (`samples-matrix.yaml`) construye todas las combinaciones sin configuración de AWS.
+  - API: un `sort` inválido responde 400 (antes 500); una request en inglés recibe textos en
+    inglés aunque el idioma por defecto sea `es-PE`; las duraciones de EDA y BFF se leen con el
+    binder de Boot.
+  - Initializr: los tokens bearer deben traer la audiencia del initializr; un token del mismo SSO
+    para otra API recibe 401.
+  - Demo: el escenario de liquidación usa un archivo propio en cada ejecución, y volver a ejecutar
+    un archivo ya cargado escribe otra vez su resumen si S3 lo perdió (LocalStack no conserva
+    datos al recrearse y PostgreSQL sí). `demo.sh` reconoce los puertos publicados en rango
+    (`4317-4318`). Las pruebas del historial y del batch que fallaban se corrigieron.
+  - Evidencia: los workflows compartidos publican en el resumen de cada job el commit, el JDK, el
+    comando y las pruebas por módulo (`actions/test-report`). Los `VERIFICATION.md` separan lo
+    verificado aquí sin Maven de lo que solo corre en CI.

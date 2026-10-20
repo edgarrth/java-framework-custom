@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Clock;
 import java.time.Duration;
@@ -17,12 +20,14 @@ import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.jdbc.ConnectionProvider;
 import pe.axiz.core.commons.jdbc.JdbcTransactions;
 import pe.axiz.core.messaging.Deduplicator;
 
 class InboxTest {
 
   private JdbcInboxStore store;
+  private JdbcDataSource dataSource;
   private final MutableClock clock = new MutableClock();
 
   @BeforeEach
@@ -39,6 +44,7 @@ class InboxTest {
       }
     }
     store = new JdbcInboxStore(new JdbcTransactions(ds), "axiz_inbox");
+    dataSource = ds;
   }
 
   @Test
@@ -152,6 +158,124 @@ class InboxTest {
     JdbcInboxStore broken = new JdbcInboxStore(noDb, "axiz_inbox");
     assertThrows(InboxException.class, () -> broken.purgeExpired(clock.now));
     assertThrows(IllegalArgumentException.class, () -> new JdbcInboxStore(noDb, "Bad Table"));
+  }
+
+  @Test
+  void aRegistrationReleasedWhileAcquiringIsRedeliveredAtOnce() throws Exception {
+    Instant now = clock.now;
+    store.tryAcquire("c", "e-9", "a", now, now.plusSeconds(60), now.plusSeconds(600));
+    // the owner releases its registration between our insert attempt and our read
+    ConnectionProvider racing =
+        new ConnectionProvider() {
+          @Override
+          public Connection get() throws SQLException {
+            Connection real = dataSource.getConnection();
+            return (Connection)
+                Proxy.newProxyInstance(
+                    Connection.class.getClassLoader(),
+                    new Class<?>[] {Connection.class},
+                    (p, m, args) -> {
+                      if (m.getName().equals("prepareStatement")
+                          && ((String) args[0]).startsWith("SELECT status")) {
+                        store.release("c", "e-9", "a");
+                      }
+                      try {
+                        return m.invoke(real, args);
+                      } catch (InvocationTargetException e) {
+                        throw e.getCause();
+                      }
+                    });
+          }
+
+          @Override
+          public void release(Connection connection) throws SQLException {
+            connection.close();
+          }
+        };
+    InboxStore.Acquisition a =
+        new JdbcInboxStore(racing, "axiz_inbox")
+            .tryAcquire("c", "e-9", "b", now.plusSeconds(1), now.plusSeconds(61), now.plusSeconds(600));
+    assertEquals(InboxStore.Acquisition.Status.BUSY, a.status());
+    assertEquals(now.plusSeconds(1), a.leaseUntil(), "busy until now: retry right away");
+  }
+
+  @Test
+  void aConnectionThatCannotBeReturnedDoesNotFailTheOperation() {
+    ConnectionProvider leaky =
+        new ConnectionProvider() {
+          @Override
+          public Connection get() throws SQLException {
+            return dataSource.getConnection();
+          }
+
+          @Override
+          public void release(Connection connection) throws SQLException {
+            connection.close();
+            throw new SQLException("pool closed");
+          }
+        };
+    JdbcInboxStore s = new JdbcInboxStore(leaky, "axiz_inbox");
+    Instant now = clock.now;
+    assertEquals(
+        InboxStore.Acquisition.Status.ACQUIRED,
+        s.tryAcquire("c", "e-10", "a", now, now.plusSeconds(60), now.plusSeconds(600)).status());
+    assertTrue(s.markProcessed("c", "e-10", "a", now));
+  }
+
+  @Test
+  void anUnreachableDatabaseFailsTheAcquisition() {
+    JdbcInboxStore broken = new JdbcInboxStore(new JdbcTransactions(new JdbcDataSource()), "axiz_inbox");
+    InboxException e =
+        assertThrows(
+            InboxException.class,
+            () ->
+                broken.tryAcquire(
+                    "c", "e-1", "a", clock.now, clock.now.plusSeconds(1), clock.now.plusSeconds(2)));
+    assertTrue(e.getMessage().startsWith("Inbox acquire failed"), e.getMessage());
+  }
+
+  @Test
+  void theDeduplicatorNeedsAPositiveLeaseAndWaitsAFullLeaseWhenTheEndIsUnknown() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new InboxDeduplicator(store, Duration.ZERO, Duration.ofHours(1), clock));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new InboxDeduplicator(store, Duration.ofSeconds(-1), Duration.ofHours(1), clock));
+    InboxStore unknownLease =
+        new InboxStore() {
+          @Override
+          public Acquisition tryAcquire(
+              String consumer,
+              String messageId,
+              String owner,
+              Instant now,
+              Instant leaseUntil,
+              Instant expiresAt) {
+            return Acquisition.busy(null);
+          }
+
+          @Override
+          public boolean markProcessed(String consumer, String messageId, String owner, Instant at) {
+            return false;
+          }
+
+          @Override
+          public boolean release(String consumer, String messageId, String owner) {
+            return false;
+          }
+
+          @Override
+          public int purgeExpired(Instant now) {
+            return 0;
+          }
+        };
+    unknownLease.verifySchema(); // nothing to check by default
+    Deduplicator.Claim busy =
+        new InboxDeduplicator(unknownLease, Duration.ofSeconds(30), Duration.ofHours(1), clock)
+            .claim("c", "e-1");
+    assertEquals(Deduplicator.Claim.Status.BUSY, busy.status());
+    assertEquals(Duration.ofSeconds(30), busy.retryAfter());
   }
 
   static final class MutableClock extends Clock {

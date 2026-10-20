@@ -23,6 +23,9 @@ import org.springframework.util.StringUtils;
  *   <li>With {@code axiz.config.parameter-store.enabled=true} it imports {@code
  *       optional:aws-parameterstore:/axiz/<environment>/<app>/} below the ConfigMaps.
  *   <li>Outside the cluster the Kubernetes integration is switched off.
+ *   <li>Spring Cloud AWS Parameter Store follows {@code axiz.config.parameter-store.enabled} (false
+ *       by default): otherwise it builds an {@code SsmClient} at startup that nothing uses, and that
+ *       fails without an AWS region (tests, laptops, generated projects without AWS).
  * </ul>
  *
  * Values set explicitly by the service always win: the conventions are added with the lowest
@@ -67,6 +70,9 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
       defaults.put("spring.cloud.kubernetes.config.enabled", "false");
       defaults.put("spring.cloud.kubernetes.secrets.enabled", "false");
     }
+    // a placeholder, resolved when Spring Cloud AWS binds it: the service's own files count too
+    defaults.put(
+        "spring.cloud.aws.parameterstore.enabled", "${axiz.config.parameter-store.enabled:false}");
     env.getPropertySources().addLast(new MapPropertySource(DEFAULTS, defaults));
 
     if (!imports.isEmpty()) {

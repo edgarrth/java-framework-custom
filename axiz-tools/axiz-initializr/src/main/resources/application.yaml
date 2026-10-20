@@ -22,9 +22,12 @@ spring:
             client-id: ${AXIZ_SSO_CLIENT_ID:axiz-initializr}
             client-secret: ${AXIZ_SSO_CLIENT_SECRET:}
             scope: [openid, profile, email]
+          # only authorizes repository creation; login is the SSO (see SecurityConfiguration).
+          # The GitHub OAuth app must use this callback: <initializr URL>/authorized/github
           github:
             client-id: ${AXIZ_GITHUB_CLIENT_ID:axiz-initializr-local}
             client-secret: ${AXIZ_GITHUB_CLIENT_SECRET:}
+            redirect-uri: "{baseUrl}/authorized/{registrationId}"
             scope: [repo]
         provider:
           sso:
@@ -48,6 +51,8 @@ axiz:
   initializr:
     framework-version: ${AXIZ_FRAMEWORK_VERSION:0.1.0-SNAPSHOT}
     github-organization: ${AXIZ_GITHUB_ORGANIZATION:}
+    # bearer tokens of the CLI and automations must name this API in their audience
+    audience: ${AXIZ_INITIALIZR_AUDIENCE:axiz-initializr}
   audit:
     async:
       enabled: true

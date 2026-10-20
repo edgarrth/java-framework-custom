@@ -84,6 +84,11 @@ jobs:
         run: |
           # shellcheck disable=SC2086 # Maven arguments are split on purpose
           mvn -B -ntp verify -Pquality $MODULE_ARGS
+      - name: Test results of this commit (job summary)
+        if: always()
+        uses: axiz/axiz-workflows/actions/test-report@v1
+        with:
+          command: mvn -B -ntp verify -Pquality ${{ env.MODULE_ARGS }}
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
         if: env.SONAR_TOKEN != ''
         run: |

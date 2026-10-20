@@ -158,15 +158,25 @@ class IdempotencyTest {
 
   @Test
   void sameKeyReplaysAndDifferentBodyIsRejected() throws Exception {
-    MockHttpServletResponse first = call("key-00000001", "{\"amount\":10}");
-    MockHttpServletResponse second = call("key-00000001", "{\"amount\":10}");
+    MockHttpServletResponse first = call("idempotency-key-00000001", "{\"amount\":10}");
+    MockHttpServletResponse second = call("idempotency-key-00000001", "{\"amount\":10}");
     assertEquals(1, controller.executions.get());
     assertEquals(201, second.getStatus());
     assertEquals(first.getContentAsString(), second.getContentAsString());
     assertEquals("true", second.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
     BusinessException reused =
-        assertThrows(BusinessException.class, () -> call("key-00000001", "{\"amount\":99}"));
+        assertThrows(BusinessException.class, () -> call("idempotency-key-00000001", "{\"amount\":99}"));
     assertEquals(422, reused.category().httpStatus());
+  }
+
+  @Test
+  void aKeyOutsideTheContractIsRejectedBeforeTheHandlerRuns() {
+    // 16 to 128 characters of [A-Za-z0-9._:-]: too short, too long and unsafe characters
+    for (String key : new String[] {"key-00000001", "k".repeat(129), "key with spaces 0001"}) {
+      BusinessException e = assertThrows(BusinessException.class, () -> call(key, "{}"));
+      assertEquals(400, e.category().httpStatus(), key);
+    }
+    assertEquals(0, controller.executions.get());
   }
 
   /**
@@ -175,15 +185,15 @@ class IdempotencyTest {
    */
   @Test
   void aReplayIsDeniedWhenTheCallerIsNoLongerAuthorized() throws Exception {
-    MockHttpServletResponse first = call("key-00000010", "{}");
+    MockHttpServletResponse first = call("idempotency-key-00000010", "{}");
     assertEquals(201, first.getStatus());
     allowed.set(false);
     MockHttpServletResponse[] holder = new MockHttpServletResponse[1];
-    assertThrows(Denied.class, () -> holder[0] = call("key-00000010", "{}"));
+    assertThrows(Denied.class, () -> holder[0] = call("idempotency-key-00000010", "{}"));
     assertNull(holder[0]);
     assertEquals(1, controller.executions.get());
     allowed.set(true);
-    MockHttpServletResponse replay = call("key-00000010", "{}");
+    MockHttpServletResponse replay = call("idempotency-key-00000010", "{}");
     assertEquals(first.getContentAsString(), replay.getContentAsString());
     assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
@@ -195,13 +205,13 @@ class IdempotencyTest {
         (res, n) -> {
           throw new IllegalStateException("downstream timeout");
         };
-    assertThrows(IllegalStateException.class, () -> call("key-00000002", "{}"));
+    assertThrows(IllegalStateException.class, () -> call("idempotency-key-00000002", "{}"));
     controller.handler =
         (res, n) -> {
           res.setStatus(201);
           res.getWriter().write("ok-" + n);
         };
-    MockHttpServletResponse retry = call("key-00000002", "{}");
+    MockHttpServletResponse retry = call("idempotency-key-00000002", "{}");
     assertEquals(2, controller.executions.get(), "the retry runs instead of replaying a 200");
     assertEquals(201, retry.getStatus());
     assertNull(retry.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
@@ -210,11 +220,11 @@ class IdempotencyTest {
   /** Report cases: the query string is part of the fingerprint, taken as sent. */
   @Test
   void theQueryStringAsSentIsPartOfTheFingerprint() throws Exception {
-    call("key-00000003", "{}", "sort=a&sort=b", null, Integer.MAX_VALUE);
+    call("idempotency-key-00000003", "{}", "sort=a&sort=b", null, Integer.MAX_VALUE);
     BusinessException reordered =
         assertThrows(
             BusinessException.class,
-            () -> call("key-00000003", "{}", "sort=b&sort=a", null, Integer.MAX_VALUE));
+            () -> call("idempotency-key-00000003", "{}", "sort=b&sort=a", null, Integer.MAX_VALUE));
     assertEquals(422, reordered.category().httpStatus());
     assertEquals(1, controller.executions.get());
   }
@@ -223,9 +233,9 @@ class IdempotencyTest {
   @Test
   void keysAreScopedByCaller() throws Exception {
     MockHttpServletResponse alice =
-        call("key-00000004", "{}", null, metadata("alice"), Integer.MAX_VALUE);
+        call("idempotency-key-00000004", "{}", null, metadata("alice"), Integer.MAX_VALUE);
     MockHttpServletResponse bob =
-        call("key-00000004", "{}", null, metadata("bob"), Integer.MAX_VALUE);
+        call("idempotency-key-00000004", "{}", null, metadata("bob"), Integer.MAX_VALUE);
     assertEquals(2, controller.executions.get());
     assertNotEquals(alice.getContentAsString(), bob.getContentAsString());
     assertNull(bob.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
@@ -245,9 +255,9 @@ class IdempotencyTest {
           res.setHeader("Location", "/payments/1");
           res.getOutputStream().write(new byte[64 * 1024]);
         };
-    MockHttpServletResponse first = call("key-00000005", "{}", null, null, 16);
+    MockHttpServletResponse first = call("idempotency-key-00000005", "{}", null, null, 16);
     assertEquals(64 * 1024, first.getContentAsByteArray().length, "the client gets all of it");
-    MockHttpServletResponse replay = call("key-00000005", "{}", null, null, 16);
+    MockHttpServletResponse replay = call("idempotency-key-00000005", "{}", null, null, 16);
     assertEquals(1, controller.executions.get());
     assertEquals(201, replay.getStatus());
     assertEquals("/payments/1", replay.getHeader("Location"));
@@ -300,7 +310,7 @@ class IdempotencyTest {
     String fp = IdempotencyService.fingerprint("POST", "/payments", null, new byte[0]);
 
     ReactiveIdempotency.IdempotencyExchange first =
-        new ReactiveIdempotency.IdempotencyExchange("key-00000020", fp);
+        new ReactiveIdempotency.IdempotencyExchange("idempotency-key-00000020", fp);
     assertEquals(
         "p-1",
         reactive.pay().contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, first)).block());
@@ -310,7 +320,7 @@ class IdempotencyTest {
 
     allowed.set(false);
     ReactiveIdempotency.IdempotencyExchange denied =
-        new ReactiveIdempotency.IdempotencyExchange("key-00000020", fp);
+        new ReactiveIdempotency.IdempotencyExchange("idempotency-key-00000020", fp);
     assertThrows(
         Denied.class,
         () ->
@@ -321,7 +331,7 @@ class IdempotencyTest {
 
     allowed.set(true);
     ReactiveIdempotency.IdempotencyExchange again =
-        new ReactiveIdempotency.IdempotencyExchange("key-00000020", fp);
+        new ReactiveIdempotency.IdempotencyExchange("idempotency-key-00000020", fp);
     IdempotentReplay replay =
         assertThrows(
             IdempotentReplay.class,

@@ -132,9 +132,11 @@
 
   document.getElementById('github').addEventListener('click', () => busy(async () => {
     const response = await post('/v1/projects/github', await request());
-    if (response.status === 401 || response.redirected) {
-      window.location.assign('/oauth2/authorization/github');
-      return;
+    // GitHub not authorized yet: 403 with the URL that starts the authorization; the browser comes
+    // back to /?github=authorized and the user creates the repository again
+    if (response.status === 403) {
+      const body = await response.clone().json().catch(() => ({}));
+      if (body.authorize) { window.location.assign(body.authorize); return; }
     }
     if (!response.ok) return problem(response);
     const r = await response.json();
@@ -163,7 +165,7 @@
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`metadata ${r.status}`))))
     .then((m) => {
       metadata = m;
-      form.archetype.replaceChildren(...m.archetypes.map((a) => option(a.name, `${a.name} — ${a.role}`)));
+      form.archetype.replaceChildren(...m.archetypes.map((a) => option(a.name, `${a.name}: ${a.role}`)));
       const caps = document.getElementById('capabilities');
       caps.replaceChildren(...m.capabilities.map((c) => {
         const label = document.createElement('label');
@@ -180,6 +182,10 @@
       }));
       form.archetype.value = 'business';
       refresh();
+      if (new URLSearchParams(window.location.search).get('github') === 'authorized') {
+        window.history.replaceState(null, '', '/');
+        show('GitHub autorizado: completa el formulario y vuelve a pulsar «Crear repositorio en GitHub».');
+      }
     })
     .catch((e) => show(`No se pudo cargar el catálogo: ${e.message}`));
 })();

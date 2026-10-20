@@ -220,8 +220,12 @@ public final class ProjectGenerator {
           t.put("usesModels", ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get("hasModel"))));
           java.util.TreeSet<String> models = new java.util.TreeSet<>();
           for (Map<String, Object> o : ops) {
-            for (Object m : (List<?>) o.get("models")) {
-              models.add(String.valueOf(((Map<?, ?>) m).get("name")));
+            if (o.get("models") instanceof List<?> used) {
+              for (Object m : used) {
+                if (m instanceof Map<?, ?> model) {
+                  models.add(String.valueOf(model.get("name")));
+                }
+              }
             }
           }
           t.put("models", models.stream().map(m -> Map.of("name", m)).toList());

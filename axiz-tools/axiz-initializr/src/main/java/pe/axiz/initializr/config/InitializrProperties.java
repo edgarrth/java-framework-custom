@@ -13,10 +13,13 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param githubOrganization organization where repositories are created; the user's account when
  *     empty
  * @param maxFiles maximum number of files pushed to a new repository
+ * @param audience audience that bearer tokens must carry to call the API (tokens of the same
+ *     identity provider issued for other APIs are rejected)
  */
 @ConfigurationProperties("axiz.initializr")
 public record InitializrProperties(
     @DefaultValue("0.1.0-SNAPSHOT") String frameworkVersion,
     @DefaultValue("https://api.github.com") URI githubApi,
     @Nullable String githubOrganization,
-    @DefaultValue("2000") int maxFiles) {}
+    @DefaultValue("2000") int maxFiles,
+    @DefaultValue(SecurityConfiguration.DEFAULT_AUDIENCE) String audience) {}

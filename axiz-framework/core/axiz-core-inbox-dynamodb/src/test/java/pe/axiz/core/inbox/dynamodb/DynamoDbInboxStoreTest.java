@@ -2,6 +2,9 @@ package pe.axiz.core.inbox.dynamodb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
@@ -12,8 +15,10 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import pe.axiz.core.contracts.InboxStoreContract;
+import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
+import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
@@ -130,5 +135,73 @@ class DynamoDbInboxStoreTest {
         };
     return InboxStoreContract.checks(backend).stream()
         .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
+  }
+
+  /** Answers every write with the given failure. */
+  static DynamoDbClient failing(RuntimeException failure) {
+    return new DynamoDbClient() {
+      @Override
+      public PutItemResponse putItem(PutItemRequest r) {
+        throw failure;
+      }
+
+      @Override
+      public UpdateItemResponse updateItem(UpdateItemRequest r) {
+        throw failure;
+      }
+
+      @Override
+      public DeleteItemResponse deleteItem(DeleteItemRequest r) {
+        throw failure;
+      }
+
+      @Override
+      public String serviceName() {
+        return "dynamodb";
+      }
+
+      @Override
+      public void close() {}
+    };
+  }
+
+  @Test
+  void aRefusedWriteWithoutTheCurrentItemIsBusyWithAnUnknownLease() {
+    Instant now = Instant.parse("2026-01-01T00:00:00Z");
+    // the condition failed but DynamoDB returned no item (or one without lease): busy, lease unknown
+    DynamoDbInboxStore withoutItem =
+        new DynamoDbInboxStore(
+            failing(ConditionalCheckFailedException.builder().message("exists").build()), "t");
+    Acquisition busy =
+        withoutItem.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(3600));
+    assertEquals(Acquisition.Status.BUSY, busy.status());
+    assertNull(busy.leaseUntil());
+
+    DynamoDbInboxStore withoutLease =
+        new DynamoDbInboxStore(
+            failing(
+                ConditionalCheckFailedException.builder()
+                    .message("exists")
+                    .item(Map.of("status", AttributeValue.fromS("IN_PROGRESS")))
+                    .build()),
+            "t");
+    assertNull(
+        withoutLease
+            .tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(3600))
+            .leaseUntil());
+  }
+
+  @Test
+  void dynamoFailuresAreInboxExceptions() {
+    Instant now = Instant.parse("2026-01-01T00:00:00Z");
+    SdkException down = SdkException.builder().message("unreachable").build();
+    DynamoDbInboxStore store = new DynamoDbInboxStore(failing(down), "t");
+    InboxException acquire =
+        assertThrows(
+            InboxException.class,
+            () -> store.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(60)));
+    assertInstanceOf(SdkException.class, acquire.getCause());
+    assertThrows(InboxException.class, () -> store.markProcessed("c", "e-1", "a", now));
+    assertThrows(InboxException.class, () -> store.release("c", "e-1", "a"));
   }
 }

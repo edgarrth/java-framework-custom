@@ -66,4 +66,38 @@ class AwsClientsTest {
       assertFalse(client.serviceClientConfiguration().endpointOverride().isPresent());
     }
   }
+
+  @Test
+  void blankValuesAreIgnoredAndTheSharedEndpointIsTheFallback() {
+    Map<String, String> properties =
+        Map.of(
+            "axiz.aws.region", " ",
+            "axiz.aws.dynamodb.endpoint", " ",
+            "axiz.aws.endpoint", "http://localhost:4566");
+    // a blank region leaves the one of the builder (or the SDK chain) in place
+    try (DynamoDbClient client =
+        AwsClients.configured(
+            DynamoDbClient.builder().httpClient(new NoHttp()).region(Region.SA_EAST_1),
+            ObservationRegistry.NOOP,
+            properties::get,
+            "dynamodb")) {
+      assertEquals(Region.SA_EAST_1, client.serviceClientConfiguration().region());
+      assertEquals(
+          URI.create("http://localhost:4566"),
+          client.serviceClientConfiguration().endpointOverride().orElseThrow());
+    }
+  }
+
+  @Test
+  void buildWithoutRegionOrEndpointLeavesThemToTheSdk() {
+    try (DynamoDbClient client =
+        AwsClients.build(
+            DynamoDbClient.builder().httpClient(new NoHttp()).region(Region.EU_WEST_1),
+            ObservationRegistry.NOOP,
+            null,
+            null)) {
+      assertEquals(Region.EU_WEST_1, client.serviceClientConfiguration().region());
+      assertFalse(client.serviceClientConfiguration().endpointOverride().isPresent());
+    }
+  }
 }

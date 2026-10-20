@@ -1,6 +1,6 @@
 {
   "uid": "axiz-messaging",
-  "title": "axiz · mensajería",
+  "title": "axiz: mensajería",
   "description": "Publicación y consumo de eventos: handlers, inbox, outbox, lag de Kafka y sagas.",
   "tags": [
     "axiz"

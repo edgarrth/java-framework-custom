@@ -127,9 +127,15 @@
           </execution>
         </executions>
       </plugin>
+      <!-- integration tests run after package, when spring-boot:repackage has replaced the jar with
+           the executable one (classes under BOOT-INF/classes): Failsafe must use the compiled
+           classes, or it cannot load the service's own types (NoClassDefFoundError) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

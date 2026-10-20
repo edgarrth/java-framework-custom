@@ -15,6 +15,8 @@ final class AuthorizationCoverage {
   private AuthorizationCoverage() {}
 
   /**
+   * Checks that every command and query declares who may send it.
+   *
    * @param mode {@code warn} (log them), {@code fail} (stop startup) or {@code allow}
    */
   static void verify(Collection<Class<?>> requestTypes, AccessPolicies policies, String mode) {

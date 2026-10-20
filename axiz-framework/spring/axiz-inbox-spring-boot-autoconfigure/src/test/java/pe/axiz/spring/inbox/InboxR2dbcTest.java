@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.inbox.r2dbc.R2dbcInboxStore;
 import pe.axiz.core.messaging.Deduplicator;
@@ -26,6 +27,8 @@ class InboxR2dbcTest {
     Set<String> rows = ConcurrentHashMap.newKeySet();
     FakeR2dbc db =
         new FakeR2dbc()
+            // startup schema check: the table has every column of this version (owner included)
+            .onQuery("SELECT consumer, message_id, status, owner, lease_until, expires_at", b -> List.of())
             .onUpdate("INSERT INTO axiz_inbox", b -> rows.add(b.get(0) + "/" + b.get(1)) ? 1L : 0L)
             .onUpdate("SET owner", b -> 0L)
             .onQuery(
@@ -49,6 +52,24 @@ class InboxR2dbcTest {
                   Deduplicator.Claim.Status.ALREADY_PROCESSED, d.claim("billing", "e-1").status());
               assertEquals(Deduplicator.Claim.Status.ACQUIRED, d.claim("ledger", "e-1").status());
               assertEquals(2, rows.size());
+            });
+  }
+
+  @Test
+  void anInboxTableOfAnOlderVersionStopsTheStartup() {
+    // the schema query fails as it does on a table without the owner column
+    FakeR2dbc db = new FakeR2dbc();
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                AxizInboxR2dbcAutoConfiguration.class, AxizInboxAutoConfiguration.class))
+        .withPropertyValues("axiz.inbox.store=r2dbc")
+        .withBean(ReactiveSql.class, () -> new R2dbcSql(db))
+        .run(
+            ctx -> {
+              Throwable failure = ctx.getStartupFailure();
+              assertInstanceOf(InboxException.class, failure);
+              assertTrue(failure.getMessage().contains("inbox-postgresql-upgrade-owner.sql"));
             });
   }
 }

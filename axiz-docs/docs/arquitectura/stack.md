@@ -28,7 +28,7 @@ auto-configuración activa la correcta y el servicio declara un solo starter.
 | Outbox, inbox, ShedLock | JDBC | R2DBC (`ReactiveTransactionalEvents`, `axiz.inbox.store: r2dbc`, `axiz.scheduling.store: r2dbc`) |
 | CQRS | `CommandBus`, `QueryBus` | `ReactiveCommandBus`, `ReactiveQueryBus` |
 | EDA | `TypedEventHandler` | `ReactiveTypedEventHandler` |
-| Pruebas | — | `BlockHoundExtension` obligatoria |
+| Pruebas | ninguna | `BlockHoundExtension` obligatoria |
 
 Estilos con variante reactiva: `cqrs`, `bff` y `eda`. `layered` y `hexagonal` son solo servlet.
 

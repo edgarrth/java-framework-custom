@@ -183,6 +183,58 @@ class R2dbcOutboxStoreTest {
     assertNull(records.get(0).lastError());
   }
 
+  @Test
+  void aRecordThatGivesUpIsFailedWithItsErrorTrimmedOrEmpty() {
+    List<Map<Integer, Object>> updates = new ArrayList<>();
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onUpdate(
+                "SET status = \\$1",
+                b -> {
+                  updates.add(new HashMap<>(b));
+                  return 1L;
+                });
+    R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    Instant next = Instant.parse("2026-10-11T12:05:00Z");
+
+    store.markFailed("e-1", 3, next, "x".repeat(1500), true);
+    store.markFailed("e-2", 1, next, "broker unavailable", false);
+    store.markFailed("e-3", 1, next, null, false);
+
+    assertEquals("FAILED", updates.get(0).get(0));
+    assertEquals(1000, ((String) updates.get(0).get(3)).length());
+    assertEquals("PENDING", updates.get(1).get(0));
+    assertEquals("broker unavailable", updates.get(1).get(3));
+    assertNull(updates.get(2).get(3));
+    assertEquals(String.class, db.last("SET status").types().get(3), "a typed null for the error");
+  }
+
+  @Test
+  void purgesPublishedRecordsAndCountsZeroPendingOnAnEmptyAnswer() {
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onUpdate("^DELETE FROM axiz_outbox", b -> 4L)
+            .onQuery("COUNT", b -> List.of());
+    R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    assertEquals(4, store.purgePublished(Instant.parse("2026-10-01T00:00:00Z")));
+    assertEquals(
+        Instant.parse("2026-10-01T00:00:00Z"), db.last("DELETE FROM axiz_outbox").binds().get(0));
+    assertEquals(0L, store.countPending());
+  }
+
+  @Test
+  void aRecordWithoutAttemptsHasZero() {
+    Map<String, Object> r = new HashMap<>(row("e-10"));
+    r.remove("attempts");
+    FakeR2dbc db = new FakeR2dbc().onQuery("FOR UPDATE", b -> List.of(r));
+    assertEquals(
+        0,
+        new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT)
+            .lockDue(5, Instant.parse("2026-10-11T12:00:00Z"))
+            .get(0)
+            .attempts());
+  }
+
   private static Map<String, Object> row(String id) {
     Map<String, Object> m = new HashMap<>();
     m.put("id", id);

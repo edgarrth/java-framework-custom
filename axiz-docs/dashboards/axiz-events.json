@@ -1,6 +1,6 @@
 {
   "uid": "axiz-events",
-  "title": "axiz · eventos",
+  "title": "axiz: eventos",
   "description": "Métricas genéricas por evento: cualquier evento de negocio con $event, $channel y $product.",
   "tags": [
     "axiz"

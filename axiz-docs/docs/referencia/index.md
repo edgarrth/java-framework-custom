@@ -3,7 +3,7 @@
 
 Tipos públicos principales de cada módulo, generados desde los README del framework (en inglés, como el código).
 
-## Capa 1 · core (Java puro)
+## Capa 1: core (Java puro)
 
 | Módulo | Descripción |
 |---|---|
@@ -66,7 +66,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-time`](core/axiz-core-time.md) | Injectable clock, business calendar, holidays, cut-off times and due dates. |
 | [`core`](core/core.md) | Plain Java capabilities (`axiz-core-<capability>[-<technology>]`): JDK, SLF4J, JSpecify and |
 
-## Capa 2 · Spring Boot
+## Capa 2: Spring Boot
 
 | Módulo | Descripción |
 |---|---|
@@ -137,7 +137,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-web-spring-boot-starter`](spring/axiz-web-spring-boot-starter.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata. |
 | [`spring`](spring/spring.md) | Spring Boot 4.1 wiring of each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans |
 
-## Capa 3 · frameworks
+## Capa 3: frameworks
 
 | Módulo | Descripción |
 |---|---|

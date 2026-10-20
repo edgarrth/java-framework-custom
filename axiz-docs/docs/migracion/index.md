@@ -231,3 +231,47 @@ Si ya creaste tablas o stores propios con el paquete preliminar:
   imagen de Jib y en las pruebas). Netty lo necesita para su transporte nativo; sin él, Java 25
   avisa al arrancar y una versión futura lo bloqueará. Si un servicio arranca con un comando
   propio (`java -cp ...` sin `-jar`), agrega `--enable-native-access=ALL-UNNAMED`.
+- **Initializr:** el registro OAuth `github` usa el callback `{baseUrl}/authorized/github` en vez
+  del de login. Actualiza la URL de callback de la OAuth App de GitHub de cada ambiente
+  (`https://<initializr>/authorized/github`). Solo el registro `sso` inicia sesión, y
+  `POST /v1/projects/github` sin autorización de GitHub responde 403 con `authorize` en vez de
+  redirigir.
+
+#### Cambios de la tercera revisión (auditoría de código)
+
+- **Pruebas de integración (Failsafe):** `axiz-parent-service` fija `classesDirectory` de Failsafe
+  en `target/classes`. Después de `spring-boot:repackage` el jar del módulo es ejecutable y sus
+  clases están en `BOOT-INF/classes`, así que las pruebas `*IT` no encontraban las clases del
+  servicio. Sin cambios en los servicios.
+- **Parameter Store:** `spring.cloud.aws.parameterstore.enabled` sigue a
+  `axiz.config.parameter-store.enabled` (falso por defecto). Antes Spring Cloud AWS creaba un
+  `SsmClient` al arrancar aunque nadie lo usara, y sin región de AWS (pruebas, laptops, proyectos
+  generados sin AWS) el contexto no arrancaba. Un valor explícito del servicio gana.
+- **Checkstyle 14.2:** `JavadocStyle` ya no existe (se eliminó en Checkstyle 13.9). Las reglas de
+  axiz usan `SummaryJavadoc` sin exigir punto final: un Javadoc necesita una descripción, no solo
+  tags. Si tus `suppressions.xml` nombran `JavadocStyle`, cámbialo por `SummaryJavadoc`.
+- **NullAway y JSpecify:** `axiz-dependencies` fija JSpecify 1.0.1, la versión que trae Micrometer
+  1.17 (la regla `RequireUpperBoundDeps` fallaba con 1.0.0). `axiz-observability` excluye
+  `aopalliance:aopalliance`, cuyas clases ya trae `spring-aop` (fallaba `BanDuplicateClasses`).
+- **Idioma inglés:** el framework incluye `axiz/i18n/messages_en.properties`. Con el idioma por
+  defecto `es-PE`, una request en inglés recibía el texto en español, porque el bundle raíz se
+  consulta después del idioma por defecto. Cada bundle de un servicio debe tener un archivo por
+  idioma soportado (`messages_en.properties`, `messages.properties` para el idioma por defecto),
+  como los servicios generados.
+- **Parámetro `sort` inválido:** responde 400 con la violación del campo `sort`, en los dos stacks.
+  Antes respondía 500.
+- **Duraciones de EDA y BFF:** `axiz.eda.handler-timeout` y `axiz.bff.timeout` se leen con el
+  binder de Spring Boot (`500ms`, `30s`, `PT30S`). Antes dependían del servicio de conversión del
+  `Environment`: en una aplicación Boot funcionaba, pero en un contexto sin él (por ejemplo
+  `ApplicationContextRunner` en pruebas) un valor configurado impedía arrancar
+  (`No converter found ... Duration`). Sin cambios en los servicios.
+- **Initializr:** los tokens bearer del API deben traer la audiencia `axiz.initializr.audience`
+  (`axiz-initializr` por defecto, variable `AXIZ_INITIALIZR_AUDIENCE`). Un token del mismo SSO
+  emitido para otro API recibe 401. En el proveedor de identidad, el cliente que usa la CLI
+  necesita un mapper de audiencia con ese valor; el realm local lo trae.
+- **Demo, liquidación:** `settlement.run-on-startup` (verdadero por defecto) permite arrancar el
+  servicio sin cargar un archivo, y `SettlementRunner.load(key)` carga uno bajo el lock. Al volver
+  a ejecutar un archivo ya cargado, si falta su resumen en S3 se escribe otra vez desde las filas
+  de Aurora (LocalStack no conserva datos entre reinicios y PostgreSQL sí).
+- **Pruebas con R2DBC falso:** `FakeR2dbc.Execution` registra también el tipo de cada parámetro
+  (`types()`), incluido el de los `Parameter` de R2DBC y los `bindNull`.

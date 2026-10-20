@@ -61,7 +61,7 @@ public class GenerationService {
       GeneratedProject project = generator.generate(request);
       count(request, "success");
       log.info(
-          "generated {} ({} · {} · {}) with {} files",
+          "generated {} ({} / {} / {}) with {} files",
           request.name(),
           request.archetype(),
           request.framework().id(),

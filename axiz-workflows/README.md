@@ -18,8 +18,11 @@ the release of this repository moves; third-party actions are pinned by commit S
 | `infra.yaml` | service infrastructure | Terraform fmt, validate, Trivy config scan, plan in the PR, apply after merge with approval |
 
 Composite actions: `actions/setup-maven` (JDK 25 or GraalVM, Nexus as the only repository,
-credentials only as environment variables) and `actions/gitops-update` (validated write of a
-release to the GitOps repository, retried on concurrent pushes).
+credentials only as environment variables), `actions/gitops-update` (validated write of a
+release to the GitOps repository, retried on concurrent pushes) and `actions/test-report` (job
+summary with the commit, the JDK, the Maven command and, per module, the unit and integration
+tests that passed, failed or were skipped, read from the Surefire and Failsafe reports; it runs
+even when the build fails).
 
 ## Pipeline of a service
 

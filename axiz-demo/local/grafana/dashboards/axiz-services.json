@@ -1,6 +1,6 @@
 {
  "uid": "axiz-services",
- "title": "axiz \u00b7 services (RED)",
+ "title": "axiz: services (RED)",
  "description": "Rate, errors and duration of every axiz service, outbound clients and resilience state.",
  "tags": [
   "axiz"

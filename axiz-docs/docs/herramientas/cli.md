@@ -25,7 +25,8 @@ Todos los comandos aceptan `-h` y `-V`; los que trabajan sobre un proyecto acept
 Por defecto la CLI genera **offline** con las plantillas embebidas en el binario. Con
 `--server https://initializr.axiz.internal` genera a través del initializr usando el token del
 usuario en `AXIZ_TOKEN` (la CLI nunca lo guarda), útil para usar plantillas más nuevas que el
-binario instalado.
+binario instalado. El token debe estar emitido para el initializr (audiencia `axiz-initializr`, o la
+que defina `axiz.initializr.audience`); un token del mismo SSO para otra API recibe 401.
 
 ## `axiz doctor`
 

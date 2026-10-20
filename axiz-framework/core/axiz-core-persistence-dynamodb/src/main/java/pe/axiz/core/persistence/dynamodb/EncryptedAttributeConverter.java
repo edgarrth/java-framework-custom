@@ -1,5 +1,6 @@
 package pe.axiz.core.persistence.dynamodb;
 
+import java.util.Objects;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
@@ -25,7 +26,14 @@ public class EncryptedAttributeConverter implements AttributeConverter<String> {
 
   @Override
   public String transformTo(AttributeValue input) {
-    return EncryptionRegistry.encryptor().decrypt(input.s(), context());
+    String encrypted = input.s();
+    if (encrypted == null) {
+      // the attribute was not written by this converter (another type): never return a null
+      throw new IllegalArgumentException(
+          "Encrypted attribute expected as a string, found " + input.type());
+    }
+    // decrypt only answers null for a null input
+    return Objects.requireNonNull(EncryptionRegistry.encryptor().decrypt(encrypted, context()));
   }
 
   @Override

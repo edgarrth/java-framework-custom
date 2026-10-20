@@ -1,5 +1,26 @@
 # Verificación de esta entrega
 
+## review26 (auditoría de código sobre review24)
+
+La auditoría ejecutó el demo con Maven real: 115 pruebas, 110 aprobadas, 1 fallo y 4 errores, y 86
+de 87 comprobaciones de escenarios. Lo corregido y lo verificado aquí, sin Maven ni Docker:
+
+| Qué | Resultado aquí |
+|---|---|
+| Compilación de main y pruebas de los 8 servicios | OK (modelos de OpenAPI reemplazados por stubs generados del contrato) |
+| `settlement-batch`, pruebas unitarias | 12 OK, entre ellas la nueva: una nueva ejecución de un archivo ya cargado escribe su resumen si falta, y no lo reescribe si existe |
+| `payments-history`, pruebas unitarias | 12 OK |
+| `PaymentsHistoryApplicationTest` y `SettlementBatchApplicationTest` (Testcontainers) | compilan; corren con Docker (`./mvnw verify`). El historial consulta con un cliente autenticado (la política de acceso respondía 404 a un llamador anónimo); el batch arranca con `settlement.run-on-startup=false`, carga con `SettlementRunner.load` un archivo propio de la prueba y comprueba filas, resumen, idempotencia y resumen reescrito |
+| `scripts/scenarios.sh` | shellcheck sin hallazgos; contra el simulador: 88 comprobaciones en verde (una nueva: resumen perdido y reescrito). Con fallas inyectadas, 82 en verde y 6 `FAIL` con su motivo, código de salida 1 |
+| `scripts/demo.sh` | shellcheck sin hallazgos; `published_by` probado con salidas de `docker ps` reales: rangos (`0.0.0.0:4317-4318->4317-4318/tcp`), IPv6 y puertos expuestos sin publicar; la infraestructura del demo se reconoce por la etiqueta del proyecto de Compose `axiz-demo` |
+| Realm de Keycloak | JSON válido; el cliente `axiz-initializr` emite tokens con audiencia `axiz-initializr` |
+
+No ejecutado aquí: las pruebas de arranque con Testcontainers, `DailyLimitConcurrencyIT`, el entorno
+local completo, el smoke y los escenarios contra los servicios reales (`scripts/demo.sh up --build`,
+`smoke`, `scenarios`).
+
+## Entregas anteriores
+
 Sin acceso a Maven Central ni Docker en el entorno de construcción; `./mvnw verify`, las pruebas con
 contenedores, el entorno local y el e2e en kind corren en CI (`ci.yaml`, `e2e.yaml`).
 

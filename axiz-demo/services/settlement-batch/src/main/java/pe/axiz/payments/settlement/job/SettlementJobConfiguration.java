@@ -72,15 +72,17 @@ public class SettlementJobConfiguration {
   }
 
   @Bean
+  SettlementSummaryTasklet settlementSummary(
+      DataSource dataSource, ObjectStorage storage, EventMetrics metrics) {
+    return new SettlementSummaryTasklet(JdbcClient.create(dataSource), storage, metrics);
+  }
+
+  @Bean
   Step summaryStep(
       JobRepository jobRepository,
       PlatformTransactionManager tx,
-      DataSource dataSource,
-      ObjectStorage storage,
-      EventMetrics metrics) {
-    return new StepBuilder("summary", jobRepository)
-        .tasklet(new SettlementSummaryTasklet(JdbcClient.create(dataSource), storage, metrics), tx)
-        .build();
+      SettlementSummaryTasklet settlementSummary) {
+    return new StepBuilder("summary", jobRepository).tasklet(settlementSummary, tx).build();
   }
 
   @Bean

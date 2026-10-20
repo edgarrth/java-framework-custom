@@ -20,8 +20,12 @@ CLI en modo online y las automatizaciones.
 
 - Login OIDC para la UI (cookie CSRF para la SPA, CSP estricta) y JWT bearer para la CLI y las
   automatizaciones; solo los probes de health son anónimos.
-- Los repositorios de GitHub se crean con la autorización OAuth del propio usuario; los tokens no
-  se guardan.
+- Solo el registro `sso` inicia sesión: la página va directo al SSO, sin elegir proveedor, y el
+  login rechaza cualquier otro registro aunque su código llegue al callback de login.
+- Los repositorios de GitHub se crean con la autorización OAuth del propio usuario (registro
+  `github`, callback `/authorized/github`), guardada para el usuario ya autenticado; los tokens no
+  se guardan fuera de la sesión. Sin esa autorización, `POST /v1/projects/github` responde 403
+  con la URL `authorize`; la API nunca redirige.
 - La generación ocurre **en memoria**: sin directorios temporales ni rutas construidas con datos del
   usuario, con límites de tamaño para contratos y archivos.
 - Cada generación se audita y se cuenta (`axiz.initializr.generations` por arquetipo, estilo, stack
@@ -29,3 +33,18 @@ CLI en modo online y las automatizaciones.
 
 Se despliega con su propio chart (`axiz-initializr/deploy/helm`), con configuración en ConfigMaps y
 los secretos de cliente desde el ExternalSecret, por el mismo pipeline GitOps que un servicio.
+
+## Probarlo en local
+
+Con el demo levantado (su Keycloak tiene el cliente `axiz-initializr`):
+
+```bash
+cd axiz-tools
+./mvnw -pl axiz-initializr -am clean package -DskipTests
+java -jar axiz-initializr/target/axiz-initializr-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+```
+
+Abre <http://localhost:8090> e inicia sesión con `ana` / `local-only-ana`. El perfil `local` usa
+el puerto 8090 y un secreto de cliente `local-only`. Para el botón de GitHub hace falta una OAuth
+App propia con el callback `http://localhost:8090/authorized/github` (`AXIZ_GITHUB_CLIENT_ID`,
+`AXIZ_GITHUB_CLIENT_SECRET`).

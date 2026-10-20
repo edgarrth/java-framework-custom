@@ -3,7 +3,7 @@ site_description: Plataforma backend para microservicios Java 25 sobre Spring Bo
 site_url: https://docs.axiz.internal/
 repo_url: https://github.com/axiz/axiz-docs
 edit_uri: edit/main/docs/
-copyright: axiz · equipo de plataforma
+copyright: axiz, equipo de plataforma
 strict: true
 validation:
   omitted_files: warn

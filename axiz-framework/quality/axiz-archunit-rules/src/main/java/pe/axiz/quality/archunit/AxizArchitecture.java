@@ -54,10 +54,16 @@ public final class AxizArchitecture {
    * Imports production classes of the package and checks every rule, failing with all violations.
    */
   public static void verify(String basePackage, Style style) {
-    JavaClasses classes =
+    verify(
         new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-            .importPackages(basePackage);
+            .importPackages(basePackage),
+        basePackage,
+        style);
+  }
+
+  /** Checks every rule of the style on classes imported by the caller (own import options). */
+  public static void verify(JavaClasses classes, String basePackage, Style style) {
     List<String> failures = new ArrayList<>();
     for (ArchRule rule : rules(basePackage, style)) {
       var result = rule.allowEmptyShould(true).evaluate(classes);

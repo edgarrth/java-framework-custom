@@ -1,0 +1,17 @@
+name: test-report
+description: >-
+  Writes the test results of this run to the job summary: commit, JDK, the Maven command, and per
+  module the tests that passed, failed, had errors or were skipped, read from the Surefire and
+  Failsafe XML reports. Run it with "if: always()" after the build, so a failing build still
+  leaves its numbers. It reports, it never changes the result of the job.
+inputs:
+  command:
+    description: Maven command that produced the reports (shown as is)
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+      run: python3 "$GITHUB_ACTION_PATH/test_report.py" >> "$GITHUB_STEP_SUMMARY"

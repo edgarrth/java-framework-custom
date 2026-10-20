@@ -1,6 +1,6 @@
 {
   "uid": "axiz-red",
-  "title": "axiz · servicios (RED)",
+  "title": "axiz: servicios (RED)",
   "description": "Tasa, errores y duración de cada servicio: HTTP de entrada, casos de uso, commands y queries.",
   "tags": [
     "axiz"

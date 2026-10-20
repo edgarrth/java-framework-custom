@@ -40,11 +40,30 @@ trap 'red "demo.sh: unexpected failure (exit $?) at line $LINENO: $BASH_COMMAND"
 # true when something accepts connections on localhost:<port>
 port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
-# who holds a port: a container (name and image) or, when ss can tell, a process
+# reads `docker ps` lines (name, image, ports, compose project) and prints the container that
+# publishes host port $1. Docker writes ranges as one mapping ("0.0.0.0:4317-4318->4317-4318/tcp")
+# and exposed but unpublished ports without "->" ("5432/tcp"); both are taken into account
+published_by() {
+  awk -F'\t' -v p="$1" '{
+    n = split($3, maps, ", ")
+    for (i = 1; i <= n; i++) {
+      if (index(maps[i], "->") == 0) continue
+      host = maps[i]; sub(/->.*/, "", host); sub(/.*:/, "", host)
+      lo = host; hi = host
+      if (index(host, "-")) { split(host, r, "-"); lo = r[1]; hi = r[2] }
+      if (p + 0 >= lo + 0 && p + 0 <= hi + 0) {
+        project = ($4 == "") ? "" : ", compose project " $4
+        print $1 " (container, image " $2 project ")"; exit
+      }
+    }
+  }'
+}
+
+# who holds a port: a container (name, image and compose project) or, when ss can tell, a process
 port_owner() {
   local owner
-  owner=$(docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}' 2>/dev/null \
-    | awk -F'\t' -v p=":$1->" 'index($3, p) { print $1 " (container, image " $2 ")"; exit }')
+  owner=$(docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Label "com.docker.compose.project"}}' \
+    2>/dev/null | published_by "$1")
   if [ -z "$owner" ] && command -v ss >/dev/null; then
     owner=$(ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'users:(([^)]*' | head -1 | sed 's/users:((//' || true)
   fi
@@ -153,7 +172,7 @@ check_ports() {
     if port_busy "$p"; then
       owner=$(port_owner "$p")
       case "$owner" in
-        axiz-demo-*) ;;
+        *", compose project axiz-demo)") ;; # this demo's infrastructure, already running
         *-control-plane*) red "port $p (infrastructure) is taken by: $owner"; kind="${owner%% *}"; conflicts=1 ;;
         *) red "port $p (infrastructure) is taken by: $owner"; conflicts=1 ;;
       esac

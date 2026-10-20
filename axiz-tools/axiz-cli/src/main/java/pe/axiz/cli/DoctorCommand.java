@@ -120,11 +120,11 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                 + manifest.name()
                 + " ("
                 + manifest.archetype()
-                + " · "
+                + " / "
                 + manifest.framework().id()
-                + " · "
+                + " / "
                 + manifest.stack().id()
-                + " · axiz "
+                + " / axiz "
                 + manifest.axizVersion()
                 + ")"));
 

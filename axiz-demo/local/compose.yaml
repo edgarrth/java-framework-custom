@@ -58,6 +58,10 @@ services:
     entrypoint: ["/bin/bash", "/topics.sh"]
 
   # DynamoDB, S3, SQS, SNS, KMS and Secrets Manager
+  # Local state: LocalStack keeps nothing when its container is recreated, PostgreSQL keeps its
+  # data until "scripts/demo.sh down" (which removes both). Nothing depends on them being in step:
+  # the scenarios use their own ids per run, and rerunning a settlement file that was already
+  # loaded writes its summary again when S3 lost it.
   localstack:
     image: localstack/localstack:4.9
     ports: ["4566:4566"]

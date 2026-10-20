@@ -23,6 +23,8 @@ public final class MessageKeys {
   }
 
   /**
+   * Key of a message from its source and id (an id is only unique within its source).
+   *
    * @param source CloudEvents source
    * @param id CloudEvents id
    * @return {@code <source length>:<source>|<id>}, or {@code sha256:<hex>} when longer

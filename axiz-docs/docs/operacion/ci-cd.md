@@ -17,6 +17,11 @@ así un cambio de estándar llega a todos sin tocar cada repo.
 | `infra.yaml` | cambios en la infraestructura del servicio | Terraform: fmt, validate, Trivy config, plan en el PR, apply con aprobación |
 | Renovate | programado | PRs de dependencias y del parent de axiz (con la nota de `axiz upgrade`) |
 
+El repositorio del framework tiene además `samples-matrix.yaml` (nocturno): genera todas las
+combinaciones que ofrece el generador (arquetipo, framework, stack web y persistencia, `MODE=all`)
+y construye cada proyecto con su wrapper sin ninguna configuración de AWS en el entorno. El job
+`samples` de cada pull request construye solo los valores por defecto de cada arquetipo.
+
 ## El pipeline de un servicio
 
 ```mermaid

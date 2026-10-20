@@ -91,6 +91,12 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/Repository'}
               example: {repository: acme/payments-business, url: https://github.com/acme/payments-business}
+        '403':
+          description: The user has not authorized GitHub yet; open `authorize` in the browser and retry
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+              example: {type: "https://axiz.dev/problems/authorization-required", title: Authorization required, status: 403, registration: github, authorize: /oauth2/authorization/github}
         '422':
           description: The request cannot be generated
           content:
@@ -172,3 +178,5 @@ components:
         status: {type: integer}
         detail: {type: string}
         problems: {type: array, items: {type: string}}
+        registration: {type: string, description: OAuth client the user must authorize (403)}
+        authorize: {type: string, description: URL that starts that authorization in the browser (403)}

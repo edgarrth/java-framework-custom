@@ -173,6 +173,41 @@
         "profile",
         "tenant"
       ]
+    },
+    {
+      "clientId": "axiz-initializr",
+      "description": "axiz-initializr web UI (OIDC login, authorization code). Local only: run it with the local profile on port 8090",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "local-only-initializr",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8090/login/oauth2/code/sso"
+      ],
+      "webOrigins": [
+        "http://localhost:8090"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8090/*"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "profile"
+      ],
+      "protocolMappers": [
+        {
+          "name": "initializr-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "axiz-initializr",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "users": [

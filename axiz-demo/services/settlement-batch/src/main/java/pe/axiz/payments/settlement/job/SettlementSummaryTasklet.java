@@ -26,7 +26,8 @@ import pe.axiz.core.storage.ObjectStorage;
 /**
  * Last step: totals per currency and status of the loaded file, as business metrics ({@code
  * settlement.file}, with amounts) and as a JSON summary next to the file ({@code
- * out/settlement/<file>.summary.json}) for operations and reconciliation.
+ * out/settlement/<file>.summary.json}) for operations and reconciliation. A rerun of a file that
+ * was already loaded writes the summary again when it is missing ({@link #rewrite}).
  */
 public class SettlementSummaryTasklet implements Tasklet {
 
@@ -53,26 +54,40 @@ public class SettlementSummaryTasklet implements Tasklet {
                     .getJobParameters()
                     .get(SettlementJobConfiguration.INPUT_KEY),
             "input.key job parameter");
-    List<Total> totals =
-        jdbc.sql(
-                "SELECT currency, status, COUNT(*) AS n, SUM(amount) AS total"
-                    + " FROM settlement_line WHERE file_key = :key"
-                    + " GROUP BY currency, status ORDER BY currency, status")
-            .param("key", key)
-            .query(
-                (rs, i) ->
-                    new Total(
-                        rs.getString("currency").strip(),
-                        rs.getString("status"),
-                        rs.getLong("n"),
-                        rs.getBigDecimal("total")))
-            .list();
-    publish(key, totals);
+    publish(key, totals(key));
     return RepeatStatus.FINISHED;
   }
 
+  /** Whether the summary of a loaded file is in the bucket. */
+  public boolean exists(String fileKey) {
+    return storage.head(summaryKey(fileKey)).isPresent();
+  }
+
+  /**
+   * Writes the summary of a file that was loaded before again, from its rows (for example after the
+   * bucket lost it). Metrics are not recorded twice: they were recorded when the file was loaded.
+   */
+  public void rewrite(String fileKey) {
+    write(fileKey, totals(fileKey));
+  }
+
+  List<Total> totals(String key) {
+    return jdbc.sql(
+            "SELECT currency, status, COUNT(*) AS n, SUM(amount) AS total"
+                + " FROM settlement_line WHERE file_key = :key"
+                + " GROUP BY currency, status ORDER BY currency, status")
+        .param("key", key)
+        .query(
+            (rs, i) ->
+                new Total(
+                    rs.getString("currency").strip(),
+                    rs.getString("status"),
+                    rs.getLong("n"),
+                    rs.getBigDecimal("total")))
+        .list();
+  }
+
   void publish(String key, List<Total> totals) {
-    List<Map<String, Object>> rows = new ArrayList<>();
     for (Total t : totals) {
       metrics.record(
           MetricEvent.of("settlement.file")
@@ -80,6 +95,13 @@ public class SettlementSummaryTasklet implements Tasklet {
               .stage(t.status().toLowerCase(Locale.ROOT))
               .value(t.count())
               .outcome(Outcome.SUCCESS));
+    }
+    write(key, totals);
+  }
+
+  private void write(String key, List<Total> totals) {
+    List<Map<String, Object>> rows = new ArrayList<>();
+    for (Total t : totals) {
       Map<String, Object> row = new LinkedHashMap<>();
       row.put("currency", t.currency());
       row.put("status", t.status());

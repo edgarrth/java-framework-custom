@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProp
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -46,11 +47,14 @@ public class AxizEdaAutoConfiguration {
     @Bean
     static ReactiveEventHandlerPostProcessor axizReactiveEventHandlers(
         ObjectProvider<ReactiveTransactionManager> tx, Environment env) {
-      // a static post-processor cannot take @ConfigurationProperties, read the raw values
+      // a static post-processor cannot take @ConfigurationProperties: bind the values with Spring
+      // Boot's conversions ("100ms", "30s", relaxed names). Environment.getProperty(Duration) only
+      // works when the environment carries Boot's conversion service, not in every context
+      Binder binder = Binder.get(env);
       return new ReactiveEventHandlerPostProcessor(
           tx,
-          env.getProperty("axiz.eda.transactional", Boolean.class, true),
-          env.getProperty("axiz.eda.handler-timeout", Duration.class, Duration.ofSeconds(30)));
+          binder.bind("axiz.eda.transactional", Boolean.class).orElse(true),
+          binder.bind("axiz.eda.handler-timeout", Duration.class).orElse(Duration.ofSeconds(30)));
     }
   }
 

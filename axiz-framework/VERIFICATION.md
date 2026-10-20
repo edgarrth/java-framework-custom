@@ -1,5 +1,43 @@
 # Verificación de esta entrega
 
+## Qué se verificó y dónde (review26)
+
+La última ejecución con Maven real es la auditoría de código del 16 de octubre de 2026 sobre
+review24 (Fedora en WSL2, JDK 25.0.3, Docker y Testcontainers reales): 614 pruebas del framework,
+598 aprobadas, 5 fallos y 11 errores; el perfil `quality` no inicializaba Checkstyle. review26
+corrige esos hallazgos. Esta entrega se construyó en un entorno sin Maven Central, así que lo que
+sigue separa lo ejecutado aquí de lo que solo CI (o tu máquina) puede ejecutar. Desde review26 cada
+ejecución de CI publica en el resumen del job el commit, el JDK, el comando y las pruebas por módulo
+(`axiz-workflows/actions/test-report`).
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 139 módulos OK, 2 omitidos (`axiz-architecture-tests` y `axiz-test-spring-boot-starter`: necesitan `archunit-junit5`, Testcontainers y WireMock) |
+| Pruebas unitarias (capa 1, APIs de estilos, codegen, ArchUnit) | aquí, JUnit | 510 OK, 0 fallidas |
+| Cobertura JaCoCo 0.8.14 (agente) con los umbrales del perfil `quality` (líneas 0,80, ramas 0,70) | aquí, en los módulos cuyas pruebas corren aquí | 60 módulos medidos, todos sobre los umbrales (el menor: 0,81 de líneas y 0,70 de ramas); antes de review26 quedaban 15 por debajo, entre ellos 3 de los 4 que reportó la auditoría (el cuarto, `cache-redis`, no corre aquí: sus 4 ramas quedan cubiertas por la prueba nueva de paginación del SCAN) |
+| Pruebas de contexto de Spring de las auto-configuraciones (`ApplicationContextRunner`) | solo CI | compilan; no se ejecutaron aquí y su cobertura no se midió |
+| Checkstyle 14.2 | solo CI | la configuración se validó contra las fuentes de Checkstyle 14.2.0 (cada módulo y propiedad existe); no se ejecutó |
+| Error Prone + NullAway | solo CI | los 21 avisos de la auditoría se corrigieron en el código, sin suprimirlos; no se ejecutó |
+| Convergencia de dependencias y clases duplicadas | solo CI | JSpecify 1.0.1 y exclusión de `aopalliance`; no se ejecutó |
+| SpotBugs, PIT, Spotless | solo CI | no se ejecutaron |
+| Integración con contenedores (`*IT`, store contracts reales) | CI o una máquina con Docker | no se ejecutaron |
+| Proyectos generados (29 combinaciones) | aquí compilan main y pruebas; CI nocturno (`samples-matrix.yaml`) los construye con Maven sin configuración de AWS | aquí: los 29 compilan main y pruebas con las plantillas de review26 |
+
+Cómo se corrigió cada hallazgo de la auditoría y qué prueba lo reproduce:
+
+| Hallazgo | Corrección | Prueba |
+|---|---|---|
+| H01 Checkstyle 14.2 sin `JavadocStyle` | `SummaryJavadoc` sin exigir punto final; 3 Javadoc sin descripción completados | configuración validada contra las fuentes 14.2.0 |
+| H02 NullAway, JSpecify, cobertura | código sin nulos implícitos (saga con resultados tipados, codegen, ids, tenancy, cifrado); JSpecify 1.0.1; `aopalliance` excluido; pruebas nuevas en `cache-redis`, `logging` (proveedor SLF4J de pruebas que captura cada línea), `batch-api`, `eda-api`, `core-test`, `storage-s3`, `persistence-dynamodb`, `persistence-jpa`, `observability-awssdk`, `messaging-sns`, `inbox`, `inbox-dynamodb`, `outbox-r2dbc`, `store-contracts` (los contratos fallan con stores rotos), `domain` y `archunit-rules` | cobertura medida aquí; los umbrales no cambiaron |
+| H03 Failsafe después de `repackage` | `classesDirectory` en `target/classes` | CI (`*IT`) |
+| H04 `SsmClient` sin región | Parameter Store sigue a `axiz.config.parameter-store.enabled` | `AxizConfigEnvironmentPostProcessorTest.parameterStoreClientsExistOnlyWhenParameterStoreIsUsed` (CI) |
+| H05 `sort` inválido daba 500 | violación del campo `sort` y 400 | `WebTest` (ambos stacks, CI) |
+| H06 inglés con idioma por defecto `es-PE` | `messages_en.properties` del framework | `I18nTest` (aquí) |
+| H07 fixtures desactualizados | llaves de idempotencia válidas, `FakeR2dbc` con tipos, saga con rechazo e incertidumbre, duraciones con el binder de Boot | aquí lo que no necesita Spring; el resto en CI |
+| H10 evidencia | esta sección y `actions/test-report` | |
+
+## Verificaciones de entregas anteriores
+
 El entorno donde se construyó no tenía acceso a Maven Central, así que `./mvnw verify` no pudo
 ejecutarse aquí: corre en CI (`.github/workflows/ci.yaml`, que además genera y construye un
 servicio por arquetipo). Localmente se verificó con `javac` (JDK 21 con `--release` compatible) y
@@ -8,7 +46,7 @@ Kafka, Lettuce, Reactor, R2DBC (SPI, pool, PostgreSQL), Spring Data R2DBC, Nimbu
 ArchUnit, y stubs de compilación generados solo para
 dependencias opcionales de esas librerías (nunca para código de axiz).
 
-## Resultado
+### Resultado
 
 | Qué | Resultado |
 |---|---|
@@ -16,7 +54,7 @@ dependencias opcionales de esas librerías (nunca para código de axiz).
 | Pruebas unitarias ejecutadas | 449 OK, 0 fallidas (capa 1, APIs de los estilos, codegen, reglas ArchUnit), más 9 del store Redis ejecutadas compilando Lettuce desde fuentes |
 | Auto-configuraciones y starters de estilos (capa 2/3) | 43 compilan código y pruebas; las pruebas de contexto (`ApplicationContextRunner`) se ejecutan en CI |
 | Starters (solo dependencias), plantillas, archetypes | 36 verificados por estructura |
-| Proyectos generados (todas las combinaciones válidas: 27 servicios + library + starter, incluidos `business · cqrs · reactive · aurora` y `event-processor · eda · reactive · aurora` sobre R2DBC) | compilan main y test; `ArchitectureTest` OK en los 27 servicios; pruebas unitarias de los generados reactivos con Aurora OK |
+| Proyectos generados (todas las combinaciones válidas: 27 servicios + library + starter, incluidos `business / cqrs / reactive / aurora` y `event-processor / eda / reactive / aurora` sobre R2DBC) | compilan main y test; `ArchitectureTest` OK en los 27 servicios; pruebas unitarias de los generados reactivos con Aurora OK |
 | Charts generados y del demo (105 renders: cada chart × dev/qa/prod) | kubeconform estricto (Kubernetes 1.33) y kube-linter 0.7.6 sin hallazgos |
 | Workflows | actionlint + shellcheck sin hallazgos; acciones de terceros fijadas por SHA |
 | Reglas del framework (`FrameworkArchitectureTest`) | 6 reglas OK sobre todas las clases compiladas (capa 1 Java puro, `-api` sin Spring ni Reactor, starters aislados, sin ciclos) |
@@ -44,7 +82,7 @@ dependencias opcionales de esas librerías (nunca para código de axiz).
 | Wrapper de Maven | `.github/scripts/test-mvnw.sh`: sin checksum fijado en modo estricto falla, checksum publicado OK, checksum fijado OK, distribución alterada rechazada y no descomprimida; con Maven en caché el modo estricto también exige el checksum fijado |
 | Formato | google-java-format sobre todo el código; ninguna línea supera 120 columnas fuera de imports/URLs |
 
-## Omitido localmente (corre en CI)
+### Omitido localmente (corre en CI)
 
 - `axiz-architecture-tests` y `axiz-test-spring-boot-starter`: necesitan `archunit-junit5`,
   Testcontainers y WireMock en tiempo de ejecución.
@@ -63,7 +101,7 @@ dependencias opcionales de esas librerías (nunca para código de axiz).
   Maven Central): el wrapper lo verifica contra el `.sha512` publicado y el release exige fijarlo
   con `./mvnw --pin-checksum`.
 
-## Cómo reproducir en CI o en una máquina con Nexus
+### Cómo reproducir en CI o en una máquina con Nexus
 
 ```bash
 ./mvnw -Pquality verify                 # framework completo con todos los gates

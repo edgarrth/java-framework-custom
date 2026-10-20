@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Framework;
@@ -178,7 +179,8 @@ public final class ArtifactGenerator {
       return new Result(files, Map.of(), Map.of(), dependencies, notes);
     }
     @SuppressWarnings("unchecked")
-    Map<String, Object> a = (Map<String, Object>) c.get("artifact");
+    Map<String, Object> a =
+        (Map<String, Object>) Objects.requireNonNull(c.get("artifact"), "artifact");
     Map<String, String> appended = new LinkedHashMap<>();
     String line = "error." + a.get("code") + "=" + a.get("title") + "\n";
     appended.put("src/main/resources/messages.properties", line);

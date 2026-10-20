@@ -53,5 +53,12 @@
       <artifactId>spring-webflux</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- the servlet test context (WebApplicationContextRunner) needs the Servlet API; the module
+         itself never requires it, which is what the reactive test checks -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

@@ -27,7 +27,8 @@ import pe.axiz.core.time.BusinessCalendar;
 /**
  * Entry point of the CronJob: works out which file to load and runs the job under a cluster lock
  * (ShedLock on Aurora), so a manual run never overlaps the scheduled one. The process exit code is
- * the job's: 0 when the file was loaded (or had already been), 1 when it failed.
+ * the job's: 0 when the file was loaded (or had already been), 1 when it failed. A file that was
+ * already loaded is not loaded again; its summary is written again if it is missing.
  */
 @Component
 @EnableConfigurationProperties(SettlementProperties.class)
@@ -41,6 +42,7 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
   private final LockingTaskExecutor locks;
   private final SettlementProperties properties;
   private final BusinessCalendar calendar;
+  private final SettlementSummaryTasklet summary;
   private final Clock clock;
   private final AtomicInteger exitCode = new AtomicInteger();
 
@@ -50,18 +52,34 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
       LockProvider lockProvider,
       SettlementProperties properties,
       BusinessCalendar calendar,
+      SettlementSummaryTasklet summary,
       Clock clock) {
     this.jobs = jobs;
     this.settlementJob = settlementJob;
     this.locks = new DefaultLockingTaskExecutor(lockProvider);
     this.properties = properties;
     this.calendar = calendar;
+    this.summary = summary;
     this.clock = clock;
   }
 
   @Override
   public void run(ApplicationArguments args) {
-    String key = inputKey();
+    if (!properties.runOnStartup()) {
+      log.info("settlement.run-on-startup is false: no file is loaded at startup");
+      return;
+    }
+    exitCode.set(load(inputKey()));
+  }
+
+  /**
+   * Loads one file under the cluster lock.
+   *
+   * @param key object key of the file in the bucket
+   * @return 0 when it was loaded, had already been loaded or another replica is loading it; 1 when
+   *     it failed
+   */
+  public int load(String key) {
     LockingTaskExecutor.TaskResult<Integer> result;
     try {
       result =
@@ -71,16 +89,14 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
                   clock.instant(), LOCK, properties.maxDuration(), Duration.ZERO));
     } catch (Throwable e) {
       log.error("Settlement job could not run for {}", key, e);
-      exitCode.set(1);
-      return;
+      return 1;
     }
     if (!result.wasExecuted()) {
       log.warn("Settlement job is already running elsewhere; nothing to do");
-      exitCode.set(0);
-      return;
+      return 0;
     }
     Integer code = result.getResult();
-    exitCode.set(code == null ? 1 : code);
+    return code == null ? 1 : code;
   }
 
   int launch(String key) throws Exception {
@@ -94,6 +110,11 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
       return execution.getStatus() == BatchStatus.COMPLETED ? 0 : 1;
     } catch (JobInstanceAlreadyCompleteException e) {
       log.info("Settlement file {} was already loaded", key);
+      if (!summary.exists(key)) {
+        // e.g. the bucket was recreated: the rows are the source of truth, the summary follows them
+        log.warn("Summary of {} is missing; writing it again from the loaded rows", key);
+        summary.rewrite(key);
+      }
       return 0;
     }
   }

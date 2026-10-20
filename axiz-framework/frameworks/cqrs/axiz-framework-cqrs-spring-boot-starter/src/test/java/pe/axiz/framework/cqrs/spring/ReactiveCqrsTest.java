@@ -109,7 +109,7 @@ class ReactiveCqrsTest {
             ctx -> {
               ReactiveCommandBus commands = ctx.getBean(ReactiveCommandBus.class);
               ReactiveQueryBus queries = ctx.getBean(ReactiveQueryBus.class);
-              PayCommand command = new PayCommand("p-1", "key-00000001");
+              PayCommand command = new PayCommand("p-1", "idempotency-key-00000001");
 
               Mono<String> anonymous = commands.send(command);
               assertThrows(AccessException.class, () -> anonymous.block(T));

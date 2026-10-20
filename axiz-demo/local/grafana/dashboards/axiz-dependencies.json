@@ -1,6 +1,6 @@
 {
   "uid": "axiz-dependencies",
-  "title": "axiz · dependencias",
+  "title": "axiz: dependencias",
   "description": "Llamadas salientes: clientes HTTP y SOAP por nombre lógico, servicios de AWS y bases de datos.",
   "tags": [
     "axiz"

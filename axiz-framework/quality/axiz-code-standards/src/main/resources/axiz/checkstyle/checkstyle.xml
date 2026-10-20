@@ -148,9 +148,11 @@
       <property name="skipAnnotations" value="Generated"/>
       <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, RECORD_DEF, ANNOTATION_DEF"/>
     </module>
-    <module name="JavadocStyle">
-      <property name="checkEmptyJavadoc" value="true"/>
-      <property name="checkFirstSentence" value="false"/>
+    <!-- Every Javadoc has a description. JavadocStyle no longer exists (removed in Checkstyle 13.9 in
+         favor of SummaryJavadoc); an empty period keeps the rule it had here: a description is
+         required, its first sentence does not have to end with a period -->
+    <module name="SummaryJavadoc">
+      <property name="period" value=""/>
     </module>
     <module name="NonEmptyAtclauseDescription"/>
     <module name="AtclauseOrder"/>

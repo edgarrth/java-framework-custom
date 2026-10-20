@@ -77,4 +77,23 @@ class AxizConfigEnvironmentPostProcessorTest {
             () -> new RequiredPropertiesVerifier(env, List.of("a", "b", "c")).afterPropertiesSet());
     assertEquals(true, e.getMessage().contains("b, c"));
   }
+
+  @Test
+  void parameterStoreClientsExistOnlyWhenParameterStoreIsUsed() {
+    // no SsmClient (and no AWS region needed) unless the service turns Parameter Store on
+    MockEnvironment laptop = new MockEnvironment();
+    epp.postProcessEnvironment(laptop, new SpringApplication());
+    assertEquals("false", laptop.getProperty("spring.cloud.aws.parameterstore.enabled"));
+
+    // the switch may come from the service's own configuration, read when it is bound
+    MockEnvironment enabled = cluster();
+    epp.postProcessEnvironment(enabled, new SpringApplication());
+    enabled.setProperty("axiz.config.parameter-store.enabled", "true");
+    assertEquals("true", enabled.getProperty("spring.cloud.aws.parameterstore.enabled"));
+
+    MockEnvironment explicit =
+        new MockEnvironment().withProperty("spring.cloud.aws.parameterstore.enabled", "true");
+    epp.postProcessEnvironment(explicit, new SpringApplication());
+    assertEquals("true", explicit.getProperty("spring.cloud.aws.parameterstore.enabled"));
+  }
 }
