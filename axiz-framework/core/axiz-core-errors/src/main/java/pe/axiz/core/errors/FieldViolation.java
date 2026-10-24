@@ -1,5 +1,6 @@
 package pe.axiz.core.errors;
 
+import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -11,7 +12,8 @@ import org.jspecify.annotations.Nullable;
  * @param rejectedValue masked rejected value, if safe to show
  */
 public record FieldViolation(
-    String field, String code, String message, @Nullable String rejectedValue) {
+    String field, String code, String message, @Nullable String rejectedValue)
+    implements Serializable {
 
   public static FieldViolation of(String field, String code, String message) {
     return new FieldViolation(field, code, message, null);

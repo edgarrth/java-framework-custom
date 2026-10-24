@@ -1,7 +1,9 @@
 package pe.axiz.framework.batch.spring;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +34,15 @@ class StorageRecordItemReaderTest {
     assertEquals("3", restarted.read());
     assertNull(restarted.read());
     restarted.close();
+  }
+
+  @Test
+  void closingAReaderThatNeverOpenedIsHarmlessAndAMissingFileIsNamed() throws Exception {
+    InMemoryObjectStorage storage = new InMemoryObjectStorage();
+    StorageRecordItemReader<String> reader = reader(storage);
+    reader.close();
+    Exception missing = assertThrows(Exception.class, () -> reader.open(new ExecutionContext()));
+    assertThat(missing).hasStackTraceContaining("in/file.csv");
   }
 
   private static StorageRecordItemReader<String> reader(InMemoryObjectStorage storage) {

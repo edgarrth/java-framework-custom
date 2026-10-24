@@ -50,7 +50,14 @@ public final class InMemoryByteCache implements ByteCache {
       map.remove(key, e);
       return Optional.empty();
     }
-    return Optional.of(new CachedValue(e.value, Duration.between(now, e.expiresAt)));
+    return Optional.of(CachedValue.expiringIn(e.value, Duration.between(now, e.expiresAt)));
+  }
+
+  /** The clock that expires the entries, in nanoseconds. */
+  @Override
+  public long ticks() {
+    Instant now = clock.instant();
+    return now.getEpochSecond() * 1_000_000_000L + now.getNano();
   }
 
   @Override

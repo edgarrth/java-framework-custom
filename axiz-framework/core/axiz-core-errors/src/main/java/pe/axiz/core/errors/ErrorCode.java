@@ -1,5 +1,6 @@
 package pe.axiz.core.errors;
 
+import java.io.Serializable;
 import java.util.regex.Pattern;
 
 /**
@@ -8,7 +9,7 @@ import java.util.regex.Pattern;
  *
  * @param value code text
  */
-public record ErrorCode(String value) {
+public record ErrorCode(String value) implements Serializable {
 
   private static final Pattern FORMAT =
       Pattern.compile("^[A-Z][A-Z0-9]{1,9}-[A-Z0-9]{2,20}-\\d{4}$");

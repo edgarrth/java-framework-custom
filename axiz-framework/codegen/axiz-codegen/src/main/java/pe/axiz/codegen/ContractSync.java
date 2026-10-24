@@ -16,6 +16,7 @@ import pe.axiz.codegen.openapi.ContractDiff;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
+import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.TemplateSet;
@@ -138,7 +139,7 @@ public final class ContractSync {
       }
       Path target = dir.resolve(path);
       if (!Files.exists(target)) {
-        Files.createDirectories(target.getParent());
+        Files.createDirectories(SafePaths.parentOf(target));
         Files.write(target, e.getValue());
         created.add(path);
       } else if (adapterFile && !Arrays.equals(Files.readAllBytes(target), e.getValue())) {
@@ -146,7 +147,7 @@ public final class ContractSync {
         proposed.add(path + PROPOSAL);
       }
     }
-    Files.createDirectories(snapshot.getParent());
+    Files.createDirectories(SafePaths.parentOf(snapshot));
     Files.writeString(snapshot, text, StandardCharsets.UTF_8);
     manifest.withOperations(ids).write(dir);
     return new Result(added, removed, created, proposed, changes, findings, true);

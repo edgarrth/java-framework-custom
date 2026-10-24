@@ -51,10 +51,37 @@ class IdentifiersTest {
     "phone, +51 987 654 321, true",
     "phone, 987654321, false",
     "email, Ana.Perez@Example.COM, true",
-    "email, ana@@example.com, false"
+    "email, ana@@example.com, false",
+    "email, ana.maria+pagos@correo.banco.pe, true",
+    "email, a-1@b-2.c3.pe, true",
+    "email, ana.example.com, false",
+    "email, @example.com, false",
+    "email, ana..maria@example.com, false",
+    "email, ana.@example.com, false",
+    "email, ana@example, false",
+    "email, ana@example.c, false",
+    "email, ana@example.p3, false",
+    "email, ana@-example.com, false",
+    "email, ana@example-.com, false",
+    "email, ana@exa_mple.com, false",
+    "email, ana@example..com, false"
   })
   void validates(String type, String value, boolean valid) {
     assertEquals(valid, registry.isValid(type, value), type + " " + value);
+  }
+
+  @Test
+  void emailLabelsAndLengthHaveTheirLimits() {
+    String label63 = "b".repeat(63);
+    assertEquals(true, registry.isValid("email", "a@" + label63 + ".pe"));
+    assertEquals(false, registry.isValid("email", "a@" + label63 + "b.pe"));
+    assertEquals(true, registry.isValid("email", "a@b." + "c".repeat(63)));
+    assertEquals(false, registry.isValid("email", "a@b." + "c".repeat(64)));
+    String domain = String.join(".", "d".repeat(60), "d".repeat(60), "d".repeat(60), "pe");
+    assertEquals(
+        true, registry.isValid("email", "a".repeat(254 - 1 - domain.length()) + "@" + domain));
+    assertEquals(
+        false, registry.isValid("email", "a".repeat(255 - 1 - domain.length()) + "@" + domain));
   }
 
   @Test

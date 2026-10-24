@@ -130,6 +130,83 @@ class SensitiveTest {
   }
 
   @Test
+  void aLongJsonValueIsMaskedWithoutExhaustingTheStack() {
+    JsonTextMasker masker = new JsonTextMasker(ObjectMasker.defaults());
+    String document = "QUJD".repeat(50_000);
+    String json = "{\"document\":\"" + document + "\",\"password\":\"" + document + "\"}";
+    String masked = masker.mask(json, OutputChannel.LOG);
+    assertEquals("{\"document\":\"" + document + "\",\"password\":\"****\"}", masked);
+  }
+
+  @Test
+  void onlyCompleteJsonPairsAreRead() {
+    JsonTextMasker masker = new JsonTextMasker(ObjectMasker.defaults());
+    assertEquals(
+        "{\"pin\":\"****\",\"pin\":\"****\"x,\"pin\":\"****\".,\"ok\":false}",
+        masker.mask(
+            "{\"pin\":-12.5e+3,\"pin\" : 1E2x,\"pin\":7.,\"ok\":false}", OutputChannel.LOG));
+    assertEquals(
+        "{\"pin\":\"****\"}", masker.mask("{\"pin\":true}", OutputChannel.LOG), "a boolean value");
+    String notPairs = "{\"pin\":-x, \"pin\" 1, \"p\\in\":1, \"\":1, \"pin\":null, \"pin\":\"open";
+    assertEquals(notPairs, masker.mask(notPairs, OutputChannel.LOG));
+    String longKey = "{\"" + "k".repeat(101) + "\":\"4111111111111111\"}";
+    assertEquals(
+        longKey, masker.mask(longKey, OutputChannel.LOG), "keys longer than 100 are skipped");
+    String escaped = "{\"password\":\"a\\\"b\\\\\"}";
+    assertEquals("{\"password\":\"****\"}", masker.mask(escaped, OutputChannel.LOG));
+    String escapedLineBreak = "{\"password\":\"a\\\nb\"}";
+    assertEquals(escapedLineBreak, masker.mask(escapedLineBreak, OutputChannel.LOG));
+  }
+
+  @Test
+  void aKeyOfUpToOneHundredCharactersIsRead() {
+    String key100 = "k".repeat(100);
+    String key101 = "k".repeat(101);
+    ObjectMasker masker =
+        new ObjectMasker(
+            MaskingPolicy.defaults(),
+            SensitiveKeys.withExtra(
+                Map.of(
+                    key100,
+                    new SensitiveField(key100, SensitivityLevel.HIGH, MaskType.DOCUMENT),
+                    key101,
+                    new SensitiveField(key101, SensitivityLevel.HIGH, MaskType.DOCUMENT))));
+    JsonTextMasker json = new JsonTextMasker(masker);
+    assertEquals(
+        "{\"" + key100 + "\":\"*****6789\"}",
+        json.mask("{\"" + key100 + "\":\"123456789\"}", OutputChannel.LOG));
+    String skipped = "{\"" + key101 + "\":\"123456789\"}";
+    assertEquals(skipped, json.mask(skipped, OutputChannel.LOG));
+  }
+
+  @Test
+  void jsonWhitespaceAndEscapedLineBreaksFollowTheRules() {
+    JsonTextMasker masker = new JsonTextMasker(ObjectMasker.defaults());
+    for (String space : List.of(" ", "\t", "\n", "\u000B", "\f", "\r")) {
+      assertEquals(
+          "{\"pin\":\"****\"}",
+          masker.mask("{\"pin\"" + space + ":" + space + "1234}", OutputChannel.LOG),
+          "whitespace " + (int) space.charAt(0));
+    }
+    for (String lineBreak : List.of("\n", "\r", "\u0085", "\u2028", "\u2029")) {
+      String text = "{\"pin\":\"12\\" + lineBreak + "34\"}";
+      assertEquals(
+          text, masker.mask(text, OutputChannel.LOG), "line break " + (int) lineBreak.charAt(0));
+    }
+    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":\"12\\t34\"}", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"12\\", masker.mask("{\"pin\":\"12\\", OutputChannel.LOG));
+    assertEquals("{\"pin\"", masker.mask("{\"pin\"", OutputChannel.LOG));
+    assertEquals("{\"pin\":", masker.mask("{\"pin\":", OutputChannel.LOG));
+    assertEquals("\"pin", masker.mask("\"pin", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":-0}", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"****\"e}", masker.mask("{\"pin\":12e}", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"****\"e+}", masker.mask("{\"pin\":12e+}", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":12e-3}", OutputChannel.LOG));
+    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":false}", OutputChannel.LOG));
+    assertEquals("{\"pin\":fals}", masker.mask("{\"pin\":fals}", OutputChannel.LOG));
+  }
+
+  @Test
   void customKeys() {
     SensitiveKeys keys =
         SensitiveKeys.withExtra(

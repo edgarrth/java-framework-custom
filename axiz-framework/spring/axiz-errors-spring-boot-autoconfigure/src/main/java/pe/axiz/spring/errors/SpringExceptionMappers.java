@@ -118,19 +118,19 @@ final class SpringExceptionMappers {
       List<FieldViolation> out = new ArrayList<>();
       hmve.getParameterValidationResults()
           .forEach(
-              r ->
-                  r.getResolvableErrors()
-                      .forEach(
-                          e ->
-                              out.add(
-                                  FieldViolation.of(
-                                      r.getMethodParameter().getParameterName() == null
-                                          ? "parameter"
-                                          : r.getMethodParameter().getParameterName(),
-                                      e.getCodes() == null || e.getCodes().length == 0
-                                          ? "Invalid"
-                                          : last(e.getCodes()),
-                                      message(e.getDefaultMessage())))));
+              r -> {
+                String parameter = r.getMethodParameter().getParameterName();
+                r.getResolvableErrors()
+                    .forEach(
+                        e -> {
+                          String[] codes = e.getCodes();
+                          out.add(
+                              FieldViolation.of(
+                                  parameter == null ? "parameter" : parameter,
+                                  codes == null || codes.length == 0 ? "Invalid" : last(codes),
+                                  message(e.getDefaultMessage())));
+                        });
+              });
       return Optional.of(new ValidationException(out));
     }
     if (SERVLET) {

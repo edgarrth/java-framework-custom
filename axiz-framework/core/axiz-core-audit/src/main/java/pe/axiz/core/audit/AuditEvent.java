@@ -39,15 +39,36 @@ public record AuditEvent(
     @Nullable String tenant,
     Map<String, @Nullable Object> details) {
 
-  public AuditEvent {
-    Objects.requireNonNull(id);
-    Objects.requireNonNull(occurredAt);
-    Objects.requireNonNull(service);
-    Objects.requireNonNull(action);
-    Objects.requireNonNull(resourceType);
-    Objects.requireNonNull(actor);
-    Objects.requireNonNull(outcome);
-    details = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(details));
+  // An explicit canonical constructor, not a compact one: javac does not write the @Nullable of a
+  // type argument on the parameters of a compact constructor, so callers in other modules would
+  // see Map<String, Object> and NullAway would reject details with null values.
+  public AuditEvent(
+      String id,
+      Instant occurredAt,
+      String service,
+      String action,
+      String resourceType,
+      @Nullable String resourceId,
+      Actor actor,
+      Outcome outcome,
+      @Nullable String errorCode,
+      @Nullable String correlationId,
+      @Nullable String channel,
+      @Nullable String tenant,
+      Map<String, @Nullable Object> details) {
+    this.id = Objects.requireNonNull(id);
+    this.occurredAt = Objects.requireNonNull(occurredAt);
+    this.service = Objects.requireNonNull(service);
+    this.action = Objects.requireNonNull(action);
+    this.resourceType = Objects.requireNonNull(resourceType);
+    this.resourceId = resourceId;
+    this.actor = Objects.requireNonNull(actor);
+    this.outcome = Objects.requireNonNull(outcome);
+    this.errorCode = errorCode;
+    this.correlationId = correlationId;
+    this.channel = channel;
+    this.tenant = tenant;
+    this.details = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(details));
   }
 
   /** CloudEvents type of audit events on every transport (the action travels in the data). */

@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.openapi.SafeYaml;
+import pe.axiz.codegen.output.SafePaths;
 
 /**
  * The {@code .axiz/project.yaml} manifest of a generated project: what the CLI needs to generate
@@ -105,7 +106,7 @@ public record ProjectManifest(
     }
     operations.forEach(o -> b.append("  - ").append(o).append('\n'));
     Path file = dir.resolve(PATH);
-    Files.createDirectories(file.getParent());
+    Files.createDirectories(SafePaths.parentOf(file));
     Files.writeString(file, b.toString(), StandardCharsets.UTF_8);
   }
 

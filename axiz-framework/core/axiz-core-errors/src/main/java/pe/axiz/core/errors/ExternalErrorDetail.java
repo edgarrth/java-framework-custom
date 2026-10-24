@@ -1,5 +1,6 @@
 package pe.axiz.core.errors;
 
+import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -13,7 +14,8 @@ import org.jspecify.annotations.Nullable;
  * @param body raw body (truncated to {@link #MAX_BODY}), may be empty but never null
  */
 public record ExternalErrorDetail(
-    String system, int status, @Nullable String code, @Nullable String message, String body) {
+    String system, int status, @Nullable String code, @Nullable String message, String body)
+    implements Serializable {
 
   public static final int MAX_BODY = 2048;
 

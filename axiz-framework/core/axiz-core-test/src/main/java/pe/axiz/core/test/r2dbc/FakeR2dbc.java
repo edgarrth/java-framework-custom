@@ -308,8 +308,9 @@ public final class FakeR2dbc implements ConnectionFactory {
                     Collections.unmodifiableMap(new LinkedHashMap<>(types)),
                     connection));
             Rule r = rule(sql);
-            if (r.update() != null) {
-              return new FakeResult(r.update().apply(copy), List.of());
+            Function<Map<Integer, @Nullable Object>, Long> update = r.update();
+            if (update != null) {
+              return new FakeResult(update.apply(copy), List.of());
             }
             return new FakeResult(0L, Objects.requireNonNull(r.query()).apply(copy));
           });

@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.cache.AxizCacheable;
 import pe.axiz.core.cache.ByteCache;
+import pe.axiz.core.cache.CacheKeys;
 import pe.axiz.core.cache.InMemoryByteCache;
 import pe.axiz.core.cache.TwoLevelCache;
 import reactor.core.publisher.Flux;
@@ -185,7 +186,9 @@ class CacheContractTest {
           lookup.find("9");
           String key =
               caches.prefix()
-                  + ":lookup:k2:"
+                  + ":lookup:"
+                  + CacheKeys.FORMAT
+                  + ":"
                   + AxizCacheableInterceptor.signature(Lookup.class.getMethod("find", String.class))
                   + ":s=9";
           assertTrue(caches.store().get(key).isPresent(), key);

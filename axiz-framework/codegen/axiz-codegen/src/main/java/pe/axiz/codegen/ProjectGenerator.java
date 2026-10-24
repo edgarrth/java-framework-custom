@@ -54,11 +54,12 @@ public final class ProjectGenerator {
    */
   public GeneratedProject generate(ProjectRequest request) {
     RequestValidator.Result result = validator.validate(request);
-    if (!result.valid() || result.archetype() == null) {
+    Archetype archetype = result.archetype();
+    if (!result.valid() || archetype == null) {
       throw new GenerationException(result.problems(), result.findings());
     }
-    Map<String, Object> context = context(request, result.archetype(), result.contract());
-    String set = result.archetype().isService() ? "service" : result.archetype().kind();
+    Map<String, Object> context = context(request, archetype, result.contract());
+    String set = archetype.isService() ? "service" : archetype.kind();
     return new GeneratedProject(
         request.name(), JavaFormatter.formatAll(TemplateSet.load(set).render(context)));
   }
@@ -190,11 +191,13 @@ public final class ProjectGenerator {
 
     Map<String, Object> api = new LinkedHashMap<>();
     api.put("present", contract != null);
-    api.put("text", r.openApi() == null ? "" : r.openApi());
+    String openApi = r.openApi();
+    api.put("text", openApi == null ? "" : openApi);
     api.put("title", contract == null ? "" : contract.title());
     api.put("version", contract == null ? "" : contract.version());
-    api.put("asyncapi", r.asyncApi() == null ? "" : r.asyncApi());
-    api.put("hasAsyncapi", r.asyncApi() != null && !r.asyncApi().isBlank());
+    String asyncApi = r.asyncApi();
+    api.put("asyncapi", asyncApi == null ? "" : asyncApi);
+    api.put("hasAsyncapi", asyncApi != null && !asyncApi.isBlank());
     c.put("api", api);
 
     List<Map<String, Object>> operations = new ArrayList<>();
@@ -660,16 +663,11 @@ public final class ProjectGenerator {
     o.put("hasInput", !components.isEmpty());
     o.put("commandName", className + "Command");
     o.put("queryName", className + "Query");
-    o.put("hasExample", op.requestExample() != null);
-    o.put("exampleJson", op.requestExample() == null ? "" : op.requestExample());
-    o.put(
-        "exampleTestable",
-        op.requestExample() != null && request != null && !request.startsWith("List<"));
-    o.put(
-        "example",
-        op.requestExample() == null
-            ? ""
-            : op.requestExample().replace("\\", "\\\\").replace("\"", "\\\""));
+    String example = op.requestExample();
+    o.put("hasExample", example != null);
+    o.put("exampleJson", example == null ? "" : example);
+    o.put("exampleTestable", example != null && request != null && !request.startsWith("List<"));
+    o.put("example", example == null ? "" : example.replace("\\", "\\\\").replace("\"", "\\\""));
     o.put("modelPackage", basePackage + ".api.model");
     return o;
   }

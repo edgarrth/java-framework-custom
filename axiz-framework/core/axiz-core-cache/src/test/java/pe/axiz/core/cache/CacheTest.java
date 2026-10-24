@@ -84,6 +84,13 @@ class CacheTest {
       return delegate.get(key);
     }
 
+    /** Like Redis: the value and its remaining time in one read. */
+    @Override
+    public Optional<CachedValue> getWithTtl(String key) {
+      check();
+      return delegate.getWithTtl(key);
+    }
+
     @Override
     public void put(String key, byte[] value, Duration ttl) {
       check();
@@ -99,6 +106,35 @@ class CacheTest {
     @Override
     public long evictByPrefix(String prefix) {
       check();
+      return delegate.evictByPrefix(prefix);
+    }
+  }
+
+  /** A tier that keeps the default {@code getWithTtl}: it cannot tell when an entry expires. */
+  static final class NoTtlCache implements ByteCache {
+    final InMemoryByteCache delegate;
+
+    NoTtlCache(Clock clock) {
+      delegate = new InMemoryByteCache(100, clock);
+    }
+
+    @Override
+    public Optional<byte[]> get(String key) {
+      return delegate.get(key);
+    }
+
+    @Override
+    public void put(String key, byte[] value, Duration ttl) {
+      delegate.put(key, value, ttl);
+    }
+
+    @Override
+    public void evict(String key) {
+      delegate.evict(key);
+    }
+
+    @Override
+    public long evictByPrefix(String prefix) {
       return delegate.evictByPrefix(prefix);
     }
   }
@@ -226,7 +262,7 @@ class CacheTest {
   }
 
   @Test
-  void aCopyLivesTheL1LimitWhenL2HasMoreTimeLeftOrCannotTell() {
+  void aCopyLivesTheL1LimitWhenL2HasMoreTimeLeftAndNoneWhenItCannotTell() {
     MutableClock clock = new MutableClock();
     InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
     InMemoryByteCache l2 = new InMemoryByteCache(10, clock);
@@ -239,12 +275,147 @@ class CacheTest {
     clock.now = clock.now.plusSeconds(2);
     assertTrue(cache.get("k").isEmpty(), "past the L1 limit");
 
-    FlakyCache unknown = new FlakyCache(clock); // no remaining TTL: the L1 limit applies
-    TwoLevelCache other =
-        new TwoLevelCache(new InMemoryByteCache(10, clock), unknown, Duration.ofSeconds(3));
-    unknown.delegate.put("u", new byte[] {2}, Duration.ofMinutes(5));
-    assertTrue(other.get("u").isPresent());
+    NoTtlCache unknown = new NoTtlCache(clock); // cannot tell the expiration: no local copy
+    InMemoryByteCache otherL1 = new InMemoryByteCache(10, clock);
+    TwoLevelCache other = new TwoLevelCache(otherL1, unknown, Duration.ofSeconds(3));
+    unknown.put("u", new byte[] {2}, Duration.ofMinutes(5));
+    assertTrue(other.get("u").isPresent(), "the value is still returned");
+    assertTrue(otherL1.get("u").isEmpty(), "but never copied without a known expiration");
     assertTrue(other.getWithTtl("u").orElseThrow().remaining().isEmpty());
+  }
+
+  /** An L2 that answers with a fixed expiration while the read takes a controlled time. */
+  static final class SlowL2 implements ByteCache {
+    final long[] nanos;
+    final long readNanos;
+    final CachedValue answer;
+
+    SlowL2(long[] nanos, long readNanos, CachedValue answer) {
+      this.nanos = nanos;
+      this.readNanos = readNanos;
+      this.answer = answer;
+    }
+
+    @Override
+    public Optional<CachedValue> getWithTtl(String key) {
+      nanos[0] += readNanos; // the answer arrives this much later
+      return Optional.of(answer);
+    }
+
+    @Override
+    public Optional<byte[]> get(String key) {
+      return Optional.of(answer.value());
+    }
+
+    @Override
+    public void put(String key, byte[] value, Duration ttl) {}
+
+    @Override
+    public void evict(String key) {}
+
+    @Override
+    public long evictByPrefix(String prefix) {
+      return 0;
+    }
+  }
+
+  @Test
+  void aSlowAnswerFromL2CannotStretchTheExpiration() {
+    MutableClock clock = new MutableClock();
+    long[] nanos = {0};
+    InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
+    // L2 had 1 s left when it read the key, the answer took 1.5 s to arrive: nothing to copy
+    TwoLevelCache late =
+        new TwoLevelCache(
+            l1,
+            new SlowL2(
+                nanos,
+                1_500_000_000L,
+                CachedValue.expiringIn(new byte[] {1}, Duration.ofSeconds(1))),
+            Duration.ofSeconds(30),
+            () -> nanos[0]);
+    assertTrue(late.get("k").isPresent(), "the value was valid when L2 read it");
+    assertTrue(l1.get("k").isEmpty(), "an answer with no time left is not copied");
+
+    // 10 s left, the read took 4 s: the copy lives 6 s, not 10
+    InMemoryByteCache l1b = new InMemoryByteCache(10, clock);
+    TwoLevelCache slow =
+        new TwoLevelCache(
+            l1b,
+            new SlowL2(
+                nanos,
+                4_000_000_000L,
+                CachedValue.expiringIn(new byte[] {2}, Duration.ofSeconds(10))),
+            Duration.ofSeconds(30),
+            () -> nanos[0]);
+    assertTrue(slow.get("k").isPresent());
+    clock.now = clock.now.plusSeconds(5);
+    assertTrue(l1b.get("k").isPresent());
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(l1b.get("k").isEmpty(), "the copy expired with the original, read time included");
+  }
+
+  @Test
+  void aDelayMeasuredByTheClockOfL1AlsoCounts() {
+    MutableClock clock = new MutableClock();
+    InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
+    InMemoryByteCache store = new InMemoryByteCache(10, clock);
+    ByteCache delayed =
+        new ByteCache() {
+          @Override
+          public Optional<CachedValue> getWithTtl(String key) {
+            Optional<CachedValue> measured = store.getWithTtl(key);
+            clock.now = clock.now.plusSeconds(2); // the answer arrives 2 s after L2 measured it
+            return measured;
+          }
+
+          @Override
+          public Optional<byte[]> get(String key) {
+            return store.get(key);
+          }
+
+          @Override
+          public void put(String key, byte[] value, Duration ttl) {
+            store.put(key, value, ttl);
+          }
+
+          @Override
+          public void evict(String key) {
+            store.evict(key);
+          }
+
+          @Override
+          public long evictByPrefix(String prefix) {
+            return store.evictByPrefix(prefix);
+          }
+        };
+    // the production constructor: only the L1 clock sees the delay
+    TwoLevelCache cache = new TwoLevelCache(l1, delayed, Duration.ofSeconds(3));
+    cache.put("k", new byte[] {1}, Duration.ofSeconds(10));
+    clock.now = clock.now.plusSeconds(9);
+    assertTrue(cache.get("k").isPresent(), "valid when L2 read it, at 9 s");
+    clock.now = clock.now.plusMillis(500);
+    assertTrue(store.get("k").isEmpty());
+    assertTrue(cache.get("k").isEmpty(), "at 11.5 s the copy may not outlive the 10 s deadline");
+    assertEquals(l1.ticks(), cache.ticks(), "local copies expire by the L1 clock");
+  }
+
+  @Test
+  void anEntryWithoutExpirationIsCopiedForTheL1Limit() {
+    MutableClock clock = new MutableClock();
+    long[] nanos = {0};
+    InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
+    TwoLevelCache cache =
+        new TwoLevelCache(
+            l1,
+            new SlowL2(nanos, 0, CachedValue.withoutExpiry(new byte[] {3})),
+            Duration.ofSeconds(3),
+            () -> nanos[0]);
+    assertTrue(cache.get("k").isPresent());
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(l1.get("k").isPresent());
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(l1.get("k").isEmpty());
   }
 
   @Test

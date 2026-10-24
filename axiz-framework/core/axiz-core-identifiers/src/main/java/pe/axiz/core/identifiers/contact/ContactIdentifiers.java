@@ -33,10 +33,11 @@ public final class ContactIdentifiers implements IdentifierTypeProvider {
   /** Email address (pragmatic RFC 5322 subset, at most 254 characters). */
   public static final IdentifierType EMAIL =
       new IdentifierType() {
-        private static final Pattern FORMAT =
-            Pattern.compile(
-                "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*"
-                    + "@([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]{2,63}$");
+        // The address is split at '@' and '.', and each part is checked with a pattern without
+        // nested repetition, so the check is linear in the length of the address.
+        private static final Pattern LOCAL_PART = Pattern.compile("^[a-z0-9!#$%&'*+/=?^_`{|}~-]+$");
+        private static final Pattern LABEL = Pattern.compile("^[a-z0-9-]{1,63}$");
+        private static final Pattern TOP_LEVEL = Pattern.compile("^[a-z]{2,63}$");
 
         @Override
         public String name() {
@@ -50,7 +51,28 @@ public final class ContactIdentifiers implements IdentifierTypeProvider {
 
         @Override
         public boolean isValid(String v) {
-          return v.length() <= 254 && FORMAT.matcher(v).matches();
+          int at = v.indexOf('@');
+          if (v.length() > 254 || at < 0) {
+            return false;
+          }
+          for (String atom : v.substring(0, at).split("\\.", -1)) {
+            if (!LOCAL_PART.matcher(atom).matches()) {
+              return false;
+            }
+          }
+          String[] labels = v.substring(at + 1).split("\\.", -1);
+          if (labels.length < 2 || !TOP_LEVEL.matcher(labels[labels.length - 1]).matches()) {
+            return false;
+          }
+          for (int i = 0; i < labels.length - 1; i++) {
+            String label = labels[i];
+            if (!LABEL.matcher(label).matches()
+                || label.charAt(0) == '-'
+                || label.charAt(label.length() - 1) == '-') {
+              return false;
+            }
+          }
+          return true;
         }
 
         @Override

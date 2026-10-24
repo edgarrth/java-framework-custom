@@ -41,6 +41,9 @@
     <aws-msk-iam-auth.version>2.3.8</aws-msk-iam-auth.version>
     <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
     <openfeature.version>1.23.0</openfeature.version>
+    <!-- newer patch than the Spring Boot BOM manages: ArchUnit and the OpenFeature SDK require it,
+         so the whole SLF4J family is aligned through its BOM (imported before Spring Boot's) -->
+    <slf4j.version>2.0.19</slf4j.version>
     <!-- annotations the OpenFeature SDK classes carry; same version as the root build's SpotBugs -->
     <spotbugs.version>4.10.3</spotbugs.version>
     <archunit.version>1.5.1</archunit.version>
@@ -166,6 +169,13 @@
         <groupId>software.amazon.awssdk</groupId>
         <artifactId>bom</artifactId>
         <version>${awssdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-bom</artifactId>
+        <version>${slf4j.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

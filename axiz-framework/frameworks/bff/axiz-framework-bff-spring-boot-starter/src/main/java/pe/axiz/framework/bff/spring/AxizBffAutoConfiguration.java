@@ -24,7 +24,9 @@ public class AxizBffAutoConfiguration {
     // Boot's binder converts "500ms" or "3s" in any context (Environment.getProperty only when the
     // environment carries Boot's conversion service)
     Duration timeout =
-        Binder.get(env).bind("axiz.bff.timeout", Duration.class).orElse(Duration.ofSeconds(3));
+        Binder.get(env)
+            .bind("axiz.bff.timeout", Duration.class)
+            .orElseGet(() -> Duration.ofSeconds(3));
     return new Compositions(snapshots, timeout);
   }
 }

@@ -9,18 +9,24 @@ public ExchangeRate rate(String currency) { ... }
 
 - Dos niveles: L1 local (acotado, TTL corto para que las réplicas converjan) y L2 Redis
   (ElastiCache/Valkey) cuando hay conexión.
-- Llaves `<servicio>:<caché>:k2:<método>:<argumentos>`: la firma del método (clase, nombre y tipos
+- Llaves `<servicio>:<caché>:k3:<método>:<argumentos>`: la firma del método (clase, nombre y tipos
   de parámetros) separa sobrecargas y métodos distintos, y cada argumento lleva su tipo (`"7"` y
   `7`, `null` y `"-"` nunca comparten llave). Dos métodos comparten entradas solo si lo declaran
   con `keyName`. Se aceptan textos, números, booleanos, enums, UUID, valores de `java.time`,
-  `Currency`, `Locale`, `byte[]`, colecciones, mapas, `Optional`, records y tipos que implementan
+  `Currency`, `Locale`, arreglos, colecciones, mapas, `Optional`, records y tipos que implementan
   `CacheKeyPart`; cualquier otro objeto se rechaza, porque su `toString()` no es una identidad
-  estable. `k2` es la versión del formato: un cambio de formato cambia todas las llaves y las
-  entradas viejas expiran solas.
+  estable. Arreglos y colecciones llevan su clase en la llave: `int[]{7}`, `Integer[]{7}`,
+  `List.of(7)` y un `ArrayDeque` con 7 son llaves distintas, igual que lo serían los argumentos.
+  `k3` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
+  viejas expiran solas.
 - Valores serializados en JSON y **single flight**: un valor que falta se carga una sola vez
   aunque lo pidan muchos hilos.
 - Una copia que L1 toma de L2 nunca vive más que el original: su TTL es el menor entre lo que le
-  queda en Redis (`PTTL`, en el mismo script que la lectura) y el límite de L1.
+  queda en Redis (`PTTL`, en el mismo script que la lectura), descontado el tiempo que tardó la
+  lectura (medido con reloj monotónico), y el límite de L1. Si la respuesta llegó cuando el original
+  ya vencía, no se copia. Una entrada sin expiración en Redis se copia por el límite de L1; si el
+  nivel remoto no puede decir cuándo vence (un `ByteCache` propio sin `getWithTtl`), el valor se
+  devuelve pero no se copia a L1.
 - En reactivo funciona sobre `Mono` y `Flux`. Si Redis no responde, la caché se degrada (se llama a
   la fuente) en lugar de fallar.
 - Programático con `AxizCache.getOrLoad(key, type, loader)` y `evict(key)`; TTL por caché en

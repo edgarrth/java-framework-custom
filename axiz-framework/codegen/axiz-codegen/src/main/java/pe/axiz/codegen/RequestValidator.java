@@ -141,12 +141,13 @@ public final class RequestValidator {
       }
     }
     if (a.rest()) {
-      if (r.openApi() == null || r.openApi().isBlank()) {
+      String openApi = r.openApi();
+      if (openApi == null || openApi.isBlank()) {
         problems.add(
             "Archetype " + a.name() + " exposes REST: an OpenAPI 3.1 contract is required");
       } else {
         try {
-          contract = OpenApiDocument.parse(r.openApi());
+          contract = OpenApiDocument.parse(openApi);
           findings.addAll(OpenApiLinter.lint(contract));
         } catch (IllegalArgumentException e) {
           problems.add(e.getMessage());

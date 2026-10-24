@@ -46,10 +46,10 @@ public abstract class BaseEntity {
     if (this == o) {
       return true;
     }
-    if (o == null || effectiveClass(this) != effectiveClass(o)) {
+    if (!(o instanceof BaseEntity other) || effectiveClass(this) != effectiveClass(other)) {
       return false;
     }
-    return id.equals(((BaseEntity) o).id);
+    return id.equals(other.id);
   }
 
   @Override

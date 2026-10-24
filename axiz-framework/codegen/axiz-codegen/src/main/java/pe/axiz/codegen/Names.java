@@ -9,8 +9,10 @@ import java.util.regex.Pattern;
 public final class Names {
 
   private static final Pattern WORDS = Pattern.compile("[^A-Za-z0-9]+|(?<=[a-z0-9])(?=[A-Z])");
-  private static final Pattern ARTIFACT = Pattern.compile("^[a-z][a-z0-9]*(-[a-z0-9]+)*$");
-  private static final Pattern PACKAGE = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$");
+  // Each character is matched by exactly one alternative and a separator must be followed by a
+  // valid start, so the match is linear in the length of the text (no nested repetition).
+  private static final Pattern ARTIFACT = Pattern.compile("^[a-z](?:[a-z0-9]|-(?=[a-z0-9]))*$");
+  private static final Pattern PACKAGE = Pattern.compile("^[a-z](?:[a-z0-9_]|\\.(?=[a-z]))*$");
 
   private Names() {}
 

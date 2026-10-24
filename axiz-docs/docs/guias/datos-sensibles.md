@@ -42,7 +42,9 @@ Desde `axiz.sensitive.full-mask-level` (por defecto `CRITICAL`) el valor siempre
 completo. Para datos sin
 anotaciones (mapas, cuerpos HTTP crudos, headers) `axiz.sensitive.keys` declara nombres de
 propiedades o headers sensibles con su nivel y máscara; `JsonTextMasker` los enmascara dentro del
-JSON sin parsearlo.
+JSON sin parsearlo. Lo lee en una sola pasada, en tiempo lineal y sin recursión, así que un cuerpo
+con valores largos (un documento en base64, por ejemplo) se enmascara igual que uno corto: el
+cuerpo se enmascara completo y recién después se trunca para el log.
 
 ## Logs
 

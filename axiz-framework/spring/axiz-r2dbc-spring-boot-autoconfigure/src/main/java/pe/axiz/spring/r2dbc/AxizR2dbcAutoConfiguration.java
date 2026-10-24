@@ -73,7 +73,7 @@ public class AxizR2dbcAutoConfiguration {
             iam,
             Binder.get(env)
                 .bind("spring.r2dbc.properties", Bindable.mapOf(String.class, String.class))
-                .orElse(Map.of()),
+                .orElseGet(Map::of),
             decorators.orderedStream().toList()));
   }
 

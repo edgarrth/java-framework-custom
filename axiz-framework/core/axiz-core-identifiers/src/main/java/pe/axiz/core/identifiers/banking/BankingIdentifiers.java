@@ -24,8 +24,8 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
       };
 
   /**
-   * Inter-bank account code with control digits verified: the first over bank and branch, the second
-   * over the account number (alternating 1-2 weights). Use it when the issuing banks of your
+   * Inter-bank account code with control digits verified: the first over bank and branch, the
+   * second over the account number (alternating 1-2 weights). Use it when the issuing banks of your
    * ecosystem follow that scheme.
    */
   public static final IdentifierType CCI_STRICT =

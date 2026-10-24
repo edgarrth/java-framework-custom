@@ -148,11 +148,12 @@ public final class ArtifactGenerator {
     if (type.equals("migration") && !aurora) {
       throw new IllegalArgumentException("Flyway migrations need Aurora persistence");
     }
-    if (type.equals("error-code") && options.category() != null) {
-      if (!ERROR_CATEGORIES.contains(options.category().toUpperCase(Locale.ROOT))) {
-        throw new IllegalArgumentException(
-            "Unknown error category " + options.category() + "; use one of " + ERROR_CATEGORIES);
-      }
+    String requestedCategory = options.category();
+    if (type.equals("error-code")
+        && requestedCategory != null
+        && !ERROR_CATEGORIES.contains(requestedCategory.toUpperCase(Locale.ROOT))) {
+      throw new IllegalArgumentException(
+          "Unknown error category " + requestedCategory + "; use one of " + ERROR_CATEGORIES);
     }
     Map<String, Object> c = context(project, type, name, options, existingErrors, migrationVersion);
     String kind = type.equals("event-handler") ? "handler" : type;
@@ -328,14 +329,13 @@ public final class ArtifactGenerator {
     String target = typeName(options.target());
     a.put("targetSimple", target.substring(target.lastIndexOf('.') + 1));
     a.put("hasMapping", options.source() != null && options.target() != null);
-    String category =
-        options.category() == null ? "UNPROCESSABLE" : options.category().toUpperCase(Locale.ROOT);
-    a.put("category", category);
+    String requestedCategory = options.category();
     a.put(
-        "title",
-        options.title() == null
-            ? String.join(" ", Names.words(simple))
-            : options.title().replace("\"", "'"));
+        "category",
+        requestedCategory == null ? "UNPROCESSABLE" : requestedCategory.toUpperCase(Locale.ROOT));
+    String title = options.title();
+    a.put(
+        "title", title == null ? String.join(" ", Names.words(simple)) : title.replace("\"", "'"));
     a.put("constant", Names.snake(simple).toUpperCase(Locale.ROOT));
     a.put(
         "code",

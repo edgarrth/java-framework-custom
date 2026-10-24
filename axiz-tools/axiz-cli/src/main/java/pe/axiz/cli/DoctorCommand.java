@@ -20,6 +20,7 @@ import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
+import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.PomEditor;
 import pe.axiz.codegen.project.ProjectManifest;
 import picocli.CommandLine.Command;
@@ -207,8 +208,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
         }
       }
       if (manifest.isService()
-          && all.stream()
-              .noneMatch(p -> p.getFileName().toString().equals("ArchitectureTest.java"))) {
+          && all.stream().noneMatch(p -> SafePaths.fileName(p).equals("ArchitectureTest.java"))) {
         out.add(new Check(Level.WARN, "No ArchitectureTest: the style rules are not enforced"));
       }
     }
@@ -221,7 +221,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                 .filter(
                     f ->
                         f.toString().endsWith(".md")
-                            && !f.getFileName().toString().equals("template.md"))
+                            && !SafePaths.fileName(f).equals("template.md"))
                 .sorted()
                 .toList()) {
           if (Files.readString(p, StandardCharsets.UTF_8)

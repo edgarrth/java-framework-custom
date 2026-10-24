@@ -11,11 +11,22 @@ public interface ByteCache {
   Optional<byte[]> get(String key);
 
   /**
-   * The value and the time it still has to live, read together. A tier that cannot tell returns an
-   * unknown remaining time; {@link TwoLevelCache} then keeps a local copy for at most its L1 limit.
+   * The value and what the tier knows about its expiration, read together (one round trip). A tier
+   * that cannot tell returns {@link CachedValue#unknownExpiry}; {@link TwoLevelCache} then keeps no
+   * local copy, so it never serves a value past an expiration it does not know.
    */
   default Optional<CachedValue> getWithTtl(String key) {
-    return get(key).map(v -> new CachedValue(v, null));
+    return get(key).map(CachedValue::unknownExpiry);
+  }
+
+  /**
+   * A reading, in nanoseconds, of the clock this tier expires entries with. Only differences
+   * between two readings mean something. {@link TwoLevelCache} times each L2 read with it too, so
+   * the copy it keeps here is measured in the same time base that will expire it. The default is
+   * the monotonic clock of the JVM, the one Caffeine uses.
+   */
+  default long ticks() {
+    return System.nanoTime();
   }
 
   /** Stores the value with a TTL applied to the very same key. */

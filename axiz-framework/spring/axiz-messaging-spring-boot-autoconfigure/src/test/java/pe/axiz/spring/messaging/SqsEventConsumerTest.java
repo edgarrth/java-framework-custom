@@ -107,7 +107,7 @@ class SqsEventConsumerTest {
     return Message.builder().messageId("m-1").receiptHandle("r-1").body(body).build();
   }
 
-  private static String validBody() {
+  static String validBody() {
     return CloudEventJson.write(
         new EventEnvelope(
             "e-1",

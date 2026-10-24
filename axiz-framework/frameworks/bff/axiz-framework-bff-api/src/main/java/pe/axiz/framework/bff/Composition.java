@@ -14,9 +14,12 @@ import org.jspecify.annotations.Nullable;
  */
 public record Composition(Map<String, @Nullable Object> values, List<String> degraded) {
 
-  public Composition {
-    values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
-    degraded = List.copyOf(degraded);
+  // An explicit canonical constructor, not a compact one: javac does not write the @Nullable of a
+  // type argument on the parameters of a compact constructor, so callers in other modules would
+  // see Map<String, Object> and NullAway would reject a map with null values.
+  public Composition(Map<String, @Nullable Object> values, List<String> degraded) {
+    this.values = Collections.unmodifiableMap(new LinkedHashMap<>(values));
+    this.degraded = List.copyOf(degraded);
   }
 
   public <T> @Nullable T get(String part, Class<T> type) {

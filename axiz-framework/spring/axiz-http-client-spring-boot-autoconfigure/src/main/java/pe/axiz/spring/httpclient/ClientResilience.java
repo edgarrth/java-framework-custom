@@ -85,10 +85,10 @@ public final class ClientResilience {
       int status,
       int attempt,
       long firstStartNanos) {
-    if (failure instanceof ExternalServiceException e
-        && e.external() != null
-        && ("circuit-open".equals(e.external().code())
-            || "bulkhead-full".equals(e.external().code()))) {
+    ExternalErrorDetail detail =
+        failure instanceof ExternalServiceException e ? e.external() : null;
+    if (detail != null
+        && ("circuit-open".equals(detail.code()) || "bulkhead-full".equals(detail.code()))) {
       return false;
     }
     Throwable reason =

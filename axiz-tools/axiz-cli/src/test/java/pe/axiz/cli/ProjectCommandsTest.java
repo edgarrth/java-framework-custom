@@ -167,6 +167,17 @@ class ProjectCommandsTest {
   }
 
   @Test
+  void versionsAreReleaseNumbersWithAnOptionalSuffix() {
+    for (String valid : List.of("1.2.0", "10.20.30", "1.2.0-SNAPSHOT", "1.2.0-rc.1")) {
+      assertTrue(UpgradeCommand.isVersion(valid), valid);
+    }
+    for (String invalid :
+        List.of("", "1.2", "1.2.0.", "v1.2.0", "1.2.0-", "1.2.0-rc_1", "1.2.0-rc-1", "latest!")) {
+      assertFalse(UpgradeCommand.isVersion(invalid), invalid);
+    }
+  }
+
+  @Test
   void localEnvironment(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     CliHarness h = new CliHarness();

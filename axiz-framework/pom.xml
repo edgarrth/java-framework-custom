@@ -538,6 +538,19 @@
                         <ignoreClass>module-info</ignoreClass>
                         <ignoreClass>META-INF.versions.*</ignoreClass>
                       </ignoreClasses>
+                      <dependencies>
+                        <!-- wiremock-standalone (the test starter) shades the JSpecify annotations
+                             without relocating them. They are the same four annotations as
+                             jspecify 1.0.1 and only matter at compile time; nothing else that
+                             jar shades overlaps with the platform. -->
+                        <dependency>
+                          <groupId>org.wiremock</groupId>
+                          <artifactId>wiremock-standalone</artifactId>
+                          <ignoreClasses>
+                            <ignoreClass>org.jspecify.annotations.*</ignoreClass>
+                          </ignoreClasses>
+                        </dependency>
+                      </dependencies>
                     </banDuplicateClasses>
                   </rules>
                 </configuration>

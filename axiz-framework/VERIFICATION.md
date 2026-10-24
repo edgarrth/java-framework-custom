@@ -1,5 +1,93 @@
 # Verificación de esta entrega
 
+## Qué se verificó y dónde (review31)
+
+La corrida de `-Pquality` sobre review30 falló solo en Spotless de una prueba de
+`axiz-soap-spring-boot-autoconfigure`. Verificado aquí: google-java-format 1.30.0 con Java 25.0.3
+y sin reacomodar textos largos, igual que Spotless, sobre todo el código de framework,
+herramientas y demo: un solo archivo cambia, el que señaló tu corrida. El detalle está en
+
+## Qué se verificó y dónde (review30)
+
+review30 responde a la corrida de `mvn -Pquality verify` sobre review29 del 24 de octubre de 2026
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 139 módulos OK, 2 omitidos (los mismos de siempre) |
+| Pruebas unitarias | aquí, JUnit | 586 OK, 0 fallidas (`axiz-core-soap`: 15, seis nuevas) |
+| Starters cambiados | aquí, arnés de Spring | BFF 4/4, auditoría 11/12 (la de SQS, por el stub del arnés; ver review28) |
+| Error Prone 2.49.0 + NullAway 0.14.1, leyendo los demás módulos desde sus clases compiladas como Maven | aquí, 106 módulos con código de producción | 0 errores y 0 avisos; `axiz-featureflags` y `axiz-test-spring-boot-starter` no se pueden compilar aquí por librerías que faltan (pasaron en tu corrida) |
+| SpotBugs 4.10.4 + Find Security Bugs 1.14.0 | aquí, módulos cambiados | sin avisos nuevos |
+| Checkstyle 14.2.0, google-java-format 1.30.0 | aquí | sin hallazgos ni cambios pendientes |
+| PIT, `-Pquality` completo, `*IT` con Docker | solo CI o tu máquina | no se ejecutaron aquí |
+
+Cobertura de `axiz-core-soap`: 0,93 / 0,93 (líneas / ramas).
+
+## Qué se verificó y dónde (review29)
+
+review29 responde a la corrida de `mvn -Pquality verify` sobre review28 del 24 de octubre de 2026
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 139 módulos OK, 2 omitidos (los mismos de review28) |
+| Pruebas unitarias (capa 1, APIs de estilos, codegen) | aquí, JUnit | 580 OK, 0 fallidas |
+| Pruebas de los starters y autoconfiguraciones cambiados | aquí, arnés de Spring | errors 12/14 (las dos de siempre, ver review28), idempotency 24/24, r2dbc 21/21, messaging 23/23, cache 11/11, http-client 9/9, storage 5/5, BFF 4/4, EDA 5/5 |
+| SpotBugs 4.10.4 + Find Security Bugs 1.14.0, configuración del proyecto | aquí, framework, CLI y demo | 0 de prioridad alta; de prioridad media quedan solo los justificados en el sustento (SQL con nombre de tabla validado, SHA-1 del perfil WS-Security, variación de reintentos, referencia a la contraseña de R2DBC, procesos del CLI) |
+| Checkstyle 14.2.0 | aquí | sin hallazgos en el reactor |
+| google-java-format 1.30.0 más `formatAnnotations` | aquí | sin cambios pendientes |
+| Error Prone 2.49.0 + NullAway 0.14.1 en el código de producción cambiado | aquí | 0 errores, 0 avisos |
+| PIT, `-Pquality` completo, `*IT` con Docker | solo CI o tu máquina | no se ejecutaron aquí |
+
+Cobertura de los módulos que la corrida encontró bajo el umbral (líneas / ramas): `axiz-core-soap`
+0,92 / 0,93 y `axiz-idempotency-spring-boot-autoconfigure` 0,84 / 0,77. De los que no alcanzó a
+medir: `axiz-lock-spring-boot-autoconfigure` 0,85 / 1,00 y `axiz-soap-spring-boot-autoconfigure`
+0,98 / 0,89.
+
+Defecto real encontrado: `JsonTextMasker` lanzaba `StackOverflowError` con un valor de texto de
+unos 5.000 caracteres en el cuerpo que se registraba; ahora lee el cuerpo en una sola pasada.
+
+## Qué se verificó y dónde (review28)
+
+review28 responde a la validación del 23 de octubre de 2026 sobre review27, hecha con Maven y
+Docker reales: 845/845 pruebas del framework, pero el perfil `quality` terminó en `BUILD FAILURE`
+(nueve módulos bajo JaCoCo, tres archivos de Spotless, tres violaciones de Enforcer) y tres pruebas
+nuevas de límites de caché fallaban. Este entorno sigue sin Maven Central; lo que sigue separa lo
+ejecutado aquí de lo que solo CI (o tu máquina) puede ejecutar.
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 139 módulos OK, 2 omitidos (`axiz-architecture-tests` y `axiz-test-spring-boot-starter`: ArchUnit JUnit, Testcontainers y WireMock) |
+| Pruebas unitarias (capa 1, APIs de estilos, codegen) | aquí, JUnit | 557 OK, 0 fallidas |
+| Pruebas de límites de caché de la validación (`CorrectionEdgeCasesTest`, sin cambios en sus aserciones) | aquí, JUnit | 3/3 OK (antes 0/3) |
+| Checkstyle 14.2.0 | aquí | sin hallazgos en el reactor |
+| google-java-format 1.30.0 más el paso `formatAnnotations` de Spotless | aquí, todo el reactor | sin cambios pendientes |
+| Error Prone 2.49.0 + NullAway 0.14.1 en el código de producción cambiado | aquí | 0 errores, 0 avisos |
+| Enforcer (`banDuplicateClasses`, `requireUpperBoundDeps`) | revisión de POM | JSpecify de WireMock declarado, AOP Alliance excluido, `slf4j-api` 2.0.19; Enforcer corre en CI |
+| Cobertura | aquí, JaCoCo 0.8.14 | ver la tabla siguiente |
+| `-Pquality` completo, PIT, SpotBugs, `*IT` con Docker | solo CI o tu máquina | no se ejecutaron aquí |
+
+Cobertura medida aquí (líneas / ramas). El arnés compila Spring desde fuentes; cuando le falta una
+clase que Spring carga por nombre, la prueba afectada falla aquí aunque pase con Maven, y la cifra
+de aquí es un mínimo. El detalle por módulo y las pruebas que solo corren con Maven están en
+
+| Módulo | Validación del 23 de octubre | Ahora |
+|---|---|---|
+| `axiz-core-sequence-dynamodb` | 0,95 / 0,50 | 1,00 / 1,00 |
+| `axiz-audit-spring-boot-autoconfigure` | 0,50 / 0,42 | 0,94 / 0,88 |
+| `axiz-errors-spring-boot-autoconfigure` | 0,83 / 0,67 | 0,89 / 0,84 |
+| `axiz-http-client-spring-boot-autoconfigure` | 0,59 / 0,45 | 0,84 / 0,81 |
+| `axiz-logging-spring-boot-autoconfigure` | 0,57 / 0,36 | 1,00 / 0,79 |
+| `axiz-messaging-spring-boot-autoconfigure` | 0,44 / 0,26 | 0,88 / 0,72 |
+| `axiz-metrics-spring-boot-autoconfigure` | 0,63 / 0,38 | 0,98 / 0,88 |
+| `axiz-observability-spring-boot-autoconfigure` | 0,58 / 0,50 | 1,00 / 0,81 |
+| `axiz-r2dbc-spring-boot-autoconfigure` | 0,53 / 0,52 | 0,96 / 0,87 |
+| Starters de batch, BFF, CQRS, EDA, hexagonal y layered | no medidos (omitidos) | entre 0,89 y 1,00 / entre 0,80 y 1,00 |
+| `axiz-inbox`, `axiz-outbox`, `axiz-scheduling`, `axiz-sequence`, `axiz-saga` (autoconfigure) | no medidos (omitidos) | entre 0,89 y 1,00 / entre 0,75 y 1,00 |
+
+Corrección de comportamiento encontrada al escribir las pruebas: Apache HttpClient reenviaba una
+vez cualquier request respondido con 429 o 503, `POST` incluido; sus reintentos automáticos quedan
+apagados y solo reintenta el interceptor de axiz (llamadas idempotentes).
+
 ## Qué se verificó y dónde (review27)
 
 review27 aplica tres auditorías independientes sobre review26 (informe técnico con 9 hallazgos,

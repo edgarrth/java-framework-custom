@@ -1,5 +1,6 @@
 package pe.axiz.core.security;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -7,7 +8,9 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Authenticated caller, built from the access token claims.
+ * Authenticated caller, built from the access token claims. It is serializable because Spring
+ * Security keeps the authentication in the HTTP session when the service uses one; the claims it
+ * copies are serializable values, as in the token itself.
  *
  * @param subject end user id ({@code sub}); null for machine-to-machine tokens
  * @param clientId calling application ({@code azp} or {@code client_id})
@@ -26,7 +29,8 @@ public record AxizPrincipal(
     Set<String> scopes,
     Set<String> roles,
     @Nullable String tenantId,
-    Map<String, Object> attributes) {
+    Map<String, Object> attributes)
+    implements Serializable {
 
   public AxizPrincipal {
     Objects.requireNonNull(clientId, "clientId");

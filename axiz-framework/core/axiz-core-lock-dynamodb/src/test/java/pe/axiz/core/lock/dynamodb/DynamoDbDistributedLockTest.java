@@ -1,6 +1,8 @@
 package pe.axiz.core.lock.dynamodb;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
@@ -24,6 +26,8 @@ class DynamoDbDistributedLockTest {
 
   static final class FakeDynamo implements DynamoDbClient {
     final Map<String, Map<String, AttributeValue>> items = new HashMap<>();
+    PutItemRequest lastPut;
+    UpdateItemRequest lastUpdate;
 
     private static ConditionalCheckFailedException failed() {
       return ConditionalCheckFailedException.builder().message("condition").build();
@@ -37,6 +41,7 @@ class DynamoDbDistributedLockTest {
       if (existing != null && Long.parseLong(existing.get("leaseUntil").n()) >= now) {
         throw failed();
       }
+      lastPut = r;
       items.put(pk, new HashMap<>(r.item()));
       return PutItemResponse.builder().build();
     }
@@ -49,6 +54,8 @@ class DynamoDbDistributedLockTest {
         throw failed();
       }
       existing.put("leaseUntil", r.expressionAttributeValues().get(":until"));
+      existing.put("ttl", r.expressionAttributeValues().get(":ttl"));
+      lastUpdate = r;
       return UpdateItemResponse.builder().build();
     }
 
@@ -104,5 +111,63 @@ class DynamoDbDistributedLockTest {
     assertTrue(dynamo.items.containsKey("account:1"));
     b.release();
     assertFalse(dynamo.items.containsKey("account:1"));
+  }
+
+  private static Clock at(Instant[] now) {
+    return new Clock() {
+      @Override
+      public java.time.ZoneId getZone() {
+        return ZoneOffset.UTC;
+      }
+
+      @Override
+      public Clock withZone(java.time.ZoneId zone) {
+        return this;
+      }
+
+      @Override
+      public Instant instant() {
+        return now[0];
+      }
+    };
+  }
+
+  private static long number(Map<String, AttributeValue> item, String name) {
+    return Long.parseLong(item.get(name).n());
+  }
+
+  @Test
+  void theLeaseAndTheCleanupTimeAreWrittenFromTheClock() {
+    FakeDynamo dynamo = new FakeDynamo();
+    Instant start = Instant.parse("2026-01-01T00:00:00Z");
+    Instant[] now = {start};
+    DynamoDbDistributedLock lock = new DynamoDbDistributedLock(dynamo, "axiz-locks", at(now));
+    var handle = lock.tryAcquire("account:7", Duration.ofSeconds(10)).orElseThrow();
+
+    assertEquals("account:7", handle.resource());
+    Map<String, AttributeValue> stored = dynamo.items.get("account:7");
+    assertEquals(handle.token(), stored.get("token").s(), "the item carries the owner's token");
+    assertFalse(handle.token().isBlank());
+    long t0 = start.toEpochMilli();
+    assertEquals(t0 + 10_000, number(stored, "leaseUntil"));
+    assertEquals((t0 + 10_000) / 1000 + 3600, number(stored, "ttl"), "cleaned an hour later");
+    assertEquals("axiz-locks", dynamo.lastPut.tableName());
+    assertEquals(Long.toString(t0), dynamo.lastPut.expressionAttributeValues().get(":now").n());
+    assertEquals(
+        "attribute_not_exists(pk) OR leaseUntil < :now", dynamo.lastPut.conditionExpression());
+
+    now[0] = start.plusSeconds(5);
+    assertTrue(handle.renew(Duration.ofSeconds(20)));
+    assertEquals(t0 + 25_000, number(stored, "leaseUntil"), "renewed from now, not from start");
+    assertEquals((t0 + 25_000) / 1000 + 3600, number(stored, "ttl"));
+    assertEquals("axiz-locks", dynamo.lastUpdate.tableName());
+
+    now[0] = start.plusSeconds(25);
+    assertTrue(
+        lock.tryAcquire("account:7", Duration.ofSeconds(10)).isEmpty(),
+        "still held at the exact end of the lease");
+    now[0] = start.plusSeconds(25).plusMillis(1);
+    var next = lock.tryAcquire("account:7", Duration.ofSeconds(10)).orElseThrow();
+    assertNotEquals(handle.token(), next.token(), "each acquisition has its own token");
   }
 }

@@ -48,13 +48,17 @@ public class AxizCacheAutoConfiguration {
                 new InMemoryByteCache(p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
     ByteCache remote = p.redis() ? l2.getIfAvailable() : null;
     ByteCache store = remote != null ? new TwoLevelCache(l1, remote, p.l1().maxTtl()) : l1;
+    String configuredPrefix = p.prefix();
     String prefix =
-        p.prefix() != null ? p.prefix() : env.getProperty("spring.application.name", "application");
+        configuredPrefix != null
+            ? configuredPrefix
+            : env.getProperty("spring.application.name", "application");
+    JsonMapper json = mapper.getIfAvailable();
     return new AxizCaches(
         prefix,
         store,
         new JacksonValueCodec(
-            mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build())),
+            json != null ? json : JsonMapper.builder().findAndAddModules().build()),
         p);
   }
 

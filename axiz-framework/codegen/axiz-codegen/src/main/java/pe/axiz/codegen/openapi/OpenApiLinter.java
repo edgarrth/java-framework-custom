@@ -14,14 +14,28 @@ import java.util.regex.Pattern;
 public final class OpenApiLinter {
 
   private static final Pattern CAMEL = Pattern.compile("^[a-z][a-zA-Z0-9]*$");
-  private static final Pattern PATH =
-      Pattern.compile("^(/([a-z0-9]+(-[a-z0-9]+)*|\\{[a-zA-Z0-9]+\\}))+$");
+  // One path segment: kebab-case or a {parameter}. Checked segment by segment, so the match is
+  // linear in the length of the path (no nested repetition).
+  private static final Pattern SEGMENT =
+      Pattern.compile("^(?:[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9]))*|\\{[a-zA-Z0-9]+\\})$");
   private static final Pattern VERSIONED = Pattern.compile("^/v[0-9]+/.*");
   private static final Pattern SENSITIVE_QUERY =
       Pattern.compile("(?i).*(card|pan|documentnumber|password|otp).*");
   private static final Set<String> METHODS = Set.of("get", "post", "put", "patch", "delete");
 
   private OpenApiLinter() {}
+
+  private static boolean kebabPath(String path) {
+    if (!path.startsWith("/")) {
+      return false;
+    }
+    for (String segment : path.substring(1).split("/", -1)) {
+      if (!SEGMENT.matcher(segment).matches()) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   public static List<LintFinding> lint(OpenApiDocument doc) {
     List<LintFinding> out = new ArrayList<>();
@@ -34,7 +48,7 @@ public final class OpenApiLinter {
     }
     for (Map.Entry<String, Object> p : paths.entrySet()) {
       String path = p.getKey();
-      if (!PATH.matcher(path).matches()) {
+      if (!kebabPath(path)) {
         out.add(
             new LintFinding(
                 "axiz-paths-kebab-case",

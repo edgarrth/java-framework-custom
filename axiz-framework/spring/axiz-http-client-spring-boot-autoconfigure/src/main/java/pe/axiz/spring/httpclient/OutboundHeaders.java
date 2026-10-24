@@ -32,8 +32,9 @@ public final class OutboundHeaders {
         new LinkedHashMap<>(
             new HeaderPropagation(settings.propagateHeaders())
                 .outbound(inbound.keySet(), inbound::get));
-    if (tenantHeader != null && m.tenantId() != null) {
-      out.put(tenantHeader, m.tenantId().toLowerCase(Locale.ROOT));
+    String tenant = m.tenantId();
+    if (tenantHeader != null && tenant != null) {
+      out.put(tenantHeader, tenant.toLowerCase(Locale.ROOT));
     }
     return out;
   }

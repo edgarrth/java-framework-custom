@@ -21,7 +21,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizExchangeFilter` | Reactive counterpart of `AxizRestClientInterceptor`, without blocking: credentials that need I/O are obtained on a worker scheduler, errors are translated from the response body and retries use Reactor's backoff for idempotent calls only. |
 | `AxizHttpClientAutoConfiguration` | Declarative HTTP clients (`@HttpExchange`) on Spring's HTTP service groups: every group whose name matches `axiz.http-client.clients.<name>` gets the axiz transport, timeouts, credentials, resilience, propagation, error translation and logging. |
 | `AxizHttpClientProperties` | Logical HTTP clients (`axiz.http-client.clients.<name>`). |
-| `AxizHttpClients` | Applies the axiz settings of a logical client to a `RestClient.Builder`: Apache HttpClient 5 transport with pool and timeouts, observation name, error translation and the axiz interceptor. |
+| `AxizHttpClients` | Applies the axiz settings of a logical client to a `RestClient.Builder`: Apache HttpClient 5 transport with pool and timeouts and without its own retries, observation name, error translation and the axiz interceptor. |
 | `AxizRestClientInterceptor` | Per-client behavior of a `RestClient`: header propagation, outbound authentication, bulkhead and circuit breaker, retries only for idempotent calls within the total timeout, and one log line per attempt (path only, never the query string). |
 | `ClientNameObservationConvention` | Uses the logical client name as `client.name` in metrics and spans. |
 | `ClientResilience` | Circuit breaker, bulkhead and retry decisions of one client. |

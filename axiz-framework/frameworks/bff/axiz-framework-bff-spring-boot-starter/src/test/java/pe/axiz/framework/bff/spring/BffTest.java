@@ -1,6 +1,7 @@
 package pe.axiz.framework.bff.spring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,6 +51,21 @@ class BffTest {
             .block();
     assertEquals("acc", c.get("account", String.class));
     assertEquals(List.of("offers"), c.degraded());
+  }
+
+  @Test
+  void aMissingValueIsNullWhetherThePartWasEmptyOrItsFallbackHadNothing() {
+    Composition c =
+        ReactiveComposer.within(Duration.ofMillis(200))
+            .required("profile", Mono.<String>empty())
+            .optional("limits", Mono.<String>error(new IllegalStateException("down")), () -> null)
+            .optional("rates", Mono.just("3.75"), () -> "unused")
+            .run()
+            .block();
+    assertNull(c.get("profile", String.class));
+    assertNull(c.get("limits", String.class));
+    assertEquals("3.75", c.get("rates", String.class));
+    assertEquals(List.of("limits"), c.degraded());
   }
 
   @Test

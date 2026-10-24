@@ -16,7 +16,10 @@ import org.slf4j.LoggerFactory;
 final class CardinalityGuard {
 
   private static final Logger LOG = LoggerFactory.getLogger(CardinalityGuard.class);
-  private static final Pattern EVENT_NAME = Pattern.compile("^[a-z0-9]+([._-][a-z0-9]+)*$");
+  // A separator must be followed by a letter or digit; each character has one way to match, so the
+  // check is linear in the length of the name (no nested repetition).
+  private static final Pattern EVENT_NAME =
+      Pattern.compile("^[a-z0-9](?:[a-z0-9]|[._-](?=[a-z0-9]))*$");
   private static final Pattern TAG_VALUE = Pattern.compile("[^A-Za-z0-9._:-]");
   private static final int MAX_VALUE_LENGTH = 64;
 

@@ -53,8 +53,10 @@ public class AxizEdaAutoConfiguration {
       Binder binder = Binder.get(env);
       return new ReactiveEventHandlerPostProcessor(
           tx,
-          binder.bind("axiz.eda.transactional", Boolean.class).orElse(true),
-          binder.bind("axiz.eda.handler-timeout", Duration.class).orElse(Duration.ofSeconds(30)));
+          binder.bind("axiz.eda.transactional", Boolean.class).orElseGet(() -> true),
+          binder
+              .bind("axiz.eda.handler-timeout", Duration.class)
+              .orElseGet(() -> Duration.ofSeconds(30)));
     }
   }
 

@@ -146,7 +146,12 @@ class RedisByteCacheTest {
     assertEquals(4, hit.value()[0]);
     assertEquals(Duration.ofMillis(1500), hit.remaining().orElseThrow());
     cache.put("eternal", new byte[] {5}, Duration.ofSeconds(2));
-    assertTrue(cache.getWithTtl("eternal").orElseThrow().remaining().isEmpty());
+    var eternal = cache.getWithTtl("eternal").orElseThrow();
+    assertTrue(eternal.remaining().isEmpty());
+    assertTrue(
+        eternal.neverExpires(), "PTTL -1 is an entry without expiration, not an unknown one");
+    assertTrue(eternal.expiryKnown());
+    assertTrue(hit.expiryKnown() && !hit.neverExpires());
     assertEquals(3, commands.stream().filter("eval"::equals).count());
     assertTrue(RedisByteCache.GET_WITH_TTL.contains("PTTL"));
     RedisByteCache down = new RedisByteCache(fake(new TreeMap<>(), new ArrayList<>(), true));

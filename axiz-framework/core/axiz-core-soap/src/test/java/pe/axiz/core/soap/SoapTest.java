@@ -80,7 +80,8 @@ class SoapTest {
     SoapClient client =
         client(
             SoapVersion.SOAP_11,
-            new SoapEnvelope.Credentials("svc", "pw".toCharArray(), WsSecurity.Mode.LEGACY_SHA1_DIGEST),
+            new SoapEnvelope.Credentials(
+                "svc", "pw".toCharArray(), WsSecurity.Mode.LEGACY_SHA1_DIGEST),
             Duration.ofSeconds(2));
     Element payload =
         client.call(

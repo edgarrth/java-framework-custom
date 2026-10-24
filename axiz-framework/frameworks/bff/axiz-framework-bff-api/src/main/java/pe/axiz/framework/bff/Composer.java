@@ -103,7 +103,8 @@ public final class Composer {
             throw failure(e.getKey(), failure);
           }
           degraded.add(e.getKey());
-          values.put(e.getKey(), part.fallback() != null ? part.fallback().get() : null);
+          @Nullable Supplier<@Nullable Object> fallback = part.fallback();
+          values.put(e.getKey(), fallback != null ? fallback.get() : null);
         }
       }
     }

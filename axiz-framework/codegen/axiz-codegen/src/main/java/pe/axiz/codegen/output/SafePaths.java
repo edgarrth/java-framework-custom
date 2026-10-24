@@ -41,6 +41,33 @@ public final class SafePaths {
   }
 
   /**
+   * The directory that contains a file. A relative path is resolved against the working directory
+   * first, so {@code pom.xml} has a parent too.
+   *
+   * @param file a file path
+   * @return its directory
+   * @throws IllegalArgumentException for a file system root, which has no parent
+   */
+  public static Path parentOf(Path file) {
+    Path parent = file.toAbsolutePath().getParent();
+    if (parent == null) {
+      throw new IllegalArgumentException("Not a file path: " + file);
+    }
+    return parent;
+  }
+
+  /**
+   * The last name of a path, or an empty string for a file system root.
+   *
+   * @param path a path
+   * @return its file name
+   */
+  public static String fileName(Path path) {
+    Path name = path.getFileName();
+    return name == null ? "" : name.toString();
+  }
+
+  /**
    * Resolves a generated path under {@code base}, refusing any symbolic link between the base and
    * the target (the target included). The base itself may be a link chosen by the user.
    *
@@ -74,7 +101,7 @@ public final class SafePaths {
     if (!overwrite && Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
       return false;
     }
-    Files.createDirectories(target.getParent());
+    Files.createDirectories(parentOf(target));
     target(base, relativePath); // directories created concurrently must not be links either
     try {
       Files.write(

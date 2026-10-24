@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Currency;
 import java.util.HashSet;
@@ -85,6 +86,38 @@ class CacheKeysTest {
     assertNotEquals(CacheKeys.of(Channel.WEB), CacheKeys.of("WEB"));
     assertNotEquals(CacheKeys.of(List.of("a")), CacheKeys.of(Set.of("a")));
     assertNotEquals(CacheKeys.of(new StringBuilder("a")), CacheKeys.of('a'));
+  }
+
+  @Test
+  void arraysKeepTheirComponentType() {
+    // the audit case: a method taking Object received int[]{7} and then Integer[]{7}
+    assertNotEquals(CacheKeys.of((Object) new int[] {7}), CacheKeys.of((Object) new Integer[] {7}));
+    assertNotEquals(CacheKeys.of((Object) new int[] {7}), CacheKeys.of((Object) new long[] {7}));
+    assertNotEquals(
+        CacheKeys.of((Object) new Integer[] {7}), CacheKeys.of((Object) new Object[] {7}));
+    assertNotEquals(
+        CacheKeys.of((Object) new char[] {'a'}), CacheKeys.of((Object) new String[] {"a"}));
+    assertNotEquals(
+        CacheKeys.of((Object) new int[0]), CacheKeys.of((Object) new Integer[0]), "empty arrays");
+    assertNotEquals(CacheKeys.of((Object) new int[0]), CacheKeys.of(List.of()));
+    assertNotEquals(
+        CacheKeys.of((Object) new int[][] {{7}}),
+        CacheKeys.of((Object) new Integer[][] {{7}}),
+        "multidimensional");
+    assertNotEquals(CacheKeys.of((Object) new int[][] {{7}}), CacheKeys.of((Object) new int[] {7}));
+    assertEquals(
+        CacheKeys.of((Object) new int[][] {{1, 2}, {3}}),
+        CacheKeys.of((Object) new int[][] {{1, 2}, {3}}));
+    assertEquals(
+        "a([I)=[i\\=7]", CacheKeys.part(new int[] {7}), "format: array class, then the elements");
+  }
+
+  @Test
+  void otherCollectionsKeepTheirClass() {
+    assertNotEquals(CacheKeys.of(new ArrayDeque<>(List.of(1))), CacheKeys.of(List.of(1)));
+    assertEquals(
+        CacheKeys.of(new ArrayDeque<>(List.of(1, 2))),
+        CacheKeys.of(new ArrayDeque<>(List.of(1, 2))));
   }
 
   @Test

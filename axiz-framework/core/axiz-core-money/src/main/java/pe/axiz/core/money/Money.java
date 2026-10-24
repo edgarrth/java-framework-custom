@@ -86,18 +86,24 @@ public final class Money implements Comparable<Money> {
     return of(parts[1], parts[0]);
   }
 
-  private static BigDecimal parseAmount(String amount) {
+  private static BigDecimal parseAmount(@Nullable String amount) {
+    if (amount == null) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid amount");
+    }
     try {
       return new BigDecimal(amount.strip());
-    } catch (NumberFormatException | NullPointerException e) {
+    } catch (NumberFormatException e) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid amount");
     }
   }
 
-  private static Currency currency(String code) {
+  private static Currency currency(@Nullable String code) {
+    if (code == null) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid currency");
+    }
     try {
       return Currency.getInstance(code.strip());
-    } catch (IllegalArgumentException | NullPointerException e) {
+    } catch (IllegalArgumentException e) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid currency");
     }
   }

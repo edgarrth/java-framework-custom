@@ -3,6 +3,7 @@ package pe.axiz.spring.outbox;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler.FirstMatchingCompositeObservationHandler;
@@ -68,6 +69,56 @@ class OutboxTraceTest {
     // the regular traceparent belongs to the publication, written by the relay
     assertFalse(stored.getFirst().extension(EventEnvelope.TRACEPARENT).isPresent());
     assertEquals("outbox write orders", writeSpan.getName());
+  }
+
+  @Test
+  void theTraceStateTravelsOnlyWhenItSaysSomething() {
+    Observation observation = Observation.start("test", ObservationRegistry.NOOP);
+    String parent = "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01";
+    EventEnvelope withState =
+        new OutboxTrace.Write(
+                observation,
+                Map.of(EventEnvelope.TRACEPARENT, parent, EventEnvelope.TRACESTATE, "vendor=1"))
+            .stamp(event());
+    assertEquals(parent, withState.extension(EventEnvelope.OUTBOX_TRACEPARENT).orElseThrow());
+    assertEquals("vendor=1", withState.extension(EventEnvelope.OUTBOX_TRACESTATE).orElseThrow());
+    EventEnvelope blankState =
+        new OutboxTrace.Write(
+                observation,
+                Map.of(EventEnvelope.TRACEPARENT, parent, EventEnvelope.TRACESTATE, " "))
+            .stamp(event());
+    assertFalse(blankState.extension(EventEnvelope.OUTBOX_TRACESTATE).isPresent());
+    observation.stop();
+  }
+
+  @Test
+  void aFailedWriteEndsItsSpanWithTheErrorAndAReactiveParentIsKept() {
+    SimpleTracer tracer = new SimpleTracer();
+    ObservationRegistry registry = tracing(tracer);
+    IllegalStateException failure = new IllegalStateException("insert failed");
+    IllegalStateException thrown =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                OutboxTrace.tracing(registry)
+                    .traced(
+                        "orders",
+                        event(),
+                        e -> {
+                          throw failure;
+                        }));
+    assertSame(failure, thrown);
+    assertSame(failure, tracer.getSpans().getLast().getError());
+
+    Observation parent = Observation.start("http.server.requests", registry);
+    OutboxTrace.Write write = OutboxTrace.start(registry, "orders", event(), parent);
+    write.observation().stop();
+    parent.stop();
+    List<SimpleSpan> spans = new ArrayList<>(tracer.getSpans());
+    assertEquals(
+        spans.get(spans.size() - 2).context().spanId(),
+        spans.get(spans.size() - 1).context().parentId(),
+        "the write is a child of the observation carried in the Reactor context");
   }
 
   @Test

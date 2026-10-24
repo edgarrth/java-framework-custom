@@ -72,6 +72,15 @@ class MoneyTest {
     assertThrows(BusinessException.class, () -> Money.of("abc", "PEN"));
     assertThrows(BusinessException.class, () -> Money.of("1", "XXXX"));
     assertThrows(BusinessException.class, () -> Money.parse(null));
+    assertEquals(
+        "invalid amount",
+        assertThrows(BusinessException.class, () -> Money.of((String) null, "PEN")).getMessage());
+    assertEquals(
+        "invalid currency",
+        assertThrows(BusinessException.class, () -> Money.of("1", null)).getMessage());
+    assertEquals(
+        "invalid currency",
+        assertThrows(BusinessException.class, () -> Money.of("1", "XXXX")).getMessage());
   }
 
   @Test

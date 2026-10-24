@@ -327,3 +327,52 @@ Cambios que un servicio existente debe conocer al actualizar:
   es obligatoria, qa y prod se despliegan solo por digest, la guardia de nombres
   (`AXIZ_NAMING_GUARD`) es obligatoria y el wrapper de Maven trae el SHA-512 fijado.
 
+
+#### Cambios de la quinta revisión (validación de la cuarta)
+
+- **Caché, llaves versión `k3`:** los arreglos y las colecciones llevan su clase en la llave
+  (`int[]`, `Integer[]`, `List` y `ArrayDeque` con los mismos elementos ya no comparten entrada).
+  Las entradas `k2` no se leen y expiran por su TTL; no hay nada que migrar.
+- **`CachedValue`:** el constructor público se reemplaza por `CachedValue.expiringIn(valor, ttl)`,
+  `CachedValue.withoutExpiry(valor)` y `CachedValue.unknownExpiry(valor)`, y se agregan
+  `neverExpires()` y `expiryKnown()`. Acción: solo si implementaste un `ByteCache` propio, devuelve
+  en `getWithTtl` el caso que corresponda. Si no lo implementas, el valor de L2 se sirve pero ya no
+  se copia a L1, porque no se sabe cuánto le queda.
+- **Frescura de L1:** la copia local descuenta el tiempo que tardó la lectura de L2. Una respuesta
+  que llega cuando el original ya vencía no se copia.
+- **SLF4J 2.0.19:** `axiz-dependencies` fija `slf4j-api` en 2.0.19 (lo exigen ArchUnit y el SDK de
+  OpenFeature). Si tu servicio declaraba otra versión, quítala.
+- **Cliente HTTP sin reintentos propios de Apache HttpClient:** antes, un `POST` (o cualquier
+  método) respondido con 429 o 503 se reenviaba una vez por la librería, fuera de las reglas del
+  framework; un pago podía llegar dos veces. Ahora solo reintenta el interceptor de axiz (métodos
+  idempotentes o con `Idempotency-Key`). No requiere cambios; si un servicio dependía de ese
+  reintento para un `POST`, debe enviar `Idempotency-Key`.
+- **Cliente HTTP con `api-key` o `client-credentials`:** sin `axiz-secrets-spring-boot-starter` el
+  servicio no arranca y el mensaje indica qué cliente lo necesita y qué agregar (antes fallaba con
+  un `NullPointerException`).
+
+#### Cambios de la sexta revisión (corrida de `quality` sobre la quinta)
+
+Ningún cambio requiere acción en los servicios.
+
+- **Log de cuerpos JSON:** `JsonTextMasker` lee el cuerpo en una sola pasada. Antes, un valor de
+  texto de unos 5.000 caracteres (un documento en base64, por ejemplo) lanzaba
+  `StackOverflowError` al registrar el request; ahora se enmascara como cualquier otro. Las claves
+  y los valores reconocidos son los mismos.
+- **Ruta de error:** `ProblemErrorController` declara los métodos HTTP que atiende (todos, en dos
+  asignaciones: seguros y los que cambian estado) en vez de una asignación abierta. Los errores
+  se siguen respondiendo como problemas RFC 9457 con su estado real, para cualquier método.
+- **Validaciones sin repetición anidada:** nombres de artefacto y de paquete, rutas OpenAPI,
+  nombres de evento de métricas y correo electrónico aceptan y rechazan lo mismo que antes, en
+  tiempo lineal.
+- **Serialización:** `AxizPrincipal` y los valores de error (`ErrorDefinition`, `ErrorCode`,
+  `FieldViolation`, `ExternalErrorDetail`) son serializables, así la autenticación se puede
+  guardar en una sesión HTTP distribuida.
+
+#### Cambios de la séptima revisión (corrida de `quality` sobre la sexta)
+
+Ningún cambio requiere acción en los servicios.
+
+- **`Composition` y `AuditEvent`:** tienen constructor canónico explícito en vez de compacto. La
+  firma es la misma; ahora un servicio que construye una `Composition` o un `AuditEvent` con
+  valores nulos en el mapa compila con NullAway, como dice su tipo.

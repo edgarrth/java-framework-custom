@@ -25,7 +25,10 @@ import picocli.CommandLine.Option;
     description = "Upgrades the axiz version applying the OpenRewrite recipes.")
 class UpgradeCommand extends BaseCommand implements Callable<Integer> {
 
-  private static final Pattern VERSION = Pattern.compile("^\\d+\\.\\d+\\.\\d+(-[A-Za-z0-9.]+)?$");
+  // MAJOR.MINOR.PATCH with an optional -suffix, checked in two parts so that no repetition is
+  // nested inside another and the check is linear in the length of the text.
+  private static final Pattern RELEASE = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
+  private static final Pattern SUFFIX = Pattern.compile("^[A-Za-z0-9.]+$");
 
   @Option(names = "--to", description = "Target version (default: the version of this CLI).")
   @Nullable String to;
@@ -43,7 +46,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
     Path dir = project();
     ProjectManifest manifest = ProjectManifest.read(dir);
     String target = to == null ? Version.axiz() : to;
-    if (!VERSION.matcher(target).matches()) {
+    if (!isVersion(target)) {
       throw new IllegalArgumentException("Invalid version " + target);
     }
     Path pom = dir.resolve("pom.xml");
@@ -79,6 +82,13 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
             ? "Dry run done: see target/rewrite/rewrite.patch"
             : "Recipes applied: review the diff and run mvn verify");
     return ExitCodes.OK;
+  }
+
+  static boolean isVersion(String text) {
+    int dash = text.indexOf('-');
+    String release = dash < 0 ? text : text.substring(0, dash);
+    return RELEASE.matcher(release).matches()
+        && (dash < 0 || SUFFIX.matcher(text.substring(dash + 1)).matches());
   }
 
   List<String> command(String maven, String target) {

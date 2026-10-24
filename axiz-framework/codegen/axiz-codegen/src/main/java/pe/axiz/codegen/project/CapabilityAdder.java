@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
 
@@ -149,7 +150,7 @@ public final class CapabilityAdder {
         try (Stream<Path> files = Files.list(chart)) {
           for (Path values :
               files
-                  .filter(p -> p.getFileName().toString().matches("values-[a-z0-9-]+\\.yaml"))
+                  .filter(p -> SafePaths.fileName(p).matches("values-[a-z0-9-]+\\.yaml"))
                   .sorted()
                   .toList()) {
             appendConfigKeys(values, capability, keys);
@@ -182,7 +183,7 @@ public final class CapabilityAdder {
                     + "__axiz_"
                     + capability.replace('-', '_')
                     + ".sql");
-        Files.createDirectories(migration.getParent());
+        Files.createDirectories(SafePaths.parentOf(migration));
         Files.writeString(
             migration,
             "-- Tables of the " + capability + " capability (added by axiz add)\n" + sql,
@@ -228,7 +229,7 @@ public final class CapabilityAdder {
     if (merged.equals(current)) {
       return false;
     }
-    Files.createDirectories(file.getParent());
+    Files.createDirectories(SafePaths.parentOf(file));
     Files.writeString(file, merged, StandardCharsets.UTF_8);
     return true;
   }

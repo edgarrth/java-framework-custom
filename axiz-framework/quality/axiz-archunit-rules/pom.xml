@@ -24,18 +24,6 @@
     <dependency>
       <groupId>com.tngtech.archunit</groupId>
       <artifactId>archunit</artifactId>
-      <exclusions>
-        <!-- ArchUnit asks for a newer patch of slf4j-api than the Spring Boot BOM manages: the
-             platform version is declared below, so dependency convergence holds -->
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
     </dependency>
     <!-- sample code for the reactive rules (blocking calls, global hooks) -->
     <dependency>

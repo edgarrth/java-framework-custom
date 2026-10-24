@@ -49,6 +49,14 @@
     <dependency>
       <groupId>net.ttddyy.observation</groupId>
       <artifactId>datasource-micrometer-spring-boot</artifactId>
+      <exclusions>
+        <!-- micrometer-tracing brings aopalliance 1.0, whose classes spring-aop already ships:
+             excluded so services pass BanDuplicateClasses. -->
+        <exclusion>
+          <groupId>aopalliance</groupId>
+          <artifactId>aopalliance</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

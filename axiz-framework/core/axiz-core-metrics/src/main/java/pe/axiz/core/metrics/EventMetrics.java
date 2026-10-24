@@ -322,7 +322,8 @@ public final class EventMetrics {
     tags.add(Tag.of(MetricTags.EVENT, event));
     tags.add(Tag.of(MetricTags.CATEGORY, guard.standard(MetricTags.CATEGORY, categoryOf(e))));
     if (withOutcome) {
-      Outcome outcome = e.outcome() == null ? Outcome.SUCCESS : e.outcome();
+      Outcome reported = e.outcome();
+      Outcome outcome = reported == null ? Outcome.SUCCESS : reported;
       tags.add(Tag.of(MetricTags.OUTCOME, outcome.tagValue()));
       tags.add(Tag.of(MetricTags.REASON, guard.standard(MetricTags.REASON, e.reason())));
     }
@@ -335,9 +336,9 @@ public final class EventMetrics {
       String v = guard.custom(key, custom.get(key));
       tags.add(Tag.of(key, v == null ? MetricTags.NONE : v));
     }
-    for (String key : custom.keySet()) {
-      if (!settings.customTags().containsKey(key)) {
-        guard.custom(key, custom.get(key)); // logs the undeclared tag once
+    for (Map.Entry<String, String> tag : custom.entrySet()) {
+      if (!settings.customTags().containsKey(tag.getKey())) {
+        guard.custom(tag.getKey(), tag.getValue()); // logs the undeclared tag once
       }
     }
     return Tags.of(tags);

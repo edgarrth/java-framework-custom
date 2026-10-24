@@ -55,11 +55,16 @@ public final class RedisByteCache implements ByteCache {
       return Optional.empty();
     }
     // PTTL: milliseconds left, -1 without expiration, -2 when the key is gone
-    long millis = reply.size() > 1 && reply.get(1) instanceof Long l ? l : -1;
+    if (reply.size() < 2 || !(reply.get(1) instanceof Long millis)) {
+      return Optional.of(CachedValue.unknownExpiry(value));
+    }
     if (millis == -2) {
       return Optional.empty();
     }
-    return Optional.of(new CachedValue(value, millis >= 0 ? Duration.ofMillis(millis) : null));
+    if (millis == -1) {
+      return Optional.of(CachedValue.withoutExpiry(value));
+    }
+    return Optional.of(CachedValue.expiringIn(value, Duration.ofMillis(Math.max(0, millis))));
   }
 
   @Override

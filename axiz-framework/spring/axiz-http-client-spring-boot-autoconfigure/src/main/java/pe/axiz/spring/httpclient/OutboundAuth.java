@@ -47,8 +47,7 @@ public final class OutboundAuth {
     ClientCredentialsTokenProvider tokens = null;
     switch (a.type()) {
       case CLIENT_CREDENTIALS -> {
-        SecretResolver s =
-            Objects.requireNonNull(secrets, "client-credentials needs the secrets starter");
+        SecretResolver s = requireSecrets(client, secrets);
         String ref = Objects.requireNonNull(a.clientSecretRef());
         HttpClient http =
             HttpClient.newBuilder().connectTimeout(client.timeouts().connect()).build();
@@ -64,7 +63,7 @@ public final class OutboundAuth {
                 client.timeouts().read(),
                 clock);
       }
-      case API_KEY -> Objects.requireNonNull(secrets, "api-key needs the secrets starter");
+      case API_KEY -> requireSecrets(client, secrets);
       default -> {
         // NONE, TOKEN_RELAY and MTLS need no state
       }
@@ -77,6 +76,21 @@ public final class OutboundAuth {
    * reads the servlet security context here; reactive clients add the relayed token themselves
    * ({@link AxizExchangeFilter}), because it lives in the Reactor context.
    */
+  /** The secret resolver an authenticated client needs, or an error naming the client. */
+  private static SecretResolver requireSecrets(
+      ClientSettings client, @Nullable SecretResolver secrets) {
+    if (secrets == null) {
+      throw new IllegalStateException(
+          "axiz.http-client.clients."
+              + client.name()
+              + ".auth.type="
+              + client.auth().type()
+              + " reads its credential from the secret store: add"
+              + " axiz-secrets-spring-boot-starter");
+    }
+    return secrets;
+  }
+
   public void apply(BiConsumer<String, String> header) {
     switch (settings.type()) {
       case CLIENT_CREDENTIALS ->

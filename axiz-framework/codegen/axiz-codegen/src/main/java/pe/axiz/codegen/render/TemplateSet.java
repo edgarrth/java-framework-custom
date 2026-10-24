@@ -86,13 +86,14 @@ public final class TemplateSet {
   public Map<String, byte[]> render(Map<String, Object> context) {
     Map<String, byte[]> out = new LinkedHashMap<>();
     for (Entry e : entries) {
-      if (e.each() == null) {
+      String each = e.each();
+      if (each == null) {
         if (Conditions.test(e.when(), context)) {
           out.put(renderString(e.path(), context), content(e, context));
         }
         continue;
       }
-      for (Object item : Conditions.list(Conditions.resolve(e.each(), context))) {
+      for (Object item : Conditions.list(Conditions.resolve(each, context))) {
         Map<String, Object> scoped = new LinkedHashMap<>(context);
         scoped.put("item", item);
         if (Conditions.test(e.when(), scoped)) {

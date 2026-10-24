@@ -27,8 +27,10 @@ class SoapTest {
         exchange -> {
           byte[] body =
               ("<soapenv:Envelope"
-                   + " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"><soapenv:Body><BalanceResponse"
-                   + " xmlns=\"urn:bank\"><amount>10.00</amount></BalanceResponse></soapenv:Body></soapenv:Envelope>")
+                      + " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+                      + "<soapenv:Body><BalanceResponse xmlns=\"urn:bank\">"
+                      + "<amount>10.00</amount></BalanceResponse>"
+                      + "</soapenv:Body></soapenv:Envelope>")
                   .getBytes(StandardCharsets.UTF_8);
           exchange.getResponseHeaders().add("Content-Type", "text/xml; charset=utf-8");
           exchange.sendResponseHeaders(200, body.length);

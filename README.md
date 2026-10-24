@@ -1341,3 +1341,44 @@ seguridad, y la guía de migración.
   - Pruebas y demo: llaves de prueba generadas en cada ejecución (`EphemeralSecrets`, sin
     archivos de llaves versionados); reglas ArchUnit contra locks de la JVM en código de negocio;
     pruebas de concurrencia del cifrado y de acumulación de centavos.
+
+- **Validación de review27 (review28).** La validación del 23 de octubre con Maven y Docker reales
+  confirmó seis hallazgos corregidos y dejó abiertos los límites de caché y el perfil `quality`.
+  existentes en la guía de migración ("Cambios de la quinta revisión").
+  - Caché: llaves `k3`, con la clase de cada arreglo y colección (`int[]` e `Integer[]` ya no
+    comparten entrada); la copia de L1 descuenta el tiempo de la lectura de L2, medido con el
+    reloj monotónico y con el de L1; un nivel que no conoce la expiración no llena L1.
+  - Calidad: Spotless limpio en todo el reactor (incluido `formatAnnotations`); sin clases
+    duplicadas (JSpecify de WireMock, AOP Alliance en el starter JPA); `slf4j-api` 2.0.19.
+  - Cobertura: pruebas nuevas en los nueve módulos bajo los umbrales (audit, errors, http-client,
+    logging, messaging, metrics, observability, r2dbc y sequence-dynamodb) y en los que la
+    validación no alcanzó a medir y tampoco llegaban (starters de batch, CQRS, EDA, hexagonal y
+    layered; inbox, outbox y sequence). Ningún umbral cambió.
+  - Defectos corregidos con prueba: Apache HttpClient ya no reenvía por su cuenta un `POST`
+    respondido con 429 o 503 (solo reintenta el interceptor de axiz, y solo llamadas
+    idempotentes); un cliente HTTP con `api-key` o `client-credentials` sin el starter de
+    secretos falla al arrancar con un mensaje claro en vez de un `NullPointerException`.
+
+- **Corrida de `quality` sobre review28 (review29).** La corrida del 24 de octubre aprobó 132
+  servicios en la guía de migración ("Cambios de la sexta revisión").
+  - PIT: pruebas que revisan lo que se escribe en DynamoDB al tomar y renovar un lock, y lo que
+    devuelve cada operación del servicio CRUD de layered.
+  - Cobertura: pruebas nuevas en `axiz-core-soap` (respuestas y faults) y en el interceptor de
+    `@Idempotent` (servlet y reactivo).
+  - SpotBugs: la ruta de error declara sus métodos HTTP en dos asignaciones (seguros y los que
+    cambian estado) en vez de una abierta; se corrigieron además los avisos de prioridad media de
+    todo el reactor, y los que se mantienen están justificados uno por uno.
+  - Defecto real corregido: el enmascarado de cuerpos JSON en el log lanzaba `StackOverflowError`
+    con un valor de texto de unos 5.000 caracteres; ahora lee el cuerpo en una sola pasada.
+  - R2DBC: la prueba de auditoría arma el contexto de mapeo con los tipos del dialecto, como
+    Spring Boot.
+
+- **Corrida de `quality` sobre review29 (review30).** La corrida del 24 de octubre aprobó 147
+  - PIT de `axiz-core-soap`: pruebas de lo que el cliente envía (encabezados por versión de SOAP,
+    sobre, token de WS-Security con su resumen calculado aparte, fallas de transporte).
+  - Compilación del starter de BFF: `Composition` y `AuditEvent` tienen constructor canónico
+    explícito, porque `javac` no escribe el `@Nullable` de un argumento de tipo en los
+    parámetros de un constructor compacto y NullAway rechazaba el mapa en otro módulo.
+
+- **Corrida de `quality` sobre review30 (review31).** Aprobó 149 módulos y falló en 1, por formato
+  de una prueba del autoconfigure de SOAP. El formateo de la entrega se alinea con Spotless (sin

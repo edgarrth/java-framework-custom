@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import pe.axiz.codegen.output.SafePaths;
 
 /** Extracts a generated project ZIP safely: no entry may escape the target, with size limits. */
 final class ZipExtractor {
@@ -43,7 +44,7 @@ final class ZipExtractor {
         if (Files.exists(out) && !overwrite) {
           continue;
         }
-        Files.createDirectories(out.getParent());
+        Files.createDirectories(SafePaths.parentOf(out));
         total += copy(in, out, MAX_TOTAL - total);
       }
     }

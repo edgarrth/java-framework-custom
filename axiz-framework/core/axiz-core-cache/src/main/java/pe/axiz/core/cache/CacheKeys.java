@@ -37,7 +37,7 @@ import org.jspecify.annotations.Nullable;
 public final class CacheKeys {
 
   /** Version of the key format; part of every method key built by the framework. */
-  public static final String FORMAT = "k2";
+  public static final String FORMAT = "k3";
 
   private static final String NULL = "-";
 
@@ -89,7 +89,8 @@ public final class CacheKeys {
       case List<?> list -> "[" + join(list) + "]";
       case Set<?> set -> "{" + join(sorted(set)) + "}";
       case Map<?, ?> map -> "m{" + entries(map) + "}";
-      case Collection<?> c -> "[" + join(c) + "]";
+      // any other collection keeps its class: an ArrayDeque is never equal to a List
+      case Collection<?> c -> "q(" + c.getClass().getName() + ")=[" + join(c) + "]";
       case Record r -> "r(" + r.getClass().getName() + ")=[" + components(r) + "]";
       default -> {
         if (value.getClass().isArray()) {
@@ -97,7 +98,9 @@ public final class CacheKeys {
           for (int i = 0; i < Array.getLength(value); i++) {
             items.add(Array.get(value, i));
           }
-          yield "a=[" + join(items) + "]";
+          // the array class keeps the component type: int[]{7}, Integer[]{7}, long[]{7} and
+          // int[][]{{7}} are different arguments and never share an entry
+          yield "a(" + value.getClass().getName() + ")=[" + join(items) + "]";
         }
         throw new IllegalArgumentException(
             "No stable cache key for "

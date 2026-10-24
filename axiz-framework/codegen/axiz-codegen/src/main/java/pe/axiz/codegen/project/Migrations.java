@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import pe.axiz.codegen.output.SafePaths;
 
 /**
  * Flyway versions of new migrations: the next integer after the highest {@code V<n>__} file, so
@@ -29,7 +30,7 @@ public final class Migrations {
     if (Files.isDirectory(dir)) {
       try (Stream<Path> files = Files.list(dir)) {
         for (Path f : files.toList()) {
-          Matcher m = VERSIONED.matcher(f.getFileName().toString());
+          Matcher m = VERSIONED.matcher(SafePaths.fileName(f));
           if (m.matches()) {
             max = max.max(new BigInteger(m.group(1)));
           }

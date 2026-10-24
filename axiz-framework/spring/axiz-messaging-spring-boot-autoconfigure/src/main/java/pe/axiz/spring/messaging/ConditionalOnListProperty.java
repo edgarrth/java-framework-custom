@@ -52,7 +52,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 
     /** Non-blank elements of the list property, in any of its accepted forms. */
     static List<String> values(Environment env, String name) {
-      return Binder.get(env).bind(name, Bindable.listOf(String.class)).orElse(List.of()).stream()
+      return Binder.get(env).bind(name, Bindable.listOf(String.class)).orElseGet(List::of).stream()
           .filter(v -> v != null && !v.isBlank())
           .toList();
     }

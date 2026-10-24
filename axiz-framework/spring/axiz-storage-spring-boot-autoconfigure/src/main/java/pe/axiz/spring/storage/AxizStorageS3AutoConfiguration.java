@@ -60,7 +60,8 @@ public class AxizStorageS3AutoConfiguration {
   @ConditionalOnMissingBean
   @ConditionalOnProperty("axiz.storage.bucket")
   ObjectStorage axizS3ObjectStorage(S3Client s3, S3Presigner presigner, AxizStorageProperties p) {
-    String kms = p.kmsKeyId() != null && !p.kmsKeyId().isBlank() ? p.kmsKeyId() : null;
+    String configuredKey = p.kmsKeyId();
+    String kms = configuredKey != null && !configuredKey.isBlank() ? configuredKey : null;
     return new S3ObjectStorage(
         s3, presigner, Objects.requireNonNull(p.bucket()), kms, p.maxPresignTtl());
   }

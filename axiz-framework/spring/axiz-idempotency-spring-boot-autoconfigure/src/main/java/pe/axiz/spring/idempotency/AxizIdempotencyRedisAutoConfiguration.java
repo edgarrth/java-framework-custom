@@ -41,8 +41,7 @@ public class AxizIdempotencyRedisAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   IdempotencyStore axizRedisIdempotencyStore(
-      @Qualifier("axizIdempotencyRedisConnection")
-          StatefulRedisConnection<String, String> connection,
+      @Qualifier("axizIdempotencyRedisConnection") StatefulRedisConnection<String, String> connection,
       AxizIdempotencyProperties p,
       ObjectProvider<Clock> clock) {
     return new RedisIdempotencyStore(

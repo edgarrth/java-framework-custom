@@ -1,5 +1,6 @@
 package pe.axiz.core.errors;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -12,7 +13,8 @@ import java.util.Objects;
  * @param messageKey i18n key for the detail message
  */
 public record ErrorDefinition(
-    ErrorCode code, ErrorCategory category, ErrorType type, String title, String messageKey) {
+    ErrorCode code, ErrorCategory category, ErrorType type, String title, String messageKey)
+    implements Serializable {
 
   public ErrorDefinition {
     Objects.requireNonNull(code, "code");
