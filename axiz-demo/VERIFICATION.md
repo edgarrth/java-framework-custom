@@ -1,5 +1,20 @@
 # Verificación de esta entrega
 
+## review29 (corrida de `quality` sobre review28)
+
+La corrida del 24 de octubre ejecutó el demo con Maven y Docker reales: BUILD SUCCESS. review29
+cambia una línea del job de liquidación (`SettlementRunner.inputKey`, la llave configurada se lee
+una vez, aviso de SpotBugs). Verificado aquí: los 8 servicios compilan main y pruebas contra el
+framework de esta entrega (0 fallas).
+
+## review28 (validación de review27)
+
+La validación del 23 de octubre ejecutó el demo con Maven real y sin configuración AWS ambiental:
+118 de 118 pruebas, con sus pruebas con contenedores. review28 no cambia el código del demo; solo
+el framework que usa. Verificado aquí: los 8 servicios compilan main y pruebas contra el framework
+de esta entrega (0 fallas). Ningún servicio implementa `ByteCache` ni construye `CachedValue`, las
+únicas APIs públicas que cambiaron.
+
 ## review27 (tres auditorías sobre review26)
 
 La auditoría del 17 de octubre ejecutó el demo con Maven real: 117 de 118 pruebas (fallaba el

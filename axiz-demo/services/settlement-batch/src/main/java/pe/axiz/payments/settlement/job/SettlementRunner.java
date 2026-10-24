@@ -121,8 +121,9 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
 
   /** The configured key, or the file of the previous business day. */
   String inputKey() {
-    if (properties.inputKey() != null && !properties.inputKey().isBlank()) {
-      return properties.inputKey();
+    String configured = properties.inputKey();
+    if (configured != null && !configured.isBlank()) {
+      return configured;
     }
     LocalDate today = LocalDate.now(clock.withZone(calendar.zone()));
     return SettlementFile.keyFor(properties.inputPrefix(), calendar.previousBusinessDay(today));
