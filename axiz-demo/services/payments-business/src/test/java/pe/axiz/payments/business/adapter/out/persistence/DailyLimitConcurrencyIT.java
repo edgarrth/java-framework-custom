@@ -14,9 +14,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.business.application.port.out.PaymentOrders;
+import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
@@ -25,13 +28,19 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
  * Report case (second review): with 10,000 already used under a 30,000 limit, concurrent orders of
  * 15,000 must not both pass. Runs against PostgreSQL in a container (Docker).
  */
-@SpringBootTest(properties = "axiz.secrets.directory=src/test/resources/secrets")
+@SpringBootTest
 @Import({
   PostgresTestConfiguration.class,
   KafkaTestConfiguration.class,
   LocalStackTestConfiguration.class
 })
 class DailyLimitConcurrencyIT {
+
+  /** Field encryption and blind index keys: random for every run, never committed. */
+  @DynamicPropertySource
+  static void secrets(DynamicPropertyRegistry registry) {
+    EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
+  }
 
   @Autowired PaymentOrders orders;
   @Autowired TransactionTemplate transactions;

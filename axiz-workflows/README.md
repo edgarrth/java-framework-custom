@@ -1,9 +1,14 @@
 # axiz-workflows
 
 Reusable GitHub Actions workflows, composite actions, Renovate presets and GitOps references of the
-axiz platform. Repositories call them with `secrets: inherit` and pin the major tag (`@v1`), which
-the release of this repository moves; third-party actions are pinned by commit SHA (checked by
-`self-check`, kept up to date by Renovate).
+axiz platform. Repositories call them with `secrets: inherit` and pin an immutable release
+(`@v1.0.0`); the Renovate preset (`helpers:pinGitHubActionDigestsToSemver`) turns that reference
+into the commit SHA of the release and proposes each new one as a pull request, so a moved tag can
+never change the pipeline of a service. Inside this repository the references between workflows
+and actions carry the release version too (`# x-release-please-version`: release-please updates
+them in the release pull request) and `self-check` rejects any other reference. Third-party actions
+are pinned by commit SHA (checked by `self-check`, kept up to date by Renovate). Protect the `v*`
+tags with a ruleset (no update, no deletion) and enable immutable releases in the repository.
 
 | Workflow | Used by | What it does |
 |---|---|---|
@@ -70,9 +75,14 @@ Renovate presets: `renovate/default.json` (action digests pinned to semver), `re
 | Secret | `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY` | GitHub App for release-please (its tags trigger the publication) |
 | Secret (optional) | `ARGOCD_AUTH_TOKEN` | read-only Argo CD project token (`ci-read` role) |
 | Variable | `GITOPS_REPOSITORY` (default `axiz-gitops`), `ARGOCD_SERVER` | deployments |
-| Variable | `COSIGN_KMS_KEY` (`awskms:///alias/axiz-image-signing`), `COSIGN_ROLE_ARN`, `AWS_REGION` | image signing through OIDC |
+| Variable | `COSIGN_KMS_KEY` (`awskms:///alias/axiz-image-signing`), `COSIGN_ROLE_ARN`, `AWS_REGION` | image signing, SBOM and SLSA provenance attestations, signed provenance of library releases (OIDC). Mandatory: `service-ci` fails without them, and a release tag never publishes unsigned |
+| Secret | `AXIZ_NAMING_GUARD` | names that must never appear in axiz repositories (one extended regex per line, kept out of the code); `pr.yaml` fails without it unless the variable `AXIZ_NAMING_GUARD_OPTIONAL=true` |
+| Variable (sandbox only) | `AXIZ_ALLOW_UNSIGNED_IMAGES=true` | lets a sandbox repository publish unsigned images from `main` (never from a tag); clusters with the admission policy reject them |
 | Variable per environment | `TERRAFORM_ROLE_ARN`, `AWS_REGION` | `infra.yaml` |
 
-GitHub environments `dev`, `qa` and `prod`; `prod` requires reviewers. Jobs that must reach Nexus
+GitHub environments `dev`, `qa` and `prod`; `prod` requires reviewers. `qa` and `prod` only
+deploy an image by digest (`image-digest`, output of `service-ci`); `service-cd` waits for Argo CD
+through its REST API with `curl` and `jq` (no CLI is downloaded). Every tool downloaded by a
+workflow has a pinned version and SHA-256, verified before it runs. Jobs that must reach Nexus
 or the cluster through the private network take a `runner` input (an Actions Runner Controller
 scale set in EKS).

@@ -35,8 +35,8 @@ public record Sort(List<Order> orders) {
   public static Sort parse(List<String> expressions) {
     List<Order> orders = new ArrayList<>();
     for (String expression : expressions) {
-      for (String part : expression.split(";")) {
-        String[] tokens = part.strip().split(",");
+      for (String part : expression.split(";", -1)) {
+        String[] tokens = part.strip().split(",", -1);
         if (tokens.length == 0 || tokens[0].isBlank()) {
           continue;
         }

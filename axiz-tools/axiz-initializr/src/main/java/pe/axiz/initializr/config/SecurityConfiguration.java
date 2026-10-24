@@ -70,10 +70,8 @@ public class SecurityConfiguration {
   SecurityFilterChain initializrSecurity(HttpSecurity http) throws Exception {
     http.authorizeHttpRequests(
             a ->
-                a.requestMatchers("/actuator/health/**", "/actuator/info")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
+                // only the probes are anonymous: build details (info) need a session or token
+                a.requestMatchers("/actuator/health/**").permitAll().anyRequest().authenticated())
         .oauth2Login(
             o ->
                 o.loginPage(SSO_LOGIN)

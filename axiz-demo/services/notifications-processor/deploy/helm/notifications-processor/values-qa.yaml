@@ -18,6 +18,12 @@ autoscaling:
   maxReplicas: 3
   targetCPUUtilizationPercentage: 70
 
+networkPolicy:
+  egress:
+    # destinations outside the cluster this service reaches in qa (VPC endpoints of
+    # the AWS services it uses, databases, brokers, partners), with their ports
+    cidrs: []
+
 externalSecret:
   remotePrefix: qa/notifications-processor
 

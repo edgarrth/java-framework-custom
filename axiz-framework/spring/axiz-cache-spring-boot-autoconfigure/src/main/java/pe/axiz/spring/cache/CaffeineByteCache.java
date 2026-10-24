@@ -10,7 +10,24 @@ import pe.axiz.core.cache.ByteCache;
 /** L1 on Caffeine with a TTL per entry and size-based eviction. */
 public final class CaffeineByteCache implements ByteCache {
 
-  private record Entry(byte[] value, long ttlNanos) {}
+  /** Internal holder; a class rather than a record because it holds an array. */
+  private static final class Entry {
+    private final byte[] value;
+    private final long ttlNanos;
+
+    Entry(byte[] value, long ttlNanos) {
+      this.value = value;
+      this.ttlNanos = ttlNanos;
+    }
+
+    byte[] value() {
+      return value;
+    }
+
+    long ttlNanos() {
+      return ttlNanos;
+    }
+  }
 
   private final Cache<String, Entry> cache;
 

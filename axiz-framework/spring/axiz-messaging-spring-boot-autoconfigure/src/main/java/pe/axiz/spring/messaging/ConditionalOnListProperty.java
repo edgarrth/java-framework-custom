@@ -8,6 +8,7 @@ import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -39,10 +40,10 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
     @Override
     public ConditionOutcome getMatchOutcome(
         ConditionContext context, AnnotatedTypeMetadata metadata) {
-      Map<String, Object> attributes =
+      Map<String, @Nullable Object> attributes =
           Objects.requireNonNull(
               metadata.getAnnotationAttributes(ConditionalOnListProperty.class.getName()));
-      String name = (String) attributes.get("value");
+      String name = (String) Objects.requireNonNull(attributes.get("value"));
       List<String> values = values(context.getEnvironment(), name);
       return values.isEmpty()
           ? ConditionOutcome.noMatch(name + " is empty")

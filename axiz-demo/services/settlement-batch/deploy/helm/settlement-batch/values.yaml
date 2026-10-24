@@ -13,6 +13,12 @@ serviceAccount:
   create: true
   name: ""
   annotations: {}  # eks.amazonaws.com/role-arn per environment (IRSA)
+  # the pods never call the Kubernetes API (configuration is mounted as files); the AWS identity
+  # (IRSA or EKS Pod Identity) uses its own projected token
+  automountToken: false
+
+# shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
+sharedConfigMap: axiz-common
 
 javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 env: []
@@ -48,6 +54,12 @@ cronjob:
 networkPolicy:
   enabled: true
   ingressNamespaces: []   # namespaces allowed to call the service (ingress, gateway, callers)
+  # Outbound traffic is denied except DNS and what is listed here
+  egress:
+    sameNamespace: true   # sibling services of the namespace
+    namespaces: []        # other namespaces this service calls
+    cidrs: []             # e.g. {cidr: 10.20.0.0/16, ports: [443, 5432]}: VPC endpoints, Aurora,
+                          # ElastiCache, MSK, partners. Fill per environment (values-<env>.yaml)
 
 # ConfigMap settlement-batch (application.yaml): environment values, flat Spring Boot keys
 config: {}

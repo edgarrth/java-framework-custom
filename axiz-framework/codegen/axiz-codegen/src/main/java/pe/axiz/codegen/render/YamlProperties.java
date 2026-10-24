@@ -26,7 +26,7 @@ public final class YamlProperties {
   /** Nests flat keys; later entries override earlier ones. */
   public static Map<String, Object> nest(Map<String, ?> flat) {
     Map<String, Object> root = new LinkedHashMap<>();
-    flat.forEach((key, value) -> put(root, key.split("\\."), 0, value));
+    flat.forEach((key, value) -> put(root, key.split("\\.", -1), 0, value));
     return root;
   }
 

@@ -78,7 +78,8 @@ class S3ObjectStorageTest {
         response.contentType("text/csv").contentLength(3L);
       }
       return new ResponseInputStream<>(
-          response.build(), AbortableInputStream.create(new ByteArrayInputStream(new byte[] {1, 2, 3})));
+          response.build(),
+          AbortableInputStream.create(new ByteArrayInputStream(new byte[] {1, 2, 3})));
     }
 
     @Override
@@ -93,7 +94,8 @@ class S3ObjectStorageTest {
       // two pages of two keys
       if (r.continuationToken() == null) {
         return ListObjectsV2Response.builder()
-            .contents(S3Object.builder().key("in/a").build(), S3Object.builder().key("in/b").build())
+            .contents(
+                S3Object.builder().key("in/a").build(), S3Object.builder().key("in/b").build())
             .isTruncated(true)
             .nextContinuationToken("page-2")
             .build();
@@ -186,7 +188,8 @@ class S3ObjectStorageTest {
     try (S3Presigner presigner = presigner()) {
       S3ObjectStorage storage =
           new S3ObjectStorage(s3, presigner, "axiz-files", null, Duration.ofMinutes(15));
-      storage.put("in/x.txt", new ByteArrayInputStream(new byte[2]), ObjectMetadata.of("text/plain", 2));
+      storage.put(
+          "in/x.txt", new ByteArrayInputStream(new byte[2]), ObjectMetadata.of("text/plain", 2));
       assertNull(s3.puts.get(0).serverSideEncryption());
       assertNull(s3.puts.get(0).ssekmsKeyId());
       assertEquals(2L, s3.puts.get(0).contentLength());

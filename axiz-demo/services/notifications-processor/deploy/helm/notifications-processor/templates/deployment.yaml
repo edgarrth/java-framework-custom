@@ -32,7 +32,9 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: ScheduleAnyway
+          # ScheduleAnyway keeps scheduling when a zone is full; DoNotSchedule guarantees the
+          # spread (critical services, clusters with capacity in every zone)
+          whenUnsatisfiable: {{ (.Values.topologySpread | default dict).whenUnsatisfiable | default "ScheduleAnyway" }}
           labelSelector:
             matchLabels:
               {{- include "service.selectorLabels" . | nindent 14 }}

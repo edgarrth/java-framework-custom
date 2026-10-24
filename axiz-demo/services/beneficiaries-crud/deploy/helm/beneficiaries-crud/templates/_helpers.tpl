@@ -35,7 +35,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- $root := .root -}}
 {{- $values := .root.Values -}}
 serviceAccountName: {{ include "service.serviceAccountName" $root }}
-automountServiceAccountToken: true
+# The pods never call the Kubernetes API (configuration is mounted as files): no token unless a
+# service needs one for something else and sets serviceAccount.automountToken
+automountServiceAccountToken: {{ $values.serviceAccount.automountToken | default false }}
 {{- with $values.imagePullSecrets }}
 imagePullSecrets:
   {{- toYaml . | nindent 2 }}
@@ -91,6 +93,16 @@ containers:
     volumeMounts:
       - name: tmp
         mountPath: /tmp
+      # ConfigMaps read by axiz-config as files (axiz.config.directory): later ones win
+      - name: config-common
+        mountPath: /etc/axiz/config/common
+        readOnly: true
+      - name: config-service
+        mountPath: /etc/axiz/config/service
+        readOnly: true
+      - name: config-errors
+        mountPath: /etc/axiz/config/errors
+        readOnly: true
       {{- if $values.externalSecret.keys }}
       - name: secrets
         mountPath: /var/run/secrets/axiz
@@ -99,6 +111,16 @@ containers:
 volumes:
   - name: tmp
     emptyDir: {}
+  - name: config-common
+    configMap:
+      name: {{ $values.sharedConfigMap | default "axiz-common" }}
+      optional: true
+  - name: config-service
+    configMap:
+      name: {{ include "service.fullname" $root }}
+  - name: config-errors
+    configMap:
+      name: {{ include "service.fullname" $root }}-errors
   {{- if $values.externalSecret.keys }}
   - name: secrets
     secret:

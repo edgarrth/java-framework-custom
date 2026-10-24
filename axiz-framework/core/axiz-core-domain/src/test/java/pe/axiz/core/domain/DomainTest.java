@@ -136,7 +136,8 @@ class DomainTest {
     BusinessException e =
         assertThrows(
             BusinessException.class,
-            () -> Rules.check(false, DomainErrors.RULE_VIOLATED, "over limit", Map.of("limit", 10)));
+            () ->
+                Rules.check(false, DomainErrors.RULE_VIOLATED, "over limit", Map.of("limit", 10)));
     assertEquals(Map.of("limit", 10), e.parameters());
   }
 

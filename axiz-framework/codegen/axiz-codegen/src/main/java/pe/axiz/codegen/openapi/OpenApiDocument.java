@@ -106,7 +106,7 @@ public final class OpenApiDocument {
         return Map.of();
       }
       Map<String, Object> target = root;
-      for (String part : ref.substring(2).split("/")) {
+      for (String part : ref.substring(2).split("/", -1)) {
         target = map(target.get(part.replace("~1", "/").replace("~0", "~")));
       }
       current = target;

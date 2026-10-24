@@ -1,7 +1,7 @@
 # CI/CD
 
 Los pipelines viven como **workflows reutilizables** en `axiz-workflows`; cada repositorio solo los
-invoca (`uses: axiz/axiz-workflows/.github/workflows/<workflow>.yaml@v1` con `secrets: inherit`),
+invoca (`uses: axiz/axiz-workflows/.github/workflows/<workflow>.yaml@v1.0.0` con `secrets: inherit`),
 así un cambio de estándar llega a todos sin tocar cada repo.
 
 | Workflow | Disparador | Qué hace |
@@ -45,6 +45,16 @@ El `ci.yaml` generado encadena los despliegues detrás del build y la imagen del
   revisión obligatoria.
 - Acciones de terceros **fijadas por SHA** (lo verifica `self-check` y Renovate las mantiene);
   permisos mínimos por job.
+- Los workflows de axiz se usan por **release inmutable** (`@v1.0.0`) y Renovate los fija al SHA de
+  esa release; protege los tags `v*` con un ruleset (sin actualizar ni borrar) y activa las
+  releases inmutables del repositorio.
+- Toda herramienta que un workflow descarga (actionlint, kubeconform, kube-linter) tiene versión y
+  SHA-256 fijados y se verifica antes de ejecutarse; la espera de Argo CD usa su API REST con
+  `curl`, sin descargar su CLI.
+- Firma obligatoria de imágenes, procedencia SLSA de imágenes y de releases de librerías (firmada
+  con la llave de KMS y adjunta a la release de GitHub), SBOM en cada build.
+- El wrapper de Maven verifica la distribución contra el SHA-512 fijado en
+  `maven-wrapper.properties` antes de ejecutarla.
 - Jobs que necesitan la red privada (Nexus, Argo CD) aceptan un `runner` (Actions Runner Controller
   en EKS).
 
@@ -61,10 +71,12 @@ Commits (el título del PR es el commit al hacer squash).
 |---|---|---|
 | Secreto | `NEXUS_URL`, `NEXUS_USERNAME`, `NEXUS_PASSWORD`, `NEXUS_DOCKER_REGISTRY` | builds e imágenes |
 | Secreto (opcional) | `SONAR_HOST_URL`, `SONAR_TOKEN` | análisis y quality gate |
-| Secreto (opcional) | `AXIZ_NAMING_GUARD` | identificadores prohibidos, uno por línea (fuera de todo repositorio) |
+| Secreto | `AXIZ_NAMING_GUARD` | identificadores prohibidos, uno por línea (fuera de todo repositorio); `pr.yaml` falla si falta, salvo `AXIZ_NAMING_GUARD_OPTIONAL=true` |
 | Secreto | `GITOPS_APP_ID`, `GITOPS_APP_PRIVATE_KEY` | GitHub App que solo puede escribir en el repositorio GitOps |
 | Secreto | `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY` | GitHub App de release-please (sus tags disparan la publicación) |
 | Secreto (opcional) | `ARGOCD_AUTH_TOKEN` | token de solo lectura del proyecto de Argo CD |
 | Variable | `GITOPS_REPOSITORY`, `ARGOCD_SERVER` | despliegue |
-| Variable | `COSIGN_KMS_KEY`, `COSIGN_ROLE_ARN`, `AWS_REGION` | firma de imágenes |
+| Variable | `COSIGN_KMS_KEY`, `COSIGN_ROLE_ARN`, `AWS_REGION` | firma de imágenes y atestaciones (SBOM, procedencia SLSA); obligatorias |
+| Variable (solo sandbox) | `AXIZ_ALLOW_UNSIGNED_IMAGES=true` | permite publicar desde `main` sin firma (nunca desde un tag) |
+| Variable (repositorio) | `AXIZ_API_BASELINE` | versión publicada contra la que japicmp compara la API (obligatoria desde 1.0.0) |
 | Variable por environment | `TERRAFORM_ROLE_ARN`, `AWS_REGION` | infraestructura |

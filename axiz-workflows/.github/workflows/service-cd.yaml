@@ -32,7 +32,7 @@ on:
         type: string
         default: ""
       image-digest:
-        description: Digest of the signed image (recommended; the cluster admission policy verifies it)
+        description: Digest of the signed image (sha256:<64 hex>); required for qa and prod, where only the verified digest may be deployed
         type: string
         default: ""
       wait:
@@ -69,8 +69,15 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           TAG: ${{ inputs.image-tag }}
           REVISION: ${{ inputs.revision }}
+          DIGEST: ${{ inputs.image-digest }}
         run: |
           case "$ENVIRONMENT" in dev|qa|prod) ;; *) echo "::error::unknown environment $ENVIRONMENT"; exit 1;; esac
+          if [ -n "$DIGEST" ] && ! [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::image-digest must be sha256:<64 hex>, was '$DIGEST'"; exit 1
+          fi
+          if [ "$ENVIRONMENT" != dev ] && [ -z "$DIGEST" ]; then
+            echo "::error::$ENVIRONMENT deploys only a signed image by digest: pass image-digest (service-ci output)"; exit 1
+          fi
           echo "tag=${TAG:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
           echo "revision=${REVISION:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
       - name: Token for the GitOps repository (GitHub App, short-lived)
@@ -82,7 +89,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: ${{ vars.GITOPS_REPOSITORY || 'axiz-gitops' }}
       - name: Update the release in the GitOps repository
-        uses: axiz/axiz-workflows/actions/gitops-update@v1
+        uses: axiz/axiz-workflows/actions/gitops-update@v1.0.0 # x-release-please-version
         with:
           token: ${{ steps.token.outputs.token }}
           repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY || 'axiz-gitops' }}
@@ -99,11 +106,23 @@ jobs:
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
           APP: ${{ inputs.service }}-${{ inputs.environment }}
+        # Argo CD REST API with curl and jq: no CLI binary is downloaded and executed on the runner
         run: |
-          curl -fsSL -o argocd "https://$ARGOCD_SERVER/download/argocd-linux-amd64" && chmod +x argocd
-          ./argocd app get "$APP" --grpc-web --refresh > /dev/null
-          ./argocd app wait "$APP" --grpc-web --sync --health --timeout 900
-          deployed=$(./argocd app get "$APP" --grpc-web -o json | jq -r '.status.sync.revisions // [] | join(" ")')
+          api="https://$ARGOCD_SERVER/api/v1/applications/$APP"
+          auth=(-H "Authorization: Bearer $ARGOCD_AUTH_TOKEN")
+          curl -fsS --retry 3 "${auth[@]}" "$api?refresh=normal" > /dev/null
+          deadline=$((SECONDS + 900))
+          while :; do
+            state=$(curl -fsS --retry 3 "${auth[@]}" "$api" | jq -r '[.status.sync.status, .status.health.status, .status.operationState.phase // "None"] | join(" ")')
+            echo "Argo CD: $state"
+            case "$state" in
+              "Synced Healthy Succeeded"|"Synced Healthy None") break ;;
+              *" Degraded "*|*" Failed"|*" Error") echo "::error::$APP is $state"; exit 1 ;;
+            esac
+            [ "$SECONDS" -lt "$deadline" ] || { echo "::error::$APP not synced and healthy after 15 minutes ($state)"; exit 1; }
+            sleep 10
+          done
+          deployed=$(curl -fsS "${auth[@]}" "$api" | jq -r '.status.sync.revisions // [.status.sync.revision] | join(" ")')
           echo "Argo CD revisions: $deployed"
       - name: Summary
         env:

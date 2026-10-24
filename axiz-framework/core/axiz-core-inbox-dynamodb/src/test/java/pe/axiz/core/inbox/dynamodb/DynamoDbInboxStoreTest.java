@@ -168,7 +168,8 @@ class DynamoDbInboxStoreTest {
   @Test
   void aRefusedWriteWithoutTheCurrentItemIsBusyWithAnUnknownLease() {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
-    // the condition failed but DynamoDB returned no item (or one without lease): busy, lease unknown
+    // the condition failed but DynamoDB returned no item (or one without lease): busy, lease
+    // unknown
     DynamoDbInboxStore withoutItem =
         new DynamoDbInboxStore(
             failing(ConditionalCheckFailedException.builder().message("exists").build()), "t");

@@ -1,5 +1,9 @@
 package pe.axiz.core.crypto;
 
+import java.security.MessageDigest;
+import java.util.Arrays;
+import org.jspecify.annotations.Nullable;
+
 /** Port for envelope encryption data keys (AWS KMS in production). */
 public interface DataKeyProvider {
 
@@ -10,25 +14,42 @@ public interface DataKeyProvider {
   byte[] decrypt(byte[] encryptedKey, String context);
 
   /**
-   * Data key pair.
-   *
-   * @param plaintext 32-byte key, keep only in memory
-   * @param encrypted key encrypted by the master key
+   * Data key pair. The arrays are copied on the way in and out; equality compares the encrypted key
+   * only, in constant time, and the plaintext never appears in {@link #toString()}.
    */
-  record DataKey(byte[] plaintext, byte[] encrypted) {
-    public DataKey {
-      plaintext = plaintext.clone();
-      encrypted = encrypted.clone();
+  final class DataKey {
+    private final byte[] plaintext;
+    private final byte[] encrypted;
+
+    /**
+     * Creates a data key pair.
+     *
+     * @param plaintext 32-byte key, keep only in memory
+     * @param encrypted key encrypted by the master key
+     */
+    public DataKey(byte[] plaintext, byte[] encrypted) {
+      this.plaintext = plaintext.clone();
+      this.encrypted = encrypted.clone();
     }
 
-    @Override
+    /** A copy of the 32-byte plaintext key. */
     public byte[] plaintext() {
       return plaintext.clone();
     }
 
-    @Override
+    /** A copy of the key encrypted by the master key. */
     public byte[] encrypted() {
       return encrypted.clone();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      return o instanceof DataKey k && MessageDigest.isEqual(encrypted, k.encrypted);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(encrypted);
     }
 
     @Override

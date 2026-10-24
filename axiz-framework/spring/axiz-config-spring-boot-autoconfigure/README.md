@@ -1,7 +1,7 @@
 <!-- generated -->
 # axiz-config-spring-boot-autoconfigure
 
-ConfigMaps through Spring Cloud Kubernetes and Parameter Store conventions with fail-fast validation (auto-configuration).
+ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation (auto-configuration).
 
 ## Dependency
 

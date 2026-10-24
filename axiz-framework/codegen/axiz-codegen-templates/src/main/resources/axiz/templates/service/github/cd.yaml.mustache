@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: <% project.name %>
       environment: ${{ inputs.environment }}

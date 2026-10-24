@@ -9,7 +9,7 @@ import pe.axiz.core.errors.ErrorType;
 
 /**
  * Error handling settings ({@code axiz.errors.*}). The service catalog usually comes from the
- * {@code <service>-errors} ConfigMap imported with Spring Cloud Kubernetes.
+ * {@code <service>-errors} ConfigMap, mounted as a file and imported by axiz-config.
  *
  * @param typeBaseUri base URI of problem types; empty means {@code about:blank}
  * @param exposeExternalDetail whether responses include the failing dependency name and code

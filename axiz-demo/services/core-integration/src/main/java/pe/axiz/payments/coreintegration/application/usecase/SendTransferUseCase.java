@@ -15,7 +15,7 @@ import pe.axiz.payments.coreintegration.domain.Transfer;
 import pe.axiz.payments.coreintegration.domain.TransferOrder;
 
 /**
- * Sends an interbank transfer. The CCI check digits are verified here, so obviously wrong accounts
+ * Sends an inter-bank transfer. The CCI check digits are verified here, so obviously wrong accounts
  * never cost a network call.
  */
 @UseCase

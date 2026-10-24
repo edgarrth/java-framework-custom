@@ -18,6 +18,12 @@ autoscaling:
   maxReplicas: 2
   targetCPUUtilizationPercentage: 70
 
+networkPolicy:
+  egress:
+    # destinations outside the cluster this service reaches in dev (VPC endpoints of
+    # the AWS services it uses, databases, brokers, partners), with their ports
+    cidrs: []
+
 externalSecret:
   remotePrefix: dev/beneficiaries-crud
 

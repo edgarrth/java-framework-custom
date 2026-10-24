@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
@@ -60,7 +61,8 @@ public class HttpClientRegistry {
   public HttpClientSettings transport(ClientSettings s) {
     HttpClientSettings t =
         HttpClientSettings.defaults().withTimeouts(s.timeouts().connect(), s.timeouts().read());
-    String bundle = raw.get(s.name()).sslBundle();
+    String bundle =
+        Objects.requireNonNull(raw.get(s.name()), "Unknown HTTP client " + s.name()).sslBundle();
     if (bundle != null) {
       if (sslBundles == null) {
         throw new IllegalStateException(

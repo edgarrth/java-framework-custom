@@ -26,7 +26,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `IssuerPolicy` | Allow-list of trusted issuers. |
 | `RateLimitKeys` | Builds rate-limit keys from the authenticated principal. |
 | `RateLimiter` | Rate limiter port; the key always comes from the validated token, never from a client header. |
-| `RequestSignature` | HMAC-SHA256 request signatures for partner callbacks and webhooks. |
+| `RequestSignature` | HMAC-SHA256 signatures (format `AXIZ-HMAC-V2`) for partner callbacks and webhooks: unambiguous signed string, key rotation by key id, time window and single-use nonces. |
+| `NonceStore`, `InMemoryNonceStore` | Replay protection for `RequestSignature`; the in-memory store protects one instance only (use `RedisNonceStore` in a cluster). |
 | `TrustedIssuer` | An issuer the service accepts. |
 
 ## Tests

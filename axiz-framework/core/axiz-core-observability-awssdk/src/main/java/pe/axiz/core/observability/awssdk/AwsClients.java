@@ -6,6 +6,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 
 /**
@@ -29,7 +30,18 @@ public final class AwsClients {
     if (endpoint != null && !endpoint.isBlank()) {
       builder.endpointOverride(URI.create(endpoint));
     }
-    return builder.build();
+    try {
+      return builder.build();
+    } catch (SdkClientException e) {
+      if (region == null || region.isBlank()) {
+        // the SDK chain found no region: say which setting the service is missing
+        throw new IllegalStateException(
+            "No AWS region for this client: set axiz.aws.region (or AWS_REGION), or turn off the"
+                + " capability that creates it when the service does not use AWS",
+            e);
+      }
+      throw e;
+    }
   }
 
   /**

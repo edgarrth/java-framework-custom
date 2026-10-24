@@ -23,7 +23,7 @@ class FrameworkArchitectureTest {
 
   /** Layer 1 is plain Java: no Spring, no Quarkus, no upper layers. */
   @ArchTest
-  static final ArchRule coreIsPlainJava =
+  static final ArchRule CORE_IS_PLAIN_JAVA =
       noClasses()
           .that()
           .resideInAPackage("pe.axiz.core..")
@@ -35,7 +35,7 @@ class FrameworkArchitectureTest {
 
   /** Layer 2 never depends on layer 3. */
   @ArchTest
-  static final ArchRule springDoesNotKnowFrameworks =
+  static final ArchRule SPRING_DOES_NOT_KNOW_FRAMEWORKS =
       noClasses()
           .that()
           .resideInAPackage("pe.axiz.spring..")
@@ -45,7 +45,7 @@ class FrameworkArchitectureTest {
 
   /** Framework contracts (-api) are plain Java over layer 1. */
   @ArchTest
-  static final ArchRule frameworkApisArePlainJava =
+  static final ArchRule FRAMEWORK_APIS_ARE_PLAIN_JAVA =
       noClasses()
           .that(apiPackages())
           .should()
@@ -58,7 +58,7 @@ class FrameworkArchitectureTest {
    * talk to each other through core ports.
    */
   @ArchTest
-  static final ArchRule startersAreIsolated =
+  static final ArchRule STARTERS_ARE_ISOLATED =
       ArchRuleDefinition.classes()
           .that()
           .resideInAPackage("pe.axiz.spring..")
@@ -66,12 +66,12 @@ class FrameworkArchitectureTest {
 
   /** No cycles between core capabilities. */
   @ArchTest
-  static final ArchRule coreHasNoCycles =
+  static final ArchRule CORE_HAS_NO_CYCLES =
       slices().matching("pe.axiz.core.(*)..").should().beFreeOfCycles();
 
   /** No cycles between framework styles. */
   @ArchTest
-  static final ArchRule frameworksHaveNoCycles =
+  static final ArchRule FRAMEWORKS_HAVE_NO_CYCLES =
       slices().matching("pe.axiz.framework.(*)..").should().beFreeOfCycles();
 
   static DescribedPredicate<JavaClass> apiPackages() {

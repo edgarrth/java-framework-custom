@@ -169,13 +169,13 @@ class EventMetricsTest {
 
   @Test
   void sampleMeasuresDurationWithOutcome() {
-    EventMetrics.Sample sample = metrics.start("transfer.interbank");
+    EventMetrics.Sample sample = metrics.start("transfer.external");
     clock.add(Duration.ofMillis(250));
     sample.stop(Outcome.TIMEOUT, t -> t.reason("network"));
     Timer timer =
         registry
             .get(MetricNames.DURATION)
-            .tags("event", "transfer.interbank", "outcome", "timeout")
+            .tags("event", "transfer.external", "outcome", "timeout")
             .timer();
     assertEquals(250.0, timer.totalTime(TimeUnit.MILLISECONDS));
     metrics.start("x").stop(Outcome.SUCCESS);

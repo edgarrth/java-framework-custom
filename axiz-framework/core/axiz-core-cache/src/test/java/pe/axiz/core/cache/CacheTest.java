@@ -206,7 +206,60 @@ class CacheTest {
   }
 
   @Test
-  void keysEscapeSeparators() {
-    assertEquals("a:b\\:c:_", CacheKeys.of("a", "b:c", null));
+  void keysEscapeSeparatorsAndKeepTypes() {
+    assertEquals("s=a:s=b\\:c:-", CacheKeys.of("a", "b:c", null));
+  }
+
+  @Test
+  void aCopyTakenFromL2NeverOutlivesTheOriginalExpiration() {
+    MutableClock clock = new MutableClock();
+    InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
+    InMemoryByteCache l2 = new InMemoryByteCache(10, clock);
+    TwoLevelCache cache = new TwoLevelCache(l1, l2, Duration.ofSeconds(3));
+    cache.put("rate", "old".getBytes(StandardCharsets.UTF_8), Duration.ofSeconds(10));
+    l1.evict("rate"); // another instance: only L2 has it
+    clock.now = clock.now.plusSeconds(9);
+    assertTrue(cache.get("rate").isPresent());
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(l2.get("rate").isEmpty());
+    assertTrue(cache.get("rate").isEmpty(), "L1 must not serve past the 10 second TTL");
+  }
+
+  @Test
+  void aCopyLivesTheL1LimitWhenL2HasMoreTimeLeftOrCannotTell() {
+    MutableClock clock = new MutableClock();
+    InMemoryByteCache l1 = new InMemoryByteCache(10, clock);
+    InMemoryByteCache l2 = new InMemoryByteCache(10, clock);
+    TwoLevelCache cache = new TwoLevelCache(l1, l2, Duration.ofSeconds(3));
+    l2.put("k", new byte[] {1}, Duration.ofMinutes(5));
+    assertTrue(cache.get("k").isPresent());
+    l2.evict("k");
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(cache.get("k").isPresent(), "within the L1 limit");
+    clock.now = clock.now.plusSeconds(2);
+    assertTrue(cache.get("k").isEmpty(), "past the L1 limit");
+
+    FlakyCache unknown = new FlakyCache(clock); // no remaining TTL: the L1 limit applies
+    TwoLevelCache other =
+        new TwoLevelCache(new InMemoryByteCache(10, clock), unknown, Duration.ofSeconds(3));
+    unknown.delegate.put("u", new byte[] {2}, Duration.ofMinutes(5));
+    assertTrue(other.get("u").isPresent());
+    assertTrue(other.getWithTtl("u").orElseThrow().remaining().isEmpty());
+  }
+
+  @Test
+  void theInMemoryTierReportsWhatIsLeft() {
+    MutableClock clock = new MutableClock();
+    InMemoryByteCache cache = new InMemoryByteCache(10, clock);
+    assertTrue(cache.getWithTtl("none").isEmpty());
+    cache.put("k", new byte[] {7}, Duration.ofSeconds(10));
+    clock.now = clock.now.plusSeconds(4);
+    CachedValue v = cache.getWithTtl("k").orElseThrow();
+    assertEquals(Duration.ofSeconds(6), v.remaining().orElseThrow());
+    byte[] copy = v.value();
+    copy[0] = 0;
+    assertEquals(7, v.value()[0], "defensive copy");
+    clock.now = clock.now.plusSeconds(6);
+    assertTrue(cache.getWithTtl("k").isEmpty());
   }
 }

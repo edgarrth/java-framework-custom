@@ -90,5 +90,14 @@ public final class InMemoryObjectStorage implements ObjectStorage {
     }
   }
 
-  private record Entry(byte[] bytes, ObjectMetadata metadata) {}
+  /** Internal holder; a class rather than a record because it holds an array. */
+  private static final class Entry {
+    private final byte[] bytes;
+    private final ObjectMetadata metadata;
+
+    Entry(byte[] bytes, ObjectMetadata metadata) {
+      this.bytes = bytes;
+      this.metadata = metadata;
+    }
+  }
 }

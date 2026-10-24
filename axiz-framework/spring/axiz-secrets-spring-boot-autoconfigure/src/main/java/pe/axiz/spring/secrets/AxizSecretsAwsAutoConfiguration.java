@@ -1,7 +1,6 @@
 package pe.axiz.spring.secrets;
 
 import io.micrometer.observation.ObservationRegistry;
-import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -67,12 +66,13 @@ public class AxizSecretsAwsAutoConfiguration {
 
     @Bean
     SecretSource axizParameterStoreSource(SsmClient client, AxizSecretsProperties p) {
-      return new SecretSource(
-          "parameter-store",
-          new ParameterStoreResolver(
-              client,
-              Objects.requireNonNull(
-                  p.parameterStore().path(), "axiz.secrets.parameter-store.path is required")));
+      String path = p.parameterStore().path();
+      if (path == null || path.isBlank()) {
+        throw new IllegalStateException(
+            "axiz.secrets.parameter-store.path is required when the Parameter Store source is"
+                + " enabled");
+      }
+      return new SecretSource("parameter-store", new ParameterStoreResolver(client, path));
     }
   }
 }

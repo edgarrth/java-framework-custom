@@ -15,7 +15,7 @@ import pe.axiz.payments.coreintegration.adapter.out.paymentnetwork.model.Network
 @HttpExchange
 public interface PaymentNetworkClient {
 
-  /** Submits an immediate interbank transfer (POST /api/transfers). */
+  /** Submits an immediate inter-bank transfer (POST /api/transfers). */
   @PostExchange("/api/transfers")
   NetworkReceipt submitTransfer(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,

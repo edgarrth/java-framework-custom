@@ -57,7 +57,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Version (tag v<x.y.z> = release, otherwise the SNAPSHOT of the pom)
@@ -82,7 +82,7 @@ jobs:
           fi
       - name: Test results of this commit (job summary)
         if: always()
-        uses: axiz/axiz-workflows/actions/test-report@v1
+        uses: axiz/axiz-workflows/actions/test-report@v1.0.0 # x-release-please-version
         with:
           command: mvn -B -ntp verify -Pquality (deploy -Pquality,release when staging) ${{ inputs.maven-args }}
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
@@ -144,5 +144,5 @@ jobs:
   publish:
     needs: verify
     if: inputs.publish
-    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0 # x-release-please-version
     secrets: inherit

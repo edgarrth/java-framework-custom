@@ -71,7 +71,7 @@ capabilities:
 
   - name: config
     starter: axiz-config-spring-boot-starter
-    description: ConfigMaps through Spring Cloud Kubernetes (axiz-common, <app>, <app>-errors), Parameter Store, required keys check
+    description: ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check
     properties:
       axiz.config.environment: ${AXIZ_ENVIRONMENT:local}
     example: |
@@ -103,6 +103,8 @@ capabilities:
     local:
       axiz.security.issuers[0].issuer: http://localhost:8180/realms/axiz
       axiz.security.issuers[0].audiences[0]: local-services
+      # Swagger UI without a token only on a laptop; in every environment it needs a token
+      axiz.security.public-api-docs: true
     example: |
       @PreAuthorize("hasAuthority('SCOPE_orders.write')")
 
@@ -475,3 +477,19 @@ capabilities:
     properties: {}
     example: |
       notificationSender.send(new NotificationRequest(id, NotificationChannel.EMAIL, to, "payment-confirmed", locale, params, null));
+
+# What the starter of each architectural style brings by itself. The generator adds these
+# capabilities and tables to every service of the style, so the migration, the properties and the
+# local resources always match what starts (a wired store without its table fails at startup or on
+# the first write).
+#   capabilities  added when the service store supports them (an event processor without
+#                 persistence has no inbox store: its handlers must be idempotent on their own)
+#   jdbc-tables   tables of stores the style starter wires when the service has a JDBC database
+#                 (servlet stack on Aurora), even if the capability was not chosen. Optional
+#                 dependencies of a starter do not count: they only arrive with their capability
+styles:
+  eda:
+    capabilities: [inbox]
+    jdbc-tables: [outbox]
+  batch:
+    jdbc-tables: [shedlock]

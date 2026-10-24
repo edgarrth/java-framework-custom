@@ -27,12 +27,13 @@ final class ReactiveCaching {
       String key,
       MethodInvocation invocation)
       throws Throwable {
+    // a reactive method that returns null (a contract violation) behaves as an empty publisher
     Object result = invocation.proceed();
     Mono<Optional<Object>> cached =
         Mono.fromCallable(() -> in.read(plan, key, plan.valueType()))
             .subscribeOn(Schedulers.boundedElastic());
     if ("mono".equals(plan.reactive())) {
-      Mono<Object> source = (Mono<Object>) result;
+      Mono<Object> source = result == null ? Mono.empty() : (Mono<Object>) result;
       return cached.flatMap(
           hit ->
               hit.isPresent()
@@ -43,7 +44,7 @@ final class ReactiveCaching {
                               .subscribeOn(Schedulers.boundedElastic())
                               .thenReturn(v)));
     }
-    Flux<Object> source = (Flux<Object>) result;
+    Flux<Object> source = result == null ? Flux.empty() : (Flux<Object>) result;
     return cached.flatMapMany(
         hit ->
             hit.isPresent()

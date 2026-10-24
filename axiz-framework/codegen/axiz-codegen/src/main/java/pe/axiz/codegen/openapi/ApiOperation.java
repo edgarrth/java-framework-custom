@@ -15,10 +15,10 @@ import org.jspecify.annotations.Nullable;
  * @param responseSchema schema name of the success response, if any
  * @param successStatus success status code
  * @param pathParams path parameter names
- * @param paged whether it accepts {@code page}/{@code size} query parameters
+ * @param paged whether it accepts the "page" and "size" query parameters
  * @param requestExample example request body (JSON), if declared
- * @param queryParams query parameters other than {@code page}, {@code size} and {@code sort}
- * @param pagingParams which of {@code page}, {@code size} and {@code sort} the contract declares
+ * @param queryParams query parameters other than "page", "size" and "sort"
+ * @param pagingParams which of "page", "size" and "sort" the contract declares
  * @param headerParams header parameters declared by the operation
  */
 public record ApiOperation(

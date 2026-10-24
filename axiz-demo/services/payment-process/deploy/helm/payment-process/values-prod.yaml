@@ -18,6 +18,15 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
 
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule   # replicas in different zones, always
+
+networkPolicy:
+  egress:
+    # destinations outside the cluster this service reaches in prod (VPC endpoints of
+    # the AWS services it uses, databases, brokers, partners), with their ports
+    cidrs: []
+
 externalSecret:
   remotePrefix: prod/payment-process
 

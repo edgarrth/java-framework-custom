@@ -15,8 +15,12 @@ import pe.axiz.core.security.ClaimMapping;
  * @param algorithms accepted JWS algorithms
  * @param clockSkew tolerated clock difference for {@code exp} and {@code nbf}
  * @param claims claim mapping to the principal
- * @param publicPaths path patterns that do not require a token
- * @param actuatorAuthority authority required for actuator endpoints other than health and info
+ * @param publicPaths path patterns that do not require a token (none by default)
+ * @param publicApiDocs whether the OpenAPI document and Swagger UI are reachable without a token;
+ *     off by default (production), the local profile of generated services turns it on
+ * @param publicInfo whether {@code /actuator/info} is reachable without a token; off by default,
+ *     since build and git details help an attacker; health probes are always public
+ * @param actuatorAuthority authority required for actuator endpoints other than health
  * @param rateLimit rate limiting per caller
  */
 @ConfigurationProperties("axiz.security")
@@ -25,10 +29,27 @@ public record AxizSecurityProperties(
     @DefaultValue({"RS256", "PS256", "ES256"}) List<String> algorithms,
     @DefaultValue("30s") Duration clockSkew,
     @DefaultValue Claims claims,
-    @DefaultValue({"/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"})
-        List<String> publicPaths,
+    @DefaultValue List<String> publicPaths,
+    @DefaultValue("false") boolean publicApiDocs,
+    @DefaultValue("false") boolean publicInfo,
     @DefaultValue("SCOPE_actuator") String actuatorAuthority,
     @DefaultValue RateLimit rateLimit) {
+
+  /** Paths of the OpenAPI document and Swagger UI (springdoc defaults). */
+  static final List<String> API_DOCS =
+      List.of("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html");
+
+  /** Every path reachable without a token, besides the health probes. */
+  public List<String> anonymousPaths(String actuatorBase) {
+    List<String> out = new java.util.ArrayList<>(publicPaths);
+    if (publicApiDocs) {
+      out.addAll(API_DOCS);
+    }
+    if (publicInfo) {
+      out.add(actuatorBase + "/info");
+    }
+    return List.copyOf(out);
+  }
 
   /**
    * A trusted issuer. Keys come from the configured (or discovered) JWKS URI, never from the token.
@@ -74,7 +95,9 @@ public record AxizSecurityProperties(
    *
    * @param enabled whether limits are enforced
    * @param rules limits by route group
-   * @param failOpen whether requests pass when the limiter store is unavailable
+   * @param failOpen whether requests pass when the limiter store is unavailable, for rules that do
+   *     not decide it themselves: true keeps reads available during a store outage; sensitive route
+   *     groups (money movement, callbacks) set {@code fail-open: false} on their rule
    */
   public record RateLimit(
       @DefaultValue("false") boolean enabled,
@@ -89,11 +112,19 @@ public record AxizSecurityProperties(
    * @param limit requests allowed per window
    * @param window window length
    * @param key {@code client} or {@code subject}
+   * @param failOpen policy of this group when the store is unavailable; empty uses the global one
    */
   public record Rule(
       String name,
       @DefaultValue("/**") List<String> paths,
       @DefaultValue("100") long limit,
       @DefaultValue("1m") Duration window,
-      @DefaultValue("client") String key) {}
+      @DefaultValue("client") String key,
+      @Nullable Boolean failOpen) {
+
+    /** The policy of this rule, or the global one. */
+    public boolean failOpen(boolean global) {
+      return failOpen != null ? failOpen : global;
+    }
+  }
 }

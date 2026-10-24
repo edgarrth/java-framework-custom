@@ -14,9 +14,9 @@ final class Conditions {
     if (expression == null || expression.isBlank()) {
       return true;
     }
-    for (String any : expression.split("\\|\\|")) {
+    for (String any : expression.split("\\|\\|", -1)) {
       boolean all = true;
-      for (String term : any.split("&&")) {
+      for (String term : any.split("&&", -1)) {
         String t = term.strip();
         boolean negate = t.startsWith("!");
         boolean value = truthy(resolve(negate ? t.substring(1).strip() : t, context));
@@ -34,7 +34,7 @@ final class Conditions {
 
   static @Nullable Object resolve(String path, Map<String, Object> context) {
     Object current = context;
-    for (String part : path.split("\\.")) {
+    for (String part : path.split("\\.", -1)) {
       if (!(current instanceof Map<?, ?> m)) {
         return null;
       }

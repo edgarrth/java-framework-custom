@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-security-redis</artifactId>
   <name>axiz :: core :: security-redis</name>
-  <description>Distributed fixed-window rate limiter on Redis (ElastiCache)</description>
+  <description>Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache)</description>
 
   <properties>
     <axiz.module.name>pe.axiz.core.security.redis</axiz.module.name>

@@ -20,6 +20,11 @@ public final class FeatureFlags {
     this.provider = Objects.requireNonNull(provider);
   }
 
+  /** Whether the flag is configured at all (an unknown flag is off, but not the same as off). */
+  public boolean isDefined(String flag) {
+    return provider.find(flag).isPresent();
+  }
+
   public boolean isEnabled(String flag, EvaluationContext ctx) {
     Optional<FlagDefinition> def = provider.find(flag);
     return def.isPresent() && evaluate(def.get(), ctx);

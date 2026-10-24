@@ -56,5 +56,6 @@ config:
   axiz.soap.clients:
     core-credit:
       endpoint: http://wiremock.axiz-demo.svc.cluster.local:8080/soap/credit
+      allow-plain-http: true   # WireMock stand-in inside the kind cluster
       username: core-integration
       password-ref: core-soap-password

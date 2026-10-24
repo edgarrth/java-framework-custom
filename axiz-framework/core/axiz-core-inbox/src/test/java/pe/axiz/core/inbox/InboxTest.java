@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -194,7 +194,8 @@ class InboxTest {
         };
     InboxStore.Acquisition a =
         new JdbcInboxStore(racing, "axiz_inbox")
-            .tryAcquire("c", "e-9", "b", now.plusSeconds(1), now.plusSeconds(61), now.plusSeconds(600));
+            .tryAcquire(
+                "c", "e-9", "b", now.plusSeconds(1), now.plusSeconds(61), now.plusSeconds(600));
     assertEquals(InboxStore.Acquisition.Status.BUSY, a.status());
     assertEquals(now.plusSeconds(1), a.leaseUntil(), "busy until now: retry right away");
   }
@@ -224,13 +225,19 @@ class InboxTest {
 
   @Test
   void anUnreachableDatabaseFailsTheAcquisition() {
-    JdbcInboxStore broken = new JdbcInboxStore(new JdbcTransactions(new JdbcDataSource()), "axiz_inbox");
+    JdbcInboxStore broken =
+        new JdbcInboxStore(new JdbcTransactions(new JdbcDataSource()), "axiz_inbox");
     InboxException e =
         assertThrows(
             InboxException.class,
             () ->
                 broken.tryAcquire(
-                    "c", "e-1", "a", clock.now, clock.now.plusSeconds(1), clock.now.plusSeconds(2)));
+                    "c",
+                    "e-1",
+                    "a",
+                    clock.now,
+                    clock.now.plusSeconds(1),
+                    clock.now.plusSeconds(2)));
     assertTrue(e.getMessage().startsWith("Inbox acquire failed"), e.getMessage());
   }
 
@@ -256,7 +263,8 @@ class InboxTest {
           }
 
           @Override
-          public boolean markProcessed(String consumer, String messageId, String owner, Instant at) {
+          public boolean markProcessed(
+              String consumer, String messageId, String owner, Instant at) {
             return false;
           }
 

@@ -14,7 +14,7 @@ public interface ProcessRunner {
   boolean available(String executable);
 
   /** Real processes. */
-  final class System implements ProcessRunner {
+  final class Local implements ProcessRunner {
 
     @Override
     public int run(Path directory, List<String> command) throws IOException {
@@ -34,7 +34,10 @@ public interface ProcessRunner {
       if (path == null) {
         return false;
       }
-      for (String dir : path.split(java.io.File.pathSeparator)) {
+      for (String dir : path.split(java.io.File.pathSeparator, -1)) {
+        if (dir.isEmpty()) {
+          continue; // an empty entry means the current directory: never trusted
+        }
         for (String name : List.of(executable, executable + ".exe", executable + ".cmd")) {
           if (java.nio.file.Files.isExecutable(Path.of(dir, name))) {
             return true;

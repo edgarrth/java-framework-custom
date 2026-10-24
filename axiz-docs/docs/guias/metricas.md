@@ -23,7 +23,7 @@ metrics.record(MetricEvent.of("payment").channel("mobile").amount(order.amount()
 metrics.count("login", e -> e.outcome(Outcome.REJECTED).reason("invalid-otp"));
 metrics.value("file.load", 12_480, e -> e.outcome(Outcome.SUCCESS));
 
-var sample = metrics.start("transfer.interbank");
+var sample = metrics.start("transfer.external");
 // ...
 sample.stop(Outcome.SUCCESS);
 
@@ -80,7 +80,7 @@ axiz:
 | security | `login`, `logout`, `mfa.challenge`, `otp.send`, `otp.validate`, `password.reset`, `device.enroll`, `session` |
 | customer | `onboarding` (con `stage`), `kyc.validate`, `profile.update`, `consent.update` |
 | account | `account.open`, `account.close`, `balance.inquiry`, `statement.download` |
-| payment | `payment`, `transfer.internal`, `transfer.interbank`, `bill.payment`, `qr.payment`, `refund`, `reversal` |
+| payment | `payment`, `transfer.internal`, `transfer.external`, `bill.payment`, `qr.payment`, `refund`, `reversal` |
 | card | `card.issue`, `card.activate`, `card.block`, `card.limit.change`, `card.authorization`, `pin.change` |
 | credit | `loan.application`, `loan.disbursement`, `installment.payment`, `credit.score` |
 | risk | `fraud.check`, `fraud.alert`, `aml.screening` |

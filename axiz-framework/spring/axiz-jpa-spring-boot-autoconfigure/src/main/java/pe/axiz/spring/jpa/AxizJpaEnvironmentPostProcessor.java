@@ -2,10 +2,12 @@ package pe.axiz.spring.jpa;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.Ordered;
@@ -61,13 +63,12 @@ public class AxizJpaEnvironmentPostProcessor implements EnvironmentPostProcessor
   static void verifyDdl(ConfigurableEnvironment env) {
     String ddl =
         env.getProperty("spring.jpa.hibernate.ddl-auto", "validate").toLowerCase(Locale.ROOT);
-    List<String> profiles = Arrays.asList(env.getActiveProfiles());
-    String active = env.getProperty("spring.profiles.active", "");
-    boolean local =
-        profiles.contains("local")
-            || profiles.contains("test")
-            || active.contains("local")
-            || active.contains("test");
+    Set<String> profiles = new HashSet<>(Arrays.asList(env.getActiveProfiles()));
+    // whole profile names only: "attestation" or "localstack-prod" are not local profiles
+    for (String p : env.getProperty("spring.profiles.active", "").split(",", -1)) {
+      profiles.add(p.trim());
+    }
+    boolean local = profiles.contains("local") || profiles.contains("test");
     if (!local && FORBIDDEN_DDL.contains(ddl)) {
       throw new IllegalStateException(
           "spring.jpa.hibernate.ddl-auto="

@@ -4,7 +4,7 @@ A small payment processor built with the axiz framework: eight services, generat
 `axiz new` and grown with `axiz add` / `axiz generate`, that together use **every capability of
 the axiz catalog** (checked by `coverage/`). Business flow: a customer pays a frequent beneficiary
 from the web or mobile app; the payment is debited from their account in the core banking system,
-sent to the interbank network, notified, audited and reconciled with the daily settlement file.
+sent to the inter-bank network, notified, audited and reconciled with the daily settlement file.
 
 All names, accounts and data are fictitious. Local credentials are placeholders marked
 `local-only`; real environments read secrets from AWS Secrets Manager.

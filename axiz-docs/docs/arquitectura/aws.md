@@ -15,7 +15,7 @@ Gateway, CodeArtifact, ECR) queda fuera, y el enforcer bloquea sus librerías.
 | Amazon SNS | pub/sub estándar y FIFO | `axiz-core-messaging-sns` | LocalStack |
 | AWS Secrets Manager | secretos (sincronizados con External Secrets) | `axiz-core-secrets-aws` | LocalStack, `local/secrets` |
 | AWS Systems Manager Parameter Store | parámetros compartidos fuera del clúster | `axiz-config-spring-boot-starter` | LocalStack |
-| ConfigMaps (Spring Cloud Kubernetes) | configuración base de cada servicio | `axiz-config-spring-boot-starter` | perfil `local`, kind |
+| ConfigMaps montados como archivos | configuración base de cada servicio | `axiz-config-spring-boot-starter` | perfil `local`, kind |
 | AWS KMS | cifrado de campos (envelope) y de objetos en S3 | `axiz-core-crypto-kms` | LocalStack |
 | Amazon S3 | archivos, batch, archivo de auditoría | `axiz-core-storage-s3` | LocalStack |
 | Observabilidad | OpenTelemetry Collector en EKS; Prometheus y Grafana; trazas y logs en el backend OTLP de plataforma | `axiz-observability-*`, `axiz-metrics-*` | Grafana LGTM en Docker |

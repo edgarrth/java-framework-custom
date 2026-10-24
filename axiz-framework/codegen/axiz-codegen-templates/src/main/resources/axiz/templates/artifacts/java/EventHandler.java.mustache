@@ -25,7 +25,7 @@ public class {{artifact.className}}Handler extends TypedEventHandler<{{artifact.
 public class {{artifact.className}}Handler implements EventHandler<{{artifact.className}}> {
 {{/fw.eda}}
 
-  private static final Logger log = LoggerFactory.getLogger({{artifact.className}}Handler.class);
+  private static final Logger LOG = LoggerFactory.getLogger({{artifact.className}}Handler.class);
 {{^fw.eda}}
 
   @Override
@@ -46,6 +46,6 @@ public class {{artifact.className}}Handler implements EventHandler<{{artifact.cl
 {{^fw.eda}}
   public void handle({{artifact.className}} payload, EventEnvelope envelope) {
 {{/fw.eda}}
-    log.info("{{artifact.kebab}} received: id={} eventId={}", payload.id(), envelope.id());
+    LOG.info("{{artifact.kebab}} received: id={} eventId={}", payload.id(), envelope.id());
   }
 }

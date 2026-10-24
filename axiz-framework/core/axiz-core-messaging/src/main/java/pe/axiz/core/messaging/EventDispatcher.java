@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,21 +100,24 @@ public final class EventDispatcher {
       LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), e.toString());
       return Outcome.of(DeliveryDecision.RETRY);
     }
-    switch (claim.status()) {
-      case ALREADY_PROCESSED -> {
-        LOG.info("Duplicate event {} ignored by {}", envelope.id(), consumer);
-        return Outcome.of(DeliveryDecision.ACK);
-      }
-      case BUSY -> {
-        LOG.info(
-            "Event {} is being processed by another delivery of {}; deferring",
-            envelope.id(),
-            consumer);
-        return new Outcome(DeliveryDecision.DEFER, claim.retryAfter());
-      }
-      case ACQUIRED -> {
-        // processed below
-      }
+    // exhaustive: a new claim status must decide here what happens to the delivery
+    @Nullable Outcome early =
+        switch (claim.status()) {
+          case ALREADY_PROCESSED -> {
+            LOG.info("Duplicate event {} ignored by {}", envelope.id(), consumer);
+            yield Outcome.of(DeliveryDecision.ACK);
+          }
+          case BUSY -> {
+            LOG.info(
+                "Event {} is being processed by another delivery of {}; deferring",
+                envelope.id(),
+                consumer);
+            yield new Outcome(DeliveryDecision.DEFER, claim.retryAfter());
+          }
+          case ACQUIRED -> null; // processed below
+        };
+    if (early != null) {
+      return early;
     }
     try {
       invoke(handler, envelope);

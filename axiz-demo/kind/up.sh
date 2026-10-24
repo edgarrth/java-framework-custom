@@ -26,6 +26,9 @@ kubectl -n $ns wait --for=condition=available deploy --all --timeout=300s
 kubectl -n $ns wait --for=condition=complete job/kafka-topics --timeout=300s
 
 # secrets: the charts mount <service>-secrets; in kind they come from the dev-secrets files
+# configuration shared by every service of the namespace (mounted by each chart, optional)
+kubectl -n $ns apply -f "$root/deploy/platform/axiz-common.yaml"
+
 bash "$root/scripts/dev-secrets.sh"
 for s in "${services[@]}"; do
   dir="$root/services/$s/local/secrets"

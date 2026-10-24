@@ -9,4 +9,6 @@
   <suppress files="[\\/]src[\\/]test[\\/]" checks="MissingJavadocType|SummaryJavadoc|AbbreviationAsWordInName|MethodName|HideUtilityClassConstructor"/>
   <!-- CLI tools print to the console by design -->
   <suppress files="[\\/]axiz-cli[\\/]" id="noSystemOut"/>
+  <!-- Build-time command line entry point run by CI (.github/scripts/samples.sh): its output is the console -->
+  <suppress files="[\\/]pe[\\/]axiz[\\/]codegen[\\/]tools[\\/]SampleProjects\.java$" id="noSystemOut"/>
 </suppressions>

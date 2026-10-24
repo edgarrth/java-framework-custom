@@ -115,8 +115,8 @@ public sealed interface Result<T, E> permits Result.Ok, Result.Err {
    * Returns the value or throws the exception produced from the error.
    *
    * @param exceptionMapper builds the exception to throw
-   * @return the success value
    * @param <X> exception type
+   * @return the success value
    * @throws X when the result is an error
    */
   default <X extends Exception> T orElseThrow(Function<? super E, X> exceptionMapper) throws X {

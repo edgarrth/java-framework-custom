@@ -16,7 +16,7 @@ public final class Names {
 
   public static List<String> words(String text) {
     List<String> out = new ArrayList<>();
-    for (String w : WORDS.split(text.strip())) {
+    for (String w : WORDS.split(text.strip(), -1)) {
       if (!w.isEmpty()) {
         out.add(w.toLowerCase(Locale.ROOT));
       }

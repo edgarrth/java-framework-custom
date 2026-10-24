@@ -18,7 +18,17 @@ autoscaling:
   minReplicas: {{item.minReplicas}}
   maxReplicas: {{item.maxReplicas}}
   targetCPUUtilizationPercentage: 70
+{{#item.prod}}
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule   # replicas in different zones, always
+{{/item.prod}}
 {{/archetype.deployment}}
+
+networkPolicy:
+  egress:
+    # destinations outside the cluster this service reaches in {{item.name}} (VPC endpoints of
+    # the AWS services it uses, databases, brokers, partners), with their ports
+    cidrs: []
 
 externalSecret:
   remotePrefix: {{item.name}}/{{project.name}}

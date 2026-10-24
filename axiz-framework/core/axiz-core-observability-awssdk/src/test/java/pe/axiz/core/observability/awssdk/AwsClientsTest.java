@@ -2,10 +2,13 @@ package pe.axiz.core.observability.awssdk;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.observation.ObservationRegistry;
 import java.net.URI;
 import java.util.Map;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.http.ExecutableHttpRequest;
 import software.amazon.awssdk.http.HttpExecuteRequest;
@@ -98,6 +101,40 @@ class AwsClientsTest {
             null)) {
       assertEquals(Region.EU_WEST_1, client.serviceClientConfiguration().region());
       assertFalse(client.serviceClientConfiguration().endpointOverride().isPresent());
+    }
+  }
+
+  @Test
+  void aClientWithoutAnyRegionNamesTheSettingToFix() {
+    Assumptions.assumeTrue(
+        System.getenv("AWS_REGION") == null && System.getenv("AWS_DEFAULT_REGION") == null,
+        "the environment of this run defines a region");
+    String config = System.getProperty("aws.configFile");
+    String imds = System.getProperty("aws.disableEc2Metadata");
+    System.setProperty("aws.configFile", "/nonexistent/axiz-test-config");
+    System.setProperty("aws.disableEc2Metadata", "true");
+    try {
+      IllegalStateException e =
+          assertThrows(
+              IllegalStateException.class,
+              () ->
+                  AwsClients.configured(
+                      DynamoDbClient.builder().httpClient(new NoHttp()),
+                      ObservationRegistry.NOOP,
+                      key -> null,
+                      "dynamodb"));
+      assertTrue(e.getMessage().contains("axiz.aws.region"), e.getMessage());
+    } finally {
+      restore("aws.configFile", config);
+      restore("aws.disableEc2Metadata", imds);
+    }
+  }
+
+  private static void restore(String key, String value) {
+    if (value == null) {
+      System.clearProperty(key);
+    } else {
+      System.setProperty(key, value);
     }
   }
 }

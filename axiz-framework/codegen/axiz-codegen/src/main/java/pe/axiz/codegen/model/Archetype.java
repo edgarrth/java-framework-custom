@@ -16,7 +16,7 @@ import java.util.Objects;
  * @param starters capabilities always included
  * @param deployment {@code deployment}, {@code cronjob} or {@code none} (platform archetypes)
  * @param rest whether it exposes a REST API (and therefore needs an OpenAPI contract)
- * @param kind {@code service}, {@code library} or {@code starter}
+ * @param kind kind of project: service, library or starter
  * @param properties {@code application.yaml} defaults of the archetype (flat keys)
  */
 public record Archetype(

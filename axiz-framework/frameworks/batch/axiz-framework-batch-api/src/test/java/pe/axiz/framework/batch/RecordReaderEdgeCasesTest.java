@@ -62,7 +62,8 @@ class RecordReaderEdgeCasesTest {
 
   @Test
   void fixedWidthSkipsBlankLinesAndCountsThem() throws Exception {
-    FixedWidthLayout layout = new FixedWidthLayout("acc", List.of(FixedField.text("account", 1, 4)));
+    FixedWidthLayout layout =
+        new FixedWidthLayout("acc", List.of(FixedField.text("account", 1, 4)));
     try (FixedWidthRecordReader<Object> r =
         new FixedWidthRecordReader<>(
             new ByteArrayInputStream("\nA001\n  \nA002\n".getBytes(StandardCharsets.UTF_8)),
@@ -88,7 +89,8 @@ class RecordReaderEdgeCasesTest {
             throw new IOException("connection reset");
           }
         };
-    FixedWidthLayout layout = new FixedWidthLayout("acc", List.of(FixedField.text("account", 1, 4)));
+    FixedWidthLayout layout =
+        new FixedWidthLayout("acc", List.of(FixedField.text("account", 1, 4)));
     try (FixedWidthRecordReader<Object> r =
         new FixedWidthRecordReader<>(
             broken, StandardCharsets.UTF_8, layout, m -> m, line -> false)) {

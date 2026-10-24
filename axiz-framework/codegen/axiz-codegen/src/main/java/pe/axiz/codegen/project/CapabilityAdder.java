@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -51,11 +50,9 @@ public final class CapabilityAdder {
           "shedlock");
 
   private final Catalog catalog;
-  private final Clock clock;
 
-  public CapabilityAdder(Catalog catalog, Clock clock) {
+  public CapabilityAdder(Catalog catalog) {
     this.catalog = catalog;
-    this.clock = clock;
   }
 
   /**
@@ -120,7 +117,7 @@ public final class CapabilityAdder {
     for (Capability c : missing) {
       updated = PomEditor.addDependency(updated, "pe.axiz", c.starter(), null);
       for (String d : c.dependencies(store)) {
-        String[] ga = d.split(":");
+        String[] ga = d.split(":", -1);
         updated = PomEditor.addDependency(updated, ga[0], ga[1], null);
       }
     }

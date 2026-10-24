@@ -10,7 +10,7 @@ import pe.axiz.payments.business.domain.PaymentOrder;
  *
  * @param customerId customer
  * @param debtorAccount account to debit
- * @param creditorCci interbank account (CCI) to credit
+ * @param creditorCci inter-bank account (CCI) to credit
  * @param amount amount
  * @param currency ISO 4217 code
  * @param description free text for the creditor

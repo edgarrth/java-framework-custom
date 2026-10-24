@@ -33,8 +33,8 @@ public record Backoff(Duration initialDelay, double multiplier, Duration maxDela
 
   /** Delay before retry number {@code retry} (1 = first retry). */
   public Duration delay(int retry) {
-    double base = initialDelay.toMillis() * Math.pow(multiplier, Math.max(0, retry - 1));
-    long capped = (long) Math.min(base, maxDelay.toMillis());
+    double base = (double) initialDelay.toMillis() * Math.pow(multiplier, Math.max(0, retry - 1));
+    long capped = (long) Math.min(base, (double) maxDelay.toMillis());
     if (!jitter || capped == 0) {
       return Duration.ofMillis(capped);
     }

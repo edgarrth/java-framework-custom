@@ -26,6 +26,7 @@ Perfil `local` (`application-local.yaml`):
 ```yaml
 axiz.security.issuers[0].issuer: http://localhost:8180/realms/axiz
 axiz.security.issuers[0].audiences[0]: local-services
+axiz.security.public-api-docs: true
 ```
 
 ## Llaves del ConfigMap por ambiente

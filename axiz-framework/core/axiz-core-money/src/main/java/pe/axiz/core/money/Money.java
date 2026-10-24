@@ -79,7 +79,7 @@ public final class Money implements Comparable<Money> {
    * @return the money
    */
   public static Money parse(String text) {
-    String[] parts = text == null ? new String[0] : text.strip().split("\\s+");
+    String[] parts = text == null ? new String[0] : text.strip().split("\\s+", -1);
     if (parts.length != 2) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "unparseable money");
     }

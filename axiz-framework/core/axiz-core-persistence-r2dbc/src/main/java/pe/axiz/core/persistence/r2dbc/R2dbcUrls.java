@@ -39,7 +39,7 @@ public final class R2dbcUrls {
       return "jdbc:" + rest;
     }
     StringJoiner query = new StringJoiner("&", "?", "").setEmptyValue("");
-    for (String pair : rest.substring(q + 1).split("&")) {
+    for (String pair : rest.substring(q + 1).split("&", -1)) {
       int eq = pair.indexOf('=');
       if (eq <= 0) {
         continue;

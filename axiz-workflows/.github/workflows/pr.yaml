@@ -58,16 +58,43 @@ jobs:
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.30.1 \
             git /repo "${config[@]}" --log-opts="$BASE..$HEAD" --redact --verbose
       - name: Naming guard (identifiers that must never appear in axiz code)
+        # the forbidden names live in an organization secret, so the repositories never contain them
         env:
           PATTERNS: ${{ secrets.AXIZ_NAMING_GUARD }}
+          OPTIONAL: ${{ vars.AXIZ_NAMING_GUARD_OPTIONAL }}
         run: |
-          if [ -z "$PATTERNS" ]; then echo "AXIZ_NAMING_GUARD not defined: skipped"; exit 0; fi
+          if [ -z "$PATTERNS" ]; then
+            if [ "$OPTIONAL" = "true" ]; then echo "::warning::AXIZ_NAMING_GUARD not defined: skipped"; exit 0; fi
+            echo "::error::define the organization secret AXIZ_NAMING_GUARD (one extended regex per line)"; exit 1
+          fi
           printf '%s\n' "$PATTERNS" | sed '/^[[:space:]]*$/d' > "$RUNNER_TEMP/guard.txt"
           if git grep -I -n -i -E -f "$RUNNER_TEMP/guard.txt" -- . ':!*.lock' > "$RUNNER_TEMP/hits.txt"; then
             echo "::error::forbidden identifiers found (patterns are not printed)"
             cut -d: -f1,2 "$RUNNER_TEMP/hits.txt"
             exit 1
           fi
+      - name: Release versions consistent (version.txt, release-please manifest and pom)
+        shell: python3 {0}
+        run: |
+          import json, os, re, sys
+          def ver(v): return tuple(int(x) for x in v.split('.'))
+          bad = 0
+          for dirpath, dirnames, files in os.walk('.'):
+              dirnames[:] = [d for d in dirnames if d not in ('target', '.git', 'node_modules', 'templates')]
+              if 'version.txt' not in files or '.release-please-manifest.json' not in files:
+                  continue
+              v = open(os.path.join(dirpath, 'version.txt')).read().strip()
+              m = json.load(open(os.path.join(dirpath, '.release-please-manifest.json'))).get('.')
+              if m != v:
+                  print(f'::error::{dirpath}: version.txt {v} but .release-please-manifest.json {m}'); bad += 1
+              pom = os.path.join(dirpath, 'pom.xml')
+              if os.path.isfile(pom):
+                  text = re.sub(r'<parent>.*?</parent>', '', open(pom).read(), flags=re.S)
+                  pv = re.search(r'<revision>([^<]+)</revision>', text) or re.search(r'<version>([^<$]+)</version>', text)
+                  if pv and re.fullmatch(r'\d+\.\d+\.\d+(-SNAPSHOT)?', pv.group(1)):
+                      if ver(pv.group(1).replace('-SNAPSHOT', '')) < ver(v):
+                          print(f'::error::{dirpath}: pom version {pv.group(1)} is behind the released {v}'); bad += 1
+          sys.exit(1 if bad else 0)
       - name: Dependency review (licenses and known vulnerabilities)
         uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
@@ -134,7 +161,9 @@ jobs:
       - name: actionlint (workflows of the repository)
         run: |
           if ls .github/workflows/*.y*ml > /dev/null 2>&1; then
-            curl -fsSL https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
-              | tar xz actionlint
+            # pinned version and SHA-256 (from the release checksums file): verified before running it
+            curl -fsSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+            echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz" | sha256sum -c -
+            tar xzf actionlint.tar.gz actionlint
             ./actionlint -color
           fi

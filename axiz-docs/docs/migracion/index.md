@@ -275,3 +275,55 @@ Si ya creaste tablas o stores propios con el paquete preliminar:
   de Aurora (LocalStack no conserva datos entre reinicios y PostgreSQL sí).
 - **Pruebas con R2DBC falso:** `FakeR2dbc.Execution` registra también el tipo de cada parámetro
   (`types()`), incluido el de los `Parameter` de R2DBC y los `bindNull`.
+
+#### Cambios de la cuarta revisión (tres auditorías independientes)
+
+Cambios que un servicio existente debe conocer al actualizar:
+
+- **Configuración por archivos, sin API de Kubernetes:** `axiz-config` ya no usa Spring Cloud
+  Kubernetes. El chart monta los ConfigMaps `axiz-common` (opcional), `<servicio>` y
+  `<servicio>-errors` en `/etc/axiz/config/{common,service,errors}` y el servicio los importa
+  como archivos. El pod ya no monta token de ServiceAccount y el chart ya no crea `Role` ni
+  `RoleBinding`. Acción: copia en tu chart `templates/_helpers.tpl`, `deployment.yaml`,
+  `networkpolicy.yaml`, `configmap*.yaml` de un servicio recién generado con la misma versión
+  (`axiz new` en un directorio temporal), borra `templates/rbac.yaml` y agrega a `values.yaml`
+  `serviceAccount.automountToken: false` y `sharedConfigMap: axiz-common`. Si tu servicio leía otros
+  ConfigMaps por la API, móntalos como archivos.
+- **NetworkPolicy con salida restringida:** además de la entrada, el tráfico de salida queda
+  denegado salvo DNS, los pods del namespace y lo que declares en `networkPolicy.egress`
+  (`namespaces` y `cidrs` con puertos). Acción: en cada `values-<env>.yaml` lista los CIDR de los
+  endpoints de VPC de AWS, Aurora, ElastiCache, MSK y los socios que el servicio llama.
+- **Seguridad por defecto:** OpenAPI, Swagger UI y `/actuator/info` quedan cerrados; ábrelos con
+  `axiz.security.public-api-docs` o `public-info` solo donde corresponda (los proyectos generados
+  lo hacen en el perfil `local`). Un token de un emisor no confiable recibe 401.
+- **Rate limit por regla:** cada regla acepta `fail-open`; define `false` en las que mueven dinero.
+- **Caché, llaves versión `k2`:** la llave incluye la firma del método y el tipo de cada
+  argumento; argumentos sin identidad estable (objetos arbitrarios) se rechazan. Para compartir
+  entradas entre métodos usa `@AxizCacheable(keyName = ...)`. Las entradas viejas no se leen y
+  expiran por su TTL.
+- **`RequestSignature` versión 2:** nueva API con `Message`, llaves por id, nonce y `NonceStore`
+  (`RedisNonceStore` en clúster); `verify` devuelve un `Outcome`. El formato firmado cambió
+  (`AXIZ-HMAC-V2`), así que firmante y verificador se actualizan juntos.
+- **WS-Security:** `password-mode` ya no tiene valor por defecto y `DIGEST` se llama
+  `LEGACY_SHA1_DIGEST`; con credenciales el endpoint debe ser `https://` (`allow-plain-http: true`
+  solo para sustitutos locales).
+- **Tarjetas:** `CardBrand.of` pasa a `CardBrand.guess` (solo para mostrar). Las decisiones de
+  ruteo, autorización o riesgo usan `CardSchemeResolver` con una `IinRangeTable` cargada desde la
+  tabla IIN/BIN gobernada.
+- **Tipos inmutables:** `EventEnvelope`, `StoredResponse`, `DataKeyProvider.DataKey` y
+  `SoapEnvelope.Credentials` dejaron de ser records (contenían arreglos): mismos constructores y
+  accesores, `equals` por contenido; ya no admiten patrones de record.
+- **Contraseñas:** `Pbkdf2PasswordHasher` exige entre 100 000 y 10 000 000 iteraciones.
+- **Pruebas:** `EphemeralSecrets` (en `axiz-test-spring-boot-starter`) genera las llaves de prueba
+  en cada ejecución; borra los archivos de llaves versionados en `src/test/resources`.
+- **ArchUnit:** las reglas generales prohíben locks de la JVM (`java.util.concurrent.locks`,
+  métodos `synchronized`) en el código de negocio; usa `LockTemplate`.
+- **Feature flags por OpenFeature:** una bandera que no está configurada devuelve el valor por
+  defecto que pasó quien la consulta, con `FLAG_NOT_FOUND`, en lugar de `false`. Revisa las
+  llamadas `getBooleanValue(nombre, true)`: antes recibían `false` si la bandera no existía.
+- **`ddl-auto` solo con perfiles `local` o `test` exactos:** un perfil cuyo nombre solo contiene
+  esas palabras (`testing`, `localstack-prod`) ya no permite `create`, `create-drop` ni `update`.
+- **CI/CD:** los workflows se usan por `@v1.0.0` (Renovate los fija por SHA), la firma de imágenes
+  es obligatoria, qa y prod se despliegan solo por digest, la guardia de nombres
+  (`AXIZ_NAMING_GUARD`) es obligatoria y el wrapper de Maven trae el SHA-512 fijado.
+

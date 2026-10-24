@@ -113,11 +113,11 @@ public record AxizWebProperties(
 
     /** Compares dotted numeric versions ("1" < "1.1" < "2" < "10"); other text compares as text. */
     static int compareVersions(String a, String b) {
-      String[] x = a.split("\\.");
-      String[] y = b.split("\\.");
+      String[] x = a.split("\\.", -1);
+      String[] y = b.split("\\.", -1);
       for (int i = 0; i < Math.max(x.length, y.length); i++) {
-        String p = i < x.length ? x[i] : "0";
-        String q = i < y.length ? y[i] : "0";
+        String p = i < x.length && !x[i].isEmpty() ? x[i] : "0";
+        String q = i < y.length && !y[i].isEmpty() ? y[i] : "0";
         int c =
             p.chars().allMatch(Character::isDigit) && q.chars().allMatch(Character::isDigit)
                 ? Long.compare(Long.parseLong(p), Long.parseLong(q))

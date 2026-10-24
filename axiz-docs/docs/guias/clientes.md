@@ -68,8 +68,15 @@ axiz:
 ## SOAP
 
 Para sistemas legacy, `SoapClient` sobre el `HttpClient` del JDK con timeout obligatorio,
-WS-Security UsernameToken (texto o digest), parseo endurecido contra XXE, faults convertidos en
-errores externos y log enmascarado:
+WS-Security UsernameToken, parseo endurecido contra XXE, faults convertidos en errores externos y
+log enmascarado. UsernameToken es autenticación legacy, por eso:
+
+- `password-mode` no tiene valor por defecto: `TEXT` (la clave viaja dentro de TLS) o
+  `LEGACY_SHA1_DIGEST` (el digest del perfil UsernameToken 1.0, que fija SHA-1; solo cuando la
+  contraparte lo exige, y su uso queda registrado al crear el cliente).
+- Con credenciales el endpoint debe ser `https://`; `allow-plain-http: true` existe solo para los
+  sustitutos locales (docker compose, kind).
+- Si la contraparte lo soporta, se prefiere un perfil moderno (TLS mutuo, X.509 o tokens).
 
 ```yaml
 axiz:
@@ -80,7 +87,7 @@ axiz:
         timeout: 8s
         username: core-integration
         password-ref: core-soap-password
-        password-mode: DIGEST
+        password-mode: LEGACY_SHA1_DIGEST   # lo exige el core de créditos
 ```
 
 En el demo, `core-integration` usa los tres modos: REST con client credentials (core bancario),

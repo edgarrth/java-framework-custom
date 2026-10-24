@@ -29,7 +29,7 @@ import pe.axiz.payments.notifications.event.PaymentOrderStatusChanged;
 @HandlesEvent("pe.axiz.payments.payment-order.status-changed.v1")
 public class PaymentNotificationHandler extends TypedEventHandler<PaymentOrderStatusChanged> {
 
-  private static final Logger log = LoggerFactory.getLogger(PaymentNotificationHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PaymentNotificationHandler.class);
   static final Set<String> FINAL = Set.of("COMPLETED", "REJECTED");
   static final Locale DEFAULT_LOCALE = Locale.forLanguageTag("es-PE");
 
@@ -54,7 +54,7 @@ public class PaymentNotificationHandler extends TypedEventHandler<PaymentOrderSt
     if (contact.isEmpty()) {
       metrics.record(
           MetricEvent.of("notification.payment").outcome(Outcome.CANCELLED).reason("no-contact"));
-      log.info("No payment alerts for order {}: customer has no active contact", e.orderId());
+      LOG.info("No payment alerts for order {}: customer has no active contact", e.orderId());
       return;
     }
     CustomerContact c = contact.get();

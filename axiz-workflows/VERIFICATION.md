@@ -12,4 +12,12 @@
   errores y omitidas por módulo, pruebas unitarias y de integración por separado). Lo pidió la
   auditoría de review24: cada ejecución de CI deja el comando, el JDK y los resultados por módulo
   del commit, también cuando el build falla.
+- review27 (auditorías sobre review26): actionlint 1.7.12 sin hallazgos en los workflows de los
+  cinco repositorios; YAML de `gitops/` y de los workflows y JSON de Renovate y release-please
+  válidos. La expresión del `customManager` de Renovate encuentra las 2 imágenes base del parent de
+  servicios (probada con el motor de expresiones de Python, compatible con esta sintaxis); el
+  validador oficial de Renovate necesita npm, sin acceso aquí, y corre en `self-check`. Cambios:
+  workflows reutilizables por `@v1.0.0` (Renovate los fija por SHA), firma de imágenes
+  obligatoria, qa y prod solo por digest, descargas de herramientas con checksum, procedencia SLSA
+  firmada en `lib-promote`, guardia de nombres obligatoria (`AXIZ_NAMING_GUARD`).
 - No verificable fuera de GitHub: ejecución real de los workflows (OIDC, Nexus, SonarQube, Argo CD).

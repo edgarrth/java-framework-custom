@@ -165,7 +165,8 @@ class IdempotencyTest {
     assertEquals(first.getContentAsString(), second.getContentAsString());
     assertEquals("true", second.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
     BusinessException reused =
-        assertThrows(BusinessException.class, () -> call("idempotency-key-00000001", "{\"amount\":99}"));
+        assertThrows(
+            BusinessException.class, () -> call("idempotency-key-00000001", "{\"amount\":99}"));
     assertEquals(422, reused.category().httpStatus());
   }
 
@@ -215,6 +216,47 @@ class IdempotencyTest {
     assertEquals(2, controller.executions.get(), "the retry runs instead of replaying a 200");
     assertEquals(201, retry.getStatus());
     assertNull(retry.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
+  }
+
+  /**
+   * A server error (a transient technical failure: timeout of the database, unavailable downstream)
+   * is never stored: the key is released and a retry with the same key runs again.
+   */
+  @Test
+  void aServerErrorReleasesTheKeySoTheRetryRunsAgain() throws Exception {
+    controller.handler =
+        (res, n) -> {
+          res.setStatus(503);
+          res.getWriter().write("{\"title\":\"unavailable\"}");
+        };
+    assertEquals(503, call("idempotency-key-00000050", "{}").getStatus());
+    controller.handler =
+        (res, n) -> {
+          res.setStatus(201);
+          res.getWriter().write("{\"id\":\"p-" + n + "\"}");
+        };
+    MockHttpServletResponse retry = call("idempotency-key-00000050", "{}");
+    assertEquals(2, controller.executions.get(), "the retry runs: the 503 was not cached");
+    assertEquals(201, retry.getStatus());
+    assertNull(retry.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
+  }
+
+  /**
+   * A client error is a decision about that exact request: it is stored and replayed, so the same
+   * key with the same body gets the same answer and the operation never runs twice.
+   */
+  @Test
+  void aClientErrorIsStoredAndReplayed() throws Exception {
+    controller.handler =
+        (res, n) -> {
+          res.setStatus(422);
+          res.getWriter().write("{\"title\":\"limit exceeded\"}");
+        };
+    assertEquals(422, call("idempotency-key-00000051", "{}").getStatus());
+    MockHttpServletResponse replay = call("idempotency-key-00000051", "{}");
+    assertEquals(1, controller.executions.get(), "the business rejection is not re-executed");
+    assertEquals(422, replay.getStatus());
+    assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
 
   /** Report cases: the query string is part of the fingerprint, taken as sent. */

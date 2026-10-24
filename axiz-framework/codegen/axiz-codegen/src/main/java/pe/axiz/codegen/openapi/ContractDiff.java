@@ -171,7 +171,7 @@ public final class ContractDiff {
                 oldProps.containsKey(r) ? "field became required" : "required field added"));
       }
     }
-    typeChanges(prev, old, cur, now, at, out);
+    typeChanges(old, now, at, out);
     OpenApiDocument.map(now.get("properties"))
         .forEach(
             (name, def) -> {
@@ -203,7 +203,7 @@ public final class ContractDiff {
       out.add(new Change(true, at, "response body removed"));
       return;
     }
-    typeChanges(prev, old, cur, now, at, out);
+    typeChanges(old, now, at, out);
     Set<String> oldEnum = strings(old.get("enum"));
     Set<String> newEnum = strings(now.get("enum"));
     if (!oldEnum.isEmpty() && !newEnum.isEmpty() && !oldEnum.equals(newEnum)) {
@@ -246,12 +246,7 @@ public final class ContractDiff {
   }
 
   private static void typeChanges(
-      OpenApiDocument prev,
-      Map<String, Object> old,
-      OpenApiDocument cur,
-      Map<String, Object> now,
-      String at,
-      List<Change> out) {
+      Map<String, Object> old, Map<String, Object> now, String at, List<Change> out) {
     Object oldType = old.get("type");
     Object newType = now.get("type");
     if (oldType != null && newType != null && !oldType.equals(newType)) {

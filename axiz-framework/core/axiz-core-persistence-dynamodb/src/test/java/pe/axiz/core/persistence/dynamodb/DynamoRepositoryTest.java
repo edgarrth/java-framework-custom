@@ -148,7 +148,8 @@ class DynamoRepositoryTest {
     public QueryResponse query(QueryRequest r) {
       requests.add(r);
       QueryResponse.Builder b =
-          QueryResponse.builder().items(row("C-1", "B-1", "ACTIVE"), row("C-1", "B-2", "ACTIVE"));
+          QueryResponse.builder()
+              .items(List.of(row("C-1", "B-1", "ACTIVE"), row("C-1", "B-2", "ACTIVE")));
       if (!lastKey.isEmpty()) {
         b.lastEvaluatedKey(lastKey);
       }

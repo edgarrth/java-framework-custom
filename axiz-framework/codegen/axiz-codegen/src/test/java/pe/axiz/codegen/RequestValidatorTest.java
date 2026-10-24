@@ -177,4 +177,32 @@ class RequestValidatorTest {
     assertTrue(mentions(problems(evil), "kebab-case"));
     assertThrows(GenerationException.class, () -> generator.generate(evil));
   }
+
+  @Test
+  void descriptionsAreOneLineOfAnyPunctuation() {
+    ProjectRequest base =
+        Fixtures.request("crud", Framework.LAYERED, Stack.SERVLET, "aurora", List.of());
+    for (String text : List.of("Payments --- reconciliation <v2> & more", "x".repeat(200))) {
+      assertTrue(generator.validate(withDescription(base, text)).valid(), text);
+    }
+    for (String text : List.of("two\nlines", "tab\tinside", "x".repeat(201))) {
+      assertTrue(mentions(problems(withDescription(base, text)), "single line"), text);
+    }
+  }
+
+  private static ProjectRequest withDescription(ProjectRequest b, String description) {
+    return new ProjectRequest(
+        b.name(),
+        b.groupId(),
+        b.basePackage(),
+        description,
+        b.archetype(),
+        b.framework(),
+        b.stack(),
+        b.persistence(),
+        b.capabilities(),
+        b.openApi(),
+        b.asyncApi(),
+        b.frameworkVersion());
+  }
 }

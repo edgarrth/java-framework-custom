@@ -126,7 +126,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       String text = Files.readString(pom, StandardCharsets.UTF_8);
       String updated = text;
       for (String d : r.dependencies()) {
-        String[] ga = d.split(":");
+        String[] ga = d.split(":", -1);
         updated = PomEditor.addDependency(updated, ga[0], ga[1], null);
       }
       if (!updated.equals(text)) {

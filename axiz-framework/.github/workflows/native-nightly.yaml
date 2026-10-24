@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   native:
-    uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v1.0.0
     with:
       generate-script: .github/scripts/samples.sh
       modules: >-

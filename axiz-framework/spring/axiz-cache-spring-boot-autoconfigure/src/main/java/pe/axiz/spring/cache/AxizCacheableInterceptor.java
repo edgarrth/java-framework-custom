@@ -20,9 +20,11 @@ import tools.jackson.databind.JavaType;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * Applies {@link AxizCacheable}: the key is the method name plus the arguments; values are stored
- * as JSON with their full generic type; {@code null} results are not cached; {@code Mono} and
- * {@code Flux} results are cached when they complete, without blocking the event loop.
+ * Applies {@link AxizCacheable}: the key is the cache name, the key format, the method signature
+ * (or the explicit {@link AxizCacheable#keyName()}) and the arguments encoded by {@link CacheKeys};
+ * values are stored as JSON with their full generic type; {@code null} results are not cached;
+ * {@code Mono} and {@code Flux} results are cached when they complete, without blocking the event
+ * loop.
  */
 public class AxizCacheableInterceptor implements MethodInterceptor {
 
@@ -43,12 +45,7 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     if (plan == null) {
       return invocation.proceed();
     }
-    String key =
-        plan.cacheName()
-            + ":"
-            + invocation.getMethod().getName()
-            + ":"
-            + CacheKeys.of(invocation.getArguments());
+    String key = plan.keyPrefix() + CacheKeys.of(invocation.getArguments());
     if (REACTOR && plan.reactive() != null) {
       return ReactiveCaching.wrap(this, plan, key, invocation);
     }
@@ -103,8 +100,29 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
       javaType =
           mapper.obtain().getTypeFactory().constructCollectionType(java.util.List.class, javaType);
     }
-    return new Plan(a.value(), ttl, javaType, reactive);
+    String name = a.keyName().isBlank() ? signature(method) : a.keyName();
+    return new Plan(
+        a.value(), a.value() + ":" + CacheKeys.FORMAT + ":" + name + ":", ttl, javaType, reactive);
   }
 
-  record Plan(String cacheName, Duration ttl, JavaType valueType, @Nullable String reactive) {}
+  /** Class, name and parameter types: overloads and equally named methods never share entries. */
+  static String signature(Method method) {
+    StringBuilder b =
+        new StringBuilder(method.getDeclaringClass().getName())
+            .append('#')
+            .append(method.getName());
+    b.append('(');
+    Class<?>[] types = method.getParameterTypes();
+    for (int i = 0; i < types.length; i++) {
+      b.append(i == 0 ? "" : ",").append(types[i].getTypeName());
+    }
+    return b.append(')').toString();
+  }
+
+  record Plan(
+      String cacheName,
+      String keyPrefix,
+      Duration ttl,
+      JavaType valueType,
+      @Nullable String reactive) {}
 }

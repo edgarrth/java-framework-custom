@@ -21,7 +21,7 @@ concurrency:
 jobs:
   pr:
     if: github.event_name == 'pull_request'
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
     secrets: inherit
 
   service:
@@ -37,7 +37,7 @@ jobs:
           - {service: payments-history, openapi: true, asyncapi: true}
           - {service: notifications-processor, openapi: false, asyncapi: true}
           - {service: settlement-batch, openapi: false}
-    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0
     with:
       service: ${{ matrix.service }}
       module: services/${{ matrix.service }}
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Capability coverage

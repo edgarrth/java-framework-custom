@@ -15,7 +15,9 @@ axiz:
         # jwk-set-uri opcional: si falta, se descubre de /.well-known/openid-configuration
     algorithms: [RS256, PS256, ES256]
     clock-skew: 30s
-    public-paths: [/v3/api-docs/**, /swagger-ui/**]
+    public-paths: []           # rutas sin token propias del servicio (ninguna por defecto)
+    public-api-docs: false     # OpenAPI y Swagger UI sin token: solo el perfil local lo activa
+    public-info: false         # /actuator/info sin token: expone versión y commit, cerrado
     actuator-authority: SCOPE_actuator
 ```
 
@@ -50,8 +52,12 @@ Con otro proveedor, configura la marca que distinga sus tokens de aplicación. S
 configuras, una cuenta de servicio se tratará como una persona y las políticas le negarán el
 acceso.
 
-En servlet se configura un `SecurityFilterChain` y en reactivo un `SecurityWebFilterChain`;
-health e info son las únicas rutas anónimas del actuator.
+En servlet se configura un `SecurityFilterChain` y en reactivo un `SecurityWebFilterChain`. Por
+defecto la única ruta anónima es health (las sondas de Kubernetes); el resto del actuator exige
+`actuator-authority`. El documento OpenAPI, Swagger UI y `/actuator/info` quedan cerrados salvo que
+el servicio los abra con `public-api-docs` o `public-info` (los proyectos generados lo hacen solo
+en el perfil `local`). Un token de un emisor que no está en la lista recibe 401 sin consultar
+ninguna llave.
 
 ## Rate limit
 
@@ -63,14 +69,25 @@ axiz:
   security:
     rate-limit:
       enabled: true
-      fail-open: true
+      fail-open: true            # política global si Redis no responde
       rules:
+        - name: catalog
+          paths: [/v1/catalog/**]
+          limit: 600
+          window: 1m
+          key: client
         - name: payments
           paths: [/v1/payments/**]
           limit: 100
           window: 1m
           key: client
+          fail-open: false       # mover dinero: si el limitador no responde, se rechaza (429)
 ```
+
+Cada regla puede tener su propia política ante una caída del almacén del limitador. Las rutas de
+consulta suelen preferir disponibilidad (`fail-open: true`); las que mueven dinero o reciben
+callbacks de terceros deben fallar cerrado (`fail-open: false`), porque perder el límite abre la
+puerta a abuso o fraude justo cuando la plataforma está degradada.
 
 ## Autorización por recurso
 
@@ -169,11 +186,58 @@ Ver [Clientes HTTP y SOAP](clientes.md).
 
 ## Firmas y criptografía
 
-- `RequestSignature`: HMAC-SHA256 para callbacks y webhooks de partners.
+- `RequestSignature`: firmas HMAC-SHA256 para callbacks y webhooks de partners (formato
+  `AXIZ-HMAC-V2`, detalle abajo).
 - `AesGcm`, `EnvelopeEncryptor` (data keys de KMS), `Rsa` (OAEP y PSS), `Jose` (JWS y JWE con lista
   fija de algoritmos), `Pbkdf2PasswordHasher`, `BlindIndex` para buscar por igualdad en columnas
   cifradas.
 - Prohibidos: AES-ECB, CBC sin MAC, IV fijo, RSA PKCS#1 v1.5 (Semgrep los detecta).
+
+## Firmas de callbacks y webhooks
+
+`RequestSignature` firma y verifica mensajes entre sistemas con HMAC-SHA256. La cadena firmada
+tiene un campo por línea, y ninguno puede contener un salto de línea (cada uno se valida contra un
+alfabeto estricto), así que dos requests distintas nunca producen la misma cadena:
+
+```text
+AXIZ-HMAC-V2
+<key id>
+<epoch en segundos>
+<nonce>
+<MÉTODO>
+<ruta y query tal como viajan, en ASCII imprimible>
+<SHA-256 del cuerpo en hexadecimal>
+```
+
+- **Rotación**: cada llave tiene un id; el firmante usa la activa y el verificador acepta todas
+  las configuradas, así una rotación no corta el tráfico.
+- **Ventana**: el timestamp debe estar dentro de la tolerancia (máximo 15 minutos) en ambos
+  sentidos.
+- **Un solo uso**: el nonce de un mensaje auténtico se registra en un `NonceStore` mientras la
+  firma podría seguir siendo válida; un segundo envío recibe `REPLAYED`. En un clúster se usa
+  `RedisNonceStore` (`SET NX PX`, atómico entre réplicas); `InMemoryNonceStore` protege una sola
+  instancia. Si el almacén no responde, la verificación falla cerrada
+  (`REPLAY_CHECK_UNAVAILABLE`).
+- Solo los mensajes con firma válida consumen nonces: un atacante no puede "quemar" el nonce de un
+  mensaje legítimo.
+- La ruta se firma tal como viaja, sin normalizar: un proxy que la reescriba rompe la firma, que es
+  el resultado seguro. Headers: `X-Axiz-Signature: keyId=<id>,v2=<hex>`, `X-Axiz-Timestamp`,
+  `X-Axiz-Nonce`.
+
+```java
+RequestSignature signatures =
+    new RequestSignature(keys, "2026-10", Duration.ofMinutes(5), clock, nonceStore);
+Outcome outcome = signatures.verify(message, request.getHeader(RequestSignature.SIGNATURE_HEADER));
+if (!outcome.valid()) {
+  // 401 para MALFORMED, STALE, UNKNOWN_KEY, BAD_SIGNATURE y REPLAYED; 503 si el almacén no responde
+}
+```
+
+## Contraseñas
+
+`Pbkdf2PasswordHasher` acepta entre 100 000 y 10 000 000 iteraciones. Un hash almacenado se lee
+con un único parser que valida formato, iteraciones, sal y largo: un registro corrupto o
+manipulado nunca coincide, pide actualización y no consume CPU sin límite.
 
 ## Lo que no se hace
 

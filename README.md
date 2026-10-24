@@ -34,7 +34,7 @@ Cada carpeta está pensada como un repositorio independiente, con su propio pipe
 `README.md`. Esta entrega las distribuye juntas en un zip, así que en tu copia son carpetas de un
 mismo directorio (o de un solo repositorio Git, si lo versionas así): no hay submódulos. Para
 publicarlas, cada carpeta se sube a su propio repositorio; los workflows de cada una ya asumen
-esa separación (`axiz/axiz-workflows/...@v1`).
+esa separación (`axiz/axiz-workflows/...@v1.0.0`).
 
 | Repositorio | Qué contiene | Lo necesitas para el demo |
 |---|---|---|
@@ -1099,7 +1099,7 @@ Secciones principales:
 
 ## 12. Revisiones incorporadas
 
-Esta entrega incluye las correcciones de dos revisiones externas y de una auditoría de código. El
+Esta entrega incluye las correcciones de dos revisiones externas y de cuatro auditorías de código.
 seguridad, y la guía de migración.
 
 - **Primera revisión.** Llaves de idempotencia e inbox con dueño y *fencing*. Mensajes ocupados
@@ -1309,3 +1309,35 @@ seguridad, y la guía de migración.
   - Evidencia: los workflows compartidos publican en el resumen de cada job el commit, el JDK, el
     comando y las pruebas por módulo (`actions/test-report`). Los `VERIFICATION.md` separan lo
     verificado aquí sin Maven de lo que solo corre en CI.
+
+- **Tres auditorías independientes sobre review26 (review27).** Se aplicó lo que corresponde a un
+  framework bancario en producción; el detalle y las acciones para servicios existentes están en la
+  guía de migración de `axiz-docs` ("Cambios de la cuarta revisión").
+  - Seguridad: `RequestSignature` versión 2 (forma canónica sin ambigüedad, llave por id, nonce
+    con `NonceStore` contra replay, `RedisNonceStore` en clúster); OpenAPI, Swagger UI y
+    `/actuator/info` cerrados por defecto; `fail-open` por regla de rate limit; WS-Security sin
+    modo por defecto, con el digest SHA-1 legado solo explícito y siempre sobre `https://`.
+  - Tarjetas: `CardBrand.guess` solo para mostrar; las decisiones usan `CardSchemeResolver` con la
+    tabla IIN/BIN gobernada (`IinRangeTable`).
+  - Kubernetes: la configuración llega como archivos montados (sin Spring Cloud Kubernetes, sin
+    token de ServiceAccount ni RBAC); NetworkPolicy con salida restringida; reparto entre zonas
+    estricto en prod.
+  - Cadena de suministro: workflows por versión fijada, firma de imágenes obligatoria, qa y prod
+    por digest, descargas de CI verificadas por checksum, procedencia SLSA firmada en cada
+    release, wrapper de Maven con SHA-512 fijado y comparación de API con japicmp
+    (`-Papi-compat`).
+  - Calidad: el perfil `quality` queda limpio en lo que se puede ejecutar sin Maven (Checkstyle,
+    formato, Error Prone y NullAway corregidos en el código, sin supresiones generales);
+    convergencia de dependencias (`slf4j-api`, Bouncy Castle); pruebas nuevas en las
+    auto-configuraciones que no llegaban a los umbrales de cobertura (crypto, errors,
+    featureflags, foundation, i18n, idempotency, jpa, lock, r2dbc, secrets, soap, storage,
+    tenancy, web, dynamodb, security).
+  - Defectos corregidos con prueba: initializr con un solo constructor; inbox incluido por el
+    estilo EDA; claves de caché con tipo y firma de método (`k2`); POM válido con cualquier
+    descripción; L1 que no supera el TTL de L2; contexto de seguridad vacío en WebFlux; región de
+    AWS ya no requerida por Secrets Manager en local; una bandera de OpenFeature no configurada
+    devuelve el valor por defecto de quien la consulta; `ddl-auto` solo con los perfiles `local`
+    o `test` exactos.
+  - Pruebas y demo: llaves de prueba generadas en cada ejecución (`EphemeralSecrets`, sin
+    archivos de llaves versionados); reglas ArchUnit contra locks de la JVM en código de negocio;
+    pruebas de concurrencia del cifrado y de acumulación de centavos.

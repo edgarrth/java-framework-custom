@@ -36,14 +36,16 @@ public class IgnoredPathsObservationPredicate implements ObservationPredicate {
         && context
             instanceof
             org.springframework.http.server.observation.ServerRequestObservationContext s) {
-      return s.getCarrier().getRequestURI();
+      var request = s.getCarrier();
+      return request == null ? null : request.getRequestURI();
     }
     if (REACTIVE
         && context
             instanceof
             org.springframework.http.server.reactive.observation.ServerRequestObservationContext
                 r) {
-      return r.getCarrier().getPath().value();
+      var request = r.getCarrier();
+      return request == null ? null : request.getPath().value();
     }
     return null;
   }

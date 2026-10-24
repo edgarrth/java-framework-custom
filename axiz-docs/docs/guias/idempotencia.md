@@ -20,7 +20,8 @@ El endpoint exige el header `Idempotency-Key` (el contrato lo declara) y:
 | misma llave mientras la primera sigue en curso | `409` |
 | misma llave con otra request (otro cuerpo u otra query) | `422` |
 | cuerpo mayor a `max-body-size` | `413` |
-| el handler lanza una excepción o responde `5xx` | la llave se libera: el reintento se ejecuta de nuevo |
+| el handler lanza una excepción o responde `5xx` (falla técnica transitoria) | la llave se libera: el reintento se ejecuta de nuevo |
+| el handler responde `4xx` (rechazo de negocio o validación) | se guarda y se repite: la misma request recibe la misma decisión y la operación nunca corre dos veces |
 | respuesta mayor a `max-response-size` | se devuelve completa (sin acumularse en memoria); el replay trae status y headers, sin cuerpo, con `Idempotent-Body-Omitted: true` |
 
 Para operaciones financieras conviene una respuesta pequeña y estable (id y `Location` del recurso

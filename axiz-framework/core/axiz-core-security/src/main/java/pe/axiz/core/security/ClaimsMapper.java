@@ -1,5 +1,6 @@
 package pe.axiz.core.security;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -108,7 +109,7 @@ public final class ClaimsMapper {
       return claims.get(path);
     }
     Object current = claims;
-    for (String part : path.split("\\.")) {
+    for (String part : path.split("\\.", -1)) {
       if (!(current instanceof Map<?, ?> map)) {
         return null;
       }
@@ -132,6 +133,6 @@ public final class ClaimsMapper {
       return c.stream().map(String::valueOf).filter(s -> !s.isBlank()).toList();
     }
     String s = v.toString().strip();
-    return s.isEmpty() ? List.of() : List.of(s.split("[\\s,]+"));
+    return Arrays.stream(s.split("[\\s,]+", -1)).filter(p -> !p.isEmpty()).toList();
   }
 }

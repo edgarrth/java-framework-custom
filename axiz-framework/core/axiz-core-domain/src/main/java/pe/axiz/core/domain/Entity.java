@@ -12,6 +12,9 @@ public abstract class Entity<I> {
 
   protected abstract I id();
 
+  // The exact concrete type on purpose, not instanceof: a Customer and an Account with the same id
+  // are different entities although both extend Entity. equals is final, so symmetry holds.
+  @SuppressWarnings("EqualsGetClass")
   @Override
   public final boolean equals(@Nullable Object o) {
     if (this == o) {

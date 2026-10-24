@@ -2,6 +2,7 @@ package pe.axiz.core.sequence.dynamodb;
 
 import java.util.Map;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sequence.SequenceStore;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
@@ -31,6 +32,12 @@ public final class DynamoDbSequenceStore implements SequenceStore {
                     Map.of(":inc", AttributeValue.builder().n(Integer.toString(increment)).build()))
                 .returnValues(ReturnValue.UPDATED_NEW)
                 .build());
-    return Long.parseLong(response.attributes().get("seqValue").n());
+    AttributeValue value = response.attributes().get("seqValue");
+    @Nullable String number = value == null ? null : value.n();
+    if (number == null) {
+      throw new IllegalStateException(
+          "DynamoDB did not return the new value of sequence " + name + " (" + period + ")");
+    }
+    return Long.parseLong(number);
   }
 }

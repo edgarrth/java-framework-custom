@@ -1,5 +1,6 @@
 package pe.axiz.spring.featureflags;
 
+import dev.openfeature.sdk.ErrorCode;
 import dev.openfeature.sdk.EvaluationContext;
 import dev.openfeature.sdk.FeatureProvider;
 import dev.openfeature.sdk.Metadata;
@@ -31,6 +32,9 @@ public class AxizOpenFeatureProvider implements FeatureProvider {
   @Override
   public ProviderEvaluation<Boolean> getBooleanEvaluation(
       String key, Boolean defaultValue, EvaluationContext ctx) {
+    if (!flags.isDefined(key)) {
+      return notFound(key, defaultValue);
+    }
     boolean on = flags.isEnabled(key, convert(ctx));
     return ProviderEvaluation.<Boolean>builder()
         .value(on)
@@ -41,11 +45,28 @@ public class AxizOpenFeatureProvider implements FeatureProvider {
   @Override
   public ProviderEvaluation<String> getStringEvaluation(
       String key, String defaultValue, EvaluationContext ctx) {
+    if (!flags.isDefined(key)) {
+      return notFound(key, defaultValue);
+    }
     String v = flags.variant(key, convert(ctx), defaultValue);
     return ProviderEvaluation.<String>builder()
         .value(v)
         .variant(v)
         .reason(Reason.TARGETING_MATCH.name())
+        .build();
+  }
+
+  /**
+   * An unknown flag yields the caller's default and says so (OpenFeature {@code FLAG_NOT_FOUND}),
+   * instead of silently answering "off": a typo in a flag name must be visible, not a behaviour
+   * change.
+   */
+  private static <T> ProviderEvaluation<T> notFound(String key, T defaultValue) {
+    return ProviderEvaluation.<T>builder()
+        .value(defaultValue)
+        .reason(Reason.ERROR.name())
+        .errorCode(ErrorCode.FLAG_NOT_FOUND)
+        .errorMessage("flag '" + key + "' is not configured")
         .build();
   }
 

@@ -12,7 +12,7 @@
 
   <artifactId>axiz-config-spring-boot-starter</artifactId>
   <name>axiz :: spring :: config :: starter</name>
-  <description>ConfigMaps through Spring Cloud Kubernetes and Parameter Store conventions with fail-fast validation</description>
+  <description>ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation</description>
 
   <properties>
     <!-- dependencies only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
@@ -25,10 +25,6 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-config-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-kubernetes-client-config</artifactId>
     </dependency>
     <dependency>
       <groupId>io.awspring.cloud</groupId>

@@ -22,7 +22,7 @@ final class ReactiveMetering {
         || Flux.class.isAssignableFrom(method.getReturnType());
   }
 
-  static Object measure(
+  static @Nullable Object measure(
       EventMetrics metrics,
       String event,
       @Nullable String category,

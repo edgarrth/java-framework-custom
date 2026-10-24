@@ -1,0 +1,15 @@
+Copyright (c) 2026 axiz. All rights reserved.
+
+This repository and everything it contains (source code, templates, documentation, workflows and
+generated artifacts) is proprietary and confidential. It is licensed only for internal use by the
+organization that owns it and by the people it authorizes, to build, run and maintain its own
+systems.
+
+Without prior written permission it may not be copied, distributed, sublicensed, published, sold
+or disclosed to third parties, in whole or in part, in source or binary form.
+
+Third-party components keep their own licenses. They are listed with their versions and licenses
+in the CycloneDX SBOM produced by every build (target/bom.json) and their notices are preserved in
+the distributed artifacts. Nothing in this notice changes the terms of those licenses.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.

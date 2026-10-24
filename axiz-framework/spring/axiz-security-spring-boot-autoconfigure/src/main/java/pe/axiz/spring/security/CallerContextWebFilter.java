@@ -17,7 +17,8 @@ public class CallerContextWebFilter implements WebFilter {
   @Override
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
+        // a context without authentication (anonymous) is empty here, not a null element
+        .mapNotNull(SecurityContext::getAuthentication)
         .filter(AxizAuthentication.class::isInstance)
         .map(a -> Optional.of(((AxizAuthentication) a).axizPrincipal()))
         .defaultIfEmpty(Optional.empty())

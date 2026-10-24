@@ -93,7 +93,7 @@ usage example.
 ## Configuration
 
 - `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `{{project.name}}` and `{{project.name}}-errors`, read by Spring Cloud Kubernetes
+  `{{project.name}}` and `{{project.name}}-errors`, mounted as files by the chart
   (`deploy/helm/{{project.name}}/values-<env>.yaml`, keys `config` and `errors`).
 - Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
   the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
@@ -111,7 +111,7 @@ Keys each environment must define:
 
 `deploy/helm/{{project.name}}` contains the chart: {{#archetype.deployment}}Deployment with probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
 ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
-The pipelines in `.github/workflows` call the shared axiz workflows (`@v1`):
+The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@v1.0.0`; Renovate pins its commit and proposes new releases):
 
 - `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
   builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys

@@ -36,6 +36,8 @@ class FeatureFlagsTest {
     assertTrue(flags.isEnabled("new-checkout", EvaluationContext.empty()));
     assertFalse(flags.isEnabled("legacy", EvaluationContext.empty()));
     assertFalse(flags.isEnabled("unknown", EvaluationContext.empty()));
+    assertTrue(flags.isDefined("legacy"));
+    assertFalse(flags.isDefined("unknown"));
     assertTrue(
         flags.isEnabled("mobile-only", new EvaluationContext("u", "mobile", null, Map.of())));
     assertFalse(flags.isEnabled("mobile-only", new EvaluationContext("u", "web", null, Map.of())));

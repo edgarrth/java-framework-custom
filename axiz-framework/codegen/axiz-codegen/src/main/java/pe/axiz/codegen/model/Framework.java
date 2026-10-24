@@ -1,28 +1,28 @@
 package pe.axiz.codegen.model;
 
-import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
 
 /** Architectural style (layer 3) and the stacks it supports in v1. */
 public enum Framework {
-  LAYERED(EnumSet.of(Stack.SERVLET)),
-  HEXAGONAL(EnumSet.of(Stack.SERVLET)),
-  CQRS(EnumSet.of(Stack.SERVLET, Stack.REACTIVE)),
-  EDA(EnumSet.of(Stack.SERVLET, Stack.REACTIVE)),
-  BFF(EnumSet.of(Stack.SERVLET, Stack.REACTIVE)),
-  BATCH(EnumSet.of(Stack.SERVLET)),
+  LAYERED(false),
+  HEXAGONAL(false),
+  CQRS(true),
+  EDA(true),
+  BFF(true),
+  BATCH(false),
   /** Platform archetypes (library, starter) have no style. */
-  NONE(EnumSet.of(Stack.SERVLET));
+  NONE(false);
 
-  private final Set<Stack> stacks;
+  private final boolean reactive;
 
-  Framework(Set<Stack> stacks) {
-    this.stacks = stacks;
+  Framework(boolean reactive) {
+    this.reactive = reactive;
   }
 
+  /** The stacks the style supports; an unmodifiable set, servlet always included. */
   public Set<Stack> stacks() {
-    return stacks;
+    return reactive ? Set.of(Stack.SERVLET, Stack.REACTIVE) : Set.of(Stack.SERVLET);
   }
 
   public String id() {

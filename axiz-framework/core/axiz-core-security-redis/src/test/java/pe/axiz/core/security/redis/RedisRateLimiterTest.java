@@ -56,4 +56,16 @@ class RedisRateLimiterTest {
             .tryAcquire("k", 1, Duration.ofSeconds(1))
             .allowed());
   }
+
+  @Test
+  void aRouteGroupCanChooseItsOwnFailurePolicy() {
+    RedisRateLimiter openByDefault =
+        new RedisRateLimiter(fake(new AtomicLong(), true), "rl:", true);
+    assertFalse(
+        openByDefault.tryAcquire("k", 1, Duration.ofSeconds(1), false).allowed(),
+        "a money-movement rule fails closed even if the default is open");
+    RedisRateLimiter closedByDefault =
+        new RedisRateLimiter(fake(new AtomicLong(), true), "rl:", false);
+    assertTrue(closedByDefault.tryAcquire("k", 1, Duration.ofSeconds(1), true).allowed());
+  }
 }

@@ -132,8 +132,12 @@ class ContractsCatchBrokenStoresTest {
     Expect.isTrue(true, "fine");
     Expect.isFalse(false, "fine");
     Expect.equal("a", "a", "fine");
-    assertEquals("flag", assertThrows(AssertionError.class, () -> Expect.isTrue(false, "flag")).getMessage());
-    assertEquals("flag", assertThrows(AssertionError.class, () -> Expect.isFalse(true, "flag")).getMessage());
+    assertEquals(
+        "flag",
+        assertThrows(AssertionError.class, () -> Expect.isTrue(false, "flag")).getMessage());
+    assertEquals(
+        "flag",
+        assertThrows(AssertionError.class, () -> Expect.isFalse(true, "flag")).getMessage());
     assertEquals(
         "status: expected <A> but was <B>",
         assertThrows(AssertionError.class, () -> Expect.equal("A", "B", "status")).getMessage());

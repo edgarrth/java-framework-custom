@@ -24,11 +24,11 @@ concurrency:
 jobs:
   pr:
     if: github.event_name == 'pull_request'
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
     secrets: inherit
 
   build:
-    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
     with:
       # store contracts against PostgreSQL, Valkey and DynamoDB containers must run, not skip
       maven-args: -Daxiz.it.requireDocker=true
@@ -36,10 +36,42 @@ jobs:
     secrets: inherit
 
   publish:
-    needs: [build, wrapper, samples]
-    if: github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v')
-    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1
+    needs: [build, wrapper, samples, api-compat]
+    # api-compat is skipped until the repository sets AXIZ_API_BASELINE; it never fails silently
+    if: >-
+      !cancelled()
+      && needs.build.result == 'success'
+      && needs.wrapper.result == 'success'
+      && needs.samples.result == 'success'
+      && (needs.api-compat.result == 'success' || needs.api-compat.result == 'skipped')
+      && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0
+    # release provenance: attached to the GitHub release, signed with the KMS key (OIDC)
+    permissions:
+      contents: write
+      id-token: write
     secrets: inherit
+
+
+  api-compat:
+    # public API and SPI compatibility with the last release (opt-in before 1.0.0: set the
+    # repository variable AXIZ_API_BASELINE to the released version to compare with)
+    needs: build
+    if: vars.AXIZ_API_BASELINE != ''
+    runs-on: ubuntu-24.04
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      BASELINE: ${{ vars.AXIZ_API_BASELINE }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: japicmp against the baseline
+        run: ./mvnw -B -ntp verify -DskipTests -Papi-compat -Daxiz.api.baseline="$BASELINE"
 
   wrapper:
     # the Maven wrapper (also copied into every generated project) verifies the distribution
@@ -55,8 +87,9 @@ jobs:
         run: python3 .github/scripts/check-publish-gates.py .github/workflows/ci.yaml
       - name: One version per third-party library, defined once
         run: python3 .github/scripts/check-dependency-governance.py .
-      - name: Checksum pinned for the release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: spring.factories only registers environment post-processors
+        run: python3 .github/scripts/check-spring-factories.py .
+      - name: Maven distribution checksum pinned (repository and generated projects)
         run: |
           for f in .mvn/wrapper/maven-wrapper.properties \
                    codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvn/wrapper/maven-wrapper.properties; do
@@ -74,7 +107,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Install the framework and generate the samples

@@ -1,6 +1,9 @@
 # Promotes to Nexus the artifacts that lib-publish verified and staged in this same run: the
 # staging repository is checked against its SHA-256 manifest and uploaded file by file, so what is
 # published is byte for byte what passed the gates. Call it from a job that "needs" every gate.
+# A release (v* tag) also gets an SLSA v1 build provenance (in-toto statement whose subjects are the
+# published files and their SHA-256), signed with the CI key in AWS KMS and attached to the GitHub
+# release; the calling job grants `contents: write` and `id-token: write`.
 name: lib-promote
 on:
   workflow_call:
@@ -22,7 +25,8 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
+  id-token: write
 
 jobs:
   promote:
@@ -31,6 +35,9 @@ jobs:
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      SIGNING_KEY: ${{ vars.COSIGN_KMS_KEY }}
+      # this workflow at the release that published the artifacts (an immutable tag of axiz-workflows)
+      BUILDER: https://github.com/axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0 # x-release-please-version
     steps:
       - name: Only develop (SNAPSHOT) and v* tags (releases) publish
         run: |
@@ -60,3 +67,39 @@ jobs:
             cat SHA256SUMS
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Signing key for the release provenance
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          if [ -z "$SIGNING_KEY" ] || [ -z "${{ vars.COSIGN_ROLE_ARN }}" ] || [ -z "${{ vars.AWS_REGION }}" ]; then
+            echo "::error::a release needs its signed provenance: define COSIGN_KMS_KEY, COSIGN_ROLE_ARN and AWS_REGION"; exit 1
+          fi
+      - name: AWS credentials for the signing key (OIDC)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: ${{ vars.COSIGN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        if: startsWith(github.ref, 'refs/tags/v')
+      - name: SLSA provenance of the release, signed and attached to the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: staging-repo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jq -R -s --arg builder "$BUILDER" --arg repo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --arg sha "$GITHUB_SHA" --arg ref "$GITHUB_REF" \
+            --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT" \
+            '{_type: "https://in-toto.io/Statement/v1",
+              subject: [split("\n")[] | select(length > 0) | capture("^(?<d>[0-9a-f]{64})  (?<n>.+)$") | {name: (.n | ltrimstr("./")), digest: {sha256: .d}}],
+              predicateType: "https://slsa.dev/provenance/v1",
+              predicate: {buildDefinition: {buildType: "https://github.com/axiz/axiz-workflows/lib-publish/v1",
+                  externalParameters: {repository: $repo, ref: $ref},
+                  resolvedDependencies: [{uri: ("git+" + $repo + "@" + $ref), digest: {gitCommit: $sha}}]},
+                runDetails: {builder: {id: $builder}, metadata: {invocationId: $run}}}}' \
+            SHA256SUMS > ../provenance.intoto.json
+          cosign sign-blob --yes --tlog-upload=false --key "$SIGNING_KEY" \
+            --bundle ../provenance.intoto.json.bundle ../provenance.intoto.json
+          gh release upload "$GITHUB_REF_NAME" ../provenance.intoto.json ../provenance.intoto.json.bundle \
+            --repo "$GITHUB_REPOSITORY" --clobber
+          echo "- SLSA provenance signed (AWS KMS) and attached to release $GITHUB_REF_NAME" >> "$GITHUB_STEP_SUMMARY"

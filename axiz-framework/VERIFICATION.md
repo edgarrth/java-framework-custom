@@ -1,5 +1,55 @@
 # Verificación de esta entrega
 
+## Qué se verificó y dónde (review27)
+
+review27 aplica tres auditorías independientes sobre review26 (informe técnico con 9 hallazgos,
+auditoría del 17 de octubre de 2026 con R01 a R09 e informe con 22 hallazgos `AXZ-*`). La
+auditoría del 17 de octubre ejecutó Maven real: 683/683 pruebas del framework, pero el perfil
+`quality` fallaba (Checkstyle, Spotless, 18 avisos de NullAway, Enforcer en 2 módulos y cobertura
+bajo el umbral en 14 módulos). Este entorno sigue sin Maven Central; lo que sigue separa lo ejecutado
+aquí de lo que solo CI puede ejecutar.
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 139 módulos OK, 2 omitidos (`axiz-architecture-tests` y `axiz-test-spring-boot-starter`: Testcontainers y WireMock) |
+| Pruebas unitarias (capa 1, APIs de estilos, codegen, ArchUnit) | aquí, JUnit | 551 OK, 0 fallidas (incluye cifrado concurrente con hilos virtuales y suma de 10 000 centavos sin deriva) |
+| Checkstyle 14.2.0 con la configuración de `axiz-code-standards` | aquí | sin hallazgos en los cinco repositorios y en los 29 proyectos generados |
+| google-java-format 1.30.0 (la versión de Spotless) | aquí | sin cambios pendientes |
+| Error Prone 2.49.0 + NullAway 0.14.1 con las opciones del POM | aquí | 0 errores y 0 avisos; los avisos se corrigieron en el código, sin supresiones generales. No analizables aquí: `featureflags` (OpenFeature usa Lombok), `r2dbc` (sobrecargas de Flyway y RDS), `tenancy` (Hibernate) y el starter de pruebas |
+| Convergencia de dependencias | revisión de POM | `slf4j-api` de ArchUnit excluido y declarado; Bouncy Castle alineado en 1.85; Enforcer corre en CI |
+| Cobertura de las auto-configuraciones que la auditoría marcó bajo el umbral (líneas 0,80, ramas 0,70) | aquí, JaCoCo 0.8.14 con pruebas de contexto de Spring (`ApplicationContextRunner`) | ver la tabla siguiente |
+| Charts (9 charts × dev/qa/prod/kind) | aquí | kubeconform estricto (Kubernetes 1.33): 276 recursos válidos, 0 inválidos (20 omitidos: CRDs como `ExternalSecret`); kube-linter 0.7.6 sin hallazgos |
+| Workflows | aquí | actionlint 1.7.12 sin hallazgos |
+| `-Pquality` completo, PIT, SpotBugs, `*IT` con Docker, `api-compat` | solo CI | no se ejecutaron |
+
+Cobertura medida aquí (líneas / ramas). El arnés compila Spring desde fuentes; cuando falta alguna
+clase que Spring carga por nombre, la prueba afectada falla aquí aunque pase con Maven, y se indica:
+
+| Módulo | Antes (auditoría) | Ahora |
+|---|---|---|
+| `axiz-storage-spring-boot-autoconfigure` | 0,20 / 0,00 | 1,00 / 0,90 |
+| `axiz-tenancy-spring-boot-autoconfigure` | 0,40 / 0,31 | 1,00 / 1,00 |
+| `axiz-jpa-spring-boot-autoconfigure` | 0,77 / 0,66 | 1,00 / 1,00 |
+| `axiz-foundation-spring-boot-autoconfigure` | 0,54 / 0,50 | 0,98 / 0,81 |
+| `axiz-soap-spring-boot-autoconfigure` | sobre umbral / 0,50 | 0,98 / 0,89 |
+| `axiz-i18n-spring-boot-autoconfigure` | 0,64 / sin ramas | 0,88 / sin ramas (falta aquí el resolvedor reactivo, que cubre la prueba nueva en CI) |
+| `axiz-lock-spring-boot-autoconfigure` | 0,55 / sobre umbral | 0,85 / 1,00 |
+| `axiz-crypto-spring-boot-autoconfigure` | 0,59 / 0,28 | 0,83 / 0,79 (la prueba de KMS necesita el SDK real, CI) |
+| `axiz-dynamodb-spring-boot-autoconfigure` | sin pruebas | 1,00 / 1,00 |
+| `axiz-web-spring-boot-autoconfigure` | 0,56 / 0,58 | 0,95 / 0,80 |
+| `axiz-errors-spring-boot-autoconfigure` | 0,41 / 0,42 | 0,63 / 0,52 aquí, con 5 de 6 pruebas: la prueba MVC de extremo a extremo (validación, header faltante, cuerpo ilegible, 401, 403, 409, 404, 500) cubre `SpringExceptionMappers` y no arranca aquí porque Spring MVC necesita clases que el arnés no compila; corre en CI |
+| `axiz-idempotency-spring-boot-autoconfigure` | 0,49 / 0,47 | 0,59 / 0,50 aquí, con 17 de 21 pruebas: las 4 del filtro reactivo cubren `IdempotencyWebFilter` (97 líneas) y no arrancan WebFlux en el arnés; corren en CI |
+| `axiz-secrets-spring-boot-autoconfigure` | 0,56 / 0,50 | 0,66 / 0,88 aquí: las fuentes de Secrets Manager y Parameter Store necesitan los clientes reales del SDK, que solo existen en CI; sus pruebas nuevas están escritas |
+| `axiz-featureflags-spring-boot-autoconfigure` | 0,22 / 0,21 | no medible aquí (Lombok); pruebas nuevas del proveedor de OpenFeature |
+| `axiz-r2dbc-spring-boot-autoconfigure` | 0,45 / 0,48 | no medible aquí (pool de R2DBC y Flyway); prueba nueva del acceso de Flyway con IAM |
+
+Correcciones de comportamiento encontradas al escribir las pruebas (cada una con su prueba):
+una bandera de OpenFeature no configurada devolvía `false` en vez del valor por defecto de quien
+consulta (ahora `FLAG_NOT_FOUND`); un perfil cuyo nombre contenía `test` o `local` permitía
+`ddl-auto=update`; un cliente SOAP mal configurado fallaba con `NullPointerException` en vez de
+nombrar la propiedad; Parameter Store sin ruta fallaba igual; Argon2id caía a PBKDF2 sin avisar
+(ahora deja un WARN).
+
 ## Qué se verificó y dónde (review26)
 
 La última ejecución con Maven real es la auditoría de código del 16 de octubre de 2026 sobre

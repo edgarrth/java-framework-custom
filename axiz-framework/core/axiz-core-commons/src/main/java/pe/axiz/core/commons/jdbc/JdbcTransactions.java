@@ -2,6 +2,7 @@ package pe.axiz.core.commons.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import javax.sql.DataSource;
@@ -13,8 +14,14 @@ import org.jspecify.annotations.Nullable;
  */
 public final class JdbcTransactions implements TransactionRunner, ConnectionProvider {
 
+  /**
+   * Connections bound to the current thread, per data source (identity): every instance working on
+   * the same data source joins the same transaction.
+   */
+  private static final ThreadLocal<@Nullable IdentityHashMap<DataSource, Connection>> BOUND =
+      new ThreadLocal<>();
+
   private final DataSource dataSource;
-  private final ThreadLocal<@Nullable Connection> bound = new ThreadLocal<>();
 
   public JdbcTransactions(DataSource dataSource) {
     this.dataSource = Objects.requireNonNull(dataSource);
@@ -22,13 +29,13 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
 
   @Override
   public <T> T inTransaction(Callable<T> work) throws Exception {
-    if (bound.get() != null) {
+    if (bound() != null) {
       return work.call(); // join the running transaction
     }
     try (Connection c = dataSource.getConnection()) {
       boolean autoCommit = c.getAutoCommit();
       c.setAutoCommit(false);
-      bound.set(c);
+      bind(c);
       try {
         T result = work.call();
         c.commit();
@@ -37,7 +44,7 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
         c.rollback();
         throw e;
       } finally {
-        bound.remove();
+        unbind();
         c.setAutoCommit(autoCommit);
       }
     }
@@ -45,14 +52,38 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
 
   @Override
   public Connection get() throws SQLException {
-    Connection c = bound.get();
+    Connection c = bound();
     return c != null ? c : dataSource.getConnection();
   }
 
   @Override
   public void release(Connection connection) throws SQLException {
-    if (bound.get() != connection) {
+    if (bound() != connection) {
       connection.close();
+    }
+  }
+
+  private @Nullable Connection bound() {
+    IdentityHashMap<DataSource, Connection> map = BOUND.get();
+    return map == null ? null : map.get(dataSource);
+  }
+
+  private void bind(Connection c) {
+    IdentityHashMap<DataSource, Connection> map = BOUND.get();
+    if (map == null) {
+      map = new IdentityHashMap<>();
+      BOUND.set(map);
+    }
+    map.put(dataSource, c);
+  }
+
+  private void unbind() {
+    IdentityHashMap<DataSource, Connection> map = BOUND.get();
+    if (map != null) {
+      map.remove(dataSource);
+      if (map.isEmpty()) {
+        BOUND.remove();
+      }
     }
   }
 }

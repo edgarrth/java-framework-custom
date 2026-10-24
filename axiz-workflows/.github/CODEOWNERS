@@ -1,0 +1,4 @@
+# Pipelines and admission policies change the supply chain of every service.
+*                         @axiz-pe/platform
+/.github/workflows/       @axiz-pe/platform @axiz-pe/security
+/gitops/                  @axiz-pe/platform @axiz-pe/security

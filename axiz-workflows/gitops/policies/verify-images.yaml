@@ -1,5 +1,6 @@
 # Admission policy (Kyverno): pods of the service namespaces only run images from the Nexus
-# registry signed by the CI key in AWS KMS (cosign, see service-ci). The policy is managed by the
+# registry signed by the CI key in AWS KMS (cosign, see service-ci) and with a signed SLSA
+# provenance that names the shared service-ci workflow as builder. The policy is managed by the
 # platform team; the public key is exported once from KMS (cosign public-key --key awskms:///...).
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
@@ -33,6 +34,23 @@ spec:
                       ignoreTlog: true
                     ctlog:
                       ignoreSCT: true
+          # SLSA build provenance signed with the same key: the image was built by the shared
+          # service-ci workflow (service-ci attests it next to the SBOM)
+          attestations:
+            - type: https://slsa.dev/provenance/v1
+              attestors:
+                - entries:
+                    - keys:
+                        kms: awskms:///alias/axiz-image-signing
+                        rekor:
+                          ignoreTlog: true
+                        ctlog:
+                          ignoreSCT: true
+              conditions:
+                - all:
+                    - key: "{{ starts_with(runDetails.builder.id, 'https://github.com/axiz/axiz-workflows/.github/workflows/service-ci.yaml@') }}"
+                      operator: Equals
+                      value: true
     - name: only-nexus-registry
       match:
         any:

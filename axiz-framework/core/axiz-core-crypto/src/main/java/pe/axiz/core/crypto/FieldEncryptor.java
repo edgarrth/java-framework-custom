@@ -67,5 +67,14 @@ public final class FieldEncryptor {
     }
   }
 
-  private record Parsed(String keyId, byte[] payload) {}
+  /** Internal holder; a class rather than a record because it holds an array. */
+  private static final class Parsed {
+    private final String keyId;
+    private final byte[] payload;
+
+    Parsed(String keyId, byte[] payload) {
+      this.keyId = keyId;
+      this.payload = payload;
+    }
+  }
 }

@@ -45,14 +45,8 @@ public class AuditableInterceptor implements MethodInterceptor {
     }
     AuditTrail.Builder record =
         trail.obtain().record(a.action(), a.resource()).context(context.obtain().current(null));
-    String[] params =
-        names.computeIfAbsent(
-            method,
-            m -> {
-              String[] n = discoverer.getParameterNames(m);
-              return n != null ? n : new String[0];
-            });
-    Object[] args = invocation.getArguments();
+    String[] params = names.computeIfAbsent(method, this::parameterNames);
+    @Nullable Object[] args = invocation.getArguments();
     Map<String, @Nullable Object> captured = new LinkedHashMap<>();
     for (int i = 0; i < args.length && i < params.length; i++) {
       if (params[i].equals(a.resourceIdArgument()) && args[i] != null) {
@@ -70,12 +64,23 @@ public class AuditableInterceptor implements MethodInterceptor {
       finish(a, record, null, t);
       throw t;
     }
-    if (REACTOR && ReactiveAudit.isReactive(result)) {
+    if (REACTOR && result != null && ReactiveAudit.isReactive(result)) {
       return ReactiveAudit.decorate(
           result, v -> finish(a, record, v, null), e -> finish(a, record, null, e));
     }
     finish(a, record, result, null);
     return result;
+  }
+
+  /** Parameter names, or {@code argN} where the compiler did not keep them. */
+  private String[] parameterNames(Method m) {
+    @Nullable String @Nullable [] discovered = discoverer.getParameterNames(m);
+    String[] out = new String[m.getParameterCount()];
+    for (int i = 0; i < out.length; i++) {
+      String n = discovered != null && i < discovered.length ? discovered[i] : null;
+      out[i] = n != null ? n : "arg" + i;
+    }
+    return out;
   }
 
   static void finish(

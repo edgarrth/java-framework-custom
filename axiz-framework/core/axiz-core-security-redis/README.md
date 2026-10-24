@@ -1,7 +1,7 @@
 <!-- generated -->
 # axiz-core-security-redis
 
-Distributed fixed-window rate limiter on Redis (ElastiCache).
+Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache).
 
 ## Dependency
 
@@ -19,6 +19,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `RedisRateLimiter` | Distributed fixed-window rate limiter on Redis. |
+| `RedisNonceStore` | Nonces of signed requests, accepted once across every instance (`SET NX PX`); fails closed if Redis is down. |
 
 ## Tests
 

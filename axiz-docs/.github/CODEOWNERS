@@ -1,0 +1,4 @@
+# Documentation and architecture decisions.
+*                         @axiz-pe/platform
+/docs/                @axiz-pe/platform @axiz-pe/architecture
+/docs/guias/seguridad.md  @axiz-pe/platform @axiz-pe/security

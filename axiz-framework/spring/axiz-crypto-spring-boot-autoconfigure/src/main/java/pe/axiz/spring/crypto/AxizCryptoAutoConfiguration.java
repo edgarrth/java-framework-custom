@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -32,6 +34,8 @@ import pe.axiz.core.secrets.SecretResolver;
 @EnableConfigurationProperties(AxizCryptoProperties.class)
 public class AxizCryptoAutoConfiguration {
 
+  private static final Logger LOG = LoggerFactory.getLogger(AxizCryptoAutoConfiguration.class);
+
   @Bean
   @ConditionalOnMissingBean
   PasswordHasher axizPasswordHasher(AxizCryptoProperties p) {
@@ -48,10 +52,15 @@ public class AxizCryptoAutoConfiguration {
         }
         yield SpringEncoders.bcrypt();
       }
-      case "argon2id" ->
-          springCrypto && SpringEncoders.argon2Available()
-              ? SpringEncoders.argon2()
-              : new Pbkdf2PasswordHasher(Pbkdf2PasswordHasher.DEFAULT_ITERATIONS);
+      case "argon2id" -> {
+        if (springCrypto && SpringEncoders.argon2Available()) {
+          yield SpringEncoders.argon2();
+        }
+        LOG.warn(
+            "axiz.crypto.password.algorithm=argon2id needs spring-security-crypto and"
+                + " bcprov-jdk18on on the classpath; hashing with PBKDF2-HMAC-SHA256 instead");
+        yield new Pbkdf2PasswordHasher(Pbkdf2PasswordHasher.DEFAULT_ITERATIONS);
+      }
       default -> throw new IllegalStateException("Unsupported password algorithm: " + algorithm);
     };
   }

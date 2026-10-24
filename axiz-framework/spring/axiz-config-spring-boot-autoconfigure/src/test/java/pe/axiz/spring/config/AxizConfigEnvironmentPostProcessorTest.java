@@ -20,35 +20,65 @@ class AxizConfigEnvironmentPostProcessorTest {
         .withProperty("KUBERNETES_SERVICE_PORT", "443");
   }
 
+  private static final String MOUNTED =
+      "optional:file:/etc/axiz/config/common/application.yaml,"
+          + "file:/etc/axiz/config/service/application.yaml,"
+          + "file:/etc/axiz/config/errors/application.yaml";
+
   @Test
-  void insideClusterImportsConventionalConfigMaps() {
+  void insideClusterImportsTheMountedConfigMaps() {
+    // shared (optional), then the service and its error catalog (required): later files win
     MockEnvironment env =
         cluster().withProperty("spring.config.import", "optional:file:./extra.yaml");
     epp.postProcessEnvironment(env, new SpringApplication());
-    assertEquals("optional:file:./extra.yaml,kubernetes:", env.getProperty("spring.config.import"));
-    assertEquals("axiz-common", env.getProperty("spring.cloud.kubernetes.config.sources[0].name"));
-    assertEquals(
-        "payments-business-errors",
-        env.getProperty("spring.cloud.kubernetes.config.sources[2].name"));
-    assertEquals("true", env.getProperty("spring.cloud.kubernetes.config.fail-fast"));
-    assertEquals("false", env.getProperty("spring.cloud.kubernetes.secrets.enabled"));
+    assertEquals("optional:file:./extra.yaml," + MOUNTED, env.getProperty("spring.config.import"));
   }
 
   @Test
-  void explicitValuesWin() {
+  void theMountDirectoryCanBeChangedAndEntriesAreNotRepeated() {
     MockEnvironment env =
-        cluster().withProperty("spring.cloud.kubernetes.config.fail-fast", "false");
+        cluster()
+            .withProperty("axiz.config.directory", "/config/")
+            .withProperty("spring.config.import", "file:/config/service/application.yaml");
     epp.postProcessEnvironment(env, new SpringApplication());
-    assertEquals("false", env.getProperty("spring.cloud.kubernetes.config.fail-fast"));
+    assertEquals(
+        "file:/config/service/application.yaml,optional:file:/config/common/application.yaml,"
+            + "file:/config/errors/application.yaml",
+        env.getProperty("spring.config.import"));
   }
 
   @Test
-  void localProfileAndOutsideClusterSkipKubernetes() {
+  void theKubernetesPlatformCanBeDeclared() {
+    MockEnvironment env =
+        new MockEnvironment()
+            .withProperty("spring.application.name", "payments-business")
+            .withProperty("spring.main.cloud-platform", "kubernetes");
+    epp.postProcessEnvironment(env, new SpringApplication());
+    assertEquals(MOUNTED, env.getProperty("spring.config.import"));
+
+    MockEnvironment none = cluster().withProperty("spring.main.cloud-platform", "none");
+    epp.postProcessEnvironment(none, new SpringApplication());
+    assertNull(none.getProperty("spring.config.import"));
+  }
+
+  @Test
+  void disabledConventionsChangeNothing() {
+    MockEnvironment env = cluster().withProperty("axiz.config.enabled", "false");
+    epp.postProcessEnvironment(env, new SpringApplication());
+    assertNull(env.getProperty("spring.config.import"));
+    assertNull(env.getProperty("spring.cloud.aws.secretsmanager.enabled"));
+  }
+
+  @Test
+  void localProfileAndOutsideClusterSkipTheConfigMaps() {
     MockEnvironment local = cluster();
     local.setActiveProfiles("local");
     epp.postProcessEnvironment(local, new SpringApplication());
     assertNull(local.getProperty("spring.config.import"));
-    assertEquals("false", local.getProperty("spring.cloud.kubernetes.enabled"));
+
+    MockEnvironment test = cluster().withProperty("spring.profiles.active", "dev, test");
+    epp.postProcessEnvironment(test, new SpringApplication());
+    assertNull(test.getProperty("spring.config.import"));
 
     MockEnvironment laptop = new MockEnvironment();
     epp.postProcessEnvironment(laptop, new SpringApplication());
@@ -63,7 +93,7 @@ class AxizConfigEnvironmentPostProcessorTest {
             .withProperty("axiz.config.environment", "QA");
     epp.postProcessEnvironment(env, new SpringApplication());
     assertEquals(
-        "optional:aws-parameterstore:/axiz/qa/payments-business/,kubernetes:",
+        "optional:aws-parameterstore:/axiz/qa/payments-business/," + MOUNTED,
         env.getProperty("spring.config.import"));
   }
 
@@ -95,5 +125,18 @@ class AxizConfigEnvironmentPostProcessorTest {
         new MockEnvironment().withProperty("spring.cloud.aws.parameterstore.enabled", "true");
     epp.postProcessEnvironment(explicit, new SpringApplication());
     assertEquals("true", explicit.getProperty("spring.cloud.aws.parameterstore.enabled"));
+  }
+
+  @Test
+  void theSecretsManagerConfigIntegrationIsOffUnlessTheServiceTurnsItOn() {
+    // the SDK on the classpath (axiz.secrets) must not build a second client that needs a region
+    MockEnvironment laptop = new MockEnvironment();
+    epp.postProcessEnvironment(laptop, new SpringApplication());
+    assertEquals("false", laptop.getProperty("spring.cloud.aws.secretsmanager.enabled"));
+
+    MockEnvironment explicit =
+        new MockEnvironment().withProperty("spring.cloud.aws.secretsmanager.enabled", "true");
+    epp.postProcessEnvironment(explicit, new SpringApplication());
+    assertEquals("true", explicit.getProperty("spring.cloud.aws.secretsmanager.enabled"));
   }
 }

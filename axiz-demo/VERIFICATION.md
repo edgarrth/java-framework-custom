@@ -1,5 +1,21 @@
 # Verificación de esta entrega
 
+## review27 (tres auditorías sobre review26)
+
+La auditoría del 17 de octubre ejecutó el demo con Maven real: 117 de 118 pruebas (fallaba el
+arranque de `payment-process` sin región de AWS) y 88 de 88 comprobaciones de escenarios. Lo
+corregido y lo verificado aquí, sin Maven ni Docker:
+
+| Qué | Resultado aquí |
+|---|---|
+| Compilación de main y pruebas de los 8 servicios | OK, 0 fallas |
+| `payment-process` sin región de AWS | Secrets Manager de Spring Cloud AWS queda apagado por defecto (`axiz-config`); el servicio lo activa solo donde lo usa |
+| Llaves de prueba | `payments-business` y `payments-history` ya no versionan llaves: `EphemeralSecrets` las genera en cada ejecución (`@DynamicPropertySource`) |
+| `core-integration` | WS-Security con `password-mode: LEGACY_SHA1_DIGEST` explícito (lo exige el core simulado); `allow-plain-http` solo en el perfil local y en kind |
+| `payments-history` | versión 0.1.0, igual que el resto |
+| Charts de los 8 servicios (dev, qa, prod, kind) | kubeconform estricto y kube-linter sin hallazgos; ConfigMaps montados como archivos, sin token de ServiceAccount ni RBAC, salida restringida |
+| Pruebas con contexto de Spring, `*IT` con Testcontainers, escenarios | solo con Maven y Docker (sección 4 del README) |
+
 ## review26 (auditoría de código sobre review24)
 
 La auditoría ejecutó el demo con Maven real: 115 pruebas, 110 aprobadas, 1 fallo y 4 errores, y 86

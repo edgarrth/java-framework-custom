@@ -27,10 +27,15 @@ public final class Catalog {
 
   private final Map<String, Archetype> archetypes;
   private final Map<String, Capability> capabilities;
+  private final Map<Framework, Style> styles;
 
-  private Catalog(Map<String, Archetype> archetypes, Map<String, Capability> capabilities) {
+  private Catalog(
+      Map<String, Archetype> archetypes,
+      Map<String, Capability> capabilities,
+      Map<Framework, Style> styles) {
     this.archetypes = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(archetypes));
     this.capabilities = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(capabilities));
+    this.styles = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(styles));
   }
 
   public static Catalog load() {
@@ -51,9 +56,9 @@ public final class Catalog {
               map(a.get("properties")));
       archetypes.put(archetype.name(), archetype);
     }
+    Map<String, Object> capabilityDoc = read(cl, "axiz/archetypes/capabilities.yaml");
     Map<String, Capability> capabilities = new LinkedHashMap<>();
-    for (Map<String, Object> c :
-        list(read(cl, "axiz/archetypes/capabilities.yaml").get("capabilities"))) {
+    for (Map<String, Object> c : list(capabilityDoc.get("capabilities"))) {
       Capability cap =
           new Capability(
               str(c, "name"),
@@ -69,7 +74,16 @@ public final class Catalog {
               stores(c.get("persistence")));
       capabilities.put(cap.name(), cap);
     }
-    Catalog catalog = new Catalog(archetypes, capabilities);
+    Map<Framework, Style> styles = new LinkedHashMap<>();
+    map(capabilityDoc.get("styles"))
+        .forEach(
+            (id, v) -> {
+              Map<String, Object> m = map(v);
+              styles.put(
+                  Framework.of(id),
+                  new Style(strings(m.get("capabilities")), strings(m.get("jdbc-tables"))));
+            });
+    Catalog catalog = new Catalog(archetypes, capabilities, styles);
     catalog.check();
     return catalog;
   }
@@ -113,12 +127,27 @@ public final class Catalog {
         }
       }
       for (String d : c.dependencies()) {
-        if (d.split(":").length != 2) {
+        if (d.split(":", -1).length != 2) {
           throw new IllegalStateException(
               "Dependency " + d + " of " + c.name() + " is not groupId:artifactId");
         }
       }
     }
+    styles.forEach(
+        (framework, style) -> {
+          for (String c : style.capabilities()) {
+            if (!capabilities.containsKey(c)) {
+              throw new IllegalStateException(
+                  "Style " + framework.id() + " brings unknown capability " + c);
+            }
+          }
+          for (String t : style.jdbcTables()) {
+            if (!Style.TABLES.contains(t)) {
+              throw new IllegalStateException(
+                  "Style " + framework.id() + " declares unknown table " + t);
+            }
+          }
+        });
     for (Archetype a : archetypes.values()) {
       for (String s : a.starters()) {
         if (!capabilities.containsKey(s)) {
@@ -170,6 +199,11 @@ public final class Catalog {
     }
     path.remove(path.size() - 1);
     out.put(name, c);
+  }
+
+  /** What the starter of a style brings by itself ({@link Style#NONE} when nothing). */
+  public Style style(Framework framework) {
+    return styles.getOrDefault(framework, Style.NONE);
   }
 
   public Optional<Archetype> archetype(String name) {

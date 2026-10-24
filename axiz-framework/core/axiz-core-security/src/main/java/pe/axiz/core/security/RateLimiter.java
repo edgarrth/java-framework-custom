@@ -16,6 +16,17 @@ public interface RateLimiter {
   Decision tryAcquire(String key, long limit, Duration window);
 
   /**
+   * Tries to consume one permit with an explicit policy for when the limiter store is unavailable:
+   * a route group can fail closed (financial operations, callbacks) while others fail open. A
+   * limiter whose store cannot fail (in memory) ignores the policy.
+   *
+   * @param failOpen whether the request passes when the store cannot answer
+   */
+  default Decision tryAcquire(String key, long limit, Duration window, boolean failOpen) {
+    return tryAcquire(key, limit, window);
+  }
+
+  /**
    * Decision of the limiter.
    *
    * @param allowed whether the request may proceed

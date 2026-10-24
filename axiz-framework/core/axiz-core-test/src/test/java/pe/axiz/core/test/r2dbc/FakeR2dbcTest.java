@@ -136,9 +136,12 @@ class FakeR2dbcTest {
 
     Result result = Mono.from(s.execute()).block();
     assertEquals(result, result.filter(segment -> true));
-    assertThrows(UnsupportedOperationException.class, () -> result.flatMap(segment -> Mono.empty()));
+    assertThrows(
+        UnsupportedOperationException.class, () -> result.flatMap(segment -> Mono.empty()));
     Object metadata =
-        Flux.from(result.map((row, meta) -> meta.getColumnMetadatas().size() + ":" + meta.contains("x")))
+        Flux.from(
+                result.map(
+                    (row, meta) -> meta.getColumnMetadatas().size() + ":" + meta.contains("x")))
             .blockFirst();
     assertEquals("0:false", metadata);
   }

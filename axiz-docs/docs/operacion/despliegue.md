@@ -7,13 +7,13 @@ Cada servicio trae su chart en `deploy/helm/<servicio>` con `values.yaml` (por d
 
 | Recurso | Detalle |
 |---|---|
-| `Deployment` (o `CronJob` en batch) | usuario no root, filesystem de solo lectura, sin privilegios, probes de liveness/readiness/startup, apagado ordenado, checksum de los ConfigMaps (un cambio dispara rollout), imagen por tag y digest |
+| `Deployment` (o `CronJob` en batch) | usuario no root, filesystem de solo lectura, sin privilegios, probes de liveness/readiness/startup, apagado ordenado, checksum de los ConfigMaps (un cambio dispara rollout), imagen por tag y digest, ConfigMaps montados como archivos en `/etc/axiz/config`, réplicas repartidas por zona (`topologySpread.whenUnsatisfiable`: `DoNotSchedule` en prod) |
 | `Service` | ClusterIP (o NodePort para pruebas locales) |
 | `HorizontalPodAutoscaler`, `PodDisruptionBudget` | réplicas por ambiente; el PDB usa `maxUnavailable` para no bloquear el drenado de nodos |
 | `ConfigMap` `<servicio>` y `<servicio>-errors` | configuración del ambiente y catálogo de errores |
 | `ExternalSecret` | llaves del servicio desde Secrets Manager (`<ambiente>/<servicio>/<llave>`) montadas en `/var/run/secrets/axiz` |
-| `ServiceAccount`, `Role`, `RoleBinding` | IRSA/Pod Identity por ambiente; lectura de ConfigMaps del namespace |
-| `NetworkPolicy` | entrada solo desde el mismo namespace y los namespaces listados (ingress, monitoreo) |
+| `ServiceAccount` | IRSA/Pod Identity por ambiente; sin token de la API de Kubernetes montado (`automountServiceAccountToken: false`) y sin `Role` ni `RoleBinding`: el servicio no consulta la API |
+| `NetworkPolicy` | denegación por defecto en ambos sentidos. Entrada: el mismo namespace y los namespaces listados (ingress, monitoreo). Salida: DNS, los pods del namespace (`egress.sameNamespace`), los namespaces listados (`egress.namespaces`) y los CIDR con sus puertos (`egress.cidrs`: endpoints de VPC de los servicios de AWS, Aurora, ElastiCache, MSK, socios) que cada `values-<env>.yaml` declara |
 
 CI valida cada combinación `values.yaml` + `values-<env>.yaml` con `helm lint`, kubeconform y
 kube-linter.
@@ -52,9 +52,14 @@ permitidos).
 ## Imágenes firmadas
 
 CI firma cada imagen con **cosign** usando una llave de AWS KMS (sin llaves en archivos) y adjunta
-el SBOM como atestación. En el clúster, la política de Kyverno
-(`gitops/policies/verify-images.yaml`) solo admite en los namespaces de servicios imágenes del
-registro de Nexus firmadas con esa llave; el chart fija la imagen por digest.
+dos atestaciones firmadas con la misma llave: el SBOM (CycloneDX) y la **procedencia SLSA v1**
+(qué workflow, en qué versión, construyó qué commit y en qué ejecución). La firma es obligatoria:
+`service-ci` falla antes de publicar si la llave no está configurada, y un tag nunca publica una
+imagen sin firmar. En el clúster, la política de Kyverno (`gitops/policies/verify-images.yaml`)
+solo admite en los namespaces de servicios imágenes del registro de Nexus firmadas con esa llave y
+con una procedencia que nombre a `service-ci` como constructor; qa y prod solo se despliegan por
+digest (`service-cd` rechaza un despliegue sin `image-digest`). Las imágenes base se fijan por tag
+y digest; Renovate actualiza ambos y una release no se construye sobre una base sin digest.
 
 ## Configuración y secretos por ambiente
 

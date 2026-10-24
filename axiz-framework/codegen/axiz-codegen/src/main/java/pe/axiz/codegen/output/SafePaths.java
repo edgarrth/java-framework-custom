@@ -27,7 +27,7 @@ public final class SafePaths {
     if (p.isEmpty() || p.startsWith("/") || p.length() > 400) {
       throw new IllegalArgumentException("Invalid generated path: " + path);
     }
-    for (String s : p.split("/")) {
+    for (String s : p.split("/", -1)) {
       segment(s);
     }
     return p;

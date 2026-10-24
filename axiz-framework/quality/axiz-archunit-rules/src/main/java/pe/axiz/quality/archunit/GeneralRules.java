@@ -2,12 +2,14 @@ package pe.axiz.quality.archunit;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import java.util.List;
@@ -85,6 +87,38 @@ public final class GeneralRules {
                   }))
           .because("blocking a reactive pipeline starves the event loop");
 
+  /** Packages of business operations in every style (use cases, handlers, services). */
+  private static final String[] BUSINESS_PACKAGES = {
+    "..application..", "..usecase..", "..service..", "..handler..", "..job.."
+  };
+
+  /**
+   * Business operations never serialize with JVM-local locks: a service runs several replicas, so a
+   * {@code ReentrantLock} or a {@code synchronized} method protects one pod only and two replicas
+   * can still move the same account at once. They use the distributed lock ({@code LockTemplate} of
+   * axiz-lock) or database constraints.
+   */
+  public static final ArchRule NO_JVM_LOCKS_IN_BUSINESS_CODE =
+      noClasses()
+          .that()
+          .resideInAnyPackage(BUSINESS_PACKAGES)
+          .should()
+          .dependOnClassesThat()
+          .resideInAPackage("java.util.concurrent.locks..")
+          .because(
+              "a lock in one JVM does not serialize the replicas of a service; use LockTemplate");
+
+  /** Same rule for {@code synchronized} methods. */
+  public static final ArchRule NO_SYNCHRONIZED_BUSINESS_METHODS =
+      methods()
+          .that()
+          .areDeclaredInClassesThat()
+          .resideInAnyPackage(BUSINESS_PACKAGES)
+          .should()
+          .notHaveModifier(JavaModifier.SYNCHRONIZED)
+          .because(
+              "a lock in one JVM does not serialize the replicas of a service; use LockTemplate");
+
   /** Testing authentication tokens never reach production code. */
   public static final ArchRule NO_TESTING_AUTHENTICATION =
       noClasses()
@@ -146,7 +180,9 @@ public final class GeneralRules {
         NO_PARALLEL_HTTP_CLIENTS,
         NO_AWS_SDK_V1,
         NO_DEPRECATED_API,
-        UNIQUE_BEAN_NAMES);
+        UNIQUE_BEAN_NAMES,
+        NO_JVM_LOCKS_IN_BUSINESS_CODE,
+        NO_SYNCHRONIZED_BUSINESS_METHODS);
   }
 
   static DescribedPredicate<JavaClass> annotatedWithAny(List<String> annotationNames) {

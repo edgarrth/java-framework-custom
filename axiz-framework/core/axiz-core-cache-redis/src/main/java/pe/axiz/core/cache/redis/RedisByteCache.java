@@ -4,6 +4,7 @@ import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisException;
 import io.lettuce.core.ScanArgs;
 import io.lettuce.core.ScanCursor;
+import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.SetArgs;
 import io.lettuce.core.api.sync.RedisCommands;
 import java.time.Duration;
@@ -12,14 +13,20 @@ import java.util.Objects;
 import java.util.Optional;
 import pe.axiz.core.cache.ByteCache;
 import pe.axiz.core.cache.CacheUnavailableException;
+import pe.axiz.core.cache.CachedValue;
 
 /**
  * Redis (ElastiCache / Valkey) cache tier. {@code SET key value PX ttl} sets the TTL atomically on
- * the key that is written; prefix eviction uses {@code SCAN} in batches (never {@code KEYS}).
+ * the key that is written; a read with its remaining TTL is one atomic script ({@code GET} and
+ * {@code PTTL} of the same key); prefix eviction uses {@code SCAN} in batches (never {@code KEYS}).
  */
 public final class RedisByteCache implements ByteCache {
 
   private static final int SCAN_COUNT = 500;
+
+  /** Value and remaining milliseconds of one key, read atomically. */
+  static final String GET_WITH_TTL =
+      "return {redis.call('GET', KEYS[1]), redis.call('PTTL', KEYS[1])}";
 
   private final RedisCommands<String, byte[]> redis;
 
@@ -34,6 +41,25 @@ public final class RedisByteCache implements ByteCache {
     } catch (RedisException e) {
       throw new CacheUnavailableException("Redis GET failed", e);
     }
+  }
+
+  @Override
+  public Optional<CachedValue> getWithTtl(String key) {
+    List<Object> reply;
+    try {
+      reply = redis.eval(GET_WITH_TTL, ScriptOutputType.MULTI, key);
+    } catch (RedisException e) {
+      throw new CacheUnavailableException("Redis GET with PTTL failed", e);
+    }
+    if (reply == null || reply.isEmpty() || !(reply.get(0) instanceof byte[] value)) {
+      return Optional.empty();
+    }
+    // PTTL: milliseconds left, -1 without expiration, -2 when the key is gone
+    long millis = reply.size() > 1 && reply.get(1) instanceof Long l ? l : -1;
+    if (millis == -2) {
+      return Optional.empty();
+    }
+    return Optional.of(new CachedValue(value, millis >= 0 ? Duration.ofMillis(millis) : null));
   }
 
   @Override

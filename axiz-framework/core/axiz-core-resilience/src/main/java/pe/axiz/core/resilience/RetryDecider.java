@@ -39,7 +39,7 @@ public final class RetryDecider {
           || t instanceof ConnectException) {
         return true;
       }
-      if (t instanceof IOException && !(t.getClass().getSimpleName().contains("SSL"))) {
+      if (t instanceof IOException && !t.getClass().getSimpleName().contains("SSL")) {
         return true;
       }
       if (t.getCause() == t) {

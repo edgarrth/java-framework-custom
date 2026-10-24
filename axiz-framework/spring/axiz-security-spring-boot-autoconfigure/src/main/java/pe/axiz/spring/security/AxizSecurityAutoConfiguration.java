@@ -29,6 +29,7 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
 import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerReactiveAuthenticationManagerResolver;
@@ -72,6 +73,12 @@ import pe.axiz.core.security.TrustedIssuer;
 public class AxizSecurityAutoConfiguration {
 
   static final String CSP = "default-src 'none'; frame-ancestors 'none'";
+
+  /** A token of an issuer outside the allow-list: rejected before any key lookup (401). */
+  static final AuthenticationManager UNTRUSTED_ISSUER =
+      authentication -> {
+        throw new InvalidBearerTokenException("Invalid issuer");
+      };
 
   @Bean
   @ConditionalOnMissingBean
@@ -151,7 +158,7 @@ public class AxizSecurityAutoConfiguration {
           issuer -> {
             NimbusJwtDecoder decoder = decoders.servlet(issuer);
             if (decoder == null) {
-              return null;
+              return UNTRUSTED_ISSUER;
             }
             JwtAuthenticationProvider provider = new JwtAuthenticationProvider(decoder);
             provider.setJwtAuthenticationConverter(converter);
@@ -185,12 +192,12 @@ public class AxizSecurityAutoConfiguration {
                           r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
           .authorizeHttpRequests(
               a -> {
-                a.requestMatchers(actuator + "/health", actuator + "/health/**", actuator + "/info")
-                    .permitAll();
-                a.requestMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
-                if (!p.publicPaths().isEmpty()) {
-                  a.requestMatchers(p.publicPaths().toArray(String[]::new)).permitAll();
+                a.requestMatchers(actuator + "/health", actuator + "/health/**").permitAll();
+                List<String> anonymous = p.anonymousPaths(actuator);
+                if (!anonymous.isEmpty()) {
+                  a.requestMatchers(anonymous.toArray(String[]::new)).permitAll();
                 }
+                a.requestMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
                 a.anyRequest().authenticated();
               })
           .oauth2ResourceServer(
@@ -204,7 +211,8 @@ public class AxizSecurityAutoConfiguration {
       RateLimiter rl = limiter.getIfAvailable();
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
-            new RateLimitFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            new RateLimitFilter(
+                rl, new RateLimitRules(p.rateLimit().rules()), problems, p.rateLimit().failOpen()),
             CallerContextFilter.class);
       }
       return http.build();
@@ -261,12 +269,12 @@ public class AxizSecurityAutoConfiguration {
                                       .NO_REFERRER)))
           .authorizeExchange(
               a -> {
-                a.pathMatchers(actuator + "/health", actuator + "/health/**", actuator + "/info")
-                    .permitAll();
-                a.pathMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
-                if (!p.publicPaths().isEmpty()) {
-                  a.pathMatchers(p.publicPaths().toArray(String[]::new)).permitAll();
+                a.pathMatchers(actuator + "/health", actuator + "/health/**").permitAll();
+                List<String> anonymous = p.anonymousPaths(actuator);
+                if (!anonymous.isEmpty()) {
+                  a.pathMatchers(anonymous.toArray(String[]::new)).permitAll();
                 }
+                a.pathMatchers(actuator + "/**").hasAuthority(p.actuatorAuthority());
                 a.anyExchange().authenticated();
               })
           .oauth2ResourceServer(
@@ -280,7 +288,8 @@ public class AxizSecurityAutoConfiguration {
       RateLimiter rl = limiter.getIfAvailable();
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
-            new RateLimitWebFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            new RateLimitWebFilter(
+                rl, new RateLimitRules(p.rateLimit().rules()), problems, p.rateLimit().failOpen()),
             SecurityWebFiltersOrder.AUTHORIZATION);
       }
       return http.build();

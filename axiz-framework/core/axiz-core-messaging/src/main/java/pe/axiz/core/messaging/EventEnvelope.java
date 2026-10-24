@@ -13,24 +13,10 @@ import org.jspecify.annotations.Nullable;
  * CloudEvents 1.0 envelope. {@code data} is the encoded payload (JSON by default); extensions carry
  * correlation, tracing, tenant and declared business headers.
  *
- * @param id event id, also used for deduplication (FIFO, inbox)
- * @param source URI identifying the producer, e.g. {@code urn:axiz:payments-business}
- * @param type event type, e.g. {@code pe.axiz.payments.order-placed.v1}
- * @param time occurrence time
- * @param subject subject (aggregate id), used as partition / group key
- * @param dataContentType content type of {@code data}
- * @param data encoded payload
- * @param extensions CloudEvents extensions (lowercase alphanumeric names)
+ * <p>Immutable: {@code data} is copied on the way in and out. Two envelopes are equal when they
+ * have the same CloudEvents identity ({@code source} and {@code id}).
  */
-public record EventEnvelope(
-    String id,
-    String source,
-    String type,
-    Instant time,
-    @Nullable String subject,
-    String dataContentType,
-    byte[] data,
-    Map<String, String> extensions) {
+public final class EventEnvelope {
 
   public static final String SPEC_VERSION = "1.0";
   public static final String CORRELATION_ID = "correlationid";
@@ -50,22 +36,81 @@ public record EventEnvelope(
   public static final String TENANT = "tenant";
   private static final Pattern EXTENSION_NAME = Pattern.compile("^[a-z0-9]{1,20}$");
 
-  public EventEnvelope {
-    Objects.requireNonNull(id, "id");
-    Objects.requireNonNull(source, "source");
-    Objects.requireNonNull(type, "type");
-    Objects.requireNonNull(time, "time");
-    Objects.requireNonNull(dataContentType, "dataContentType");
-    data = Objects.requireNonNull(data, "data").clone();
+  private final String id;
+  private final String source;
+  private final String type;
+  private final Instant time;
+  private final @Nullable String subject;
+  private final String dataContentType;
+  private final byte[] data;
+  private final Map<String, String> extensions;
+
+  /**
+   * Creates an envelope.
+   *
+   * @param id event id, also used for deduplication (FIFO, inbox)
+   * @param source URI identifying the producer, e.g. {@code urn:axiz:payments-business}
+   * @param type event type, e.g. {@code pe.axiz.payments.order-placed.v1}
+   * @param time occurrence time
+   * @param subject subject (aggregate id), used as partition / group key
+   * @param dataContentType content type of {@code data}
+   * @param data encoded payload
+   * @param extensions CloudEvents extensions (lowercase alphanumeric names)
+   */
+  public EventEnvelope(
+      String id,
+      String source,
+      String type,
+      Instant time,
+      @Nullable String subject,
+      String dataContentType,
+      byte[] data,
+      Map<String, String> extensions) {
+    this.id = Objects.requireNonNull(id, "id");
+    this.source = Objects.requireNonNull(source, "source");
+    this.type = Objects.requireNonNull(type, "type");
+    this.time = Objects.requireNonNull(time, "time");
+    this.subject = subject;
+    this.dataContentType = Objects.requireNonNull(dataContentType, "dataContentType");
+    this.data = Objects.requireNonNull(data, "data").clone();
     for (String name : extensions.keySet()) {
       if (!EXTENSION_NAME.matcher(name).matches()) {
         throw new IllegalArgumentException("Invalid CloudEvents extension name: " + name);
       }
     }
-    extensions = Map.copyOf(extensions);
+    this.extensions = Map.copyOf(extensions);
   }
 
-  @Override
+  public String id() {
+    return id;
+  }
+
+  public String source() {
+    return source;
+  }
+
+  public String type() {
+    return type;
+  }
+
+  public Instant time() {
+    return time;
+  }
+
+  public @Nullable String subject() {
+    return subject;
+  }
+
+  public String dataContentType() {
+    return dataContentType;
+  }
+
+  /** CloudEvents extensions, unmodifiable. */
+  public Map<String, String> extensions() {
+    return extensions;
+  }
+
+  /** A copy of the encoded payload. */
   public byte[] data() {
     return data.clone();
   }

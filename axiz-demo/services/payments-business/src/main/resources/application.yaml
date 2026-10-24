@@ -1,6 +1,6 @@
 # Payments Business: defaults shared by every environment.
 # Environment values come from the ConfigMaps axiz-common, payments-business and payments-business-errors
-# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
 # placeholders only serve local runs and tests: never write environment values or secrets here.
 spring:
   application:

@@ -3,8 +3,8 @@ package pe.axiz.core.i18n;
 import java.util.Map;
 
 /**
- * Replaces {@code {name}} placeholders. Unknown placeholders are left untouched; {@code '{'} and
- * {@code '}'} without a name are kept literally. Values are rendered with {@code String.valueOf}.
+ * Replaces {@code {name}} placeholders. Unknown placeholders are left untouched; an opening or
+ * closing brace without a name is kept literally. Values are rendered with {@code String.valueOf}.
  */
 public final class MessageFormatter {
 

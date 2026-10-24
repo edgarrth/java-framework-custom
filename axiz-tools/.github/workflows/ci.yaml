@@ -25,11 +25,11 @@ concurrency:
 jobs:
   pr:
     if: github.event_name == 'pull_request'
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
     secrets: inherit
 
   build:
-    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
     with:
       stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
     secrets: inherit
@@ -44,13 +44,17 @@ jobs:
       && needs.initializr.result == 'success'
       && (needs.cli-native.result == 'success' || needs.cli-native.result == 'skipped')
       && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
-    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0
+    # release provenance: attached to the GitHub release, signed with the KMS key (OIDC)
+    permissions:
+      contents: write
+      id-token: write
     secrets: inherit
 
   cli-native:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    uses: axiz/axiz-workflows/.github/workflows/native.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/native.yaml@v1.0.0
     with:
       module: axiz-cli
       binary: axiz
@@ -59,7 +63,7 @@ jobs:
 
   initializr:
     needs: build
-    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0
     with:
       service: axiz-initializr
       module: axiz-initializr
@@ -70,7 +74,7 @@ jobs:
   initializr-dev:
     needs: initializr
     if: github.ref == 'refs/heads/main'
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: axiz-initializr
       environment: dev
@@ -81,7 +85,7 @@ jobs:
 
   initializr-qa:
     needs: [initializr, initializr-dev]
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: axiz-initializr
       environment: qa
@@ -93,7 +97,7 @@ jobs:
   initializr-prod:
     needs: initializr
     if: startsWith(github.ref, 'refs/tags/v')
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1
+    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: axiz-initializr
       environment: prod

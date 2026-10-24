@@ -77,16 +77,16 @@ class IdentifiersTest {
 
   @Test
   void cardBrandsAndBin() {
-    assertEquals(CardBrand.VISA, CardBrand.of("4111111111111111"));
-    assertEquals(CardBrand.MASTERCARD, CardBrand.of("5555555555554444"));
-    assertEquals(CardBrand.MASTERCARD, CardBrand.of("2221000000000009"));
-    assertEquals(CardBrand.AMEX, CardBrand.of("378282246310005"));
-    assertEquals(CardBrand.DINERS, CardBrand.of("30569309025904"));
-    assertEquals(CardBrand.DISCOVER, CardBrand.of("6011111111111117"));
-    assertEquals(CardBrand.JCB, CardBrand.of("3530111333300000"));
-    assertEquals(CardBrand.UNIONPAY, CardBrand.of("6200000000000005"));
-    assertEquals(CardBrand.UNKNOWN, CardBrand.of("9999999999999"));
-    assertEquals(CardBrand.UNKNOWN, CardBrand.of("41"));
+    assertEquals(CardBrand.VISA, CardBrand.guess("4111111111111111"));
+    assertEquals(CardBrand.MASTERCARD, CardBrand.guess("5555555555554444"));
+    assertEquals(CardBrand.MASTERCARD, CardBrand.guess("2221000000000009"));
+    assertEquals(CardBrand.AMEX, CardBrand.guess("378282246310005"));
+    assertEquals(CardBrand.DINERS, CardBrand.guess("30569309025904"));
+    assertEquals(CardBrand.DISCOVER, CardBrand.guess("6011111111111117"));
+    assertEquals(CardBrand.JCB, CardBrand.guess("3530111333300000"));
+    assertEquals(CardBrand.UNIONPAY, CardBrand.guess("6200000000000005"));
+    assertEquals(CardBrand.UNKNOWN, CardBrand.guess("9999999999999"));
+    assertEquals(CardBrand.UNKNOWN, CardBrand.guess("41"));
     assertEquals("41111111", BankingIdentifiers.bin("4111111111111111"));
     assertEquals("378282", BankingIdentifiers.bin("378282246310005"));
   }

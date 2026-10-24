@@ -26,7 +26,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `InvalidIdentifierException` | Thrown when a value is not a valid identifier of the requested type. |
 | `PeruIdentifiers` | Peruvian national documents: DNI, RUC and foreigner card (CE). |
 | `ContactIdentifiers` | Contact data: E.164 phone numbers and email addresses. |
-| `BankingIdentifiers` | Banking identifiers: interbank account code (CCI), card number (PAN) and IBAN. |
+| `BankingIdentifiers` | Banking identifiers: inter-bank account code (CCI), card number (PAN) and IBAN. |
 
 ## Tests
 

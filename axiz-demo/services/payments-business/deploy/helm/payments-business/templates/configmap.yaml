@@ -1,4 +1,4 @@
-# Environment configuration read by Spring Cloud Kubernetes (source named after the service)
+# Environment configuration of the service, mounted in /etc/axiz/config/service (axiz-config)
 apiVersion: v1
 kind: ConfigMap
 metadata:

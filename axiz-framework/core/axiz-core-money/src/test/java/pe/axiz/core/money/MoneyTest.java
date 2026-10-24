@@ -167,4 +167,15 @@ class MoneyTest {
         IllegalArgumentException.class, () -> new ExchangeRate(USD, PEN, BigDecimal.ZERO, now));
     assertFalse(new ExchangeRate(USD, PEN, BigDecimal.TEN, now).inverse().rate().signum() <= 0);
   }
+
+  @Test
+  void tenThousandCentsAddUpExactly() {
+    Money total = Money.zero("PEN");
+    Money cent = Money.of("0.01", "PEN");
+    for (int i = 0; i < 10_000; i++) {
+      total = total.plus(cent);
+    }
+    assertEquals(Money.of("100.00", "PEN"), total);
+    assertEquals(0, new BigDecimal("100.00").compareTo(total.amount()));
+  }
 }

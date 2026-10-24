@@ -152,11 +152,17 @@ public class AxizMessagingKafkaAutoConfiguration {
           h != null && h.value().length == 4 ? java.nio.ByteBuffer.wrap(h.value()).getInt() : 1;
       EventDispatcher.Outcome outcome =
           dispatcher.dispatch(record.topic(), KafkaEnvelopes.from(record), attempt);
-      switch (outcome.decision()) {
-        case ACK -> {}
-        case RETRY -> throw new RetryLaterException(record.topic() + "@" + record.offset());
-        case DEFER -> throw new DeferredException(record.topic() + "@" + record.offset());
-        case DEAD_LETTER -> throw new DeadLetterException(record.topic() + "@" + record.offset());
+      String where = record.topic() + "@" + record.offset();
+      // exhaustive: a new decision must say how the container treats the record
+      @Nullable RuntimeException failure =
+          switch (outcome.decision()) {
+            case ACK -> null;
+            case RETRY -> new RetryLaterException(where);
+            case DEFER -> new DeferredException(where);
+            case DEAD_LETTER -> new DeadLetterException(where);
+          };
+      if (failure != null) {
+        throw failure;
       }
     }
   }

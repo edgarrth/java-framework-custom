@@ -6,10 +6,10 @@ import pe.axiz.core.identifiers.CheckDigits;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
-/** Banking identifiers: interbank account code (CCI), card number (PAN) and IBAN. */
+/** Banking identifiers: inter-bank account code (CCI), card number (PAN) and IBAN. */
 public final class BankingIdentifiers implements IdentifierTypeProvider {
 
-  /** Interbank account code: 20 digits (bank 3, branch 3, account 12, control 2). */
+  /** Inter-bank account code: 20 digits (bank 3, branch 3, account 12, control 2). */
   public static final IdentifierType CCI =
       new IdentifierType() {
         @Override
@@ -24,7 +24,7 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
       };
 
   /**
-   * Interbank account code with control digits verified: the first over bank and branch, the second
+   * Inter-bank account code with control digits verified: the first over bank and branch, the second
    * over the account number (alternating 1-2 weights). Use it when the issuing banks of your
    * ecosystem follow that scheme.
    */
@@ -120,6 +120,11 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
           Map.entry("SV", 28));
 
   /** Card brand detected from the issuer identification number (first digits). */
+  /**
+   * Card schemes. Which one a card belongs to is decided by a {@link CardSchemeResolver}: in
+   * production an {@link IinRangeTable} loaded from the governed IIN/BIN table, never from ranges
+   * written in code.
+   */
   public enum CardBrand {
     VISA,
     MASTERCARD,
@@ -131,12 +136,17 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
     UNKNOWN;
 
     /**
-     * Detects the brand of a card number (only the leading digits are inspected).
+     * Best-effort guess from a few well-known leading digits, for display and telemetry only.
+     *
+     * <p><strong>Not for routing, authorization, acceptance, pricing or fraud decisions</strong>:
+     * IIN ranges change, overlap, include co-branded and private ranges and are published by the
+     * schemes. Those decisions use a {@link CardSchemeResolver} backed by the governed table
+     * ({@link IinRangeTable}).
      *
      * @param pan card number digits
-     * @return the brand, {@link #UNKNOWN} when not recognized
+     * @return the guessed brand, {@link #UNKNOWN} when not recognized
      */
-    public static CardBrand of(String pan) {
+    public static CardBrand guess(String pan) {
       if (pan.length() < 6 || !CheckDigits.allDigits(pan.substring(0, 6))) {
         return UNKNOWN;
       }

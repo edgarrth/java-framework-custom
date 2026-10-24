@@ -12,6 +12,12 @@ resources:
   limits:
     memory: 1Gi
 
+networkPolicy:
+  egress:
+    # destinations outside the cluster this service reaches in prod (VPC endpoints of
+    # the AWS services it uses, databases, brokers, partners), with their ports
+    cidrs: []
+
 externalSecret:
   remotePrefix: prod/settlement-batch
 

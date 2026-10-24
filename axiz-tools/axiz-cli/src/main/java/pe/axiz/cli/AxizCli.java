@@ -48,7 +48,7 @@ public final class AxizCli {
 
     public static Environment system() {
       return new Environment(
-          new ProcessRunner.System(),
+          new ProcessRunner.Local(),
           new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)),
           Clock.systemUTC(),
           System.getenv());

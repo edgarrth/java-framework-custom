@@ -3,6 +3,7 @@ package pe.axiz.spring.logging;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class LogOperationInterceptor implements MethodInterceptor {
         fail(d, start, t);
         throw t;
       }
-      if (REACTOR && ReactiveLogging.isReactive(result)) {
+      if (REACTOR && result != null && ReactiveLogging.isReactive(result)) {
         return ReactiveLogging.decorate(
             result, value -> succeed(d, start, value), error -> fail(d, start, error));
       }
@@ -100,8 +101,12 @@ public class LogOperationInterceptor implements MethodInterceptor {
         annotation.value().isBlank()
             ? target.getSimpleName() + "." + method.getName()
             : annotation.value();
-    String[] discovered = names.getParameterNames(method);
-    List<String> argNames = discovered != null ? Arrays.asList(discovered) : List.of();
+    @Nullable String @Nullable [] discovered = names.getParameterNames(method);
+    List<String> argNames = new ArrayList<>();
+    for (int i = 0; i < method.getParameterCount(); i++) {
+      String n = discovered != null && i < discovered.length ? discovered[i] : null;
+      argNames.add(n != null ? n : "arg" + i);
+    }
     Annotation[][] params = method.getParameterAnnotations();
     boolean[] excluded = new boolean[params.length];
     for (int i = 0; i < params.length; i++) {
@@ -110,6 +115,35 @@ public class LogOperationInterceptor implements MethodInterceptor {
     return new Descriptor(operation, annotation, argNames, excluded);
   }
 
-  private record Descriptor(
-      String operation, LogOperation annotation, List<String> argumentNames, boolean[] excluded) {}
+  /** Internal holder; a class rather than a record because it holds an array. */
+  private static final class Descriptor {
+    private final String operation;
+    private final LogOperation annotation;
+    private final List<String> argumentNames;
+    private final boolean[] excluded;
+
+    Descriptor(
+        String operation, LogOperation annotation, List<String> argumentNames, boolean[] excluded) {
+      this.operation = operation;
+      this.annotation = annotation;
+      this.argumentNames = argumentNames;
+      this.excluded = excluded;
+    }
+
+    String operation() {
+      return operation;
+    }
+
+    LogOperation annotation() {
+      return annotation;
+    }
+
+    List<String> argumentNames() {
+      return argumentNames;
+    }
+
+    boolean[] excluded() {
+      return excluded;
+    }
+  }
 }

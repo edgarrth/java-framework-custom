@@ -6,26 +6,26 @@
 -- environment: it runs over JDBC at startup, the service itself only uses R2DBC.
 {{/persistence.r2dbc}}
 -- Add domain tables in new migrations (V2__..., never edit an applied one).
-{{#caps.outbox}}
+{{#schema.outbox}}
 
 {{> sql/outbox}}
-{{/caps.outbox}}
-{{#caps.inbox}}
+{{/schema.outbox}}
+{{#schema.inbox}}
 
 {{> sql/inbox}}
-{{/caps.inbox}}
-{{#caps.saga}}
+{{/schema.inbox}}
+{{#schema.saga}}
 
 {{> sql/saga}}
-{{/caps.saga}}
-{{#caps.sequence}}
+{{/schema.saga}}
+{{#schema.sequence}}
 
 {{> sql/sequence}}
-{{/caps.sequence}}
-{{#caps.scheduling}}
+{{/schema.sequence}}
+{{#schema.shedlock}}
 
 {{> sql/shedlock}}
-{{/caps.scheduling}}
+{{/schema.shedlock}}
 {{#fw.batch}}
 
 {{> sql/batch}}

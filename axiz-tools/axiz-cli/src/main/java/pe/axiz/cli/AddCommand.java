@@ -21,7 +21,7 @@ class AddCommand extends BaseCommand implements Callable<Integer> {
 
   @Override
   public Integer call() throws IOException {
-    CapabilityAdder adder = new CapabilityAdder(Catalog.load(), environment.clock());
+    CapabilityAdder adder = new CapabilityAdder(Catalog.load());
     for (String capability : capabilities) {
       CapabilityAdder.Result r = adder.add(project(), capability);
       if (r.added().isEmpty()) {

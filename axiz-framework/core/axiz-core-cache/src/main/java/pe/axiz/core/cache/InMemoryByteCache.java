@@ -40,6 +40,20 @@ public final class InMemoryByteCache implements ByteCache {
   }
 
   @Override
+  public Optional<CachedValue> getWithTtl(String key) {
+    Entry e = map.get(key);
+    Instant now = clock.instant();
+    if (e == null) {
+      return Optional.empty();
+    }
+    if (!now.isBefore(e.expiresAt)) {
+      map.remove(key, e);
+      return Optional.empty();
+    }
+    return Optional.of(new CachedValue(e.value, Duration.between(now, e.expiresAt)));
+  }
+
+  @Override
   public void put(String key, byte[] value, Duration ttl) {
     if (map.size() >= maxEntries && !map.containsKey(key)) {
       evictOldest();
@@ -83,5 +97,14 @@ public final class InMemoryByteCache implements ByteCache {
     return map.size();
   }
 
-  private record Entry(byte[] value, Instant expiresAt) {}
+  /** Internal holder; a class rather than a record because it holds an array. */
+  private static final class Entry {
+    private final byte[] value;
+    private final Instant expiresAt;
+
+    Entry(byte[] value, Instant expiresAt) {
+      this.value = value;
+      this.expiresAt = expiresAt;
+    }
+  }
 }

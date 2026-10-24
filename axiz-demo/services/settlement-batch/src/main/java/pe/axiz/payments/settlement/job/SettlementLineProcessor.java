@@ -15,7 +15,7 @@ import pe.axiz.core.identifiers.IdentifierRegistry;
 @Component
 public class SettlementLineProcessor implements ItemProcessor<SettlementLine, SettlementLine> {
 
-  private static final Logger log = LoggerFactory.getLogger(SettlementLineProcessor.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SettlementLineProcessor.class);
 
   private final IdentifierRegistry identifiers;
 
@@ -26,7 +26,7 @@ public class SettlementLineProcessor implements ItemProcessor<SettlementLine, Se
   @Override
   public @Nullable SettlementLine process(SettlementLine line) {
     if (!identifiers.isValid("cci-strict", line.creditorCci())) {
-      log.warn("Settlement line {} filtered: invalid destination account", line.endToEndId());
+      LOG.warn("Settlement line {} filtered: invalid destination account", line.endToEndId());
       return null;
     }
     return new SettlementLine(

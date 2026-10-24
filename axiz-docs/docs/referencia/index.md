@@ -53,7 +53,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-secrets`](core/axiz-core-secrets.md) | SecretResolver port with environment and file resolvers and TTL cache. |
 | [`axiz-core-secrets-aws`](core/axiz-core-secrets-aws.md) | Secret resolvers for AWS Secrets Manager and Parameter Store. |
 | [`axiz-core-security`](core/axiz-core-security.md) | AxizPrincipal, claim mapping, authority model, rate-limit keys and request signatures. |
-| [`axiz-core-security-redis`](core/axiz-core-security-redis.md) | Distributed fixed-window rate limiter on Redis (ElastiCache). |
+| [`axiz-core-security-redis`](core/axiz-core-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
 | [`axiz-core-sensitive`](core/axiz-core-sensitive.md) | Sensitivity levels, masking strategies and annotations for responses, logs and audit. |
 | [`axiz-core-sequence`](core/axiz-core-sequence.md) | Atomic formatted sequences with JDBC (PostgreSQL SEQUENCE) store. |
 | [`axiz-core-sequence-dynamodb`](core/axiz-core-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
@@ -74,8 +74,8 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-audit-spring-boot-starter`](spring/axiz-audit-spring-boot-starter.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS). |
 | [`axiz-cache-spring-boot-autoconfigure`](spring/axiz-cache-spring-boot-autoconfigure.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance (auto-configuration). |
 | [`axiz-cache-spring-boot-starter`](spring/axiz-cache-spring-boot-starter.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance. |
-| [`axiz-config-spring-boot-autoconfigure`](spring/axiz-config-spring-boot-autoconfigure.md) | ConfigMaps through Spring Cloud Kubernetes and Parameter Store conventions with fail-fast validation (auto-configuration). |
-| [`axiz-config-spring-boot-starter`](spring/axiz-config-spring-boot-starter.md) | ConfigMaps through Spring Cloud Kubernetes and Parameter Store conventions with fail-fast validation. |
+| [`axiz-config-spring-boot-autoconfigure`](spring/axiz-config-spring-boot-autoconfigure.md) | ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation (auto-configuration). |
+| [`axiz-config-spring-boot-starter`](spring/axiz-config-spring-boot-starter.md) | ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation. |
 | [`axiz-crypto-spring-boot-autoconfigure`](spring/axiz-crypto-spring-boot-autoconfigure.md) | Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE (auto-configuration). |
 | [`axiz-crypto-spring-boot-starter`](spring/axiz-crypto-spring-boot-starter.md) | Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE. |
 | [`axiz-dynamodb-spring-boot-autoconfigure`](spring/axiz-dynamodb-spring-boot-autoconfigure.md) | DynamoDB Enhanced Client, table naming per environment and generic repositories (auto-configuration). |

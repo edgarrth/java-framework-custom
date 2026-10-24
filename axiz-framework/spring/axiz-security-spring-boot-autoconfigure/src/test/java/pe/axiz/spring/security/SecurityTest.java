@@ -80,7 +80,12 @@ class SecurityTest {
         new RateLimitRules(
             List.of(
                 new AxizSecurityProperties.Rule(
-                    "payments", List.of("/payments/**"), 10, Duration.ofMinutes(1), "client")));
+                    "payments",
+                    List.of("/payments/**"),
+                    10,
+                    Duration.ofMinutes(1),
+                    "client",
+                    null)));
     AxizSecurityProperties.Rule rule = rules.match("/payments/1").orElseThrow();
     assertTrue(RateLimitRules.key(rule, auth.axizPrincipal()).endsWith(":mobile-app"));
     assertTrue(rules.match("/other").isEmpty());

@@ -8,7 +8,7 @@ import pe.axiz.payments.process.application.port.out.Transfers;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
 /**
- * Interbank transfers through core-integration. The idempotency key makes a retry after a timeout
+ * Inter-bank transfers through core-integration. The idempotency key makes a retry after a timeout
  * return the first outcome instead of sending the money twice.
  */
 @Component

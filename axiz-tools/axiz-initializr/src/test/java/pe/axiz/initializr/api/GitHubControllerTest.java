@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -74,9 +75,16 @@ class GitHubControllerTest {
 
   @Test
   void theBrowserGoesStraightToTheSso() throws Exception {
-    mvc.perform(get("/").accept(MediaType.TEXT_HTML))
-        .andExpect(status().isFound())
-        .andExpect(header().string("Location", "http://localhost/oauth2/authorization/sso"));
+    String location =
+        mvc.perform(get("/").accept(MediaType.TEXT_HTML))
+            .andExpect(status().isFound())
+            .andReturn()
+            .getResponse()
+            .getHeader("Location");
+    // relative (same site) or absolute on this same host: both are valid, another host is not
+    URI target = URI.create(String.valueOf(location));
+    assertThat(target.getPath()).isEqualTo("/oauth2/authorization/sso");
+    assertThat(target.getHost()).isIn(null, "localhost");
   }
 
   @Test

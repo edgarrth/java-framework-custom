@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,9 +18,7 @@ import pe.axiz.codegen.model.Stack;
 class CapabilityAdderTest {
 
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
-  private final CapabilityAdder adder =
-      new CapabilityAdder(
-          generator.catalog(), Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC));
+  private final CapabilityAdder adder = new CapabilityAdder(generator.catalog());
 
   private Path project(Path dir, String archetype, Framework f, Stack s, String persistence)
       throws Exception {

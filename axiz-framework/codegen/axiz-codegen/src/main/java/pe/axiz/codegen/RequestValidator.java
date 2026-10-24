@@ -33,6 +33,9 @@ public final class RequestValidator {
     }
   }
 
+  /** Longest description accepted: one line in every generated file. */
+  static final int MAX_DESCRIPTION = 200;
+
   private final Catalog catalog;
 
   public RequestValidator(Catalog catalog) {
@@ -60,6 +63,12 @@ public final class RequestValidator {
     }
     if (!Names.isPackage(r.basePackage())) {
       problems.add("basePackage must be a valid Java package");
+    }
+    if (r.description().length() > MAX_DESCRIPTION
+        || r.description().chars().anyMatch(Character::isISOControl)) {
+      // one line of text: it lands in POMs, Javadoc, YAML and Markdown (punctuation is fine)
+      problems.add(
+          "description must be a single line of at most " + MAX_DESCRIPTION + " characters");
     }
     Archetype a = catalog.archetype(r.archetype()).orElse(null);
     OpenApiDocument contract = null;
@@ -106,7 +115,7 @@ public final class RequestValidator {
     if (known && a.isService()) {
       String store = Catalog.store(r.persistence(), r.stack());
       List<Capability> capabilities =
-          catalog.resolve(ProjectGenerator.capabilityNames(r, a), store);
+          catalog.resolve(ProjectGenerator.capabilityNames(catalog, r, a), store);
       List<String> resolved = capabilities.stream().map(Capability::name).toList();
       if (resolved.contains("jpa") && !"aurora".equals(r.persistence())) {
         problems.add("Capabilities " + needing(r, "jpa") + " need Aurora: use persistence aurora");

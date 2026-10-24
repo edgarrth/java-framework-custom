@@ -163,7 +163,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
     String desc = prompt.ask("Description", description, a.role());
     if (interactive && capabilities.isEmpty()) {
       String extra = prompt.ask("Extra capabilities (comma separated, see axiz catalog)", null, "");
-      for (String c : extra.split(",")) {
+      for (String c : extra.split(",", -1)) {
         if (!c.isBlank()) {
           capabilities.add(c.strip());
         }

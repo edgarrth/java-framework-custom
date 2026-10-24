@@ -229,14 +229,82 @@ class ProjectGeneratorTest {
         new Yaml(new SafeConstructor(new LoaderOptions()))
             .load(p.text("deploy/helm/orders-business/Chart.yaml"));
     assertEquals(
-        "History: read model <R2DBC> & \"events\" -- see * / docs",
+        "History: read model <R2DBC> & \"events\" -- see */ docs",
         ((java.util.Map<?, ?>) chart).get("description"));
     javax.xml.parsers.DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
         .parse(new java.io.ByteArrayInputStream(p.files().get("pom.xml")));
-    assertFalse(
-        p.text("src/main/java/pe/axiz/orders/ordersbusiness/OrdersBusinessApplication.java")
-            .contains("see */"));
+    String application =
+        p.text("src/main/java/pe/axiz/orders/ordersbusiness/OrdersBusinessApplication.java");
+    assertFalse(application.contains("see */"));
+    assertTrue(application.contains("read model &lt;R2DBC&gt; &amp;"), "doclint-safe HTML");
+  }
+
+  /** Every run of hyphens, a trailing one and markup still give well-formed POMs and Javadoc. */
+  @Test
+  void ordinaryPunctuationAlwaysProducesWellFormedFiles() throws Exception {
+    javax.xml.parsers.DocumentBuilderFactory xml =
+        javax.xml.parsers.DocumentBuilderFactory.newInstance();
+    xml.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+    for (String description :
+        List.of(
+            "Payments & collections",
+            "Payments <settlement>",
+            "Payments --- reconciliation",
+            "Payments ---- reconciliation",
+            "Payments -",
+            "Payments --",
+            "-- leading",
+            "Ends with comment */",
+            "Mail @team or {@code x}")) {
+      for (String archetype : List.of("library", "business")) {
+        ProjectRequest base =
+            "library".equals(archetype)
+                ? Fixtures.request("library", Framework.NONE, Stack.SERVLET, "none", List.of())
+                : Fixtures.request("business", Framework.CQRS, Stack.SERVLET, "aurora", List.of());
+        ProjectRequest r =
+            new ProjectRequest(
+                base.name(),
+                base.groupId(),
+                base.basePackage(),
+                description,
+                base.archetype(),
+                base.framework(),
+                base.stack(),
+                base.persistence(),
+                base.capabilities(),
+                base.openApi(),
+                null,
+                base.frameworkVersion());
+        GeneratedProject p = generator.generate(r);
+        org.w3c.dom.Document pom =
+            xml.newDocumentBuilder()
+                .parse(new java.io.ByteArrayInputStream(p.files().get("pom.xml")));
+        String text = pom.getElementsByTagName("description").item(0).getTextContent();
+        assertTrue(text.startsWith(description.replaceAll("\\.$", "")), archetype + ": " + text);
+        for (Map.Entry<String, byte[]> e : p.files().entrySet()) {
+          if (e.getKey().endsWith(".java")) {
+            String source = new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+            int start = source.indexOf("/**");
+            if (start >= 0) {
+              String doc = source.substring(start + 3, source.indexOf("*/", start));
+              assertFalse(doc.contains("<settlement>"), e.getKey());
+              assertFalse(doc.contains("{@code x}") && description.contains("@team"), e.getKey());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  void xmlCommentsNeverContainTwoHyphensInARow() {
+    for (String s : List.of("-", "--", "---", "a--b", "a-", "a - b", "")) {
+      String c = ProjectGenerator.xmlComment(s);
+      assertFalse(c.contains("--"), s + " -> " + c);
+      assertFalse(c.endsWith("-"), s + " -> " + c);
+    }
+    assertEquals("a- - -b", ProjectGenerator.xmlComment("a---b"));
   }
 
   @Test

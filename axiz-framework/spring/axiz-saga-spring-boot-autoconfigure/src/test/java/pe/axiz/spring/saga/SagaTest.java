@@ -22,7 +22,9 @@ import pe.axiz.core.saga.SagaStepRejectedException;
 
 class SagaTest {
 
-  /** How a step ends: it applies, the participant rejects it for sure, or its outcome is unknown. */
+  /**
+   * How a step ends: it applies, the participant rejects it for sure, or its outcome is unknown.
+   */
   enum Outcome {
     APPLIED,
     REJECTED,

@@ -67,7 +67,7 @@ http://localhost:3000 (OpenTelemetry collector on ports 4317/4318).
 | `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
 | `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
 | `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps through Spring Cloud Kubernetes (axiz-common, <app>, <app>-errors), Parameter Store, required keys check |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check |
 | `storage-s3` | `axiz-storage-spring-boot-starter` | Object storage on S3 (streaming, presigned URLs, metadata), observed |
 | `audit` | `axiz-audit-spring-boot-starter` | @Auditable business audit trail, sanitized by sensitivity, published asynchronously |
 | `jpa` | `axiz-jpa-spring-boot-starter` | Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns |
@@ -79,7 +79,7 @@ usage example.
 ## Configuration
 
 - `application.yaml` holds defaults only. Environment values live in the ConfigMaps `axiz-common`,
-  `settlement-batch` and `settlement-batch-errors`, read by Spring Cloud Kubernetes
+  `settlement-batch` and `settlement-batch-errors`, mounted as files by the chart
   (`deploy/helm/settlement-batch/values-<env>.yaml`, keys `config` and `errors`).
 - Secrets never go to the repository nor to ConfigMaps: they come from AWS Secrets Manager through
   the ExternalSecret and are mounted as files in `/var/run/secrets/axiz`.
@@ -98,7 +98,7 @@ Keys each environment must define:
 
 `deploy/helm/settlement-batch` contains the chart: CronJob,
 ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
-The pipelines in `.github/workflows` call the shared axiz workflows (`@v1`):
+The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@v1.0.0`; Renovate pins its commit and proposes new releases):
 
 - `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
   builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys

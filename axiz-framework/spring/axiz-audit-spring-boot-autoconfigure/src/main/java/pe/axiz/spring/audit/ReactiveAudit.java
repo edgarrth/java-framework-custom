@@ -17,7 +17,7 @@ final class ReactiveAudit {
   static Object decorate(
       Object result, Consumer<@Nullable Object> success, Consumer<Throwable> failure) {
     if (result instanceof Mono<?> mono) {
-      return mono.doOnSuccess(success::accept).doOnError(failure);
+      return mono.doOnSuccess(success).doOnError(failure);
     }
     return ((Flux<?>) result).doOnComplete(() -> success.accept(null)).doOnError(failure);
   }

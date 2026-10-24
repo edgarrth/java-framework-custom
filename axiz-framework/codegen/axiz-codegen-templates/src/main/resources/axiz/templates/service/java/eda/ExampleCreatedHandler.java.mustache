@@ -32,23 +32,23 @@ import {{project.basePackage}}.event.ExampleCreated;
 {{#stack.reactive}}
 public class ExampleCreatedHandler extends ReactiveTypedEventHandler<ExampleCreated> {
 
-  private static final Logger log = LoggerFactory.getLogger(ExampleCreatedHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ExampleCreatedHandler.class);
 
   @Override
   protected Publisher<Void> on(ExampleCreated payload, EventEnvelope envelope) {
     return Mono.fromRunnable(
-        () -> log.info("example created: exampleId={} eventId={}", payload.id(), envelope.id()));
+        () -> LOG.info("example created: exampleId={} eventId={}", payload.id(), envelope.id()));
   }
 }
 {{/stack.reactive}}
 {{^stack.reactive}}
 public class ExampleCreatedHandler extends TypedEventHandler<ExampleCreated> {
 
-  private static final Logger log = LoggerFactory.getLogger(ExampleCreatedHandler.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ExampleCreatedHandler.class);
 
   @Override
   protected void on(ExampleCreated payload, EventEnvelope envelope) {
-    log.info("example created: exampleId={} eventId={}", payload.id(), envelope.id());
+    LOG.info("example created: exampleId={} eventId={}", payload.id(), envelope.id());
   }
 }
 {{/stack.reactive}}

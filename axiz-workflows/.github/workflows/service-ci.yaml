@@ -77,7 +77,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Build, standards (Spotless, Checkstyle, Error Prone + NullAway, SpotBugs), ArchUnit, tests, coverage
@@ -86,7 +86,7 @@ jobs:
           mvn -B -ntp verify -Pquality $MODULE_ARGS
       - name: Test results of this commit (job summary)
         if: always()
-        uses: axiz/axiz-workflows/actions/test-report@v1
+        uses: axiz/axiz-workflows/actions/test-report@v1.0.0 # x-release-please-version
         with:
           command: mvn -B -ntp verify -Pquality ${{ env.MODULE_ARGS }}
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
@@ -184,8 +184,12 @@ jobs:
           version: v3.19.0
       - name: helm lint, schema validation (kubeconform) and best practices (kube-linter) per environment
         run: |
-          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
-          curl -fsSL https://github.com/stackrox/kube-linter/releases/download/v0.7.6/kube-linter-linux.tar.gz | tar xz kube-linter
+          curl -fsSL -o kubeconform.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
+          echo "c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3  kubeconform.tar.gz" | sha256sum -c -
+          tar xzf kubeconform.tar.gz kubeconform
+          curl -fsSL -o kube-linter.tar.gz https://github.com/stackrox/kube-linter/releases/download/v0.7.6/kube-linter-linux.tar.gz
+          echo "cb6128997162b8b7e6962284313635643434421b4e9b4f86545af7a4976e0139  kube-linter.tar.gz" | sha256sum -c -
+          tar xzf kube-linter.tar.gz kube-linter
           for values in "$CHART"/values-*.yaml; do
             echo "::group::$values"
             helm lint "$CHART" -f "$CHART/values.yaml" -f "$values"
@@ -207,7 +211,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           distribution: graalvm
           nexus-url: ${{ secrets.NEXUS_URL }}
@@ -229,14 +233,45 @@ jobs:
       REGISTRY: ${{ secrets.NEXUS_DOCKER_REGISTRY }}
       SERVICE: ${{ inputs.service }}
       SIGNING_KEY: ${{ vars.COSIGN_KMS_KEY }}
+      SIGNING_ROLE: ${{ vars.COSIGN_ROLE_ARN }}
+      SIGNING_REGION: ${{ vars.AWS_REGION }}
     steps:
+      - name: Signing is mandatory
+        # an unsigned image is rejected by the cluster admission policy anyway: fail here, before
+        # publishing it. Only a sandbox repository may opt out (variable AXIZ_ALLOW_UNSIGNED_IMAGES),
+        # never for a release tag.
+        env:
+          ALLOW_UNSIGNED: ${{ vars.AXIZ_ALLOW_UNSIGNED_IMAGES }}
+        run: |
+          echo "STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"   # build start, for the provenance
+          if [ -n "$SIGNING_KEY" ] && [ -n "$SIGNING_ROLE" ] && [ -n "$SIGNING_REGION" ]; then exit 0; fi
+          missing="COSIGN_KMS_KEY, COSIGN_ROLE_ARN and AWS_REGION (organization variables)"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "::error::release images must be signed: define $missing"; exit 1
+          fi
+          if [ "$ALLOW_UNSIGNED" = "true" ]; then
+            echo "::warning::unsigned image (AXIZ_ALLOW_UNSIGNED_IMAGES=true): it can only run where no admission policy verifies signatures"
+            exit 0
+          fi
+          echo "::error::images must be signed: define $missing"; exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1
+      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           distribution: ${{ inputs.native && 'graalvm' || 'temurin' }}
           nexus-url: ${{ secrets.NEXUS_URL }}
+      - name: Base images pinned by digest (required for a release)
+        run: |
+          for prop in axiz.image.base axiz.image.native-base; do
+            image=$(mvn -B -ntp -q -f "$MODULE_DIR/pom.xml" help:evaluate -Dexpression="$prop" -DforceStdout)
+            if [[ "$image" != *@sha256:* ]]; then
+              if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+                echo "::error::$prop=$image: a release image needs a base pinned by digest (Renovate pins it)"; exit 1
+              fi
+              echo "::warning::$prop=$image is not pinned by digest"
+            fi
+          done
       - name: JVM image (Jib, non-root), immutable tag = commit
         id: jvm
         run: |
@@ -271,11 +306,13 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
       - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
         if: env.SIGNING_KEY != ''
-      - name: Sign the images and attest the SBOM (cosign, key in AWS KMS, private transparency)
+      - name: Sign the images, attest the SBOM and the SLSA build provenance (cosign, key in AWS KMS)
         if: env.SIGNING_KEY != ''
         env:
           JVM_DIGEST: ${{ steps.jvm.outputs.digest }}
           NATIVE_DIGEST: ${{ steps.native.outputs.digest }}
+          # this workflow at the release that built the image (an immutable tag of axiz-workflows)
+          BUILDER: https://github.com/axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0 # x-release-please-version
         run: |
           echo "$NEXUS_PASSWORD" | cosign login "$REGISTRY" -u "$NEXUS_USERNAME" --password-stdin
           # shellcheck disable=SC2086 # arguments are split on purpose
@@ -287,6 +324,21 @@ jobs:
               -a "repository=$GITHUB_REPOSITORY" -a "commit=$GITHUB_SHA" "$ref"
             cosign attest --yes --tlog-upload=false --key "$SIGNING_KEY" \
               --type cyclonedx --predicate "$MODULE_DIR/target/bom.json" "$ref"
+            # SLSA v1 provenance: which workflow (and its commit) built which source commit, in
+            # which run. The admission policy can require it before an image runs.
+            jq -n \
+              --arg builder "$BUILDER" \
+              --arg repo "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --arg sha "$GITHUB_SHA" --arg ref "$GITHUB_REF" \
+              --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT" \
+              --arg event "$GITHUB_EVENT_NAME" --arg service "$SERVICE" --arg started "$STARTED" \
+              '{buildDefinition: {buildType: "https://github.com/axiz/axiz-workflows/service-ci/v1",
+                  externalParameters: {repository: $repo, ref: $ref, service: $service},
+                  internalParameters: {event: $event},
+                  resolvedDependencies: [{uri: ("git+" + $repo + "@" + $ref), digest: {gitCommit: $sha}}]},
+                runDetails: {builder: {id: $builder}, metadata: {invocationId: $run, startedOn: $started}}}' \
+              > provenance.json
+            cosign attest --yes --tlog-upload=false --key "$SIGNING_KEY" \
+              --type slsaprovenance1 --predicate provenance.json "$ref"
           done
       - name: Summary
         env:
@@ -296,5 +348,5 @@ jobs:
             echo "### $SERVICE image"
             echo "- tag: \`$GITHUB_SHA\`"
             echo "- digest: \`$DIGEST\`"
-            [ -n "$SIGNING_KEY" ] && echo "- signed with cosign (AWS KMS) and SBOM attested" || echo "- not signed: COSIGN_KMS_KEY is not defined"
+            [ -n "$SIGNING_KEY" ] && echo "- signed with cosign (AWS KMS); SBOM and SLSA provenance attested" || echo "- NOT signed (AXIZ_ALLOW_UNSIGNED_IMAGES): rejected by clusters that verify signatures"
           } >> "$GITHUB_STEP_SUMMARY"

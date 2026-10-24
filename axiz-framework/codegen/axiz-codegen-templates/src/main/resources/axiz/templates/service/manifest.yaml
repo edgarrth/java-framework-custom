@@ -96,5 +96,4 @@ files:
   - {template: static/helm/configmap-errors.yaml, path: "deploy/helm/{{project.name}}/templates/configmap-errors.yaml", binary: true}
   - {template: static/helm/externalsecret.yaml, path: "deploy/helm/{{project.name}}/templates/externalsecret.yaml", binary: true}
   - {template: static/helm/serviceaccount.yaml, path: "deploy/helm/{{project.name}}/templates/serviceaccount.yaml", binary: true}
-  - {template: static/helm/rbac.yaml, path: "deploy/helm/{{project.name}}/templates/rbac.yaml", binary: true}
   - {template: static/helm/networkpolicy.yaml, path: "deploy/helm/{{project.name}}/templates/networkpolicy.yaml", binary: true}

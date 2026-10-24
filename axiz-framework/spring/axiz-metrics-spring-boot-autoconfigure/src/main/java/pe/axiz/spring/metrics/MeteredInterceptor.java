@@ -43,7 +43,8 @@ public class MeteredInterceptor implements MethodInterceptor {
       return ReactiveMetering.measure(
           m, metered.event(), category, metered.duration(), sources, invocation);
     }
-    return m.observe(metered.event(), category, metered.duration(), sources, invocation::proceed);
+    return m.<@Nullable Object>observe(
+        metered.event(), category, metered.duration(), sources, invocation::proceed);
   }
 
   static Duration since(long startNanos) {

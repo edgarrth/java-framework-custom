@@ -24,17 +24,17 @@ import pe.axiz.core.audit.Auditable;
 @Service
 public class GenerationService {
 
-  private static final Logger log = LoggerFactory.getLogger(GenerationService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(GenerationService.class);
 
   private final ProjectGenerator generator;
   private final MeterRegistry meters;
 
+  /**
+   * The only constructor, so the container has a single, unambiguous way to build the service; the
+   * generator holds no per-request state and is created once with the bundled catalog.
+   */
   public GenerationService(MeterRegistry meters) {
-    this(ProjectGenerator.withDefaults(), meters);
-  }
-
-  GenerationService(ProjectGenerator generator, MeterRegistry meters) {
-    this.generator = generator;
+    this.generator = ProjectGenerator.withDefaults();
     this.meters = meters;
   }
 
@@ -60,7 +60,7 @@ public class GenerationService {
     try {
       GeneratedProject project = generator.generate(request);
       count(request, "success");
-      log.info(
+      LOG.info(
           "generated {} ({} / {} / {}) with {} files",
           request.name(),
           request.archetype(),

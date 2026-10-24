@@ -1,6 +1,6 @@
 # Core Integration: defaults shared by every environment.
 # Environment values come from the ConfigMaps axiz-common, core-integration and core-integration-errors
-# (Spring Cloud Kubernetes) and secrets from files mounted by the ExternalSecret. ${VAR:default}
+# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
 # placeholders only serve local runs and tests: never write environment values or secrets here.
 spring:
   application:
@@ -77,7 +77,8 @@ axiz:
         timeout: 8s
         username: ${CORE_CREDIT_SOAP_USER:core-integration}
         password-ref: core-soap-password
-        password-mode: DIGEST
+        # the simulated core of credits demands the UsernameToken digest (legacy profile, SHA-1)
+        password-mode: LEGACY_SHA1_DIGEST
   lock:
     store: redis
   audit:

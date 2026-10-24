@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -80,11 +81,13 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
   public Integer call() throws IOException {
     List<Check> checks = checks(project());
     for (Check c : checks) {
-      switch (c.level()) {
-        case OK -> ok(c.message());
-        case WARN -> warn(c.message());
-        case ERROR -> fail(c.message());
-      }
+      Consumer<String> report =
+          switch (c.level()) {
+            case OK -> this::ok;
+            case WARN -> this::warn;
+            case ERROR -> this::fail;
+          };
+      report.accept(c.message());
     }
     long errors = checks.stream().filter(c -> c.level() == Level.ERROR).count();
     long warnings = checks.stream().filter(c -> c.level() == Level.WARN).count();
@@ -244,7 +247,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                 || value.startsWith("#")
                 || value.startsWith("|")
                 || value.endsWith("-ref")
-                || value.matches("[a-z0-9-]+") && !value.matches(".*\\d{4,}.*");
+                || (value.matches("[a-z0-9-]+") && !value.matches(".*\\d{4,}.*"));
         if (!placeholder) {
           out.add(
               new Check(

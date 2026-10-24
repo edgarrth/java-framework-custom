@@ -19,6 +19,8 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.messaging.EventFactory;
@@ -28,6 +30,7 @@ import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 import pe.axiz.spring.test.BlockHoundExtension;
+import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
@@ -39,11 +42,7 @@ import reactor.util.retry.Retry;
  * payment end to end: events on Kafka, R2DBC inbox, reactive command pipeline, projection with
  * encrypted and money columns on PostgreSQL, reactive query. Needs Docker.
  */
-@SpringBootTest(
-    properties = {
-      "axiz.secrets.directory=src/test/resources/secrets",
-      "axiz.messaging.destinations.payments=kafka:payments"
-    })
+@SpringBootTest(properties = {"axiz.messaging.destinations.payments=kafka:payments"})
 @AutoConfigureWebTestClient
 @Import({
   PostgresTestConfiguration.class,
@@ -52,6 +51,12 @@ import reactor.util.retry.Retry;
 })
 @ExtendWith(BlockHoundExtension.class)
 class PaymentsHistoryApplicationTest {
+
+  /** Field encryption and blind index keys: random for every run, never committed. */
+  @DynamicPropertySource
+  static void secrets(DynamicPropertyRegistry registry) {
+    EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
+  }
 
   private static final Duration T = Duration.ofSeconds(30);
 

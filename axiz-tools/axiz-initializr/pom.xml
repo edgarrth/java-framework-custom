@@ -20,6 +20,8 @@
   <description>Generates axiz services from an OpenAPI contract: web UI and REST API with corporate SSO</description>
 
   <properties>
+    <!-- renovate: datasource=docker depName=eclipse-temurin -->
+    <axiz.initializr.base-image>eclipse-temurin:25-jdk-noble</axiz.initializr.base-image>
     <axiz.base-package>pe.axiz.initializr</axiz.base-package>
   </properties>
 
@@ -116,7 +118,7 @@
           </container>
           <!-- the formatter needs jdk.compiler: full JDK base image instead of the JRE -->
           <from>
-            <image>eclipse-temurin:25-jdk-noble</image>
+            <image>${axiz.initializr.base-image}</image>
           </from>
         </configuration>
       </plugin>

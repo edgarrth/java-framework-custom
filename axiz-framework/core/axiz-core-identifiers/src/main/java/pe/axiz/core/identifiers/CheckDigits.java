@@ -70,7 +70,7 @@ public final class CheckDigits {
 
   /**
    * Alternating 1-2 weighted check digit with digit sum of products (the scheme used for the
-   * control digits of interbank account codes).
+   * control digits of inter-bank account codes).
    *
    * @param digits digits without check digit
    * @return the check digit

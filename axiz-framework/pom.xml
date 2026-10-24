@@ -117,6 +117,7 @@
     <native-maven-plugin.version>0.11.4</native-maven-plugin.version>
     <axiz.readme.skip>false</axiz.readme.skip>
     <rewrite-maven-plugin.version>6.49.0</rewrite-maven-plugin.version>
+    <japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
 
     <!-- Must match axiz-dependencies -->
     <spring-boot.version>4.1.1</spring-boot.version>
@@ -472,7 +473,7 @@
                 <compilerArgs combine.children="append">
                   <arg>-XDcompilePolicy=simple</arg>
                   <arg>--should-stop=ifError=FLOW</arg>
-                  <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-(test-)?sources/.*|.*/src/test/java/.* -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract -Xep:MissingSummary:OFF</arg>
+                  <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-(test-)?sources/.*|.*/src/test/java/.* -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract -XepOpt:NullAway:ExcludedFieldAnnotations=picocli.CommandLine.Spec -Xep:MissingSummary:OFF</arg>
                 </compilerArgs>
                 <annotationProcessorPaths combine.children="append">
                   <path>
@@ -630,6 +631,75 @@
                 <phase>package</phase>
                 <goals>
                   <goal>makeAggregateBom</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- API and SPI compatibility against a released version (-Papi-compat
+         -Daxiz.api.baseline=<x.y.z>): binary or source incompatible changes of public types break
+         the build. Opt-in before 1.0.0, required by CI from 1.0.0 (CONTRIBUTING.md); an intended
+         break needs an architecture contract. Modules new since the baseline are skipped. -->
+    <profile>
+      <id>api-compat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>api-compat-baseline</id>
+                <goals>
+                  <goal>enforce</goal>
+                </goals>
+                <configuration>
+                  <rules>
+                    <requireProperty>
+                      <property>axiz.api.baseline</property>
+                      <regex>\d+\.\d+\.\d+</regex>
+                      <message>-Papi-compat needs -Daxiz.api.baseline=&lt;released version&gt;</message>
+                    </requireProperty>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <version>${japicmp-maven-plugin.version}</version>
+            <configuration>
+              <oldVersion>
+                <dependency>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>${project.artifactId}</artifactId>
+                  <version>${axiz.api.baseline}</version>
+                  <type>jar</type>
+                </dependency>
+              </oldVersion>
+              <newVersion>
+                <file>
+                  <path>${project.build.directory}/${project.build.finalName}.jar</path>
+                </file>
+              </newVersion>
+              <parameter>
+                <onlyModified>true</onlyModified>
+                <skipPomModules>true</skipPomModules>
+                <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
+                <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+                <reportOnlyFilename>true</reportOnlyFilename>
+              </parameter>
+            </configuration>
+            <executions>
+              <execution>
+                <id>api-compat</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>cmp</goal>
                 </goals>
               </execution>
             </executions>

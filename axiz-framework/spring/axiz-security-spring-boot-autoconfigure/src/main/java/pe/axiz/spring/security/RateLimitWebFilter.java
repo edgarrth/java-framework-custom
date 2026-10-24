@@ -18,11 +18,23 @@ public class RateLimitWebFilter implements WebFilter {
   private final RateLimiter limiter;
   private final RateLimitRules rules;
   private final SecurityProblems problems;
+  private final boolean failOpen;
 
   public RateLimitWebFilter(RateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
+    this(limiter, rules, problems, true);
+  }
+
+  /**
+   * Creates the filter.
+   *
+   * @param failOpen policy when the limiter store is unavailable, for rules without their own
+   */
+  public RateLimitWebFilter(
+      RateLimiter limiter, RateLimitRules rules, SecurityProblems problems, boolean failOpen) {
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);
     this.problems = Objects.requireNonNull(problems);
+    this.failOpen = failOpen;
   }
 
   @Override
@@ -34,7 +46,8 @@ public class RateLimitWebFilter implements WebFilter {
     }
     AxizSecurityProperties.Rule r = rule.get();
     return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
+        // a context without authentication (anonymous) is empty here, not a null element
+        .mapNotNull(SecurityContext::getAuthentication)
         .filter(AxizAuthentication.class::isInstance)
         .map(a -> Optional.of(RateLimitRules.key(r, ((AxizAuthentication) a).axizPrincipal())))
         .defaultIfEmpty(Optional.empty())
@@ -42,7 +55,10 @@ public class RateLimitWebFilter implements WebFilter {
             key ->
                 key.isEmpty()
                     ? chain.filter(exchange)
-                    : Mono.fromCallable(() -> limiter.tryAcquire(key.get(), r.limit(), r.window()))
+                    : Mono.fromCallable(
+                            () ->
+                                limiter.tryAcquire(
+                                    key.get(), r.limit(), r.window(), r.failOpen(failOpen)))
                         .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(d -> decide(exchange, chain, d)));
   }

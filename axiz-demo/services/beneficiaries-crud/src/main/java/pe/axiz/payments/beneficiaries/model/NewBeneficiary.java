@@ -9,7 +9,7 @@ import pe.axiz.core.sensitive.SensitivityLevel;
  *
  * @param alias name the customer gives it
  * @param holderName account holder
- * @param cci interbank account code (20 digits)
+ * @param cci inter-bank account code (20 digits)
  * @param currency PEN or USD
  */
 public record NewBeneficiary(

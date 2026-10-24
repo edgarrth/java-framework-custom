@@ -34,7 +34,7 @@ import pe.axiz.core.time.BusinessCalendar;
 @EnableConfigurationProperties(SettlementProperties.class)
 public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
 
-  private static final Logger log = LoggerFactory.getLogger(SettlementRunner.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SettlementRunner.class);
   static final String LOCK = "settlement-job";
 
   private final JobOperator jobs;
@@ -66,7 +66,7 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
   @Override
   public void run(ApplicationArguments args) {
     if (!properties.runOnStartup()) {
-      log.info("settlement.run-on-startup is false: no file is loaded at startup");
+      LOG.info("settlement.run-on-startup is false: no file is loaded at startup");
       return;
     }
     exitCode.set(load(inputKey()));
@@ -88,11 +88,11 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
               new LockConfiguration(
                   clock.instant(), LOCK, properties.maxDuration(), Duration.ZERO));
     } catch (Throwable e) {
-      log.error("Settlement job could not run for {}", key, e);
+      LOG.error("Settlement job could not run for {}", key, e);
       return 1;
     }
     if (!result.wasExecuted()) {
-      log.warn("Settlement job is already running elsewhere; nothing to do");
+      LOG.warn("Settlement job is already running elsewhere; nothing to do");
       return 0;
     }
     Integer code = result.getResult();
@@ -106,13 +106,13 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
             .toJobParameters();
     try {
       JobExecution execution = jobs.start(settlementJob, params);
-      log.info("Settlement job for {} ended {}", key, execution.getStatus());
+      LOG.info("Settlement job for {} ended {}", key, execution.getStatus());
       return execution.getStatus() == BatchStatus.COMPLETED ? 0 : 1;
     } catch (JobInstanceAlreadyCompleteException e) {
-      log.info("Settlement file {} was already loaded", key);
+      LOG.info("Settlement file {} was already loaded", key);
       if (!summary.exists(key)) {
         // e.g. the bucket was recreated: the rows are the source of truth, the summary follows them
-        log.warn("Summary of {} is missing; writing it again from the loaded rows", key);
+        LOG.warn("Summary of {} is missing; writing it again from the loaded rows", key);
         summary.rewrite(key);
       }
       return 0;

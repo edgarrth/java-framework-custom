@@ -11,9 +11,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * WS-Security UsernameToken header. {@link Mode#DIGEST} sends {@code Base64(SHA-1(nonce + created +
- * password))} with nonce and timestamp, as the profile defines; {@link Mode#TEXT} is only
- * acceptable over TLS.
+ * WS-Security UsernameToken header for legacy SOAP counterparties. Both modes are legacy
+ * authentication and are only used over TLS (the client refuses plain HTTP unless a local stand-in
+ * is explicitly allowed): {@link Mode#TEXT} sends the password inside the TLS channel; {@link
+ * Mode#LEGACY_SHA1_DIGEST} sends {@code Base64(SHA-1(nonce + created + password))} with nonce and
+ * timestamp, because the UsernameToken Profile 1.0 fixes SHA-1 for that digest. Prefer a modern
+ * profile (mutual TLS, X.509 or tokens) whenever the counterparty supports one.
  */
 public final class WsSecurity {
 
@@ -25,10 +28,16 @@ public final class WsSecurity {
       "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0";
   private static final SecureRandom RANDOM = new SecureRandom();
 
-  /** Password modes. */
+  /** Password modes; there is no default, a client declares the one its counterparty requires. */
   public enum Mode {
+    /** {@code PasswordText}: the password travels inside the TLS channel. */
     TEXT,
-    DIGEST
+    /**
+     * {@code PasswordDigest} of the UsernameToken Profile 1.0: SHA-1, required by the profile and
+     * not a choice of this framework. Only for counterparties that demand it, over TLS, with the
+     * endpoint on the allow-list of the service; its use is logged when the client is created.
+     */
+    LEGACY_SHA1_DIGEST
   }
 
   private WsSecurity() {}

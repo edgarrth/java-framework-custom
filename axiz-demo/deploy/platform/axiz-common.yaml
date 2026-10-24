@@ -1,5 +1,6 @@
-# ConfigMap axiz-common: configuration shared by every service of a namespace (read by Spring
-# Cloud Kubernetes before the service's own ConfigMap). One per environment namespace; apply with
+# ConfigMap axiz-common: configuration shared by every service of a namespace (each chart mounts it
+# in /etc/axiz/config/common, read before the service's own ConfigMap). One per environment
+# namespace (kind/up.sh applies it to the demo cluster); apply with
 #   kubectl -n payments-<env> apply -f deploy/platform/axiz-common.yaml
 # The business calendar is maintained by operations (official holidays are published yearly).
 apiVersion: v1

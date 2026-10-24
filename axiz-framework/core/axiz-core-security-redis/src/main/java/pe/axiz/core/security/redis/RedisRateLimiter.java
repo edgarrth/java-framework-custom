@@ -10,8 +10,8 @@ import pe.axiz.core.security.RateLimiter;
 
 /**
  * Distributed fixed-window rate limiter on Redis. One atomic Lua script increments the counter and
- * sets the expiration on the same key on its first use. If Redis is unavailable the configured
- * fail-open policy decides.
+ * sets the expiration on the same key on its first use. If Redis is unavailable the fail-open
+ * policy decides: the one of the call, or else the one given at construction.
  */
 public final class RedisRateLimiter implements RateLimiter {
 
@@ -34,6 +34,11 @@ public final class RedisRateLimiter implements RateLimiter {
 
   @Override
   public Decision tryAcquire(String key, long limit, Duration window) {
+    return tryAcquire(key, limit, window, failOpen);
+  }
+
+  @Override
+  public Decision tryAcquire(String key, long limit, Duration window, boolean failOpen) {
     try {
       List<Long> result =
           redis.eval(

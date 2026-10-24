@@ -36,7 +36,7 @@ public interface CoreIntegrationClient {
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,
       @RequestBody MovementRequest body);
 
-  /** Sends an interbank transfer to the payment network (POST /v1/transfers). */
+  /** Sends an inter-bank transfer to the payment network (POST /v1/transfers). */
   @PostExchange("/v1/transfers")
   Transfer sendTransfer(
       @RequestHeader(name = "Idempotency-Key", required = true) String idempotencyKey,

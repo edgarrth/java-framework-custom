@@ -17,15 +17,24 @@ import org.springframework.util.StringUtils;
  * Applies the configuration conventions before config data is loaded.
  *
  * <ul>
- *   <li>Inside Kubernetes (and outside the {@code local} and {@code test} profiles) it imports
- *       {@code kubernetes:} with the sources {@code axiz-common}, {@code <app>} and {@code
- *       <app>-errors}, fail-fast enabled, reload disabled and Secrets API reading disabled.
+ *   <li>Inside Kubernetes (and outside the {@code local} and {@code test} profiles) it imports the
+ *       ConfigMaps the chart mounts as files under {@code axiz.config.directory} (default {@value
+ *       #DEFAULT_DIRECTORY}): {@code common/application.yaml} (ConfigMap {@code axiz-common},
+ *       optional), then {@code service/application.yaml} ({@code <app>}) and {@code
+ *       errors/application.yaml} ({@code <app>-errors}), both required so a missing ConfigMap stops
+ *       the startup. Later files win. Reading files instead of the Kubernetes API means the pods
+ *       need no service account token and no RBAC: a compromised pod cannot list the ConfigMaps of
+ *       the namespace. A ConfigMap change rolls the pods (checksum annotations).
  *   <li>With {@code axiz.config.parameter-store.enabled=true} it imports {@code
  *       optional:aws-parameterstore:/axiz/<environment>/<app>/} below the ConfigMaps.
- *   <li>Outside the cluster the Kubernetes integration is switched off.
  *   <li>Spring Cloud AWS Parameter Store follows {@code axiz.config.parameter-store.enabled} (false
- *       by default): otherwise it builds an {@code SsmClient} at startup that nothing uses, and that
- *       fails without an AWS region (tests, laptops, generated projects without AWS).
+ *       by default): otherwise it builds an {@code SsmClient} at startup that nothing uses, and
+ *       that fails without an AWS region (tests, laptops, generated projects without AWS).
+ *   <li>The Spring Cloud AWS Secrets Manager integration is off by default: axiz reads secrets
+ *       through {@code axiz.secrets} (its own resolver, enabled explicitly), and that integration
+ *       would otherwise build a {@code SecretsManagerClient} as soon as the SDK is on the
+ *       classpath. A service that imports {@code aws-secretsmanager:} config data turns it on with
+ *       {@code spring.cloud.aws.secretsmanager.enabled=true}.
  * </ul>
  *
  * Values set explicitly by the service always win: the conventions are added with the lowest
@@ -35,6 +44,9 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
 
   /** Runs before Boot's config data processing ({@code HIGHEST_PRECEDENCE + 10}). */
   public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 5;
+
+  /** Where the chart mounts the ConfigMaps. */
+  public static final String DEFAULT_DIRECTORY = "/etc/axiz/config";
 
   static final String DEFAULTS = "axizConfigDefaults";
   static final String IMPORTS = "axizConfigImports";
@@ -57,22 +69,16 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
       imports.add("optional:aws-parameterstore:" + prefix + "/" + environment + "/" + app + "/");
     }
     if (cluster) {
-      defaults.put("spring.cloud.kubernetes.config.fail-fast", "true");
-      defaults.put("spring.cloud.kubernetes.config.retry.max-attempts", "6");
-      defaults.put("spring.cloud.kubernetes.config.sources[0].name", "axiz-common");
-      defaults.put("spring.cloud.kubernetes.config.sources[1].name", app);
-      defaults.put("spring.cloud.kubernetes.config.sources[2].name", app + "-errors");
-      defaults.put("spring.cloud.kubernetes.secrets.enabled", "false");
-      defaults.put("spring.cloud.kubernetes.reload.enabled", "false");
-      imports.add("kubernetes:");
-    } else {
-      defaults.put("spring.cloud.kubernetes.enabled", "false");
-      defaults.put("spring.cloud.kubernetes.config.enabled", "false");
-      defaults.put("spring.cloud.kubernetes.secrets.enabled", "false");
+      String dir = env.getProperty("axiz.config.directory", DEFAULT_DIRECTORY);
+      String base = dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;
+      imports.add("optional:file:" + base + "/common/application.yaml");
+      imports.add("file:" + base + "/service/application.yaml");
+      imports.add("file:" + base + "/errors/application.yaml");
     }
     // a placeholder, resolved when Spring Cloud AWS binds it: the service's own files count too
     defaults.put(
         "spring.cloud.aws.parameterstore.enabled", "${axiz.config.parameter-store.enabled:false}");
+    defaults.put("spring.cloud.aws.secretsmanager.enabled", "false");
     env.getPropertySources().addLast(new MapPropertySource(DEFAULTS, defaults));
 
     if (!imports.isEmpty()) {
@@ -80,13 +86,14 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
       String existing = env.getProperty("spring.config.import");
       if (StringUtils.hasText(existing)) {
         merged.addAll(
-            Arrays.stream(existing.split(","))
+            Arrays.stream(existing.split(",", -1))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList());
       }
       for (String i : imports) {
-        if (merged.stream().noneMatch(e -> e.endsWith(i.replace("optional:", "")))) {
+        String target = i.replace("optional:", "");
+        if (merged.stream().noneMatch(e -> e.replace("optional:", "").equals(target))) {
           merged.add(i);
         }
       }
@@ -110,7 +117,8 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
     List<String> active = new ArrayList<>(Arrays.asList(env.getActiveProfiles()));
     String prop = env.getProperty("spring.profiles.active");
     if (prop != null) {
-      active.addAll(Arrays.stream(prop.split(",")).map(String::trim).toList());
+      active.addAll(
+          Arrays.stream(prop.split(",", -1)).map(String::trim).filter(s -> !s.isEmpty()).toList());
     }
     return active.stream().anyMatch(LOCAL_PROFILES::contains);
   }

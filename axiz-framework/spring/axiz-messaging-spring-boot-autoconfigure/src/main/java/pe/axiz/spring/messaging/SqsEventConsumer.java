@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class SqsEventConsumer implements SmartLifecycle {
   private volatile boolean running;
   private List<Thread> workers = List.of();
   private @Nullable ScheduledExecutorService heartbeat;
+  private @Nullable ScheduledFuture<?> heartbeatTask;
 
   public SqsEventConsumer(
       SqsClient sqs,
@@ -70,7 +72,8 @@ public class SqsEventConsumer implements SmartLifecycle {
     ScheduledExecutorService hb =
         Executors.newSingleThreadScheduledExecutor(
             Thread.ofVirtual().name("axiz-sqs-visibility").factory());
-    hb.scheduleWithFixedDelay(this::renewVisibility, period, period, TimeUnit.SECONDS);
+    heartbeatTask =
+        hb.scheduleWithFixedDelay(this::renewVisibilitySafely, period, period, TimeUnit.SECONDS);
     heartbeat = hb;
     workers =
         settings.queues().stream()
@@ -97,6 +100,10 @@ public class SqsEventConsumer implements SmartLifecycle {
         workers.forEach(Thread::interrupt);
         break;
       }
+    }
+    ScheduledFuture<?> task = heartbeatTask;
+    if (task != null) {
+      task.cancel(false);
     }
     ScheduledExecutorService hb = heartbeat;
     if (hb != null) {
@@ -156,6 +163,18 @@ public class SqsEventConsumer implements SmartLifecycle {
     }
   }
 
+  /**
+   * Heartbeat body: an exception escaping a periodic task would silently cancel every later run, so
+   * nothing is let through.
+   */
+  private void renewVisibilitySafely() {
+    try {
+      renewVisibility();
+    } catch (RuntimeException e) {
+      LOG.warn("SQS visibility heartbeat failed; it runs again on the next period", e);
+    }
+  }
+
   /** Extends the visibility of every message received and not yet settled. */
   void renewVisibility() {
     int seconds = (int) Math.min(MAX_VISIBILITY_SECONDS, settings.visibilityTimeout().toSeconds());
@@ -164,7 +183,8 @@ public class SqsEventConsumer implements SmartLifecycle {
         sqs.changeMessageVisibility(
             b -> b.queueUrl(f.queue()).receiptHandle(f.receiptHandle()).visibilityTimeout(seconds));
       } catch (RuntimeException e) {
-        LOG.debug("Could not extend visibility on {}: {}", f.queue(), e.toString());
+        // the message may become visible again and be delivered twice (the inbox absorbs it)
+        LOG.warn("Could not extend visibility on {}: {}", f.queue(), e.toString());
       }
     }
   }
@@ -192,12 +212,16 @@ public class SqsEventConsumer implements SmartLifecycle {
       LOG.warn("Dispatch of {} on {} failed: {}", envelope.id(), queue, e.toString());
       outcome = new EventDispatcher.Outcome(DeliveryDecision.RETRY, Duration.ZERO);
     }
-    switch (outcome.decision()) {
-      case ACK -> delete(queue, m);
-      case RETRY -> delay(queue, m, backoff.delay(attempt));
-      case DEFER -> delay(queue, m, outcome.retryAfter().plusSeconds(1));
-      case DEAD_LETTER -> deadLetter(queue, m, envelope);
-    }
+    EventDispatcher.Outcome decided = outcome;
+    // exhaustive: a new decision must say what happens to the message
+    Runnable action =
+        switch (decided.decision()) {
+          case ACK -> () -> delete(queue, m);
+          case RETRY -> () -> delay(queue, m, backoff.delay(attempt));
+          case DEFER -> () -> delay(queue, m, decided.retryAfter().plusSeconds(1));
+          case DEAD_LETTER -> () -> deadLetter(queue, m, envelope);
+        };
+    action.run();
   }
 
   private void delay(String queue, Message m, Duration delay) {

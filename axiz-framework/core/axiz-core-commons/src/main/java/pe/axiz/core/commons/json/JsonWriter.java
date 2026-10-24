@@ -1,10 +1,8 @@
 package pe.axiz.core.commons.json;
 
 import java.math.BigDecimal;
-import java.time.temporal.TemporalAccessor;
 import java.util.Collection;
 import java.util.Map;
-import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -64,13 +62,8 @@ public final class JsonWriter {
       sb.append(']');
     } else if (value instanceof Object[] array) {
       append(sb, java.util.Arrays.asList(array), depth);
-    } else if (value instanceof CharSequence
-        || value instanceof Enum<?>
-        || value instanceof UUID
-        || value instanceof TemporalAccessor
-        || value instanceof Character) {
-      string(sb, value.toString());
     } else {
+      // text, enums, UUIDs, java.time values, characters and anything else: their text form
       string(sb, value.toString());
     }
   }

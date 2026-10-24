@@ -7,7 +7,7 @@ import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
- * An interbank transfer to send.
+ * An inter-bank transfer to send.
  *
  * @param creditorCci destination account (CCI)
  * @param amount positive amount

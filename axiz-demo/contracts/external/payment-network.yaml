@@ -3,7 +3,7 @@ info:
   title: Clearing payment network (simulated)
   version: 1.0.0
   description: >
-    Transfer API of the interbank network as simulated with WireMock (API key authentication).
+    Transfer API of the inter-bank network as simulated with WireMock (API key authentication).
     Rejections use codes NET-R01 (invalid account), NET-R02 (account closed), NET-R09 (limit).
 tags:
   - name: transfers
@@ -12,7 +12,7 @@ paths:
     post:
       operationId: submitTransfer
       tags: [transfers]
-      summary: Submits an immediate interbank transfer
+      summary: Submits an immediate inter-bank transfer
       parameters:
         - {name: Idempotency-Key, in: header, required: true, schema: {type: string}}
       requestBody:

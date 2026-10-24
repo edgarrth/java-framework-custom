@@ -50,7 +50,8 @@ final class Json {
 
   private static void string(StringBuilder b, String s) {
     b.append('"');
-    for (char c : s.toCharArray()) {
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
       switch (c) {
         case '"' -> b.append("\\\"");
         case '\\' -> b.append("\\\\");

@@ -69,8 +69,7 @@ class I18nTest {
     // the services run with es-PE by default: an English request must not fall to Spanish
     BundleMessageResolver framework =
         new BundleMessageResolver(List.of("axiz.i18n.messages"), ES_PE);
-    assertEquals(
-        "The request is not valid.", framework.get("error.AXZ-CORE-0001", Locale.ENGLISH));
+    assertEquals("The request is not valid.", framework.get("error.AXZ-CORE-0001", Locale.ENGLISH));
     assertEquals(
         "The request is not valid.",
         framework.get("error.AXZ-CORE-0001", Locale.forLanguageTag("en-GB")));

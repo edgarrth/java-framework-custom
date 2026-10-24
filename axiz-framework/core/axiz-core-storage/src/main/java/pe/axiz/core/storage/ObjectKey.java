@@ -13,7 +13,7 @@ public final class ObjectKey {
     if (key == null || !SAFE.matcher(key).matches() || key.startsWith("/") || key.contains("//")) {
       throw new IllegalArgumentException("Invalid object key");
     }
-    for (String segment : key.split("/")) {
+    for (String segment : key.split("/", -1)) {
       if (segment.equals("..") || segment.equals(".")) {
         throw new IllegalArgumentException("Invalid object key");
       }

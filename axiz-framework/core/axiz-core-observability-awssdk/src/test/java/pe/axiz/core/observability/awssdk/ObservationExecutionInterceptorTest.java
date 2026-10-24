@@ -117,8 +117,10 @@ class ObservationExecutionInterceptorTest {
 
     assertEquals(3, stopped.size());
     assertEquals("success", stopped.get(0).getLowCardinalityKeyValue("outcome").getValue());
-    assertEquals("R-1", stopped.get(0).getHighCardinalityKeyValue(AxizAttributes.AWS_REQUEST_ID).getValue());
-    assertEquals("R-2", stopped.get(1).getHighCardinalityKeyValue(AxizAttributes.AWS_REQUEST_ID).getValue());
+    assertEquals(
+        "R-1", stopped.get(0).getHighCardinalityKeyValue(AxizAttributes.AWS_REQUEST_ID).getValue());
+    assertEquals(
+        "R-2", stopped.get(1).getHighCardinalityKeyValue(AxizAttributes.AWS_REQUEST_ID).getValue());
     assertNull(stopped.get(2).getHighCardinalityKeyValue(AxizAttributes.AWS_REQUEST_ID));
   }
 
@@ -128,7 +130,8 @@ class ObservationExecutionInterceptorTest {
     ObservationExecutionInterceptor interceptor =
         new ObservationExecutionInterceptor(recording(stopped));
     ExecutionAttributes foreign = call("DynamoDb", "GetItem");
-    interceptor.afterExecution(answered(SdkHttpResponse.builder().statusCode(200).build()), foreign);
+    interceptor.afterExecution(
+        answered(SdkHttpResponse.builder().statusCode(200).build()), foreign);
     interceptor.onExecutionFailure(null, foreign);
     assertEquals(List.of(), stopped);
   }

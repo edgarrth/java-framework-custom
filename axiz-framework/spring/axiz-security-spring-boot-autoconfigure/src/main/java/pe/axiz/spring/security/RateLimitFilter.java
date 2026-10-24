@@ -22,11 +22,23 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private final RateLimiter limiter;
   private final RateLimitRules rules;
   private final SecurityProblems problems;
+  private final boolean failOpen;
 
   public RateLimitFilter(RateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
+    this(limiter, rules, problems, true);
+  }
+
+  /**
+   * Creates the filter.
+   *
+   * @param failOpen policy when the limiter store is unavailable, for rules without their own
+   */
+  public RateLimitFilter(
+      RateLimiter limiter, RateLimitRules rules, SecurityProblems problems, boolean failOpen) {
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);
     this.problems = Objects.requireNonNull(problems);
+    this.failOpen = failOpen;
   }
 
   @Override
@@ -42,7 +54,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
     AxizSecurityProperties.Rule r = rule.get();
     RateLimiter.Decision d =
-        limiter.tryAcquire(RateLimitRules.key(r, a.axizPrincipal()), r.limit(), r.window());
+        limiter.tryAcquire(
+            RateLimitRules.key(r, a.axizPrincipal()), r.limit(), r.window(), r.failOpen(failOpen));
     if (!d.allowed()) {
       response.setHeader("Retry-After", Long.toString(Math.max(1, d.retryAfter().toSeconds())));
       ProblemAuthenticationEntryPoint.write(

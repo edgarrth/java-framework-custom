@@ -25,7 +25,7 @@ public class TransfersController {
     this.sendTransferUseCase = sendTransferUseCase;
   }
 
-  /** Sends an interbank transfer to the payment network (POST /v1/transfers). */
+  /** Sends an inter-bank transfer to the payment network (POST /v1/transfers). */
   @PostMapping("/v1/transfers")
   public ResponseEntity<Transfer> sendTransfer(
       @RequestHeader("Idempotency-Key") String idempotencyKey,

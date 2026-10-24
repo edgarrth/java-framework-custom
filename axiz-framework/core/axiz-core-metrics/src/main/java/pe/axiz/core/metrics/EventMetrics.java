@@ -205,7 +205,7 @@ public final class EventMetrics {
    * @return the operation result
    * @throws Throwable whatever the operation throws
    */
-  public <T> T observe(
+  public <T extends @Nullable Object> T observe(
       String event,
       @Nullable String category,
       boolean recordDuration,
@@ -370,7 +370,7 @@ public final class EventMetrics {
 
   /** Supplier that may throw. */
   @FunctionalInterface
-  public interface ThrowingSupplier<T> {
+  public interface ThrowingSupplier<T extends @Nullable Object> {
     T get() throws Throwable;
   }
 

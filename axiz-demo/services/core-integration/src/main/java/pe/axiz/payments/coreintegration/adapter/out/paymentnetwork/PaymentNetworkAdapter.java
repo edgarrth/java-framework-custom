@@ -15,7 +15,7 @@ import pe.axiz.payments.coreintegration.domain.TransferOrder;
 import pe.axiz.payments.coreintegration.domain.TransferStatus;
 
 /**
- * Adapter of the interbank network (API key from the secret store, HTTP service group {@code
+ * Adapter of the inter-bank network (API key from the secret store, HTTP service group {@code
  * payment-network}). Network rejection codes become {@code TRANSFER_REJECTED} with a stable reason.
  */
 @Component

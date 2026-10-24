@@ -22,6 +22,8 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public class IdempotencyBehavior implements PipelineBehavior {
 
+  private static final byte[] JSON_NULL = "null".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyBehavior.class);
 
   private final IdempotencyService service;
@@ -49,9 +51,10 @@ public class IdempotencyBehavior implements PipelineBehavior {
         service.begin(
             scope(invocation.name(), RequestContext.get()), command.idempotencyKey(), fingerprint);
     if (decision instanceof IdempotencyService.Replay(StoredResponse stored)) {
-      return stored.body().length == 0
-          ? null
-          : (R) mapper.readValue(stored.body(), invocation.resultType());
+      // the stored result is JSON: "null" for a command without result (Command<Void>); an empty
+      // body was written by earlier versions for the same case
+      byte[] json = stored.body().length == 0 ? JSON_NULL : stored.body();
+      return (R) mapper.readValue(json, invocation.resultType());
     }
     IdempotencyService.Proceed execution = (IdempotencyService.Proceed) decision;
     R result;
@@ -61,7 +64,7 @@ public class IdempotencyBehavior implements PipelineBehavior {
       service.fail(execution);
       throw e;
     }
-    byte[] out = result == null ? new byte[0] : mapper.writeValueAsBytes(result);
+    byte[] out = result == null ? JSON_NULL : mapper.writeValueAsBytes(result);
     if (!service.complete(
         execution, new StoredResponse(200, Map.of("Content-Type", "application/json"), out))) {
       LOG.warn(

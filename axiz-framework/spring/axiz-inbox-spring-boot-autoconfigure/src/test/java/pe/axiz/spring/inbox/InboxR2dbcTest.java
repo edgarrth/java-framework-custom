@@ -28,7 +28,9 @@ class InboxR2dbcTest {
     FakeR2dbc db =
         new FakeR2dbc()
             // startup schema check: the table has every column of this version (owner included)
-            .onQuery("SELECT consumer, message_id, status, owner, lease_until, expires_at", b -> List.of())
+            .onQuery(
+                "SELECT consumer, message_id, status, owner, lease_until, expires_at",
+                b -> List.of())
             .onUpdate("INSERT INTO axiz_inbox", b -> rows.add(b.get(0) + "/" + b.get(1)) ? 1L : 0L)
             .onUpdate("SET owner", b -> 0L)
             .onQuery(

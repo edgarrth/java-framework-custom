@@ -33,7 +33,8 @@ public final class TemplateRenderer {
 
   static String html(String s) {
     StringBuilder b = new StringBuilder(s.length());
-    for (char c : s.toCharArray()) {
+    for (int i = 0; i < s.length(); i++) {
+      char c = s.charAt(i);
       switch (c) {
         case '<' -> b.append("&lt;");
         case '>' -> b.append("&gt;");

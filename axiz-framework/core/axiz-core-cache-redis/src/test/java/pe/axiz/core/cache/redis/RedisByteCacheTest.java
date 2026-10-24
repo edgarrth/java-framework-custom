@@ -32,6 +32,15 @@ class RedisByteCacheTest {
               }
               return switch (m.getName()) {
                 case "get" -> data.get((String) a[0]);
+                case "eval" -> {
+                  // GET and PTTL of KEYS[1]; the fake keeps every key 1500 ms, "eternal" forever
+                  String key = (String) ((Object[]) a[2])[0];
+                  byte[] value = data.get(key);
+                  java.util.List<Object> reply = new ArrayList<>();
+                  reply.add(value);
+                  reply.add(value == null ? -2L : key.startsWith("eternal") ? -1L : 1500L);
+                  yield reply;
+                }
                 case "set" -> {
                   data.put((String) a[0], (byte[]) a[1]);
                   yield "OK";
@@ -86,7 +95,8 @@ class RedisByteCacheTest {
 
   @Test
   void evictionByPrefixWalksEveryPageAndSkipsEmptyOnes() {
-    List<List<String>> pages = List.of(List.of(), List.of("svc:c:1", "svc:c:2"), List.of("svc:c:3"));
+    List<List<String>> pages =
+        List.of(List.of(), List.of("svc:c:1", "svc:c:2"), List.of("svc:c:3"));
     List<String> unlinked = new ArrayList<>();
     int[] page = {0};
     @SuppressWarnings("unchecked")
@@ -123,5 +133,23 @@ class RedisByteCacheTest {
   void globCharactersOfThePrefixAreEscaped() {
     assertEquals("svc\\[1\\]:\\\\", RedisByteCache.escapeGlob("svc[1]:\\"));
     assertEquals("plain:", RedisByteCache.escapeGlob("plain:"));
+  }
+
+  @Test
+  void readsTheValueAndItsRemainingTtlInOneScript() {
+    Map<String, byte[]> data = new TreeMap<>();
+    List<String> commands = new ArrayList<>();
+    RedisByteCache cache = new RedisByteCache(fake(data, commands, false));
+    assertTrue(cache.getWithTtl("missing").isEmpty());
+    cache.put("k", new byte[] {4}, Duration.ofSeconds(2));
+    var hit = cache.getWithTtl("k").orElseThrow();
+    assertEquals(4, hit.value()[0]);
+    assertEquals(Duration.ofMillis(1500), hit.remaining().orElseThrow());
+    cache.put("eternal", new byte[] {5}, Duration.ofSeconds(2));
+    assertTrue(cache.getWithTtl("eternal").orElseThrow().remaining().isEmpty());
+    assertEquals(3, commands.stream().filter("eval"::equals).count());
+    assertTrue(RedisByteCache.GET_WITH_TTL.contains("PTTL"));
+    RedisByteCache down = new RedisByteCache(fake(new TreeMap<>(), new ArrayList<>(), true));
+    assertThrows(CacheUnavailableException.class, () -> down.getWithTtl("k"));
   }
 }

@@ -74,6 +74,18 @@ class AxizArchitectureTest {
   }
 
   @Test
+  void jvmLocalLocksInBusinessCodeAreReported() {
+    JavaClasses locks =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.locks");
+    String lockReport =
+        GeneralRules.NO_JVM_LOCKS_IN_BUSINESS_CODE.evaluate(locks).getFailureReport().toString();
+    assertTrue(lockReport.contains("ReentrantLock"), lockReport);
+    String syncReport =
+        GeneralRules.NO_SYNCHRONIZED_BUSINESS_METHODS.evaluate(locks).getFailureReport().toString();
+    assertTrue(syncReport.contains("credit()"), syncReport);
+  }
+
+  @Test
   void blockingCallsAndGlobalHooksAreReported() {
     JavaClasses reactive =
         new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.reactive");
@@ -119,7 +131,9 @@ class AxizArchitectureTest {
         BeanNames.defaultName(beans.get("pe.axiz.quality.archunit.sample.beans.PaymentsSupport")));
     ClassFileImporter importer = new ClassFileImporter();
     // two capitals keep the name as is; nested classes keep the outer name
-    assertEquals("URLDecoder", BeanNames.defaultName(importer.importClass(java.net.URLDecoder.class)));
-    assertEquals("map.Entry", BeanNames.defaultName(importer.importClass(java.util.Map.Entry.class)));
+    assertEquals(
+        "URLDecoder", BeanNames.defaultName(importer.importClass(java.net.URLDecoder.class)));
+    assertEquals(
+        "map.Entry", BeanNames.defaultName(importer.importClass(java.util.Map.Entry.class)));
   }
 }

@@ -86,7 +86,7 @@ paths:
     post:
       operationId: sendTransfer
       tags: [transfers]
-      summary: Sends an interbank transfer to the payment network
+      summary: Sends an inter-bank transfer to the payment network
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:

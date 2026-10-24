@@ -1,7 +1,9 @@
 # Configuración y secretos
 
-Los parámetros de cada servicio se cargan desde **ConfigMaps** con Spring Cloud Kubernetes al
-arrancar el pod; los **secretos** nunca van en un ConfigMap y vienen de **AWS Secrets Manager**.
+Los parámetros de cada servicio se cargan desde **ConfigMaps** que el chart monta como archivos en
+el pod; los **secretos** nunca van en un ConfigMap y vienen de **AWS Secrets Manager**. El servicio
+no consulta la API de Kubernetes: el pod no monta token de ServiceAccount y no existe Role ni
+RoleBinding, así un pod comprometido no puede listar los ConfigMaps del namespace.
 
 ## Precedencia
 
@@ -18,8 +20,10 @@ De menor a mayor:
 6. Secretos montados como archivos.
 
 El starter `axiz-config` aplica la convención: dentro del clúster (y fuera de los perfiles `local` y
-`test`) importa `kubernetes:` con esas tres fuentes, con fail-fast, reintentos, sin recarga y sin
-leer Secrets por la API de Kubernetes. Fuera del clúster apaga la integración. El cliente de
+`test`) importa los archivos montados bajo `axiz.config.directory` (por defecto `/etc/axiz/config`):
+`common/application.yaml` (`axiz-common`, opcional), `service/application.yaml` y
+`errors/application.yaml` (obligatorios: si el ConfigMap falta, el servicio no arranca). Los
+posteriores ganan sobre los anteriores. Fuera del clúster no importa nada. El cliente de
 Parameter Store de Spring Cloud AWS sigue a `axiz.config.parameter-store.enabled` (falso por
 defecto), así un servicio que no lo usa no crea un `SsmClient` ni necesita una región de AWS para
 arrancar. Lo que el servicio declare explícitamente siempre gana.
@@ -33,8 +37,10 @@ arrancar. Lo que el servicio declare explícitamente siempre gana.
   `axiz.config.required` lista llaves que deben existir.
 - Recarga desactivada: un cambio de ConfigMap dispara un rollout (el chart anota el checksum del
   ConfigMap en el pod).
-- El chart crea un ServiceAccount con un Role de solo lectura (`get`, `list`, `watch`) sobre los
-  ConfigMaps de su namespace.
+- El chart crea un ServiceAccount sin token montado (`automountServiceAccountToken: false`) y sin
+  permisos sobre la API de Kubernetes; la identidad de AWS (IRSA o EKS Pod Identity) usa su propio
+  token proyectado. Un servicio que necesite la API por otro motivo lo declara con
+  `serviceAccount.automountToken: true` y su propio Role.
 
 En el chart, `values-<env>.yaml` define el contenido:
 

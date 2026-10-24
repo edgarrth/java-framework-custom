@@ -25,11 +25,15 @@
     <!-- Container image -->
     <axiz.image.registry>nexus-docker.axiz.internal</axiz.image.registry>
     <axiz.image.repository>${axiz.image.registry}/axiz/${project.artifactId}</axiz.image.repository>
+    <!-- Base images by tag and digest: Renovate pins and updates the digest (customManagers of the
+         axiz preset); a release image is only built from a pinned base (service-ci) -->
+    <!-- renovate: datasource=docker depName=eclipse-temurin -->
     <axiz.image.base>eclipse-temurin:25-jre-noble</axiz.image.base>
     <!-- BlockHound (reactive services) redefines JDK classes; ignored where the JVM lacks the flag -->
     <!-- native access: see Enable-Native-Access below; the tests start the same Netty servers -->
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED</axiz.test.argLine>
     <!-- native images: glibc base without a JVM, non-root -->
+    <!-- renovate: datasource=docker depName=gcr.io/distroless/base-debian12 -->
     <axiz.image.native-base>gcr.io/distroless/base-debian12:nonroot</axiz.image.native-base>
     <jib-native-image-extension.version>0.1.0</jib-native-image-extension.version>
     <axiz.image.tag>${project.version}</axiz.image.tag>

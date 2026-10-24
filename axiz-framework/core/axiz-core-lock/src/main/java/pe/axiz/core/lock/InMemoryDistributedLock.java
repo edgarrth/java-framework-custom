@@ -27,7 +27,7 @@ public final class InMemoryDistributedLock implements DistributedLock {
         owners.compute(
             resource,
             (k, current) -> current == null || !now.isBefore(current.expiresAt) ? mine : current);
-    if (result != mine) {
+    if (!result.token().equals(token)) {
       return Optional.empty();
     }
     return Optional.of(new Handle(resource, token));

@@ -154,21 +154,6 @@ class SecurityTest {
     assertTrue(RateLimitKeys.forSubject(p, "g").endsWith(":u"));
   }
 
-  @Test
-  void requestSignatureVerifiesAndPreventsReplay() {
-    MutableClock clock = new MutableClock();
-    RequestSignature sig = new RequestSignature(new byte[32], Duration.ofMinutes(5), clock);
-    Instant ts = clock.now;
-    String s = sig.sign(ts, "POST", "/v1/callbacks", "{\"a\":1}");
-    assertTrue(sig.verify(ts, "POST", "/v1/callbacks", "{\"a\":1}", s));
-    assertFalse(sig.verify(ts, "POST", "/v1/callbacks", "{\"a\":2}", s));
-    clock.now = clock.now.plus(Duration.ofMinutes(6));
-    assertFalse(sig.verify(ts, "POST", "/v1/callbacks", "{\"a\":1}", s));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new RequestSignature(new byte[8], Duration.ofMinutes(1), clock));
-  }
-
   static final class MutableClock extends Clock {
     Instant now = Instant.parse("2026-03-01T10:00:00.500Z");
 

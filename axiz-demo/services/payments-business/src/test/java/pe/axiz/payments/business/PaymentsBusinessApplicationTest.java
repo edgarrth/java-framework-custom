@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
@@ -17,7 +20,7 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
  * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
  * configuration, migrations and health. Needs Docker.
  */
-@SpringBootTest(properties = "axiz.secrets.directory=src/test/resources/secrets")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Import({
   PostgresTestConfiguration.class,
@@ -25,6 +28,12 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
   LocalStackTestConfiguration.class
 })
 class PaymentsBusinessApplicationTest {
+
+  /** Field encryption and blind index keys: random for every run, never committed. */
+  @DynamicPropertySource
+  static void secrets(DynamicPropertyRegistry registry) {
+    EphemeralSecrets.register(registry, "field-key-v1", "blind-index-key");
+  }
 
   @Test
   void startsAndReportsHealth(@Autowired MockMvc mvc) throws Exception {

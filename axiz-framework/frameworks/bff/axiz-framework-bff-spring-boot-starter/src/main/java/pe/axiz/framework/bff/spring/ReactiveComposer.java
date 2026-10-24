@@ -53,8 +53,13 @@ public final class ReactiveComposer {
   }
 
   public Mono<Composition> run() {
-    List<String> names = new ArrayList<>(parts.keySet());
-    List<Mono<Object>> monos = names.stream().map(n -> parts.get(n).defaultIfEmpty(NONE)).toList();
+    List<String> names = new ArrayList<>();
+    List<Mono<Object>> monos = new ArrayList<>();
+    parts.forEach(
+        (name, part) -> {
+          names.add(name);
+          monos.add(part.defaultIfEmpty(NONE));
+        });
     return Mono.zip(
         monos,
         results -> {

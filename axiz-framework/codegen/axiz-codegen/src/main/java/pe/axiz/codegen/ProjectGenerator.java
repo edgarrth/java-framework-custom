@@ -13,6 +13,7 @@ import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Style;
 import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.output.GeneratedProject;
@@ -73,20 +74,16 @@ public final class ProjectGenerator {
     project.put("basePackage", r.basePackage());
     project.put("packagePath", Names.packagePath(r.basePackage()));
     String description = r.description().isBlank() ? a.role() : r.description().strip();
-    // descriptions land in Javadoc, XML and YAML: neutralize the comment terminator here and
-    // escape per format below
+    // descriptions land in Markdown, Javadoc, XML (content and comments) and YAML: each format
+    // gets its own escaping, so ordinary punctuation never breaks a generated file
     String text =
-        (description.endsWith(".")
-                ? description.substring(0, description.length() - 1)
-                : description)
-            .replace("*/", "* /");
+        description.endsWith(".")
+            ? description.substring(0, description.length() - 1)
+            : description;
     project.put("description", text);
-    project.put(
-        "descriptionXml",
-        text.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("--", "- -")); // also printed inside an XML comment
+    project.put("descriptionJavadoc", javadoc(text));
+    project.put("descriptionXml", xmlText(text));
+    project.put("descriptionXmlComment", xmlComment(text));
     project.put("descriptionYaml", "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\"");
     project.put("className", Names.pascal(r.name()));
     project.put("camelName", Names.camel(r.name()));
@@ -157,7 +154,7 @@ public final class ProjectGenerator {
         "reactiveHandlers",
         r.stack() == Stack.REACTIVE && !Catalog.DYNAMODB.equals(r.persistence()));
 
-    List<Capability> resolved = catalog.resolve(capabilityNames(r, a), store);
+    List<Capability> resolved = catalog.resolve(capabilityNames(catalog, r, a), store);
     Map<String, Object> caps = new LinkedHashMap<>();
     List<Map<String, Object>> capabilityRows = new ArrayList<>();
     Set<String> starterIds = new LinkedHashSet<>();
@@ -180,10 +177,11 @@ public final class ProjectGenerator {
     }
     List<Map<String, Object>> dependencies = new ArrayList<>();
     for (String d : dependencyIds) {
-      String[] ga = d.split(":");
+      String[] ga = d.split(":", -1);
       dependencies.add(Map.of("groupId", ga[0], "artifactId", ga[1]));
     }
     c.put("caps", caps);
+    c.put("schema", schema(catalog.style(r.framework()), caps, Catalog.AURORA.equals(store)));
     c.put("capabilities", capabilityRows);
     c.put("starters", starters);
     c.put("dependencies", dependencies);
@@ -320,50 +318,48 @@ public final class ProjectGenerator {
 
   /** Packages of each style with their role (package-info files of the skeleton). */
   static List<Map<String, Object>> packages(Framework framework) {
-    Map<String, String> p = new LinkedHashMap<>();
-    switch (framework) {
-      case HEXAGONAL -> {
-        p.put("domain", "Domain model: plain Java, no framework dependencies.");
-        p.put("application.usecase", "Use cases: one class per operation, transactional.");
-        p.put("application.port.out", "Outbound ports implemented by adapters.");
-        p.put("adapter.in.rest", "REST adapter generated from the OpenAPI contract.");
-        p.put("adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.");
-        p.put("config", "Wiring of use cases, ports and adapters.");
-      }
-      case CQRS -> {
-        p.put("domain", "Domain model: plain Java, no framework dependencies.");
-        p.put("application.command", "Commands and their handlers (write side).");
-        p.put("application.query", "Queries and their handlers (read side).");
-        p.put("application.port.out", "Outbound ports implemented by adapters.");
-        p.put("adapter.in.rest", "REST adapter generated from the OpenAPI contract.");
-        p.put("adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.");
-        p.put("config", "Wiring of handlers, ports and adapters.");
-      }
-      case LAYERED -> {
-        p.put("controller", "REST controllers generated from the OpenAPI contract.");
-        p.put("service", "Business services, transactional.");
-        p.put("repository", "Data access.");
-        p.put("model", "Entities and items.");
-      }
-      case BFF -> {
-        p.put("controller", "Channel API generated from the OpenAPI contract.");
-        p.put("composition", "Compositions of downstream calls, one per API tag.");
-        p.put("client", "HTTP clients of downstream services.");
-      }
-      case EDA -> {
-        p.put("handler", "Event handlers, one per event type.");
-        p.put("event", "Event payloads.");
-      }
-      case BATCH -> p.put("job", "Jobs, steps, readers, processors and writers.");
-      case NONE -> {
-        // platform archetypes have their own layout
-      }
-    }
+    // name and role, in order; an exhaustive switch expression: a new style must declare its own
+    List<String> p =
+        switch (framework) {
+          case HEXAGONAL ->
+              List.of(
+                  "domain", "Domain model: plain Java, no framework dependencies.",
+                  "application.usecase", "Use cases: one class per operation, transactional.",
+                  "application.port.out", "Outbound ports implemented by adapters.",
+                  "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
+                  "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
+                  "config", "Wiring of use cases, ports and adapters.");
+          case CQRS ->
+              List.of(
+                  "domain", "Domain model: plain Java, no framework dependencies.",
+                  "application.command", "Commands and their handlers (write side).",
+                  "application.query", "Queries and their handlers (read side).",
+                  "application.port.out", "Outbound ports implemented by adapters.",
+                  "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
+                  "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
+                  "config", "Wiring of handlers, ports and adapters.");
+          case LAYERED ->
+              List.of(
+                  "controller", "REST controllers generated from the OpenAPI contract.",
+                  "service", "Business services, transactional.",
+                  "repository", "Data access.",
+                  "model", "Entities and items.");
+          case BFF ->
+              List.of(
+                  "controller", "Channel API generated from the OpenAPI contract.",
+                  "composition", "Compositions of downstream calls, one per API tag.",
+                  "client", "HTTP clients of downstream services.");
+          case EDA ->
+              List.of("handler", "Event handlers, one per event type.", "event", "Event payloads.");
+          case BATCH -> List.of("job", "Jobs, steps, readers, processors and writers.");
+          // platform archetypes have their own layout
+          case NONE -> List.of();
+        };
     List<Map<String, Object>> out = new ArrayList<>();
-    p.forEach(
-        (name, description) ->
-            out.add(
-                Map.of("name", name, "path", name.replace('.', '/'), "description", description)));
+    for (int i = 0; i < p.size(); i += 2) {
+      String name = p.get(i);
+      out.add(Map.of("name", name, "path", name.replace('.', '/'), "description", p.get(i + 1)));
+    }
     return out;
   }
 
@@ -372,8 +368,15 @@ public final class ProjectGenerator {
   }
 
   /** Archetype starters, persistence and the requested capabilities (before requirements). */
-  static List<String> capabilityNames(ProjectRequest r, Archetype a) {
+  static List<String> capabilityNames(Catalog catalog, ProjectRequest r, Archetype a) {
     Set<String> names = new LinkedHashSet<>(a.starters());
+    String store = Catalog.store(r.persistence(), r.stack());
+    // what the style starter brings: the service gets its tables, properties and resources too
+    for (String implied : catalog.style(r.framework()).capabilities()) {
+      if (catalog.capability(implied).map(c -> c.supports(store)).orElse(false)) {
+        names.add(implied);
+      }
+    }
     if ("aurora".equals(r.persistence())) {
       // JPA on servlet; R2DBC on the reactive stack, where JDBC would block the event loop
       names.add(r.stack() == Stack.REACTIVE ? "r2dbc" : "jpa");
@@ -383,6 +386,50 @@ public final class ProjectGenerator {
     }
     names.addAll(r.capabilities());
     return List.copyOf(names);
+  }
+
+  /** XML element content: the markup characters become entities. */
+  static String xmlText(String text) {
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+  }
+
+  /**
+   * Inside an XML comment: no {@code --} anywhere (whatever the run of hyphens) and no hyphen right
+   * before the closing {@code -->}.
+   */
+  static String xmlComment(String text) {
+    StringBuilder b = new StringBuilder(text.length() + 4);
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (c == '-' && b.length() > 0 && b.charAt(b.length() - 1) == '-') {
+        b.append(' ');
+      }
+      b.append(c);
+    }
+    if (b.length() > 0 && b.charAt(b.length() - 1) == '-') {
+      b.append(' ');
+    }
+    return b.toString();
+  }
+
+  /** Javadoc text: HTML-escaped (doclint) and without a comment terminator. */
+  static String javadoc(String text) {
+    return xmlText(text).replace("*/", "*&#47;").replace("@", "&#64;");
+  }
+
+  /**
+   * Framework tables the initial migration creates: those of the chosen capabilities, plus those
+   * the style starter wires on its own when the service has a JDBC database. A store that is wired
+   * always has its table, so nothing fails later on the first write or poll.
+   */
+  static Map<String, Object> schema(Style style, Map<String, Object> caps, boolean jdbc) {
+    Map<String, Object> schema = new LinkedHashMap<>();
+    for (String table : Style.TABLES) {
+      String capability = "shedlock".equals(table) ? "scheduling" : table;
+      schema.put(
+          table, caps.containsKey(capability) || (jdbc && style.jdbcTables().contains(table)));
+    }
+    return schema;
   }
 
   /** Local infrastructure the service needs (Docker Compose, Testcontainers, README). */

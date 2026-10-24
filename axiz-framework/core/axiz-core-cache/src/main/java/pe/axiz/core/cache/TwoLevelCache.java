@@ -7,9 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * L1 (local) + L2 (Redis) cache. Reads go L1 then L2 (filling L1 with a shorter TTL); writes and
- * evictions go to both. A failing L2 never fails the caller: the error is logged and the call
- * continues as a cache miss (the source of truth is used).
+ * L1 (local) + L2 (Redis) cache. Reads go L1 then L2; writes and evictions go to both. A failing L2
+ * never fails the caller: the error is logged and the call continues as a cache miss (the source of
+ * truth is used).
+ *
+ * <p>Freshness: an entry is never served after the expiration it was written with. A copy taken
+ * from L2 lives in L1 for the time the L2 entry still had left, capped by the L1 limit. What L1 may
+ * still serve after a change is bounded by that limit: an eviction on another instance reaches this
+ * L1 only through the eviction of the same key here, or when the copy expires.
  */
 public final class TwoLevelCache implements ByteCache {
 
@@ -32,18 +37,29 @@ public final class TwoLevelCache implements ByteCache {
       return local;
     }
     try {
-      Optional<byte[]> remote = l2.get(key);
-      remote.ifPresent(v -> l1.put(key, v, l1MaxTtl));
-      return remote;
+      Optional<CachedValue> remote = l2.getWithTtl(key);
+      if (remote.isEmpty()) {
+        return Optional.empty();
+      }
+      byte[] value = remote.get().value();
+      Duration forL1 = remote.get().remaining().map(this::capped).orElse(l1MaxTtl);
+      if (!forL1.isNegative() && !forL1.isZero()) {
+        l1.put(key, value, forL1);
+      }
+      return Optional.of(value);
     } catch (RuntimeException e) {
       LOG.warn("L2 cache read failed for a key; continuing without cache: {}", e.toString());
       return Optional.empty();
     }
   }
 
+  private Duration capped(Duration remaining) {
+    return remaining.compareTo(l1MaxTtl) < 0 ? remaining : l1MaxTtl;
+  }
+
   @Override
   public void put(String key, byte[] value, Duration ttl) {
-    l1.put(key, value, ttl.compareTo(l1MaxTtl) < 0 ? ttl : l1MaxTtl);
+    l1.put(key, value, capped(ttl));
     try {
       l2.put(key, value, ttl);
     } catch (RuntimeException e) {
