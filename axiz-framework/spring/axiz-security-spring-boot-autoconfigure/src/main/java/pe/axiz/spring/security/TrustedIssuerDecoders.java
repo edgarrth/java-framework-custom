@@ -2,6 +2,7 @@ package pe.axiz.spring.security;
 
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -11,6 +12,8 @@ import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
+import org.springframework.security.oauth2.jwt.JwtClaimValidator;
 import org.springframework.security.oauth2.jwt.JwtIssuerValidator;
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -61,8 +64,15 @@ public class TrustedIssuerDecoders {
     return policy;
   }
 
+  /**
+   * Checks of every access token: an expiration is required ({@code exp}, as in the JWT profile for
+   * OAuth 2.0 access tokens, RFC 9068), it and {@code nbf} are checked with the clock skew, the
+   * issuer must be the trusted one and the audience one of its audiences. The signature algorithm
+   * is restricted by the decoder.
+   */
   OAuth2TokenValidator<Jwt> validator(TrustedIssuer issuer) {
     return new DelegatingOAuth2TokenValidator<>(
+        new JwtClaimValidator<Instant>(JwtClaimNames.EXP, Objects::nonNull),
         new JwtTimestampValidator(clockSkew),
         new JwtIssuerValidator(issuer.issuer()),
         new AudienceValidator(policy));

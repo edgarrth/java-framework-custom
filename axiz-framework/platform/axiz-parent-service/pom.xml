@@ -247,6 +247,10 @@
                     <annotationLibrary>none</annotationLibrary>
                     <useResponseEntity>true</useResponseEntity>
                     <sourceFolder>src/main/java</sourceFolder>
+                    <!-- class-retention marker: JaCoCo leaves generated models out of the coverage
+                         gates, which measure the code of the service (see pe.axiz.core.commons.Generated) -->
+                    <additionalModelTypeAnnotations>@pe.axiz.core.commons.Generated("openapi-generator")</additionalModelTypeAnnotations>
+                    <additionalEnumTypeAnnotations>@pe.axiz.core.commons.Generated("openapi-generator")</additionalEnumTypeAnnotations>
                   </configOptions>
                 </configuration>
               </execution>

@@ -1,6 +1,8 @@
 package pe.axiz.initializr.config;
 
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -116,9 +118,13 @@ public class SecurityConfiguration {
         });
   }
 
-  /** Issuer, validity window and audience: what a bearer token needs to reach this API. */
+  /**
+   * Issuer, validity window (an expiration is required) and audience: what a bearer token needs to
+   * reach this API.
+   */
   static OAuth2TokenValidator<Jwt> apiTokenValidator(String issuer, String audience) {
     return new DelegatingOAuth2TokenValidator<>(
+        new JwtClaimValidator<Instant>(JwtClaimNames.EXP, Objects::nonNull),
         JwtValidators.createDefaultWithIssuer(issuer),
         new JwtClaimValidator<List<String>>(
             JwtClaimNames.AUD, aud -> aud != null && aud.contains(audience)));

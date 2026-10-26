@@ -1,6 +1,5 @@
 package pe.axiz.payments.business.domain;
 
-import java.util.Map;
 import java.util.Set;
 
 /** Lifecycle of a payment order. */
@@ -10,19 +9,22 @@ public enum PaymentStatus {
   COMPLETED,
   REJECTED;
 
-  private static final Map<PaymentStatus, Set<PaymentStatus>> NEXT =
-      Map.of(
-          RECEIVED, Set.of(PROCESSING, REJECTED),
-          PROCESSING, Set.of(COMPLETED, REJECTED),
-          COMPLETED, Set.of(),
-          REJECTED, Set.of());
+  /** Statuses the order can move to from this one (none for a final status). */
+  public Set<PaymentStatus> next() {
+    // an exhaustive switch: a new status does not compile until its transitions are declared
+    return switch (this) {
+      case RECEIVED -> Set.of(PROCESSING, REJECTED);
+      case PROCESSING -> Set.of(COMPLETED, REJECTED);
+      case COMPLETED, REJECTED -> Set.of();
+    };
+  }
 
   /** Whether the order can move from this status to {@code next}. */
   public boolean canMoveTo(PaymentStatus next) {
-    return NEXT.get(this).contains(next);
+    return next().contains(next);
   }
 
   public boolean isFinal() {
-    return NEXT.get(this).isEmpty();
+    return next().isEmpty();
   }
 }

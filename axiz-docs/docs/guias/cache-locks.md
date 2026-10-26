@@ -9,16 +9,33 @@ public ExchangeRate rate(String currency) { ... }
 
 - Dos niveles: L1 local (acotado, TTL corto para que las réplicas converjan) y L2 Redis
   (ElastiCache/Valkey) cuando hay conexión.
-- Llaves `<servicio>:<caché>:k3:<método>:<argumentos>`: la firma del método (clase, nombre y tipos
-  de parámetros) separa sobrecargas y métodos distintos, y cada argumento lleva su tipo (`"7"` y
+- Llaves `<servicio>:<caché>:k4:<método>:<alcance>:<argumentos>`: la firma del método (clase,
+  nombre y tipos de parámetros) separa sobrecargas y métodos distintos, y cada argumento lleva su tipo (`"7"` y
   `7`, `null` y `"-"` nunca comparten llave). Dos métodos comparten entradas solo si lo declaran
   con `keyName`. Se aceptan textos, números, booleanos, enums, UUID, valores de `java.time`,
   `Currency`, `Locale`, arreglos, colecciones, mapas, `Optional`, records y tipos que implementan
   `CacheKeyPart`; cualquier otro objeto se rechaza, porque su `toString()` no es una identidad
   estable. Arreglos y colecciones llevan su clase en la llave: `int[]{7}`, `Integer[]{7}`,
   `List.of(7)` y un `ArrayDeque` con 7 son llaves distintas, igual que lo serían los argumentos.
-  `k3` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
+  `k4` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
   viejas expiran solas.
+- **Alcance** (`scope`): quién comparte las entradas además de los argumentos.
+    - `TENANT` (por defecto): solo las llamadas del mismo tenant (el del contexto, el de
+      `TenantContext` en servlet o el del contexto de Reactor en reactivo; ninguno en un servicio
+      de un solo tenant). Dos tenants nunca leen sus entradas aunque el método reciba un id local
+      al tenant (un código de cliente, un número de página).
+    - `CALLER`: además, solo el mismo usuario autenticado (el nombre del principal de Spring
+      Security), para resultados que dependen de quién pregunta. Sin usuario autenticado el
+      método corre sin caché.
+    - `GLOBAL`: todos comparten, solo para datos que son iguales para todos (un catálogo, la lista
+      de bancos).
+
+    ```java
+    @AxizCacheable(value = "my-limits", ttl = "1m", scope = CacheScope.CALLER)
+    public Limits myLimits() { ... }
+    ```
+
+    Un acierto de caché no ejecuta el método: la autorización va antes de la llamada, no adentro.
 - Valores serializados en JSON y **single flight**: un valor que falta se carga una sola vez
   aunque lo pidan muchos hilos.
 - Una copia que L1 toma de L2 nunca vive más que el original: su TTL es el menor entre lo que le
@@ -39,12 +56,31 @@ public ExchangeRate rate(String currency) { ... }
 Movement m = lockTemplate.withLock("account:" + accountId,
     Duration.ofSeconds(10),    // lease: un dueño caído nunca bloquea más que esto
     Duration.ofSeconds(2),     // espera máxima para tomarlo
-    () -> core.debit(order, key));
+    lease -> {
+      lease.ensureHeld();      // justo antes del efecto
+      return core.debit(order, key);   // idempotente en el core: la llave rechaza un segundo débito
+    });
 ```
 
 `LockTemplate` renueva la concesión en segundo plano mientras el trabajo corre y siempre libera.
 Redis (`SET NX PX` + scripts que solo actúan con el token del dueño) o DynamoDB (escrituras
 condicionales): `axiz.lock.store`.
+
+Si la concesión se pierde mientras el trabajo corre (el almacén rechaza la renovación, o no se
+pudo renovar antes de que venciera), otra réplica puede tomar el recurso. Por eso:
+
+- el hilo del trabajo se interrumpe en ese momento (cancelación cooperativa: una llamada bloqueante
+  termina con `InterruptedException`);
+- `withLock` nunca devuelve el resultado: termina con `LockLostException` (`AXZ-LOCK-0503`, 503,
+  se puede reintentar), y si el trabajo falló por su cuenta, su excepción lleva la pérdida como
+  suprimida;
+- el trabajo que recibe `lease` llama `lease.ensureHeld()` justo antes de cada efecto y puede usar
+  `lease.token()` en escrituras condicionales.
+
+Una excepción al final no deshace lo que el trabajo ya hizo. Para efectos de dinero, el recurso
+mismo debe rechazar a un dueño anterior: una llave de idempotencia persistida, una transacción o
+una escritura condicional con el token. El lock evita el trabajo duplicado en el caso normal; esas
+garantías lo evitan cuando una réplica se pausa o pierde la red.
 
 ## Tareas programadas en una sola réplica
 

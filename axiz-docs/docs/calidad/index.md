@@ -19,7 +19,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |
 | Bytecode y seguridad | SpotBugs + FindSecBugs | sin hallazgos de prioridad alta |
 | Modernización | OpenRewrite (análisis estático) en modo informe en cada PR | informativo |
-| Cobertura | JaCoCo por módulo | ≥ 80 % líneas, ≥ 70 % ramas |
+| Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura y código generado](#cobertura-y-codigo-generado) | ≥ 80 % líneas, ≥ 70 % ramas |
 | Calidad de pruebas | PIT en la capa 1 | ≥ 60 % de mutantes eliminados |
 | Integración | Failsafe + Testcontainers + LocalStack; BlockHound en reactivo | obligatorio por starter |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo | nocturno en verde |
@@ -54,6 +54,17 @@ Tres controles lo sostienen:
   conflicto que no se ve en los nombres de los artefactos (por ejemplo, una librería que embebe
   otra).
 
+Cuando un aviso de seguridad afecta a una dependencia transitiva, la versión corregida se fija en
+`axiz-dependencies` (una entrada en `dependencyManagement` o el BOM de la librería, antes del de
+Spring Boot) con el aviso en un comentario, y se retira cuando el BOM que la trae ya la incluye.
+Así están fijadas hoy las líneas de Jackson 2 y 3, `lz4-java` (de `kafka-clients`) y el cliente
+SCRAM (de `r2dbc-postgresql`). Tampoco entran versiones previas: Lettuce trae `redis-authx-core`
+0.1.1-beta2, que solo usa su proveedor de tokens de Entra ID, y se excluye en `axiz-dependencies`.
+Las excepciones a `banDuplicateClasses` se declaran por artefacto
+y por clase, con su justificación, nunca para un jar entero: hoy solo los `package-info` que
+repiten los parsers de OpenRewrite en `axiz-rewrite-recipes` y las anotaciones JSpecify que
+embebe `wiremock-standalone`.
+
 Además, cada capacidad usa una sola librería para cada función:
 
 | Función | Librería |
@@ -68,6 +79,39 @@ Además, cada capacidad usa una sola librería para cada función:
 | Pruebas | JUnit 5, AssertJ, Mockito y Testcontainers |
 
 No se usa Lombok: los modelos son `record` de Java y el resto del código es explícito.
+
+## Cobertura y código generado
+
+El umbral de JaCoCo mide el código que escribe el equipo, que es el que sus pruebas deben ejercitar.
+Los modelos que openapi-generator produce desde el contrato (getters, setters, `equals`,
+`hashCode`, `toString`) no son código del servicio: su forma la fija el contrato, que validan las
+pruebas de ejemplos y el lint, y su comportamiento lo prueba el generador. `axiz-parent-service`
+configura el generador para anotarlos con `pe.axiz.core.commons.Generated`, de retención `CLASS`;
+JaCoCo excluye por diseño toda clase con una anotación visible en el bytecode cuyo nombre contiene
+`Generated` (la `jakarta.annotation.Generated` que el generador también escribe es de retención
+`SOURCE` y no llega a las clases). No es una exclusión por paquete ni por módulo: el umbral y las
+reglas no cambian, y la anotación no se pone a mano sobre código escrito.
+
+Las ramas del código escrito se cubren con pruebas de comportamiento: adaptadores REST sobre los
+casos de uso reales, adaptadores de persistencia sobre el cliente real de DynamoDB o Spring Data
+con un almacenamiento en memoria, y cada rama de error que el código traduce.
+
+## Avisos de prioridad media
+
+SpotBugs y FindSecBugs informan desde prioridad media y el build falla con prioridad alta. Un aviso
+medio que señala un defecto se corrige en el código (review34 y review35 corrigieron así lecturas repetidas de
+valores que pueden ser `null` y una marca leída fuera de su candado). Los que quedan se revisaron
+uno por uno y son intencionales; no hay filtro de exclusión para ellos, así que siguen visibles en
+cada corrida:
+
+| Aviso | Dónde | Por qué se mantiene |
+|---|---|---|
+| `PREDICTABLE_RANDOM` | `Backoff` | es el jitter entre reintentos, no un secreto |
+| `SQL_INJECTION_JDBC` | `JdbcInboxStore`, `JdbcOutboxStore`, `JdbcSagaStateStore`, `JdbcSequenceStore` | solo el nombre de tabla se concatena, validado como identificador por `SqlStates.identifier`; los valores van como parámetros |
+| `WEAK_MESSAGE_DIGEST_SHA1` | `WsSecurity` | el `PasswordDigest` de WS-Security lo exige; solo con `LEGACY_SHA1_DIGEST` explícito, sobre `https://` y con WARN |
+| `HARD_CODE_PASSWORD` | `AxizR2dbcEnvironmentPostProcessor` | es la referencia `${spring.r2dbc.password:}`, no una contraseña |
+| `XSS_SERVLET` | `ProblemAuthenticationEntryPoint`, `RateLimitFilter`, `SecurityProblems`, `RequestMetadataFilter` | escriben `application/problem+json` serializado (o textos fijos del catálogo de errores), no HTML |
+| `COMMAND_INJECTION` | `ProcessRunner` de la CLI | la CLI ejecuta `mvn` y `docker` por diseño, con argumentos que arma ella |
 
 ## Herramientas y su trabajo
 

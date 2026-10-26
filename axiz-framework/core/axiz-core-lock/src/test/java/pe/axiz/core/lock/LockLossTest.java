@@ -1,0 +1,206 @@
+package pe.axiz.core.lock;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntFunction;
+import org.junit.jupiter.api.Test;
+
+/** A lease lost while the work runs never ends in a success. */
+class LockLossTest {
+
+  private static final Duration LEASE = Duration.ofMillis(60);
+
+  /** A handle whose renewals answer what the test says; counts them. */
+  static final class ScriptedHandle implements LockHandle {
+    final AtomicInteger renewals = new AtomicInteger();
+    final AtomicBoolean released = new AtomicBoolean();
+    final CountDownLatch renewed = new CountDownLatch(1);
+    final IntFunction<Boolean> answer;
+
+    ScriptedHandle(IntFunction<Boolean> answer) {
+      this.answer = answer;
+    }
+
+    @Override
+    public String resource() {
+      return "account:A-1";
+    }
+
+    @Override
+    public String token() {
+      return "owner-1";
+    }
+
+    @Override
+    public boolean renew(Duration lease) {
+      int n = renewals.incrementAndGet();
+      try {
+        return answer.apply(n);
+      } finally {
+        renewed.countDown();
+      }
+    }
+
+    @Override
+    public void release() {
+      released.set(true);
+    }
+  }
+
+  private static LockTemplate template(ScriptedHandle handle) {
+    return new LockTemplate((resource, lease) -> Optional.of(handle), Duration.ofMillis(1));
+  }
+
+  @Test
+  void aRefusedRenewalInterruptsTheWorkAndIsNeverASuccess() {
+    ScriptedHandle handle = new ScriptedHandle(n -> false);
+    AtomicBoolean effect = new AtomicBoolean();
+    LockLostException e =
+        assertThrows(
+            LockLostException.class,
+            () ->
+                template(handle)
+                    .withLock(
+                        "account:A-1",
+                        LEASE,
+                        Duration.ofSeconds(1),
+                        () -> {
+                          new CountDownLatch(1).await(5, TimeUnit.SECONDS);
+                          effect.set(true);
+                          return "SUCCESS";
+                        }));
+    assertFalse(effect.get(), "the work was stopped before its effect");
+    assertEquals(LockErrors.LOST, e.definition());
+    assertEquals("account:A-1", e.parameters().get("resource"));
+    assertInstanceOf(InterruptedException.class, e.getSuppressed()[0]);
+    assertTrue(handle.released.get());
+    assertFalse(Thread.currentThread().isInterrupted(), "the interrupt does not leak");
+  }
+
+  @Test
+  void workCanCheckItsLeaseBeforeEachEffect() throws Exception {
+    ScriptedHandle handle = new ScriptedHandle(n -> false);
+    AtomicInteger effects = new AtomicInteger();
+    assertThrows(
+        LockLostException.class,
+        () ->
+            template(handle)
+                .withLock(
+                    "account:A-1",
+                    LEASE,
+                    Duration.ofSeconds(1),
+                    lease -> {
+                      assertEquals("owner-1", lease.token());
+                      assertEquals("account:A-1", lease.resource());
+                      lease.ensureHeld();
+                      effects.incrementAndGet();
+                      while (lease.held()) {
+                        Thread.onSpinWait();
+                      }
+                      Thread.interrupted();
+                      lease.ensureHeld();
+                      effects.incrementAndGet();
+                      return "SUCCESS";
+                    }));
+    assertEquals(1, effects.get(), "the second effect never ran");
+  }
+
+  @Test
+  void aFailureOfTheWorkKeepsItsOwnExceptionAndCarriesTheLoss() {
+    ScriptedHandle handle = new ScriptedHandle(n -> false);
+    IllegalStateException e =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                template(handle)
+                    .withLock(
+                        "account:A-1",
+                        LEASE,
+                        Duration.ofSeconds(1),
+                        lease -> {
+                          while (lease.held()) {
+                            Thread.onSpinWait();
+                          }
+                          Thread.interrupted();
+                          throw new IllegalStateException("ledger rejected");
+                        }));
+    assertInstanceOf(LockLostException.class, e.getSuppressed()[0]);
+  }
+
+  @Test
+  void aStoreThatFailsOnceIsRetriedAndTheWorkSucceeds() throws Exception {
+    ScriptedHandle handle =
+        new ScriptedHandle(
+            n -> {
+              if (n == 1) {
+                throw new IllegalStateException("store unavailable");
+              }
+              return true;
+            });
+    String result =
+        template(handle)
+            .withLock(
+                "account:A-1",
+                LEASE,
+                Duration.ofSeconds(1),
+                () -> {
+                  while (handle.renewals.get() < 3) {
+                    Thread.sleep(5);
+                  }
+                  return "SUCCESS";
+                });
+    assertEquals("SUCCESS", result);
+  }
+
+  @Test
+  void aStoreThatKeepsFailingLosesTheLeaseWhenItsTimeRunsOut() {
+    ScriptedHandle handle =
+        new ScriptedHandle(
+            n -> {
+              throw new IllegalStateException("store unavailable");
+            });
+    LockLostException e =
+        assertThrows(
+            LockLostException.class,
+            () ->
+                template(handle)
+                    .withLock(
+                        "account:A-1",
+                        LEASE,
+                        Duration.ofSeconds(1),
+                        () -> {
+                          Thread.sleep(5_000);
+                          return "SUCCESS";
+                        }));
+    assertInstanceOf(IllegalStateException.class, e.getCause());
+  }
+
+  @Test
+  void anUnbrokenLeaseReturnsTheResult() throws Exception {
+    ScriptedHandle handle = new ScriptedHandle(n -> true);
+    Object result =
+        template(handle)
+            .withLock(
+                "account:A-1",
+                LEASE,
+                Duration.ofSeconds(1),
+                lease -> {
+                  handle.renewed.await(5, TimeUnit.SECONDS);
+                  lease.ensureHeld();
+                  return lease;
+                });
+    assertTrue(((LockLease) result).token().equals("owner-1"));
+    assertSame(LockErrors.LOST, new LockLostException("r", null).definition());
+  }
+}

@@ -73,6 +73,28 @@ class LoggingTest {
   }
 
   @Test
+  void aBodyThatCannotBeMaskedWholeIsNotWritten() {
+    HttpLogFormatter f = new HttpLogFormatter(List.of(), 64, ObjectMasker.defaults());
+    String secret = "SYNTHETIC-SECRET";
+    String cut = "{\"password\":\"" + secret;
+    assertEquals(
+        "<application/json, more than " + cut.length() + " chars: too large to mask, not logged>",
+        f.body("application/json", cut, false));
+    assertEquals(
+        "<application/json, " + cut.length() + " chars: not a complete JSON value, not logged>",
+        f.body("application/json", cut));
+    assertFalse(
+        f.body("application/json", "{\"\\u0070assword\":\"" + secret + "\"}").contains(secret));
+    assertFalse(f.body("application/json", "{\"password\":[\"" + secret + "\"]}").contains(secret));
+    String longSecret = "{\"password\":\"" + secret + "x".repeat(100) + "\"}";
+    assertEquals("{\"password\":\"****\"}", f.body("application/json", longSecret));
+    assertEquals(
+        "<application/json, 70000 bytes: too large to mask, not logged>",
+        f.omitted("application/json", 70_000));
+    assertEquals("<unknown, 3 bytes: too large to mask, not logged>", f.omitted(null, 3));
+  }
+
+  @Test
   void entryMasksArgumentsAndSkipsThoseMarkedNoLog() {
     CapturedLogs.reset(Level.INFO);
     OperationLogger logger = new OperationLogger(ObjectMasker.defaults());

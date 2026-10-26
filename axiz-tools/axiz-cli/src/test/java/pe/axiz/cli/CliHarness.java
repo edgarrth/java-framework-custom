@@ -28,7 +28,7 @@ final class CliHarness {
     int exitCode;
 
     FakeProcesses(Set<String> installed) {
-      this.installed = installed;
+      this.installed = new java.util.HashSet<>(installed);
     }
 
     @Override
@@ -45,17 +45,18 @@ final class CliHarness {
 
   final FakeProcesses processes = new FakeProcesses(Set.of("mvn", "docker"));
   String input = "";
+  Map<String, String> env = Map.of();
   final StringWriter out = new StringWriter();
   final StringWriter err = new StringWriter();
 
   int run(String... args) {
-    AxizCli.Environment env =
+    AxizCli.Environment environment =
         new AxizCli.Environment(
             processes,
             new BufferedReader(new StringReader(input)),
             Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC),
-            Map.of());
-    CommandLine cli = AxizCli.commandLine(env);
+            env);
+    CommandLine cli = AxizCli.commandLine(environment);
     cli.setOut(new PrintWriter(out, true));
     cli.setErr(new PrintWriter(err, true));
     cli.setColorScheme(CommandLine.Help.defaultColorScheme(CommandLine.Help.Ansi.OFF));

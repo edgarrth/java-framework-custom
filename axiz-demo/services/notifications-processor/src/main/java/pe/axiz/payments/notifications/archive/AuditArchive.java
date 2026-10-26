@@ -71,12 +71,13 @@ public class AuditArchive {
           "audit-manifest:" + day,
           LEASE,
           WAIT,
-          () -> {
+          lease -> {
             Map<String, @Nullable Object> counts =
                 storage.get(manifest).map(AuditArchive::read).orElseGet(LinkedHashMap::new);
             Object current = counts.get(service);
             long n = current instanceof Number num ? num.longValue() : 0;
             counts.put(service, n + 1);
+            lease.ensureHeld(); // another replica may own the manifest once the lease is lost
             put(manifest, JsonWriter.write(counts));
             return null;
           });

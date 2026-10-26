@@ -120,7 +120,7 @@
     <japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
 
     <!-- Must match axiz-dependencies -->
-    <spring-boot.version>4.1.1</spring-boot.version>
+    <spring-boot.version>4.1.2</spring-boot.version>
 
     <!-- Analysis tools -->
     <checkstyle.version>14.2.0</checkstyle.version>
@@ -195,6 +195,10 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-resources-plugin</artifactId>
           <version>${maven-resources-plugin.version}</version>
+          <configuration>
+            <!-- filtered .properties files are read and written in the build encoding too -->
+            <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

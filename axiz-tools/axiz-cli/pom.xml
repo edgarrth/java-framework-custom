@@ -56,10 +56,19 @@
               <version>${picocli.version}</version>
             </path>
           </annotationProcessorPaths>
-          <compilerArgs combine.children="append">
-            <arg>-Aproject=pe.axiz/axiz-cli</arg>
-          </compilerArgs>
         </configuration>
+        <executions>
+          <!-- the option names the generated native-image files; only the main sources declare
+               commands, so the test compilation (where no processor reads it) does not get it -->
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs combine.children="append">
+                <arg>-Aproject=pe.axiz/axiz-cli</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <!-- executable JVM distribution: java -jar axiz-cli.jar -->
       <plugin>

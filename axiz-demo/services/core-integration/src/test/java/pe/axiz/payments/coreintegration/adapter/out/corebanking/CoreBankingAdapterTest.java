@@ -3,6 +3,11 @@ package pe.axiz.payments.coreintegration.adapter.out.corebanking;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.micrometer.observation.ObservationRegistry;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.ExternalErrorDetail;
@@ -10,12 +15,16 @@ import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.errors.TechnicalException;
 import pe.axiz.core.money.Money;
+import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.payments.coreintegration.adapter.out.corebanking.model.CoreDebit;
 import pe.axiz.payments.coreintegration.adapter.out.corebanking.model.CoreMovement;
+import pe.axiz.payments.coreintegration.adapter.out.soap.CoreCreditGateway;
 import pe.axiz.payments.coreintegration.domain.IntegrationErrors;
 import pe.axiz.payments.coreintegration.domain.Movement;
 import pe.axiz.payments.coreintegration.domain.MovementOrder;
 import pe.axiz.payments.coreintegration.domain.MovementStatus;
+import pe.axiz.spring.soap.AxizSoapProperties;
+import pe.axiz.spring.soap.SoapClients;
 
 class CoreBankingAdapterTest {
 
@@ -91,6 +100,52 @@ class CoreBankingAdapterTest {
 
     client.failure = null;
     assertThat(adapter.reverse("MV-1", "k").status()).isEqualTo(MovementStatus.REVERSED);
+  }
+
+  @Test
+  void otherReversalFailuresStayDependencyFailures() {
+    client.failure = core(503, null);
+    assertThatThrownBy(() -> adapter.reverse("MV-1", "k")).isSameAs(client.failure);
+
+    client.failure = core(422, "CB-62");
+    assertThatThrownBy(() -> adapter.reverse("MV-1", "k"))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            e -> assertThat(e.definition()).isEqualTo(IntegrationErrors.ACCOUNT_NOT_OPERATIVE));
+  }
+
+  @Test
+  void creditsGoThroughTheSoapServiceAndItsFaultsAreTranslated() {
+    List<ExternalServiceException> faults = new ArrayList<>();
+    CoreCreditGateway credits =
+        new CoreCreditGateway(
+            new SoapClients(
+                new AxizSoapProperties(Map.of()),
+                null,
+                ObjectMasker.defaults(),
+                ObservationRegistry.NOOP,
+                Clock.systemUTC())) {
+          @Override
+          public Movement credit(MovementOrder o) {
+            if (!faults.isEmpty()) {
+              throw faults.removeFirst();
+            }
+            return new Movement("MV-C", MovementStatus.POSTED, o.reference());
+          }
+        };
+    CoreBankingAdapter withCredits = new CoreBankingAdapter(client, credits);
+
+    assertThat(withCredits.credit(order, "k").id()).isEqualTo("MV-C");
+
+    faults.add(core(422, "CB-17"));
+    assertThatThrownBy(() -> withCredits.credit(order, "k"))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            e -> assertThat(e.definition()).isEqualTo(IntegrationErrors.ACCOUNT_NOT_OWNED));
+
+    ExternalServiceException down = core(502, null);
+    faults.add(down);
+    assertThatThrownBy(() -> withCredits.credit(order, "k")).isSameAs(down);
   }
 
   @Test

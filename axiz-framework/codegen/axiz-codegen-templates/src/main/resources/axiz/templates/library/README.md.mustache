@@ -5,7 +5,9 @@
 Plain Java library for the axiz ecosystem (layer 1): it depends on no framework, so it can be used
 from Spring, Quarkus or plain Java. Build with `./mvnw verify` (enforcer rules and tests);
 `./mvnw -Pquality verify` adds the format check, Checkstyle, Error Prone + NullAway and coverage, as CI does.
-Releases are published to Nexus from `v*` tags.
+Releases are published to Nexus from `v*` tags. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
+nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). From `0.0.0` a `feat:` commit
+makes the first release `0.1.0`.
 
 ## Rules
 

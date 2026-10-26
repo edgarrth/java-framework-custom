@@ -40,6 +40,18 @@ public record MaskingPolicy(
    * @param channel output
    * @return text to write, or null when the value was null and may be written as null
    */
+  /**
+   * Whether a value of this level is masked on the channel (fully or partially).
+   *
+   * @param level sensitivity of the value
+   * @param channel where the value goes
+   * @return true when {@link #apply} changes a value of this level
+   */
+  public boolean masks(SensitivityLevel level, OutputChannel channel) {
+    return level.compareTo(fullMaskLevel) >= 0
+        || level.compareTo(minimumLevelToMask.getOrDefault(channel, SensitivityLevel.LOW)) >= 0;
+  }
+
   public @Nullable String apply(
       @Nullable String value, SensitivityLevel level, MaskType mask, OutputChannel channel) {
     if (value == null) {

@@ -1,0 +1,110 @@
+package pe.axiz.payments.beneficiaries.controller;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.errors.NotFoundException;
+import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
+import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;
+import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
+import pe.axiz.payments.beneficiaries.api.model.BeneficiaryUpdate;
+import pe.axiz.payments.beneficiaries.service.InMemoryBeneficiaries;
+import pe.axiz.payments.beneficiaries.service.Services;
+
+/**
+ * The REST adapter over the real service: what each operation answers (status and body in the
+ * contract's models) and how the contract models map to the service's.
+ */
+class BeneficiariesControllerTest {
+
+  static final String CCI = "00219100123456789053";
+  static final String OTHER_CCI = "00319300987654321003";
+
+  final InMemoryBeneficiaries repository = new InMemoryBeneficiaries();
+  final BeneficiariesController controller =
+      new BeneficiariesController(
+          Services.beneficiaries(
+              repository,
+              Clock.fixed(Instant.parse("2026-10-12T15:00:00Z"), ZoneOffset.UTC),
+              new SimpleMeterRegistry(),
+              5));
+
+  static BeneficiaryRequest request(String alias, String cci) {
+    return new BeneficiaryRequest()
+        .alias(alias)
+        .holderName(" Ana Torres ")
+        .cci(cci)
+        .currency("PEN");
+  }
+
+  @Test
+  void createAnswers201WithTheContractModel() {
+    var response = controller.createBeneficiary("C-1", request(" Landlord ", CCI));
+
+    assertThat(response.getStatusCode().value()).isEqualTo(201);
+    Beneficiary body = response.getBody();
+    assertThat(body).isNotNull();
+    assertThat(body.getId()).isEqualTo("B-1");
+    assertThat(body.getCustomerId()).isEqualTo("C-1");
+    assertThat(body.getAlias()).isEqualTo("Landlord");
+    assertThat(body.getHolderName()).isEqualTo("Ana Torres");
+    assertThat(body.getCci()).isEqualTo(CCI);
+    assertThat(body.getCurrency()).isEqualTo("PEN");
+    assertThat(repository.allActive("C-1")).hasSize(1);
+  }
+
+  @Test
+  void getAndUpdateAnswer200() {
+    controller.createBeneficiary("C-1", request("Landlord", CCI));
+
+    var read = controller.getBeneficiary("C-1", "B-1");
+    var renamed = controller.updateBeneficiary("C-1", "B-1", new BeneficiaryUpdate().alias("Rent"));
+
+    assertThat(read.getStatusCode().value()).isEqualTo(200);
+    assertThat(read.getBody()).isNotNull();
+    assertThat(read.getBody().getAlias()).isEqualTo("Landlord");
+    assertThat(renamed.getStatusCode().value()).isEqualTo(200);
+    assertThat(renamed.getBody()).isNotNull();
+    assertThat(renamed.getBody().getAlias()).isEqualTo("Rent");
+    assertThat(controller.getBeneficiary("C-1", "B-1").getBody().getAlias()).isEqualTo("Rent");
+  }
+
+  @Test
+  void listPagesWithTheCursorOfThePreviousPage() {
+    controller.createBeneficiary("C-1", request("Landlord", CCI));
+    controller.createBeneficiary("C-1", request("Gym", OTHER_CCI));
+
+    BeneficiaryPage first =
+        controller.listBeneficiaries("C-1", null, PageRequest.of(0, 1)).getBody();
+    assertThat(first).isNotNull();
+    assertThat(first.getItems()).extracting(Beneficiary::getAlias).containsExactly("Landlord");
+    assertThat(first.getNextCursor()).isNotNull();
+
+    BeneficiaryPage second =
+        controller.listBeneficiaries("C-1", first.getNextCursor(), PageRequest.of(0, 1)).getBody();
+    assertThat(second).isNotNull();
+    assertThat(second.getItems()).extracting(Beneficiary::getAlias).containsExactly("Gym");
+    assertThat(second.getNextCursor()).isNull();
+  }
+
+  @Test
+  void deleteAnswers204AndTheBeneficiaryIsGone() {
+    controller.createBeneficiary("C-1", request("Landlord", CCI));
+
+    var response = controller.deleteBeneficiary("C-1", "B-1");
+
+    assertThat(response.getStatusCode().value()).isEqualTo(204);
+    assertThat(response.getBody()).isNull();
+    assertThat(repository.rows).hasSize(1);
+    assertThatThrownBy(() -> controller.getBeneficiary("C-1", "B-1"))
+        .isInstanceOf(NotFoundException.class);
+    assertThat(controller.listBeneficiaries("C-1", null, PageRequest.first()).getBody())
+        .satisfies(page -> assertThat(page.getItems()).isEmpty());
+  }
+}

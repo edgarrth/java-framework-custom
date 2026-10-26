@@ -31,4 +31,12 @@ class CustomerAccessTest {
     assertThat(access.isCustomer(token("local-client", "local-client"), "C-1001")).isFalse();
     assertThat(access.isCustomer(null, "C-1001")).isFalse();
   }
+
+  @Test
+  void withoutACustomerInThePathOrAnAxizPrincipalNobodyIsTheCustomer() {
+    assertThat(access.isCustomer(token("C-1001", "payments-web"), null)).isFalse();
+    assertThat(
+            access.isCustomer(new TestingAuthenticationToken("C-1001", null, List.of()), "C-1001"))
+        .isFalse();
+  }
 }

@@ -23,7 +23,11 @@ axiz.lock.store: memory
 ## Uso
 
 ```java
-lockTemplate.withLock("account:" + id, Duration.ofSeconds(10), Duration.ofSeconds(2), () -> debit(id));
+// the lease is checked right before the effect; the debit itself is idempotent (key) in the core
+lockTemplate.withLock("account:" + id, Duration.ofSeconds(10), Duration.ofSeconds(2), lease -> {
+  lease.ensureHeld();
+  return core.debit(id, amount, idempotencyKey);
+});
 ```
 
 ## Módulos

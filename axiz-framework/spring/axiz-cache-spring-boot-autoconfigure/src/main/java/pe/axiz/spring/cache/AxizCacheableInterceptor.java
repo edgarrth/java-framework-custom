@@ -16,15 +16,19 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
 import pe.axiz.core.cache.AxizCacheable;
 import pe.axiz.core.cache.CacheKeys;
+import pe.axiz.core.cache.CacheScope;
 import tools.jackson.databind.JavaType;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Applies {@link AxizCacheable}: the key is the cache name, the key format, the method signature
- * (or the explicit {@link AxizCacheable#keyName()}) and the arguments encoded by {@link CacheKeys};
- * values are stored as JSON with their full generic type; {@code null} results are not cached;
- * {@code Mono} and {@code Flux} results are cached when they complete, without blocking the event
- * loop.
+ * (or the explicit {@link AxizCacheable#keyName()}), the scope ({@link CacheScope}: the tenant by
+ * default, the tenant and the caller, or nothing for global data) and the arguments encoded by
+ * {@link CacheKeys}; values are stored as JSON with their full generic type; {@code null} results
+ * are not cached; {@code Mono} and {@code Flux} results are cached when they complete, without
+ * blocking the event loop, and their scope is read when they are subscribed. A call whose scope
+ * cannot be resolved (a {@link CacheScope#CALLER} cache without an authenticated caller) runs
+ * without the cache.
  */
 public class AxizCacheableInterceptor implements MethodInterceptor {
 
@@ -45,10 +49,15 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     if (plan == null) {
       return invocation.proceed();
     }
-    String key = plan.keyPrefix() + CacheKeys.of(invocation.getArguments());
+    String arguments = CacheKeys.of(invocation.getArguments());
     if (REACTOR && plan.reactive() != null) {
-      return ReactiveCaching.wrap(this, plan, key, invocation);
+      return ReactiveCaching.wrap(this, plan, arguments, invocation);
     }
+    Optional<String> scope = CacheScopes.blocking(plan.scope());
+    if (scope.isEmpty()) {
+      return invocation.proceed();
+    }
+    String key = key(plan, scope.get(), arguments);
     Optional<Object> hit = read(plan, key, plan.valueType());
     if (hit.isPresent()) {
       return hit.get();
@@ -56,6 +65,10 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     Object value = invocation.proceed();
     write(plan, key, value);
     return value;
+  }
+
+  static String key(Plan plan, String scope, String arguments) {
+    return plan.keyPrefix() + scope + ":" + arguments;
   }
 
   Optional<Object> read(Plan plan, String key, JavaType type) {
@@ -102,7 +115,12 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     }
     String name = a.keyName().isBlank() ? signature(method) : a.keyName();
     return new Plan(
-        a.value(), a.value() + ":" + CacheKeys.FORMAT + ":" + name + ":", ttl, javaType, reactive);
+        a.value(),
+        a.value() + ":" + CacheKeys.FORMAT + ":" + name + ":",
+        a.scope(),
+        ttl,
+        javaType,
+        reactive);
   }
 
   /** Class, name and parameter types: overloads and equally named methods never share entries. */
@@ -122,6 +140,7 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
   record Plan(
       String cacheName,
       String keyPrefix,
+      CacheScope scope,
       Duration ttl,
       JavaType valueType,
       @Nullable String reactive) {}

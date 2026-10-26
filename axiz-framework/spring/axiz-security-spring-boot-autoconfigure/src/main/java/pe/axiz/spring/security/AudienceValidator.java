@@ -1,5 +1,6 @@
 package pe.axiz.spring.security;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -23,8 +24,10 @@ public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
   @Override
   public OAuth2TokenValidatorResult validate(Jwt jwt) {
-    String issuer = jwt.getIssuer() != null ? jwt.getIssuer().toString() : "";
-    List<String> aud = jwt.getAudience() != null ? jwt.getAudience() : List.of();
+    URL issuerUrl = jwt.getIssuer();
+    String issuer = issuerUrl != null ? issuerUrl.toString() : "";
+    List<String> audience = jwt.getAudience();
+    List<String> aud = audience != null ? audience : List.of();
     return policy.audienceAccepted(issuer, aud)
         ? OAuth2TokenValidatorResult.success()
         : OAuth2TokenValidatorResult.failure(INVALID);

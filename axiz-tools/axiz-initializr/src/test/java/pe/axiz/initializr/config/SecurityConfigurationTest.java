@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.config.oauth2.client.CommonOAuth2Provider;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -91,16 +92,25 @@ class SecurityConfigurationTest {
                     token(key, "https://other.example.test", List.of("axiz-initializr"))))
         .isInstanceOf(JwtValidationException.class)
         .hasMessageContaining("iss");
+    // a token without expiration never reaches the API
+    assertThatThrownBy(() -> decoder.decode(token(key, ISSUER, List.of("axiz-initializr"), null)))
+        .isInstanceOf(JwtValidationException.class)
+        .hasMessageContaining("exp");
   }
 
   private static String token(SecretKey key, String issuer, List<String> audience)
       throws Exception {
+    return token(key, issuer, audience, Instant.now().plusSeconds(300));
+  }
+
+  private static String token(
+      SecretKey key, String issuer, List<String> audience, @Nullable Instant expires)
+      throws Exception {
     JWTClaimsSet.Builder claims =
-        new JWTClaimsSet.Builder()
-            .subject("ana")
-            .issuer(issuer)
-            .issueTime(new Date())
-            .expirationTime(Date.from(Instant.now().plusSeconds(300)));
+        new JWTClaimsSet.Builder().subject("ana").issuer(issuer).issueTime(new Date());
+    if (expires != null) {
+      claims.expirationTime(Date.from(expires));
+    }
     if (!audience.isEmpty()) {
       claims.audience(audience);
     }

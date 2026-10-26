@@ -93,7 +93,7 @@ public class SettlementSummaryTasklet implements Tasklet {
           MetricEvent.of("settlement.file")
               .amount(Money.of(t.amount(), t.currency()))
               .stage(t.status().toLowerCase(Locale.ROOT))
-              .value(t.count())
+              .value((double) t.count())
               .outcome(Outcome.SUCCESS));
     }
     write(key, totals);

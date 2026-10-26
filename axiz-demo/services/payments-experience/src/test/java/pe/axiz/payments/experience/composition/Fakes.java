@@ -25,14 +25,14 @@ import pe.axiz.payments.experience.client.paymentsbusiness.model.StatusChange;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
-/** In-memory downstream services for composition tests. */
-final class Fakes {
+/** In-memory downstream services for composition and controller tests. */
+public final class Fakes {
 
-  static final String CCI = "00219100123456789053";
+  public static final String CCI = "00219100123456789053";
 
   private Fakes() {}
 
-  static Context signedIn(String customerId) {
+  public static Context signedIn(String customerId) {
     RequestMetadata m =
         RequestMetadata.builder("corr-1", "req-1").subject(customerId).channel("web").build();
     return Context.of(RequestContext.KEY, m);
@@ -43,12 +43,12 @@ final class Fakes {
         new ExternalErrorDetail("payments-business", status, code, "rejected", "{}"));
   }
 
-  static final class Crud implements BeneficiariesCrudClient {
+  public static final class Crud implements BeneficiariesCrudClient {
     final Map<String, Beneficiary> rows = new HashMap<>();
     int listCalls;
     @Nullable RuntimeException listFailure;
 
-    Crud with(String customerId, String id, String alias, String cci, String currency) {
+    public Crud with(String customerId, String id, String alias, String cci, String currency) {
       rows.put(
           customerId + "/" + id,
           new Beneficiary(id, customerId, alias, "Ana Torres", cci, currency));
@@ -91,7 +91,7 @@ final class Fakes {
     }
   }
 
-  static final class Business implements PaymentsBusinessClient {
+  public static final class Business implements PaymentsBusinessClient {
     final Map<String, PaymentOrder> orders = new HashMap<>();
     final Map<String, PaymentOrderRequest> received = new HashMap<>();
     @Nullable RuntimeException failure;

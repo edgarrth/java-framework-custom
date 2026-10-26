@@ -42,9 +42,23 @@ Desde `axiz.sensitive.full-mask-level` (por defecto `CRITICAL`) el valor siempre
 completo. Para datos sin
 anotaciones (mapas, cuerpos HTTP crudos, headers) `axiz.sensitive.keys` declara nombres de
 propiedades o headers sensibles con su nivel y máscara; `JsonTextMasker` los enmascara dentro del
-JSON sin parsearlo. Lo lee en una sola pasada, en tiempo lineal y sin recursión, así que un cuerpo
-con valores largos (un documento en base64, por ejemplo) se enmascara igual que uno corto: el
-cuerpo se enmascara completo y recién después se trunca para el log.
+JSON. Lo lee como JSON estricto (RFC 8259) en una sola pasada, en tiempo lineal y con profundidad
+acotada (64 niveles):
+
+- Los nombres se comparan ya decodificados: `"pass\u0077ord"` es `password`.
+- Un valor sensible de texto, número o booleano se enmascara con su máscara; si es un objeto o un
+  arreglo se reemplaza entero por `"****"`, contenga lo que contenga.
+- Los textos se decodifican antes de enmascarar y el resultado se vuelve a escribir como JSON
+  válido, sin espacios insignificantes.
+- Lo que no es **un** valor JSON completo (un cuerpo cortado por un límite, dos documentos
+  seguidos, un error de sintaxis o un anidamiento mayor al límite) nunca se devuelve tal como
+  llegó: `mask` responde `<not a complete JSON value: not logged>`. Un escaneo tolerante no puede
+  prometer eso: un escape válido o un texto truncado dejarían pasar un secreto.
+
+En el log HTTP el cuerpo se enmascara completo y recién después se trunca a
+`axiz.logging.http.max-body-length`. Un cuerpo de más de `axiz.logging.http.max-masked-body-length`
+caracteres (por defecto 65536) no se guarda para enmascararlo: se registra solo su tipo y tamaño,
+igual que un cuerpo que no es JSON válido.
 
 ## Logs
 

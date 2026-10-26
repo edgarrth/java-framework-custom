@@ -190,6 +190,8 @@ class CacheContractTest {
                   + CacheKeys.FORMAT
                   + ":"
                   + AxizCacheableInterceptor.signature(Lookup.class.getMethod("find", String.class))
+                  + ":"
+                  + CacheScopes.part(pe.axiz.core.cache.CacheScope.TENANT, null, null)
                   + ":s=9";
           assertTrue(caches.store().get(key).isPresent(), key);
           caches

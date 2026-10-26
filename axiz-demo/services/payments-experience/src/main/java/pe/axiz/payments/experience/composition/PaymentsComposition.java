@@ -124,10 +124,11 @@ public class PaymentsComposition {
    * is by currency and last 4 digits, and only when it is unambiguous.
    */
   private Mono<String> aliasOf(Customer customer, PaymentOrder order) {
-    if (order.creditorCci() == null) {
+    String creditorCci = order.creditorCci();
+    if (creditorCci == null) {
       return Mono.empty();
     }
-    String last = ChannelViews.lastFour(order.creditorCci());
+    String last = ChannelViews.lastFour(creditorCci);
     return directory
         .page(customer.id(), null, 100)
         .flatMap(
@@ -135,10 +136,12 @@ public class PaymentsComposition {
               List<Beneficiary> matches =
                   Objects.requireNonNullElse(page.items(), List.<Beneficiary>of()).stream()
                       .filter(
-                          b ->
-                              b.cci() != null
-                                  && ChannelViews.lastFour(b.cci()).equals(last)
-                                  && Objects.equals(b.currency(), order.currency()))
+                          b -> {
+                            String cci = b.cci();
+                            return cci != null
+                                && ChannelViews.lastFour(cci).equals(last)
+                                && Objects.equals(b.currency(), order.currency());
+                          })
                       .toList();
               return matches.size() == 1
                   ? Mono.justOrEmpty(matches.get(0).alias())

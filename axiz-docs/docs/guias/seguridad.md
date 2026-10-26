@@ -24,6 +24,11 @@ axiz:
 La lista de emisores normalmente vive en el ConfigMap `axiz-common`. Las llaves solo se obtienen
 por `https` (salvo `localhost` en local).
 
+Además de la firma (solo los algoritmos de `algorithms`), el emisor y la audiencia, cada token debe
+traer **`exp`** (RFC 9068 la exige en un access token): sin ella se rechaza, en servlet y en
+reactivo, porque un token sin vencimiento valdría para siempre. `exp` y `nbf` se comparan con el
+reloj con la tolerancia de `clock-skew`. La Initializr aplica la misma regla a sus tokens.
+
 El token se convierte en un `AxizPrincipal` (sujeto, client id, scopes, roles, tenant y atributos)
 según `axiz.security.claims`, que mapea rutas de claims (`realm_access.roles`, `tid`...). Las
 authorities quedan como `SCOPE_<scope>` y `ROLE_<ROL>`:
@@ -192,6 +197,13 @@ Ver [Clientes HTTP y SOAP](clientes.md).
   fija de algoritmos), `Pbkdf2PasswordHasher`, `BlindIndex` para buscar por igualdad en columnas
   cifradas.
 - Prohibidos: AES-ECB, CBC sin MAC, IV fijo, RSA PKCS#1 v1.5 (Semgrep los detecta).
+
+`EnvelopeEncryptor` guarda en memoria las data keys para no llamar a KMS en cada mensaje, con
+límites: una llave de cifrado se reusa como máximo `maxAge` y `maxUses` mensajes; una llave
+descifrada, como máximo `maxAge` y solo para exactamente los mismos bytes de llave cifrada y el
+mismo contexto (dos llaves cifradas distintas nunca comparten entrada, aunque su hash coincida,
+así que un sobre siempre se abre con la llave que nombra su cabecera); y cada caché guarda a lo
+sumo 1000 llaves, saliendo primero las menos usadas.
 
 ## Firmas de callbacks y webhooks
 

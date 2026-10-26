@@ -138,72 +138,139 @@ class SensitiveTest {
     assertEquals("{\"document\":\"" + document + "\",\"password\":\"****\"}", masked);
   }
 
-  @Test
-  void onlyCompleteJsonPairsAreRead() {
-    JsonTextMasker masker = new JsonTextMasker(ObjectMasker.defaults());
-    assertEquals(
-        "{\"pin\":\"****\",\"pin\":\"****\"x,\"pin\":\"****\".,\"ok\":false}",
-        masker.mask(
-            "{\"pin\":-12.5e+3,\"pin\" : 1E2x,\"pin\":7.,\"ok\":false}", OutputChannel.LOG));
-    assertEquals(
-        "{\"pin\":\"****\"}", masker.mask("{\"pin\":true}", OutputChannel.LOG), "a boolean value");
-    String notPairs = "{\"pin\":-x, \"pin\" 1, \"p\\in\":1, \"\":1, \"pin\":null, \"pin\":\"open";
-    assertEquals(notPairs, masker.mask(notPairs, OutputChannel.LOG));
-    String longKey = "{\"" + "k".repeat(101) + "\":\"4111111111111111\"}";
-    assertEquals(
-        longKey, masker.mask(longKey, OutputChannel.LOG), "keys longer than 100 are skipped");
-    String escaped = "{\"password\":\"a\\\"b\\\\\"}";
-    assertEquals("{\"password\":\"****\"}", masker.mask(escaped, OutputChannel.LOG));
-    String escapedLineBreak = "{\"password\":\"a\\\nb\"}";
-    assertEquals(escapedLineBreak, masker.mask(escapedLineBreak, OutputChannel.LOG));
+  private static final JsonTextMasker JSON = new JsonTextMasker(ObjectMasker.defaults());
+
+  private static String masked(String json) {
+    return JSON.mask(json, OutputChannel.LOG);
   }
 
   @Test
-  void aKeyOfUpToOneHundredCharactersIsRead() {
-    String key100 = "k".repeat(100);
-    String key101 = "k".repeat(101);
+  void escapedMemberNamesAreDecodedBeforeTheyAreCompared() {
+    assertEquals("{\"\\u0070assword\":\"****\"}", masked("{\"\\u0070assword\":\"SECRET-1\"}"));
+    assertEquals("{\"pass\\u0077ord\":\"****\"}", masked("{\"pass\\u0077ord\":\"SECRET-1\"}"));
+    assertEquals("{\"note\\\"x\":\"free\"}", masked("{\"note\\\"x\":\"free\"}"));
+    String longKey = "description" + "x".repeat(200);
+    assertEquals(
+        "{\"" + longKey + "\":\"free\"}",
+        masked("{\"" + longKey + "\":\"free\"}"),
+        "a long name that is not sensitive keeps its value");
+  }
+
+  @Test
+  void anArrayOrObjectUnderASensitiveKeyIsHiddenWhole() {
+    assertEquals("{\"password\":\"****\"}", masked("{\"password\":[\"SECRET-1\",\"SECRET-2\"]}"));
+    assertEquals("{\"pin\":\"****\"}", masked("{\"pin\":{\"value\":\"1234\",\"n\":[1,2]}}"));
+    assertEquals("{\"password\":\"****\"}", masked("{\"password\":[]}"));
+    assertEquals(
+        "{\"items\":[{\"password\":\"****\"},{\"note\":\"y\"},[1,true,null]]}",
+        masked("{\"items\":[{\"password\":\"x\"},{\"note\":\"y\"},[1,true,null]]}"),
+        "other arrays and objects are read member by member");
+    assertEquals("{\"password\":null}", masked("{\"password\":null}"), "null hides nothing");
+  }
+
+  @Test
+  void stringsAreDecodedBeforeTheyAreMasked() {
+    assertEquals("{\"pan\":\"411111******1111\"}", masked("{\"pan\":\"4111\\u003111111111111\"}"));
+    assertEquals(
+        "{\"note\":\"a\\u0041\\n\\/\"}",
+        masked("{\"note\":\"a\\u0041\\n\\/\"}"),
+        "values that are not masked keep their escapes");
+    assertEquals("{\"pin\":\"****\"}", masked("{\"pin\":\"12\\t34\"}"));
+  }
+
+  @Test
+  void numbersBooleansAndWhitespaceFollowTheJsonGrammar() {
+    for (String number : List.of("0", "-0", "1234", "-12.5e+3", "1E2", "7.25", "3e-7")) {
+      assertEquals("{\"pin\":\"****\"}", masked("{\"pin\":" + number + "}"), number);
+      assertEquals("{\"n\":" + number + "}", masked("{\"n\":" + number + "}"), number);
+    }
+    assertEquals("{\"pin\":\"****\",\"ok\":false}", masked("{\"pin\":true,\"ok\":false}"));
+    assertEquals(
+        "{\"pin\":\"****\",\"a\":[1,2]}",
+        masked(" \t\r\n{ \"pin\" :\n1234 ,\t\"a\" : [ 1 , 2 ] }\n"),
+        "insignificant whitespace is dropped");
+    assertEquals("[]", masked("[]"));
+    assertEquals("\"plain\"", masked("\"plain\""));
+  }
+
+  @Test
+  void textThatIsNotOneCompleteJsonValueIsNeverReturned() {
+    String secret = "SECRET-123";
+    for (String text :
+        List.of(
+            "{\"password\":\"" + secret,
+            "{\"password\":\"" + secret + "\"",
+            "{\"password\":\"" + secret + "\"} trailing",
+            "{\"note\":\"" + secret + "\"}{\"x\":1}",
+            "{\"password\" \"" + secret + "\"}",
+            "{\"password\":\"" + secret + "\",}",
+            "[\"" + secret + "\",]",
+            "{\"password\":\"" + secret + "\u0001\"}",
+            "{\"password\":\"" + secret + "\\x\"}",
+            "{\"password\":\"" + secret + "\\u12\"}",
+            "{\"password\":\"" + secret + "\\",
+            "{password:\"" + secret + "\"}",
+            "{\"pin\":01,\"note\":\"" + secret + "\"}",
+            "{\"pin\":1.,\"note\":\"" + secret + "\"}",
+            "{\"pin\":-,\"note\":\"" + secret + "\"}",
+            "{\"pin\":1e,\"note\":\"" + secret + "\"}",
+            "{\"pin\":fals,\"note\":\"" + secret + "\"}",
+            "{\u000B\"note\":\"" + secret + "\"}",
+            "",
+            "   ")) {
+      assertEquals(JsonTextMasker.UNREADABLE, masked(text), text);
+      assertTrue(JSON.tryMask(text, OutputChannel.LOG).isEmpty(), text);
+    }
+  }
+
+  @Test
+  void nestingIsReadUpToTheLimit() {
+    int max = JsonTextMasker.MAX_DEPTH;
+    String deepest = "[".repeat(max) + "]".repeat(max);
+    assertEquals(deepest, masked(deepest));
+    assertEquals(
+        JsonTextMasker.UNREADABLE, masked("[".repeat(max + 1) + "]".repeat(max + 1)), "too deep");
+    String hidden = "{\"password\":" + "[".repeat(max - 1) + "]".repeat(max - 1) + "}";
+    assertEquals("{\"password\":\"****\"}", masked(hidden));
+  }
+
+  @Test
+  void maskedValuesAreWrittenAsValidJsonStrings() {
     ObjectMasker masker =
         new ObjectMasker(
             MaskingPolicy.defaults(),
             SensitiveKeys.withExtra(
                 Map.of(
-                    key100,
-                    new SensitiveField(key100, SensitivityLevel.HIGH, MaskType.DOCUMENT),
-                    key101,
-                    new SensitiveField(key101, SensitivityLevel.HIGH, MaskType.DOCUMENT))));
-    JsonTextMasker json = new JsonTextMasker(masker);
-    assertEquals(
-        "{\"" + key100 + "\":\"*****6789\"}",
-        json.mask("{\"" + key100 + "\":\"123456789\"}", OutputChannel.LOG));
-    String skipped = "{\"" + key101 + "\":\"123456789\"}";
-    assertEquals(skipped, json.mask(skipped, OutputChannel.LOG));
+                    "memo", new SensitiveField("memo", SensitivityLevel.HIGH, MaskType.PARTIAL))));
+    String out =
+        new JsonTextMasker(masker)
+            .mask("{\"memo\":\"ab\\\"\\\\\\n\\u0001cdef\"}", OutputChannel.LOG);
+    assertTrue(out.startsWith("{\"memo\":\""), out);
+    assertTrue(new JsonTextMasker(masker).tryMask(out, OutputChannel.LOG).isPresent(), out);
+    assertFalse(out.contains("ab"), out);
   }
 
   @Test
-  void jsonWhitespaceAndEscapedLineBreaksFollowTheRules() {
-    JsonTextMasker masker = new JsonTextMasker(ObjectMasker.defaults());
-    for (String space : List.of(" ", "\t", "\n", "\u000B", "\f", "\r")) {
-      assertEquals(
-          "{\"pin\":\"****\"}",
-          masker.mask("{\"pin\"" + space + ":" + space + "1234}", OutputChannel.LOG),
-          "whitespace " + (int) space.charAt(0));
-    }
-    for (String lineBreak : List.of("\n", "\r", "\u0085", "\u2028", "\u2029")) {
-      String text = "{\"pin\":\"12\\" + lineBreak + "34\"}";
-      assertEquals(
-          text, masker.mask(text, OutputChannel.LOG), "line break " + (int) lineBreak.charAt(0));
-    }
-    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":\"12\\t34\"}", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"12\\", masker.mask("{\"pin\":\"12\\", OutputChannel.LOG));
-    assertEquals("{\"pin\"", masker.mask("{\"pin\"", OutputChannel.LOG));
-    assertEquals("{\"pin\":", masker.mask("{\"pin\":", OutputChannel.LOG));
-    assertEquals("\"pin", masker.mask("\"pin", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":-0}", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"****\"e}", masker.mask("{\"pin\":12e}", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"****\"e+}", masker.mask("{\"pin\":12e+}", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":12e-3}", OutputChannel.LOG));
-    assertEquals("{\"pin\":\"****\"}", masker.mask("{\"pin\":false}", OutputChannel.LOG));
-    assertEquals("{\"pin\":fals}", masker.mask("{\"pin\":fals}", OutputChannel.LOG));
+  void keysThatAChannelShowsKeepTheirValues() {
+    ObjectMasker masker =
+        new ObjectMasker(
+            MaskingPolicy.defaults(),
+            SensitiveKeys.withExtra(
+                Map.of(
+                    "segment",
+                    new SensitiveField("segment", SensitivityLevel.LOW, MaskType.FULL))));
+    JsonTextMasker json = new JsonTextMasker(masker);
+    assertEquals(
+        "{\"segment\":[\"retail\"]}",
+        json.mask("{\"segment\":[\"retail\"]}", OutputChannel.RESPONSE),
+        "low sensitivity is shown in responses");
+    assertEquals(
+        "{\"segment\":\"****\"}",
+        json.mask("{\"segment\":[\"retail\"]}", OutputChannel.LOG),
+        "and masked in logs");
+    assertFalse(masker.masksKey("segment", OutputChannel.RESPONSE));
+    assertTrue(masker.masksKey("segment", OutputChannel.LOG));
+    assertFalse(ObjectMasker.defaults().masksKey("note", OutputChannel.LOG));
   }
 
   @Test

@@ -30,10 +30,12 @@
     <revision>0.1.0-SNAPSHOT</revision>
     <axiz.nexus.url>https://nexus.axiz.internal</axiz.nexus.url>
 
-    <spring-boot.version>4.1.1</spring-boot.version>
+    <!-- 4.1.2 manages Tomcat 11.0.27 (fixes of 11.0.25 to 11.0.27, see the Tomcat 11 security page) -->
+    <spring-boot.version>4.1.2</spring-boot.version>
     <spring-cloud.version>2025.1.3</spring-cloud.version>
     <spring-cloud-aws.version>4.2.0</spring-cloud-aws.version>
-    <awssdk.version>2.47.4</awssdk.version>
+    <!-- at least the version aws-msk-iam-auth 2.3.8 requires (2.51.2): one SDK for every client -->
+    <awssdk.version>2.57.0</awssdk.version>
     <resilience4j.version>2.4.0</resilience4j.version>
     <shedlock.version>7.10.1</shedlock.version>
     <springdoc.version>3.1.1</springdoc.version>
@@ -41,9 +43,19 @@
     <aws-msk-iam-auth.version>2.3.8</aws-msk-iam-auth.version>
     <datasource-micrometer.version>2.2.1</datasource-micrometer.version>
     <openfeature.version>1.23.0</openfeature.version>
-    <!-- newer patch than the Spring Boot BOM manages: ArchUnit and the OpenFeature SDK require it,
-         so the whole SLF4J family is aligned through its BOM (imported before Spring Boot's) -->
-    <slf4j.version>2.0.19</slf4j.version>
+    <!-- Jackson lines with the fixes of GHSA-7hhh-6rmp-j9qf, GHSA-p6pp-m3f8-5c89, GHSA-cxp5-3px4-pw24,
+         GHSA-wv8q-qhhj-9h54, GHSA-gx83-3vf8-gh7j, GHSA-q4xh-88c3-wmh7 and GHSA-wjgm-6hv5-3cvf, pinned
+         through their BOMs (imported before Spring Boot's). Jackson 2 is only a transitive dependency
+         (AWS MSK IAM auth requires 2.22.1 or later); axiz uses Jackson 3. -->
+    <jackson2.version>2.22.3</jackson2.version>
+    <jackson3.version>3.1.7</jackson3.version>
+    <!-- transitive (kafka-clients): 1.11.4 fixes GHSA-343h-94h5-c4wr, GHSA-4v53-57pg-c464,
+         GHSA-6cx8-rjf8-pr8g, GHSA-gm45-99xc-r7wv, GHSA-mcr4-qmvw-px4g and GHSA-xx22-p4ch-683r -->
+    <lz4-java.version>1.11.4</lz4-java.version>
+    <!-- the version Spring Boot 4.1.2 manages, declared here only to exclude a beta (see below) -->
+    <lettuce.version>7.5.2.RELEASE</lettuce.version>
+    <!-- transitive (r2dbc-postgresql): 3.3 fixes GHSA-p9jg-fcr6-3mhf (channel binding downgrade) -->
+    <scram.version>3.3</scram.version>
     <!-- annotations the OpenFeature SDK classes carry; same version as the root build's SpotBugs -->
     <spotbugs.version>4.10.3</spotbugs.version>
     <archunit.version>1.5.1</archunit.version>
@@ -172,10 +184,19 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <!-- Jackson 2 first: both BOMs manage jackson-annotations (shared by both lines) and the newest
+           one, 2.22, is the one Jackson 2.22 requires; Jackson 3.1 needs 2.21 or later -->
       <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-bom</artifactId>
-        <version>${slf4j.version}</version>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson2.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>tools.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson3.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -215,6 +236,34 @@
         <scope>import</scope>
       </dependency>
 
+      <!-- Lettuce depends on redis-authx-core 0.1.1-beta2, used only by its Entra ID token provider
+           (io.lettuce.authx), which axiz does not use: the platform ships no pre-release library -->
+      <dependency>
+        <groupId>io.lettuce</groupId>
+        <artifactId>lettuce-core</artifactId>
+        <version>${lettuce.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>redis.clients.authentication</groupId>
+            <artifactId>redis-authx-core</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>at.yawk.lz4</groupId>
+        <artifactId>lz4-java</artifactId>
+        <version>${lz4-java.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.ongres.scram</groupId>
+        <artifactId>scram-client</artifactId>
+        <version>${scram.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.ongres.scram</groupId>
+        <artifactId>scram-common</artifactId>
+        <version>${scram.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>

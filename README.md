@@ -1382,3 +1382,33 @@ seguridad, y la guía de migración.
 
 - **Corrida de `quality` sobre review30 (review31).** Aprobó 149 módulos y falló en 1, por formato
   de una prueba del autoconfigure de SOAP. El formateo de la entrega se alinea con Spotless (sin
+
+- **Auditoría del 24 de octubre (review32).** Cinco defectos y dos hallazgos de build, todos
+  - Caché por tenant por defecto (`CacheScope`), enmascarado de JSON estricto, caché de data keys
+    con identidad exacta, edad y tamaño, `exp` obligatoria en los JWT y `LockLostException` cuando
+    un lock se pierde mientras el trabajo corre.
+  - Dependencias con avisos actualizadas: Spring Boot 4.1.2 (Tomcat 11.0.27), Jackson 3.1.7 y
+    2.22.3, `lz4-java` 1.11.4, SCRAM 3.3 y AWS SDK 2.57.0.
+  - Herramientas y demo pasan sus reglas de convergencia; la cobertura mide el código escrito
+    (los modelos generados llevan `@Generated`) y se agregaron pruebas de comportamiento a la CLI,
+    la Initializr y los servicios del demo.
+
+- **Corrida de review32 (review33).** El demo pasó sus 88 escenarios con las dependencias nuevas;
+  los tres `-Pquality` fallaron por SLF4J fijada en 2.0.19 cuando Spring Boot 4.1.2 pide 2.0.20.
+  Se quitó la fijación y se excluyó una beta que Lettuce traía (`redis-authx-core`). El detalle
+
+- **Corrida de review33 (review34).** El framework y las herramientas pasaron `-Pquality`. El del
+  demo se detuvo por NullAway en `PaymentStatus` (`Map.get` puede devolver `null`); las
+  transiciones son ahora un `switch` exhaustivo. Se corrigieron además los avisos que la corrida
+  mostró en el demo y dos de SpotBugs en el framework (`LockTemplate`, `AudienceValidator`). El
+
+- **Corrida de review34 (review35).** Framework, herramientas y demo pasan `-Pquality`; el demo
+  pasó smoke y 88 escenarios. Se corrigió el último aviso de SpotBugs del demo
+  (`PaymentNotificationHandler`) y `payments-business` y `payments-history` declaran `pbkdf2`
+
+- **Corrida de review35 (review36).** `-Pquality` del demo sin avisos. En los escenarios, una
+  lectura de Grafana sin reintento falló una vez; ahora espera hasta 90 s y, si falla, muestra
+
+- **Versión inicial de los proyectos generados (review37).** `version.txt` y el manifiesto de
+  release-please siguen en `0.0.0` (nada liberado todavía); el pom nace en `0.1.0-SNAPSHOT`. La
+  Initializr sube el proyecto con un commit `feat:`, así el primer release es `0.1.0`. El detalle

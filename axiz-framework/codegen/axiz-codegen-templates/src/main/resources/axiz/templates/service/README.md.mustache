@@ -119,7 +119,9 @@ The pipelines in `.github/workflows` call the shared axiz workflows, pinned to a
 - Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
   the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
 - `release.yaml`: release-please keeps a release pull request with the next version and the
-  changelog; merging it creates the tag.
+  changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
+  the last released version (`0.0.0`: nothing released yet); the pom holds the next one
+  (`0.1.0-SNAPSHOT`). From `0.0.0` a `feat:` commit makes the first release `0.1.0`.
 
 ## Decisions
 

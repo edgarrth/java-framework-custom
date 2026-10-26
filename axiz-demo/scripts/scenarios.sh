@@ -669,14 +669,19 @@ trace_has() {
   have=" $(trace_services "$t") "
   for s in "$@"; do [[ "$have" == *" $s "* ]] || return 1; done
 }
-g_observability() {
-  involved=()
+# grafana_datasources: sets PROM_UID and TEMPO_UID; false until Grafana lists both (a single
+# request can find Grafana busy or restarting, so the check polls instead of failing on it)
+grafana_datasources() {
   local ds
   ds=$(grafana /api/datasources)
-  PROM_UID=$(jq -r '.[]? | select(.type == "prometheus") | .uid' <<<"$ds" | head -1)
-  TEMPO_UID=$(jq -r '.[]? | select(.type == "tempo") | .uid' <<<"$ds" | head -1)
-  if [ -z "$PROM_UID" ] || [ -z "$TEMPO_UID" ]; then
-    bad "Grafana datasources (Prometheus, Tempo)" "$(cut -c1-300 <<<"$ds")"
+  PROM_UID=$(jq -r '.[]? | select(.type == "prometheus") | .uid' <<<"$ds" 2>/dev/null | head -1)
+  TEMPO_UID=$(jq -r '.[]? | select(.type == "tempo") | .uid' <<<"$ds" 2>/dev/null | head -1)
+  [ -n "$PROM_UID" ] && [ -n "$TEMPO_UID" ]
+}
+g_observability() {
+  involved=()
+  if ! poll 90 grafana_datasources; then
+    bad "Grafana datasources (Prometheus, Tempo)" "$GRAFANA/api/health: HTTP $(curl -s -o /dev/null -w '%{http_code}' "$GRAFANA/api/health"); /api/datasources: $(grafana /api/datasources | cut -c1-300)"
     return
   fi
   need_payment

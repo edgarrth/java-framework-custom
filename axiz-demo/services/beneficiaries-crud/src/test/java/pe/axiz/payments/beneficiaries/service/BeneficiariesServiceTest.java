@@ -4,120 +4,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.cache.AxizCache;
-import pe.axiz.core.cache.InMemoryByteCache;
-import pe.axiz.core.cache.ValueCodec;
 import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
-import pe.axiz.core.identifiers.IdentifierRegistry;
-import pe.axiz.core.metrics.EventMetrics;
-import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.model.BeneficiaryErrors;
-import pe.axiz.payments.beneficiaries.model.BeneficiaryPolicy;
 import pe.axiz.payments.beneficiaries.model.NewBeneficiary;
-import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
 class BeneficiariesServiceTest {
 
   static final String VALID_CCI = "00219100123456789053";
   static final String OTHER_CCI = "00319300987654321003";
 
-  /** In-memory repository with the same semantics (active only, insertion order). */
-  static final class InMemoryRepository implements BeneficiaryRepository {
-    final Map<String, Beneficiary> rows = new LinkedHashMap<>();
-    int reads;
-
-    @Override
-    public Optional<Beneficiary> findActive(String customerId, String beneficiaryId) {
-      reads++;
-      return Optional.ofNullable(rows.get(customerId + "/" + beneficiaryId))
-          .filter(b -> !b.removed());
-    }
-
-    @Override
-    public Page<Beneficiary> listActive(String customerId, int size, @Nullable String cursor) {
-      List<Beneficiary> all = allActive(customerId);
-      int from = cursor == null ? 0 : Integer.parseInt(cursor);
-      int to = Math.min(all.size(), from + size);
-      return new Page<>(
-          all.subList(from, to),
-          new PageMetadata(0, size, -1, -1),
-          to < all.size() ? Integer.toString(to) : null);
-    }
-
-    @Override
-    public List<Beneficiary> allActive(String customerId) {
-      return rows.values().stream()
-          .filter(b -> b.getCustomerId().equals(customerId) && !b.removed())
-          .toList();
-    }
-
-    @Override
-    public void insert(Beneficiary b) {
-      if (rows.putIfAbsent(b.getCustomerId() + "/" + b.getBeneficiaryId(), b) != null) {
-        throw new IllegalStateException("exists");
-      }
-    }
-
-    @Override
-    public Beneficiary update(Beneficiary b) {
-      rows.put(b.getCustomerId() + "/" + b.getBeneficiaryId(), b);
-      return b;
-    }
-  }
-
-  /** Keeps values by reference: enough to test the cache flow without a JSON codec. */
-  static final class ReferenceCodec implements ValueCodec {
-    final Map<String, Object> values = new ConcurrentHashMap<>();
-
-    @Override
-    public byte[] encode(Object value) {
-      String id = UUID.randomUUID().toString();
-      values.put(id, value);
-      return id.getBytes(StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public <T> T decode(byte[] bytes, Class<T> type) {
-      return type.cast(values.get(new String(bytes, StandardCharsets.UTF_8)));
-    }
-  }
-
   final Clock clock = Clock.fixed(Instant.parse("2026-10-12T15:00:00Z"), ZoneOffset.UTC);
-  final InMemoryRepository repository = new InMemoryRepository();
+  final InMemoryBeneficiaries repository = new InMemoryBeneficiaries();
   final SimpleMeterRegistry meters = new SimpleMeterRegistry();
-  final AtomicInteger ids = new AtomicInteger();
-  final BeneficiariesService service =
-      new BeneficiariesService(
-          repository,
-          new AxizCache(
-              "test",
-              "beneficiaries",
-              new InMemoryByteCache(100, clock),
-              new ReferenceCodec(),
-              Duration.ofMinutes(5)),
-          IdentifierRegistry.withDiscoveredTypes(),
-          () -> "B-" + ids.incrementAndGet(),
-          new EventMetrics(meters, MetricsSettings.defaults()),
-          clock,
-          new BeneficiaryPolicy(2));
+  final BeneficiariesService service = Services.beneficiaries(repository, clock, meters, 2);
 
   static NewBeneficiary beneficiary(String cci) {
     return new NewBeneficiary(" Landlord ", "Ana Torres", cci, "PEN");

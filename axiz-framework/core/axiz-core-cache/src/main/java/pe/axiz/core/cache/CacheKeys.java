@@ -37,7 +37,7 @@ import org.jspecify.annotations.Nullable;
 public final class CacheKeys {
 
   /** Version of the key format; part of every method key built by the framework. */
-  public static final String FORMAT = "k3";
+  public static final String FORMAT = "k4";
 
   private static final String NULL = "-";
 

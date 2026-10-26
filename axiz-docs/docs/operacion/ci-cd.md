@@ -65,6 +65,15 @@ se construyen como `main`; las ramas de trabajo solo corren los checks del PR. L
 es la del tag (`-Drevision=<x.y.z>`); el pom conserva el SNAPSHOT. Los commits siguen Conventional
 Commits (el título del PR es el commit al hacer squash).
 
+Un proyecto nuevo nace con el pom en `0.1.0-SNAPSHOT` y el chart en `0.1.0`, que es la versión
+hacia la que trabaja. `version.txt` y `.release-please-manifest.json` guardan otra cosa: la última
+versión liberada, y nacen en `0.0.0` porque todavía no hay ninguna. Ponerlos en `0.1.0` declararía
+un release que no existe (sin tag `v0.1.0`), y release-please propondría `0.1.1` o `0.2.0` como
+primero. Desde `0.0.0`, un commit `feat:` lleva el primer release a `0.1.0`; por eso la Initializr
+sube el proyecto con el commit `feat: generate <nombre> with axiz initializr`. Si lo generas con
+`axiz new`, haz el primer commit también como `feat:`. `pr.yaml` comprueba que `version.txt` y el
+manifiesto coincidan y que el pom no esté por detrás de la versión liberada.
+
 ## Configuración de la organización
 
 | Tipo | Nombre | Para qué |

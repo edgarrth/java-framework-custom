@@ -59,14 +59,16 @@ public class PaymentNotificationHandler extends TypedEventHandler<PaymentOrderSt
     }
     CustomerContact c = contact.get();
     NotificationChannel channel = NotificationChannel.valueOf(c.getChannel());
+    String languageTag = c.getLocale();
+    String reason = e.reason();
     sender.send(
         new NotificationRequest(
             envelope.id(),
             channel,
             c.getAddress(),
             "payment-" + e.status().toLowerCase(Locale.ROOT),
-            c.getLocale() == null ? DEFAULT_LOCALE : Locale.forLanguageTag(c.getLocale()),
-            Map.of("orderId", e.orderId(), "reason", e.reason() == null ? "" : e.reason()),
+            languageTag == null ? DEFAULT_LOCALE : Locale.forLanguageTag(languageTag),
+            Map.of("orderId", e.orderId(), "reason", reason == null ? "" : reason),
             envelope.correlationId().orElse(null)));
     metrics.record(
         MetricEvent.of("notification.payment")

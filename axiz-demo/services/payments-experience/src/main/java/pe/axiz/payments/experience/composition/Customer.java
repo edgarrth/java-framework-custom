@@ -23,11 +23,12 @@ record Customer(String id, @Nullable String channel, @Nullable String tenant) {
     return Mono.deferContextual(
         ctx -> {
           RequestMetadata m = ctx.getOrDefault(RequestContext.KEY, null);
-          if (m == null || m.subject() == null || m.subject().isBlank()) {
+          String subject = m == null ? null : m.subject();
+          if (m == null || subject == null || subject.isBlank()) {
             return Mono.error(
                 new AxizException(CoreErrors.UNAUTHENTICATED, "no customer in the token"));
           }
-          return Mono.just(new Customer(m.subject(), m.channel(), m.tenantId()));
+          return Mono.just(new Customer(subject, m.channel(), m.tenantId()));
         });
   }
 

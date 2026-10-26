@@ -115,8 +115,37 @@ class LoggingBehaviourTest {
   }
 
   private static AxizLoggingProperties.Http http(boolean bodies) {
+    return http(bodies, 65_536);
+  }
+
+  private static AxizLoggingProperties.Http http(boolean bodies, int maxMaskedBodyLength) {
     return new AxizLoggingProperties.Http(
-        true, List.of("Content-Type"), bodies, 40, List.of("/actuator/**"));
+        true, List.of("Content-Type"), bodies, 40, List.of("/actuator/**"), maxMaskedBodyLength);
+  }
+
+  @Test
+  void bodiesLargerThanWhatIsKeptAreLoggedBySizeOnly(CapturedOutput output) throws Exception {
+    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true, 32));
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+    request.setContentType("application/json");
+    request.setContent(
+        ("{\"user\":\"ana\",\"password\":\"SYNTHETIC-SECRET-" + "x".repeat(40) + "\"}")
+            .getBytes(StandardCharsets.UTF_8));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    filter.doFilter(
+        request,
+        response,
+        (req, res) -> {
+          req.getInputStream().readAllBytes();
+          res.setContentType("application/json");
+          res.getWriter().write("{\"token\":\"SYNTHETIC-TOKEN-" + "y".repeat(40) + "\"}");
+        });
+    assertThat(response.getContentAsString()).startsWith("{\"token\":");
+    assertThat(output.getOut())
+        .contains("request=<application/json, more than 32 chars: too large to mask, not logged>")
+        .contains("response=<application/json, 68 bytes: too large to mask, not logged>")
+        .doesNotContain("SYNTHETIC-SECRET")
+        .doesNotContain("SYNTHETIC-TOKEN");
   }
 
   @Test

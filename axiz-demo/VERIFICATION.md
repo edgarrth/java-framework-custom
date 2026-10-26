@@ -1,5 +1,44 @@
 # Verificación de esta entrega
 
+## review36 (corrida de review35)
+
+`-Pquality` del demo pasó sin ningún aviso de SpotBugs y sin el WARN de crypto. En los escenarios
+falló una vez la lectura de las fuentes de datos de Grafana (respuesta vacía), que en la corrida
+anterior pasó con el mismo código; el grupo `observability` se detuvo ahí (82 de 83). La lectura
+era una sola petición: ahora reintenta hasta 90 s y, si aun así falla, muestra el estado HTTP de
+`/api/health` y la respuesta. Verificado aquí: sintaxis del script y la espera con un Grafana
+simulado que tarda en responder.
+
+## review35 (corrida de review34)
+
+La corrida de review34 pasó `-Pquality` en los 8 servicios, el smoke y los 88 escenarios. Quedaban
+dos avisos que el gate no había mostrado antes: SpotBugs en `PaymentNotificationHandler` (el
+idioma y el motivo se leían dos veces, comprobar y usar) y un WARN de arranque en
+`payments-business` y `payments-history`, que no tienen el proveedor de Argon2id y caían a PBKDF2.
+El manejador lee cada valor una vez y esos dos servicios declaran `pbkdf2`. Verificado aquí:
+NullAway y Error Prone sin errores ni avisos; pruebas de `notifications-processor` en verde
+(el manejador con 34 de 34 líneas cubiertas).
+
+## review34 (corrida de review33)
+
+`-Pquality` del demo se detuvo en `payments-business`: NullAway marca `Map.get` como
+`@Nullable` y `PaymentStatus` lo desreferenciaba. Las transiciones son ahora un `switch`
+exhaustivo (un estado nuevo no compila sin sus transiciones). Se corrigieron también los avisos
+que la corrida mostró: cuatro de SpotBugs en `payments-experience` (lecturas repetidas de valores
+que pueden ser `null`) y uno de Error Prone en `settlement-batch` (conversión de `long` a
+`double`). Verificado aquí: NullAway y Error Prone sobre los 8 servicios sin errores ni avisos;
+pruebas de dominio y composición de los tres servicios tocados en verde.
+
+## review32 (auditoría del 24 de octubre)
+
+Los 8 servicios compilan main y pruebas contra el framework de esta entrega (0 fallas). Con las
+pruebas unitarias nuevas, medidas aquí sin las de contexto de Spring, el código escrito queda en
+(líneas / ramas): `beneficiaries-crud` 96 % / 100 %, `core-integration` 95 % / 94 %,
+`payments-experience` 92 % / 86 %, `payments-business` 94 % / 94 %, `payment-process` 88 % / 84 %,
+`payments-history` 97 % / 94 % y `notifications-processor` 93 % / 92 %. Los modelos generados
+convergencia de `aws-msk-iam-auth` se resuelve en el BOM (AWS SDK 2.57.0, Jackson 2.22.3) y se
+confirma en tu corrida.
+
 ## review29 (corrida de `quality` sobre review28)
 
 La corrida del 24 de octubre ejecutó el demo con Maven y Docker reales: BUILD SUCCESS. review29

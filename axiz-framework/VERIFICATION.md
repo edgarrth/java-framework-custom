@@ -1,5 +1,41 @@
 # Verificación de esta entrega
 
+## Qué se verificó y dónde (review37)
+
+Las plantillas de `library`, `service` y `starter` explican qué guardan `version.txt` y
+`.release-please-manifest.json` (`0.0.0`: nada liberado todavía) frente al pom (`0.1.0-SNAPSHOT`).
+Sin cambios de código en el framework; `axiz-codegen` pasa sus 81 pruebas con las plantillas
+
+## Qué se verificó y dónde (review34)
+
+La corrida de review33 pasó el gate completo del framework (`-Pquality`, 33 min) y el de las
+herramientas. review34 corrige dos avisos de SpotBugs de prioridad media que esa corrida mostró:
+`LockTemplate.Lease` lee bajo el mismo candado que escribe la marca de interrupción, y
+`AudienceValidator` lee una sola vez el emisor y la audiencia del token. Verificado aquí: NullAway
+y Error Prone sobre `axiz-core-lock`; 139 módulos compilan y 601 pruebas pasan con el arnés local.
+
+## Qué se verificó y dónde (review33)
+
+La corrida de review32 falló en `requireUpperBoundDeps` por SLF4J (2.0.19 fijada, 2.0.20 pedida
+por Spring Boot 4.1.2). review33 quita la fijación y excluye `redis-authx-core` (beta) de Lettuce;
+solo cambia `axiz-dependencies`. El resultado del árbol de dependencias se confirma en tu corrida:
+
+## Qué se verificó y dónde (review32)
+
+review32 responde a la auditoría del 24 de octubre de 2026 (R1 a R7). El detalle está en
+
+| Nivel | Dónde | Resultado |
+|---|---|---|
+| Compilación de main y pruebas | aquí, `javac` sin Maven | 142 módulos OK; los servicios del demo se compilan aparte con modelos sustitutos (0 fallas) |
+| Pruebas unitarias | aquí, JUnit | 640 OK, 0 fallidas |
+| Starters cambiados | aquí, arnés de Spring | caché 17/17 (alcance por tenant), logging y seguridad (perfil del access token, 8/8) |
+| Pruebas nuevas de la capa 1 | aquí | `LockLossTest` 6/6 (15 corridas), `EnvelopeKeyCacheTest`, `SensitiveTest` 26/26 y 30.074 casos de JSON contrastados con otro parser |
+| Error Prone 2.49.0 + NullAway | aquí, módulos cambiados | 0 errores, 0 avisos |
+| Checkstyle 14.2.0, google-java-format 1.30.0 | aquí, framework, herramientas y demo | sin hallazgos ni cambios pendientes |
+| Documentación | aquí, `mkdocs build --strict` | sin avisos |
+| Versiones nuevas del BOM (Spring Boot 4.1.2, Jackson, AWS SDK, lz4, SCRAM) | solo tu máquina o CI | aquí no hay Maven Central |
+| PIT, `-Pquality` completo, `*IT` con Docker | solo CI o tu máquina | no se ejecutaron aquí |
+
 ## Qué se verificó y dónde (review31)
 
 La corrida de `-Pquality` sobre review30 falló solo en Spotless de una prueba de

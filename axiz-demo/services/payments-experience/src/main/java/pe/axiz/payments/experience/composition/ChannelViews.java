@@ -21,10 +21,11 @@ final class ChannelViews {
   private ChannelViews() {}
 
   static PaymentView payment(PaymentOrder order, @Nullable String beneficiaryAlias) {
+    var status = order.status();
     return new PaymentView()
         .paymentId(order.id())
         .operationNumber(order.operationNumber())
-        .status(order.status() == null ? null : order.status().name())
+        .status(status == null ? null : status.name())
         .amount(order.amount())
         .currency(order.currency())
         .beneficiaryAlias(beneficiaryAlias)

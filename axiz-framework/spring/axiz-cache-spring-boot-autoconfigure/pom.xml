@@ -35,6 +35,17 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-tenancy</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-aop</artifactId>
     </dependency>

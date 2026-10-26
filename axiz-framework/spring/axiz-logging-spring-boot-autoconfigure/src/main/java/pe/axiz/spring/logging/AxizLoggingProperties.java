@@ -20,9 +20,11 @@ public record AxizLoggingProperties(@Nullable Boolean json, @DefaultValue Http h
    * @param enabled whether one line per request is written (logger {@code axiz.http})
    * @param headers allow-listed headers to include ({@code traceparent} shows which trace the
    *     caller sent); Authorization and Cookie are never written
-   * @param bodies whether JSON bodies are included (masked and truncated; servlet only)
-   * @param maxBodyLength maximum logged body length
+   * @param bodies whether JSON bodies are included (masked and then truncated; servlet only)
+   * @param maxBodyLength maximum logged body length, applied after masking
    * @param excludedPaths path patterns not logged
+   * @param maxMaskedBodyLength largest body that is kept to be masked; a larger one is logged by
+   *     type and size only, never cut before masking
    */
   public record Http(
       @DefaultValue("true") boolean enabled,
@@ -37,5 +39,6 @@ public record AxizLoggingProperties(@Nullable Boolean json, @DefaultValue Http h
           List<String> headers,
       @DefaultValue("false") boolean bodies,
       @DefaultValue("4000") int maxBodyLength,
-      @DefaultValue({"/actuator/**"}) List<String> excludedPaths) {}
+      @DefaultValue({"/actuator/**"}) List<String> excludedPaths,
+      @DefaultValue("65536") int maxMaskedBodyLength) {}
 }

@@ -67,6 +67,10 @@ axiz:
   secrets:
     directory: /var/run/secrets/axiz
   crypto:
+    # the service hashes no passwords and does not ship the Argon2id provider (spring-security-crypto
+    # and bcprov): the algorithm is stated instead of falling back to it with a WARN at startup
+    password:
+      algorithm: pbkdf2
     kms:
       key-id: ${AXIZ_KMS_KEY_ID:alias/local}
     fields:

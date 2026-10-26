@@ -10,10 +10,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
+import pe.axiz.core.metrics.TagPolicy;
 import pe.axiz.core.notification.NotificationChannel;
 import pe.axiz.core.notification.NotificationRequest;
 import pe.axiz.payments.notifications.contact.CustomerContact;
@@ -27,7 +29,11 @@ class PaymentNotificationHandlerTest {
       new PaymentNotificationHandler(
           id -> Optional.ofNullable(contacts.get(id)),
           sent::add,
-          new EventMetrics(new SimpleMeterRegistry(), MetricsSettings.defaults()));
+          new EventMetrics(
+              new SimpleMeterRegistry(),
+              // the custom tag the service declares in axiz.metrics.tags (application.yaml)
+              MetricsSettings.defaults()
+                  .withCustomTags(TagPolicy.allowed("medium", Set.of("email", "sms", "push")))));
 
   static EventEnvelope envelope(String id) {
     return new EventEnvelope(

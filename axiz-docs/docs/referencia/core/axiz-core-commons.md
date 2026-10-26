@@ -22,6 +22,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Checks` | Argument preconditions that fail fast with `IllegalArgumentException`. |
 | `Dates` | Date helpers. |
 | `Environments` | Operational profile of a deployment (`axiz.config.environment`). |
+| `Generated` | Marks a class written by a generator, not by a person (the models openapi-generator produces from the contract of a service); JaCoCo leaves such classes out of the coverage gates. |
 | `HeaderCatalog` | Catalog of business headers a service accepts, validates and propagates. |
 | `HeaderDefinition` | Declares a business header in the header catalog. |
 | `Page` | A page of results. |

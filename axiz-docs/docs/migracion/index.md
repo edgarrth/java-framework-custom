@@ -376,3 +376,44 @@ Ningún cambio requiere acción en los servicios.
 - **`Composition` y `AuditEvent`:** tienen constructor canónico explícito en vez de compacto. La
   firma es la misma; ahora un servicio que construye una `Composition` o un `AuditEvent` con
   valores nulos en el mapa compila con NullAway, como dice su tipo.
+
+#### Cambios de la octava revisión (auditoría del 24 de octubre)
+
+Revisa los puntos marcados **acción**; el resto no requiere cambios.
+
+- **Caché por tenant (acción si cacheas datos globales):** `@AxizCacheable` tiene `scope`, por
+  defecto `CacheScope.TENANT`: las entradas de un tenant ya no las lee otro, aunque el método reciba
+  un id local al tenant. Para datos iguales para todos declara `scope = CacheScope.GLOBAL` (si no,
+  cada tenant tendrá su copia, correcta pero repetida); para resultados que dependen del usuario,
+  `CacheScope.CALLER`. Las llaves pasan al formato `k4` e incluyen el alcance: las entradas `k3`
+  dejan de leerse y expiran solas.
+- **Locks que se pierden (acción si tu trabajo tiene efectos externos):** si la renovación del
+  lease falla mientras el trabajo corre, `LockTemplate.withLock` ya no devuelve el resultado:
+  interrumpe el hilo del trabajo y termina con `LockLostException` (`AXZ-LOCK-0503`, 503,
+  reintentable). Si el trabajo falló por su cuenta, se lanza su excepción con la pérdida como
+  suprimida. Un trabajo con efectos externos usa la sobrecarga que recibe el lease
+  (`LeasedWork`): `lease -> { lease.ensureHeld(); return efecto(); }`, y el recurso debe rechazar
+  por sí mismo a un dueño viejo (escritura condicional o llave de idempotencia).
+- **JWT sin `exp` (acción si algún emisor no la pone):** el resource server rechaza un token sin
+  `exp`, en servlet y en reactivo. Los tokens de Keycloak, Entra, Cognito y Okta la traen siempre.
+- **Log de cuerpos JSON:** `JsonTextMasker` lee JSON estricto: compara los nombres decodificados
+  (`"password"` es `password`), reemplaza por `"****"` un valor sensible que sea objeto o
+  arreglo, y escribe el resultado sin espacios insignificantes. Lo que no es un JSON completo se
+  registra como `<not a complete JSON value: not logged>`. El log HTTP ya no enmascara un cuerpo
+  cortado: los mayores a `axiz.logging.http.max-masked-body-length` (nueva, por defecto 65536
+  caracteres) se registran solo por tipo y tamaño.
+- **Data keys de `EnvelopeEncryptor`:** la caché de llaves descifradas se indexa por los bytes
+  exactos de la llave cifrada y el contexto, sus entradas vencen a los `maxAge` y cada caché guarda
+  a lo sumo 1000 llaves. Un sobre ya no puede abrirse con una llave en caché de otro sobre.
+- **Dependencias con avisos de seguridad:** Spring Boot 4.1.2 (Tomcat 11.0.27), Jackson 3.1.7,
+  Jackson 2 2.22.3 (transitivo), `lz4-java` 1.11.4 (de `kafka-clients`), SCRAM 3.3 (de
+  `r2dbc-postgresql`) y AWS SDK 2.57.0 (`aws-msk-iam-auth` 2.3.8 pide 2.51.2 o posterior). Si tu
+  servicio fijaba alguna, quita la versión: la gobierna `axiz-dependencies`. SLF4J deja de fijarse
+  en `axiz-dependencies`: Spring Boot 4.1.2 ya trae 2.0.20, más nueva que la 2.0.19 que se fijaba.
+  Lettuce se usa sin `redis-authx-core` (una beta que solo sirve para autenticarse con tokens de
+  Entra ID); si tu servicio usa `io.lettuce.authx`, declara esa librería en tu pom.
+- **Cobertura del código escrito:** los modelos que genera openapi-generator llevan
+  `@pe.axiz.core.commons.Generated` y JaCoCo los deja fuera del umbral (ver
+  [Calidad](../calidad/index.md#cobertura-y-codigo-generado)). El umbral sigue en 80 % de líneas y
+  70 % de ramas del código del servicio. Un servicio que llegaba al umbral gracias a los modelos
+  necesitará pruebas de sus adaptadores.

@@ -23,10 +23,33 @@
   <properties>
     <axiz.module.name>pe.axiz.rewrite</axiz.module.name>
     <rewrite-recipe-bom.version>3.20.0</rewrite-recipe-bom.version>
+    <!-- versions the OpenRewrite modules disagree on, aligned on the newest one they request -->
+    <asm.version>9.9</asm.version>
+    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
+      <!-- rewrite-java asks for ASM 9.9; gizmo (rewrite-core) still for 9.3 -->
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-bom</artifactId>
+        <version>${asm.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Caffeine asks for 2.49.0, Guava (error-prone-support) for 2.41.0: the root build's version -->
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${errorprone.version}</version>
+      </dependency>
+      <!-- from 13.0 (kotlin-stdlib) to 26.0.2-1 (the OpenRewrite modules) -->
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${jetbrains-annotations.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.openrewrite.recipe</groupId>
         <artifactId>rewrite-recipe-bom</artifactId>
@@ -43,10 +66,24 @@
       <groupId>org.openrewrite.recipe</groupId>
       <artifactId>rewrite-spring</artifactId>
       <scope>runtime</scope>
+      <exclusions>
+        <!-- rewrite-jackson asks for the AssertJ 4.0.0-M1 milestone: the platform only ships
+             releases, so the jar its recipes look up on the classpath is the managed release
+             (declared below) -->
+        <exclusion>
+          <groupId>org.assertj</groupId>
+          <artifactId>assertj-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.openrewrite.recipe</groupId>
       <artifactId>rewrite-migrate-java</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -55,4 +92,62 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>axiz-dependency-convergence</id>
+            <configuration>
+              <rules>
+                <banDuplicateClasses combine.self="override">
+                  <findAllDuplicates>true</findAllDuplicates>
+                  <ignoreWhenIdentical>true</ignoreWhenIdentical>
+                  <scopes>
+                    <scope>compile</scope>
+                    <scope>runtime</scope>
+                  </scopes>
+                  <ignoreClasses>
+                    <ignoreClass>module-info</ignoreClass>
+                    <ignoreClass>META-INF.versions.*</ignoreClass>
+                  </ignoreClasses>
+                  <dependencies>
+                    <!-- The per-Java-version parsers of OpenRewrite ship the package-info of the
+                         packages they share with rewrite-java (org.openrewrite.java) and with each
+                         other (org.openrewrite.java.isolated). A package-info holds only package
+                         annotations (nullness defaults), no code: only those two entries are
+                         ignored, every other class of these jars is still checked. -->
+                    <dependency>
+                      <groupId>org.openrewrite</groupId>
+                      <artifactId>rewrite-java-8</artifactId>
+                      <ignoreClasses>
+                        <ignoreClass>org.openrewrite.java.package-info</ignoreClass>
+                      </ignoreClasses>
+                    </dependency>
+                    <dependency>
+                      <groupId>org.openrewrite</groupId>
+                      <artifactId>rewrite-java-21</artifactId>
+                      <ignoreClasses>
+                        <ignoreClass>org.openrewrite.java.isolated.package-info</ignoreClass>
+                      </ignoreClasses>
+                    </dependency>
+                    <dependency>
+                      <groupId>org.openrewrite</groupId>
+                      <artifactId>rewrite-java-25</artifactId>
+                      <ignoreClasses>
+                        <ignoreClass>org.openrewrite.java.isolated.package-info</ignoreClass>
+                      </ignoreClasses>
+                    </dependency>
+                  </dependencies>
+                </banDuplicateClasses>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

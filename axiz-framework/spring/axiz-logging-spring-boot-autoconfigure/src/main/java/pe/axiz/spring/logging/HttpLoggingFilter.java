@@ -55,9 +55,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
       throws ServletException, IOException {
     long start = System.nanoTime();
     HttpServletRequest req =
-        settings.bodies()
-            ? new ContentCachingRequestWrapper(request, settings.maxBodyLength())
-            : request;
+        settings.bodies() ? new BoundedRequest(request, settings.maxMaskedBodyLength()) : request;
     ContentCachingResponseWrapper res =
         settings.bodies() ? new ContentCachingResponseWrapper(response) : null;
     try {
@@ -67,11 +65,11 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
       Map<String, String> headers =
           formatter.headers(Collections.list(request.getHeaderNames()), request::getHeader);
       if (settings.bodies() && res != null) {
-        String in =
-            req instanceof ContentCachingRequestWrapper w
-                ? new String(w.getContentAsByteArray(), StandardCharsets.UTF_8)
-                : "";
-        String out = new String(res.getContentAsByteArray(), StandardCharsets.UTF_8);
+        BoundedRequest kept = (BoundedRequest) req;
+        String in = new String(kept.getContentAsByteArray(), StandardCharsets.UTF_8);
+        boolean outComplete = res.getContentSize() <= settings.maxMaskedBodyLength();
+        String out =
+            outComplete ? new String(res.getContentAsByteArray(), StandardCharsets.UTF_8) : "";
         LOG.info(
             "http method={} path={} status={} durationMs={} headers={} request={} response={}",
             request.getMethod(),
@@ -79,8 +77,10 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
             res.getStatus(),
             ms,
             headers,
-            formatter.body(request.getContentType(), in),
-            formatter.body(res.getContentType(), out));
+            formatter.body(request.getContentType(), in, !kept.overflowed()),
+            outComplete
+                ? formatter.body(res.getContentType(), out)
+                : formatter.omitted(res.getContentType(), res.getContentSize()));
         res.copyBodyToResponse();
       } else {
         LOG.info(
@@ -91,6 +91,28 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
             ms,
             headers);
       }
+    }
+  }
+
+  /**
+   * Keeps at most {@code limit} bytes of the request body and remembers whether the body was
+   * longer, so a cut body is never masked as if it were whole.
+   */
+  static final class BoundedRequest extends ContentCachingRequestWrapper {
+
+    private boolean overflowed;
+
+    BoundedRequest(HttpServletRequest request, int limit) {
+      super(request, limit);
+    }
+
+    @Override
+    protected void handleContentOverflow(int contentCacheLimit) {
+      overflowed = true;
+    }
+
+    boolean overflowed() {
+      return overflowed;
     }
   }
 

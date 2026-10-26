@@ -49,6 +49,19 @@ public final class ObjectMasker {
   }
 
   /** Masks a single value by its key name (headers, map entries, query parameters). */
+  /**
+   * Whether the values of a key are masked on the channel; a structured value (an array or an
+   * object in JSON) under such a key is hidden whole.
+   *
+   * @param key property or header name
+   * @param channel where the value goes
+   * @return true for a sensitive key at the level the channel masks
+   */
+  public boolean masksKey(String key, OutputChannel channel) {
+    Optional<SensitiveField> field = keys.find(key);
+    return field.isPresent() && policy.masks(field.get().level(), channel);
+  }
+
   public @Nullable String maskByKey(String key, @Nullable String value, OutputChannel channel) {
     Optional<SensitiveField> field = keys.find(key);
     return field.isPresent()
