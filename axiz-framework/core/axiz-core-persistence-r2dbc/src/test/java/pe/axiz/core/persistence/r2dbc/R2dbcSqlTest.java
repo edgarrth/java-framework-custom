@@ -125,7 +125,7 @@ class R2dbcSqlTest {
     assertTrue(e.getMessage().contains(":a"), e.getMessage());
   }
 
-  /** Report case: a failed commit must still return the connection to the pool, exactly once. */
+  /** Regression: a failed commit must still return the connection to the pool, exactly once. */
   @Test
   void aFailedCommitClosesTheConnectionExactlyOnceAndPropagates() {
     FakeR2dbc db = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L).failOn("commit");

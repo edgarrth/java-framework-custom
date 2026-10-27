@@ -121,7 +121,8 @@ The pipelines in `.github/workflows` call the shared axiz workflows, pinned to a
 - `release.yaml`: release-please keeps a release pull request with the next version and the
   changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
   the last released version (`0.0.0`: nothing released yet); the pom holds the next one
-  (`0.1.0-SNAPSHOT`). From `0.0.0` a `feat:` commit makes the first release `0.1.0`.
+  (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
+  `release-please-config.json`); later ones follow Conventional Commits.
 
 ## Decisions
 

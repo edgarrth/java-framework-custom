@@ -113,7 +113,7 @@ de los fallos sigue la política de reintentos. Al detenerse, espera a los handl
 30 s antes de interrumpirlos.
 
 La tabla JDBC/R2DBC del inbox tiene la columna `owner`: si falta, el servicio no arranca (antes
-de consumir) y el mensaje indica la migración a agregar (ver [Migración](../migracion/index.md)).
+de consumir) y el mensaje indica la migración a agregar.
 
 El inbox protege el registro de consumo, no el efecto: una entrega cuya concesión venció puede
 seguir ejecutándose mientras otra la toma. Un efecto de negocio que no puede repetirse (un débito,

@@ -215,8 +215,8 @@ class PaymentSagaTest {
   }
 
   /**
-   * Report case (second review, F03): the debit keeps timing out and its outcome is unknown. The
-   * process must not reject the order or reverse anything: it waits VERIFYING.
+   * Regression: the debit keeps timing out and its outcome is unknown. The process must not reject
+   * the order or reverse anything: it waits VERIFYING.
    */
   @Test
   void anUncertainDebitIsVerifiedNeverAssumedMissing() {

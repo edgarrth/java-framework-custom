@@ -11,12 +11,12 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-core</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath/>
   </parent>
 
   <artifactId>axiz-rewrite-recipes</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>axiz :: tools :: rewrite recipes</name>
   <description>Declarative OpenRewrite recipes to upgrade services between axiz versions</description>
 
@@ -25,7 +25,6 @@
     <rewrite-recipe-bom.version>3.20.0</rewrite-recipe-bom.version>
     <!-- versions the OpenRewrite modules disagree on, aligned on the newest one they request -->
     <asm.version>9.9</asm.version>
-    <jetbrains-annotations.version>26.0.2-1</jetbrains-annotations.version>
   </properties>
 
   <dependencyManagement>
@@ -38,18 +37,8 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Caffeine asks for 2.49.0, Guava (error-prone-support) for 2.41.0: the root build's version -->
-      <dependency>
-        <groupId>com.google.errorprone</groupId>
-        <artifactId>error_prone_annotations</artifactId>
-        <version>${errorprone.version}</version>
-      </dependency>
-      <!-- from 13.0 (kotlin-stdlib) to 26.0.2-1 (the OpenRewrite modules) -->
-      <dependency>
-        <groupId>org.jetbrains</groupId>
-        <artifactId>annotations</artifactId>
-        <version>${jetbrains-annotations.version}</version>
-      </dependency>
+      <!-- error_prone_annotations and org.jetbrains:annotations, which the OpenRewrite modules
+           request in different versions, are managed by axiz-dependencies -->
       <dependency>
         <groupId>org.openrewrite.recipe</groupId>
         <artifactId>rewrite-recipe-bom</artifactId>

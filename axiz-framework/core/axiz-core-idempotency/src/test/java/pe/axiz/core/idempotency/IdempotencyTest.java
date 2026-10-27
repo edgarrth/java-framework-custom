@@ -111,7 +111,7 @@ class IdempotencyTest {
   }
 
   /**
-   * Report case: request A holds the key, its lock expires, request B takes the key and is still
+   * Regression: request A holds the key, its lock expires, request B takes the key and is still
    * running when A finishes. A's response must not be stored over B, nor may A release B's key.
    */
   @Test
@@ -161,7 +161,41 @@ class IdempotencyTest {
     assertInstanceOf(IdempotencyService.Proceed.class, svc.begin("s", key, fp));
   }
 
-  /** Report case: the scope separates issuers, tenants, clients and subjects. */
+  /**
+   * Regression: with U+0000 U+0002 inside a part, ("app" + S + "other", "subject") and ("app",
+   * "other" + S + "subject") hashed the same bytes. Parts with control characters are rejected
+   * before anything starts, which keeps the encoding injective without changing the scope of clean
+   * callers (requests in flight across an upgrade keep their keys).
+   */
+  @Test
+  void aPartCannotImitateTheSeparatorsOfTheScope() {
+    String s = "\u0000\u0002";
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> IdempotencyService.scope("op", "iss", "t", "app" + s + "other", "subject"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> IdempotencyService.scope("op", "iss", "t", "app", "other" + s + "subject"));
+    for (String control : new String[] {"\u0000", "\u0001", "\t", "\n", "\u001f", "\u007f"}) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> IdempotencyService.scope("op", "iss" + control, null, null, null),
+          control);
+    }
+    // the hash of a clean caller is the one earlier releases computed
+    assertEquals(
+        "op:1762d179852eb97b8e8bd49538404fea2d21f5d01eee4d990616230cab44fc28",
+        IdempotencyService.scope("op", "iss", "t1", "app", "user-1"));
+    // empty and absent parts, and non-ASCII text, stay distinct and accepted
+    assertNotEquals(
+        IdempotencyService.scope("op", "iss", "", "app", null),
+        IdempotencyService.scope("op", "iss", null, "app", ""));
+    assertNotEquals(
+        IdempotencyService.scope("op", "iss", null, "app", "josé"),
+        IdempotencyService.scope("op", "iss", null, "app", "jose"));
+  }
+
+  /** Regression: the scope separates issuers, tenants, clients and subjects. */
   @Test
   void theScopeSeparatesEveryCallerDimension() {
     String base = IdempotencyService.scope("op", "iss", "t1", "app", "user-1");
@@ -192,7 +226,7 @@ class IdempotencyTest {
   }
 
   /**
-   * Report cases: the query string is part of the request identity, and is taken as sent, so an
+   * Regressions: the query string is part of the request identity, and is taken as sent, so an
    * order-sensitive repeated parameter ({@code sort=a&sort=b}) is not confused with its reverse.
    */
   @Test

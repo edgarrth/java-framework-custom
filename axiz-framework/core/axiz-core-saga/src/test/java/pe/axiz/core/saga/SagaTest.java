@@ -276,7 +276,7 @@ class SagaTest {
     }
   }
 
-  /** Report case: a listener that throws after a step must not compensate that step. */
+  /** Regression: a listener that throws after a step must not compensate that step. */
   @Test
   void aFailingListenerDoesNotCompensateACompletedStep() {
     List<String> log = new ArrayList<>();
@@ -309,7 +309,7 @@ class SagaTest {
   }
 
   /**
-   * Report case: step "debit" ran but recording its result failed. The saga aborts and "debit" is
+   * Regression: step "debit" ran but recording its result failed. The saga aborts and "debit" is
    * compensated too, not only the steps before it.
    */
   @Test
@@ -399,9 +399,9 @@ class SagaTest {
   }
 
   /**
-   * Report case (second review, F03): an effect confirmed remotely whose response was lost must not
-   * produce a COMPENSATED saga while the effect still exists. Without a verification answer the
-   * saga is IN_DOUBT and nothing is undone.
+   * Regression: an effect confirmed remotely whose response was lost must not produce a COMPENSATED
+   * saga while the effect still exists. Without a verification answer the saga is IN_DOUBT and
+   * nothing is undone.
    */
   @Test
   void anUncertainFailureIsNeverTreatedAsNoEffect() {

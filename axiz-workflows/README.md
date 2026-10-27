@@ -60,7 +60,9 @@ A rollback is a revert in the GitOps repository (or `cd.yaml` with the previous 
 `main` holds released code; `develop` publishes SNAPSHOTs of libraries; `release/*` and `hotfix/*`
 are built like `main`; work branches only run the PR checks. Versions come from release-please
 (`release-please-config.json`, `.release-please-manifest.json`, `version.txt`): the tag
-`v<x.y.z>` is the version published (`-Drevision`), and the pom keeps the SNAPSHOT.
+`v<x.y.z>` is the version published (`-Drevision`). Between releases the pom holds the SNAPSHOT
+of the next version; the tagged commit (such as 1.0.0) holds the released version, and the first
+change on `develop` after the tag moves the pom to the next SNAPSHOT (for example `1.1.0-SNAPSHOT`).
 
 Renovate presets: `renovate/default.json` (action digests pinned to semver), `renovate/service.json`
 (only the axiz parent moves; `axiz upgrade` applies its recipes) and `renovate/platform.json`.

@@ -171,6 +171,6 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-architecture-tests`](quality/axiz-architecture-tests.md) | ArchUnit tests of the framework itself (`FrameworkArchitectureTest`): layer 1 is plain Java (no |
 | [`axiz-archunit-rules`](quality/axiz-archunit-rules.md) | Architecture rules for axiz services: general hygiene and one rule set per architectural style. |
 | [`axiz-code-standards`](quality/axiz-code-standards.md) | Checkstyle, SpotBugs, Semgrep, Spectral and gitleaks configuration. |
-| [`axiz-coverage-report`](quality/axiz-coverage-report.md) | Aggregates the JaCoCo reports of every module (`./mvnw -Pquality verify`, report in |
+| [`axiz-coverage-report`](quality/axiz-coverage-report.md) | Aggregates the JaCoCo reports of every module with production code (`./mvnw -Pquality verify`, |
 | [`axiz-store-integration-tests`](quality/axiz-store-integration-tests.md) | Internal module, never published: it is not a dependency for services. |
 | [`quality`](quality/quality.md) | Machine-checked rules: `axiz-code-standards` (Checkstyle, SpotBugs, Spotless, Semgrep, Spectral and |

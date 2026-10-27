@@ -89,6 +89,12 @@ jobs:
         run: python3 .github/scripts/check-dependency-governance.py .
       - name: spring.factories only registers environment post-processors
         run: python3 .github/scripts/check-spring-factories.py .
+      - name: The aggregated coverage report lists every module with code
+        run: python3 .github/scripts/check-coverage-aggregate.py .
+      - name: Release versions of a generated project (release-please calculation)
+        run: |
+          npm install --prefix .github/scripts/release-version --no-audit --no-fund --ignore-scripts
+          node .github/scripts/release-version/test.cjs
       - name: Maven distribution checksum pinned (repository and generated projects)
         run: |
           for f in .mvn/wrapper/maven-wrapper.properties \

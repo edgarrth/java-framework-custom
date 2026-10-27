@@ -115,7 +115,7 @@ class RedisIdempotencyStoreTest {
     assertTrue(store.find("missing", Instant.now()).isEmpty());
   }
 
-  /** Report case: A's lock expires, B takes the key, A finishes late. */
+  /** Regression: A's lock expires, B takes the key, A finishes late. */
   @Test
   void aLateOwnerCannotOverwriteOrReleaseTheKeyOfTheNewOwner() {
     Map<String, String> data = new HashMap<>();

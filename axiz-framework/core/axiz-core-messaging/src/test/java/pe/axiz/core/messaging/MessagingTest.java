@@ -241,8 +241,8 @@ class MessagingTest {
   }
 
   /**
-   * Report case (second review, F04): two producers may use the same id; only source + id
-   * identifies an event, so both are processed, while a redelivery of the same one is not.
+   * Regression: two producers may use the same id; only source + id identifies an event, so both
+   * are processed, while a redelivery of the same one is not.
    */
   @Test
   void deduplicationUsesSourceAndId() {

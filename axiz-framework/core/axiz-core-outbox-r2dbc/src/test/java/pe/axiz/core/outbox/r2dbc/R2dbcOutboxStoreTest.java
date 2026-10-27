@@ -131,7 +131,7 @@ class R2dbcOutboxStoreTest {
   }
 
   /**
-   * Report case: the blocking {@code append} (used by the imperative outbox writer) waited on a
+   * Regression: the blocking {@code append} (used by the imperative outbox writer) waited on a
    * {@code Mono<Void>} and failed with "returned nothing" after the row had been inserted.
    */
   @Test

@@ -8,7 +8,7 @@ archetype: crud
 framework: layered
 stack: servlet
 persistence: dynamodb
-axizVersion: 0.1.0-SNAPSHOT
+axizVersion: 1.0.0
 contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: null

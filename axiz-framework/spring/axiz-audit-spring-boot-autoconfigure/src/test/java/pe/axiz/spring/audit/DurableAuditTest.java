@@ -23,9 +23,9 @@ import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
 
 /**
- * Report case (second review, F07): audit evidence of a committed change must survive a crash after
- * the commit. In durable mode the event is written to the outbox inside the business transaction
- * (same commit), never kept only in memory.
+ * Regression: audit evidence of a committed change must survive a crash after the commit. In
+ * durable mode the event is written to the outbox inside the business transaction (same commit),
+ * never kept only in memory.
  */
 class DurableAuditTest {
 

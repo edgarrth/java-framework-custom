@@ -22,12 +22,14 @@ class AddCommand extends BaseCommand implements Callable<Integer> {
   @Override
   public Integer call() throws IOException {
     CapabilityAdder adder = new CapabilityAdder(Catalog.load());
+    boolean changed = false;
     for (String capability : capabilities) {
       CapabilityAdder.Result r = adder.add(project(), capability);
       if (r.added().isEmpty()) {
         ok(capability + " is already in the project");
         continue;
       }
+      changed = true;
       ok("Added " + String.join(", ", r.added()));
       r.changed().forEach(f -> out().println("    " + f));
       if (!r.configMapKeys().isEmpty()) {
@@ -38,6 +40,9 @@ class AddCommand extends BaseCommand implements Callable<Integer> {
       }
       out().println("  Example:");
       r.example().lines().forEach(l -> out().println("    " + l));
+    }
+    if (changed) {
+      formatSources(project());
     }
     return ExitCodes.OK;
   }

@@ -16,7 +16,7 @@ final class Version implements CommandLine.IVersionProvider {
 
   static String axiz() {
     String v = PROPERTIES.getProperty("axizVersion", "");
-    return v.isBlank() || v.startsWith("${") ? "0.1.0-SNAPSHOT" : v;
+    return v.isBlank() || v.startsWith("${") ? "1.0.0" : v;
   }
 
   @Override

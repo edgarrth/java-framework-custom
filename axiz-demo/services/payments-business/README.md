@@ -8,7 +8,7 @@ Owner of payment orders.
 | Style | `cqrs` |
 | Stack | `servlet` |
 | Persistence | `aurora` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.business` |
 
 ## In the demo

@@ -53,7 +53,7 @@ class GeneratedProjectTest {
     content[0] = 'z';
     assertEquals("a", p.text("f"));
     assertFalse(p.files().isEmpty());
-    // report case: the returned map and arrays are copies
+    // regression: the returned map and arrays are copies
     p.files().get("f")[0] = 'z';
     assertEquals("a", p.text("f"));
     p.files().put("g", b("x"));
@@ -61,7 +61,7 @@ class GeneratedProjectTest {
     assertEquals(1, p.totalBytes());
   }
 
-  /** Report case: a symbolic link inside the destination redirected writes outside it. */
+  /** Regression: a symbolic link inside the destination redirected writes outside it. */
   @Test
   void neverFollowsSymbolicLinksInTheDestination(@TempDir Path tmp) throws Exception {
     Path outside = Files.createDirectories(tmp.resolve("outside"));

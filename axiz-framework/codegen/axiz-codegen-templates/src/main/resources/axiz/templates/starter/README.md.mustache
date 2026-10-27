@@ -17,5 +17,5 @@ framework arrives through an RFC and with its use case in the demo.
 
 `./mvnw verify` builds the three modules; `develop` publishes SNAPSHOTs and release tags publish
 the release to Nexus. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
-nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). From `0.0.0` a `feat:` commit
-makes the first release `0.1.0`.
+nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
+`release-please-config.json`); later ones follow Conventional Commits.

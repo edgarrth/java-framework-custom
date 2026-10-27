@@ -45,6 +45,18 @@
       <artifactId>spring-security-core</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- caller identity of token authentications (issuer, subject, client) -->
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-security</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-oauth2-core</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-aop</artifactId>
@@ -72,6 +84,24 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-data-redis</artifactId>
       <optional>true</optional>
+    </dependency>
+
+    <!-- the cache is tested together with real method security (servlet and reactive) -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-config</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-oauth2-resource-server</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- the tests build Jwt tokens (org.springframework.security.oauth2.jwt) -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-oauth2-jose</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

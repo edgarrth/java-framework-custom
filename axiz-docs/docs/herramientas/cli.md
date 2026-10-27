@@ -20,6 +20,15 @@ axiz catalog [archetypes|capabilities]
 
 Todos los comandos aceptan `-h` y `-V`; los que trabajan sobre un proyecto aceptan `-d <dir>`.
 
+## Código formateado
+
+Lo que generan `new`, `add`, `generate` y `contract sync` queda con el formato que exige
+`spotless:check`, así que el primer `./mvnw -Pquality verify` pasa sin `spotless:apply`. El jar
+trae google-java-format y declara en su manifiesto (`Add-Exports`) el acceso a `jdk.compiler` que
+necesita; basta con ejecutarlo en un JDK 25. El binario nativo no puede correr el formateador:
+al terminar ejecuta `./mvnw -q spotless:apply` en el proyecto (o `mvn` si no hay wrapper) y, si no
+encuentra Maven, avisa qué correr.
+
 ## Modo offline y online
 
 Por defecto la CLI genera **offline** con las plantillas embebidas en el binario. Con

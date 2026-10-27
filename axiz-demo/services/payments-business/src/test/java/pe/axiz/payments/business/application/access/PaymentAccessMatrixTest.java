@@ -27,9 +27,8 @@ import pe.axiz.payments.business.domain.PaymentOrder;
 import pe.axiz.payments.business.domain.PaymentStatus;
 
 /**
- * Report case (second review, F02): two customers, two service identities and different scopes.
- * Cross reads, orders on behalf of another customer and status changes by an unauthorized actor are
- * rejected.
+ * Regression: two customers, two service identities and different scopes. Cross reads, orders on
+ * behalf of another customer and status changes by an unauthorized actor are rejected.
  */
 class PaymentAccessMatrixTest {
 

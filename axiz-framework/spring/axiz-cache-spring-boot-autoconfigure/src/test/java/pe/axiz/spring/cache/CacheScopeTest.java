@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.Advisor;
@@ -18,8 +21,11 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import pe.axiz.core.cache.AxizCacheable;
 import pe.axiz.core.cache.CacheScope;
+import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.tenancy.TenantContext;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -28,6 +34,8 @@ import reactor.core.publisher.Mono;
 class CacheScopeTest {
 
   private static final Duration T = Duration.ofSeconds(5);
+  private static final String ISSUER_A = "https://issuer-a.example";
+  private static final String ISSUER_B = "https://issuer-b.example";
 
   /** Reads the tenant from the context and takes a tenant-local id, like a real repository. */
   public static class Profiles {
@@ -242,8 +250,132 @@ class CacheScopeTest {
         "separators inside values are escaped");
   }
 
-  private static TestingAuthenticationToken user(String name) {
-    TestingAuthenticationToken token = new TestingAuthenticationToken(name, "n/a", "ROLE_USER");
+  @Test
+  void theCallerIsTheIssuerSubjectAndClientOfTheToken() {
+    withProfiles(
+        p -> {
+          Profiles target = p[0];
+          Profiles profiles = p[1];
+          SecurityContextHolder.getContext().setAuthentication(token(ISSUER_A, "ana", "app"));
+          assertEquals("ana:summary", profiles.mine("summary"));
+          assertEquals("ana:summary", profiles.mine("summary"), "same issuer, subject and client");
+          assertEquals(1, target.calls.get());
+
+          // another trust domain reuses the subject: never the same entry
+          SecurityContextHolder.getContext().setAuthentication(token(ISSUER_B, "ana", "app"));
+          profiles.mine("summary");
+          assertEquals(2, target.calls.get());
+          // the same user through another application
+          SecurityContextHolder.getContext().setAuthentication(token(ISSUER_A, "ana", "web"));
+          profiles.mine("summary");
+          assertEquals(3, target.calls.get());
+          // a machine token (no subject) of that application
+          SecurityContextHolder.getContext().setAuthentication(token(ISSUER_A, null, "app"));
+          profiles.mine("summary");
+          profiles.mine("summary");
+          assertEquals(4, target.calls.get());
+        });
+  }
+
+  @Test
+  void axizPrincipalsAreTokenCallersToo() {
+    withProfiles(
+        p -> {
+          Profiles target = p[0];
+          Profiles profiles = p[1];
+          SecurityContextHolder.getContext().setAuthentication(axiz(ISSUER_A, "ana"));
+          profiles.mine("summary");
+          profiles.mine("summary");
+          assertEquals(1, target.calls.get());
+          SecurityContextHolder.getContext().setAuthentication(axiz(ISSUER_B, "ana"));
+          profiles.mine("summary");
+          assertEquals(2, target.calls.get());
+          assertNotEquals(
+              new DefaultCacheCallerResolver().identity(axiz(ISSUER_A, "ana")),
+              new DefaultCacheCallerResolver().identity(axiz(ISSUER_B, "ana")));
+        });
+  }
+
+  @Test
+  void anAuthenticationWithoutASafeIdentityIsNotCached() {
+    withProfiles(
+        p -> {
+          TestingAuthenticationToken named = new TestingAuthenticationToken("ana", "n/a", "R");
+          named.setAuthenticated(true);
+          SecurityContextHolder.getContext().setAuthentication(named);
+          p[1].mine("summary");
+          p[1].mine("summary");
+          assertEquals(2, p[0].calls.get(), "a bare name may repeat across trust domains");
+          SecurityContextHolder.getContext()
+              .setAuthentication(
+                  new JwtAuthenticationToken(
+                      Jwt.withTokenValue("t").header("alg", "none").subject("ana").build()));
+          p[1].mine("summary");
+          p[1].mine("summary");
+          assertEquals(4, p[0].calls.get(), "a token without issuer is not cached");
+        });
+  }
+
+  @Test
+  void aServiceDeclaresItsOwnCallerIdentity() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizCacheAutoConfiguration.class))
+        .withPropertyValues("spring.application.name=svc")
+        .withBean(CacheCallerResolver.class, () -> a -> "local:" + a.getName())
+        .run(
+            ctx -> {
+              Profiles target = new Profiles();
+              ProxyFactory pf = new ProxyFactory(target);
+              pf.setProxyTargetClass(true);
+              pf.addAdvisor(ctx.getBean("axizCacheableAdvisor", Advisor.class));
+              Profiles profiles = (Profiles) pf.getProxy();
+              TestingAuthenticationToken named = new TestingAuthenticationToken("ana", "n/a", "R");
+              named.setAuthenticated(true);
+              SecurityContextHolder.getContext().setAuthentication(named);
+              profiles.mine("summary");
+              profiles.mine("summary");
+              assertEquals(1, target.calls.get());
+            });
+  }
+
+  @Test
+  void reactiveCallersAreToldApartByIssuer() {
+    withProfiles(
+        p -> {
+          for (String issuer : List.of(ISSUER_A, ISSUER_B, ISSUER_A)) {
+            assertEquals(
+                "ana:summary",
+                p[1].reactiveMine("summary")
+                    .contextWrite(
+                        ReactiveSecurityContextHolder.withAuthentication(
+                            token(issuer, "ana", "app")))
+                    .block(T));
+          }
+          assertEquals(2, p[0].calls.get());
+        });
+  }
+
+  private static JwtAuthenticationToken user(String name) {
+    return token(ISSUER_A, name, "app");
+  }
+
+  private static JwtAuthenticationToken token(
+      String issuer, @Nullable String subject, String client) {
+    Jwt.Builder jwt =
+        Jwt.withTokenValue("synthetic").header("alg", "RS256").issuer(issuer).claim("azp", client);
+    if (subject != null) {
+      jwt.subject(subject);
+    }
+    return new JwtAuthenticationToken(
+        jwt.build(),
+        AuthorityUtils.createAuthorityList("ROLE_USER"),
+        subject != null ? subject : client);
+  }
+
+  private static TestingAuthenticationToken axiz(String issuer, String subject) {
+    AxizPrincipal principal =
+        new AxizPrincipal(subject, "app", issuer, List.of(), Set.of(), Set.of(), null, Map.of());
+    TestingAuthenticationToken token = new TestingAuthenticationToken(principal, "n/a", "R");
     token.setAuthenticated(true);
     return token;
   }

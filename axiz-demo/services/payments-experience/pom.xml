@@ -10,13 +10,13 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-service</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath/>
   </parent>
 
   <groupId>pe.axiz.payments</groupId>
   <artifactId>payments-experience</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>Payments Experience</name>
   <description>Payments API for the channels</description>
 

@@ -102,7 +102,7 @@ class MoneyTest {
     assertThrows(IllegalArgumentException.class, () -> Money.of("1", "PEN").allocate(-1, 2));
   }
 
-  /** Report case: {@code minor * ratio} overflowed a long and produced wrong parts. */
+  /** Regression: {@code minor * ratio} overflowed a long and produced wrong parts. */
   @Test
   void allocationOfLargeAmountsWithLargeRatiosDoesNotOverflow() {
     Money big = Money.of("90000000000000000.00", "PEN"); // 9e18 minor units

@@ -8,7 +8,7 @@ Anti-corruption layer of the core banking system and the payment network.
 | Style | `hexagonal` |
 | Stack | `servlet` |
 | Persistence | `none` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.coreintegration` |
 
 ## In the demo

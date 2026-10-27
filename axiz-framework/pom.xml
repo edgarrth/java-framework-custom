@@ -66,7 +66,7 @@
   </distributionManagement>
 
   <properties>
-    <revision>0.1.0-SNAPSHOT</revision>
+    <revision>1.0.0</revision>
     <!-- version of axiz used by children (the code standards); resolved when the parents are published -->
     <axiz.version>${revision}</axiz.version>
 

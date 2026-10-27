@@ -39,7 +39,7 @@ public class GenerationServiceTest {
         List.of(),
         contract,
         null,
-        "0.1.0-SNAPSHOT");
+        "1.0.0");
   }
 
   @Test

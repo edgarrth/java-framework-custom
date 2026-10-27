@@ -8,7 +8,7 @@ Payment history of each customer: read model projected from the payment order ev
 | Style | `cqrs` |
 | Stack | `reactive` |
 | Persistence | `aurora` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.history` |
 
 ## What it shows

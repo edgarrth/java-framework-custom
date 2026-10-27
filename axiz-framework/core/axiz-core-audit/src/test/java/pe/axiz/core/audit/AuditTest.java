@@ -127,7 +127,7 @@ class AuditTest {
     assertEquals(2, fallback.size());
   }
 
-  /** Report case: a failing fallback killed the worker and every later event was lost. */
+  /** Regression: a failing fallback killed the worker and every later event was lost. */
   @Test
   void aFailingFallbackDoesNotKillTheWorker() throws Exception {
     List<AuditEvent> delivered = new CopyOnWriteArrayList<>();

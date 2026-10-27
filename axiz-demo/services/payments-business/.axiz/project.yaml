@@ -8,7 +8,7 @@ archetype: business
 framework: cqrs
 stack: servlet
 persistence: aurora
-axizVersion: 0.1.0-SNAPSHOT
+axizVersion: 1.0.0
 contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: null

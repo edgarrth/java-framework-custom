@@ -145,12 +145,20 @@ public final class IdempotencyService {
    * Scope of a key: the operation plus a hash of who calls it. Two callers that share an
    * Idempotency-Key never see each other's responses, even across issuers or tenants.
    *
+   * <p>Each part is hashed as a marker ({@code 01} absent, {@code 02} present), its UTF-8 bytes and
+   * a {@code 00} separator. The encoding is unambiguous because a part may not contain control
+   * characters: UTF-8 never encodes another character with a byte below {@code 0x20}, so no part
+   * can imitate a separator or a marker. A part with a control character (U+0000 to U+001F, U+007F)
+   * is rejected before any operation starts; the axiz token mapping already refuses such claims,
+   * and integrations that build scopes by other means get the same check here.
+   *
    * @param operation stable operation name (for example {@code com.acme.PaymentController#create})
    * @param issuer token issuer, if any
    * @param tenant tenant, if any
    * @param client calling application, if any
    * @param subject end user, if any
    * @return {@code operation:hash}
+   * @throws IllegalArgumentException when a part contains a control character
    */
   public static String scope(
       String operation,
@@ -163,12 +171,25 @@ public final class IdempotencyService {
       if (part == null) {
         d.update((byte) 1);
       } else {
+        requireNoControlCharacters(part);
         d.update((byte) 2);
         d.update(part.getBytes(StandardCharsets.UTF_8));
       }
       d.update((byte) 0);
     }
     return operation + ":" + HexFormat.of().formatHex(d.digest());
+  }
+
+  private static void requireNoControlCharacters(String part) {
+    for (int i = 0; i < part.length(); i++) {
+      char c = part.charAt(i);
+      if (c < 0x20 || c == 0x7F) {
+        throw new IllegalArgumentException(
+            "An idempotency scope part contains a control character (U+"
+                + String.format("%04X", (int) c)
+                + ")");
+      }
+    }
   }
 
   /** SHA-256 over method, path and body (no query string). */

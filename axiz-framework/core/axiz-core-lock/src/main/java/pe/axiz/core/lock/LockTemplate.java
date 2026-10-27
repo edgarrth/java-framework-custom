@@ -1,11 +1,11 @@
 package pe.axiz.core.lock;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -25,6 +25,12 @@ import pe.axiz.core.errors.BusinessException;
  * attached as suppressed. Work with external effects receives the {@link LockLease} to check it
  * right before each effect and to use its token in conditional writes; see {@link LockLease} for
  * why the resource itself must also reject an old owner.
+ *
+ * <p>The lease is counted from before each request to the store, on the monotonic clock, minus a
+ * margin for clock drift between this process and the store (1% of the lease plus 2 ms): time spent
+ * waiting for the answer is time the store already counted. An acquisition that answers after its
+ * lease ran out is released and not used (another owner may hold the resource by then); the
+ * template keeps trying until {@code waitTimeout}.
  */
 public final class LockTemplate {
 
@@ -63,8 +69,9 @@ public final class LockTemplate {
    */
   public <T extends @Nullable Object> T withLock(
       String resource, Duration lease, Duration waitTimeout, LeasedWork<T> work) throws Exception {
-    LockHandle handle = acquire(resource, lease, waitTimeout);
-    Lease held = new Lease(handle, Instant.now().plus(lease), Thread.currentThread());
+    Acquired acquired = acquire(resource, lease, waitTimeout);
+    LockHandle handle = acquired.handle();
+    Lease held = new Lease(handle, acquired.validUntil(), Thread.currentThread());
     AtomicBoolean done = new AtomicBoolean();
     Thread renewer =
         Thread.ofVirtual()
@@ -103,19 +110,45 @@ public final class LockTemplate {
     handle.release();
   }
 
-  private LockHandle acquire(String resource, Duration lease, Duration waitTimeout)
+  /** A handle and the moment (monotonic nanos) its lease stops being trusted. */
+  private record Acquired(LockHandle handle, long validUntil) {}
+
+  private Acquired acquire(String resource, Duration lease, Duration waitTimeout)
       throws InterruptedException {
-    Instant deadline = Instant.now().plus(waitTimeout);
+    long deadline = System.nanoTime() + waitTimeout.toNanos();
     while (true) {
+      long sent = System.nanoTime();
       Optional<LockHandle> h = lock.tryAcquire(resource, lease);
       if (h.isPresent()) {
-        return h.get();
+        long validUntil = validUntil(sent, lease);
+        if (System.nanoTime() - validUntil < 0) {
+          return new Acquired(h.get(), validUntil);
+        }
+        LOG.warn(
+            "Lock on {} acquired after its lease ran out ({} ms to answer): released, not used",
+            resource,
+            TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - sent));
+        releaseQuietly(h.get());
       }
-      if (Instant.now().isAfter(deadline)) {
+      if (System.nanoTime() - deadline > 0) {
         throw new BusinessException(
             LockErrors.BUSY, "lock not acquired", Map.of("resource", resource));
       }
       Thread.sleep(pollInterval.toMillis());
+    }
+  }
+
+  /** Until when a lease asked for at {@code sent} is trusted: the lease minus the drift margin. */
+  static long validUntil(long sent, Duration lease) {
+    return sent + lease.toNanos() - (lease.toNanos() / 100 + TimeUnit.MILLISECONDS.toNanos(2));
+  }
+
+  private static void releaseQuietly(LockHandle handle) {
+    try {
+      handle.release();
+    } catch (RuntimeException e) {
+      // the store expires it anyway; releasing only shortens the wait of the next owner
+      LOG.debug("Lock on {} not released: {}", handle.resource(), e.toString());
     }
   }
 
@@ -135,15 +168,15 @@ public final class LockTemplate {
       if (done.get()) {
         return;
       }
-      Instant attempt = Instant.now();
+      long attempt = System.nanoTime();
       try {
         if (held.handle.renew(lease)) {
-          held.heldUntil = attempt.plus(lease);
+          held.heldUntil = validUntil(attempt, lease);
           continue;
         }
         held.lose(null);
       } catch (RuntimeException e) {
-        if (attempt.isBefore(held.heldUntil)) {
+        if (attempt - held.heldUntil < 0) {
           LOG.warn("Lock on {} not renewed, retrying: {}", held.resource(), e.toString());
           continue;
         }
@@ -159,14 +192,15 @@ public final class LockTemplate {
 
     private final LockHandle handle;
     private final Thread worker;
-    private volatile Instant heldUntil;
+    // monotonic nanos (System.nanoTime) after which the lease is no longer trusted
+    private volatile long heldUntil;
     private volatile boolean lost;
     private volatile @Nullable Throwable cause;
     // guarded by this: lose() and finish() decide together whether the work gets interrupted
     private boolean running = true;
     private boolean interrupted;
 
-    Lease(LockHandle handle, Instant heldUntil, Thread worker) {
+    Lease(LockHandle handle, long heldUntil, Thread worker) {
       this.handle = handle;
       this.heldUntil = heldUntil;
       this.worker = worker;
@@ -222,7 +256,7 @@ public final class LockTemplate {
 
     @Override
     public boolean held() {
-      return !lost && Instant.now().isBefore(heldUntil);
+      return !lost && System.nanoTime() - heldUntil < 0;
     }
 
     @Override

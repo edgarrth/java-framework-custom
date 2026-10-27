@@ -92,7 +92,7 @@ class CqrsTest {
                 assertEquals("card-1-ana", first);
                 assertEquals(first, again);
                 assertEquals(1, handler.calls.get());
-                // report case: another caller reusing the key runs its own command
+                // regression: another caller reusing the key runs its own command
                 String other;
                 try (RequestContext.Scope ignored = RequestContext.open(caller("bob"))) {
                   other = bus.send(new IssueCardCommand("ana", "idempotency-key-00000001"));
@@ -114,7 +114,7 @@ class CqrsTest {
     }
   }
 
-  /** Report case (second review): commands nothing protects stop startup in fail mode. */
+  /** Regression: commands nothing protects stop startup in fail mode. */
   @Test
   void unprotectedCommandsFailStartupWhenRequired() {
     new ApplicationContextRunner()

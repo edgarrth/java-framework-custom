@@ -65,15 +65,17 @@ public class AxizCacheAutoConfiguration {
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
   static Advisor axizCacheableAdvisor(
-      ObjectProvider<AxizCaches> caches, ObjectProvider<JsonMapper> mapper) {
+      ObjectProvider<AxizCaches> caches,
+      ObjectProvider<JsonMapper> mapper,
+      ObjectProvider<CacheCallerResolver> callers) {
     DefaultPointcutAdvisor advisor =
         new DefaultPointcutAdvisor(
             new AnnotationMatchingPointcut(null, AxizCacheable.class, true),
             new AxizCacheableInterceptor(
                 caches::getObject,
-                () ->
-                    mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build())));
-    advisor.setOrder(30);
+                () -> mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build()),
+                () -> callers.getIfAvailable(CacheScopes::defaultCallers)));
+    advisor.setOrder(AxizCacheableInterceptor.ORDER);
     return advisor;
   }
 }

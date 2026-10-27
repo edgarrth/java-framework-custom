@@ -306,8 +306,8 @@ class InboxTest {
   }
 
   /**
-   * Report case (second review, F11): a database created with the previous layout (no owner column)
-   * is detected at startup, upgraded by a new migration and keeps its data and invariants.
+   * Regression: a database created with the previous layout (no owner column) is detected at
+   * startup, upgraded by a new migration and keeps its data and invariants.
    */
   @Test
   void anInboxFromThePreviousVersionIsDetectedAndUpgradedKeepingItsData() throws Exception {

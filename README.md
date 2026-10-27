@@ -26,7 +26,6 @@ y cómo ejecutar y probar el demo desde una máquina sin nada instalado.
 9. [Compilar y probar el framework completo](#9-compilar-y-probar-el-framework-completo)
 10. [Crear un servicio propio](#10-crear-un-servicio-propio)
 11. [Documentación](#11-documentación)
-12. [Revisiones incorporadas](#12-revisiones-incorporadas)
 
 ## 1. Los cinco repositorios
 
@@ -85,8 +84,8 @@ flowchart LR
 - **Workflows → todos.** Los pipelines de los demás repositorios llaman a los workflows
   reutilizables por la etiqueta `v1` (`lib-publish`, `lib-promote`, `service-ci` y despliegue).
 - **Framework → documentación.** `axiz-docs/scripts/sync_reference.py` genera la referencia de
-- **Versión.** Todos los repositorios están en `0.1.0-SNAPSHOT`, y el demo usa esa misma versión
-  del framework.
+- **Versión.** Todos los repositorios están en `1.0.0`, y el demo usa esa misma versión del
+  framework.
 
 Dentro del demo, el flujo de un pago es este:
 
@@ -178,7 +177,7 @@ explica cómo correrlas.
 **Qué validar:**
 
 ```bash
-ls ~/.m2/repository/pe/axiz/axiz-parent-service/0.1.0-SNAPSHOT/   # existe el .pom
+ls ~/.m2/repository/pe/axiz/axiz-parent-service/1.0.0/            # existe el .pom
 ls ~/.m2/repository/pe/axiz/ | wc -l                             # alrededor de 145 artefactos
 ```
 
@@ -210,10 +209,10 @@ jars. Si falta un jar, o es más antiguo que el código de su servicio, `up` lo 
 de compilación por separado.
 
 `clean` importa: un `package` incremental deja en `target/classes` el `.class` de un archivo que
-se renombró o se borró (por ejemplo al extraer una revisión nueva sobre la anterior), y el jar lo
+se renombró o se borró (por ejemplo al extraer una versión nueva sobre la anterior), y el jar lo
 incluye.
 
-**Qué validar:** `BUILD SUCCESS` y un `target/<servicio>-0.1.0-SNAPSHOT.jar` en cada carpeta de
+**Qué validar:** `BUILD SUCCESS` y un `target/<servicio>-1.0.0.jar` en cada carpeta de
 `services/`.
 
 ### 4.4 Levantar la infraestructura y los servicios
@@ -954,46 +953,20 @@ No hace falta reinstalar el framework, salvo que cambies su código.
 
 | Síntoma | Causa y solución |
 |---|---|
-| `'dependencies.dependency.version' for ... is missing` al compilar el framework | Versión no gobernada por el BOM. Está corregido en esta entrega; si aparece otra, la dependencia debe declararse en `platform/axiz-dependencies/pom.xml`. |
-| `Could not find artifact pe.axiz:axiz-parent-service:pom:0.1.0-SNAPSHOT` en el demo | No se instaló el framework. Ejecuta la sección 4.1. |
+| `'dependencies.dependency.version' for ... is missing` al compilar el framework | Versión no gobernada por el BOM: la dependencia debe declararse en `platform/axiz-dependencies/pom.xml`. |
+| `Could not find artifact pe.axiz:axiz-parent-service:pom:1.0.0` en el demo | No se instaló el framework. Ejecuta la sección 4.1. |
 | `Rule ... RequireJavaVersion failed` | El JDK no es 25. Revisa `java -version` y `JAVA_HOME`. |
 | `failed to connect to the docker API at unix:///var/run/docker.sock` o `Docker is not running` | Docker no está iniciado. Abre Docker Desktop (con la integración WSL activa) o, en WSL sin Docker Desktop, ejecuta `sudo service docker start`. |
 | `port 8080 (payments-experience) is taken by: <nombre>-control-plane` | Un clúster de kind publica el 8080. Detén su nodo con `docker stop <nombre>-control-plane` (lo recuperas con `docker start`) o bórralo con `kind delete cluster --name <nombre>`. |
 | `port ... is taken by: a process outside Docker` | Otro programa usa el puerto. `sudo ss -ltnp 'sport = :<puerto>'` muestra cuál. |
-| `scripts/demo.sh smoke` no muestra nada | Era la versión anterior del script, que fallaba en silencio si los servicios aún no arrancaban. La actual espera a los servicios y explica cada fallo. |
-| `scripts/demo.sh scenarios` termina con `the tokens have no claim "tenant"` | Keycloak conserva el realm anterior a review19. `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El grupo `notifications` falla con `probe queue ... missing` | LocalStack se inicializó con un demo anterior a review19, que no creaba la cola que copia las notificaciones. `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| `GET /v1/payment-processes/...` responde `400` con `tenant is required` | El token no trae el claim `tenant` (realm anterior a review19). `scripts/demo.sh down` y `scripts/demo.sh up`. |
 | El grupo `settlement` falla con `settlement-batch jar missing` | El jar del batch no se compiló. `scripts/demo.sh up` lo compila; también `./mvnw clean package -DskipTests -pl services/settlement-batch -am`. |
-| `payments-experience` muestra `NoClassDefFoundError: jakarta/servlet/ServletException` y el pago no responde | El framework instalado es anterior a review13. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El pago responde `404` con `AXZ-CORE-0404` y el log de payments-experience dice `NoResourceFoundException` | El framework instalado es anterior a review14: con el header `API-Version` opcional y sin versión por defecto, WebFlux no encontraba ninguna ruta. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El pago queda en `RECEIVED`, sin errores, y `.run/payment-process.log` no tiene `ConsumerConfig values` | El framework instalado es anterior a review17: con `axiz.messaging.kafka.topics` escrito como lista YAML no se creaba ningún consumidor, y payment-process nunca leía el evento. El smoke lo detecta y muestra el grupo de consumidores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El pago queda en `RECEIVED` y payments-business dice `INVALID_TOPIC_EXCEPTION` para `kafka:payments` | El framework instalado es anterior a review16: el publicador de Kafka usaba `kafka:payments` como nombre de topic en vez de `payments`. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| El pago queda en `RECEIVED` y payments-business repite `UNKNOWN_TOPIC_OR_PARTITION` | Los topics de Kafka no se crearon (demo anterior a review15: el broker solo se anunciaba como `localhost` y el job `kafka-topics` no podía conectarse). Con review15, `scripts/demo.sh down` y `scripts/demo.sh up`; `up` verifica que existan `payments`, `payments.dlq` y `audit`. |
 | El smoke falla con `no answer: ...` | El texto que sigue dice qué pasó: `connection refused` (el servicio no escucha), `no response in 30s` (no respondió a tiempo) o `closed the connection` (cerró la conexión). Encima, el smoke muestra las últimas advertencias y errores de los servicios que participan en ese paso. Con eso puedes revisar el log completo en `.run/<servicio>.log`. |
-| `payments-business` termina con `Schema validation: wrong column type encountered in column [currency]` | Es el demo de review10 o anterior: la migración creaba `currency` como `CHAR(3)` y la entidad la valida como `VARCHAR(3)`. Con review11, la migración `V4__currency_varchar.sql` la corrige. Ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| `notifications-processor` termina con `At least one trusted issuer is required` | El framework instalado es anterior a review10: el starter de EDA incluía el resource server de seguridad, y un procesador de eventos no configura emisores. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| `beneficiaries-crud` o `notifications-processor` terminan con `Failed to configure a DataSource` | El framework instalado es anterior a review9: sus starters layered y EDA traían un pool de conexiones. Reinstala el framework (sección 4.1) y ejecuta `scripts/demo.sh down` y `scripts/demo.sh up`. |
-| Al arrancar cada servicio aparece `WARNING: sun.misc.Unsafe::arrayBaseOffset has been called by com.google.protobuf.UnsafeUtil` | El framework instalado es anterior a review21 (`protobuf-java` 4.35, que trae la exportación de métricas OTLP). Reinstala el framework (sección 4.1) y vuelve a compilar el demo: `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
-| El grupo `rules` falla porque el pago en USD responde `201` | Demo anterior a review21: el perfil `platform` encendía el flag `payments-usd` por encima de `AXIZ_FLAG_PAYMENTS_USD`. Con review21, `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
-| `core-integration` registra `SqsException: The security token included in the request is invalid` y el grupo `audit` falla | El framework instalado es anterior a review21: el cliente SQS de la auditoría ignoraba `axiz.aws.endpoint` y salía a AWS real. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
-| `settlement-batch` termina con `The bean 'settlementJob' ... could not be registered` | La clase de configuración y su `@Bean` se llamaban igual (antes de review21), o el jar todavía lleva el `SettlementJob.class` de esa versión: la clase se renombró a `SettlementJobConfiguration` y un `package` sin `clean` dejó el `.class` anterior en `target/classes` (el log muestra `SettlementJob.class` dentro del jar). Desde review23 `demo.sh` compila con `clean package`; ejecuta `scripts/demo.sh up --build`. La regla `UNIQUE_BEAN_NAMES` del `ArchitectureTest` detecta los nombres repetidos al ejecutar las pruebas. |
-| `scenarios` falla en `audit of core-integration archived on S3 (SQS -> S3)` aunque el objeto existe | Antes de review23 el escenario contaba con `--query KeyCount`: el AWS CLI pagina `list-objects-v2`, une las páginas y `KeyCount` sale `None`. Ahora cuenta `length(Contents)`. |
-| Falla `one trace from the channel request to the saga` | El mensaje dice qué servicios tiene la traza de la última orden. Si falta `payments-experience`, el demo es anterior a review21 (sin `spring-boot-starter-webclient` las llamadas del canal salían sin `traceparent`). Si falla `core-integration continues the trace of payment-process`, compara el `traceparent` de la línea `axiz.http` de core-integration que muestra el mensaje con el trace ID de payment-process. |
-| `scripts/demo.sh up` termina con `the Kafka topics were not created` aunque el log del job muestra `Created topic payments.` | Versión de review21 o anterior: el script esperaba el job con `docker compose wait`, que en algunas versiones de Compose falla con un job que ya terminó. Desde review22 pregunta al broker por los topics. Reemplaza `axiz-demo/scripts/demo.sh` y vuelve a ejecutar `scripts/demo.sh up --build`. |
-| `scripts/demo.sh up --build` termina enseguida sin mostrar nada y luego `smoke` espera 300 s con todo `STOPPED` | Versión de review23 o anterior en una copia nueva (sin carpetas `target/`, por ejemplo al extraer el zip en otra carpeta): el script buscaba el jar en `target/`, la búsqueda fallaba y `set -e` lo cerraba sin mensaje. Desde review24 compila los jars que faltan, cualquier falla inesperada de los scripts muestra la línea y el comando, y `wait`/`smoke` fallan de inmediato si un servicio no se arrancó. |
 | El initializr no arranca con `Unable to resolve Configuration with the provided Issuer` | Keycloak no está levantado o aún no responde en `http://localhost:8180`. Levanta el demo (sección 4.4) y espera a que `scripts/demo.sh status` muestre los servicios UP. |
-| Keycloak muestra `Client not found` o `Invalid parameter: redirect_uri` al entrar al initializr | El realm se importó con una versión anterior a review25, sin el cliente `axiz-initializr`. `scripts/demo.sh down` y `scripts/demo.sh up` recrean Keycloak con el realm actual. Comprueba también que el initializr corre con `--spring.profiles.active=local` (puerto 8090). |
-| `payments-experience` o `payments-history` muestran `WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal.NativeLibraryUtil` | El framework instalado es anterior a review23: el jar no declaraba `Enable-Native-Access`. Reinstala el framework (sección 4.1), luego `scripts/demo.sh down` y `scripts/demo.sh up --build`. |
-| `core-integration` registra `ERROR ... status=503 code=AXZ-EXT-0502 ... failed with status -1` con un stack trace largo durante el grupo `recovery` | Es el timeout simulado del core (esperado), registrado con el framework anterior a review23. Con review23 sale una línea `WARN ... status=504 code=AXZ-EXT-0504 ... got no response (SocketTimeoutException) cause=...` sin stack trace. |
-| `scripts/demo.sh up` aborta con `port 4317 (infrastructure) is taken by: a process outside Docker` aunque es el `otel-lgtm` del demo | Versión de review25 o anterior: el script no reconocía los puertos publicados en rango (`0.0.0.0:4317-4318->4317-4318/tcp`). Desde review26 los reconoce y considera propios los contenedores del proyecto de Compose `axiz-demo`. |
-| `scenarios` falla en `summary on S3` con `no out/settlement/NET-SETTLE-SAMPLE.txt.summary.json` | Antes de review26 el escenario reutilizaba siempre el mismo archivo: PostgreSQL lo tenía como cargado y LocalStack, recreado, ya no tenía su resumen. Ahora cada ejecución usa un archivo propio y una nueva ejecución de un archivo ya cargado vuelve a escribir su resumen. |
-| Las pruebas de arranque (`...ApplicationTest`) fallan con `Error creating bean with name 'ssmClient'` o `Unable to load region from any of the providers in the chain` | El framework instalado es anterior a review26: Spring Cloud AWS creaba un cliente de Parameter Store sin que se usara y sin región de AWS en la máquina no arrancaba. Reinstala el framework (sección 4.1). |
-| `./mvnw -Pquality verify` falla con `cannot initialize module JavadocStyle` | Versión anterior a review26: Checkstyle 14.2 ya no tiene ese módulo. Las reglas de review26 usan `SummaryJavadoc`. |
+| Falla `one trace from the channel request to the saga` | El mensaje dice qué servicios tiene la traza de la última orden. Si falla `core-integration continues the trace of payment-process`, compara el `traceparent` de la línea `axiz.http` de core-integration que muestra el mensaje con el trace ID de payment-process. |
+| `core-integration` registra `WARN ... status=504 code=AXZ-EXT-0504 ... got no response (SocketTimeoutException)` durante el grupo `recovery` | Es el timeout simulado del core: el escenario lo provoca a propósito. |
 | `<servicio> stopped while starting` o estado `EXITED` | El servicio se cayó al arrancar. El mensaje muestra el final de su log; el log completo está en `.run/<servicio>.log`. |
 | Un servicio sigue en `STARTING` después de 5 minutos | La máquina está saturada. Revisa memoria (sección 3) y `.run/<servicio>.log`. |
 | `401` en todas las llamadas | El token venció (15 minutos). Vuelve a obtener los tokens (5.0). |
-| `403` donde se espera `200` con el token del proceso | El realm de Keycloak es anterior a esta entrega. Ejecuta `scripts/demo.sh down` y `up`. |
 | El smoke falla con `payment rejected` | La cuenta debitada no es `1910012345678` o el core simulado no responde. Revisa WireMock en <http://localhost:8089/__admin/requests>. |
 | `409 ... 0004` al pagar | Ya hay un pago igual hoy. Cambia el monto. |
 | Todo es muy lento en WSL | Mueve los repositorios de `/mnt/...` a `~/` (sección 3) y dale a Docker Desktop al menos 8 GB. |
@@ -1019,15 +992,13 @@ cd axiz-framework
   (LocalStack) con Testcontainers, así que necesitan Docker.
 - En el demo, `./mvnw verify` desde `axiz-demo` corre las pruebas de los 8 servicios y la
   verificación de que el demo usa todas las capacidades del catálogo.
-- Cada repositorio tiene un `VERIFICATION.md`. Ahí está lo que se verificó al construir esta
-  entrega y lo que corre solo en CI.
 
 ## 10. Crear un servicio propio
 
 Con la CLI compilada (sección 4.2):
 
 ```bash
-alias axiz='java -jar ~/axiz/axiz-tools/axiz-cli/target/axiz-cli-0.1.0-SNAPSHOT-jar-with-dependencies.jar'
+alias axiz='java -jar ~/axiz/axiz-tools/axiz-cli/target/axiz-cli-1.0.0-jar-with-dependencies.jar'
 axiz catalog                                  # arquetipos, estilos y capacidades
 axiz new orders --archetype business --framework hexagonal --persistence aurora \
   -c idempotency -c outbox --openapi orders.yaml
@@ -1057,7 +1028,7 @@ en otra terminal:
 ```bash
 cd axiz-tools
 ./mvnw -pl axiz-initializr -am clean package -DskipTests
-java -jar axiz-initializr/target/axiz-initializr-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+java -jar axiz-initializr/target/axiz-initializr-1.0.0.jar --spring.profiles.active=local
 ```
 
 Abre <http://localhost:8090> e inicia sesión con `ana` / `local-only-ana`. Desde ahí eliges
@@ -1070,9 +1041,8 @@ correcto y **Generar ZIP** descarga `<nombre>.zip`.
 
 - El perfil `local` usa el puerto 8090 (del 8080 al 8086 están los servicios del demo) y el cliente
   `axiz-initializr` del realm del demo, con un secreto `local-only`.
-- Keycloak importa el realm solo cuando se crea su contenedor. Si el demo ya estaba levantado con
-  una versión anterior a review25, ejecuta `scripts/demo.sh down` y `scripts/demo.sh up` para que
-  aparezca el cliente.
+- Keycloak importa el realm solo cuando se crea su contenedor. Si cambias el realm con el demo
+  levantado, ejecuta `scripts/demo.sh down` y `scripts/demo.sh up` para que tome los cambios.
 - **Crear repositorio en GitHub** necesita una OAuth App propia en GitHub con el callback
   `http://localhost:8090/authorized/github`. Exporta `AXIZ_GITHUB_CLIENT_ID` y
   `AXIZ_GITHUB_CLIENT_SECRET` antes de arrancar. El repositorio se crea en tu cuenta, o en la
@@ -1096,319 +1066,3 @@ Secciones principales:
 - operación: CI/CD, despliegue, perfil operativo y observabilidad;
 - migración;
 - referencia de cada módulo.
-
-## 12. Revisiones incorporadas
-
-Esta entrega incluye las correcciones de dos revisiones externas y de cuatro auditorías de código.
-seguridad, y la guía de migración.
-
-- **Primera revisión.** Llaves de idempotencia e inbox con dueño y *fencing*. Mensajes ocupados
-  que no se confirman. Sagas que compensan lo que ejecutaron. Contratos de stores probados contra
-  backends reales. Wrapper de Maven verificado. Generador reproducible.
-- **Segunda revisión** (requisitos de entidad financiera):
-  - autorización vigente antes de cualquier replay;
-  - autorización por recurso en todos los servicios del demo;
-  - sagas que no compensan efectos inciertos (`IN_DOUBT`);
-  - deduplicación por `source` + `id`;
-  - límite diario reservado de forma atómica y llave de solicitud durable;
-  - auditoría durable vía outbox;
-  - publicación solo después de todos los gates;
-  - migración del inbox;
-  - stores en memoria prohibidos en ambientes desplegados.
-- **Arranque y smoke del demo:**
-  - `demo.sh up` revisa Docker, el JDK y los puertos antes de arrancar, y nombra a quien ocupa un
-    puerto;
-  - los servicios arrancan desde sus jars y `up` espera a que los 7 estén `UP`;
-  - `smoke` espera a los servicios y muestra el código HTTP y la respuesta de cualquier paso que
-    falle;
-  - el clúster de kind del demo usa los puertos 9080, 9180 y 9300 para convivir con el demo
-    local.
-- **Persistencia de los starters de estilo:** el starter layered ya no trae JPA y el de EDA ya no
-  trae un pool JDBC. Con ese pool, un servicio sobre DynamoDB no arrancaba
-  (`beneficiaries-crud`: `Failed to configure a DataSource`). Una regla de
-  `check-dependency-governance.py` impide que vuelva a pasar.
-- **Seguridad del estilo EDA:** el starter de EDA ya no incluye el resource server, porque un
-  procesador de eventos no tiene API ni emisores de tokens que configurar
-  (`notifications-processor`: `At least one trusted issuer is required`). Si la lista de emisores
-  queda vacía en un servicio con API, el error indica qué configurar.
-- **Esquema de payments-business:** `currency` pasa de `CHAR(3)` a `VARCHAR(3)` con validación de
-  formato ISO 4217, en una migración nueva (`V4`). Hibernate valida el esquema al arrancar y
-  rechazaba la columna `CHAR`. Todas las migraciones del demo y de los proyectos generados se
-  aplicaron sobre PostgreSQL real, y las consultas SQL del framework y del demo se prepararon
-  contra esos esquemas.
-- **Token relay en servicios reactivos:** un cliente HTTP reactivo con `auth.type: TOKEN_RELAY`
-  (payments-experience hacia beneficiaries-crud y payments-business) buscaba el token en el
-  contexto de seguridad del hilo, que en WebFlux está vacío. Ahora lo toma del contexto de
-  Reactor. El smoke explica además por qué no hubo respuesta y muestra los errores de los
-  servicios involucrados.
-- **Errores en servicios reactivos:** el traductor de excepciones del framework usaba una clase
-  que depende del API de servlets, ausente en WebFlux. Cualquier error en payments-experience
-  hacía fallar el propio manejador de errores y la request quedaba sin respuesta (el smoke
-  esperaba 30 s). Ahora esas clases solo se cargan en servicios servlet, un traductor que falle
-  ya no impide responder, y las fallas de red de los clientes reactivos (timeout, conexión
-  rechazada) se responden como error de dependencia (503), igual que en servlet.
-- **Versión de API por defecto:** en un servicio reactivo con versionado por header opcional y sin
-  versión por defecto, Spring WebFlux no encuentra ninguna ruta para una request sin el header y
-  responde 404 (era el error del pago). El framework usa ahora la versión por defecto configurada
-  o, si falta, la menor soportada, y falla al arrancar si no puede elegir ninguna. El arquetipo
-  experience y payments-experience la declaran (`default-version: '1'`).
-- **Logs del demo:** `scripts/demo.sh up --attach` muestra los logs de todos los servicios en la
-  terminal; `logs`, `restart --debug` y `stop` completan el ciclo, y el smoke muestra las llamadas
-  fallidas además de los errores.
-- **Kafka del demo:** el broker anuncia dos direcciones, `kafka:29092` para los contenedores y
-  `localhost:9092` para los servicios. Con una sola, el job que crea los topics no podía
-  conectarse, faltaban `payments` y `audit` y la saga del pago nunca empezaba. `demo.sh up` ahora
-  verifica los topics antes de arrancar los servicios.
-- **Idempotencia reactiva:** el registro de la respuesta se guarda como parte de escribirla. Antes
-  se hacía después, y el servidor podía cancelar ese trabajo al terminar la respuesta
-  (`RedisCommandInterruptedException`), dejando la llave en curso hasta que venciera.
-- **Destinos de Kafka:** `axiz.messaging.destinations` documenta el formato `kafka:<topic>`, pero
-  el publicador de Kafka enviaba a un topic llamado literalmente `kafka:payments`, que Kafka
-  rechaza. Los eventos de la orden nunca salían del outbox y la saga no empezaba. El publicador
-  ahora quita el prefijo (prueba ejecutada con el `MockProducer` de Kafka).
-- **Idempotencia reactiva (segunda parte):** la respuesta se registra en un worker independiente
-  de la request. Cuando el cliente cierra la conexión apenas recibe la respuesta, el servidor
-  cancela el trabajo de esa request; el registro ya no depende de ella y no se interrumpe.
-- **Consumidores de Kafka:** la condición que crea los listeners leía `axiz.messaging.kafka.topics`
-  como un texto; escrita como lista YAML (como en todos los servicios) parecía vacía y ningún
-  servicio consumía. El evento quedaba en el topic y el pago en `RECEIVED`. Ahora la lista se lee
-  con el binder de Spring Boot (prueba ejecutada con las tres formas de escribirla). Lo mismo
-  aplicaba a las colas SQS de `notifications-processor`.
-- **Datos sensibles en eventos:** el enmascaramiento de `@Sensitive` estaba en el `JsonMapper` de
-  la aplicación, que también arma el payload de los eventos. La cuenta a debitar viajaba como
-  `*********5678` y el débito habría fallado en el siguiente paso de la saga. Ahora solo se
-  enmascaran las respuestas HTTP (ejecutado con Jackson 3: el evento conserva la cuenta y la
-  respuesta la enmascara).
-- **Tipos sin handler:** el topic `payments` lleva `created` y `status-changed`.
-  `payment-process` y `notifications-processor` procesan uno solo y mandaban el otro a la DLQ;
-  ahora lo confirman sin procesarlo (`ignore-unknown-types: true`).
-- **Advertencias del build:** `axiz-featureflags-spring-boot-autoconfigure` declara
-  `spotbugs-annotations` como `provided`. Las clases del SDK de OpenFeature traen
-  `@SuppressFBWarnings`, y sin la anotación en el classpath javac avisaba una vez por cada miembro
-  anotado. Los starters (solo dependencias), los módulos que solo tienen pruebas y el reporte de
-  cobertura ya no avisan `JAR will be empty`: los primeros crean el jar a propósito
-  (`maven.jar.forceCreation`) y el reporte de cobertura usa packaging `pom`.
-- **Pruebas funcionales (`scripts/demo.sh scenarios`):** 85 verificaciones en 14 grupos cubren lo que
-  el smoke no toca (sección 4.7). Al escribirlas se encontraron tres problemas del demo:
-  - la vista del proceso (`GET /v1/payment-processes/{id}`) respondía `400`, porque payment-process
-    es multi-tenant y los tokens no traían tenant. El realm ahora agrega el claim `tenant`;
-  - la sección 5.7 y Bruno esperaban `-0001` para un pago en USD, pero el feature flag lo rechaza
-    antes con `-0002`. Se corrigieron, y el caso de moneda distinta ahora usa un beneficiario en
-    dólares;
-  - la sección 5.9 decía que la traza del pago continuaba por Kafka. La saga tiene su propia traza,
-    que empieza en la publicación del outbox.
-  LocalStack crea además una cola suscrita al topic de notificaciones, para verificar lo que se
-  envía, y `demo.sh up` compila el job `settlement-batch`.
-- **Trazas completas a través del outbox:** la request que registra un pago y su saga son ahora una
-  sola traza. Antes el outbox publicaba el evento fuera de la request, y la saga empezaba una traza
-  nueva. El `OutboxWriter` guarda con el evento el contexto de la escritura
-  (`outboxtraceparent`); el relay lo continúa al publicar (span `outbox dispatch`) y lo quita antes
-  de enviar al broker; Kafka lleva el `traceparent` de la publicación a los consumidores. Aplica a
-  todo lo que pasa por el outbox, también la auditoría durable y las reacciones de EDA. Probado con
-  los handlers reales de Micrometer Tracing: request → `outbox write` → `outbox dispatch` →
-  `publish` → handler del consumidor, todo en la misma traza. El grupo `observability` de los
-  escenarios lo verifica en Tempo.
-- **Advertencias de arranque y fallas de los escenarios (review21):**
-  - `protobuf-java` 4.36.2 en `axiz-dependencies`. La exportación de métricas OTLP lo trae y, hasta
-    la 4.35, su runtime llamaba a métodos de `sun.misc.Unsafe` marcados para eliminación: Java 25
-    lo avisaba al arrancar cada servicio. La 4.36 (protobuf v36, agosto de 2026) ya no los usa en
-    el runtime completo; se revisó en sus fuentes que ninguna clase de ese camino llega a
-    `UnsafeUtil`. No se ocultó con `--sun-misc-unsafe-memory-access`.
-  - Clientes AWS: la auditoría por SQS, KMS, Secrets Manager, Parameter Store y los stores en
-    DynamoDB creaban su cliente sin endpoint ni región cuando no había un bean. Desde local iban a
-    AWS real (`403` en la auditoría de core-integration, sin archivo en S3). Ahora todos usan
-    `AwsClients.configured(...)` (`axiz.aws.<servicio>.endpoint` o `axiz.aws.endpoint`), observados
-    y cerrados al apagar; prueba ejecutada con un `SqsClient` real.
-  - `settlement-batch` no arrancaba: la clase `SettlementJob` y su `@Bean settlementJob()` daban el
-    mismo nombre de bean. La clase es ahora `SettlementJobConfiguration`, y la nueva regla
-    `UNIQUE_BEAN_NAMES` de ArchUnit (en el `ArchitectureTest` de todo servicio) detecta ese error.
-    Ejecutada sobre los 27 servicios generados, encontró el mismo problema en el generador:
-    `axiz generate command x` y `axiz generate query x` creaban dos `XHandler` en paquetes
-    distintos. Ahora son `XCommandHandler` y `XQueryHandler`.
-    Además el adaptador de S3 trae ahora la librería con la que se construye su cliente: sin ella
-    el batch habría fallado después con `NoClassDefFoundError`.
-  - Pagos en USD: el perfil `platform` de payments-experience encendía el flag por encima de
-    `AXIZ_FLAG_PAYMENTS_USD`. Se quitó; el flag está apagado en local y encendido en kind.
-  - Trazas: las llamadas de `WebClient` del canal salían sin observación (en Boot 4 el soporte de
-    `WebClient` es `spring-boot-starter-webclient`, que el demo no tenía), así que la traza se
-    cortaba entre payments-experience y payments-business. Los clientes de `axiz.http-client`
-    reciben ahora el `ObservationRegistry` en los dos stacks (con `RestClient` se ejecutó en un
-    contexto de Spring Boot con un servidor HTTP: el `traceparent` llega con la traza del
-    llamador; `WebClient` no se pudo ejecutar aquí, sin Reactor Netty), los servicios
-    reactivos generados declaran ese starter y el demo también. El endpoint de trazas usaba la
-    propiedad de Boot 3 (`management.otlp.tracing.endpoint`, ignorada en Boot 4); en kind las
-    trazas no salían. Las verificaciones de trazas de los escenarios toman el trace ID de los logs
-    y lo buscan en Tempo, y si fallan dicen en qué salto se cortó.
-  - Logs: los stores en memoria (solo permitidos en `local` y `test`) informan en INFO; los 409 se
-    registran en INFO; Lettuce ya no avisa `Connection is already closed` al apagar (la conexión
-    la cierra el cliente Redis); las notificaciones registran el medio en un tag propio
-    (`medium`) en vez de `channel`, que es el canal del cliente.
-- **Fallas de los escenarios y logs (review23):**
-  - `settlement`: el jar del batch todavía llevaba el `SettlementJob.class` anterior al cambio de
-    nombre. `package` sin `clean` no borra de `target/classes` las clases cuyo fuente se renombró
-    o se borró. `demo.sh` compila ahora con `clean package` y también detecta archivos borrados
-    (la fecha de su carpeta cambia).
-  - `audit ... archived on S3`: el objeto existía, pero el AWS CLI pagina `list-objects-v2` y, al
-    unir las páginas, `--query KeyCount` devuelve `None`. El escenario cuenta `length(Contents)`.
-  - Dependencia que no contesta: un timeout se respondía 503 con el mensaje
-    `failed with status -1` y se registraba en ERROR con ~190 líneas de stack trace por intento.
-    Ahora un timeout es 504 (`AXZ-EXT-0504`, como ya hacían el cliente SOAP y la BFF), una
-    conexión rechazada sigue en 503, el mensaje dice `got no response (SocketTimeoutException)` y
-    el cliente HTTP conserva la causa. Las fallas de dependencias se registran en WARN con
-    `cause=<tipo>: <mensaje>` y sin stack trace; las fallas internas siguen en ERROR con él
-    (detalle en `axiz-docs`, guía de errores). Para la saga, 503 y 504 siguen siendo un resultado
-    incierto (`IN_DOUBT`).
-  - `WARNING: A restricted method in java.lang.System has been called` en los servicios
-    reactivos: Netty carga su transporte nativo con `System.loadLibrary`, que desde Java 24 exige
-    acceso nativo y que una versión futura bloqueará. `axiz-parent-service` lo concede de forma
-    explícita (JEP 472): atributo `Enable-Native-Access: ALL-UNNAMED` en el manifiesto del jar
-    ejecutable, `--enable-native-access=ALL-UNNAMED` en la imagen de Jib (que no arranca con
-    `java -jar`) y en las pruebas.
-- **Scripts del demo en una copia nueva (review24):** `scripts/demo.sh up` terminaba sin mensaje
-  cuando aún no existía ninguna carpeta `target/`: la búsqueda del jar fallaba y `set -e` cerraba el
-  script. Ahora compila los jars que faltan. `demo.sh`, `smoke.sh`, `dev-secrets.sh` y `run.sh`
-  usan `set -E` con un `trap ERR` que muestra la línea y el comando de cualquier falla inesperada,
-  y `scripts/demo.sh wait` (y por lo tanto `smoke`) falla de inmediato si un servicio no se
-  arrancó, en vez de esperar 300 s.
-- **Initializr (review25):**
-  - Con dos registros OAuth (`sso` para iniciar sesión y `github` para crear repositorios), el
-    login aceptaba GitHub como proveedor de identidad. Mostraba una página para elegir entre
-    ambos, y la autorización de GitHub reemplazaba la sesión del usuario del SSO. Ahora solo `sso`
-    inicia sesión: la página va directo al SSO y el servicio de usuario del login rechaza
-    cualquier otro registro. GitHub usa su propio callback (`/authorized/github`), que guarda la
-    autorización para el usuario ya autenticado.
-  - El botón de GitHub no funcionaba desde la UI: la API respondía con una redirección a GitHub
-    que `fetch` no puede seguir y que además guardaba el POST para repetirlo como GET. Ahora
-    responde 403 con `authorize`; la UI abre esa URL y al volver pide crear el repositorio otra vez.
-  - Nuevo perfil `local` (puerto 8090) y cliente `axiz-initializr` en el realm del demo, para
-    probarlo en local (sección 10.1).
-
-- **Auditoría de código sobre review24 (review26).** Cada hallazgo que aplica se corrigió con una
-  prueba que reproduce el caso; el detalle está en la guía de migración de `axiz-docs`
-  ("Cambios de la tercera revisión").
-  - Perfil `quality`: Checkstyle 14.2 ya no tiene `JavadocStyle` (se usa `SummaryJavadoc`);
-    JSpecify 1.0.1 para converger con Micrometer; `aopalliance` excluido de la observabilidad
-    (clases duplicadas con `spring-aop`); los avisos de NullAway corregidos en el código, sin
-    suprimirlos; pruebas nuevas para `cache-redis`, `logging`, `batch-api` y `eda-api`, que no
-    llegaban a los umbrales de cobertura (los umbrales no cambian).
-  - Pruebas de integración: Failsafe usa `target/classes` (después de `repackage` no encontraba
-    las clases del servicio).
-  - Proyectos generados: 13 de 29 combinaciones no arrancaban sin región de AWS, porque Spring
-    Cloud AWS creaba un `SsmClient` aunque Parameter Store no se usara. Ahora sigue a
-    `axiz.config.parameter-store.enabled` (falso por defecto). Un workflow nocturno nuevo
-    (`samples-matrix.yaml`) construye todas las combinaciones sin configuración de AWS.
-  - API: un `sort` inválido responde 400 (antes 500); una request en inglés recibe textos en
-    inglés aunque el idioma por defecto sea `es-PE`; las duraciones de EDA y BFF se leen con el
-    binder de Boot.
-  - Initializr: los tokens bearer deben traer la audiencia del initializr; un token del mismo SSO
-    para otra API recibe 401.
-  - Demo: el escenario de liquidación usa un archivo propio en cada ejecución, y volver a ejecutar
-    un archivo ya cargado escribe otra vez su resumen si S3 lo perdió (LocalStack no conserva
-    datos al recrearse y PostgreSQL sí). `demo.sh` reconoce los puertos publicados en rango
-    (`4317-4318`). Las pruebas del historial y del batch que fallaban se corrigieron.
-  - Evidencia: los workflows compartidos publican en el resumen de cada job el commit, el JDK, el
-    comando y las pruebas por módulo (`actions/test-report`). Los `VERIFICATION.md` separan lo
-    verificado aquí sin Maven de lo que solo corre en CI.
-
-- **Tres auditorías independientes sobre review26 (review27).** Se aplicó lo que corresponde a un
-  framework bancario en producción; el detalle y las acciones para servicios existentes están en la
-  guía de migración de `axiz-docs` ("Cambios de la cuarta revisión").
-  - Seguridad: `RequestSignature` versión 2 (forma canónica sin ambigüedad, llave por id, nonce
-    con `NonceStore` contra replay, `RedisNonceStore` en clúster); OpenAPI, Swagger UI y
-    `/actuator/info` cerrados por defecto; `fail-open` por regla de rate limit; WS-Security sin
-    modo por defecto, con el digest SHA-1 legado solo explícito y siempre sobre `https://`.
-  - Tarjetas: `CardBrand.guess` solo para mostrar; las decisiones usan `CardSchemeResolver` con la
-    tabla IIN/BIN gobernada (`IinRangeTable`).
-  - Kubernetes: la configuración llega como archivos montados (sin Spring Cloud Kubernetes, sin
-    token de ServiceAccount ni RBAC); NetworkPolicy con salida restringida; reparto entre zonas
-    estricto en prod.
-  - Cadena de suministro: workflows por versión fijada, firma de imágenes obligatoria, qa y prod
-    por digest, descargas de CI verificadas por checksum, procedencia SLSA firmada en cada
-    release, wrapper de Maven con SHA-512 fijado y comparación de API con japicmp
-    (`-Papi-compat`).
-  - Calidad: el perfil `quality` queda limpio en lo que se puede ejecutar sin Maven (Checkstyle,
-    formato, Error Prone y NullAway corregidos en el código, sin supresiones generales);
-    convergencia de dependencias (`slf4j-api`, Bouncy Castle); pruebas nuevas en las
-    auto-configuraciones que no llegaban a los umbrales de cobertura (crypto, errors,
-    featureflags, foundation, i18n, idempotency, jpa, lock, r2dbc, secrets, soap, storage,
-    tenancy, web, dynamodb, security).
-  - Defectos corregidos con prueba: initializr con un solo constructor; inbox incluido por el
-    estilo EDA; claves de caché con tipo y firma de método (`k2`); POM válido con cualquier
-    descripción; L1 que no supera el TTL de L2; contexto de seguridad vacío en WebFlux; región de
-    AWS ya no requerida por Secrets Manager en local; una bandera de OpenFeature no configurada
-    devuelve el valor por defecto de quien la consulta; `ddl-auto` solo con los perfiles `local`
-    o `test` exactos.
-  - Pruebas y demo: llaves de prueba generadas en cada ejecución (`EphemeralSecrets`, sin
-    archivos de llaves versionados); reglas ArchUnit contra locks de la JVM en código de negocio;
-    pruebas de concurrencia del cifrado y de acumulación de centavos.
-
-- **Validación de review27 (review28).** La validación del 23 de octubre con Maven y Docker reales
-  confirmó seis hallazgos corregidos y dejó abiertos los límites de caché y el perfil `quality`.
-  existentes en la guía de migración ("Cambios de la quinta revisión").
-  - Caché: llaves `k3`, con la clase de cada arreglo y colección (`int[]` e `Integer[]` ya no
-    comparten entrada); la copia de L1 descuenta el tiempo de la lectura de L2, medido con el
-    reloj monotónico y con el de L1; un nivel que no conoce la expiración no llena L1.
-  - Calidad: Spotless limpio en todo el reactor (incluido `formatAnnotations`); sin clases
-    duplicadas (JSpecify de WireMock, AOP Alliance en el starter JPA); `slf4j-api` 2.0.19.
-  - Cobertura: pruebas nuevas en los nueve módulos bajo los umbrales (audit, errors, http-client,
-    logging, messaging, metrics, observability, r2dbc y sequence-dynamodb) y en los que la
-    validación no alcanzó a medir y tampoco llegaban (starters de batch, CQRS, EDA, hexagonal y
-    layered; inbox, outbox y sequence). Ningún umbral cambió.
-  - Defectos corregidos con prueba: Apache HttpClient ya no reenvía por su cuenta un `POST`
-    respondido con 429 o 503 (solo reintenta el interceptor de axiz, y solo llamadas
-    idempotentes); un cliente HTTP con `api-key` o `client-credentials` sin el starter de
-    secretos falla al arrancar con un mensaje claro en vez de un `NullPointerException`.
-
-- **Corrida de `quality` sobre review28 (review29).** La corrida del 24 de octubre aprobó 132
-  servicios en la guía de migración ("Cambios de la sexta revisión").
-  - PIT: pruebas que revisan lo que se escribe en DynamoDB al tomar y renovar un lock, y lo que
-    devuelve cada operación del servicio CRUD de layered.
-  - Cobertura: pruebas nuevas en `axiz-core-soap` (respuestas y faults) y en el interceptor de
-    `@Idempotent` (servlet y reactivo).
-  - SpotBugs: la ruta de error declara sus métodos HTTP en dos asignaciones (seguros y los que
-    cambian estado) en vez de una abierta; se corrigieron además los avisos de prioridad media de
-    todo el reactor, y los que se mantienen están justificados uno por uno.
-  - Defecto real corregido: el enmascarado de cuerpos JSON en el log lanzaba `StackOverflowError`
-    con un valor de texto de unos 5.000 caracteres; ahora lee el cuerpo en una sola pasada.
-  - R2DBC: la prueba de auditoría arma el contexto de mapeo con los tipos del dialecto, como
-    Spring Boot.
-
-- **Corrida de `quality` sobre review29 (review30).** La corrida del 24 de octubre aprobó 147
-  - PIT de `axiz-core-soap`: pruebas de lo que el cliente envía (encabezados por versión de SOAP,
-    sobre, token de WS-Security con su resumen calculado aparte, fallas de transporte).
-  - Compilación del starter de BFF: `Composition` y `AuditEvent` tienen constructor canónico
-    explícito, porque `javac` no escribe el `@Nullable` de un argumento de tipo en los
-    parámetros de un constructor compacto y NullAway rechazaba el mapa en otro módulo.
-
-- **Corrida de `quality` sobre review30 (review31).** Aprobó 149 módulos y falló en 1, por formato
-  de una prueba del autoconfigure de SOAP. El formateo de la entrega se alinea con Spotless (sin
-
-- **Auditoría del 24 de octubre (review32).** Cinco defectos y dos hallazgos de build, todos
-  - Caché por tenant por defecto (`CacheScope`), enmascarado de JSON estricto, caché de data keys
-    con identidad exacta, edad y tamaño, `exp` obligatoria en los JWT y `LockLostException` cuando
-    un lock se pierde mientras el trabajo corre.
-  - Dependencias con avisos actualizadas: Spring Boot 4.1.2 (Tomcat 11.0.27), Jackson 3.1.7 y
-    2.22.3, `lz4-java` 1.11.4, SCRAM 3.3 y AWS SDK 2.57.0.
-  - Herramientas y demo pasan sus reglas de convergencia; la cobertura mide el código escrito
-    (los modelos generados llevan `@Generated`) y se agregaron pruebas de comportamiento a la CLI,
-    la Initializr y los servicios del demo.
-
-- **Corrida de review32 (review33).** El demo pasó sus 88 escenarios con las dependencias nuevas;
-  los tres `-Pquality` fallaron por SLF4J fijada en 2.0.19 cuando Spring Boot 4.1.2 pide 2.0.20.
-  Se quitó la fijación y se excluyó una beta que Lettuce traía (`redis-authx-core`). El detalle
-
-- **Corrida de review33 (review34).** El framework y las herramientas pasaron `-Pquality`. El del
-  demo se detuvo por NullAway en `PaymentStatus` (`Map.get` puede devolver `null`); las
-  transiciones son ahora un `switch` exhaustivo. Se corrigieron además los avisos que la corrida
-  mostró en el demo y dos de SpotBugs en el framework (`LockTemplate`, `AudienceValidator`). El
-
-- **Corrida de review34 (review35).** Framework, herramientas y demo pasan `-Pquality`; el demo
-  pasó smoke y 88 escenarios. Se corrigió el último aviso de SpotBugs del demo
-  (`PaymentNotificationHandler`) y `payments-business` y `payments-history` declaran `pbkdf2`
-
-- **Corrida de review35 (review36).** `-Pquality` del demo sin avisos. En los escenarios, una
-  lectura de Grafana sin reintento falló una vez; ahora espera hasta 90 s y, si falla, muestra
-
-- **Versión inicial de los proyectos generados (review37).** `version.txt` y el manifiesto de
-  release-please siguen en `0.0.0` (nada liberado todavía); el pom nace en `0.1.0-SNAPSHOT`. La
-  Initializr sube el proyecto con un commit `feat:`, así el primer release es `0.1.0`. El detalle

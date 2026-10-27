@@ -62,17 +62,23 @@ El `ci.yaml` generado encadena los despliegues detrás del build y la imagen del
 
 `main` contiene lo liberado; `develop` publica SNAPSHOTs de librerías; `release/*` y `hotfix/*`
 se construyen como `main`; las ramas de trabajo solo corren los checks del PR. La versión publicada
-es la del tag (`-Drevision=<x.y.z>`); el pom conserva el SNAPSHOT. Los commits siguen Conventional
-Commits (el título del PR es el commit al hacer squash).
+es la del tag (`-Drevision=<x.y.z>`). Entre releases el pom lleva la SNAPSHOT de la versión
+siguiente; el commit que se etiqueta (como el de la 1.0.0) lleva la versión liberada, y el primer
+cambio en `develop` después del tag sube el pom a la próxima SNAPSHOT (por ejemplo
+`1.1.0-SNAPSHOT`). Los commits siguen Conventional Commits (el título del PR es el commit al hacer
+squash).
 
 Un proyecto nuevo nace con el pom en `0.1.0-SNAPSHOT` y el chart en `0.1.0`, que es la versión
 hacia la que trabaja. `version.txt` y `.release-please-manifest.json` guardan otra cosa: la última
 versión liberada, y nacen en `0.0.0` porque todavía no hay ninguna. Ponerlos en `0.1.0` declararía
-un release que no existe (sin tag `v0.1.0`), y release-please propondría `0.1.1` o `0.2.0` como
-primero. Desde `0.0.0`, un commit `feat:` lleva el primer release a `0.1.0`; por eso la Initializr
-sube el proyecto con el commit `feat: generate <nombre> with axiz initializr`. Si lo generas con
-`axiz new`, haz el primer commit también como `feat:`. `pr.yaml` comprueba que `version.txt` y el
-manifiesto coincidan y que el pom no esté por detrás de la versión liberada.
+un release que no existe (sin tag `v0.1.0`). Mientras no hay release, release-please no calcula la
+versión desde los commits: usa `initial-version`, que la plantilla fija en `0.1.0` (sin ese valor
+propondría `1.0.0`). Desde ahí cada release sigue Conventional Commits: un `fix:` sube el parche, un
+`feat:` la menor y un cambio incompatible (`feat!:` o `BREAKING CHANGE`) la mayor. La Initializr
+sube el proyecto con el commit `feat: generate <nombre> with axiz initializr`, que abre el
+changelog. `pr.yaml` comprueba que `version.txt` y el manifiesto coincidan y que el pom no esté por
+detrás de la versión liberada, y el CI del framework calcula con release-please esos casos sobre la
+plantilla (`.github/scripts/release-version`).
 
 ## Configuración de la organización
 

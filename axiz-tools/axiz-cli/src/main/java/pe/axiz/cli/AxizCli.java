@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.function.BooleanSupplier;
+import pe.axiz.codegen.render.JavaFormatter;
 import picocli.CommandLine;
 
 /** Entry point of the {@code axiz} binary. */
@@ -39,19 +41,23 @@ public final class AxizCli {
    * @param input interactive input
    * @param clock time source (migration versions)
    * @param env environment variables
+   * @param javaFormatter whether this process formats Java sources itself (google-java-format runs
+   *     in the CLI jar, not in the native binary)
    */
   public record Environment(
       ProcessRunner processes,
       BufferedReader input,
       Clock clock,
-      java.util.Map<String, String> env) {
+      java.util.Map<String, String> env,
+      BooleanSupplier javaFormatter) {
 
     public static Environment system() {
       return new Environment(
           new ProcessRunner.Local(),
           new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8)),
           Clock.systemUTC(),
-          System.getenv());
+          System.getenv(),
+          JavaFormatter::available);
     }
   }
 

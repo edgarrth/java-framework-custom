@@ -117,6 +117,14 @@ class ProjectGeneratorTest {
     assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@v1"));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
+    // nothing released yet; the first release is the version the pom targets (release-please
+    // would propose 1.0.0 without initial-version; .github/scripts/release-version computes it)
+    assertTrue(p.text(".release-please-manifest.json").contains("\"0.0.0\""));
+    assertEquals("0.0.0", p.text("version.txt").strip());
+    assertTrue(
+        p.text("release-please-config.json").contains("\"initial-version\": \"0.1.0\""),
+        p.text("release-please-config.json"));
+    assertTrue(p.text("pom.xml").contains("<version>0.1.0-SNAPSHOT</version>"));
     String pom = p.text("pom.xml");
     assertTrue(pom.contains("<artifactId>axiz-outbox-spring-boot-starter</artifactId>"));
     assertTrue(

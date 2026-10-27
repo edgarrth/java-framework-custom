@@ -86,6 +86,9 @@ class ContractCommand implements Runnable {
         return ExitCodes.PROBLEMS;
       }
       r.created().forEach(f -> ok("Created " + f));
+      if (!r.created().isEmpty() || !r.proposed().isEmpty()) {
+        formatSources(project());
+      }
       r.proposed().forEach(f -> warn("Review and merge " + f + " (then delete it)"));
       r.removed().forEach(id -> warn("Operation " + id + " left the contract: remove its code"));
       if (r.added().isEmpty() && r.removed().isEmpty()) {

@@ -8,7 +8,7 @@ Customer notifications and audit archive.
 | Style | `eda` |
 | Stack | `servlet` |
 | Persistence | `dynamodb` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.notifications` |
 
 ## In the demo

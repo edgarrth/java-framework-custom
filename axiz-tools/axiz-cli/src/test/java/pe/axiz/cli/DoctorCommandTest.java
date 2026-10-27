@@ -26,7 +26,8 @@ class DoctorCommandTest {
             new CliHarness.FakeProcesses(Set.of("mvn", "docker")),
             null,
             Clock.systemUTC(),
-            Map.of()));
+            Map.of(),
+            () -> true));
     return doctor;
   }
 

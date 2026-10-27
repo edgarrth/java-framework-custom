@@ -47,7 +47,10 @@ Tres controles lo sostienen:
   dos POM con valores distintos. También falla si un starter de estilo trae un pool de conexiones
   (JDBC, JPA o R2DBC): la persistencia la elige el servicio, y un pool sin base de datos impide
   arrancar a un servicio sobre DynamoDB. Batch es la excepción, porque Spring Batch guarda su
-  repositorio de jobs en Aurora.
+  repositorio de jobs en Aurora. Se corre sobre el framework en su CI y acepta varias raíces:
+  `check-dependency-governance.py axiz-framework axiz-tools axiz-demo` aplica la misma regla a las
+  herramientas y al demo, sin excepciones (las versiones que las recetas de OpenRewrite alinean
+  también viven en `axiz-dependencies`).
 - `dependencyConvergence` y `requireUpperBoundDeps` (`-Pquality`) fallan si dos caminos del árbol
   piden versiones distintas de la misma librería.
 - `banDuplicateClasses` (`-Pquality`) falla si dos jars distintos traen la misma clase: es el
@@ -92,6 +95,12 @@ JaCoCo excluye por diseño toda clase con una anotación visible en el bytecode 
 `SOURCE` y no llega a las clases). No es una exclusión por paquete ni por módulo: el umbral y las
 reglas no cambian, y la anotación no se pone a mano sobre código escrito.
 
+El reporte agregado (`quality/axiz-coverage-report`, en `target/site/jacoco-aggregate`) reúne a
+todos los módulos con código del framework. Cada uno entra con alcance `provided`, porque
+`report-aggregate` de JaCoCo solo toma clases de dependencias `compile`, `runtime` o `provided`: con
+alcance `test` el reporte salía sin clases. `check-coverage-aggregate.py` (CI) falla si un módulo
+con código falta o cambia de alcance, y con `-Pquality` el build falla si el agregado sale vacío.
+
 Las ramas del código escrito se cubren con pruebas de comportamiento: adaptadores REST sobre los
 casos de uso reales, adaptadores de persistencia sobre el cliente real de DynamoDB o Spring Data
 con un almacenamiento en memoria, y cada rama de error que el código traduce.
@@ -99,7 +108,7 @@ con un almacenamiento en memoria, y cada rama de error que el código traduce.
 ## Avisos de prioridad media
 
 SpotBugs y FindSecBugs informan desde prioridad media y el build falla con prioridad alta. Un aviso
-medio que señala un defecto se corrige en el código (review34 y review35 corrigieron así lecturas repetidas de
+medio que señala un defecto se corrige en el código (así se corrigieron lecturas repetidas de
 valores que pueden ser `null` y una marca leída fuera de su candado). Los que quedan se revisaron
 uno por uno y son intencionales; no hay filtro de exclusión para ellos, así que siguen visibles en
 cada corrida:

@@ -22,6 +22,20 @@ class SecurityTest {
   private final ClaimsMapper mapper = new ClaimsMapper(ClaimMapping.defaults());
 
   @Test
+  void identityClaimsWithControlCharactersAreRejected() {
+    for (String claim : List.of("iss", "sub", "azp", "tenant")) {
+      java.util.HashMap<String, Object> claims =
+          new java.util.HashMap<>(
+              Map.of("iss", "https://idp.example", "sub", "user-1", "azp", "app", "tenant", "t1"));
+      claims.put(claim, claims.get(claim) + "\u0000\u0002other");
+      assertThrows(AccessException.class, () -> mapper.map(claims), claim);
+    }
+    assertEquals(
+        "josé",
+        mapper.map(Map.of("iss", "https://idp.example", "sub", "josé", "azp", "app")).subject());
+  }
+
+  @Test
   void mapsUserTokenWithNestedRoles() {
     AxizPrincipal p =
         mapper.map(

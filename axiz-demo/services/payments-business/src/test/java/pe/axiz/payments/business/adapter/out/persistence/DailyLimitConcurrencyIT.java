@@ -25,8 +25,8 @@ import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.PostgresTestConfiguration;
 
 /**
- * Report case (second review): with 10,000 already used under a 30,000 limit, concurrent orders of
- * 15,000 must not both pass. Runs against PostgreSQL in a container (Docker).
+ * Regression: with 10,000 already used under a 30,000 limit, concurrent orders of 15,000 must not
+ * both pass. Runs against PostgreSQL in a container (Docker).
  */
 @SpringBootTest
 @Import({

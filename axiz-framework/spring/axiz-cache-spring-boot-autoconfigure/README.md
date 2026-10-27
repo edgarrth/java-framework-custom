@@ -22,9 +22,11 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizCacheCaffeineAutoConfiguration` | L1 on Caffeine when it is on the classpath (the starter brings it). |
 | `AxizCacheProperties` | Two-level cache (`axiz.cache.*`): L1 in memory per instance, L2 on ElastiCache (Redis or Valkey) shared by the replicas. |
 | `AxizCacheRedisAutoConfiguration` | L2 cache on ElastiCache using Boot's Redis connection settings (`spring.data.redis.*`, TLS with certificate verification). |
-| `AxizCacheableInterceptor` | Applies `AxizCacheable`: the key is the method name plus the arguments; values are stored as JSON with their full generic type; `null` results are not cached; `Mono` and `Flux` results are cached when they complete, without blocking the event loop. |
+| `AxizCacheableInterceptor` | Applies `AxizCacheable`: the key is the method signature, the scope (tenant, caller) and the arguments; values are stored as JSON with their full generic type; `null` results are not cached; `Mono` and `Flux` results are cached when they complete, without blocking the event loop. It runs inside every method security interceptor (`ORDER`), so authorization is checked on every hit. |
 | `AxizCaches` | Named caches over the shared two-level store, with the TTL configured per name. |
+| `CacheCallerResolver` | Identity of the caller of a `CALLER` cache; a service with its own kind of authentication declares one. |
 | `CaffeineByteCache` | L1 on Caffeine with a TTL per entry and size-based eviction. |
+| `DefaultCacheCallerResolver` | Identity of token callers: issuer, subject and client of the token; any other authentication is not cached. |
 | `JacksonValueCodec` | JSON values with the application mapper. |
 
 ## Tests

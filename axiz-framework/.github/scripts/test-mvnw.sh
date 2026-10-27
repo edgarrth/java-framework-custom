@@ -27,7 +27,7 @@ run env MVNW_REQUIRE_PINNED_CHECKSUM=true || fail "pinned checksum not accepted"
 sed -i 's/^distributionSha512Sum=./distributionSha512Sum=0/' "$PROPS"
 run env && fail "tampered distribution accepted"
 [ ! -e "$T/home/wrapper/dists/apache-maven-9.9.9/apache-maven-9.9.9" ] || fail "tampered zip unpacked"
-# strict mode is not bypassed by a distribution already in the cache (second review, F10)
+# strict mode is not bypassed by a distribution already in the cache
 grep -v '^distributionSha512Sum=' "$PROPS" > "$T/props" && cp "$T/props" "$PROPS"
 run env || fail "published checksum not accepted (cache warm-up)"
 cached env MVNW_REQUIRE_PINNED_CHECKSUM=true && fail "strict mode ran a cached, unpinned distribution"

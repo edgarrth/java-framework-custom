@@ -84,6 +84,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
         ok("Updated src/main/resources/application.yaml");
       }
       r.notes().forEach(this::warn);
+      formatSources(dir);
       return ExitCodes.OK;
     }
     ArtifactGenerator generator = new ArtifactGenerator(environment.clock());
@@ -135,6 +136,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       }
     }
     r.notes().forEach(this::warn);
+    formatSources(dir);
     return ExitCodes.OK;
   }
 

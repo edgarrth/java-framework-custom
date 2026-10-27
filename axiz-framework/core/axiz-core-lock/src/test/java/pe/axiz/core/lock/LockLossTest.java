@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.errors.BusinessException;
 
 /** A lease lost while the work runs never ends in a success. */
 class LockLossTest {
@@ -202,5 +203,75 @@ class LockLossTest {
                 });
     assertTrue(((LockLease) result).token().equals("owner-1"));
     assertSame(LockErrors.LOST, new LockLostException("r", null).definition());
+  }
+
+  @Test
+  void anAcquisitionThatAnswersAfterItsLeaseIsReleasedAndNeverRunsTheWork() {
+    InMemoryDistributedLock store = new InMemoryDistributedLock(java.time.Clock.systemUTC());
+    AtomicInteger attempts = new AtomicInteger();
+    // the store grants the lease at once, but its answer arrives after the lease ran out; by then
+    // the in-memory store, like Redis, already lets another owner take it
+    DistributedLock slow =
+        (resource, lease) -> {
+          attempts.incrementAndGet();
+          Optional<LockHandle> handle = store.tryAcquire(resource, lease);
+          try {
+            Thread.sleep(lease.toMillis() + 150);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          return handle;
+        };
+    AtomicBoolean effect = new AtomicBoolean();
+    BusinessException busy =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                new LockTemplate(slow, Duration.ofMillis(1))
+                    .withLock(
+                        "account:A-1",
+                        Duration.ofMillis(100),
+                        Duration.ZERO,
+                        lease -> {
+                          lease.ensureHeld();
+                          effect.set(true);
+                          return "SUCCESS";
+                        }));
+    assertSame(LockErrors.BUSY, busy.definition());
+    assertFalse(effect.get(), "the work never runs on a lease that already ran out");
+    assertEquals(1, attempts.get());
+    assertTrue(
+        store.tryAcquire("account:A-1", Duration.ofSeconds(1)).isPresent(),
+        "the late acquisition was released");
+  }
+
+  @Test
+  void aSlowButTimelyAcquisitionKeepsOnlyWhatIsLeftOfItsLease() throws Exception {
+    ScriptedHandle handle = new ScriptedHandle(n -> true);
+    DistributedLock slow =
+        (resource, lease) -> {
+          try {
+            Thread.sleep(40);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          return Optional.of(handle);
+        };
+    String result =
+        new LockTemplate(slow, Duration.ofMillis(1))
+            .withLock(
+                "account:A-1",
+                Duration.ofMillis(200),
+                Duration.ofSeconds(1),
+                lease -> {
+                  lease.ensureHeld();
+                  return "SUCCESS";
+                });
+    assertEquals("SUCCESS", result);
+    long sent = System.nanoTime();
+    assertTrue(
+        LockTemplate.validUntil(sent, Duration.ofMillis(200)) - sent
+            < Duration.ofMillis(200).toNanos(),
+        "the drift margin is taken off the lease");
   }
 }

@@ -8,7 +8,7 @@ Frequent beneficiaries of each customer.
 | Style | `layered` |
 | Stack | `servlet` |
 | Persistence | `dynamodb` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.beneficiaries` |
 
 ## In the demo

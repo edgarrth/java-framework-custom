@@ -6,18 +6,22 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-core</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath/>
   </parent>
 
   <artifactId>axiz-cli</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>axiz :: tools :: cli</name>
   <description>axiz command line: new, add, generate, contract sync, upgrade, doctor and local environment</description>
 
   <properties>
     <axiz.module.name>pe.axiz.cli</axiz.module.name>
     <axiz.cli.main>pe.axiz.cli.AxizCli</axiz.cli.main>
+    <!-- google-java-format reads the compiler internals: the jar exports them in its manifest
+         (Add-Exports) and the tests get the same exports -->
+    <axiz.cli.compiler-exports>jdk.compiler/com.sun.tools.javac.api jdk.compiler/com.sun.tools.javac.code jdk.compiler/com.sun.tools.javac.file jdk.compiler/com.sun.tools.javac.main jdk.compiler/com.sun.tools.javac.parser jdk.compiler/com.sun.tools.javac.tree jdk.compiler/com.sun.tools.javac.util</axiz.cli.compiler-exports>
+    <axiz.test.argLine>--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</axiz.test.argLine>
   </properties>
 
   <dependencies>
@@ -29,6 +33,11 @@
     <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
+    </dependency>
+    <!-- formats the generated sources so a new project passes spotless:check from the first build -->
+    <dependency>
+      <groupId>com.google.googlejavaformat</groupId>
+      <artifactId>google-java-format</artifactId>
     </dependency>
   </dependencies>
 
@@ -83,6 +92,9 @@
             <manifest>
               <mainClass>${axiz.cli.main}</mainClass>
             </manifest>
+            <manifestEntries>
+              <Add-Exports>${axiz.cli.compiler-exports}</Add-Exports>
+            </manifestEntries>
           </archive>
         </configuration>
         <executions>
@@ -102,6 +114,15 @@
     <!-- native binary for Linux, macOS and Windows (built on each OS by the release workflow) -->
     <profile>
       <id>native</id>
+      <!-- google-java-format needs the compiler internals of a JDK at run time: it stays out of the
+           native binary, which formats through the project's spotless:apply instead -->
+      <dependencies>
+        <dependency>
+          <groupId>com.google.googlejavaformat</groupId>
+          <artifactId>google-java-format</artifactId>
+          <scope>provided</scope>
+        </dependency>
+      </dependencies>
       <build>
         <plugins>
           <plugin>

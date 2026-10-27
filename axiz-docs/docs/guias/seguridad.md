@@ -30,7 +30,10 @@ reactivo, porque un token sin vencimiento valdría para siempre. `exp` y `nbf` s
 reloj con la tolerancia de `clock-skew`. La Initializr aplica la misma regla a sus tokens.
 
 El token se convierte en un `AxizPrincipal` (sujeto, client id, scopes, roles, tenant y atributos)
-según `axiz.security.claims`, que mapea rutas de claims (`realm_access.roles`, `tid`...). Las
+según `axiz.security.claims`, que mapea rutas de claims (`realm_access.roles`, `tid`...). Un token
+cuyo emisor, client id, sujeto o tenant trae caracteres de control (U+0000 a U+001F, U+007F) se
+rechaza con `401`: esos valores forman las llaves de caché, el alcance de idempotencia, la
+auditoría y los logs, y un carácter de control podría hacer que dos llamantes se vean iguales. Las
 authorities quedan como `SCOPE_<scope>` y `ROLE_<ROL>`:
 
 ```java

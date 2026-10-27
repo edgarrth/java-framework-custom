@@ -36,7 +36,8 @@ final class ReactiveCaching {
     // a reactive method that returns null (a contract violation) behaves as an empty publisher
     Object result = invocation.proceed();
     Mono<Optional<String>> keys =
-        scope(plan.scope()).map(s -> s.map(p -> AxizCacheableInterceptor.key(plan, p, arguments)));
+        scope(plan.scope(), in.callers())
+            .map(s -> s.map(p -> AxizCacheableInterceptor.key(plan, p, arguments)));
     if ("mono".equals(plan.reactive())) {
       Mono<Object> source = result == null ? Mono.empty() : (Mono<Object>) result;
       return keys.flatMap(key -> key.isEmpty() ? source : cachedMono(in, plan, key.get(), source));
@@ -90,17 +91,17 @@ final class ReactiveCaching {
   }
 
   /** Scope part of the key, from the Reactor context of the subscriber. */
-  static Mono<Optional<String>> scope(CacheScope scope) {
+  static Mono<Optional<String>> scope(CacheScope scope, @Nullable CacheCallerResolver callers) {
     return Mono.deferContextual(
         ctx -> {
           String tenant = scope == CacheScope.GLOBAL ? null : tenant(ctx);
           if (scope != CacheScope.CALLER) {
             return Mono.just(Optional.of(CacheScopes.part(scope, tenant, null)));
           }
-          if (!CacheScopes.REACTIVE_SECURITY) {
+          if (!CacheScopes.REACTIVE_SECURITY || callers == null) {
             return Mono.just(Optional.<String>empty());
           }
-          return SecurityCallers.reactive()
+          return SecurityCallers.reactive(callers)
               .map(caller -> Optional.of(CacheScopes.part(scope, tenant, caller)))
               .defaultIfEmpty(Optional.empty());
         });

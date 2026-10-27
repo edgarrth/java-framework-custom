@@ -196,7 +196,8 @@ class ProjectCommandsTest {
             new CliHarness.FakeProcesses(java.util.Set.of("mvn")),
             null,
             java.time.Clock.systemUTC(),
-            java.util.Map.of()));
+            java.util.Map.of(),
+            () -> true));
     List<DoctorCommand.Check> clean = doctor.checks(p);
     assertTrue(
         clean.stream()

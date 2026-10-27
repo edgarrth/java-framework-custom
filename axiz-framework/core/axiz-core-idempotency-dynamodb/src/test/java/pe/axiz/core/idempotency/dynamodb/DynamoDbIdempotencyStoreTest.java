@@ -112,7 +112,7 @@ class DynamoDbIdempotencyStoreTest {
     assertTrue(store.find("none", Instant.now()).isEmpty());
   }
 
-  /** Report case: A's lock expires, B takes the key, A finishes late. */
+  /** Regression: A's lock expires, B takes the key, A finishes late. */
   @Test
   void aLateOwnerCannotOverwriteOrReleaseTheKeyOfTheNewOwner() {
     FakeDynamo dynamo = new FakeDynamo();

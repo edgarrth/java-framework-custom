@@ -8,7 +8,7 @@ archetype: event-processor
 framework: eda
 stack: servlet
 persistence: dynamodb
-axizVersion: 0.1.0-SNAPSHOT
+axizVersion: 1.0.0
 contract:
   openapi: null
   asyncapi: src/main/asyncapi/asyncapi.yaml

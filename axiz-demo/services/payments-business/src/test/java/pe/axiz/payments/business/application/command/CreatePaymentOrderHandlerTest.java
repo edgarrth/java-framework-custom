@@ -120,7 +120,7 @@ class CreatePaymentOrderHandlerTest {
         .isEqualTo(PaymentErrors.DAILY_LIMIT_EXCEEDED);
   }
 
-  /** Report case (F12): a retried request returns the order it created, never a second one. */
+  /** Regression: a retried request returns the order it created, never a second one. */
   @Test
   void aRetriedRequestReturnsTheSameOrderAndReservesOnce() {
     CreatePaymentOrderHandler h = handler(Instant.parse("2026-10-09T15:00:00Z"));

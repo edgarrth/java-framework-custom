@@ -37,7 +37,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `OpenApiDocument` | Minimal, safe reader of OpenAPI 3.x documents (YAML or JSON): operations, tags, schemas and examples needed by the generators. |
 | `OpenApiLinter` | Corporate contract rules, the same as the Spectral ruleset in axiz-code-standards, applied by the initializr and the CLI before generating code. |
 | `SafeYaml` | YAML loader for untrusted contracts: safe constructor (no arbitrary types), alias and size limits, no duplicate keys, and dates kept as text so examples are not rewritten. |
-| `JavaFormatter` | Formats generated Java sources with google-java-format (and removes unused imports) when it is on the classpath, so generated projects pass `spotless:check` from the first build. |
+| `JavaFormatter` | Formats generated Java sources with google-java-format (and removes unused imports) when it is on the classpath and runs (the initializr and the CLI jar ship it with the `jdk.compiler` exports it needs), so generated projects pass `spotless:check` from the first build. |
 | `TemplateSet` | A set of Mustache templates described by `axiz/templates/<set>/manifest.yaml`. |
 | `YamlProperties` | Spring Boot properties as YAML: flat keys (`a.b[0].c`) are nested into maps and lists and written in block style, so capability properties can be merged without duplicate root keys. |
 | `CapabilityAdder` | `axiz add <capability>`: adds the starter and its adapters to the pom, its properties to `application.yaml` (and the local profile), the ConfigMap keys to the Helm values of every environment, its secrets to the ExternalSecret, the tables it needs as a new Flyway migration and the capability to the manifest. |

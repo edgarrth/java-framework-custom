@@ -220,9 +220,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
         return ExitCodes.PROBLEMS;
       }
       project.writeTo(target, force);
-      if (!pe.axiz.codegen.render.JavaFormatter.available()) {
-        warn("Generated without google-java-format: run mvn spotless:apply once");
-      }
+      formatSources(target);
     }
     ok("Created " + a.name() + " / " + f.id() + " / " + st.id() + " / " + p + " in " + target);
     out().println();

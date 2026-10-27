@@ -24,10 +24,10 @@ Thank you for improving the axiz payments demo (reference services built with th
 
 - Every change comes with tests that would have failed without it. Quality gates enforce coverage
   (lines and branches), mutation testing on the core, architecture rules and static analysis.
-- Run locally before pushing: `./mvnw -B -ntp clean verify and scripts/smoke.sh`.
+- Run locally before pushing: `./mvnw -B -ntp clean verify` and `scripts/smoke.sh`.
 - Warnings are fixed, not suppressed. A suppression needs a comment that explains why the code is
   correct (for example `@SuppressWarnings("EqualsGetClass")` with its reason).
-- Update the module `README.md`, the documentation site and `VERIFICATION.md` when behavior or
+- Update the module `README.md` and the documentation site when behavior or
   usage changes. Public APIs carry Javadoc.
 - Reviews: at least one approval from a code owner; two approvals (one from the security team)
   for security, cryptography, authentication, payment flows and CI/CD changes.

@@ -8,7 +8,7 @@ Daily settlement and reconciliation.
 | Style | `batch` |
 | Stack | `servlet` |
 | Persistence | `aurora` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.settlement` |
 
 ## In the demo

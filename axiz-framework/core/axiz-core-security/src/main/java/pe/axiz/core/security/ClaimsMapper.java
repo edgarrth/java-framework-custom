@@ -40,6 +40,13 @@ public final class ClaimsMapper {
     if (clientId == null) {
       throw AccessException.unauthenticated("token without client id");
     }
+    String tenant = first(claims, mapping.tenant());
+    // identity claims key caches, idempotency scopes, audit and logs: a control character there
+    // could make two callers look alike once the values are joined
+    requirePrintable("iss", issuer);
+    requirePrintable("client", clientId);
+    requirePrintable("sub", subject);
+    requirePrintable("tenant", tenant);
     if (subject != null && !subject.equals(clientId) && isMachineToken(claims)) {
       // a service account with its own user id: the caller is the application, not a person
       subject = clientId;
@@ -58,8 +65,20 @@ public final class ClaimsMapper {
         strings(claims.get("aud")),
         firstSet(claims, mapping.scopes()),
         firstSet(claims, mapping.roles()),
-        first(claims, mapping.tenant()),
+        tenant,
         attributes);
+  }
+
+  private static void requirePrintable(String claim, @Nullable String value) {
+    if (value == null) {
+      return;
+    }
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (c < 0x20 || c == 0x7F) {
+        throw AccessException.unauthenticated("token with a control character in " + claim);
+      }
+    }
   }
 
   private boolean isMachineToken(Map<String, Object> claims) {

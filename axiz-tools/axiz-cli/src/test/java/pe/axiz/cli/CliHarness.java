@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import picocli.CommandLine;
 
 /** Runs the CLI in-process with captured output and fake processes. */
@@ -26,14 +27,19 @@ final class CliHarness {
     final List<List<String>> commands = new ArrayList<>();
     final Set<String> installed;
     int exitCode;
+    @Nullable IOException failure;
 
     FakeProcesses(Set<String> installed) {
       this.installed = new java.util.HashSet<>(installed);
     }
 
     @Override
-    public int run(Path directory, List<String> command) {
+    public int run(Path directory, List<String> command) throws IOException {
       commands.add(command);
+      IOException e = failure;
+      if (e != null) {
+        throw e;
+      }
       return exitCode;
     }
 
@@ -46,6 +52,8 @@ final class CliHarness {
   final FakeProcesses processes = new FakeProcesses(Set.of("mvn", "docker"));
   String input = "";
   Map<String, String> env = Map.of();
+  // the tests run with the compiler exports of the CLI jar, so google-java-format runs in-process
+  boolean javaFormatter = true;
   final StringWriter out = new StringWriter();
   final StringWriter err = new StringWriter();
 
@@ -55,7 +63,8 @@ final class CliHarness {
             processes,
             new BufferedReader(new StringReader(input)),
             Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC),
-            env);
+            env,
+            () -> javaFormatter);
     CommandLine cli = AxizCli.commandLine(environment);
     cli.setOut(new PrintWriter(out, true));
     cli.setErr(new PrintWriter(err, true));

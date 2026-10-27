@@ -47,6 +47,14 @@ vengan de emisores o tenants distintos. La query string es parte de la huella ta
 `?sort=b&sort=a` (el orden puede tener significado); un cliente que reintenta reenvía la misma
 request.
 
+El llamante se codifica parte por parte (marcador de presencia, texto y separador) y ninguna parte
+puede contener caracteres de control (U+0000 a U+001F, U+007F): así ningún valor puede imitar un
+separador y dos llamantes distintos nunca comparten alcance. El mapeo de tokens de axiz rechaza
+con `401` un token cuyo emisor, cliente, sujeto o tenant trae esos caracteres, e
+`IdempotencyService.scope` los rechaza también para integraciones que arman el alcance por su
+cuenta, antes de iniciar la operación. Los llamantes válidos conservan el mismo alcance que en
+versiones anteriores, así que las llaves en curso siguen deduplicando después de actualizar.
+
 ### Dueño de la llave
 
 Cada ejecución recibe un token de dueño. Guardar la respuesta o liberar la llave solo funciona

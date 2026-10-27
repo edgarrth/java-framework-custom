@@ -181,8 +181,8 @@ class IdempotencyTest {
   }
 
   /**
-   * Report case (second review): the first request was allowed, the caller's permission was then
-   * revoked; repeating it with the same key must be denied without returning the stored body.
+   * Regression: the first request was allowed, the caller's permission was then revoked; repeating
+   * it with the same key must be denied without returning the stored body.
    */
   @Test
   void aReplayIsDeniedWhenTheCallerIsNoLongerAuthorized() throws Exception {
@@ -199,7 +199,7 @@ class IdempotencyTest {
     assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
 
-  /** Report case (first review): an exception escaping the handler is not stored as a 200. */
+  /** Regression: an exception escaping the handler is not stored as a 200. */
   @Test
   void anExceptionEscapingTheHandlerReleasesTheKeyInsteadOfStoringIt() throws Exception {
     controller.handler =
@@ -259,7 +259,7 @@ class IdempotencyTest {
     assertEquals("true", replay.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
   }
 
-  /** Report cases: the query string is part of the fingerprint, taken as sent. */
+  /** Regressions: the query string is part of the fingerprint, taken as sent. */
   @Test
   void theQueryStringAsSentIsPartOfTheFingerprint() throws Exception {
     call("idempotency-key-00000003", "{}", "sort=a&sort=b", null, Integer.MAX_VALUE);
@@ -271,7 +271,7 @@ class IdempotencyTest {
     assertEquals(1, controller.executions.get());
   }
 
-  /** Report case: two callers sharing a key never see each other's responses. */
+  /** Regression: two callers sharing a key never see each other's responses. */
   @Test
   void keysAreScopedByCaller() throws Exception {
     MockHttpServletResponse alice =
@@ -288,7 +288,7 @@ class IdempotencyTest {
             .endsWith("PaymentsController#pay"));
   }
 
-  /** Report case: large responses are streamed whole but never fully buffered. */
+  /** Regression: large responses are streamed whole but never fully buffered. */
   @Test
   void anOversizedResponseIsReplayedWithoutBodyAndNeverBufferedWhole() throws Exception {
     controller.handler =
@@ -327,7 +327,7 @@ class IdempotencyTest {
         IdempotencySupport.stored(201, Map.of("Location", "/x"), new byte[8], 4).headers());
   }
 
-  /** Report case on WebFlux: the decision is taken inside reactive method security. */
+  /** Regression on WebFlux: the decision is taken inside reactive method security. */
   @Test
   void reactiveReplaysAlsoPassAuthorizationFirst() {
     ReactivePaymentsController target = new ReactivePaymentsController();

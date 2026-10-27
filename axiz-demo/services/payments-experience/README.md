@@ -8,7 +8,7 @@ Payments API for the channels.
 | Style | `bff` |
 | Stack | `reactive` |
 | Persistence | `none` |
-| axiz | `0.1.0-SNAPSHOT` |
+| axiz | `1.0.0` |
 | Base package | `pe.axiz.payments.experience` |
 
 ## In the demo

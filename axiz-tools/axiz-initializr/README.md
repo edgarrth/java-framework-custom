@@ -23,12 +23,12 @@ client `axiz-initializr`), on port 8090:
 
 ```bash
 ./mvnw -pl axiz-initializr -am clean package -DskipTests
-java -jar axiz-initializr/target/axiz-initializr-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+java -jar axiz-initializr/target/axiz-initializr-1.0.0.jar --spring.profiles.active=local
 # http://localhost:8090, user ana / local-only-ana
 ```
 
 Creating GitHub repositories also needs a GitHub OAuth App with the callback
 `http://localhost:8090/authorized/github` (`AXIZ_GITHUB_CLIENT_ID`, `AXIZ_GITHUB_CLIENT_SECRET`,
 optionally `AXIZ_GITHUB_ORGANIZATION`). The project is pushed as one commit, `feat: generate <name> with axiz
-initializr`: being a Conventional Commit `feat`, release-please makes the first release `0.1.0`
-(the version the generated pom targets) from the `0.0.0` of its manifest.
+initializr`, a Conventional Commit that opens the changelog; the first release is `0.1.0`, the
+`initial-version` of the generated `release-please-config.json`.

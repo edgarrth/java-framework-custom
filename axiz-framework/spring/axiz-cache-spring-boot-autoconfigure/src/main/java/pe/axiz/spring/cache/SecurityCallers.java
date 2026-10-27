@@ -13,23 +13,29 @@ final class SecurityCallers {
 
   private SecurityCallers() {}
 
-  static @Nullable String current() {
-    return name(SecurityContextHolder.getContext().getAuthentication());
+  /** The resolver used when the application declares none. */
+  static CacheCallerResolver defaults() {
+    return new DefaultCacheCallerResolver();
   }
 
-  static Mono<String> reactive() {
+  static @Nullable String current(CacheCallerResolver resolver) {
+    return identity(resolver, SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  static Mono<String> reactive(CacheCallerResolver resolver) {
     return ReactiveSecurityContextHolder.getContext()
         .mapNotNull(SecurityContext::getAuthentication)
-        .mapNotNull(SecurityCallers::name);
+        .mapNotNull(a -> identity(resolver, a));
   }
 
-  private static @Nullable String name(@Nullable Authentication authentication) {
+  private static @Nullable String identity(
+      CacheCallerResolver resolver, @Nullable Authentication authentication) {
     if (authentication == null
         || !authentication.isAuthenticated()
         || authentication instanceof AnonymousAuthenticationToken) {
       return null;
     }
-    String name = authentication.getName();
-    return name == null || name.isBlank() ? null : name;
+    String identity = resolver.identity(authentication);
+    return identity == null || identity.isBlank() ? null : identity;
   }
 }

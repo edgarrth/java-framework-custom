@@ -9,7 +9,7 @@ public ExchangeRate rate(String currency) { ... }
 
 - Dos niveles: L1 local (acotado, TTL corto para que las réplicas converjan) y L2 Redis
   (ElastiCache/Valkey) cuando hay conexión.
-- Llaves `<servicio>:<caché>:k4:<método>:<alcance>:<argumentos>`: la firma del método (clase,
+- Llaves `<servicio>:<caché>:k5:<método>:<alcance>:<argumentos>`: la firma del método (clase,
   nombre y tipos de parámetros) separa sobrecargas y métodos distintos, y cada argumento lleva su tipo (`"7"` y
   `7`, `null` y `"-"` nunca comparten llave). Dos métodos comparten entradas solo si lo declaran
   con `keyName`. Se aceptan textos, números, booleanos, enums, UUID, valores de `java.time`,
@@ -17,16 +17,19 @@ public ExchangeRate rate(String currency) { ... }
   `CacheKeyPart`; cualquier otro objeto se rechaza, porque su `toString()` no es una identidad
   estable. Arreglos y colecciones llevan su clase en la llave: `int[]{7}`, `Integer[]{7}`,
   `List.of(7)` y un `ArrayDeque` con 7 son llaves distintas, igual que lo serían los argumentos.
-  `k4` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
+  `k5` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
   viejas expiran solas.
 - **Alcance** (`scope`): quién comparte las entradas además de los argumentos.
     - `TENANT` (por defecto): solo las llamadas del mismo tenant (el del contexto, el de
       `TenantContext` en servlet o el del contexto de Reactor en reactivo; ninguno en un servicio
       de un solo tenant). Dos tenants nunca leen sus entradas aunque el método reciba un id local
       al tenant (un código de cliente, un número de página).
-    - `CALLER`: además, solo el mismo usuario autenticado (el nombre del principal de Spring
-      Security), para resultados que dependen de quién pregunta. Sin usuario autenticado el
-      método corre sin caché.
+    - `CALLER`: además, solo el mismo llamante, para resultados que dependen de quién pregunta.
+      El llamante es el emisor, el sujeto y el cliente del token (`iss`, `sub` y `azp` o
+      `client_id`): un `sub` es único solo dentro de su emisor, y dos emisores pueden entregar el
+      mismo a personas distintas. Sin usuario autenticado, o con una autenticación que no es un
+      token, el método corre sin caché; un servicio con otro tipo de autenticación declara un
+      bean `CacheCallerResolver` que dé una identidad única.
     - `GLOBAL`: todos comparten, solo para datos que son iguales para todos (un catálogo, la lista
       de bancos).
 
@@ -35,7 +38,12 @@ public ExchangeRate rate(String currency) { ... }
     public Limits myLimits() { ... }
     ```
 
-    Un acierto de caché no ejecuta el método: la autorización va antes de la llamada, no adentro.
+    La caché corre dentro de la seguridad de métodos de Spring (`AxizCacheableInterceptor.ORDER`,
+    después de `@PostFilter`): `@PreAuthorize`, `@Secured`, `@RolesAllowed`, `@PostAuthorize` y
+    `@PostFilter` se evalúan en cada llamada, también cuando el valor sale de la caché, así que un
+    permiso revocado se aplica de inmediato. Una aplicación que mueve la seguridad de métodos con
+    `@EnableMethodSecurity(offset = ...)` debe mantener la caché después de su último
+    interceptor de autorización.
 - Valores serializados en JSON y **single flight**: un valor que falta se carga una sola vez
   aunque lo pidan muchos hilos.
 - Una copia que L1 toma de L2 nunca vive más que el original: su TTL es el menor entre lo que le
@@ -63,6 +71,10 @@ Movement m = lockTemplate.withLock("account:" + accountId,
 ```
 
 `LockTemplate` renueva la concesión en segundo plano mientras el trabajo corre y siempre libera.
+La concesión se cuenta desde antes de cada pedido al almacén, con reloj monotónico y descontando un
+margen por diferencia de relojes (1 % de la concesión más 2 ms): el tiempo que tarda la respuesta
+ya corrió en el almacén. Una adquisición que responde cuando su concesión ya venció se libera sin
+ejecutar el trabajo (otra réplica puede tenerla) y se sigue intentando hasta la espera máxima.
 Redis (`SET NX PX` + scripts que solo actúan con el token del dueño) o DynamoDB (escrituras
 condicionales): `axiz.lock.store`.
 

@@ -38,4 +38,5 @@ spring.data.redis.url: ${REDIS_URL:redis://localhost:6379}
 - [`axiz-cache-spring-boot-autoconfigure`](../referencia/spring/axiz-cache-spring-boot-autoconfigure.md)
 - [`axiz-core-cache`](../referencia/core/axiz-core-cache.md)
 - [`axiz-core-cache-redis`](../referencia/core/axiz-core-cache-redis.md)
+- [`axiz-core-security`](../referencia/core/axiz-core-security.md)
 - [`axiz-core-tenancy`](../referencia/core/axiz-core-tenancy.md)

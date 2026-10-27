@@ -41,7 +41,7 @@ Con el demo levantado (su Keycloak tiene el cliente `axiz-initializr`):
 ```bash
 cd axiz-tools
 ./mvnw -pl axiz-initializr -am clean package -DskipTests
-java -jar axiz-initializr/target/axiz-initializr-0.1.0-SNAPSHOT.jar --spring.profiles.active=local
+java -jar axiz-initializr/target/axiz-initializr-1.0.0.jar --spring.profiles.active=local
 ```
 
 Abre <http://localhost:8090> e inicia sesión con `ana` / `local-only-ana`. El perfil `local` usa

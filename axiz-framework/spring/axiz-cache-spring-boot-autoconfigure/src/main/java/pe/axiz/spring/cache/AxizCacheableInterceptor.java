@@ -28,19 +28,48 @@ import tools.jackson.databind.json.JsonMapper;
  * are not cached; {@code Mono} and {@code Flux} results are cached when they complete, without
  * blocking the event loop, and their scope is read when they are subscribed. A call whose scope
  * cannot be resolved (a {@link CacheScope#CALLER} cache without an authenticated caller) runs
- * without the cache.
+ * without the cache. The cache never replaces authorization: see {@link #ORDER}.
  */
 public class AxizCacheableInterceptor implements MethodInterceptor {
+
+  /**
+   * Order of the advisor: inside every authorization interceptor of Spring Security method security
+   * ({@code AuthorizationInterceptorsOrder}: {@code @PreFilter} 100 to {@code @PostFilter} 600), so
+   * {@code @PreAuthorize}, {@code @Secured}, {@code @RolesAllowed}, {@code @PostAuthorize} and
+   * {@code @PostFilter} run on every call, also when the value comes from the cache; and outside
+   * {@code @Transactional} (lowest precedence), so a hit opens no transaction. An application that
+   * moves method security with {@code @EnableMethodSecurity(offset = ...)} must keep this order
+   * after its last authorization interceptor.
+   */
+  public static final int ORDER = 700;
 
   private static final boolean REACTOR = ClassUtils.isPresent("reactor.core.publisher.Mono", null);
 
   private final SingletonSupplier<AxizCaches> caches;
   private final SingletonSupplier<JsonMapper> mapper;
+  private final SingletonSupplier<@Nullable CacheCallerResolver> callers;
   private final Map<Method, Plan> plans = new ConcurrentHashMap<>();
 
+  /** With the default caller identity ({@link DefaultCacheCallerResolver}). */
   public AxizCacheableInterceptor(Supplier<AxizCaches> caches, Supplier<JsonMapper> mapper) {
+    this(caches, mapper, CacheScopes::defaultCallers);
+  }
+
+  /**
+   * @param callers identity of the caller for {@link CacheScope#CALLER} caches; a supplier that
+   *     returns {@code null} (no Spring Security) leaves those caches unused
+   */
+  public AxizCacheableInterceptor(
+      Supplier<AxizCaches> caches,
+      Supplier<JsonMapper> mapper,
+      Supplier<@Nullable CacheCallerResolver> callers) {
     this.caches = SingletonSupplier.of(caches);
     this.mapper = SingletonSupplier.of(mapper);
+    this.callers = SingletonSupplier.of(callers);
+  }
+
+  @Nullable CacheCallerResolver callers() {
+    return callers.get();
   }
 
   @Override
@@ -53,7 +82,7 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     if (REACTOR && plan.reactive() != null) {
       return ReactiveCaching.wrap(this, plan, arguments, invocation);
     }
-    Optional<String> scope = CacheScopes.blocking(plan.scope());
+    Optional<String> scope = CacheScopes.blocking(plan.scope(), callers());
     if (scope.isEmpty()) {
       return invocation.proceed();
     }

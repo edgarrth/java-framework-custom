@@ -105,8 +105,8 @@ public class GitHubPublisher {
             .body(
                 Map.of(
                     "message",
-                    // a Conventional Commit feat: from 0.0.0 (nothing released) release-please
-                    // proposes 0.1.0 as the first release, the version the pom already targets
+                    // a Conventional Commit, so it opens the changelog; the first release is the
+                    // initial-version of the generated release-please-config.json (0.1.0)
                     "feat: generate " + project.rootName() + " with axiz initializr",
                     "tree",
                     text(tree, "sha"),
