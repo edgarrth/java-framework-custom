@@ -20,18 +20,18 @@ public ExchangeRate rate(String currency) { ... }
   `k5` es la versión del formato: un cambio de formato cambia todas las llaves y las entradas
   viejas expiran solas.
 - **Alcance** (`scope`): quién comparte las entradas además de los argumentos.
-    - `TENANT` (por defecto): solo las llamadas del mismo tenant (el del contexto, el de
-      `TenantContext` en servlet o el del contexto de Reactor en reactivo; ninguno en un servicio
-      de un solo tenant). Dos tenants nunca leen sus entradas aunque el método reciba un id local
-      al tenant (un código de cliente, un número de página).
-    - `CALLER`: además, solo el mismo llamante, para resultados que dependen de quién pregunta.
-      El llamante es el emisor, el sujeto y el cliente del token (`iss`, `sub` y `azp` o
-      `client_id`): un `sub` es único solo dentro de su emisor, y dos emisores pueden entregar el
-      mismo a personas distintas. Sin usuario autenticado, o con una autenticación que no es un
-      token, el método corre sin caché; un servicio con otro tipo de autenticación declara un
-      bean `CacheCallerResolver` que dé una identidad única.
-    - `GLOBAL`: todos comparten, solo para datos que son iguales para todos (un catálogo, la lista
-      de bancos).
+  - `TENANT` (por defecto): solo las llamadas del mismo tenant (el del contexto, el de
+    `TenantContext` en servlet o el del contexto de Reactor en reactivo; ninguno en un servicio
+    de un solo tenant). Dos tenants nunca leen sus entradas aunque el método reciba un id local
+    al tenant (un código de cliente, un número de página).
+  - `CALLER`: además, solo el mismo llamante, para resultados que dependen de quién pregunta.
+    El llamante es el emisor, el sujeto y el cliente del token (`iss`, `sub` y `azp` o
+    `client_id`): un `sub` es único solo dentro de su emisor, y dos emisores pueden entregar el
+    mismo a personas distintas. Sin usuario autenticado, o con una autenticación que no es un
+    token, el método corre sin caché; un servicio con otro tipo de autenticación declara un
+    bean `CacheCallerResolver` que dé una identidad única.
+  - `GLOBAL`: todos comparten, solo para datos que son iguales para todos (un catálogo, la lista
+    de bancos).
 
     ```java
     @AxizCacheable(value = "my-limits", ttl = "1m", scope = CacheScope.CALLER)

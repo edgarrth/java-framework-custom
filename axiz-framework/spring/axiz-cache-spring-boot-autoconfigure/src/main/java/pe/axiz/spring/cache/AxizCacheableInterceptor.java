@@ -56,6 +56,8 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
   }
 
   /**
+   * Creates the interceptor with the given caller identity for {@link CacheScope#CALLER} caches.
+   *
    * @param callers identity of the caller for {@link CacheScope#CALLER} caches; a supplier that
    *     returns {@code null} (no Spring Security) leaves those caches unused
    */

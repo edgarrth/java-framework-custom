@@ -55,10 +55,10 @@ kind/up.sh               # o todo dentro de Kubernetes con los charts reales (pu
 
 | | |
 |---|---|
-| API de canal | http://localhost:8080 |
-| Keycloak | http://localhost:8180 (realm `axiz`, usuarios `ana` y `luis`) |
-| Grafana | http://localhost:3000 (dashboards base y *axiz: payments*) |
-| WireMock | http://localhost:8089 (core bancario REST y SOAP, red de pagos) |
+| API de canal | <http://localhost:8080> |
+| Keycloak | <http://localhost:8180> (realm `axiz`, usuarios `ana` y `luis`) |
+| Grafana | <http://localhost:3000> (dashboards base y *axiz: payments*) |
+| WireMock | <http://localhost:8089> (core bancario REST y SOAP, red de pagos) |
 
 El core simulado responde `CB-51` (fondos insuficientes) para la cuenta `1910099999999` y `CB-62`
 (cuenta bloqueada) para `1910088888888`; la red rechaza el CCI `00219100123456780052`, así se ven las

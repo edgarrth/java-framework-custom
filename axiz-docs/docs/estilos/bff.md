@@ -8,24 +8,24 @@ respuesta al canal y cachean lecturas.
 
 ## Composición
 
-=== "Reactivo"
+### Reactivo
 
-    ```java
-    return ReactiveComposer.within(timeout)
-        .required("order", Mono.just(order))
-        .optional("alias", aliasOf(customer, order), () -> null)   // si falla o vence: null
-        .run()
-        .map(c -> ChannelViews.payment(c.get("order", PaymentOrder.class), c.get("alias", String.class)));
-    ```
+```java
+return ReactiveComposer.within(timeout)
+    .required("order", Mono.just(order))
+    .optional("alias", aliasOf(customer, order), () -> null)   // si falla o vence: null
+    .run()
+    .map(c -> ChannelViews.payment(c.get("order", PaymentOrder.class), c.get("alias", String.class)));
+```
 
-=== "Servlet"
+### Servlet
 
-    ```java
-    Composition c = compositions.compose(Duration.ofSeconds(2))
-        .required("account", () -> accounts.get(id))
-        .optional("offers", () -> offers.forAccount(id), List::of)
-        .run();
-    ```
+```java
+Composition c = compositions.compose(Duration.ofSeconds(2))
+    .required("account", () -> accounts.get(id))
+    .optional("offers", () -> offers.forAccount(id), List::of)
+    .run();
+```
 
 Las partes corren en paralelo (virtual threads en servlet, suscripciones en reactivo) y llevan el
 contexto del llamador (metadata de la request, tenant, MDC y traza). Una parte requerida que falla

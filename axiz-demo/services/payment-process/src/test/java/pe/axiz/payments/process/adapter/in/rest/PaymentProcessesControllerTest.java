@@ -2,13 +2,19 @@ package pe.axiz.payments.process.adapter.in.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.process.api.model.ProcessRequest;
 import pe.axiz.payments.process.api.model.ProcessView;
 import pe.axiz.payments.process.application.usecase.Processes;
+import pe.axiz.spring.test.OpenApiResponses;
 
 /** The operations endpoint over the real saga: a process started by hand and read back. */
 class PaymentProcessesControllerTest {
@@ -16,6 +22,42 @@ class PaymentProcessesControllerTest {
   final Processes processes = new Processes();
   final PaymentProcessesController controller =
       new PaymentProcessesController(processes.start, processes.get);
+
+  @Test
+  void responseExamplesAndSerializedSagaMatchOpenApi() throws Exception {
+    var contract = new OpenApiResponses(Path.of("src/main/openapi/openapi.yaml"));
+    assertThat(contract.assertExamples()).isPositive();
+    var mvc = MockMvcBuilders.standaloneSetup(controller).build();
+    var created =
+        mvc.perform(
+                post("/v1/payment-processes")
+                    .contentType("application/json")
+                    .content(
+                        """
+        {"paymentOrderId":"O-1","operationNumber":"OP-1","debtorAccount":"1910012345678",
+         "creditorCci":"00219100123456789053","amount":150.75,"currency":"PEN","customerId":"C-1001"}
+        """))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse();
+    contract.assertResponse(
+        "/v1/payment-processes",
+        "post",
+        created.getStatus(),
+        created.getContentType(),
+        created.getContentAsString());
+    var read =
+        mvc.perform(get("/v1/payment-processes/O-1"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse();
+    contract.assertResponse(
+        "/v1/payment-processes/{processId}",
+        "get",
+        read.getStatus(),
+        read.getContentType(),
+        read.getContentAsString());
+  }
 
   @Test
   void startingAProcessRunsTheSagaAndAnswers201() {

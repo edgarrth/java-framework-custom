@@ -68,7 +68,7 @@ components:
       properties:
         processId: {type: string}
         status: {type: string}
-        failedStep: {type: string}
+        failedStep: {type: [string, "null"]}
     Problem:
       type: object
       properties:

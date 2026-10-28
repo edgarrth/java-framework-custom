@@ -22,11 +22,11 @@ axiz.outbox.relay.enabled: true
 
 ## Según la persistencia del servicio
 
-**Aurora en servlet (JDBC/JPA)**
+### Aurora en servlet (JDBC/JPA)
 
 Agrega también: [`jpa`](jpa.md)
 
-**Aurora en reactivo (R2DBC)**
+### Aurora en reactivo (R2DBC)
 
 Agrega también: [`r2dbc`](r2dbc.md)
 

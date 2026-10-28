@@ -12,6 +12,7 @@ Writes (and overwrites) only generated files, all marked with GENERATED:
     docs/herramientas/cli-referencia.md          (with --cli-help)
 """
 import argparse
+import html
 import os
 import re
 import shutil
@@ -82,10 +83,11 @@ def capabilities(framework, out, modules):
     rows = []
     for c in caps:
         name = c['name']
-        rows.append([f'[`{name}`]({name}.md)', c.get('description', ''),
+        description = html.escape(c.get('description', ''), quote=False)
+        rows.append([f'[`{name}`]({name}.md)', description,
                      ', '.join(included.get(name, [])) or '–'])
         autoconfigure, core = core_dependencies(framework, c['starter'])
-        parts = [f'# {name}\n', c.get('description', '') + '\n']
+        parts = [f'# {name}\n', description + '\n']
         parts.append(f'```bash\naxiz add {name}\n```\n')
         facts = [['Starter', f'`pe.axiz:{c["starter"]}`']]
         if c.get('requires'):
@@ -103,7 +105,7 @@ def capabilities(framework, out, modules):
         if c.get('persistence'):
             parts.append('## Según la persistencia del servicio\n')
             for store, extra in c['persistence'].items():
-                parts.append(f'**{STORE_LABELS.get(store, store)}**\n')
+                parts.append(f'### {STORE_LABELS.get(store, store)}\n')
                 if not extra:
                     parts.append('Sin configuración adicional.\n')
                 if extra.get('requires'):

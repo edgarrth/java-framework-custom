@@ -9,6 +9,7 @@ Test support: Testcontainers (PostgreSQL, LocalStack, Kafka, Redis), WireMock, A
 <dependency>
   <groupId>pe.axiz</groupId>
   <artifactId>axiz-test-spring-boot-starter</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -21,6 +22,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizContainers` | Containers matching the approved infrastructure: Aurora PostgreSQL, MSK (Kafka), ElastiCache (Valkey) and LocalStack for DynamoDB, SQS, SNS, S3, KMS, Secrets Manager and Parameter Store. |
 | `BlockHoundExtension` | Fails reactive tests that block an event-loop thread. |
 | `HttpStubs` | WireMock stub for a logical HTTP client: starts on a random port and points `axiz.http-client.clients.<name>.base-url` at it. |
+| `OpenApiResponses` | Checks inline response examples and serialized MockMvc/WebTestClient bodies against the source OpenAPI 3.1 schema, including local references and format assertions. |
 | `KafkaTestConfiguration` | Kafka for messaging tests; IAM authentication is switched off for the local broker. |
 | `LocalStackTestConfiguration` | LocalStack for the AWS adapters. |
 | `PostgresTestConfiguration` | PostgreSQL for `@SpringBootTest`: `@Import(PostgresTestConfiguration.class)`. |

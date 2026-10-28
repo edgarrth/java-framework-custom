@@ -89,6 +89,8 @@ jobs:
         run: python3 .github/scripts/check-dependency-governance.py .
       - name: spring.factories only registers environment post-processors
         run: python3 .github/scripts/check-spring-factories.py .
+      - name: Contract rules and response examples (Spectral)
+        run: node .github/scripts/test-contracts.cjs
       - name: The aggregated coverage report lists every module with code
         run: python3 .github/scripts/check-coverage-aggregate.py .
       - name: Release versions of a generated project (release-please calculation)

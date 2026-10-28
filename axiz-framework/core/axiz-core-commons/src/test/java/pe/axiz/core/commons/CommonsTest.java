@@ -20,6 +20,30 @@ import org.junit.jupiter.api.Test;
 class CommonsTest {
 
   @Test
+  void unicodeEncodingMustNotReplaceUnpairedSurrogates() {
+    for (String valid :
+        new String[] {
+          "", "josé", "?", "\uD7FF\uE000", "\uD800\uDC00", "\uDBFF\uDFFF", "a\uD83D\uDE00z"
+        }) {
+      assertTrue(Strings.isWellFormedUnicode(valid));
+    }
+    for (String invalid :
+        new String[] {
+          "\uD800",
+          "\uDBFF",
+          "\uDC00",
+          "\uDFFF",
+          "\uD800a",
+          "a\uDC00",
+          "\uD800\uD800",
+          "\uDC00\uD800",
+          "\uD800\uDC00\uDC00"
+        }) {
+      assertFalse(Strings.isWellFormedUnicode(invalid));
+    }
+  }
+
+  @Test
   void checksRejectInvalidArguments() {
     assertThrows(IllegalArgumentException.class, () -> Checks.notBlank(" ", "name"));
     assertThrows(IllegalArgumentException.class, () -> Checks.notNull(null, "name"));

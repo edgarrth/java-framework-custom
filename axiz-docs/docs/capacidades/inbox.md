@@ -22,11 +22,11 @@ axiz.inbox.retention: 14d
 
 ## Según la persistencia del servicio
 
-**Aurora en servlet (JDBC/JPA)**
+### Aurora en servlet (JDBC/JPA)
 
 Sin configuración adicional.
 
-**Aurora en reactivo (R2DBC)**
+### Aurora en reactivo (R2DBC)
 
 - `pe.axiz:axiz-core-inbox-r2dbc`
 
@@ -34,7 +34,7 @@ Sin configuración adicional.
 axiz.inbox.store: r2dbc
 ```
 
-**DynamoDB**
+### DynamoDB
 
 - `pe.axiz:axiz-core-inbox-dynamodb`
 

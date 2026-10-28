@@ -7,11 +7,11 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 |---|---|---|
 | [`foundation`](foundation.md) | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults | experience, business, process, integration, event-processor, batch, crud |
 | [`web`](web.md) | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions | experience, business, process, integration, event-processor, crud |
-| [`errors`](errors.md) | RFC 9457 problem details, error catalog (ConfigMap <app>-errors), external error mapping | experience, business, process, integration, event-processor, batch, crud |
+| [`errors`](errors.md) | RFC 9457 problem details, error catalog (ConfigMap &lt;app&gt;-errors), external error mapping | experience, business, process, integration, event-processor, batch, crud |
 | [`logging`](logging.md) | Structured JSON logs with trace and request context, HTTP access log with masking | experience, business, process, integration, event-processor, batch, crud |
 | [`observability`](observability.md) | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent | experience, business, process, integration, event-processor, batch, crud |
 | [`metrics`](metrics.md) | Generic event metrics (count, duration, amounts by currency, values) with bounded tags | experience, business, process, integration, event-processor, batch, crud |
-| [`config`](config.md) | ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check | experience, business, process, integration, event-processor, batch, crud |
+| [`config`](config.md) | ConfigMaps mounted as files (axiz-common, &lt;app&gt;, &lt;app&gt;-errors; no Kubernetes API access), Parameter Store, required keys check | experience, business, process, integration, event-processor, batch, crud |
 | [`i18n`](i18n.md) | Localized messages and problem details (es-PE by default) from messages*.properties | experience, business, process, integration, crud |
 | [`sensitive`](sensitive.md) | Masking of sensitive fields in responses, logs and audit by sensitivity level | experience, business, process, integration, event-processor, crud |
 | [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | experience, business, process, integration, crud |

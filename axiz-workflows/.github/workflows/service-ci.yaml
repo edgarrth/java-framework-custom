@@ -108,10 +108,12 @@ jobs:
           if [ -s rewrite.patch ]; then
             echo "### OpenRewrite suggestions: $(grep -c '^diff --git' rewrite.patch) files (artifact reports/rewrite.patch)" >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Mutation workers completed without errors
+        uses: axiz/axiz-workflows/actions/check-mutations@v1.0.0 # x-release-please-version
       - name: SBOM (CycloneDX)
         run: |
           # shellcheck disable=SC2086 # Maven arguments are split on purpose
-          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json $MODULE_ARGS
+          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false $MODULE_ARGS
       - name: Vulnerabilities, secrets and misconfigurations
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

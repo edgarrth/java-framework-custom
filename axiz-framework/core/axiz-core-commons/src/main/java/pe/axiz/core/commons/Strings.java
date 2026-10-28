@@ -22,6 +22,21 @@ public final class Strings {
     return !isBlank(value);
   }
 
+  /** Whether every UTF-16 surrogate is paired, so UTF-8 encoding loses no identity information. */
+  public static boolean isWellFormedUnicode(String value) {
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (Character.isHighSurrogate(c)) {
+        if (i + 1 == value.length() || !Character.isLowSurrogate(value.charAt(++i))) {
+          return false;
+        }
+      } else if (Character.isLowSurrogate(c)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public static @Nullable String trimToNull(@Nullable String value) {
     if (value == null) {
       return null;

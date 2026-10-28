@@ -85,6 +85,8 @@ jobs:
         uses: axiz/axiz-workflows/actions/test-report@v1.0.0 # x-release-please-version
         with:
           command: mvn -B -ntp verify -Pquality (deploy -Pquality,release when staging) ${{ inputs.maven-args }}
+      - name: Mutation workers completed without errors
+        uses: axiz/axiz-workflows/actions/check-mutations@v1.0.0 # x-release-please-version
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
         if: env.SONAR_TOKEN != ''
         run: |
@@ -107,7 +109,9 @@ jobs:
       - name: SBOM (CycloneDX)
         run: |
           # shellcheck disable=SC2086 # Maven arguments are split on purpose
-          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json $REVISION_ARG
+          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false $REVISION_ARG
+      - name: Require the aggregate inventory before scanning
+        uses: axiz/axiz-workflows/actions/check-sbom@v1.0.0 # x-release-please-version
       - name: Vulnerability scan of the dependencies
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:

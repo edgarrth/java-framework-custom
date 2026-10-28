@@ -26,7 +26,7 @@ axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:false}
 
 ## Según la persistencia del servicio
 
-**Aurora en reactivo (R2DBC)**
+### Aurora en reactivo (R2DBC)
 
 Sin configuración adicional.
 

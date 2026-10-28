@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.Strings;
 import pe.axiz.core.errors.AccessException;
 
 /** Maps validated token claims to an {@link AxizPrincipal} according to a {@link ClaimMapping}. */
@@ -27,7 +28,7 @@ public final class ClaimsMapper {
    * @return the principal
    */
   public AxizPrincipal map(Map<String, Object> claims) {
-    String issuer = string(claims.get("iss"));
+    String issuer = identityString("iss", claims.get("iss"));
     String clientId = first(claims, mapping.clientId());
     String subject = first(claims, mapping.subject());
     if (issuer == null) {
@@ -73,6 +74,9 @@ public final class ClaimsMapper {
     if (value == null) {
       return;
     }
+    if (!Strings.isWellFormedUnicode(value)) {
+      throw AccessException.unauthenticated("token with malformed Unicode in " + claim);
+    }
     for (int i = 0; i < value.length(); i++) {
       char c = value.charAt(i);
       if (c < 0x20 || c == 0x7F) {
@@ -105,7 +109,7 @@ public final class ClaimsMapper {
 
   private static @Nullable String first(Map<String, Object> claims, List<String> paths) {
     for (String p : paths) {
-      String v = string(resolve(claims, p));
+      String v = identityString(p, resolve(claims, p));
       if (v != null && !v.isBlank()) {
         return v;
       }
@@ -142,6 +146,16 @@ public final class ClaimsMapper {
 
   private static @Nullable String string(@Nullable Object v) {
     return v == null ? null : v.toString();
+  }
+
+  private static @Nullable String identityString(String claim, @Nullable Object value) {
+    if (value == null) {
+      return null;
+    }
+    if (!(value instanceof String text)) {
+      throw AccessException.unauthenticated("token with a non-text identity claim: " + claim);
+    }
+    return text;
   }
 
   private static List<String> strings(@Nullable Object v) {

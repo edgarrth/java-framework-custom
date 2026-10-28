@@ -18,6 +18,8 @@
 
   <properties>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <!-- The aggregator is not deployed, but must inventory the published tools and Initializr. -->
+    <cyclonedx.skipNotDeployed>false</cyclonedx.skipNotDeployed>
   </properties>
 
   <modules>

@@ -3,9 +3,11 @@ package pe.axiz.payments.experience.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.featureflags.FlagDefinition;
@@ -18,6 +20,9 @@ import pe.axiz.payments.experience.composition.BeneficiariesComposition;
 import pe.axiz.payments.experience.composition.BeneficiaryDirectory;
 import pe.axiz.payments.experience.composition.Fakes;
 import pe.axiz.payments.experience.composition.PaymentsComposition;
+import pe.axiz.spring.test.OpenApiResponses;
+import pe.axiz.spring.web.PageRequestParser;
+import pe.axiz.spring.web.ReactivePageRequestArgumentResolver;
 import reactor.core.publisher.Mono;
 
 /**
@@ -40,6 +45,36 @@ class ControllersTest {
               Duration.ofSeconds(1)));
   final BeneficiariesController beneficiaries =
       new BeneficiariesController(new BeneficiariesComposition(directory));
+
+  @Test
+  void responseExamplesAndSerializedBeneficiariesMatchOpenApi() throws Exception {
+    var contract = new OpenApiResponses(Path.of("src/main/openapi/openapi.yaml"));
+    assertThat(contract.assertExamples()).isPositive();
+    var client =
+        WebTestClient.bindToController(beneficiaries)
+            .argumentResolvers(
+                config ->
+                    config.addCustomResolver(
+                        new ReactivePageRequestArgumentResolver(new PageRequestParser(20, 100))))
+            .webFilter(
+                (exchange, chain) -> chain.filter(exchange).contextWrite(Fakes.signedIn("C-1")))
+            .build();
+    var response =
+        client
+            .get()
+            .uri("/v1/beneficiaries")
+            .exchange()
+            .expectStatus()
+            .isOk()
+            .expectBody(String.class)
+            .returnResult();
+    contract.assertResponse(
+        "/v1/beneficiaries",
+        "get",
+        response.getStatus().value(),
+        response.getResponseHeaders().getContentType().toString(),
+        response.getResponseBody());
+  }
 
   static <T> T as(String customer, Mono<T> mono) {
     return mono.contextWrite(Fakes.signedIn(customer)).block(Duration.ofSeconds(5));

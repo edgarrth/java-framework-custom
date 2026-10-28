@@ -2,12 +2,16 @@ package pe.axiz.payments.beneficiaries.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
@@ -16,6 +20,9 @@ import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
 import pe.axiz.payments.beneficiaries.api.model.BeneficiaryUpdate;
 import pe.axiz.payments.beneficiaries.service.InMemoryBeneficiaries;
 import pe.axiz.payments.beneficiaries.service.Services;
+import pe.axiz.spring.test.OpenApiResponses;
+import pe.axiz.spring.web.PageRequestArgumentResolver;
+import pe.axiz.spring.web.PageRequestParser;
 
 /**
  * The REST adapter over the real service: what each operation answers (status and body in the
@@ -25,6 +32,32 @@ class BeneficiariesControllerTest {
 
   static final String CCI = "00219100123456789053";
   static final String OTHER_CCI = "00319300987654321003";
+
+  @Test
+  void responseExamplesAndSerializedPagesMatchOpenApi() throws Exception {
+    var contract = new OpenApiResponses(Path.of("src/main/openapi/openapi.yaml"));
+    assertThat(contract.assertExamples()).isPositive();
+    controller.createBeneficiary("C-1", request("Landlord", CCI));
+    controller.createBeneficiary("C-1", request("Gym", OTHER_CCI));
+    var mvc =
+        MockMvcBuilders.standaloneSetup(controller)
+            .setCustomArgumentResolvers(
+                new PageRequestArgumentResolver(new PageRequestParser(20, 100)))
+            .build();
+    for (String size : new String[] {"1", "20"}) {
+      var response =
+          mvc.perform(get("/v1/customers/C-1/beneficiaries").param("size", size))
+              .andExpect(status().isOk())
+              .andReturn()
+              .getResponse();
+      contract.assertResponse(
+          "/v1/customers/{customerId}/beneficiaries",
+          "get",
+          response.getStatus(),
+          response.getContentType(),
+          response.getContentAsString());
+    }
+  }
 
   final InMemoryBeneficiaries repository = new InMemoryBeneficiaries();
   final BeneficiariesController controller =

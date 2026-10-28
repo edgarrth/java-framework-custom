@@ -22,6 +22,47 @@ class SecurityTest {
   private final ClaimsMapper mapper = new ClaimsMapper(ClaimMapping.defaults());
 
   @Test
+  void identityClaimsRequireStringsAndWellFormedUnicode() {
+    for (String claim : List.of("iss", "sub", "azp", "tenant")) {
+      for (Object invalid :
+          List.of(List.of("app"), Map.of("id", "app"), true, 123, "app\uD800", "app\uDC00")) {
+        var claims =
+            new java.util.HashMap<String, Object>(
+                Map.of(
+                    "iss", "https://idp.example", "sub", "user", "azp", "app", "tenant", "bank"));
+        claims.put(claim, invalid);
+        assertThrows(AccessException.class, () -> mapper.map(claims), claim);
+      }
+    }
+    // A malformed primary claim cannot fall through to a valid alternative.
+    assertThrows(
+        AccessException.class,
+        () ->
+            mapper.map(
+                Map.of("iss", "i", "sub", "user", "azp", List.of("app"), "client_id", "fallback")));
+    assertThrows(AccessException.class, () -> mapper.map(Map.of("iss", "i", "client_id", 123)));
+    AxizPrincipal valid =
+        mapper.map(
+            Map.of(
+                "iss",
+                "i",
+                "sub",
+                "josé\uD83D\uDE00",
+                "azp",
+                "[app]",
+                "tenant",
+                "bank",
+                "aud",
+                List.of("api"),
+                "roles",
+                List.of("customer")));
+    assertEquals("josé\uD83D\uDE00", valid.subject());
+    assertEquals("[app]", valid.clientId());
+    assertEquals(List.of("api"), valid.audience());
+    assertEquals(Set.of("customer"), valid.roles());
+  }
+
+  @Test
   void identityClaimsWithControlCharactersAreRejected() {
     for (String claim : List.of("iss", "sub", "azp", "tenant")) {
       java.util.HashMap<String, Object> claims =

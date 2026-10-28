@@ -28,7 +28,7 @@ axiz.jpa.aws-wrapper.iam: ${AXIZ_JPA_IAM:false}
 
 ## Según la persistencia del servicio
 
-**Aurora en servlet (JDBC/JPA)**
+### Aurora en servlet (JDBC/JPA)
 
 Sin configuración adicional.
 

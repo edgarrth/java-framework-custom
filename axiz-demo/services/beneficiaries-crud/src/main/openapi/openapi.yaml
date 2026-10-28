@@ -136,7 +136,7 @@ components:
         items:
           type: array
           items: {$ref: '#/components/schemas/Beneficiary'}
-        nextCursor: {type: string}
+        nextCursor: {type: [string, "null"]}
     Problem:
       type: object
       properties:

@@ -22,11 +22,11 @@ axiz.sequence.sequences.operation.prefix: OP
 
 ## Según la persistencia del servicio
 
-**Aurora en servlet (JDBC/JPA)**
+### Aurora en servlet (JDBC/JPA)
 
 Sin configuración adicional.
 
-**DynamoDB**
+### DynamoDB
 
 - `pe.axiz:axiz-core-sequence-dynamodb`
 

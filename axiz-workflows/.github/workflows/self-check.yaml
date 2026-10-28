@@ -23,6 +23,10 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz" | sha256sum -c -
           tar xzf actionlint.tar.gz actionlint
           ./actionlint -color
+      - name: SBOM validation regression
+        run: python3 -m unittest discover -s actions/check-sbom -p 'test_*.py'
+      - name: Mutation process validation regression
+        run: python3 -m unittest discover -s actions/check-mutations -p 'test_*.py'
       - name: Third-party actions pinned by commit SHA
         run: |
           unpinned=$(grep -rnE 'uses: [^ ]+@' .github/workflows actions \

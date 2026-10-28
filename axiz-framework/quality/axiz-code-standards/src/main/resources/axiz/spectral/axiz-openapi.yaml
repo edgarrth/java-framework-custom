@@ -48,7 +48,7 @@ rules:
     then:
       function: pattern
       functionOptions:
-        notMatch: "(?i)(card|pan|documentNumber|password|otp)"
+        notMatch: "/(card|pan|documentNumber|password|otp)/i"
   axiz-pagination-params:
     description: Collection GET operations must accept page and size.
     severity: warn

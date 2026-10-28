@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -28,6 +30,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.oauth2.jwt.JwtException;
+import pe.axiz.core.errors.AccessException;
+import pe.axiz.core.security.ClaimMapping;
+import pe.axiz.core.security.ClaimsMapper;
 import pe.axiz.core.security.IssuerPolicy;
 import pe.axiz.core.security.TrustedIssuer;
 
@@ -102,6 +107,50 @@ class AccessTokenProfileTest {
     if (reason != null) {
       assertThat(e.getMessage()).contains(reason);
     }
+  }
+
+  @ParameterizedTest(name = "reactive={0}")
+  @ValueSource(booleans = {false, true})
+  void signedMalformedIdentitiesAreRejectedBeforeAuthentication(boolean reactive) throws Exception {
+    ClaimsMapper mapper = new ClaimsMapper(ClaimMapping.defaults());
+    for (String clientJson :
+        List.of(
+            "[\"app\"]", "{\"id\":\"app\"}", "123", "true", "\"app\\ud800\"", "\"app\\udc00\"")) {
+      // Construct JSON directly: serializing a Java String could replace an unpaired surrogate
+      // before signing it and would not exercise the signed malformed claim.
+      String claims =
+          "{\"iss\":\""
+              + ISSUER
+              + "\",\"aud\":\"payments-api\",\"sub\":\"customer-1\",\"azp\":"
+              + clientJson
+              + ",\"exp\":"
+              + Instant.now().plusSeconds(300).getEpochSecond()
+              + "}";
+      JWSObject jwt =
+          new JWSObject(
+              new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(key.getKeyID()).build(),
+              new Payload(claims));
+      jwt.sign(new RSASSASigner(key));
+      String signed = jwt.serialize();
+      assertThrows(
+          AccessException.class,
+          () ->
+              mapper.map(
+                  (reactive
+                          ? decoders.reactive(ISSUER).decode(signed).block(T)
+                          : decoders.servlet(ISSUER).decode(signed))
+                      .getClaims()));
+    }
+    String signed = token(JWSAlgorithm.RS256, c -> c.claim("azp", "app\uD83D\uDE00"));
+    assertEquals(
+        "app\uD83D\uDE00",
+        mapper
+            .map(
+                (reactive
+                        ? decoders.reactive(ISSUER).decode(signed).block(T)
+                        : decoders.servlet(ISSUER).decode(signed))
+                    .getClaims())
+            .clientId());
   }
 
   @ParameterizedTest(name = "reactive={0}")

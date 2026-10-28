@@ -20,6 +20,14 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+    <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-test</artifactId>
       <version>${project.version}</version>

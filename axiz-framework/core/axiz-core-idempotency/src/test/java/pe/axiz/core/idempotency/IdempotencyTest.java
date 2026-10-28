@@ -195,6 +195,26 @@ class IdempotencyTest {
         IdempotencyService.scope("op", "iss", null, "app", "jose"));
   }
 
+  @Test
+  void scopeRejectsMalformedUnicodeWithoutChangingValidIdentities() {
+    for (String invalid : new String[] {"app\uD800", "app\uDC00", "\uD800x", "\uD800\uD800"}) {
+      for (int position = 0; position < 4; position++) {
+        String[] identity = {"iss", "bank", "app", "user"};
+        identity[position] = invalid;
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                IdempotencyService.scope("op", identity[0], identity[1], identity[2], identity[3]));
+      }
+    }
+    assertNotEquals(
+        IdempotencyService.scope("op", "iss", "bank", "app\uD83D\uDE00", "user"),
+        IdempotencyService.scope("op", "iss", "bank", "app?", "user"));
+    assertEquals(
+        "op:1762d179852eb97b8e8bd49538404fea2d21f5d01eee4d990616230cab44fc28",
+        IdempotencyService.scope("op", "iss", "t1", "app", "user-1"));
+  }
+
   /** Regression: the scope separates issuers, tenants, clients and subjects. */
   @Test
   void theScopeSeparatesEveryCallerDimension() {

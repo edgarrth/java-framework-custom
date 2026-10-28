@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.Strings;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.id.IdempotencyKeys;
 
@@ -150,7 +151,9 @@ public final class IdempotencyService {
    * characters: UTF-8 never encodes another character with a byte below {@code 0x20}, so no part
    * can imitate a separator or a marker. A part with a control character (U+0000 to U+001F, U+007F)
    * is rejected before any operation starts; the axiz token mapping already refuses such claims,
-   * and integrations that build scopes by other means get the same check here.
+   * and integrations that build scopes by other means get the same check here. Unpaired UTF-16
+   * surrogates are also rejected: UTF-8 would replace them and merge distinct identities. Valid
+   * identities retain their original hashes, including across upgrades and in-flight retries.
    *
    * @param operation stable operation name (for example {@code com.acme.PaymentController#create})
    * @param issuer token issuer, if any
@@ -158,7 +161,7 @@ public final class IdempotencyService {
    * @param client calling application, if any
    * @param subject end user, if any
    * @return {@code operation:hash}
-   * @throws IllegalArgumentException when a part contains a control character
+   * @throws IllegalArgumentException when a part contains a control character or malformed Unicode
    */
   public static String scope(
       String operation,
@@ -181,6 +184,9 @@ public final class IdempotencyService {
   }
 
   private static void requireNoControlCharacters(String part) {
+    if (!Strings.isWellFormedUnicode(part)) {
+      throw new IllegalArgumentException("An idempotency scope part contains malformed Unicode");
+    }
     for (int i = 0; i < part.length(); i++) {
       char c = part.charAt(i);
       if (c < 0x20 || c == 0x7F) {

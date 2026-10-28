@@ -22,11 +22,11 @@ axiz.scheduling.default-lock-at-most-for: 10m
 
 ## Según la persistencia del servicio
 
-**Aurora en servlet (JDBC/JPA)**
+### Aurora en servlet (JDBC/JPA)
 
 - `net.javacrumbs.shedlock:shedlock-provider-jdbc-template`
 
-**Aurora en reactivo (R2DBC)**
+### Aurora en reactivo (R2DBC)
 
 - `net.javacrumbs.shedlock:shedlock-provider-r2dbc`
 
@@ -34,7 +34,7 @@ axiz.scheduling.default-lock-at-most-for: 10m
 axiz.scheduling.store: r2dbc
 ```
 
-**DynamoDB**
+### DynamoDB
 
 - `net.javacrumbs.shedlock:shedlock-provider-dynamodb2`
 
