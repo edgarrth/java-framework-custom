@@ -45,6 +45,13 @@ sobre r2dbc-postgresql con pool, sin JDBC en el camino de las requests.
 - `ReactiveSql`: SQL con parámetros nombrados que se une a la transacción reactiva del llamador,
   para consultas que no conviene derivar de un repositorio.
 
+`R2dbcSql` y `R2dbcTransactionRunner` aíslan sus conexiones por identidad de `ConnectionFactory`.
+Dos instancias que usan la misma fábrica pueden compartir la conexión activa; una fábrica distinta
+conserva su propia conexión, incluso dentro de una transacción anidada. El contexto interno de
+`R2dbcSql.inTransaction` contiene las conexiones por fábrica y no debe inyectarse manualmente como
+una conexión global. Las transacciones de fábricas distintas se confirman de forma independiente;
+no constituyen una transacción distribuida.
+
 ```java
 @Table("payment_history")
 class PaymentHistoryRow extends AuditableRow {

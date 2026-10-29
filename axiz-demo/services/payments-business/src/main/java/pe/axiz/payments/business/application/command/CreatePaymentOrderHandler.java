@@ -3,7 +3,6 @@ package pe.axiz.payments.business.application.command;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Map;
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.identifiers.IdentifierRegistry;
@@ -33,7 +32,6 @@ import pe.axiz.payments.business.domain.PaymentOrder;
  * retried request returns the order it already created (durable idempotency of the business
  * operation, independent of the HTTP idempotency store).
  */
-@Component
 public class CreatePaymentOrderHandler
     implements CommandHandler<CreatePaymentOrderCommand, PaymentOrder> {
 

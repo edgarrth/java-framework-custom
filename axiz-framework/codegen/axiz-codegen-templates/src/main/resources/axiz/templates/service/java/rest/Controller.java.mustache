@@ -99,6 +99,9 @@ import {{project.basePackage}}.composition.{{item.className}}Composition;
  */
 @RestController
 public class {{item.className}}Controller {
+{{#fw.hasApplicationModels}}
+  private final tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+{{/fw.hasApplicationModels}}
 
 {{#item.fields}}
   private final {{type}} {{name}};

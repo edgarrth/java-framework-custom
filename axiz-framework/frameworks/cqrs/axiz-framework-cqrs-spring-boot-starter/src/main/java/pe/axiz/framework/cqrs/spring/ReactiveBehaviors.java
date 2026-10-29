@@ -29,6 +29,7 @@ import pe.axiz.framework.cqrs.Caller;
 import pe.axiz.framework.cqrs.IdempotentCommand;
 import pe.axiz.framework.cqrs.Invocation;
 import pe.axiz.framework.cqrs.PipelineBehavior;
+import pe.axiz.framework.cqrs.ReactiveAccessPolicy;
 import pe.axiz.framework.cqrs.RequiresAuthority;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -141,7 +142,7 @@ public final class ReactiveBehaviors {
       Mono<Void> chain = Mono.empty();
       for (ReactiveAccessPolicy policy : reactivePolicies) {
         if (policy.requestType().isInstance(request)) {
-          chain = chain.then(Mono.defer(() -> (Mono<Void>) policy.check(request, caller)));
+          chain = chain.then(Mono.defer(() -> Mono.from(policy.check(request, caller))));
         }
       }
       return chain;

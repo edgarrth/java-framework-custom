@@ -13,7 +13,7 @@ import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.framework.hexagonal.annotation.UseCase;
 {{#item.models}}
-import {{item.modelPackage}}.{{name}};
+import {{project.basePackage}}.application.model.{{name}};
 {{/item.models}}
 
 /**

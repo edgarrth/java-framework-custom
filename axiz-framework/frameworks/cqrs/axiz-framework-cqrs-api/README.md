@@ -20,6 +20,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `AccessPolicies` | The access policies of an application: runs the ones matching a request and reports request types that nothing protects. |
 | `AccessPolicy` | Object-level authorization of a command or query type: decides whether the caller may act on the resources the request names (customer, account, order), beyond the authorities of `RequiresAuthority`. |
+| `ReactiveAccessPolicy` | Non-blocking authorization through `Publisher<Void>`, independent of Spring and Reactor. |
 | `AuditedCommand` | Command recorded in the audit trail with its outcome. |
 | `Buses` | Plain-Java command and query buses. |
 | `Caller` | Who sends a command or query, as seen by an `AccessPolicy`. |

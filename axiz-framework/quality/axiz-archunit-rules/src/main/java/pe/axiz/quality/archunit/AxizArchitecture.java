@@ -57,7 +57,11 @@ public final class AxizArchitecture {
     verify(
         new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-            .importPackages(basePackage),
+            .importPackages(basePackage, "pe.axiz.core")
+            .that(
+                com.tngtech.archunit.base.DescribedPredicate.describe(
+                    "service production classes",
+                    type -> type.getName().startsWith(basePackage + "."))),
         basePackage,
         style);
   }

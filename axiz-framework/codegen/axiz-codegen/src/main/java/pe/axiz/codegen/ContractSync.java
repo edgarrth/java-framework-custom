@@ -124,13 +124,15 @@ public final class ContractSync {
           addedClasses.stream()
                   .anyMatch(
                       c ->
-                          file.equals(c + "UseCase.java")
+                          file.equals(c + "ApplicationMappingTest.java")
+                              || file.equals(c + "UseCase.java")
                               || file.equals(c + "Command.java")
                               || file.equals(c + "Query.java")
                               || file.equals(c + "Handler.java"))
               || added.stream().anyMatch(id -> path.endsWith("contract-examples/" + id + ".json"));
       boolean adapterFile =
-          file.endsWith("Controller.java")
+          path.contains("/application/model/")
+              || file.endsWith("Controller.java")
               || file.equals("ContractExamplesTest.java")
               || (file.endsWith("Service.java") && path.contains("/service/"))
               || (file.endsWith("Composition.java") && path.contains("/composition/"));

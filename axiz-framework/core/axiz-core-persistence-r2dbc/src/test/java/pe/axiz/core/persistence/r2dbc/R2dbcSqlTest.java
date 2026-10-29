@@ -85,6 +85,77 @@ class R2dbcSqlTest {
   }
 
   @Test
+  void reactiveTransactionsDoNotRouteOtherFactoriesToTheirConnection() {
+    FakeR2dbc first = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc second = new FakeR2dbc().onUpdate("^UPDATE", b -> 2L);
+    R2dbcSql sql = new R2dbcSql(first);
+    R2dbcSql other = new R2dbcSql(second);
+
+    Long updated =
+        sql.inTransaction(tx -> other.update("UPDATE other_table SET a = 1", SqlParams.of()))
+            .block();
+
+    assertEquals(2L, updated);
+    assertTrue(first.executions().isEmpty());
+    assertEquals(List.of("open:1", "close:1"), second.events());
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), first.events());
+  }
+
+  @Test
+  void nestedReactiveTransactionsPreserveEachFactoryConnection() {
+    FakeR2dbc first = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc second = new FakeR2dbc().onUpdate("^UPDATE", b -> 2L);
+    R2dbcSql sql = new R2dbcSql(first);
+    R2dbcSql other = new R2dbcSql(second);
+
+    sql.inTransaction(
+            tx ->
+                other
+                    .inTransaction(
+                        nested ->
+                            nested
+                                .update("UPDATE second_table SET a = 1", SqlParams.of())
+                                .then(tx.update("UPDATE first_table SET a = 1", SqlParams.of())))
+                    .then(tx.update("UPDATE first_table SET a = 2", SqlParams.of())))
+        .block();
+
+    assertEquals(2, first.executions().size());
+    assertEquals(1, second.executions().size());
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), first.events());
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), second.events());
+  }
+
+  @Test
+  void blockingTransactionsIsolateFactoriesAndKeepTheOuterBinding() throws Exception {
+    FakeR2dbc first = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc second = new FakeR2dbc().onUpdate("^UPDATE", b -> 2L);
+    R2dbcSql sql = new R2dbcSql(first);
+    R2dbcSql other = new R2dbcSql(second);
+    R2dbcTransactionRunner outer = new R2dbcTransactionRunner(first, Duration.ofSeconds(5));
+    R2dbcTransactionRunner inner = new R2dbcTransactionRunner(second, Duration.ofSeconds(5));
+
+    outer.inTransaction(
+        () -> {
+          assertEquals(
+              2L,
+              inner.inTransaction(
+                  () -> {
+                    assertEquals(
+                        1L, sql.update("UPDATE first_table SET a = 1", SqlParams.of()).block());
+                    return other.update("UPDATE second_table SET a = 1", SqlParams.of()).block();
+                  }));
+          assertEquals(1L, sql.update("UPDATE first_table SET a = 2", SqlParams.of()).block());
+          return null;
+        });
+
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), first.events());
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), second.events());
+    sql.update("UPDATE first_table SET a = 3", SqlParams.of()).block();
+    assertEquals(
+        List.of("open:1", "begin:1", "commit:1", "close:1", "open:2", "close:2"), first.events());
+  }
+
+  @Test
   void blockingRunnerBindsTheConnectionToTheThread() throws Exception {
     FakeR2dbc db = new FakeR2dbc().onUpdate("^DELETE", b -> 3L);
     R2dbcSql sql = new R2dbcSql(db);
@@ -113,6 +184,34 @@ class R2dbcSqlTest {
                   throw new IllegalArgumentException("no");
                 }));
     assertEquals(List.of("open:1", "begin:1", "rollback:1", "close:1"), db.events());
+  }
+
+  @Test
+  void blockingRunnersForTheSameFactoryJoinAndAnInnerFailureKeepsOtherFactoriesBound()
+      throws Exception {
+    FakeR2dbc first = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc second = new FakeR2dbc();
+    R2dbcSql sql = new R2dbcSql(first);
+    R2dbcTransactionRunner outer = new R2dbcTransactionRunner(first, Duration.ofSeconds(5));
+    R2dbcTransactionRunner same = new R2dbcTransactionRunner(first, Duration.ofSeconds(5));
+    R2dbcTransactionRunner other = new R2dbcTransactionRunner(second, Duration.ofSeconds(5));
+
+    outer.inTransaction(
+        () -> {
+          same.inTransaction(() -> sql.update("UPDATE t SET a = 1", SqlParams.of()).block());
+          assertThrows(
+              IllegalStateException.class,
+              () ->
+                  other.inTransaction(
+                      () -> {
+                        throw new IllegalStateException("inner");
+                      }));
+          return sql.update("UPDATE t SET a = 2", SqlParams.of()).block();
+        });
+
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), first.events());
+    assertEquals(List.of("open:1", "begin:1", "rollback:1", "close:1"), second.events());
+    assertTrue(first.executions().stream().allMatch(e -> e.connection() == 1));
   }
 
   @Test

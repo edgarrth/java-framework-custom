@@ -131,7 +131,8 @@ public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery>
 - Las políticas corren en la etapa de autorización del pipeline. Esto ocurre después de
   `@RequiresAuthority` y antes de la idempotencia, la transacción y el handler. En buses reactivos,
   una `AccessPolicy` corre fuera del event loop. Si la política lee estado a través de un
-  repositorio reactivo, usa `ReactiveAccessPolicy`, que devuelve `Mono<Void>` y no bloquea. Las
+  repositorio reactivo, usa `pe.axiz.framework.cqrs.ReactiveAccessPolicy` del módulo API, que devuelve
+  `Publisher<Void>` (por ejemplo, `Mono<Void>`) y no bloquea. Las
   reglas de arquitectura de los servicios reactivos prohíben `block()`.
 - Hay dos formas de negar: `AccessException` (403) y `NotFoundException` (404). Usa 404 cuando
   confirmar que el recurso existe ya sería una fuga.

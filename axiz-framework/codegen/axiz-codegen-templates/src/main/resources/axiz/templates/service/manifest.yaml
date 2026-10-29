@@ -97,3 +97,9 @@ files:
   - {template: static/helm/externalsecret.yaml, path: "deploy/helm/{{project.name}}/templates/externalsecret.yaml", binary: true}
   - {template: static/helm/serviceaccount.yaml, path: "deploy/helm/{{project.name}}/templates/serviceaccount.yaml", binary: true}
   - {template: static/helm/networkpolicy.yaml, path: "deploy/helm/{{project.name}}/templates/networkpolicy.yaml", binary: true}
+
+  - {template: java/hexagonal/Model.java.mustache, path: "src/main/java/{{project.packagePath}}/application/model/{{item.name}}.java", each: applicationModels, when: fw.hasApplicationModels}
+
+  - {template: java/cqrs/HandlerConfiguration.java.mustache, path: "src/main/java/{{project.packagePath}}/config/HandlerConfiguration.java", when: fw.cqrs}
+
+  - {template: test/ApplicationMappingTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{item.className}}ApplicationMappingTest.java", each: operations, when: fw.hasApplicationModels && item.exampleTestable}

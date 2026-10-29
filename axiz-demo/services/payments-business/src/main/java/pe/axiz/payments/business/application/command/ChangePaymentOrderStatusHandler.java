@@ -1,6 +1,5 @@
 package pe.axiz.payments.business.application.command;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
@@ -12,7 +11,6 @@ import pe.axiz.payments.business.domain.PaymentOrder;
 import pe.axiz.payments.business.domain.PaymentStatus;
 
 /** Applies a status change and publishes {@code payment-order.status-changed}. */
-@Component
 public class ChangePaymentOrderStatusHandler
     implements CommandHandler<ChangePaymentOrderStatusCommand, PaymentOrder> {
 

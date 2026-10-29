@@ -1,13 +1,11 @@
 package pe.axiz.payments.history.application.command;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.framework.cqrs.ReactiveCommandHandler;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
 /** Projects a status change (stale changes are ignored by the domain). */
-@Component
 public class RecordPaymentStatusChangedHandler
     implements ReactiveCommandHandler<RecordPaymentStatusChangedCommand, Void> {
 

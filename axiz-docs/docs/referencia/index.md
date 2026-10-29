@@ -135,7 +135,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-test-spring-boot-starter`](spring/axiz-test-spring-boot-starter.md) | Test support: Testcontainers (PostgreSQL, LocalStack, Kafka, Redis), WireMock, ArchUnit rules, BlockHound and fixtures. |
 | [`axiz-web-spring-boot-autoconfigure`](spring/axiz-web-spring-boot-autoconfigure.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata (auto-configuration). |
 | [`axiz-web-spring-boot-starter`](spring/axiz-web-spring-boot-starter.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata. |
-| [`spring`](spring/spring.md) | Spring Boot 4.1 wiring of each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans |
+| [`spring`](spring/spring.md) | Spring Boot 4.1 auto-configuration and integration adapters for each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans |
 
 ## Capa 3: frameworks
 

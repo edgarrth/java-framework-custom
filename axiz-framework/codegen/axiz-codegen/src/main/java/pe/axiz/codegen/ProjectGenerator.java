@@ -130,6 +130,9 @@ public final class ProjectGenerator {
     fw.put("restPackage", restPackage);
     fw.put("restPath", restPackage.replace('.', '/'));
     fw.put("packages", packages(r.framework()));
+    fw.put(
+        "hasApplicationModels",
+        r.framework() == Framework.HEXAGONAL || r.framework() == Framework.CQRS);
     fw.put("usecases", r.framework() == Framework.HEXAGONAL);
     fw.put("handlers", r.framework() == Framework.CQRS);
     c.put("fw", fw);
@@ -205,9 +208,16 @@ public final class ProjectGenerator {
     if (contract != null) {
       for (ApiOperation op : contract.operations()) {
         Map<String, Object> o = operation(op, r.basePackage());
+        if (r.framework() == Framework.CQRS) {
+          o.put("modelPackage", r.basePackage() + ".application.model");
+        }
         operations.add(o);
         byTag.computeIfAbsent(op.tag(), t -> new ArrayList<>()).add(o);
       }
+    }
+    if ((r.framework() == Framework.HEXAGONAL || r.framework() == Framework.CQRS)
+        && contract != null) {
+      c.put("applicationModels", ApplicationModels.records(contract, r.basePackage()));
     }
     c.put("operations", operations);
     List<Map<String, Object>> tags = new ArrayList<>();
@@ -328,6 +338,7 @@ public final class ProjectGenerator {
               List.of(
                   "domain", "Domain model: plain Java, no framework dependencies.",
                   "application.usecase", "Use cases: one class per operation, transactional.",
+                  "application.model", "Owned application contracts independent of HTTP models.",
                   "application.port.out", "Outbound ports implemented by adapters.",
                   "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
                   "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
@@ -336,6 +347,7 @@ public final class ProjectGenerator {
               List.of(
                   "domain", "Domain model: plain Java, no framework dependencies.",
                   "application.command", "Commands and their handlers (write side).",
+                  "application.model", "Owned application contracts independent of HTTP models.",
                   "application.query", "Queries and their handlers (read side).",
                   "application.port.out", "Outbound ports implemented by adapters.",
                   "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
@@ -660,6 +672,19 @@ public final class ProjectGenerator {
     o.put("controllerParams", String.join(", ", declarations));
     o.put("inputComponents", String.join(", ", components));
     o.put("inputArguments", String.join(", ", arguments));
+    List<String> hexagonalArguments = new ArrayList<>(arguments);
+    if (request != null) {
+      String applicationType =
+          request.startsWith("List<")
+              ? "java.util.List<" + basePackage + ".application.model." + request.substring(5)
+              : basePackage + ".application.model." + request;
+      hexagonalArguments.set(
+          hexagonalArguments.size() - 1,
+          "mapper.convertValue(body, new tools.jackson.core.type.TypeReference<"
+              + applicationType
+              + ">() {})");
+    }
+    o.put("hexagonalArguments", String.join(", ", hexagonalArguments));
     o.put("hasInput", !components.isEmpty());
     o.put("commandName", className + "Command");
     o.put("queryName", className + "Query");

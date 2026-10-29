@@ -1,6 +1,5 @@
 package pe.axiz.payments.business.application.access;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.framework.cqrs.AccessPolicy;
 import pe.axiz.framework.cqrs.Caller;
@@ -12,7 +11,6 @@ import pe.axiz.payments.business.domain.PaymentOrder;
  * An order is visible to its customer and to services that may read orders. Another customer's
  * order is reported as not found, so ids cannot be probed.
  */
-@Component
 public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery> {
 
   private final PaymentOrders orders;

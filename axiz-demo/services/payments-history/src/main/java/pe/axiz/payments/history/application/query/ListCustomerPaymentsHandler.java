@@ -1,6 +1,5 @@
 package pe.axiz.payments.history.application.query;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.core.commons.Page;
 import pe.axiz.framework.cqrs.ReactiveQueryHandler;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
@@ -8,7 +7,6 @@ import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
 
 /** Lists the payments of a customer. */
-@Component
 public class ListCustomerPaymentsHandler
     implements ReactiveQueryHandler<ListCustomerPaymentsQuery, Page<PaymentHistory>> {
 

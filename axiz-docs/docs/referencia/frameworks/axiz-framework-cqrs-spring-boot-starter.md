@@ -25,7 +25,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `IdempotencyBehavior` | Idempotent commands: the first result is stored (JSON) and returned again for the same key, the same command and the same caller; a different command with the same key is a 422 problem. |
 | `MetricsBehavior` | Counts and times every command and query as a generic event named after the request (`create-card`); requests and results implementing `MetricSource` add amounts and tags. |
 | `ObservationBehavior` | Outermost step: a span `axiz.command` or `axiz.query` around the whole pipeline. |
-| `ReactiveAccessPolicy` | Non-blocking `AccessPolicy` for the reactive buses: for policies that read state through a reactive repository (the owner of a resource) without blocking. |
+| `ReactiveAccessPolicy` | Deprecated compatibility bridge; application policies implement `pe.axiz.framework.cqrs.ReactiveAccessPolicy` from the API module. |
 | `ReactiveBehaviors` | The standard reactive pipeline behaviors, one per cross-cutting concern. |
 | `ReactiveBuses` | Reactive command and query buses: the same pipeline as the blocking buses (observation, validation, authorization, idempotency, transaction, audit, metrics) composed as operators on the handler's `Mono`, so no step blocks an event loop. |
 | `ReactiveCommandBus` | Sends commands through the reactive pipeline to their `ReactiveCommandHandler`. |

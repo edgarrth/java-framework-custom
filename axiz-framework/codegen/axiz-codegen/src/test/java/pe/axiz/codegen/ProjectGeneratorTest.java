@@ -98,7 +98,10 @@ class ProjectGeneratorTest {
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("@PostMapping(\"/v1/orders\")"));
     assertTrue(
-        controller.contains("createOrderUseCase.execute(new CreateOrderUseCase.Input(body))"));
+        controller.contains("createOrderUseCase.execute(new CreateOrderUseCase.Input(")
+            && controller.contains("mapper.convertValue(body,")
+            && !p.text(base + "application/usecase/CreateOrderUseCase.java")
+                .contains(".api.model"));
     assertTrue(controller.contains("ResponseEntity.status(201)"));
     assertTrue(
         p.text(base + "application/usecase/ListOrdersUseCase.java")
@@ -168,7 +171,11 @@ class ProjectGeneratorTest {
     String base = "src/main/java/pe/axiz/orders/ordersbusiness/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("private final ReactiveCommandBus commandBus;"), controller);
-    assertTrue(controller.contains("return commandBus.send(new CreateOrderCommand(body))"));
+    assertTrue(
+        controller.contains("return commandBus.send(new CreateOrderCommand(")
+            && controller.contains("mapper.convertValue(body,")
+            && !p.text(base + "application/command/CreateOrderCommand.java")
+                .contains(".api.model"));
     assertFalse(controller.contains("Schedulers"), "no offloading: the pipeline is reactive");
     String handler = p.text(base + "application/command/CreateOrderHandler.java");
     assertTrue(handler.contains("implements ReactiveCommandHandler<CreateOrderCommand, Order>"));

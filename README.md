@@ -46,7 +46,7 @@ Las capas de `axiz-framework` son tres:
 
 - **Capa 1**: Java puro, sin Spring.
 - **Capa 2**: starters de Spring Boot.
-- **Capa 3**: estilos de arquitectura (hexagonal, CQRS, capas, EDA y BFF).
+- **Capa 3**: estilos de arquitectura (hexagonal, CQRS, capas, EDA, BFF y batch).
 
 ## 2. Cómo se relacionan
 

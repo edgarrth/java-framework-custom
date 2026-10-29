@@ -54,11 +54,13 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
+          PLAN_ENVIRONMENT: ${{ inputs.environment }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           terraform show -no-color tfplan | tail -c 60000 > plan.txt
-          { echo "### Terraform plan (${{ inputs.environment }})"; echo '```'; cat plan.txt; echo '```'; } > comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md --edit-last || \
-            gh pr comment "${{ github.event.pull_request.number }}" --body-file comment.md
+          { printf '### Terraform plan (%s)\n' "$PLAN_ENVIRONMENT"; echo '```'; cat plan.txt; echo '```'; } > comment.md
+          gh pr comment "$PR_NUMBER" --body-file comment.md --edit-last || \
+            gh pr comment "$PR_NUMBER" --body-file comment.md
       - name: Apply (after merge; the environment requires approval)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: terraform apply -input=false tfplan

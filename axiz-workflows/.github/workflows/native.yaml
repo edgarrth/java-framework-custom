@@ -42,6 +42,9 @@ jobs:
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NATIVE_MODULE: ${{ inputs.module }}
+      NATIVE_BINARY: ${{ inputs.binary }}
+      NATIVE_SUFFIX: ${{ matrix.suffix }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
@@ -50,20 +53,20 @@ jobs:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Native image
         shell: bash
-        run: mvn -B -ntp -Pnative -pl "${{ inputs.module }}" -am package -DskipTests
+        run: mvn -B -ntp -Pnative -pl "$NATIVE_MODULE" -am package -DskipTests
       - name: Smoke test
         shell: bash
         run: |
-          bin="${{ inputs.module }}/target/${{ inputs.binary }}"
+          bin="$NATIVE_MODULE/target/$NATIVE_BINARY"
           [ -f "$bin.exe" ] && bin="$bin.exe"
           "$bin" --version
           "$bin" catalog > /dev/null
       - name: Package
         shell: bash
         run: |
-          cd "${{ inputs.module }}/target"
-          name="${{ inputs.binary }}-${GITHUB_REF_NAME}-${{ matrix.suffix }}"
-          if [ -f "${{ inputs.binary }}.exe" ]; then 7z a "$name.zip" "${{ inputs.binary }}.exe"; else tar czf "$name.tar.gz" "${{ inputs.binary }}"; fi
+          cd "$NATIVE_MODULE/target"
+          name="${NATIVE_BINARY}-${GITHUB_REF_NAME}-${NATIVE_SUFFIX}"
+          if [ -f "$NATIVE_BINARY.exe" ]; then 7z a "$name.zip" "$NATIVE_BINARY.exe"; else tar czf "$name.tar.gz" "$NATIVE_BINARY"; fi
           sha256sum "$name".* > "$name.sha256" 2>/dev/null || shasum -a 256 "$name".* > "$name.sha256"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

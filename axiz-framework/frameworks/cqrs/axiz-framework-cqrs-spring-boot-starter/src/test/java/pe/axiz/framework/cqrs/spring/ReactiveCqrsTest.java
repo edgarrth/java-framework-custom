@@ -30,6 +30,7 @@ import pe.axiz.framework.cqrs.HandlerNotFoundException;
 import pe.axiz.framework.cqrs.IdempotentCommand;
 import pe.axiz.framework.cqrs.Invocation;
 import pe.axiz.framework.cqrs.Query;
+import pe.axiz.framework.cqrs.ReactiveAccessPolicy;
 import pe.axiz.framework.cqrs.ReactiveCommandHandler;
 import pe.axiz.framework.cqrs.ReactiveQueryHandler;
 import pe.axiz.framework.cqrs.RequiresAuthority;
@@ -167,7 +168,7 @@ class ReactiveCqrsTest {
     }
 
     @Override
-    public Mono<Void> check(PaymentStatusQuery request, Caller caller) {
+    public org.reactivestreams.Publisher<Void> check(PaymentStatusQuery request, Caller caller) {
       return Mono.fromSupplier(
               () -> {
                 lookups.incrementAndGet();
@@ -175,7 +176,8 @@ class ReactiveCqrsTest {
               })
           .filter(owner -> owner.equals(caller.subject()))
           .switchIfEmpty(Mono.error(new NotFoundException("payment", request.paymentId())))
-          .then();
+          .then()
+          .flux();
     }
   }
 

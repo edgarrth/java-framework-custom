@@ -4,6 +4,9 @@ import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Statement;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -21,7 +24,7 @@ import reactor.util.context.ContextView;
  */
 public final class R2dbcSql implements ReactiveSql {
 
-  /** Reactor context key of the transaction connection. */
+  /** Reactor context key of factory-scoped bindings, managed by {@link #inTransaction}. */
   public static final String CONNECTION_KEY = "pe.axiz.r2dbc.connection";
 
   private final ConnectionFactory connections;
@@ -61,7 +64,7 @@ public final class R2dbcSql implements ReactiveSql {
         c ->
             Mono.from(c.beginTransaction())
                 .then(Mono.defer(() -> work.apply(this)))
-                .contextWrite(Context.of(CONNECTION_KEY, c))
+                .contextWrite(ctx -> bind(ctx, c))
                 .map(Optional::of)
                 .defaultIfEmpty(Optional.empty())
                 .flatMap(result -> Mono.from(c.commitTransaction()).then(Mono.justOrEmpty(result))),
@@ -97,11 +100,22 @@ public final class R2dbcSql implements ReactiveSql {
         });
   }
 
-  private static @Nullable Connection shared(ContextView ctx) {
+  private Context bind(Context ctx, Connection connection) {
+    Map<ConnectionFactory, Connection> existing = ctx.getOrDefault(CONNECTION_KEY, Map.of());
+    Map<ConnectionFactory, Connection> scoped = new IdentityHashMap<>(existing);
+    scoped.put(connections, connection);
+    return ctx.put(CONNECTION_KEY, Collections.unmodifiableMap(scoped));
+  }
+
+  private @Nullable Connection shared(ContextView ctx) {
     if (ctx.hasKey(CONNECTION_KEY)) {
-      return ctx.get(CONNECTION_KEY);
+      Map<ConnectionFactory, Connection> scoped = ctx.get(CONNECTION_KEY);
+      Connection connection = scoped.get(connections);
+      if (connection != null) {
+        return connection;
+      }
     }
-    return BoundConnection.current();
+    return BoundConnection.current(connections);
   }
 
   static Statement statement(Connection c, NamedSql named, SqlParams params) {

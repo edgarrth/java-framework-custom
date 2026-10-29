@@ -26,30 +26,30 @@ public final class R2dbcTransactionRunner implements TransactionRunner {
 
   @Override
   public <T> T inTransaction(Callable<T> work) throws Exception {
-    if (BoundConnection.current() != null) {
+    if (BoundConnection.current(connections) != null) {
       return work.call(); // already inside a transaction of this runner: join it
     }
     Connection c = Objects.requireNonNull(Mono.from(connections.create()).block(timeout));
     Throwable primary = null;
     try {
       Mono.from(c.beginTransaction()).block(timeout);
-      BoundConnection.bind(c);
+      BoundConnection.bind(connections, c);
       T result;
       try {
         result = work.call();
       } catch (Exception | Error e) {
-        BoundConnection.clear();
+        BoundConnection.clear(connections);
         rollback(c, e);
         throw e;
       }
-      BoundConnection.clear();
+      BoundConnection.clear(connections);
       Mono.from(c.commitTransaction()).block(timeout);
       return result;
     } catch (Exception | Error e) {
       primary = e;
       throw e;
     } finally {
-      BoundConnection.clear();
+      BoundConnection.clear(connections);
       close(c, primary);
     }
   }

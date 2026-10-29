@@ -1,0 +1,9 @@
+# Generated local validation and build artifacts
+/audit-*/
+*.log
+**/target/
+**/.flattened-pom.xml
+**/__pycache__/
+*.pyc
+/axiz-docs/site/
+**/node_modules/

@@ -13,10 +13,11 @@ import reactor.core.publisher.Mono;
  * axiz.cqrs.authorization.unprotected}.
  *
  * @param <R> request type (or a supertype shared by several requests)
+ * @deprecated implement {@link pe.axiz.framework.cqrs.ReactiveAccessPolicy} from the API module.
  */
-public interface ReactiveAccessPolicy<R> {
+@Deprecated(forRemoval = true)
+public interface ReactiveAccessPolicy<R> extends pe.axiz.framework.cqrs.ReactiveAccessPolicy<R> {
 
-  Class<R> requestType();
-
+  @Override
   Mono<Void> check(R request, Caller caller);
 }

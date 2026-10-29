@@ -1,12 +1,11 @@
 package pe.axiz.payments.history.application.access;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.framework.cqrs.AccessPolicy;
 import pe.axiz.framework.cqrs.Caller;
-import pe.axiz.framework.cqrs.spring.ReactiveAccessPolicy;
+import pe.axiz.framework.cqrs.ReactiveAccessPolicy;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
@@ -27,7 +26,6 @@ public final class HistoryAccess {
   }
 
   /** Customers list their own history. */
-  @Component
   public static class ListPolicy implements AccessPolicy<ListCustomerPaymentsQuery> {
 
     @Override
@@ -47,7 +45,6 @@ public final class HistoryAccess {
    * One payment, only for its customer. Non-blocking: the owner is read through the reactive
    * repository, never with {@code block()}.
    */
-  @Component
   public static class GetPolicy implements ReactiveAccessPolicy<GetPaymentQuery> {
 
     private final PaymentHistories histories;

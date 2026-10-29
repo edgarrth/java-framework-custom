@@ -1,6 +1,5 @@
 package pe.axiz.payments.business.application.access;
 
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.framework.cqrs.AccessPolicy;
@@ -8,7 +7,6 @@ import pe.axiz.framework.cqrs.Caller;
 import pe.axiz.payments.business.application.query.ListPaymentOrdersQuery;
 
 /** Customers list their own orders; services need {@code payments:read}. */
-@Component
 public class ListPaymentOrdersAccess implements AccessPolicy<ListPaymentOrdersQuery> {
 
   @Override

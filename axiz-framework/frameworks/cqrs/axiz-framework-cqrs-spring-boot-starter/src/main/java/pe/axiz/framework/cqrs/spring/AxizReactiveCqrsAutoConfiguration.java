@@ -20,6 +20,7 @@ import pe.axiz.framework.cqrs.AccessPolicy;
 import pe.axiz.framework.cqrs.Buses;
 import pe.axiz.framework.cqrs.CommandHandler;
 import pe.axiz.framework.cqrs.QueryHandler;
+import pe.axiz.framework.cqrs.ReactiveAccessPolicy;
 import pe.axiz.framework.cqrs.ReactiveCommandHandler;
 import pe.axiz.framework.cqrs.ReactiveQueryHandler;
 import tools.jackson.databind.json.JsonMapper;

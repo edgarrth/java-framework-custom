@@ -3,7 +3,6 @@ package {{project.basePackage}}.application.query;
 {{#item.responseIsList}}
 import java.util.List;
 {{/item.responseIsList}}
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 {{#fw.reactiveHandlers}}
@@ -18,7 +17,6 @@ import {{item.modelPackage}}.{{item.responseModel}};
 {{/item.hasResponseModel}}
 
 /** Handles {@link {{item.queryName}}} on the read side (never triggers writes). */
-@Component
 {{#fw.reactiveHandlers}}
 public class {{item.className}}Handler implements ReactiveQueryHandler<{{item.queryName}}, {{item.responseType}}> {
 

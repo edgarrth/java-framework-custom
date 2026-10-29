@@ -3,7 +3,6 @@ package {{project.basePackage}}.application.command;
 {{#item.responseIsList}}
 import java.util.List;
 {{/item.responseIsList}}
-import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 {{#fw.reactiveHandlers}}
@@ -25,7 +24,6 @@ import {{item.modelPackage}}.{{item.responseModel}};
  * WebClient); the transaction is a reactive one.
 {{/fw.reactiveHandlers}}
  */
-@Component
 {{#fw.reactiveHandlers}}
 public class {{item.className}}Handler implements ReactiveCommandHandler<{{item.commandName}}, {{item.responseType}}> {
 
