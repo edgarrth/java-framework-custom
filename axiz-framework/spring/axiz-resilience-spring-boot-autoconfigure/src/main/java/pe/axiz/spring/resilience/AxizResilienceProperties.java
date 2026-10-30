@@ -16,6 +16,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties("axiz.resilience")
 public record AxizResilienceProperties(
     @DefaultValue Policy defaults, @DefaultValue Map<String, Policy> instances) {
+  public AxizResilienceProperties {
+    instances = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(instances));
+  }
 
   public Policy policy(String name) {
     return instances.getOrDefault(name, defaults);

@@ -20,6 +20,9 @@ public record AxizErrorsProperties(
     @DefaultValue("") String typeBaseUri,
     @DefaultValue("false") boolean exposeExternalDetail,
     @DefaultValue List<CatalogEntry> catalog) {
+  public AxizErrorsProperties {
+    catalog = List.copyOf(catalog);
+  }
 
   /**
    * One catalog entry.

@@ -59,4 +59,9 @@ public record Archetype(
   public boolean isService() {
     return "service".equals(kind);
   }
+
+  @Override
+  public Map<String, Object> properties() {
+    return Snapshots.properties(properties);
+  }
 }

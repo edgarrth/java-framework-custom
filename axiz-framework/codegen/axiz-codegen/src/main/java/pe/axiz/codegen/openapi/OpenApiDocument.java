@@ -21,7 +21,7 @@ public final class OpenApiDocument {
   private final List<ApiOperation> operations;
 
   private OpenApiDocument(Map<String, Object> root, List<ApiOperation> operations) {
-    this.root = root;
+    this.root = pe.axiz.codegen.model.Snapshots.properties(root);
     this.operations = List.copyOf(operations);
   }
 
@@ -92,7 +92,7 @@ public final class OpenApiDocument {
   }
 
   public Map<String, Object> raw() {
-    return root;
+    return pe.axiz.codegen.model.Snapshots.properties(root);
   }
 
   /**

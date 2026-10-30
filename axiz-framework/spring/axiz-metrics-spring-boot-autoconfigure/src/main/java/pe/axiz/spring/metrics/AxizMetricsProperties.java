@@ -34,6 +34,13 @@ public record AxizMetricsProperties(
     @DefaultValue("true") boolean percentileHistograms,
     @Nullable String domain,
     @Nullable String version) {
+  public AxizMetricsProperties {
+    channels = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(channels));
+    events = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(events));
+    standardTags =
+        java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(standardTags));
+    tags = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(tags));
+  }
 
   /** Default channel list, kept in sync with the core settings. */
   public static final List<String> DEFAULT_CHANNELS = MetricsSettings.DEFAULT_CHANNELS;
@@ -44,7 +51,11 @@ public record AxizMetricsProperties(
    * @param allowed allowed values (empty means any value up to {@code max})
    * @param max maximum distinct values
    */
-  public record Tag(@DefaultValue Set<String> allowed, @DefaultValue("50") int max) {}
+  public record Tag(@DefaultValue Set<String> allowed, @DefaultValue("50") int max) {
+    public Tag {
+      allowed = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(allowed));
+    }
+  }
 
   /**
    * Event definition.
@@ -60,5 +71,11 @@ public record AxizMetricsProperties(
       @Nullable String valueUnit,
       @DefaultValue List<Duration> durationSlos,
       @DefaultValue List<Double> amountSlos,
-      @DefaultValue List<Double> valueSlos) {}
+      @DefaultValue List<Double> valueSlos) {
+    public Event {
+      amountSlos = List.copyOf(amountSlos);
+      durationSlos = List.copyOf(durationSlos);
+      valueSlos = List.copyOf(valueSlos);
+    }
+  }
 }

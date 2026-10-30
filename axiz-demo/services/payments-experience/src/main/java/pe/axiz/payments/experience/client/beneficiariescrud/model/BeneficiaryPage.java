@@ -9,4 +9,8 @@ import org.jspecify.annotations.Nullable;
  * @param items items
  * @param nextCursor nextCursor
  */
-public record BeneficiaryPage(@Nullable List<Beneficiary> items, @Nullable String nextCursor) {}
+public record BeneficiaryPage(@Nullable List<Beneficiary> items, @Nullable String nextCursor) {
+  public BeneficiaryPage {
+    items = items == null ? null : java.util.List.copyOf(items);
+  }
+}

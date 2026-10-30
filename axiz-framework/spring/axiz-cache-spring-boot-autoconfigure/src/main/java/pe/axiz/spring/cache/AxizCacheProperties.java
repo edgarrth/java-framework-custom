@@ -23,6 +23,9 @@ public record AxizCacheProperties(
     @DefaultValue L1 l1,
     @DefaultValue("true") boolean redis,
     @DefaultValue Map<String, CacheSpec> caches) {
+  public AxizCacheProperties {
+    caches = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(caches));
+  }
 
   /**
    * Local level.

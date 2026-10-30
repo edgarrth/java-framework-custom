@@ -22,5 +22,10 @@ public record AxizHexagonalProperties(@DefaultValue Events events) {
   public record Events(
       @DefaultValue("domain-events") String destination,
       @DefaultValue Map<String, String> destinations,
-      @DefaultValue(".v1") String typeSuffix) {}
+      @DefaultValue(".v1") String typeSuffix) {
+    public Events {
+      destinations =
+          java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(destinations));
+    }
+  }
 }

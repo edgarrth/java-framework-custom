@@ -1,17 +1,101 @@
 package pe.axiz.codegen;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class HttpClientGeneratorTest {
+
+  @Test
+  void wireEnumValuesKeepTheirSerializedNamesAndUseValidJavaIdentifiers() {
+    String source =
+        HttpClientGenerator.model(
+            "example",
+            "State",
+            Map.of("type", "string", "enum", List.of("READY", "paid-ok", "1-pending", "---")),
+            Map.of());
+    assertTrue(source.contains("public enum State"), source);
+    assertTrue(source.contains("READY,"), source);
+    assertTrue(source.contains("@JsonProperty(\"paid-ok\")\n  PAID_OK,"), source);
+    assertTrue(source.contains("@JsonProperty(\"1-pending\")\n  V_1_PENDING,"), source);
+    assertTrue(source.contains("@JsonProperty(\"---\")\n  V_\n"), source);
+    String plain =
+        HttpClientGenerator.model("example", "State", Map.of("enum", List.of("READY")), Map.of());
+    assertEquals(
+        "package example;\n\n/** State values. */\npublic enum State {\n  READY\n}\n", plain);
+    assertNull(HttpClientGenerator.model("example", "Scalar", Map.of("type", "string"), Map.of()));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void generatedCollectionsOwnTheirStateAndKeepAbsentValues(@TempDir Path directory)
+      throws Exception {
+    Map<String, Object> list = Map.of("type", "array", "items", Map.of("type", "string"));
+    Map<String, Object> properties = new LinkedHashMap<>();
+    properties.put("required", list);
+    properties.put("optional", list);
+    properties.put("metadata", Map.of("type", "object"));
+    String source =
+        HttpClientGenerator.model(
+            "example",
+            "CollectionsModel",
+            Map.of("type", "object", "required", List.of("required"), "properties", properties),
+            Map.of());
+    Path file = directory.resolve("CollectionsModel.java");
+    Files.writeString(file, source);
+    assertEquals(
+        0,
+        javax.tools.ToolProvider.getSystemJavaCompiler()
+            .run(
+                null,
+                null,
+                null,
+                "-proc:none",
+                "-classpath",
+                System.getProperty("java.class.path"),
+                "-d",
+                directory.toString(),
+                file.toString()));
+    try (var loader =
+        new URLClassLoader(
+            new java.net.URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
+      Class<?> type = loader.loadClass("example.CollectionsModel");
+      var constructor = type.getConstructor(List.class, List.class, Map.class);
+      List<String> required = new ArrayList<>(List.of("first"));
+      List<String> optional = new ArrayList<>(List.of("second"));
+      Map<String, Object> metadata = new LinkedHashMap<>();
+      metadata.put("nullable", null);
+      Object model = constructor.newInstance(required, optional, metadata);
+      required.clear();
+      optional.clear();
+      metadata.clear();
+      assertEquals(List.of("first"), type.getMethod("required").invoke(model));
+      assertEquals(List.of("second"), type.getMethod("optional").invoke(model));
+      Map<String, Object> snapshot = (Map<String, Object>) type.getMethod("metadata").invoke(model);
+      assertTrue(snapshot.containsKey("nullable"));
+      assertThrows(UnsupportedOperationException.class, () -> snapshot.put("new", "value"));
+      List<String> values = (List<String>) type.getMethod("optional").invoke(model);
+      assertThrows(UnsupportedOperationException.class, () -> values.add("new"));
+      Object absent = constructor.newInstance(List.of(), null, null);
+      assertNull(type.getMethod("optional").invoke(absent));
+      assertNull(type.getMethod("metadata").invoke(absent));
+    }
+  }
 
   private static ProjectManifest project(Framework f, Stack s) {
     return new ProjectManifest(

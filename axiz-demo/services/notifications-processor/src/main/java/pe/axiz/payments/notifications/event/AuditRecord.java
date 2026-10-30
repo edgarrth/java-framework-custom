@@ -24,4 +24,11 @@ public record AuditRecord(
     String resourceType,
     @Nullable String resourceId,
     String outcome,
-    @Nullable Map<String, Object> details) {}
+    @Nullable Map<String, Object> details) {
+  public AuditRecord {
+    details =
+        details == null
+            ? null
+            : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(details));
+  }
+}

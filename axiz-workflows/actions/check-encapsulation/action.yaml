@@ -1,0 +1,7 @@
+name: check-encapsulation
+description: Reject encapsulation regressions at every SpotBugs priority and broad exclusions.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/check_encapsulation.py" .

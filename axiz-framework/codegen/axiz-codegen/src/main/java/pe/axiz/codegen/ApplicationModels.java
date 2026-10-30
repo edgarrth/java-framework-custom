@@ -47,6 +47,7 @@ final class ApplicationModels {
         throw new IllegalArgumentException("Application schema must be an object or enum: " + name);
       }
       List<String> fields = new ArrayList<>();
+      List<String> copies = new ArrayList<>();
       for (var property : mapping(schema.get("properties")).entrySet()) {
         String propertyName = property.getKey().toString();
         if (!javax.lang.model.SourceVersion.isIdentifier(propertyName)
@@ -60,6 +61,23 @@ final class ApplicationModels {
         boolean nullable =
             propertySchema.get("type") instanceof List<?> types && types.contains("null");
         String javaType = type(propertySchema, basePackage);
+        String copy = null;
+        if (javaType.startsWith("java.util.List<")) {
+          copy = "java.util.List.copyOf(" + propertyName + ")";
+        } else if (javaType.startsWith("java.util.Map<")) {
+          copy =
+              "java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>("
+                  + propertyName
+                  + "))";
+        }
+        if (copy != null) {
+          copies.add(
+              propertyName
+                  + " = "
+                  + (!required || nullable ? propertyName + " == null ? null : " : "")
+                  + copy
+                  + ";");
+        }
         if (!required || nullable) {
           int generic = javaType.indexOf('<');
           String rawType = generic < 0 ? javaType : javaType.substring(0, generic);
@@ -74,7 +92,19 @@ final class ApplicationModels {
               "name",
               name,
               "declaration",
-              "public record " + name + "(" + String.join(", ", fields) + ") {}"));
+              "public record "
+                  + name
+                  + "("
+                  + String.join(", ", fields)
+                  + ") {"
+                  + (copies.isEmpty()
+                      ? ""
+                      : "\n  public "
+                          + name
+                          + " {\n    "
+                          + String.join("\n    ", copies)
+                          + "\n  }\n")
+                  + "}"));
     }
     return result;
   }

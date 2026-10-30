@@ -21,4 +21,8 @@ public record AxizTenancyProperties(
     @DefaultValue("false") boolean trustHeader,
     @DefaultValue("true") boolean required,
     @DefaultValue({"/actuator/**", "/v3/api-docs/**", "/swagger-ui/**"})
-        List<String> excludedPaths) {}
+        List<String> excludedPaths) {
+  public AxizTenancyProperties {
+    excludedPaths = List.copyOf(excludedPaths);
+  }
+}

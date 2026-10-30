@@ -1,7 +1,7 @@
 # Services: build and quality gates, contract checks, chart checks and, on main or a tag, the image
 # (Jib; also native when asked) pushed to the Nexus Docker registry, scanned, signed with cosign
 # (key in AWS KMS) and with its SBOM attested. Called by every generated service
-# (.github/workflows/ci.yaml) with `secrets: inherit`.
+# (.github/workflows/ci.yaml) with an explicit map of its declared secrets.
 name: service-ci
 on:
   workflow_call:
@@ -35,6 +35,9 @@ on:
         type: string
         default: ubuntu-24.04
     secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        description: Read-only token for private immutable release verification (optional for public repositories)
+        required: false
       NEXUS_URL:
         required: true
       NEXUS_USERNAME:
@@ -65,7 +68,25 @@ env:
   MODULE_DIR: ${{ inputs.module != '' && inputs.module || '.' }}
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
   build:
+    needs: axiz-workflows-trust
     runs-on: ${{ inputs.runner }}
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -77,6 +98,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
@@ -86,6 +109,8 @@ jobs:
           mvn -B -ntp verify -Pquality $MODULE_ARGS
       - name: Test results of this commit (job summary)
         if: always()
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: axiz/axiz-workflows/actions/test-report@v1.0.0 # x-release-please-version
         with:
           command: mvn -B -ntp verify -Pquality ${{ env.MODULE_ARGS }}
@@ -109,7 +134,13 @@ jobs:
             echo "### OpenRewrite suggestions: $(grep -c '^diff --git' rewrite.patch) files (artifact reports/rewrite.patch)" >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Mutation workers completed without errors
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: axiz/axiz-workflows/actions/check-mutations@v1.0.0 # x-release-please-version
+      - name: Encapsulation regression gate
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+        uses: axiz/axiz-workflows/actions/check-encapsulation@v1.0.0 # x-release-please-version
       - name: SBOM (CycloneDX)
         run: |
           # shellcheck disable=SC2086 # Maven arguments are split on purpose
@@ -204,7 +235,8 @@ jobs:
           done
 
   native:
-    if: inputs.native
+    needs: axiz-workflows-trust
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (inputs.native) }}
     runs-on: ${{ inputs.runner }}
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -213,6 +245,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           distribution: graalvm
@@ -223,8 +257,8 @@ jobs:
           mvn -B -ntp -Pnative package native:compile native:test $MODULE_ARGS
 
   image:
-    needs: [build]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: [axiz-workflows-trust, build]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))) }}
     runs-on: ${{ inputs.runner }}
     outputs:
       tag: ${{ github.sha }}
@@ -259,6 +293,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           distribution: ${{ inputs.native && 'graalvm' || 'temurin' }}

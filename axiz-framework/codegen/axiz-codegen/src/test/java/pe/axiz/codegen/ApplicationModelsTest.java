@@ -103,6 +103,7 @@ class ApplicationModelsTest {
                 amount: {type: number}
                 items: {type: array, items: {$ref: '#/components/schemas/Item'}}
                 label: {type: string}
+                metadata: {type: object}
         """);
     var model = ApplicationModels.records(document, "sample").getFirst();
     var source = directory.resolve("Item.java");
@@ -130,5 +131,26 @@ class ApplicationModelsTest {
                 "-d",
                 directory.toString(),
                 source.toString()));
+    try (var loader =
+        new java.net.URLClassLoader(
+            new java.net.URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
+      Class<?> type = loader.loadClass("sample.application.model.Item");
+      var constructor =
+          type.getConstructor(
+              java.math.BigDecimal.class, java.util.List.class, String.class, java.util.Map.class);
+      var items = new java.util.ArrayList<>();
+      var metadata = new java.util.HashMap<String, Object>();
+      metadata.put("status", "created");
+      Object item = constructor.newInstance(null, items, null, metadata);
+      items.add("changed");
+      metadata.clear();
+      org.junit.jupiter.api.Assertions.assertEquals(
+          java.util.List.of(), type.getMethod("items").invoke(item));
+      org.junit.jupiter.api.Assertions.assertEquals(
+          java.util.Map.of("status", "created"), type.getMethod("metadata").invoke(item));
+      Object absent = constructor.newInstance(null, null, null, null);
+      org.junit.jupiter.api.Assertions.assertNull(type.getMethod("items").invoke(absent));
+      org.junit.jupiter.api.Assertions.assertNull(type.getMethod("metadata").invoke(absent));
+    }
   }
 }

@@ -22,42 +22,75 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
   pr:
-    if: github.event_name == 'pull_request'
+    needs: axiz-workflows-trust
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
   build:
+    needs: axiz-workflows-trust
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
     with:
       # store contracts against PostgreSQL, Valkey and DynamoDB containers must run, not skip
       maven-args: -Daxiz.it.requireDocker=true
       stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   publish:
-    needs: [build, wrapper, samples, api-compat]
+    needs: [axiz-workflows-trust, build, wrapper, samples, api-compat]
     # api-compat is skipped until the repository sets AXIZ_API_BASELINE; it never fails silently
-    if: >-
-      !cancelled()
-      && needs.build.result == 'success'
-      && needs.wrapper.result == 'success'
-      && needs.samples.result == 'success'
-      && (needs.api-compat.result == 'success' || needs.api-compat.result == 'skipped')
-      && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled()       && needs.build.result == 'success'       && needs.wrapper.result == 'success'       && needs.samples.result == 'success'       && (needs.api-compat.result == 'success' || needs.api-compat.result == 'skipped')       && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))) }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0
     # release provenance: attached to the GitHub release, signed with the KMS key (OIDC)
     permissions:
       contents: write
       id-token: write
-    secrets: inherit
+    secrets:
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
 
 
   api-compat:
     # public API and SPI compatibility with the last release (opt-in before 1.0.0: set the
     # repository variable AXIZ_API_BASELINE to the released version to compare with)
-    needs: build
-    if: vars.AXIZ_API_BASELINE != ''
+    needs: [axiz-workflows-trust, build]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (vars.AXIZ_API_BASELINE != '') }}
     runs-on: ubuntu-24.04
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -67,6 +100,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
@@ -105,6 +140,7 @@ jobs:
           done
 
   samples:
+    needs: axiz-workflows-trust
     # every archetype generated with its defaults and built with its own wrapper: tests,
     # architecture rules and quality gates of a real team project
     runs-on: ubuntu-24.04
@@ -115,6 +151,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}

@@ -19,6 +19,9 @@ on:
         type: string
         default: high
     secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        description: Read-only token for private immutable release verification
+        required: false
       NEXUS_URL:
         required: false
       NEXUS_USERNAME:
@@ -35,6 +38,24 @@ permissions:
   security-events: write
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
+
   hygiene:
     runs-on: ${{ inputs.runner }}
     steps:
@@ -153,11 +174,15 @@ jobs:
           category: axiz-pr
 
   workflows:
+    needs: axiz-workflows-trust
     runs-on: ${{ inputs.runner }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: axiz/axiz-workflows/actions/check-workflow-security@v1.0.0 # x-release-please-version
       - name: actionlint (workflows of the repository)
         run: |
           if ls .github/workflows/*.y*ml > /dev/null 2>&1; then

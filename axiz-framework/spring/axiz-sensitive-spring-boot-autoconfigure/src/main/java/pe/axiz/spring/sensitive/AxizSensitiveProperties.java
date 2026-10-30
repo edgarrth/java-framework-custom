@@ -22,6 +22,9 @@ public record AxizSensitiveProperties(
     @DefaultValue("MEDIUM") SensitivityLevel audit,
     @DefaultValue("CRITICAL") SensitivityLevel fullMaskLevel,
     @DefaultValue Map<String, Key> keys) {
+  public AxizSensitiveProperties {
+    keys = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(keys));
+  }
 
   /**
    * A sensitive key.

@@ -1,0 +1,10 @@
+name: check-workflow-security
+description: Validate explicit secrets and verified immutable internal release exceptions.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        python3 -m venv "$RUNNER_TEMP/axiz-workflow-policy"
+        "$RUNNER_TEMP/axiz-workflow-policy/bin/pip" install --quiet PyYAML==6.0.3
+        "$RUNNER_TEMP/axiz-workflow-policy/bin/python" "$GITHUB_ACTION_PATH/check_workflow_security.py" .

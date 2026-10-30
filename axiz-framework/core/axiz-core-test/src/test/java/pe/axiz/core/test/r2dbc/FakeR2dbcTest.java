@@ -22,6 +22,21 @@ import reactor.core.publisher.Mono;
 /** The fake driver itself: what other tests rely on when they assert SQL, binds and events. */
 class FakeR2dbcTest {
 
+  @Test
+  void executionOwnsItsBindMapsAndPreservesTypedNulls() {
+    Map<Integer, Object> binds = new HashMap<>();
+    binds.put(0, null);
+    Map<Integer, Class<?>> types = new HashMap<>(Map.of(0, String.class));
+    var execution = new FakeR2dbc.Execution("SELECT $1", binds, types, 1);
+    binds.put(0, "changed");
+    types.clear();
+    assertTrue(execution.binds().containsKey(0));
+    assertNull(execution.binds().get(0));
+    assertEquals(String.class, execution.types().get(0));
+    assertThrows(UnsupportedOperationException.class, () -> execution.binds().put(0, "changed"));
+    assertThrows(UnsupportedOperationException.class, () -> execution.types().clear());
+  }
+
   private static Connection open(FakeR2dbc db) {
     return Mono.from(db.create()).cast(Connection.class).block();
   }

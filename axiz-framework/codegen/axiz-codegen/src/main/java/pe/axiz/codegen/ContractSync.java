@@ -53,7 +53,16 @@ public final class ContractSync {
       List<String> proposed,
       List<ContractDiff.Change> changes,
       List<LintFinding> findings,
-      boolean applied) {}
+      boolean applied) {
+    public Result {
+      added = List.copyOf(added);
+      changes = List.copyOf(changes);
+      created = List.copyOf(created);
+      findings = List.copyOf(findings);
+      proposed = List.copyOf(proposed);
+      removed = List.copyOf(removed);
+    }
+  }
 
   private final ProjectGenerator generator;
 

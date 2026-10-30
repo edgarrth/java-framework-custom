@@ -34,7 +34,23 @@ public final class HttpClientGenerator {
    * @param notes follow-up hints
    */
   public record Result(
-      Map<String, byte[]> files, Map<String, Object> properties, List<String> notes) {}
+      Map<String, byte[]> files, Map<String, Object> properties, List<String> notes) {
+    public Result {
+      files = pe.axiz.codegen.model.Snapshots.files(files);
+      notes = List.copyOf(notes);
+      properties = pe.axiz.codegen.model.Snapshots.properties(properties);
+    }
+
+    @Override
+    public Map<String, byte[]> files() {
+      return pe.axiz.codegen.model.Snapshots.files(files);
+    }
+
+    @Override
+    public Map<String, Object> properties() {
+      return pe.axiz.codegen.model.Snapshots.properties(properties);
+    }
+  }
 
   private HttpClientGenerator() {}
 
@@ -271,6 +287,7 @@ public final class HttpClientGenerator {
     }
     Set<String> imports = new TreeSet<>();
     List<String> components = new ArrayList<>();
+    List<String> copies = new ArrayList<>();
     StringBuilder doc = new StringBuilder();
     map(schema.get("properties"))
         .forEach(
@@ -287,6 +304,22 @@ public final class HttpClientGenerator {
                 annotations += "@Nullable ";
               }
               components.add(annotations + javaType + " " + id);
+              String copy = null;
+              if (javaType.startsWith("List<")) {
+                copy = "List.copyOf(" + id + ")";
+              } else if (javaType.startsWith("Map<")) {
+                imports.add("java.util.Collections");
+                imports.add("java.util.LinkedHashMap");
+                copy = "Collections.unmodifiableMap(new LinkedHashMap<>(" + id + "))";
+              }
+              if (copy != null) {
+                copies.add(
+                    id
+                        + " = "
+                        + (required.contains(prop) ? "" : id + " == null ? null : ")
+                        + copy
+                        + ";");
+              }
               Object description = map(def).get("description");
               doc.append(" * @param ")
                   .append(id)
@@ -310,7 +343,13 @@ public final class HttpClientGenerator {
         .append(name)
         .append('(')
         .append(String.join(", ", components))
-        .append(") {}\n");
+        .append(") {");
+    if (!copies.isEmpty()) {
+      b.append("\n  public ").append(name).append(" {\n");
+      copies.forEach(copy -> b.append("    ").append(copy).append('\n'));
+      b.append("  }\n");
+    }
+    b.append("}\n");
     return b.toString();
   }
 

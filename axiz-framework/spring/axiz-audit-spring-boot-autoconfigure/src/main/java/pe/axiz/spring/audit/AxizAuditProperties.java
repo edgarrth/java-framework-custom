@@ -63,7 +63,13 @@ public record AxizAuditProperties(
       @DefaultValue("false") boolean enabled,
       @DefaultValue({"POST", "PUT", "PATCH", "DELETE"}) List<String> methods,
       @DefaultValue("/**") List<String> includedPaths,
-      @DefaultValue("/actuator/**") List<String> excludedPaths) {}
+      @DefaultValue("/actuator/**") List<String> excludedPaths) {
+    public Http {
+      excludedPaths = List.copyOf(excludedPaths);
+      includedPaths = List.copyOf(includedPaths);
+      methods = List.copyOf(methods);
+    }
+  }
 
   /**
    * Kafka (MSK) sink.

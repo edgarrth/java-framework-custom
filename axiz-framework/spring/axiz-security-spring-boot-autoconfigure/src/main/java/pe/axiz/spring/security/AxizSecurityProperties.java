@@ -34,6 +34,11 @@ public record AxizSecurityProperties(
     @DefaultValue("false") boolean publicInfo,
     @DefaultValue("SCOPE_actuator") String actuatorAuthority,
     @DefaultValue RateLimit rateLimit) {
+  public AxizSecurityProperties {
+    algorithms = List.copyOf(algorithms);
+    issuers = List.copyOf(issuers);
+    publicPaths = List.copyOf(publicPaths);
+  }
 
   /** Paths of the OpenAPI document and Swagger UI (springdoc defaults). */
   static final List<String> API_DOCS =
@@ -60,7 +65,11 @@ public record AxizSecurityProperties(
    * @param audiences accepted audiences (at least one)
    */
   public record Issuer(
-      String issuer, @Nullable String jwkSetUri, @DefaultValue List<String> audiences) {}
+      String issuer, @Nullable String jwkSetUri, @DefaultValue List<String> audiences) {
+    public Issuer {
+      audiences = List.copyOf(audiences);
+    }
+  }
 
   /**
    * Claim paths for each principal attribute; dots navigate nested claims.
@@ -83,6 +92,15 @@ public record AxizSecurityProperties(
       @DefaultValue({"tenant", "tenant_id", "tid"}) List<String> tenant,
       @DefaultValue List<String> attributes,
       @DefaultValue({"idtyp=app", "preferred_username^=service-account-"}) List<String> machine) {
+    public Claims {
+      attributes = List.copyOf(attributes);
+      clientId = List.copyOf(clientId);
+      machine = List.copyOf(machine);
+      roles = List.copyOf(roles);
+      scopes = List.copyOf(scopes);
+      subject = List.copyOf(subject);
+      tenant = List.copyOf(tenant);
+    }
 
     public ClaimMapping toMapping() {
       return new ClaimMapping(subject, clientId, scopes, roles, tenant, attributes, machine);
@@ -102,7 +120,11 @@ public record AxizSecurityProperties(
   public record RateLimit(
       @DefaultValue("false") boolean enabled,
       @DefaultValue List<Rule> rules,
-      @DefaultValue("true") boolean failOpen) {}
+      @DefaultValue("true") boolean failOpen) {
+    public RateLimit {
+      rules = List.copyOf(rules);
+    }
+  }
 
   /**
    * One rate-limit rule.
@@ -121,6 +143,9 @@ public record AxizSecurityProperties(
       @DefaultValue("1m") Duration window,
       @DefaultValue("client") String key,
       @Nullable Boolean failOpen) {
+    public Rule {
+      paths = List.copyOf(paths);
+    }
 
     /** The policy of this rule, or the global one. */
     public boolean failOpen(boolean global) {

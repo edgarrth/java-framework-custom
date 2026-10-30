@@ -47,6 +47,14 @@
         "docker"
       ],
       "pinDigests": true
+    },
+    {
+      "description": "Update Axiz actions and their release verification in the same pull request",
+      "matchPackageNames": [
+        "axiz/axiz-workflows",
+        "axiz/axiz-workflows/**"
+      ],
+      "groupName": "axiz workflows"
     }
   ],
   "customManagers": [
@@ -59,6 +67,19 @@
       "matchStrings": [
         "<!-- renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) -->\\s*<[^>]+>[^:<]+:(?<currentValue>[^@<]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?</"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the immutable release verification version aligned with internal action references",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/\\.ya?ml\\.mustache$/"
+      ],
+      "matchStrings": [
+        "AXIZ_WORKFLOWS_VERSION: (?<currentValue>v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "axiz/axiz-workflows"
     }
   ]
 }

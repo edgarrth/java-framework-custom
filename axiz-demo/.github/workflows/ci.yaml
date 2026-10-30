@@ -19,12 +19,38 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
   pr:
-    if: github.event_name == 'pull_request'
+    needs: axiz-workflows-trust
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
   service:
+    needs: axiz-workflows-trust
     strategy:
       fail-fast: false
       matrix:
@@ -37,6 +63,8 @@ jobs:
           - {service: payments-history, openapi: true, asyncapi: true}
           - {service: notifications-processor, openapi: false, asyncapi: true}
           - {service: settlement-batch, openapi: false}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0
     with:
       service: ${{ matrix.service }}
@@ -44,14 +72,24 @@ jobs:
       openapi: ${{ matrix.openapi && format('services/{0}/src/main/openapi/openapi.yaml', matrix.service) || '' }}
       asyncapi: ${{ matrix.asyncapi && format('services/{0}/src/main/asyncapi/asyncapi.yaml', matrix.service) || '' }}
       chart: services/${{ matrix.service }}/deploy/helm/${{ matrix.service }}
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_DOCKER_REGISTRY: ${{ secrets.NEXUS_DOCKER_REGISTRY }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   coverage:
+    needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}

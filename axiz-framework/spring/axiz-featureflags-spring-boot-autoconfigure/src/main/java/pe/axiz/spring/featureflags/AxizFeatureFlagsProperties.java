@@ -15,6 +15,9 @@ import pe.axiz.core.featureflags.FlagDefinition;
  */
 @ConfigurationProperties("axiz.feature-flags")
 public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) {
+  public AxizFeatureFlagsProperties {
+    flags = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(flags));
+  }
 
   /**
    * One flag.
@@ -33,6 +36,13 @@ public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) 
       @DefaultValue Set<String> tenants,
       @DefaultValue Map<String, Set<String>> rules,
       @Nullable String variant) {
+    public Flag {
+      channels = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(channels));
+      java.util.Map<String, Set<String>> copiedRules = new java.util.LinkedHashMap<>();
+      rules.forEach((key, values) -> copiedRules.put(key, Set.copyOf(values)));
+      rules = java.util.Collections.unmodifiableMap(copiedRules);
+      tenants = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(tenants));
+    }
 
     FlagDefinition toDefinition(String name) {
       return new FlagDefinition(name, enabled, percentage, channels, tenants, rules, variant);

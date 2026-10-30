@@ -78,7 +78,25 @@ public final class ArtifactGenerator {
       Map<String, byte[]> updated,
       Map<String, String> appended,
       List<String> dependencies,
-      List<String> notes) {}
+      List<String> notes) {
+    public Result {
+      appended = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(appended));
+      created = pe.axiz.codegen.model.Snapshots.files(created);
+      dependencies = List.copyOf(dependencies);
+      notes = List.copyOf(notes);
+      updated = pe.axiz.codegen.model.Snapshots.files(updated);
+    }
+
+    @Override
+    public Map<String, byte[]> created() {
+      return pe.axiz.codegen.model.Snapshots.files(created);
+    }
+
+    @Override
+    public Map<String, byte[]> updated() {
+      return pe.axiz.codegen.model.Snapshots.files(updated);
+    }
+  }
 
   private final Clock clock;
 

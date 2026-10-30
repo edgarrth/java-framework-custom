@@ -1,8 +1,8 @@
 # CI/CD
 
 Los pipelines viven como **workflows reutilizables** en `axiz-workflows`; cada repositorio solo los
-invoca (`uses: axiz/axiz-workflows/.github/workflows/<workflow>.yaml@v1.0.0` con `secrets: inherit`),
-así un cambio de estándar llega a todos sin tocar cada repo.
+invoca con una referencia versionada y un mapa explícito de los secretos declarados por el
+workflow. Las actualizaciones llegan mediante una nueva release y su adopción en cada consumidor.
 
 | Workflow | Disparador | Qué hace |
 |---|---|---|
@@ -45,9 +45,22 @@ El `ci.yaml` generado encadena los despliegues detrás del build y la imagen del
   revisión obligatoria.
 - Acciones de terceros **fijadas por SHA** (lo verifica `self-check` y Renovate las mantiene);
   permisos mínimos por job.
-- Los workflows de axiz se usan por **release inmutable** (`@v1.0.0`) y Renovate los fija al SHA de
-  esa release; protege los tags `v*` con un ruleset (sin actualizar ni borrar) y activa las
-  releases inmutables del repositorio.
+- Las referencias internas usan SHA completo o una versión exacta con el requisito
+  `axiz-workflows-trust`. Antes de ejecutar los jobs dependientes se consulta la release en GitHub:
+  debe corresponder a la misma versión, tener `immutable: true` y no ser borrador. La ausencia de
+  acceso o de una release inmutable bloquea la ejecución. Las condiciones personalizadas también
+  exigen que esta comprobación termine correctamente. `check-workflow-security` valida esta
+  excepción concreta y los mapas de secretos, incluidas las plantillas del generador.
+- Si el repositorio de workflows es privado, configura `AXIZ_WORKFLOWS_READ_TOKEN` con permiso
+  **Contents: read** exclusivamente sobre él. Sin ese secreto se usa `github.token`. Activa las
+  [releases inmutables de GitHub](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
+  y publica una nueva release con los controles antes de actualizar consumidores: una release
+  inmutable existente no puede sobrescribirse. El código local no configura ni acredita las
+  protecciones remotas. Renovate mantiene las referencias y la versión del verificador alineadas;
+  se prefiere fijarlas por SHA cuando la release publicada sea accesible.
+- `check-encapsulation`, después del build de calidad, rechaza hallazgos de `EI_EXPOSE_REP`,
+  `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` también cuando su prioridad es media. Sus excepciones
+  deben identificar clase y campo o constructor exactos; no se admiten exclusiones globales.
 - Toda herramienta que un workflow descarga (actionlint, kubeconform, kube-linter) tiene versión y
   SHA-256 fijados y se verifica antes de ejecutarse; la espera de Argo CD usa su API REST con
   `curl`, sin descargar su CLI.

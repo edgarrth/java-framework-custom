@@ -57,6 +57,8 @@ def check_report(path):
     if not os.path.isfile(path):
         print(f'::error::{path} missing')
         return 1
+    # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+    # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     tree = ET.parse(path).getroot()
     packages = tree.findall('.//package')
     lines = [c for c in tree.findall('counter') if c.get('type') == 'LINE']

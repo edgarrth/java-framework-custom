@@ -16,6 +16,9 @@ import pe.axiz.core.soap.WsSecurity;
  */
 @ConfigurationProperties("axiz.soap")
 public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
+  public AxizSoapProperties {
+    clients = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(clients));
+  }
 
   /**
    * One client.

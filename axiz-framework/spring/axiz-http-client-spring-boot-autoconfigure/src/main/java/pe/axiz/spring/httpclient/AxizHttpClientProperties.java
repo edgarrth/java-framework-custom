@@ -22,6 +22,9 @@ import pe.axiz.core.resilience.TimeoutSettings;
 @ConfigurationProperties("axiz.http-client")
 public record AxizHttpClientProperties(
     @DefaultValue Map<String, Client> clients, @DefaultValue("60s") Duration tokenRenewBefore) {
+  public AxizHttpClientProperties {
+    clients = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(clients));
+  }
 
   /**
    * One client.
@@ -54,6 +57,9 @@ public record AxizHttpClientProperties(
       @DefaultValue("false") boolean logBodies,
       @DefaultValue("50") int maxConnections,
       @Nullable String sslBundle) {
+    public Client {
+      propagateHeaders = List.copyOf(propagateHeaders);
+    }
 
     public ClientSettings toSettings(String name) {
       return new ClientSettings(
@@ -93,6 +99,9 @@ public record AxizHttpClientProperties(
       @Nullable String audience,
       @Nullable String apiKeyHeader,
       @Nullable String apiKeyRef) {
+    public Auth {
+      scopes = List.copyOf(scopes);
+    }
 
     public AuthSettings toSettings() {
       return new AuthSettings(

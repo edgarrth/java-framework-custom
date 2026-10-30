@@ -14,4 +14,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("payments")
 public record PaymentsProperties(
-    @DefaultValue("18:00") LocalTime cutoff, @DefaultValue Map<String, BigDecimal> dailyLimits) {}
+    @DefaultValue("18:00") LocalTime cutoff, @DefaultValue Map<String, BigDecimal> dailyLimits) {
+  public PaymentsProperties {
+    dailyLimits = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(dailyLimits));
+  }
+}

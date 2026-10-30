@@ -16,4 +16,10 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AxizObservabilityProperties(
     @DefaultValue Set<String> deniedAttributes,
     @DefaultValue({"/actuator"}) List<String> ignoredPaths,
-    @DefaultValue("true") boolean contextAttributes) {}
+    @DefaultValue("true") boolean contextAttributes) {
+  public AxizObservabilityProperties {
+    deniedAttributes =
+        java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(deniedAttributes));
+    ignoredPaths = List.copyOf(ignoredPaths);
+  }
+}

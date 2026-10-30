@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
+  <Match>
+    <Class name="pe.axiz.initializr.service.GenerationService"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="meters"/>
+  </Match>
+</FindBugsFilter>

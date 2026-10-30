@@ -50,6 +50,11 @@ public record Capability(
       requires = List.copyOf(requires);
     }
 
+    @Override
+    public Map<String, Object> properties() {
+      return Snapshots.properties(properties);
+    }
+
     public Store(Map<String, Object> properties, List<String> dependencies) {
       this(properties, dependencies, List.of());
     }
@@ -105,5 +110,15 @@ public record Capability(
       out.addAll(store.dependencies());
     }
     return out;
+  }
+
+  @Override
+  public Map<String, Object> properties() {
+    return Snapshots.properties(properties);
+  }
+
+  @Override
+  public Map<String, Object> localProperties() {
+    return Snapshots.properties(localProperties);
   }
 }

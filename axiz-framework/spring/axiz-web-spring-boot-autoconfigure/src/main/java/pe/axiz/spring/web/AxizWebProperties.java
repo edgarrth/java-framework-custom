@@ -35,6 +35,10 @@ public record AxizWebProperties(
     @DefaultValue ApiVersion apiVersion,
     @DefaultValue Cors cors,
     @DefaultValue Json json) {
+  public AxizWebProperties {
+    excludedPaths = List.copyOf(excludedPaths);
+    headers = List.copyOf(headers);
+  }
 
   /**
    * One header of the catalog.
@@ -87,6 +91,7 @@ public record AxizWebProperties(
       @DefaultValue("false") boolean required) {
 
     public ApiVersion {
+      supported = List.copyOf(supported);
       if (enabled
           && !required
           && (defaultVersion == null || defaultVersion.isBlank())
@@ -152,7 +157,15 @@ public record AxizWebProperties(
       @DefaultValue("*") List<String> allowedHeaders,
       @DefaultValue({"X-Correlation-Id", "Location"}) List<String> exposedHeaders,
       @DefaultValue("false") boolean allowCredentials,
-      @DefaultValue("30m") Duration maxAge) {}
+      @DefaultValue("30m") Duration maxAge) {
+    public Cors {
+      allowedHeaders = List.copyOf(allowedHeaders);
+      allowedMethods = List.copyOf(allowedMethods);
+      allowedOriginPatterns = List.copyOf(allowedOriginPatterns);
+      allowedOrigins = List.copyOf(allowedOrigins);
+      exposedHeaders = List.copyOf(exposedHeaders);
+    }
+  }
 
   /**
    * JSON output.

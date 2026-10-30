@@ -28,6 +28,9 @@ on:
         type: string
         default: ubuntu-24.04
     secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        description: Read-only token for private immutable release verification (optional for public repositories)
+        required: false
       NEXUS_URL:
         required: true
       NEXUS_USERNAME:
@@ -44,7 +47,25 @@ permissions:
   security-events: write
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
   verify:
+    needs: axiz-workflows-trust
     runs-on: ${{ inputs.runner }}
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
@@ -57,6 +78,8 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
@@ -82,11 +105,19 @@ jobs:
           fi
       - name: Test results of this commit (job summary)
         if: always()
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: axiz/axiz-workflows/actions/test-report@v1.0.0 # x-release-please-version
         with:
           command: mvn -B -ntp verify -Pquality (deploy -Pquality,release when staging) ${{ inputs.maven-args }}
       - name: Mutation workers completed without errors
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: axiz/axiz-workflows/actions/check-mutations@v1.0.0 # x-release-please-version
+      - name: Encapsulation regression gate
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+        uses: axiz/axiz-workflows/actions/check-encapsulation@v1.0.0 # x-release-please-version
       - name: SonarQube analysis (when the organization defines SONAR_TOKEN)
         if: env.SONAR_TOKEN != ''
         run: |
@@ -111,6 +142,8 @@ jobs:
           # shellcheck disable=SC2086 # Maven arguments are split on purpose
           mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false $REVISION_ARG
       - name: Require the aggregate inventory before scanning
+        # Immutable internal release: axiz-workflows-trust must succeed first.
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
         uses: axiz/axiz-workflows/actions/check-sbom@v1.0.0 # x-release-please-version
       - name: Vulnerability scan of the dependencies
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -146,7 +179,12 @@ jobs:
           if-no-files-found: error
 
   publish:
-    needs: verify
-    if: inputs.publish
+    needs: [axiz-workflows-trust, verify]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (inputs.publish) }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0 # x-release-please-version
-    secrets: inherit
+    secrets:
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}

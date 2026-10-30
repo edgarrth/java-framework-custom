@@ -75,6 +75,8 @@ def main(roots):
             relative = os.path.relpath(path, root)
             if "/target/" in path or "/src/" in path:
                 continue
+            # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+            # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             project = ET.parse(path).getroot()
             modules[text(project, "artifactId")] = (path, runtime_dependencies(project))
             props = project.find("m:properties", NS)

@@ -17,6 +17,9 @@ public record AxizConfigProperties(
     @DefaultValue("default") String environment,
     @DefaultValue List<String> required,
     @DefaultValue ParameterStore parameterStore) {
+  public AxizConfigProperties {
+    required = List.copyOf(required);
+  }
 
   /**
    * Parameter Store import.

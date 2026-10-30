@@ -20,6 +20,14 @@ import org.junit.jupiter.api.Test;
 class CommonsTest {
 
   @Test
+  void metadataBuilderSnapshotsAttributesWhenTheyAreProvided() {
+    Map<String, String> attributes = new HashMap<>(Map.of("country", "PE"));
+    var builder = RequestMetadata.builder("correlation", "request").attributes(attributes);
+    attributes.put("country", "CHANGED");
+    assertEquals(Map.of("country", "PE"), builder.build().attributes());
+  }
+
+  @Test
   void unicodeEncodingMustNotReplaceUnpairedSurrogates() {
     for (String valid :
         new String[] {

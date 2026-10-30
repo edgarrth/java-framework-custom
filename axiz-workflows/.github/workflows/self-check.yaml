@@ -23,6 +23,14 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  actionlint.tar.gz" | sha256sum -c -
           tar xzf actionlint.tar.gz actionlint
           ./actionlint -color
+      - name: Workflow security policy and regression scenarios
+        run: |
+          python3 -m venv "$RUNNER_TEMP/axiz-workflow-policy"
+          "$RUNNER_TEMP/axiz-workflow-policy/bin/pip" install --quiet PyYAML==6.0.3
+          "$RUNNER_TEMP/axiz-workflow-policy/bin/python" -m unittest discover -s actions/check-workflow-security -p 'test_*.py'
+          "$RUNNER_TEMP/axiz-workflow-policy/bin/python" actions/check-workflow-security/check_workflow_security.py .
+      - name: Encapsulation gate regression scenarios
+        run: python3 -m unittest discover -s actions/check-encapsulation -p 'test_*.py'
       - name: SBOM validation regression
         run: python3 -m unittest discover -s actions/check-sbom -p 'test_*.py'
       - name: Mutation process validation regression

@@ -26,6 +26,10 @@ public record AxizMessagingProperties(
     @DefaultValue Consumer consumer,
     @DefaultValue Kafka kafka,
     @DefaultValue Sqs sqs) {
+  public AxizMessagingProperties {
+    destinations =
+        java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(destinations));
+  }
 
   /**
    * Physical address of a logical destination (or the value itself when it is already physical).
@@ -57,7 +61,11 @@ public record AxizMessagingProperties(
       @DefaultValue("false") boolean ignoreUnknownTypes,
       @DefaultValue List<String> subscriptions,
       @DefaultValue("10s") Duration deferInterval,
-      @DefaultValue("10m") Duration deferMaxWait) {}
+      @DefaultValue("10m") Duration deferMaxWait) {
+    public Consumer {
+      subscriptions = List.copyOf(subscriptions);
+    }
+  }
 
   /**
    * MSK.
@@ -77,7 +85,11 @@ public record AxizMessagingProperties(
       @Nullable String groupId,
       @DefaultValue("1") int concurrency,
       @DefaultValue(".dlq") String deadLetterSuffix,
-      @DefaultValue("10s") Duration sendTimeout) {}
+      @DefaultValue("10s") Duration sendTimeout) {
+    public Kafka {
+      topics = List.copyOf(topics);
+    }
+  }
 
   /**
    * SQS consumers (long polling on virtual threads).
@@ -95,5 +107,11 @@ public record AxizMessagingProperties(
       @DefaultValue Map<String, String> deadLetterQueues,
       @DefaultValue("20s") Duration waitTime,
       @DefaultValue("10") int batchSize,
-      @DefaultValue("60s") Duration visibilityTimeout) {}
+      @DefaultValue("60s") Duration visibilityTimeout) {
+    public Sqs {
+      deadLetterQueues =
+          java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(deadLetterQueues));
+      queues = List.copyOf(queues);
+    }
+  }
 }

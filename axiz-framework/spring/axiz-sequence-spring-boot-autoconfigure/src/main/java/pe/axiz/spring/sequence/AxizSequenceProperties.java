@@ -21,6 +21,9 @@ public record AxizSequenceProperties(
     @DefaultValue("axiz_sequence") String table,
     @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
     @DefaultValue Map<String, Spec> sequences) {
+  public AxizSequenceProperties {
+    sequences = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(sequences));
+  }
 
   /**
    * One sequence.

@@ -50,6 +50,9 @@ public final class AxizCli {
       Clock clock,
       java.util.Map<String, String> env,
       BooleanSupplier javaFormatter) {
+    public Environment {
+      env = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(env));
+    }
 
     public static Environment system() {
       return new Environment(

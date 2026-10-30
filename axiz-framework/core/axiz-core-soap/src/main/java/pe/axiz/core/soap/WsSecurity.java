@@ -77,6 +77,8 @@ public final class WsSecurity {
 
   static String digest(byte[] nonce, String created, char[] password) {
     try {
+      // Required by the explicitly selected legacy WS-Security UsernameToken digest protocol.
+      // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
       MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
       sha1.update(nonce);
       sha1.update(created.getBytes(StandardCharsets.UTF_8));

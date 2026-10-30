@@ -14,6 +14,16 @@ import pe.axiz.codegen.model.Stack;
 /** How an API request becomes an engine request: archetype defaults and explicit choices. */
 class ProjectRequestBodyTest {
 
+  @Test
+  void capabilitiesCannotBeChangedAfterTheRequestIsAccepted() {
+    var capabilities = new java.util.ArrayList<>(List.of("cache"));
+    var request = body(null, null, null, null, capabilities, null);
+    capabilities.clear();
+    assertThat(request.capabilities()).containsExactly("cache");
+    assertThatThrownBy(() -> request.capabilities().add("crypto"))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
   static final Catalog CATALOG = Catalog.load();
 
   static ProjectRequestBody body(

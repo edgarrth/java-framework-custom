@@ -107,6 +107,25 @@ con un almacenamiento en memoria, y cada rama de error que el código traduce.
 
 ## Avisos de prioridad media
 
+`EI_EXPOSE_REP`, `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` están activos. El control adicional
+`check-encapsulation` hace fallar CI por estos avisos también con prioridad media, después de
+ejecutar Maven con `-Pquality`. Las colecciones de configuración se copian al construirlas;
+los resultados del generador también protegen los arrays y los árboles de propiedades anidados.
+Las pruebas verifican que modificar los argumentos o los valores devueltos no altere el estado.
+
+El filtro compartido solo exceptúa clases y miembros concretos: colaboradores inyectados cuyo
+ciclo de vida debe compartirse, objetos que ya son inmutables y constructores que validan sus
+argumentos. Estos últimos no publican `this` ni usan finalizadores; se conserva su compatibilidad
+con extensiones y proxies de la aplicación. Esta justificación presupone código de aplicación
+confiable en el mismo proceso, no subclases hostiles cargadas por terceros. Cada excepción lleva
+su motivo en el filtro y las de constructores indican sus tipos de parámetros exactos.
+
+Un consumidor puede añadir `spotbugs-exclude.xml` mediante `excludeFilterFiles` del plugin,
+conservando el filtro compartido. El gate valida también esas excepciones locales y exige clase
+y miembro concretos. Los modelos que OpenAPI genera durante el build se reconocen por
+`pe.axiz.core.commons.Generated` (retención `CLASS`), no por excluir todo un paquete de modelos.
+Esta anotación nunca debe colocarse en código mantenido a mano.
+
 SpotBugs y FindSecBugs informan desde prioridad media y el build falla con prioridad alta. Un aviso
 medio que señala un defecto se corrige en el código (así se corrigieron lecturas repetidas de
 valores que pueden ser `null` y una marca leída fuera de su candado). Los que quedan se revisaron

@@ -1,14 +1,30 @@
 # axiz-workflows
 
 Reusable GitHub Actions workflows, composite actions, Renovate presets and GitOps references of the
-axiz platform. Repositories call them with `secrets: inherit` and pin an immutable release
-(`@v1.0.0`); the Renovate preset (`helpers:pinGitHubActionDigestsToSemver`) turns that reference
-into the commit SHA of the release and proposes each new one as a pull request, so a moved tag can
-never change the pipeline of a service. Inside this repository the references between workflows
-and actions carry the release version too (`# x-release-please-version`: release-please updates
-them in the release pull request) and `self-check` rejects any other reference. Third-party actions
-are pinned by commit SHA (checked by `self-check`, kept up to date by Renovate). Protect the `v*`
-tags with a ruleset (no update, no deletion) and enable immutable releases in the repository.
+axiz platform. Callers pass an explicit map of the secrets declared by each reusable workflow.
+Third-party actions use full commit SHAs. Internal references use a full SHA or an exact release
+version (`@v1.0.0`) with a mandatory `axiz-workflows-trust` prerequisite. That job checks GitHub's
+release API for the exact tag, `immutable: true` and `draft: false`, before the dependent jobs run.
+Missing access, missing releases and mutable releases stop the pipeline. Custom job conditions
+must also require the verification job to succeed. `check-workflow-security` tests these contracts
+and scans both checked-in workflows and generator templates; exceptions to Semgrep are local to
+the guarded references.
+
+For a private `axiz-workflows` repository, supply `AXIZ_WORKFLOWS_READ_TOKEN` with **Contents: read**
+on that repository only; otherwise the guard uses `github.token`. This credential does not grant
+publication or deployment access. Enable [immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
+in GitHub and publish a new immutable release containing these checks before updating consumers.
+An existing immutable release cannot be overwritten. The local changes do not configure GitHub
+repository settings or prove that the currently referenced release is immutable.
+
+Release-please updates internal action references and the guard's version together using
+`# x-release-please-version`. Renovate proposes consumer updates; references and the verification
+version must remain aligned. Prefer full SHAs once the published release can be resolved. The
+verification uses the [release-by-tag API](https://docs.github.com/en/rest/releases/releases#get-a-release-by-tag-name).
+
+After the Maven quality build, `check-encapsulation` rejects `EI_EXPOSE_REP`, `EI_EXPOSE_REP2`
+and `CT_CONSTRUCTOR_THROW` at every reported priority. The shared SpotBugs filter permits only
+reviewed exact class/member exceptions for these detectors; no global exception is allowed.
 
 | Workflow | Used by | What it does |
 |---|---|---|

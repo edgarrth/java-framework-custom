@@ -159,7 +159,7 @@ public record RequestMetadata(
     }
 
     public Builder attributes(Map<String, String> value) {
-      this.attributes = value;
+      this.attributes = Map.copyOf(value);
       return this;
     }
 

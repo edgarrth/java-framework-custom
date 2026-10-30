@@ -32,5 +32,11 @@ public record AxizFoundationProperties(
   public record Calendar(
       @DefaultValue({"SATURDAY", "SUNDAY"}) List<DayOfWeek> weekend,
       @DefaultValue List<String> recurringHolidays,
-      @DefaultValue List<LocalDate> holidays) {}
+      @DefaultValue List<LocalDate> holidays) {
+    public Calendar {
+      holidays = List.copyOf(holidays);
+      recurringHolidays = List.copyOf(recurringHolidays);
+      weekend = List.copyOf(weekend);
+    }
+  }
 }

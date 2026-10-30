@@ -16,4 +16,8 @@ public record PaymentOrderPage(
     @Nullable List<PaymentOrder> items,
     @JsonProperty("page") @Nullable Integer pageValue,
     @Nullable Integer size,
-    @Nullable Long totalElements) {}
+    @Nullable Long totalElements) {
+  public PaymentOrderPage {
+    items = items == null ? null : java.util.List.copyOf(items);
+  }
+}

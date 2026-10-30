@@ -113,7 +113,21 @@ class ProjectGeneratorTest {
     assertTrue(p.text(".mvn/jvm.config").contains("jdk.compiler"), "Error Prone needs the exports");
     String ci = p.text(".github/workflows/ci.yaml");
     assertTrue(ci.contains("service: orders-business"), ci);
-    assertTrue(ci.contains("needs: ci"), "deployments wait for the build and the image");
+    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
+    Map<?, ?> jobs = (Map<?, ?>) workflow.get("jobs");
+    List<? extends Map<?, ?>> deployments =
+        jobs.values().stream()
+            .map(job -> (Map<?, ?>) job)
+            .filter(job -> String.valueOf(job.get("uses")).contains("service-cd.yaml@"))
+            .toList();
+    assertFalse(deployments.isEmpty());
+    deployments.forEach(
+        job -> {
+          List<?> needs = (List<?>) job.get("needs");
+          assertTrue(needs.contains("ci"), "deployments wait for the build and image");
+          assertTrue(
+              needs.contains("axiz-workflows-trust"), "deployments require a trusted release");
+        });
     assertTrue(ci.contains("image-digest: ${{ needs.ci.outputs.image-digest }}"), ci);
     assertFalse(ci.contains("<%"), "delimiters fully rendered");
     assertTrue(p.text(".github/workflows/cd.yaml").contains("workflow_dispatch"));

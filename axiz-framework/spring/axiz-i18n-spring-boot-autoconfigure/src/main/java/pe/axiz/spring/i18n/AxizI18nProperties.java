@@ -16,4 +16,9 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AxizI18nProperties(
     @DefaultValue("es-PE") Locale defaultLocale,
     @DefaultValue({"es-PE", "es", "en"}) List<Locale> supportedLocales,
-    @DefaultValue("messages") List<String> basenames) {}
+    @DefaultValue("messages") List<String> basenames) {
+  public AxizI18nProperties {
+    basenames = List.copyOf(basenames);
+    supportedLocales = List.copyOf(supportedLocales);
+  }
+}

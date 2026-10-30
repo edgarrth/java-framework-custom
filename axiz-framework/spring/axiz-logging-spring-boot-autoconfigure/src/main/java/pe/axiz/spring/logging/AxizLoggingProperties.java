@@ -40,5 +40,10 @@ public record AxizLoggingProperties(@Nullable Boolean json, @DefaultValue Http h
       @DefaultValue("false") boolean bodies,
       @DefaultValue("4000") int maxBodyLength,
       @DefaultValue({"/actuator/**"}) List<String> excludedPaths,
-      @DefaultValue("65536") int maxMaskedBodyLength) {}
+      @DefaultValue("65536") int maxMaskedBodyLength) {
+    public Http {
+      excludedPaths = List.copyOf(excludedPaths);
+      headers = List.copyOf(headers);
+    }
+  }
 }

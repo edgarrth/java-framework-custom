@@ -67,6 +67,10 @@
         {
           "type": "generic",
           "path": ".github/workflows/service-ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": ".github/workflows/pr.yaml"
         }
       ]
     }

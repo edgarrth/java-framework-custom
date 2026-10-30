@@ -18,4 +18,8 @@ public record AxizEdaProperties(
     @DefaultValue("domain-events") String destination,
     @DefaultValue Map<String, String> routes,
     @DefaultValue("true") boolean transactional,
-    @DefaultValue("30s") Duration handlerTimeout) {}
+    @DefaultValue("30s") Duration handlerTimeout) {
+  public AxizEdaProperties {
+    routes = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(routes));
+  }
+}

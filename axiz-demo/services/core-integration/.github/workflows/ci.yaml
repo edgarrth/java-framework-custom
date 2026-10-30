@@ -23,22 +23,59 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
   pr:
-    if: github.event_name == 'pull_request'
+    needs: axiz-workflows-trust
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
   ci:
+    needs: axiz-workflows-trust
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0
     with:
       service: core-integration
       openapi: src/main/openapi/openapi.yaml
       chart: deploy/helm/core-integration
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_DOCKER_REGISTRY: ${{ secrets.NEXUS_DOCKER_REGISTRY }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   dev:
-    needs: ci
-    if: github.ref == 'refs/heads/main'
+    needs: [axiz-workflows-trust, ci]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.ref == 'refs/heads/main') }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: core-integration
@@ -46,10 +83,16 @@ jobs:
       chart: deploy/helm/core-integration
       image-tag: ${{ needs.ci.outputs.image-tag }}
       image-digest: ${{ needs.ci.outputs.image-digest }}
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
 
   qa:
-    needs: [ci, dev]
+    needs: [axiz-workflows-trust, ci, dev]
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: core-integration
@@ -57,11 +100,17 @@ jobs:
       chart: deploy/helm/core-integration
       image-tag: ${{ needs.ci.outputs.image-tag }}
       image-digest: ${{ needs.ci.outputs.image-digest }}
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
 
   prod:
-    needs: ci
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [axiz-workflows-trust, ci]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (startsWith(github.ref, 'refs/tags/v')) }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
     with:
       service: core-integration
@@ -69,4 +118,8 @@ jobs:
       chart: deploy/helm/core-integration
       image-tag: ${{ needs.ci.outputs.image-tag }}
       image-digest: ${{ needs.ci.outputs.image-digest }}
-    secrets: inherit
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

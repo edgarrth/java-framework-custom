@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -278,7 +277,7 @@ public final class Catalog {
 
   /** Unmodifiable copy that keeps insertion order (Map.copyOf does not). */
   static Map<String, Object> ordered(Map<String, Object> source) {
-    return Collections.unmodifiableMap(new LinkedHashMap<>(source));
+    return Snapshots.properties(source);
   }
 
   static List<String> strings(@Nullable Object o) {

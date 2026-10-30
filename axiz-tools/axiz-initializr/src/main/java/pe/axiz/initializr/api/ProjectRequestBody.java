@@ -43,6 +43,9 @@ public record ProjectRequestBody(
     @Nullable @Size(max = OpenApiDocument.MAX_SIZE) String openApi,
     @Nullable @Size(max = OpenApiDocument.MAX_SIZE) String asyncApi,
     @Nullable @Pattern(regexp = "^\\d+\\.\\d+\\.\\d+(-[A-Za-z0-9.]+)?$") String frameworkVersion) {
+  public ProjectRequestBody {
+    capabilities = capabilities == null ? null : java.util.List.copyOf(capabilities);
+  }
 
   /** The engine request, defaults resolved from the archetype. */
   public ProjectRequest toRequest(Catalog catalog, String defaultVersion) {

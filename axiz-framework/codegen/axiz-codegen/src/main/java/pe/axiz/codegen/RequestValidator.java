@@ -28,6 +28,11 @@ public final class RequestValidator {
       @Nullable OpenApiDocument contract,
       List<String> problems,
       List<LintFinding> findings) {
+    public Result {
+      findings = List.copyOf(findings);
+      problems = List.copyOf(problems);
+    }
+
     public boolean valid() {
       return problems.isEmpty() && findings.stream().noneMatch(LintFinding::error);
     }

@@ -35,7 +35,13 @@ public final class CapabilityAdder {
    * @param example usage example of the requested capability
    */
   public record Result(
-      List<String> added, List<String> changed, List<String> configMapKeys, String example) {}
+      List<String> added, List<String> changed, List<String> configMapKeys, String example) {
+    public Result {
+      added = List.copyOf(added);
+      changed = List.copyOf(changed);
+      configMapKeys = List.copyOf(configMapKeys);
+    }
+  }
 
   private static final Map<String, String> SCHEMAS =
       Map.of(

@@ -32,7 +32,11 @@ public record AxizCryptoProperties(
       @DefaultValue List<String> keyIds,
       @DefaultValue("field-key-") String secretPrefix,
       @Nullable String blindIndexSecret,
-      @DefaultValue("16") int blindIndexBytes) {}
+      @DefaultValue("16") int blindIndexBytes) {
+    public Fields {
+      keyIds = List.copyOf(keyIds);
+    }
+  }
 
   /**
    * KMS envelope encryption.

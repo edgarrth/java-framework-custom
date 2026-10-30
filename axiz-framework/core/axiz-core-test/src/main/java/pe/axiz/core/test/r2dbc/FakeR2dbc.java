@@ -57,7 +57,12 @@ public final class FakeR2dbc implements ConnectionFactory {
       String sql,
       Map<Integer, @Nullable Object> binds,
       Map<Integer, Class<?>> types,
-      int connection) {}
+      int connection) {
+    public Execution {
+      binds = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(binds));
+      types = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(types));
+    }
+  }
 
   private record Rule(
       Pattern pattern,

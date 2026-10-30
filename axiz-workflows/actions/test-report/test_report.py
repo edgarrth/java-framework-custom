@@ -22,6 +22,8 @@ def main() -> None:
         kind = "IT" if "/failsafe-reports/" in path else "unit"
         module = path.split("/target/")[0] or "."
         try:
+            # Trusted build POM/report, after executing the same checkout; no request XML is parsed.
+            # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             root = ET.parse(path).getroot()
         except ET.ParseError:
             totals[(module, kind)]["errors"] += 1
