@@ -187,4 +187,38 @@ class MoneyTest {
     assertEquals(Money.of("100.00", "PEN"), total);
     assertEquals(0, new BigDecimal("100.00").compareTo(total.amount()));
   }
+
+  @Test
+  void exactAmountsFromOutsideAreNeverRounded() {
+    assertEquals("PEN 150.50", Money.ofExact(new BigDecimal("150.5"), "PEN").toString());
+    assertEquals("PEN 150.00", Money.ofExact("150.000", "PEN").toString());
+    assertEquals("JPY 1000", Money.ofExact("1000", "JPY").toString());
+    assertThrows(BusinessException.class, () -> Money.ofExact("150.005", "PEN"));
+    assertThrows(BusinessException.class, () -> Money.ofExact("1000.5", "JPY"));
+    assertThrows(BusinessException.class, () -> Money.parse("PEN 150.005"));
+    assertEquals(Money.of("150.50", "PEN"), Money.parse("PEN 150.5"));
+    // rounding stays available for computed amounts
+    assertEquals("PEN 150.00", Money.of("150.005", "PEN").toString());
+  }
+
+  @Test
+  void hugeExponentsAreRejectedBeforeAnyRescaling() {
+    long start = System.nanoTime();
+    for (String text : List.of("1e99999999", "1e-99999999", "0E+99999999", "0E-99999999")) {
+      assertThrows(BusinessException.class, () -> Money.of(text, "PEN"), text);
+      assertThrows(BusinessException.class, () -> Money.ofExact(text, "PEN"), text);
+      assertThrows(BusinessException.class, () -> Money.parse("PEN " + text), text);
+    }
+    assertTrue(System.nanoTime() - start < 5_000_000_000L, "rejection must be immediate");
+    assertThrows(
+        BusinessException.class, () -> Money.of("1" + "0".repeat(Money.MAX_INTEGER_DIGITS), "PEN"));
+    assertEquals(
+        Money.MAX_INTEGER_DIGITS,
+        Money.of("9".repeat(Money.MAX_INTEGER_DIGITS), "PEN").amount().precision() - 2);
+    // intermediate results with many decimals are still rounded
+    assertEquals(
+        "PEN 33.33",
+        Money.of(new BigDecimal("100").divide(new BigDecimal("3"), 50, RoundingMode.HALF_EVEN), PEN)
+            .toString());
+  }
 }

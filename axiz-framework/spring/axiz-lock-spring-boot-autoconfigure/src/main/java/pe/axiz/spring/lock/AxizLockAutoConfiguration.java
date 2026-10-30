@@ -34,7 +34,7 @@ public class AxizLockAutoConfiguration {
               + " is not available: add its client and connection settings");
     }
     Environments.requireSingleProcess(
-        env.getProperty("axiz.config.environment", "local"),
+        env.getProperty("axiz.config.environment"),
         "axiz.lock.store=memory",
         "redis or dynamodb",
         "a lock held in one replica does not exclude the others");

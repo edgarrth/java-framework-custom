@@ -23,7 +23,7 @@ public final class Environments {
   }
 
   /**
-   * Fails when {@code environment} is a deployed one.
+   * Fails when {@code environment} is a deployed one, or is not set.
    *
    * @param setting the property that selected the in-memory implementation, e.g. {@code
    *     axiz.lock.store=memory}
@@ -33,12 +33,19 @@ public final class Environments {
   public static void requireSingleProcess(
       @Nullable String environment, String setting, String alternatives, String reason) {
     if (!allowsInMemoryState(environment)) {
+      // an unset environment is never taken for a local one: a deployment that lost the setting
+      // must not fall back to per-process state
+      String current =
+          environment == null || environment.isBlank()
+              ? "axiz.config.environment is not set; set it to local or test where one process"
+                  + " runs"
+              : "axiz.config.environment=" + environment;
       throw new IllegalStateException(
           setting
               + " is only allowed in "
               + SINGLE_PROCESS.stream().sorted().toList()
-              + " (axiz.config.environment="
-              + environment
+              + " ("
+              + current
               + "): "
               + reason
               + "; use "

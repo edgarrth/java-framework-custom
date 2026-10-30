@@ -196,5 +196,10 @@ class CommonsTest {
                     "replicas do not share it"));
     assertTrue(e.getMessage().contains("axiz.config.environment=qa"));
     assertTrue(e.getMessage().contains("use redis or dynamodb"));
+    IllegalStateException unset =
+        assertThrows(
+            IllegalStateException.class,
+            () -> Environments.requireSingleProcess(null, "axiz.lock.store=memory", "redis", "r"));
+    assertTrue(unset.getMessage().contains("axiz.config.environment is not set"));
   }
 }

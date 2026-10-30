@@ -111,6 +111,31 @@ class AxizFoundationAutoConfigurationTest {
         JacksonException.class, () -> mapper.readValue("{\"amount\":\"1.00\"}", Money.class));
   }
 
+  @Test
+  void moneyFromClientsIsNeverRounded() {
+    JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
+    for (String json :
+        java.util.List.of(
+            "{\"amount\":150.005,\"currency\":\"PEN\"}",
+            "{\"amount\":\"150.005\",\"currency\":\"PEN\"}",
+            "\"PEN 150.005\"",
+            "{\"amount\":\"1e99999999\",\"currency\":\"PEN\"}")) {
+      Throwable failure =
+          assertThrows(RuntimeException.class, () -> mapper.readValue(json, Money.class));
+      Throwable cause = failure;
+      while (cause != null && !(cause instanceof pe.axiz.core.errors.BusinessException)) {
+        cause = cause.getCause();
+      }
+      assertTrue(cause != null, json);
+    }
+    // a huge numeric exponent is refused as well (by the parser itself), and at once
+    long start = System.nanoTime();
+    assertThrows(
+        RuntimeException.class,
+        () -> mapper.readValue("{\"amount\":1e99999999,\"currency\":\"PEN\"}", Money.class));
+    assertTrue(System.nanoTime() - start < 5_000_000_000L);
+  }
+
   record Holder(@ValidIdentifier(type = "dni") String dni) {}
 
   record Account(@ValidIdentifier(type = "internal-account") String number) {}

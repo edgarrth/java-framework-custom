@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.featureflags.FeatureFlags;
+import pe.axiz.core.money.Money;
 import pe.axiz.framework.bff.spring.ReactiveComposer;
 import pe.axiz.payments.experience.api.model.PaymentRequest;
 import pe.axiz.payments.experience.api.model.PaymentView;
@@ -92,6 +93,16 @@ public class PaymentsComposition {
                   body.getCurrency(),
                   "expected",
                   Objects.requireNonNullElse(beneficiary.currency(), "?"))));
+    }
+    java.math.BigDecimal amount = body.getAmount();
+    if (amount != null) {
+      try {
+        // checked here so the channel answers 400 itself: an amount with more decimals than the
+        // currency (or out of range) is never sent on, nor rounded
+        Money.ofExact(amount, Objects.requireNonNull(body.getCurrency(), "currency"));
+      } catch (BusinessException e) {
+        return Mono.error(e);
+      }
     }
     PaymentOrderRequest request =
         new PaymentOrderRequest(

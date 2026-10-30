@@ -20,7 +20,7 @@ public class AxizStorageAutoConfiguration {
   @ConditionalOnProperty(name = "axiz.storage.type", havingValue = "memory")
   ObjectStorage axizInMemoryObjectStorage(Environment env) {
     Environments.requireSingleProcess(
-        env.getProperty("axiz.config.environment", "local"),
+        env.getProperty("axiz.config.environment"),
         "axiz.storage.type=memory",
         "s3",
         "objects kept in memory are lost on restart and invisible to other replicas");

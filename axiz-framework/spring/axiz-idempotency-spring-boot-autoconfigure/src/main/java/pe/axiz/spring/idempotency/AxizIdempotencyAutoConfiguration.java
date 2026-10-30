@@ -52,7 +52,7 @@ public class AxizIdempotencyAutoConfiguration {
               + " is not available: add its client and connection settings");
     }
     Environments.requireSingleProcess(
-        env.getProperty("axiz.config.environment", "local"),
+        env.getProperty("axiz.config.environment"),
         "axiz.idempotency.store=memory",
         "redis or dynamodb",
         "keys kept per replica let a retry on another replica execute twice");

@@ -14,9 +14,10 @@ import java.util.List;
  * @param attributes extra claims copied to the principal attributes
  * @param machine markers of a token issued to an application without an end user (client
  *     credentials) whose {@code sub} is not the client id: {@code claim} (present), {@code
- *     claim=value} or {@code claim^=prefix}. Such tokens are mapped with the client id as subject
- *     (RFC 9068), so they are never mistaken for an end user. Defaults: Microsoft Entra ({@code
- *     idtyp=app}) and Keycloak service accounts ({@code preferred_username^=service-account-}).
+ *     claim=value} or {@code claim^=prefix} (the claim equals the prefix followed by the token's
+ *     client id, ignoring case). Such tokens are mapped with the client id as subject (RFC 9068),
+ *     so they are never mistaken for an end user. Defaults: Microsoft Entra ({@code idtyp=app}) and
+ *     Keycloak service accounts ({@code preferred_username^=service-account-}).
  */
 public record ClaimMapping(
     List<String> subject,

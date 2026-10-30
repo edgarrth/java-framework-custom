@@ -162,6 +162,42 @@ class SecurityTest {
         presence.map(Map.of("iss", "i", "sub", "u-1", "azp", "c", "client_id", "c")).isMachine());
   }
 
+  /** A username the user may choose never turns an end user into an application. */
+  @Test
+  void aUsernameThatOnlyLooksLikeAServiceAccountIsAnEndUser() {
+    AxizPrincipal user =
+        mapper.map(
+            Map.of(
+                "iss", "i",
+                "sub", "C-1001",
+                "azp", "payments-web",
+                "preferred_username", "service-account-payment-process"));
+    assertFalse(user.isMachine());
+    assertEquals("C-1001", user.subject());
+    AxizPrincipal upperCase =
+        mapper.map(
+            Map.of(
+                "iss", "i",
+                "sub", "5f0c4e8a",
+                "azp", "Payment-Process",
+                "preferred_username", "service-account-payment-process"));
+    assertTrue(upperCase.isMachine());
+  }
+
+  /** Without the fallback, a token that names no client is rejected, never taken for one. */
+  @Test
+  void tokensWithoutAClientClaimAreRejectedWhenSubIsNotAcceptedAsClient() {
+    ClaimsMapper strict = new ClaimsMapper(ClaimMapping.defaults(), false);
+    assertThrows(
+        AccessException.class, () -> strict.map(Map.of("iss", "i", "sub", "C-1001", "scope", "x")));
+    AxizPrincipal app = strict.map(Map.of("iss", "i", "sub", "batch", "azp", "batch"));
+    assertTrue(app.isMachine());
+    AxizPrincipal user = strict.map(Map.of("iss", "i", "sub", "C-1001", "azp", "payments-web"));
+    assertFalse(user.isMachine());
+    // the default keeps accepting sub as the client
+    assertTrue(mapper.map(Map.of("iss", "i", "sub", "batch-client")).isMachine());
+  }
+
   @Test
   void issuerPolicyIsAnAllowList() {
     IssuerPolicy policy =

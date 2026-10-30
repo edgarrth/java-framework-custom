@@ -16,9 +16,26 @@ import pe.axiz.core.errors.AccessException;
 public final class ClaimsMapper {
 
   private final ClaimMapping mapping;
+  private final boolean subjectAsClient;
 
+  /** A mapper that takes {@code sub} as the client of tokens without a client claim. */
   public ClaimsMapper(ClaimMapping mapping) {
+    this(mapping, true);
+  }
+
+  /**
+   * Creates a mapper.
+   *
+   * @param mapping claim paths
+   * @param subjectAsClient whether a token without any client claim takes its {@code sub} as the
+   *     client (providers that only put the client in {@code sub} of client-credentials tokens).
+   *     Such a token is mapped as an application ({@link AxizPrincipal#isMachine()}); turn it off
+   *     when the provider always sends a client claim (RFC 9068 {@code client_id}, {@code azp}), so
+   *     an end-user token that lacks one is rejected instead of being taken for an application
+   */
+  public ClaimsMapper(ClaimMapping mapping, boolean subjectAsClient) {
     this.mapping = Objects.requireNonNull(mapping);
+    this.subjectAsClient = subjectAsClient;
   }
 
   /**
@@ -34,7 +51,7 @@ public final class ClaimsMapper {
     if (issuer == null) {
       throw AccessException.unauthenticated("token without issuer");
     }
-    if (clientId == null) {
+    if (clientId == null && subjectAsClient) {
       // some providers only include the client in sub for client-credentials tokens
       clientId = subject;
     }
@@ -48,7 +65,7 @@ public final class ClaimsMapper {
     requirePrintable("client", clientId);
     requirePrintable("sub", subject);
     requirePrintable("tenant", tenant);
-    if (subject != null && !subject.equals(clientId) && isMachineToken(claims)) {
+    if (subject != null && !subject.equals(clientId) && isMachineToken(claims, clientId)) {
       // a service account with its own user id: the caller is the application, not a person
       subject = clientId;
     }
@@ -85,13 +102,19 @@ public final class ClaimsMapper {
     }
   }
 
-  private boolean isMachineToken(Map<String, Object> claims) {
+  /**
+   * Whether a marker says the token belongs to an application. A {@code claim^=prefix} marker only
+   * matches the name derived from the token's own client ({@code prefix + clientId}, ignoring
+   * case), as Keycloak names service accounts: a claim the user may choose, such as a username that
+   * merely starts with the prefix, never turns an end user into an application.
+   */
+  private boolean isMachineToken(Map<String, Object> claims, String clientId) {
     for (String marker : mapping.machine()) {
       int prefix = marker.indexOf("^=");
       int equals = marker.indexOf('=');
       if (prefix > 0) {
         String v = string(resolve(claims, marker.substring(0, prefix)));
-        if (v != null && v.startsWith(marker.substring(prefix + 2))) {
+        if (v != null && v.equalsIgnoreCase(marker.substring(prefix + 2) + clientId)) {
           return true;
         }
       } else if (equals > 0) {

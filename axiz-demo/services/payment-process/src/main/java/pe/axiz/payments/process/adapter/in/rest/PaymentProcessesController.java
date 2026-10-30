@@ -46,7 +46,7 @@ public class PaymentProcessesController {
             body.getOperationNumber(),
             body.getDebtorAccount(),
             body.getCreditorCci(),
-            Money.of(body.getAmount(), body.getCurrency()),
+            Money.ofExact(body.getAmount(), body.getCurrency()),
             body.getCustomerId());
     PaymentProcess process =
         startPaymentProcessUseCase.execute(new StartPaymentProcessUseCase.Input(instruction));

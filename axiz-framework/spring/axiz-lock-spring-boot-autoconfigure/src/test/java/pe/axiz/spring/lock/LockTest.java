@@ -16,6 +16,7 @@ class LockTest {
   void memoryLockForTestsAndUnknownStoreFails() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .run(
             ctx -> {
               assertEquals(
@@ -32,5 +33,22 @@ class LockTest {
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
         .withPropertyValues("axiz.lock.store=redis")
         .run(ctx -> assertTrue(ctx.getStartupFailure() != null));
+  }
+
+  @Test
+  void memoryLockIsRefusedWhenTheEnvironmentIsNotSet() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
+        .run(
+            ctx -> {
+              Throwable failure = ctx.getStartupFailure();
+              assertTrue(failure != null);
+              Throwable root = failure;
+              while (root.getCause() != null) {
+                root = root.getCause();
+              }
+              assertTrue(
+                  String.valueOf(root.getMessage()).contains("axiz.config.environment is not set"));
+            });
   }
 }

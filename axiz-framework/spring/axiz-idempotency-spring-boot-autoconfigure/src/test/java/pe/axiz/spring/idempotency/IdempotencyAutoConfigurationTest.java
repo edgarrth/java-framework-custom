@@ -59,6 +59,18 @@ class IdempotencyAutoConfigurationTest {
   }
 
   @Test
+  void theMemoryStoreIsRefusedWhenTheEnvironmentIsNotSet() {
+    servlet
+        .withPropertyValues("axiz.idempotency.store=memory")
+        .run(
+            ctx ->
+                assertThat(ctx)
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("axiz.config.environment is not set"));
+  }
+
+  @Test
   void aStoreWithoutItsClientStopsTheStartupWithTheSettingToFix() {
     servlet
         .withPropertyValues("axiz.config.environment=local", "axiz.idempotency.store=redis")

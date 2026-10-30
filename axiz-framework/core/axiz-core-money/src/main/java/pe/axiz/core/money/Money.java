@@ -23,6 +23,12 @@ public final class Money implements Comparable<Money> {
   /** Default rounding: banker's rounding, unbiased for accumulated amounts. */
   public static final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
 
+  /** Most digits accepted before the decimal point (far above any real amount). */
+  public static final int MAX_INTEGER_DIGITS = 30;
+
+  /** Most decimals accepted in a value before it is rounded to the currency scale. */
+  public static final int MAX_SCALE = 100;
+
   private final BigDecimal amount;
   private final Currency currency;
 
@@ -46,8 +52,59 @@ public final class Money implements Comparable<Money> {
   public static Money of(BigDecimal amount, Currency currency, RoundingMode rounding) {
     Objects.requireNonNull(amount, "amount");
     Objects.requireNonNull(currency, "currency");
+    requireBounded(amount);
     int scale = scaleOf(currency);
     return new Money(amount.setScale(scale, rounding), currency);
+  }
+
+  /**
+   * Creates an amount that already fits the currency scale, for values received from outside
+   * (requests, messages, files): {@code 150.5} becomes {@code 150.50}, but {@code 150.005} is
+   * rejected instead of being rounded, so a client is never charged an amount it did not send.
+   *
+   * @param amount amount
+   * @param currencyCode ISO 4217 code
+   * @return the money
+   * @throws BusinessException {@link MoneyErrors#INVALID_AMOUNT} when the amount has more decimals
+   *     than the currency or is out of range
+   */
+  public static Money ofExact(BigDecimal amount, String currencyCode) {
+    return ofExact(amount, currency(currencyCode));
+  }
+
+  /** Same as {@link #ofExact(BigDecimal, String)} with a currency. */
+  public static Money ofExact(BigDecimal amount, Currency currency) {
+    Objects.requireNonNull(amount, "amount");
+    Objects.requireNonNull(currency, "currency");
+    requireBounded(amount);
+    try {
+      return new Money(amount.setScale(scaleOf(currency), RoundingMode.UNNECESSARY), currency);
+    } catch (ArithmeticException e) {
+      throw new BusinessException(
+          MoneyErrors.INVALID_AMOUNT,
+          "too many decimals",
+          Map.of("currency", currency.getCurrencyCode(), "decimals", scaleOf(currency)));
+    }
+  }
+
+  /** Same as {@link #ofExact(BigDecimal, String)} from text. */
+  public static Money ofExact(String amount, String currencyCode) {
+    return ofExact(parseAmount(amount), currencyCode);
+  }
+
+  /**
+   * Rejects values no real amount reaches before any rescaling: rescaling a value such as {@code
+   * 1e99999999} or {@code 1e-99999999} needs a power of ten with that many digits and would keep a
+   * thread busy for minutes. The limits leave room for intermediate results (rates, percentages).
+   */
+  private static void requireBounded(BigDecimal amount) {
+    int scale = amount.scale();
+    if (scale > MAX_SCALE || scale < -MAX_INTEGER_DIGITS) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
+    }
+    if (amount.signum() != 0 && amount.precision() - scale > MAX_INTEGER_DIGITS) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
+    }
   }
 
   public static Money of(String amount, String currencyCode) {
@@ -73,7 +130,9 @@ public final class Money implements Comparable<Money> {
   }
 
   /**
-   * Parses {@code "PEN 150.00"} (the text form produced by {@link #toString()}).
+   * Parses {@code "PEN 150.00"} (the text form produced by {@link #toString()}). The amount must
+   * fit the currency scale, as in {@link #ofExact(BigDecimal, String)}: text comes from outside
+   * (JSON, stored values) and is never rounded.
    *
    * @param text text form
    * @return the money
@@ -83,7 +142,7 @@ public final class Money implements Comparable<Money> {
     if (parts.length != 2) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "unparseable money");
     }
-    return of(parts[1], parts[0]);
+    return ofExact(parts[1], parts[0]);
   }
 
   private static BigDecimal parseAmount(@Nullable String amount) {

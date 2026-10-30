@@ -22,7 +22,7 @@ class StorageTest {
   void memoryStorageForTests() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizStorageAutoConfiguration.class))
-        .withPropertyValues("axiz.storage.type=memory")
+        .withPropertyValues("axiz.storage.type=memory", "axiz.config.environment=local")
         .run(
             ctx -> {
               ObjectStorage storage = ctx.getBean(ObjectStorage.class);

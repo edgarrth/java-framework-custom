@@ -120,6 +120,23 @@ class CreatePaymentOrderHandlerTest {
         .isEqualTo(PaymentErrors.DAILY_LIMIT_EXCEEDED);
   }
 
+  /**
+   * An amount the client did not send is never charged: extra decimals are refused, not rounded.
+   */
+  @Test
+  void anAmountWithMoreDecimalsThanTheCurrencyIsRejectedAndReservesNothing() {
+    CreatePaymentOrderHandler h = handler(Instant.parse("2026-10-09T15:00:00Z"));
+    assertThatThrownBy(() -> h.handle(command("150.005")))
+        .extracting(x -> ((BusinessException) x).definition())
+        .isEqualTo(pe.axiz.core.money.MoneyErrors.INVALID_AMOUNT);
+    assertThatThrownBy(() -> h.handle(command("1e99999999")))
+        .extracting(x -> ((BusinessException) x).definition())
+        .isEqualTo(pe.axiz.core.money.MoneyErrors.INVALID_AMOUNT);
+    assertThat(orders.rows).isEmpty();
+    assertThat(published).isEmpty();
+    assertThat(h.handle(command("150.50")).amount()).isEqualTo(Money.of("150.50", "PEN"));
+  }
+
   /** Regression: a retried request returns the order it created, never a second one. */
   @Test
   void aRetriedRequestReturnsTheSameOrderAndReservesOnce() {

@@ -58,7 +58,8 @@ public final class MoneyJacksonModule extends SimpleModule {
       }
       BigDecimal value =
           amount.isNumber() ? amount.decimalValue() : new BigDecimal(amount.asString());
-      return Money.of(value, currency.asString());
+      // an amount from a client is never rounded: more decimals than the currency is an error
+      return Money.ofExact(value, currency.asString());
     }
   }
 }

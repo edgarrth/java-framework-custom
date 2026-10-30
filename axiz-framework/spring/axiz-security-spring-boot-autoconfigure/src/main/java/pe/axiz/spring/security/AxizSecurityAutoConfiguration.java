@@ -107,7 +107,7 @@ public class AxizSecurityAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   ClaimsMapper axizClaimsMapper(AxizSecurityProperties p) {
-    return new ClaimsMapper(p.claims().toMapping());
+    return new ClaimsMapper(p.claims().toMapping(), p.claims().subjectAsClient());
   }
 
   @Bean

@@ -51,6 +51,10 @@ axiz:
   sensitive:
     response: MEDIUM
   security:
+    # Keycloak always sends azp: a token without a client claim is rejected (401), never
+    # taken for an application that may read every customer's data
+    claims:
+      subject-as-client: false
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:

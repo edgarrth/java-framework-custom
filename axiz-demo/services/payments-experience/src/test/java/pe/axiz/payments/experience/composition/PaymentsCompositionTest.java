@@ -68,6 +68,16 @@ class PaymentsCompositionTest {
   }
 
   @Test
+  void anAmountWithMoreDecimalsThanTheCurrencyIsRefusedAndNeverSentOn() {
+    for (String amount : List.of("150.755", "1e99999999")) {
+      PaymentRequest request = request("B-01", "PEN").amount(new BigDecimal(amount));
+      assertThatThrownBy(() -> as("C-1", composition.createPayment("k-" + amount, request)))
+          .satisfies(e -> assertCode(e, pe.axiz.core.money.MoneyErrors.INVALID_AMOUNT));
+    }
+    assertThat(business.received).isEmpty();
+  }
+
+  @Test
   void theCustomerComesFromTheTokenNeverFromTheRequest() {
     assertThatThrownBy(() -> composition.createPayment("k", request("B-01", "PEN")).block())
         .satisfies(e -> assertCode(e, CoreErrors.UNAUTHENTICATED));
