@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-audit-kafka</artifactId>
+  <name>axiz :: adapter :: audit-kafka</name>
+  <description>Audit publisher for Amazon MSK (Kafka)</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-audit-kafka</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.audit.kafka</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-audit</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+    </dependency>
+  </dependencies>
+</project>

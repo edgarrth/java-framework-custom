@@ -12,7 +12,13 @@ public class JacksonPayloadCodec implements PayloadCodec {
   private final JsonMapper mapper;
 
   public JacksonPayloadCodec(JsonMapper mapper) {
-    this.mapper = Objects.requireNonNull(mapper);
+    this.mapper =
+        Objects.requireNonNull(mapper)
+            .rebuild()
+            .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            // Nested schema objects use Map/List values; binary floating point would lose amounts.
+            .enable(tools.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .build();
   }
 
   @Override

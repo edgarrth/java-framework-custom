@@ -3,7 +3,7 @@ package pe.axiz.payments.history.application.query;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageRequest;
-import pe.axiz.framework.cqrs.Query;
+import pe.axiz.extension.cqrs.Query;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 

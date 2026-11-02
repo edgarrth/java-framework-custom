@@ -1,0 +1,36 @@
+<!-- generated -->
+# axiz-adapter-messaging-sqs
+
+Amazon SQS publisher and consumer adapter (standard and FIFO).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-messaging-sqs</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `SqsEnvelopes` | Maps SQS messages (including SNS-delivered raw messages) to envelopes. |
+| `SqsEventPublisher` | Publishes CloudEvents (structured JSON) to Amazon SQS. |
+
+## Native publication
+
+`SqsAsyncEventPublisher` uses the SDK asynchronous client, sharing request construction with the imperative
+adapter. Successful completion is the broker acknowledgement. Cancellation reaches the exact SDK
+future; submission errors are returned as failed stages, and cancellation/fatal failures preserve
+their meaning. FIFO group and deduplication identities remain unchanged.
+
+SQS routing recognizes AWS URLs and HTTP emulator queue URLs, and rejects malformed addresses,
+URL credentials, query parameters and fragments.
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-messaging-sqs verify`.

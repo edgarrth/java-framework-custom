@@ -36,7 +36,6 @@ import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.security.ClaimMapping;
 import pe.axiz.core.security.ClaimsMapper;
-import pe.axiz.core.security.InMemoryRateLimiter;
 import pe.axiz.core.security.RateLimiter;
 import reactor.core.publisher.Mono;
 
@@ -60,6 +59,43 @@ class SecurityDefaultsTest {
       new ReactiveWebApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizSecurityAutoConfiguration.class))
           .withPropertyValues(ISSUER_PROPERTIES);
+
+  @Test
+  void claimBindingUsesSafeDefaultsAndRejectsLegacyUsernameHeuristics() {
+    servlet.run(
+        ctx -> {
+          assertThat(ctx).hasNotFailed();
+          var claims = ctx.getBean(AxizSecurityProperties.class).claims();
+          assertFalse(claims.subjectAsClient());
+          assertEquals(List.of("idtyp=app"), claims.machine());
+        });
+    reactive
+        .withPropertyValues("axiz.security.claims.machine[0]=token_kind=service")
+        .run(
+            ctx -> {
+              assertThat(ctx).hasNotFailed();
+              var principal =
+                  ctx.getBean(ClaimsMapper.class)
+                      .map(
+                          java.util.Map.of(
+                              "iss",
+                              ISSUER,
+                              "sub",
+                              "technical-user",
+                              "azp",
+                              "service",
+                              "token_kind",
+                              "service"));
+              assertTrue(principal.isMachine());
+            });
+    servlet
+        .withPropertyValues("axiz.security.claims.machine[0]=preferred_username^=service-account-")
+        .run(ctx -> assertThat(ctx).hasFailed());
+    reactive
+        .withPropertyValues(
+            "axiz.security.claims.machine[0]=preferred_username=service-account-app")
+        .run(ctx -> assertThat(ctx).hasFailed());
+  }
 
   /** Status of a request through the servlet chain; 0 when it reached the application. */
   private static int call(Filter chain, String path, String bearer) throws Exception {
@@ -269,7 +305,7 @@ class SecurityDefaultsTest {
   void reactiveLimitsApplyToAxizCallersAndAnswer429() {
     RateLimitWebFilter filter =
         new RateLimitWebFilter(
-            new InMemoryRateLimiter(Clock.systemUTC()),
+            new pe.axiz.core.security.InMemoryAsyncRateLimiter(Clock.systemUTC()),
             oneRequestPerMinute(null),
             new SecurityProblems(null));
     AtomicInteger calls = new AtomicInteger();

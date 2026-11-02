@@ -10,7 +10,8 @@ axiz add security
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-security-spring-boot-starter` |
-| Incluida por defecto en | experience, business, process, integration, crud |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | business, core, gateway, ux, support |
 
 ## Propiedades que agrega
 
@@ -45,4 +46,3 @@ axiz.security.public-api-docs: true
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-security`](../referencia/core/axiz-core-security.md)
-- [`axiz-core-security-redis`](../referencia/core/axiz-core-security-redis.md)

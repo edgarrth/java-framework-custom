@@ -33,8 +33,16 @@ import tools.jackson.databind.json.JsonMapper;
 @EnableConfigurationProperties(AxizCacheProperties.class)
 public class AxizCacheAutoConfiguration {
 
+  @Bean(name = "axizL1Cache")
+  @ConditionalOnMissingBean(name = "axizL1Cache")
+  pe.axiz.core.cache.LocalByteCache axizDefaultL1Cache(
+      AxizCacheProperties p, ObjectProvider<Clock> clock) {
+    return new InMemoryByteCache(p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC));
+  }
+
   @Bean
   @ConditionalOnMissingBean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   AxizCaches axizCaches(
       AxizCacheProperties p,
       Environment env,
@@ -67,15 +75,45 @@ public class AxizCacheAutoConfiguration {
   static Advisor axizCacheableAdvisor(
       ObjectProvider<AxizCaches> caches,
       ObjectProvider<JsonMapper> mapper,
-      ObjectProvider<CacheCallerResolver> callers) {
+      ObjectProvider<CacheCallerResolver> callers,
+      ObjectProvider<AsyncCacheSettings> asyncCaches) {
     DefaultPointcutAdvisor advisor =
         new DefaultPointcutAdvisor(
             new AnnotationMatchingPointcut(null, AxizCacheable.class, true),
             new AxizCacheableInterceptor(
                 caches::getObject,
                 () -> mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build()),
-                () -> callers.getIfAvailable(CacheScopes::defaultCallers)));
+                () -> callers.getIfAvailable(CacheScopes::defaultCallers),
+                asyncCaches::getObject));
     advisor.setOrder(AxizCacheableInterceptor.ORDER);
     return advisor;
+  }
+
+  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnClass(
+      name = "reactor.core.publisher.Mono")
+  static class ReactiveConfiguration {
+    @Bean
+    @org.springframework.context.annotation.Lazy
+    @ConditionalOnMissingBean(AsyncCacheSettings.class)
+    ReactiveCaches axizReactiveCaches(
+        AxizCacheProperties p,
+        Environment env,
+        @Qualifier("axizL1Cache") ObjectProvider<pe.axiz.core.cache.LocalByteCache> local,
+        @Qualifier("axizAsyncL2Cache") ObjectProvider<pe.axiz.core.cache.AsyncByteCache> remote,
+        ObjectProvider<Clock> clock) {
+      pe.axiz.core.cache.LocalByteCache l1 =
+          local.getIfAvailable(
+              () ->
+                  new InMemoryByteCache(
+                      p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
+      pe.axiz.core.cache.AsyncByteCache l2 = p.redis() ? remote.getIfAvailable() : null;
+      String prefix =
+          p.prefix() != null
+              ? p.prefix()
+              : env.getProperty("spring.application.name", "application");
+      return new ReactiveCaches(
+          prefix, new pe.axiz.core.cache.AsyncTwoLevelCache(l1, l2, p.l1().maxTtl()), p);
+    }
   }
 }

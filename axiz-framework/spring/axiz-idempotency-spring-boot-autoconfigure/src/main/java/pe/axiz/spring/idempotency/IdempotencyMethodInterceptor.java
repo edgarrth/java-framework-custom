@@ -47,9 +47,21 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
           IdempotencyMethodInterceptor.class.getClassLoader());
 
   private final Supplier<IdempotencyService> service;
+  private final Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService;
 
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
+    this(
+        service,
+        () -> {
+          throw new IllegalStateException("Reactive idempotency requires AsyncIdempotencyService");
+        });
+  }
+
+  public IdempotencyMethodInterceptor(
+      Supplier<IdempotencyService> service,
+      Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService) {
     this.service = Objects.requireNonNull(service);
+    this.asyncService = Objects.requireNonNull(asyncService);
   }
 
   @Override
@@ -70,7 +82,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       }
     }
     if (REACTOR && ReactiveIdempotency.handles(method.getReturnType())) {
-      return ReactiveIdempotency.apply(invocation, rule, operation, service);
+      return ReactiveIdempotency.apply(invocation, rule, operation, asyncService);
     }
     return invocation.proceed(); // not called from a web request
   }

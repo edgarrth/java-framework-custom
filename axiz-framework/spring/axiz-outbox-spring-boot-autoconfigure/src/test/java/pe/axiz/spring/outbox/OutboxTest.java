@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.sql.DataSource;
@@ -94,12 +95,15 @@ class OutboxTest {
                         "payments", "e-2", "payment-created.v1", "payment", "p-2", "rolled back");
                     s.setRollbackOnly();
                   });
-              long deadline = System.currentTimeMillis() + 5000;
-              while (published.isEmpty() && System.currentTimeMillis() < deadline) {
-                Thread.sleep(20);
-              }
-              assertEquals(List.of("payments:e-1"), published);
-              assertEquals(0, ctx.getBean(OutboxStore.class).countPending());
+              // Broker acknowledgement precedes the database mark and transaction commit.
+              // Observe both outcomes before asserting that the asynchronous relay completed.
+              org.awaitility.Awaitility.await()
+                  .atMost(Duration.ofSeconds(5))
+                  .untilAsserted(
+                      () -> {
+                        assertEquals(List.of("payments:e-1"), published);
+                        assertEquals(0, ctx.getBean(OutboxStore.class).countPending());
+                      });
               assertTrue(ctx.getBean(OutboxRelayRunner.class).isRunning());
             });
   }

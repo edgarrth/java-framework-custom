@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.codegen.model.Framework;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.TemplateSet;
@@ -23,23 +23,21 @@ import pe.axiz.codegen.render.TemplateSet;
 public final class ArtifactGenerator {
 
   /** Artifact types and the styles they apply to (empty: every service style). */
-  public static final Map<String, Set<Framework>> TYPES;
+  public static final Map<String, Set<Structure>> TYPES;
 
   static {
-    Map<String, Set<Framework>> t = new LinkedHashMap<>();
-    t.put("usecase", Set.of(Framework.HEXAGONAL));
-    t.put("command", Set.of(Framework.CQRS));
-    t.put("query", Set.of(Framework.CQRS));
+    Map<String, Set<Structure>> t = new LinkedHashMap<>();
+    t.put("usecase", Set.of(Structure.HEXAGONAL));
+    t.put("command", Set.of(Structure.HEXAGONAL));
+    t.put("query", Set.of(Structure.HEXAGONAL));
     t.put("handler", Set.of());
     t.put("event-handler", Set.of());
     t.put("event", Set.of());
     t.put("entity", Set.of());
     t.put("repository", Set.of());
-    t.put(
-        "controller",
-        Set.of(Framework.HEXAGONAL, Framework.CQRS, Framework.LAYERED, Framework.BFF));
-    t.put("dto", Set.of(Framework.HEXAGONAL, Framework.CQRS, Framework.LAYERED, Framework.BFF));
-    t.put("mapper", Set.of(Framework.HEXAGONAL, Framework.CQRS, Framework.LAYERED, Framework.BFF));
+    t.put("controller", Set.of(Structure.HEXAGONAL, Structure.LAYERED, Structure.BFF));
+    t.put("dto", Set.of(Structure.HEXAGONAL, Structure.LAYERED, Structure.BFF));
+    t.put("mapper", Set.of(Structure.HEXAGONAL, Structure.LAYERED, Structure.BFF));
     t.put("migration", Set.of());
     t.put("error-code", Set.of());
     t.put("test", Set.of());
@@ -134,7 +132,10 @@ public final class ArtifactGenerator {
       Options options,
       @Nullable String existingErrors,
       @Nullable String migrationVersion) {
-    Set<Framework> styles = TYPES.get(type);
+    if ((type.equals("command") || type.equals("query")) && !project.cqrs()) {
+      throw new IllegalArgumentException(type + " requires the CQRS extension");
+    }
+    Set<Structure> styles = TYPES.get(type);
     if (styles == null) {
       throw new IllegalArgumentException(
           "Unknown type " + type + "; available: " + String.join(", ", TYPES.keySet()));
@@ -143,9 +144,9 @@ public final class ArtifactGenerator {
       throw new IllegalArgumentException(
           "axiz generate works on services; " + project.archetype() + " projects are plain code");
     }
-    if (!styles.isEmpty() && !styles.contains(project.framework())) {
+    if (!styles.isEmpty() && !styles.contains(project.structure())) {
       throw new IllegalArgumentException(
-          type + " does not apply to the " + project.framework().id() + " style");
+          type + " does not apply to the " + project.structure().id() + " style");
     }
     if (Names.pascal(name).isEmpty()) {
       throw new IllegalArgumentException("Invalid name " + name);
@@ -259,45 +260,35 @@ public final class ArtifactGenerator {
     c.put("project", project);
 
     Map<String, Object> fw = new LinkedHashMap<>();
-    for (Framework f : Framework.values()) {
-      fw.put(f.id(), f == p.framework());
+    for (Structure f : Structure.values()) {
+      fw.put(f.id(), f == p.structure());
     }
     String rest =
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "adapter.in.rest";
+        switch (p.structure()) {
+          case HEXAGONAL -> "adapter.in.rest";
           default -> "controller";
         };
     fw.put("restPackage", rest);
-    fw.put(
-        "eventPackage",
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "domain.event";
-          default -> "event";
-        });
-    fw.put(
-        "handlerPackage",
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "adapter.in.messaging";
-          default -> "handler";
-        });
+    fw.put("eventPackage", EventAdapters.payloadPackage(p.structure()));
+    fw.put("handlerPackage", EventAdapters.handlerPackage(p.structure()));
     fw.put(
         "entityPackage",
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "adapter.out.persistence";
+        switch (p.structure()) {
+          case HEXAGONAL -> "adapter.out.persistence";
           case LAYERED -> "model";
           default -> "persistence";
         });
     fw.put(
         "repositoryPackage",
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "adapter.out.persistence";
+        switch (p.structure()) {
+          case HEXAGONAL -> "adapter.out.persistence";
           case LAYERED -> "repository";
           default -> "persistence";
         });
     fw.put(
         "errorsPackage",
-        switch (p.framework()) {
-          case HEXAGONAL, CQRS -> "domain";
+        switch (p.structure()) {
+          case HEXAGONAL -> "domain";
           case LAYERED -> "service";
           default -> "";
         });
@@ -405,10 +396,19 @@ public final class ArtifactGenerator {
   }
 
   /** Types available for a style. */
-  public static List<String> typesFor(Framework framework) {
+  public static List<String> typesFor(Structure structure) {
+    return typesFor(structure, List.of());
+  }
+
+  public static List<String> typesFor(
+      Structure structure, List<pe.axiz.codegen.model.Extension> extensions) {
     return TYPES.entrySet().stream()
-        .filter(e -> e.getValue().isEmpty() || e.getValue().contains(framework))
+        .filter(e -> e.getValue().isEmpty() || e.getValue().contains(structure))
         .map(Map.Entry::getKey)
+        .filter(
+            type ->
+                (!type.equals("command") && !type.equals("query"))
+                    || extensions.contains(pe.axiz.codegen.model.Extension.CQRS))
         .toList();
   }
 }

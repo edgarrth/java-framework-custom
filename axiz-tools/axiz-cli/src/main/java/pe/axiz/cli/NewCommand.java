@@ -17,9 +17,9 @@ import pe.axiz.codegen.Names;
 import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.RequestValidator;
 import pe.axiz.codegen.model.Archetype;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.output.GeneratedProject;
 import picocli.CommandLine.Command;
@@ -37,7 +37,7 @@ import picocli.CommandLine.Parameters;
     footer = {
       "",
       "Examples:",
-      "  axiz new payments-business --archetype business --openapi api.yaml",
+      "  axiz new payment-orders --archetype business --structure hexagonal --openapi api.yaml",
       "  axiz new notifications-processor --archetype event-processor -c inbox -c messaging-sns",
       "  axiz new -i"
     })
@@ -46,7 +46,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
   @Parameters(
       index = "0",
       arity = "0..1",
-      description = "Project name in kebab-case, e.g. payments-business.")
+      description = "Project capability name in kebab-case, e.g. payment-orders.")
   @Nullable String name;
 
   @Option(
@@ -55,9 +55,15 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
   @Nullable String archetype;
 
   @Option(
-      names = {"-f", "--framework"},
-      description = "Style: layered, hexagonal, cqrs, eda, bff, batch.")
-  @Nullable String framework;
+      names = {"-f", "--structure"},
+      description = "Structure: layered, hexagonal, eda, bff, batch.")
+  @Nullable String structure;
+
+  @Option(
+      names = {"--extension", "--extensions"},
+      split = ",",
+      description = "Optional extensions: cqrs (hexagonal only).")
+  List<String> extensions = new ArrayList<>();
 
   @Option(
       names = {"-s", "--stack"},
@@ -104,7 +110,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
 
   @Option(
       names = "--axiz-version",
-      description = "Framework version (default: the one of this CLI).")
+      description = "Structure version (default: the one of this CLI).")
   @Nullable String axizVersion;
 
   @Option(
@@ -130,13 +136,13 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
                     generator.catalog().archetypes().stream().map(Archetype::name).toList(),
                     "business"))
             .orElseThrow(() -> new IllegalArgumentException("Unknown archetype; see axiz catalog"));
-    Framework f =
-        Framework.of(
+    Structure f =
+        Structure.of(
             prompt.choose(
-                "Framework",
-                framework,
-                a.frameworks().stream().map(Framework::id).toList(),
-                a.defaultFramework().id()));
+                "Structure",
+                structure,
+                a.structures().stream().map(Structure::id).toList(),
+                a.defaultStructure().id()));
     Stack st =
         Stack.of(
             prompt.choose(
@@ -190,7 +196,8 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
             capabilities,
             openApiText,
             asyncText,
-            axizVersion == null ? Version.axiz() : axizVersion);
+            axizVersion == null ? Version.axiz() : axizVersion,
+            extensions.stream().map(pe.axiz.codegen.model.Extension::of).toList());
     Path target = output.toAbsolutePath().normalize().resolve(projectName);
     if (Files.exists(target) && !force) {
       try (var entries = Files.list(target)) {
@@ -257,7 +264,8 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
     m.put("basePackage", r.basePackage());
     m.put("description", r.description());
     m.put("archetype", r.archetype());
-    m.put("framework", r.framework().id());
+    m.put("structure", r.structure().id());
+    m.put("extensions", r.extensions().stream().map(pe.axiz.codegen.model.Extension::id).toList());
     m.put("stack", r.stack().id());
     m.put("persistence", r.persistence());
     m.put("capabilities", r.capabilities());

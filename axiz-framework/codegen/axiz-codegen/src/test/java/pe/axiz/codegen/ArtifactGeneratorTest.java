@@ -11,8 +11,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class ArtifactGeneratorTest {
@@ -21,9 +21,9 @@ class ArtifactGeneratorTest {
       new ArtifactGenerator(Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC));
 
   private static ProjectManifest project(
-      Framework f, Stack s, String persistence, List<String> caps) {
+      Structure f, Stack s, String persistence, List<String> caps) {
     return new ProjectManifest(
-        "orders-business",
+        "orders",
         "pe.axiz.orders",
         "pe.axiz.orders.business",
         "business",
@@ -47,14 +47,14 @@ class ArtifactGeneratorTest {
 
   @Test
   void everyTypeRendersForEveryStyleItAppliesTo() {
-    for (Framework f :
+    for (Structure f :
         List.of(
-            Framework.HEXAGONAL,
-            Framework.CQRS,
-            Framework.LAYERED,
-            Framework.BFF,
-            Framework.EDA,
-            Framework.BATCH)) {
+            Structure.HEXAGONAL,
+            Structure.HEXAGONAL,
+            Structure.LAYERED,
+            Structure.BFF,
+            Structure.EDA,
+            Structure.BATCH)) {
       for (String type : ArtifactGenerator.typesFor(f)) {
         String persistence =
             type.equals("entity") || type.equals("repository") || type.equals("migration")
@@ -80,7 +80,7 @@ class ArtifactGeneratorTest {
   void followsTheStyleLayout() {
     ArtifactGenerator.Result useCase =
         generator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
+            project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
             "usecase",
             "approve-payment",
             ArtifactGenerator.Options.none(),
@@ -98,7 +98,7 @@ class ArtifactGeneratorTest {
 
     ArtifactGenerator.Result entity =
         generator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
+            project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
             "entity",
             "payment",
             ArtifactGenerator.Options.none(),
@@ -113,7 +113,7 @@ class ArtifactGeneratorTest {
 
     ArtifactGenerator.Result item =
         generator.generate(
-            project(Framework.LAYERED, Stack.SERVLET, "dynamodb", List.of()),
+            project(Structure.LAYERED, Stack.SERVLET, "dynamodb", List.of()),
             "repository",
             "payment",
             ArtifactGenerator.Options.none(),
@@ -122,9 +122,24 @@ class ArtifactGeneratorTest {
         text(item, "repository/PaymentRepository.java")
             .contains("repositories.create(\"payments\", PaymentItem.class)"));
 
+    ArtifactGenerator.Result reactiveDynamo =
+        generator.generate(
+            project(Structure.HEXAGONAL, Stack.REACTIVE, "dynamodb", List.of()),
+            "repository",
+            "payment",
+            ArtifactGenerator.Options.none(),
+            null);
+    String reactiveRepository =
+        text(reactiveDynamo, "adapter/out/persistence/PaymentRepository.java");
+    assertTrue(reactiveRepository.contains("ReactiveDynamoRepositories repositories"));
+    assertTrue(reactiveRepository.contains("Mono<PaymentItem> findById"));
+    assertTrue(reactiveRepository.contains("return items.save(item);"));
+    assertFalse(reactiveRepository.contains("java.util.Optional"));
+    assertFalse(reactiveRepository.contains("boundedElastic"));
+
     ArtifactGenerator.Result handler =
         generator.generate(
-            project(Framework.EDA, Stack.REACTIVE, "none", List.of("messaging-kafka")),
+            project(Structure.EDA, Stack.REACTIVE, "none", List.of("messaging-kafka")),
             "event-handler",
             "payment-approved",
             ArtifactGenerator.Options.none(),
@@ -136,7 +151,7 @@ class ArtifactGeneratorTest {
 
     ArtifactGenerator.Result hexHandler =
         generator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of("messaging-sqs")),
+            project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("messaging-sqs")),
             "handler",
             "payment-approved",
             ArtifactGenerator.Options.none(),
@@ -145,7 +160,7 @@ class ArtifactGeneratorTest {
         text(hexHandler, "adapter/in/messaging/PaymentApprovedHandler.java")
             .contains("implements EventHandler<PaymentApproved>"));
     // without a messaging capability the handler would not compile: generation is refused
-    ProjectManifest noMessaging = project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    ProjectManifest noMessaging = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
     IllegalArgumentException refused =
         assertThrows(
             IllegalArgumentException.class,
@@ -157,7 +172,7 @@ class ArtifactGeneratorTest {
     // reactive services on Aurora get Spring Data R2DBC types, never JPA
     ArtifactGenerator.Result reactiveEntity =
         generator.generate(
-            project(Framework.EDA, Stack.REACTIVE, "aurora", List.of("messaging-kafka")),
+            project(Structure.EDA, Stack.REACTIVE, "aurora", List.of("messaging-kafka")),
             "entity",
             "payment",
             ArtifactGenerator.Options.none(),
@@ -173,7 +188,7 @@ class ArtifactGeneratorTest {
 
     ArtifactGenerator.Result mapper =
         generator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
+            project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()),
             "mapper",
             "payment",
             new ArtifactGenerator.Options(null, null, "com.acme.api.PaymentDto", "Payment"),
@@ -186,7 +201,7 @@ class ArtifactGeneratorTest {
 
   @Test
   void rejectsWhatDoesNotApply() {
-    ProjectManifest hex = project(Framework.HEXAGONAL, Stack.SERVLET, "none", List.of());
+    ProjectManifest hex = project(Structure.HEXAGONAL, Stack.SERVLET, "none", List.of());
     assertThrows(
         IllegalArgumentException.class,
         () -> generator.generate(hex, "command", "x", ArtifactGenerator.Options.none(), null));
@@ -199,7 +214,7 @@ class ArtifactGeneratorTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> generator.generate(hex, "spaceship", "x", ArtifactGenerator.Options.none(), null));
-    ProjectManifest eda = project(Framework.EDA, Stack.SERVLET, "none", List.of());
+    ProjectManifest eda = project(Structure.EDA, Stack.SERVLET, "none", List.of());
     assertThrows(
         IllegalArgumentException.class,
         () -> generator.generate(eda, "controller", "x", ArtifactGenerator.Options.none(), null));
@@ -216,7 +231,7 @@ class ArtifactGeneratorTest {
 
   @Test
   void errorCodesAreNumberedAndAppended() {
-    ProjectManifest p = project(Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    ProjectManifest p = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
     ArtifactGenerator.Result first =
         generator.generate(
             p,
@@ -224,15 +239,14 @@ class ArtifactGeneratorTest {
             "limit-exceeded",
             new ArtifactGenerator.Options("unprocessable", "Daily limit exceeded", null, null),
             null);
-    String path = "src/main/java/pe/axiz/orders/business/domain/OrdersBusinessErrors.java";
+    String path = "src/main/java/pe/axiz/orders/business/domain/OrdersErrors.java";
     String errors = new String(first.created().get(path), StandardCharsets.UTF_8);
     assertTrue(
         errors.contains(
-            "\"ORDERS-ORDERSBUSINESS-0001\", ErrorCategory.UNPROCESSABLE, \"Daily limit"
-                + " exceeded\""),
+            "\"ORDERS-ORDERS-0001\", ErrorCategory.UNPROCESSABLE, \"Daily limit" + " exceeded\""),
         errors);
     assertEquals(
-        "error.ORDERS-ORDERSBUSINESS-0001=Daily limit exceeded\n",
+        "error.ORDERS-ORDERS-0001=Daily limit exceeded\n",
         first.appended().get("src/main/resources/messages.properties"));
 
     ArtifactGenerator.Result second =
@@ -240,7 +254,7 @@ class ArtifactGeneratorTest {
             p, "error-code", "account-blocked", ArtifactGenerator.Options.none(), errors);
     String updated = new String(second.updated().get(path), StandardCharsets.UTF_8);
     assertTrue(updated.contains("LIMIT_EXCEEDED") && updated.contains("ACCOUNT_BLOCKED"));
-    assertTrue(updated.contains("ORDERS-ORDERSBUSINESS-0002"));
+    assertTrue(updated.contains("ORDERS-ORDERS-0002"));
     assertTrue(second.created().isEmpty());
   }
 }

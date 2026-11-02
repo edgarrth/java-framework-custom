@@ -2,13 +2,13 @@ package pe.axiz.payments.process.application.usecase;
 
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.saga.SagaStateStore;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 import pe.axiz.payments.process.domain.PaymentProcess;
 
 /** State of the payment process of an order. */
 @UseCase
 public class GetPaymentProcessUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<GetPaymentProcessUseCase.Input, PaymentProcess> {
+    implements pe.axiz.structure.hexagonal.UseCase<GetPaymentProcessUseCase.Input, PaymentProcess> {
 
   /**
    * Input of the use case.

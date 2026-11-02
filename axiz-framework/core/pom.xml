@@ -1,35 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Aggregator only (generated list of modules); it is never deployed. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent</artifactId>
-    <version>${revision}</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
-
-  <artifactId>axiz-core-aggregator</artifactId>
-  <packaging>pom</packaging>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent</artifactId><version>${revision}</version><relativePath>../pom.xml</relativePath></parent>
+  <artifactId>axiz-core-aggregator</artifactId><packaging>pom</packaging>
   <name>axiz :: core</name>
-
-  <properties>
-    <maven.deploy.skip>true</maven.deploy.skip>
-    <maven.install.skip>true</maven.install.skip>
-  </properties>
-
+  <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
   <modules>
     <module>axiz-core-audit</module>
-    <module>axiz-core-audit-kafka</module>
-    <module>axiz-core-audit-sqs</module>
     <module>axiz-core-cache</module>
-    <module>axiz-core-cache-redis</module>
     <module>axiz-core-commons</module>
     <module>axiz-core-crypto</module>
-    <module>axiz-core-crypto-jose</module>
-    <module>axiz-core-crypto-kms</module>
     <module>axiz-core-domain</module>
     <module>axiz-core-errors</module>
     <module>axiz-core-featureflags</module>
@@ -38,45 +18,25 @@
     <module>axiz-core-i18n</module>
     <module>axiz-core-id</module>
     <module>axiz-core-idempotency</module>
-    <module>axiz-core-idempotency-dynamodb</module>
-    <module>axiz-core-idempotency-redis</module>
     <module>axiz-core-identifiers</module>
     <module>axiz-core-inbox</module>
-    <module>axiz-core-inbox-dynamodb</module>
-    <module>axiz-core-inbox-r2dbc</module>
     <module>axiz-core-lock</module>
-    <module>axiz-core-lock-dynamodb</module>
-    <module>axiz-core-lock-redis</module>
     <module>axiz-core-logging</module>
     <module>axiz-core-messaging</module>
-    <module>axiz-core-messaging-kafka</module>
-    <module>axiz-core-messaging-sns</module>
-    <module>axiz-core-messaging-sqs</module>
     <module>axiz-core-metrics</module>
     <module>axiz-core-money</module>
     <module>axiz-core-notification</module>
     <module>axiz-core-observability</module>
-    <module>axiz-core-observability-awssdk</module>
     <module>axiz-core-outbox</module>
-    <module>axiz-core-outbox-r2dbc</module>
-    <module>axiz-core-persistence-dynamodb</module>
-    <module>axiz-core-persistence-jpa</module>
-    <module>axiz-core-persistence-r2dbc</module>
     <module>axiz-core-resilience</module>
     <module>axiz-core-saga</module>
     <module>axiz-core-secrets</module>
-    <module>axiz-core-secrets-aws</module>
     <module>axiz-core-security</module>
-    <module>axiz-core-security-redis</module>
     <module>axiz-core-sensitive</module>
     <module>axiz-core-sequence</module>
-    <module>axiz-core-sequence-dynamodb</module>
     <module>axiz-core-soap</module>
     <module>axiz-core-storage</module>
-    <module>axiz-core-storage-s3</module>
-    <module>axiz-core-store-contracts</module>
     <module>axiz-core-tenancy</module>
-    <module>axiz-core-test</module>
     <module>axiz-core-time</module>
   </modules>
 </project>

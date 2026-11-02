@@ -21,7 +21,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3 # v1.12.0
@@ -45,8 +45,8 @@ jobs:
       - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
       - name: Deploy the demo
         env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
         run: kind/up.sh
       - name: Smoke test
         env:

@@ -17,7 +17,7 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.transaction.PlatformTransactionManager;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.storage.ObjectStorage;
-import pe.axiz.framework.batch.spring.StorageRecordItemReader;
+import pe.axiz.structure.batch.spring.StorageRecordItemReader;
 
 /**
  * The {@code settlement} job, one instance per file (the identifying {@code input.key} parameter):

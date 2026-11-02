@@ -1,4 +1,4 @@
-// axiz initializr web UI: no framework, no inline code (strict CSP), CSRF via the XSRF-TOKEN cookie.
+// axiz initializr web UI: no structure, no inline code (strict CSP), CSRF via the XSRF-TOKEN cookie.
 (() => {
   'use strict';
   const form = document.getElementById('project');
@@ -29,8 +29,9 @@
   const refresh = () => {
     const a = archetype();
     document.getElementById('role').textContent = a.role;
-    fill(form.framework, a.frameworks);
-    const fw = metadata.frameworks.find((f) => f.id === form.framework.value);
+    fill(form.structure, a.structures);
+    const fw = metadata.structures.find((f) => f.id === form.structure.value);
+    fill(form.extensions, ['', ...(form.structure.value === 'hexagonal' ? a.extensions : [])]);
     fill(form.stack, a.stacks.filter((s) => !fw || fw.stacks.includes(s)));
     fill(form.persistence, a.persistence.length ? a.persistence : ['none']);
     document.getElementById('openapi-required').hidden = !a.rest;
@@ -41,7 +42,7 @@
       ? 'r2dbc' : form.persistence.value;
     document.querySelectorAll('#capabilities label').forEach((label) => {
       const cap = metadata.capabilities.find((c) => c.name === label.dataset.name);
-      const supported = service && (!cap.persistence.length || cap.persistence.includes(store))
+      const supported = service && cap.stacks.includes(form.stack.value) && (!cap.persistence.length || cap.persistence.includes(store))
         && !a.starters.includes(cap.name);
       label.classList.toggle('disabled', !supported);
       label.querySelector('input').disabled = !supported;
@@ -65,7 +66,8 @@
     basePackage: form.basePackage.value.trim(),
     description: form.description.value.trim(),
     archetype: form.archetype.value,
-    framework: form.framework.value,
+    structure: form.structure.value,
+    extensions: form.extensions.value ? [form.extensions.value] : [],
     stack: form.stack.value,
     persistence: form.persistence.value,
     capabilities: [...document.querySelectorAll('#capabilities input:checked')].map((i) => i.value),
@@ -159,7 +161,7 @@
   });
   form.groupId.addEventListener('blur', () => { if (!form.groupId.value) form.groupId.value = form.groupId.placeholder; });
   form.basePackage.addEventListener('blur', () => { if (!form.basePackage.value) form.basePackage.value = form.basePackage.placeholder; });
-  ['archetype', 'framework', 'stack', 'persistence'].forEach((n) => form[n].addEventListener('change', refresh));
+  ['archetype', 'structure', 'stack', 'persistence'].forEach((n) => form[n].addEventListener('change', refresh));
 
   fetch('/v1/metadata', { credentials: 'same-origin' })
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`metadata ${r.status}`))))

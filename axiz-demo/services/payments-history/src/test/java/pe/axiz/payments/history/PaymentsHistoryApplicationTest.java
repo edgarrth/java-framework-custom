@@ -25,7 +25,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
-import pe.axiz.framework.cqrs.spring.ReactiveQueryBus;
+import pe.axiz.extension.cqrs.spring.ReactiveQueryBus;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;

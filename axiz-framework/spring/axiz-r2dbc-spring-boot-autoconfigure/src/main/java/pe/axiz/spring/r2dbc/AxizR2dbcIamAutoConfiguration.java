@@ -10,7 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.r2dbc.autoconfigure.ConnectionFactoryOptionsBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /**
  * IAM database authentication for Aurora ({@code axiz.r2dbc.iam.enabled=true}): every new

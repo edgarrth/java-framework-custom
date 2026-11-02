@@ -45,11 +45,14 @@ class OutboxTraceRelayTest {
             false,
             List.of(),
             Duration.ofSeconds(10),
-            Duration.ofMinutes(10)),
+            Duration.ofMinutes(10),
+            true,
+            Duration.ofSeconds(30)),
         new AxizMessagingProperties.Kafka(
             null, false, List.of(), null, 1, ".dlq", Duration.ofSeconds(10)),
         new AxizMessagingProperties.Sqs(
-            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)));
+            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)),
+        new AxizMessagingProperties.Routes("domain-events", Map.of()));
   }
 
   private static EventEnvelope fromOutbox() {

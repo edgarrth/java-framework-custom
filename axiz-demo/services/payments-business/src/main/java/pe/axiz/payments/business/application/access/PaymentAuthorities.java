@@ -2,7 +2,7 @@ package pe.axiz.payments.business.application.access;
 
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
-import pe.axiz.framework.cqrs.Caller;
+import pe.axiz.extension.cqrs.Caller;
 
 /**
  * Who may do what with payment orders.

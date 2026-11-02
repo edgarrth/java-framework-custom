@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-messaging-kafka</artifactId>
+  <name>axiz :: adapter :: messaging-kafka</name>
+  <description>Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-messaging-kafka</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.messaging.kafka</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-messaging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.msk</groupId>
+      <artifactId>aws-msk-iam-auth</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+</project>

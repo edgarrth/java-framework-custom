@@ -54,7 +54,7 @@ axiz:
 
 - **Timeouts obligatorios**: no existe un valor "infinito" por defecto.
 - **Reintentos solo seguros**: métodos idempotentes o requests con `Idempotency-Key`, con backoff
-  exponencial con jitter, dentro del presupuesto total. Los decide solo el framework: los
+  exponencial con jitter, dentro del presupuesto total. Los decide solo el structure: los
   reintentos automáticos de Apache HttpClient están apagados, porque reenviarían un `POST`
   respondido con 429 o 503.
 - **Headers propagados**: correlación y `Accept-Language` siempre; los demás solo si están en la

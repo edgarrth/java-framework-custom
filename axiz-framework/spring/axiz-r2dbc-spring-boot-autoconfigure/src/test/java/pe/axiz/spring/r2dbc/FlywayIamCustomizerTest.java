@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.mock.env.MockEnvironment;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /** The startup migration authenticates with a fresh IAM token, never with a stored password. */
 class FlywayIamCustomizerTest {

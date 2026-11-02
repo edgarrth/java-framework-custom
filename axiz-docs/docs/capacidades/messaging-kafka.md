@@ -10,7 +10,8 @@ axiz add messaging-kafka
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-messaging-spring-boot-starter` |
-| Dependencias | `pe.axiz:axiz-core-messaging-kafka`<br>`org.springframework.boot:spring-boot-starter-kafka`<br>`software.amazon.msk:aws-msk-iam-auth` |
+| Stacks del catálogo | servlet, reactive |
+| Dependencias | `pe.axiz:axiz-adapter-messaging-kafka`<br>`org.springframework.boot:spring-boot-starter-kafka`<br>`software.amazon.msk:aws-msk-iam-auth` |
 | Incluida por defecto en | event-processor |
 
 ## Propiedades que agrega
@@ -39,8 +40,4 @@ axizEvents.publish("orders", "order-created.v1", order.id(), new OrderCreated(or
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
-- [`axiz-core-messaging-kafka`](../referencia/core/axiz-core-messaging-kafka.md)
-- [`axiz-core-messaging-sns`](../referencia/core/axiz-core-messaging-sns.md)
-- [`axiz-core-messaging-sqs`](../referencia/core/axiz-core-messaging-sqs.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
-- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)

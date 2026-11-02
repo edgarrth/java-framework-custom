@@ -23,6 +23,10 @@ public class AxizLoggingEnvironmentPostProcessor implements EnvironmentPostProce
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
     Map<String, Object> d = new LinkedHashMap<>();
+    if (application.getWebApplicationType() == org.springframework.boot.WebApplicationType.REACTIVE
+        || "reactive".equalsIgnoreCase(env.getProperty("spring.main.web-application-type"))) {
+      d.put("logging.config", "classpath:pe/axiz/spring/logging/logback-reactive.xml");
+    }
     if (json(env)) {
       d.put("logging.structured.format.console", "logstash");
       d.put("logging.structured.json.rename.traceId", "trace_id");

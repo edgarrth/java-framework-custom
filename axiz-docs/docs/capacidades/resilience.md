@@ -10,7 +10,8 @@ axiz add resilience
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-resilience-spring-boot-starter` |
-| Incluida por defecto en | experience, process, integration |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | core, gateway, ux |
 
 ## Propiedades que agrega
 

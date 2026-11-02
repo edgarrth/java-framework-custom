@@ -5,41 +5,43 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 
 | Capacidad | Qué aporta | Incluida en |
 |---|---|---|
-| [`foundation`](foundation.md) | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults | experience, business, process, integration, event-processor, batch, crud |
-| [`web`](web.md) | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions | experience, business, process, integration, event-processor, crud |
-| [`errors`](errors.md) | RFC 9457 problem details, error catalog (ConfigMap &lt;app&gt;-errors), external error mapping | experience, business, process, integration, event-processor, batch, crud |
-| [`logging`](logging.md) | Structured JSON logs with trace and request context, HTTP access log with masking | experience, business, process, integration, event-processor, batch, crud |
-| [`observability`](observability.md) | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent | experience, business, process, integration, event-processor, batch, crud |
-| [`metrics`](metrics.md) | Generic event metrics (count, duration, amounts by currency, values) with bounded tags | experience, business, process, integration, event-processor, batch, crud |
-| [`config`](config.md) | ConfigMaps mounted as files (axiz-common, &lt;app&gt;, &lt;app&gt;-errors; no Kubernetes API access), Parameter Store, required keys check | experience, business, process, integration, event-processor, batch, crud |
-| [`i18n`](i18n.md) | Localized messages and problem details (es-PE by default) from messages*.properties | experience, business, process, integration, crud |
-| [`sensitive`](sensitive.md) | Masking of sensitive fields in responses, logs and audit by sensitivity level | experience, business, process, integration, event-processor, crud |
-| [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | experience, business, process, integration, crud |
-| [`http-client`](http-client.md) | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation | experience, process, integration |
-| [`resilience`](resilience.md) | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name | experience, process, integration |
+| [`foundation`](foundation.md) | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults | business, core, gateway, ux, support, event-processor, batch |
+| [`web`](web.md) | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions | business, core, gateway, ux, support |
+| [`errors`](errors.md) | RFC 9457 problem details, error catalog (ConfigMap &lt;app&gt;-errors), external error mapping | business, core, gateway, ux, support, event-processor, batch |
+| [`logging`](logging.md) | Structured JSON logs with trace and request context, HTTP access log with masking | business, core, gateway, ux, support, event-processor, batch |
+| [`observability`](observability.md) | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent | business, core, gateway, ux, support, event-processor, batch |
+| [`metrics`](metrics.md) | Generic event metrics (count, duration, amounts by currency, values) with bounded tags | business, core, gateway, ux, support, event-processor, batch |
+| [`config`](config.md) | ConfigMaps mounted as files (axiz-common, &lt;app&gt;, &lt;app&gt;-errors; no Kubernetes API access), Parameter Store, required keys check | business, core, gateway, ux, support, event-processor, batch |
+| [`i18n`](i18n.md) | Localized messages and problem details (es-PE by default) from messages*.properties | business, core, ux, support |
+| [`sensitive`](sensitive.md) | Masking of sensitive fields in responses, logs and audit by sensitivity level | business, core, gateway, ux, support, event-processor, batch |
+| [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | business, core, gateway, ux, support |
+| [`http-client`](http-client.md) | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation | core, gateway, ux |
+| [`resilience`](resilience.md) | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name | core, gateway, ux |
 | [`soap`](soap.md) | SOAP 1.1/1.2 clients with WS-Security, timeouts and observations | – |
-| [`secrets`](secrets.md) | Secrets from the mounted ExternalSecret directory, environment, Secrets Manager or Parameter Store, cached | integration |
+| [`secrets`](secrets.md) | Secrets from the mounted ExternalSecret directory, environment, Secrets Manager or Parameter Store, cached | business, core, gateway |
 | [`jpa`](jpa.md) | Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns | – |
 | [`r2dbc`](r2dbc.md) | Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, IAM tokens, auditing, encrypted and money columns, reader endpoint | – |
 | [`dynamodb`](dynamodb.md) | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking | – |
-| [`cache`](cache.md) | @AxizCacheable with Mono/Flux support, L1 Caffeine | experience |
+| [`cache`](cache.md) | @AxizCacheable with Mono/Flux support, L1 Caffeine | ux |
 | [`cache-redis`](cache-redis.md) | L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages | – |
+| [`storage`](storage.md) | Synchronous and native asynchronous object storage ports and Spring facades | batch |
+| [`messaging`](messaging.md) | CloudEvents ports, handlers, routes and Spring facade | event-processor |
 | [`storage-s3`](storage-s3.md) | Object storage on S3 (streaming, presigned URLs, metadata), observed | batch |
-| [`sequence`](sequence.md) | Business sequences (prefix, width, daily or monthly reset) on JDBC or DynamoDB | – |
+| [`sequence`](sequence.md) | Business sequences (prefix, width, daily or monthly reset) on JDBC, native R2DBC or DynamoDB | – |
 | [`messaging-kafka`](messaging-kafka.md) | CloudEvents over Amazon MSK with IAM auth, retries, DLQ and trace propagation | event-processor |
 | [`messaging-sqs`](messaging-sqs.md) | CloudEvents over SQS (standard and FIFO) consumers and publishers with DLQ | – |
 | [`messaging-sns`](messaging-sns.md) | CloudEvents publishing to SNS topics (fan-out) | – |
 | [`outbox`](outbox.md) | Transactional outbox in Aurora (JDBC or R2DBC) with a relay to MSK, SNS or SQS (at least once) | – |
-| [`inbox`](inbox.md) | Consumer de-duplication (inbox) with leases and retention, JDBC, R2DBC or DynamoDB | – |
-| [`idempotency`](idempotency.md) | Idempotency-Key for POST/PATCH with stored responses (in memory only in local/test; shared environments need idempotency-redis or idempotency-dynamodb) | – |
+| [`inbox`](inbox.md) | Consumer de-duplication (inbox) with leases and retention, JDBC, R2DBC or DynamoDB | event-processor |
+| [`idempotency`](idempotency.md) | Idempotency-Key for POST/PATCH with stored responses (in memory only in local/test; shared environments need idempotency-redis or idempotency-dynamodb) | gateway |
 | [`idempotency-redis`](idempotency-redis.md) | Idempotency store on ElastiCache (Redis/Valkey) | – |
 | [`idempotency-dynamodb`](idempotency-dynamodb.md) | Idempotency store on DynamoDB (conditional writes and TTL) | – |
-| [`saga`](saga.md) | Orchestrated sagas with persisted state, step retries and compensations | process |
+| [`saga`](saga.md) | Orchestrated sagas with persisted state, step retries and compensations | – |
 | [`lock`](lock.md) | Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb) | – |
 | [`lock-redis`](lock-redis.md) | Distributed locks on ElastiCache (Redis/Valkey) | – |
 | [`lock-dynamodb`](lock-dynamodb.md) | Distributed locks on DynamoDB (leases) | – |
 | [`scheduling`](scheduling.md) | @Scheduled jobs with ShedLock (JDBC, R2DBC or DynamoDB) so only one replica runs them | – |
-| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, published asynchronously | business, batch |
+| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, published asynchronously | business, core, gateway, batch |
 | [`audit-kafka`](audit-kafka.md) | Audit events published to MSK | – |
 | [`audit-sqs`](audit-sqs.md) | Audit events published to SQS | – |
 | [`crypto`](crypto.md) | Field encryption (JPA and DynamoDB converters, rotating keys from the secret store), KMS envelope encryption, blind index, JOSE, password hashing | – |

@@ -66,6 +66,22 @@ class HttpCoreTest {
   }
 
   @Test
+  void credentialDtosAreRedactedInAllMaskingChannels() {
+    var token = new AccessToken("private-token-material", Instant.now());
+    var response =
+        new AsyncHttpExchange.Response(200, "application/json", "private-response-material");
+    var masker = pe.axiz.core.sensitive.ObjectMasker.defaults();
+    for (var channel : pe.axiz.core.sensitive.OutputChannel.values()) {
+      assertFalse(
+          String.valueOf(masker.describe(token, channel)).contains("private-token-material"));
+      assertFalse(
+          String.valueOf(masker.describe(response, channel)).contains("private-response-material"));
+    }
+    assertEquals("private-token-material", token.value());
+    assertEquals("private-response-material", response.body());
+  }
+
+  @Test
   void clientCredentialsCachesAndRenewsEarly() {
     MutableClock clock = new MutableClock();
     ClientCredentialsTokenProvider provider = provider(clock);

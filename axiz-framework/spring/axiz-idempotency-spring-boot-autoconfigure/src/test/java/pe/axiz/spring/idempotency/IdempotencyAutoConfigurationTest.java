@@ -7,10 +7,10 @@ import org.springframework.aop.Advisor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
+import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
-import pe.axiz.core.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** Which store and which filter a service gets, and where the in-memory store is refused. */

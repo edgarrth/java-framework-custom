@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- {{project.title}}: layer 2, Spring Boot auto-configuration. -->
+<!-- {{project.title}}: layer 3, Spring Boot auto-configuration. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>{{axizVersion}}</version>
     <relativePath/>
   </parent>
 
   <groupId>{{project.groupId}}</groupId>
-  <artifactId>{{project.artifactId}}-spring-boot-autoconfigure</artifactId>
+  <artifactId>{{platform.capabilityArtifact}}-spring-boot-autoconfigure</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>{{project.title}} (auto-configuration)</name>
   <description>{{project.descriptionXml}} (auto-configuration)</description>
@@ -28,7 +28,7 @@
     </dependency>
     <dependency>
       <groupId>{{project.groupId}}</groupId>
-      <artifactId>{{project.artifactId}}</artifactId>
+      <artifactId>{{platform.coreArtifact}}</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

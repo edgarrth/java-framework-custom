@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-crypto-spring-boot-autoconfigure</artifactId>
@@ -19,6 +19,10 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -34,13 +38,13 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-crypto-kms</artifactId>
+      <artifactId>axiz-adapter-crypto-kms</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-crypto-jose</artifactId>
+      <artifactId>axiz-adapter-crypto-jose</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>

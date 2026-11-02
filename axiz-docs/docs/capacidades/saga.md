@@ -10,8 +10,9 @@ axiz add saga
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-saga-spring-boot-starter` |
+| Stacks del catálogo | servlet |
 | Agrega también | [`jpa`](jpa.md) |
-| Incluida por defecto en | process |
+| Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
 

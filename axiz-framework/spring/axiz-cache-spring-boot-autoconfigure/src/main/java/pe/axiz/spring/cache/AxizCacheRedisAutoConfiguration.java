@@ -11,8 +11,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.cache.redis.RedisByteCache;
 import pe.axiz.core.cache.ByteCache;
-import pe.axiz.core.cache.redis.RedisByteCache;
 
 /**
  * L2 cache on ElastiCache using Boot's Redis connection settings ({@code spring.data.redis.*}, TLS
@@ -22,7 +22,7 @@ import pe.axiz.core.cache.redis.RedisByteCache;
     afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")
 @ConditionalOnClass(
     name = {
-      "pe.axiz.core.cache.redis.RedisByteCache",
+      "pe.axiz.adapter.cache.redis.RedisByteCache",
       "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory"
     })
 @ConditionalOnBean(LettuceConnectionFactory.class)
@@ -39,8 +39,15 @@ public class AxizCacheRedisAutoConfiguration {
   }
 
   @Bean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   ByteCache axizL2Cache(
       @Qualifier("axizCacheRedisConnection") StatefulRedisConnection<String, byte[]> connection) {
     return new RedisByteCache(connection.sync());
+  }
+
+  @Bean
+  pe.axiz.core.cache.AsyncByteCache axizAsyncL2Cache(
+      @Qualifier("axizCacheRedisConnection") StatefulRedisConnection<String, byte[]> connection) {
+    return new pe.axiz.adapter.cache.redis.RedisAsyncByteCache(connection.async());
   }
 }

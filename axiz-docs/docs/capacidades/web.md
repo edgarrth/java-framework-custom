@@ -10,7 +10,8 @@ axiz add web
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-web-spring-boot-starter` |
-| Incluida por defecto en | experience, business, process, integration, event-processor, crud |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | business, core, gateway, ux, support |
 
 ## Propiedades que agrega
 

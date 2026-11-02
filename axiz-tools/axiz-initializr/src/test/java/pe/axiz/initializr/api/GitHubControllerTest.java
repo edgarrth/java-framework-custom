@@ -107,8 +107,8 @@ class GitHubControllerTest {
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"name\":\"orders-business\",\"groupId\":\"pe.axiz.orders\","
-                        + "\"basePackage\":\"pe.axiz.orders.business\",\"archetype\":\"business\"}"))
+                    "{\"name\":\"orders\",\"groupId\":\"pe.axiz.orders\","
+                        + "\"basePackage\":\"pe.axiz.orders\",\"archetype\":\"business\"}"))
         .andExpect(status().isForbidden())
         .andExpect(header().doesNotExist("Location"))
         .andExpect(jsonPath("$.registration").value("github"))

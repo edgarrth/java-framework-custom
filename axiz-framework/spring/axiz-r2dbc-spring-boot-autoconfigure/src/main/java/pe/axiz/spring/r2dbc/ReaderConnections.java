@@ -9,7 +9,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.r2dbc.ConnectionFactoryBuilder;
 import org.springframework.boot.r2dbc.ConnectionFactoryDecorator;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /** Builds the pooled connection factory of the reader endpoint. */
 final class ReaderConnections {

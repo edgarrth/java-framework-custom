@@ -18,6 +18,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `ReactiveInbox` | Deferred application facade over native DynamoDB or R2DBC; preserves cancellation and Reactor transaction context. |
 | `AxizInboxAutoConfiguration` | Inbox: the messaging dispatcher skips event ids a consumer already processed. |
 | `AxizInboxDynamoDbAutoConfiguration` | DynamoDB inbox (`axiz.inbox.store=dynamodb`); expired items are removed by the table TTL. |
 | `AxizInboxProperties` | Idempotent consumption (`axiz.inbox.*`): processed message ids per consumer. |

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-kit-r2dbc</artifactId>
+  <name>axiz :: kit :: r2dbc</name>
+  <description>Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens</description>
+
+  <properties>
+    <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
+    <axiz.api.baseline.artifactId>axiz-core-persistence-r2dbc</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.kit.r2dbc</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.r2dbc</groupId>
+      <artifactId>r2dbc-spi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+    </dependency>
+    <!-- IAM authentication tokens for Aurora; only needed when axiz.r2dbc.iam.enabled -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>rds</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-test-support</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.relational.core.mapping.Table;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.persistence.r2dbc.EncryptedText;
+import pe.axiz.kit.r2dbc.EncryptedText;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
 import pe.axiz.spring.r2dbc.AuditableRow;

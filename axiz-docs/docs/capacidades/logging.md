@@ -10,7 +10,8 @@ axiz add logging
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-logging-spring-boot-starter` |
-| Incluida por defecto en | experience, business, process, integration, event-processor, batch, crud |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | business, core, gateway, ux, support, event-processor, batch |
 
 ## Propiedades que agrega
 

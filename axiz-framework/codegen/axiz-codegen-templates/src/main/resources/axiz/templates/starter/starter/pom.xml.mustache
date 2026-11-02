@@ -6,13 +6,13 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>{{axizVersion}}</version>
     <relativePath/>
   </parent>
 
   <groupId>{{project.groupId}}</groupId>
-  <artifactId>{{project.artifactId}}-spring-boot-starter</artifactId>
+  <artifactId>{{platform.capabilityArtifact}}-spring-boot-starter</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>{{project.title}} (starter)</name>
   <description>{{project.descriptionXml}}</description>
@@ -26,7 +26,7 @@
   <dependencies>
     <dependency>
       <groupId>{{project.groupId}}</groupId>
-      <artifactId>{{project.artifactId}}-spring-boot-autoconfigure</artifactId>
+      <artifactId>{{platform.capabilityArtifact}}-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

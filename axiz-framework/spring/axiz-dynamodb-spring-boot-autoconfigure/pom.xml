@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-dynamodb-spring-boot-autoconfigure</artifactId>
@@ -19,13 +19,17 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-persistence-dynamodb</artifactId>
+      <artifactId>axiz-kit-dynamodb</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -34,7 +38,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-observability-awssdk</artifactId>
+      <artifactId>axiz-adapter-observability-aws</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

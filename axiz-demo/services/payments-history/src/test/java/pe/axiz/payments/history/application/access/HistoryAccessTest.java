@@ -12,7 +12,7 @@ import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.money.Money;
-import pe.axiz.framework.cqrs.Caller;
+import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.history.application.InMemoryPaymentHistories;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;

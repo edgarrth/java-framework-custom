@@ -1,0 +1,46 @@
+<!-- generated -->
+# axiz-adapter-storage-s3
+
+Amazon S3 object storage with SSE-KMS and presigned URLs.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-storage-s3</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `S3AsyncObjectStorage` | Native S3AsyncClient streaming, explicit cancellation and sequential bounded listing. |
+| `S3ObjectStorage` | Amazon S3 storage: streaming upload and download, SSE-KMS with the configured key, presigned URLs bounded by a maximum TTL. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-storage-s3 verify`.
+
+## Native asynchronous transport
+
+Use `presignUpload` when delegating a PUT to an HTTP client. Apply its URI and every returned
+header, including SSE-KMS and content type. The legacy URL-only method remains available, but
+cannot communicate the required headers. `Host` is derived by the HTTP client from the URI.
+
+`S3AsyncObjectStorage` implements the JDK-only `AsyncObjectStorage` port. Its private bridges
+translate JDK Flow and the SDK protocol without Reactor or object aggregation. Each delivered
+chunk has independent ownership. Closing an unconsumed download cancels its body and releases
+its connection. Listing owns and cancels the exact SDK request for the active page; it uses a
+trampoline so already-completed pages do not consume the Java stack.
+
+Both adapters share key validation, metadata, checksums, SSE-KMS and presign policy. The maximum
+URL validity must be between one second and seven days; per-call validity is positive and capped
+at that maximum. Missing objects return empty; bucket and permission errors propagate.
+
+Clients and presigner are borrowed. Construct them at startup using `AsyncAwsClients`, with
+explicit region, native Netty transport, background credential refresh and a snapshot-only
+`credentialsProvider()` for the presigner. Never construct a default credential chain per request.

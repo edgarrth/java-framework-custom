@@ -95,6 +95,13 @@ public final class CapabilityAdder {
       return new Result(List.of(), List.of(), List.of(), requested.example());
     }
     for (Capability c : missing) {
+      if (!c.supports(manifest.stack()))
+        throw new IllegalArgumentException(
+            "Capability " + c.name() + " does not support " + manifest.stack().id());
+      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
+          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
+        throw new IllegalArgumentException(
+            "Archetype " + manifest.archetype() + " cannot use domain messaging");
       if (c.name().equals("jpa") && !"aurora".equals(persistence)) {
         throw new IllegalArgumentException(
             "Capability " + capability + " needs Aurora (JPA); the project uses " + persistence);
@@ -122,6 +129,13 @@ public final class CapabilityAdder {
     String pomText = Files.readString(pom, StandardCharsets.UTF_8);
     String updated = pomText;
     for (Capability c : missing) {
+      if (!c.supports(manifest.stack()))
+        throw new IllegalArgumentException(
+            "Capability " + c.name() + " does not support " + manifest.stack().id());
+      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
+          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
+        throw new IllegalArgumentException(
+            "Archetype " + manifest.archetype() + " cannot use domain messaging");
       updated = PomEditor.addDependency(updated, "pe.axiz", c.starter(), null);
       for (String d : c.dependencies(store)) {
         String[] ga = d.split(":", -1);
@@ -138,6 +152,13 @@ public final class CapabilityAdder {
     Set<String> keys = new LinkedHashSet<>();
     Set<String> secrets = new LinkedHashSet<>();
     for (Capability c : missing) {
+      if (!c.supports(manifest.stack()))
+        throw new IllegalArgumentException(
+            "Capability " + c.name() + " does not support " + manifest.stack().id());
+      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
+          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
+        throw new IllegalArgumentException(
+            "Archetype " + manifest.archetype() + " cannot use domain messaging");
       properties.putAll(c.properties(store));
       local.putAll(c.localProperties());
       keys.addAll(c.configMapKeys());
@@ -173,6 +194,13 @@ public final class CapabilityAdder {
       StringBuilder sql = new StringBuilder();
       TemplateSet service = TemplateSet.load("service");
       for (Capability c : missing) {
+        if (!c.supports(manifest.stack()))
+          throw new IllegalArgumentException(
+              "Capability " + c.name() + " does not support " + manifest.stack().id());
+        if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
+            && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
+          throw new IllegalArgumentException(
+              "Archetype " + manifest.archetype() + " cannot use domain messaging");
         String schema = SCHEMAS.get(c.name());
         if (schema != null) {
           sql.append('\n')

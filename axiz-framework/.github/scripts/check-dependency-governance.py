@@ -7,7 +7,7 @@ Fails when:
 - a module declares the same dependency twice;
 - a version property is defined in more than one POM with different values (the root POM needs a
   few versions for its plugins that axiz-dependencies also manages: they must stay equal);
-- a style starter (frameworks/*) brings a connection pool on its own. Persistence is the service's
+- a structure/extension starter (structures/*, extensions/*) brings a connection pool on its own. Persistence is the service's
   choice: a pool on the classpath makes Spring Boot require a database, so a service on DynamoDB, or
   without persistence, would not start. The batch style is exempt (Spring Batch keeps its job
   repository in Aurora, which the batch archetype always has).
@@ -26,7 +26,7 @@ OWNERS = ("platform/axiz-dependencies/pom.xml", "pom.xml")
 # artifacts that make Spring Boot create a DataSource or a ConnectionFactory
 POOLS = {"spring-boot-starter-jdbc", "spring-boot-starter-data-jpa", "spring-boot-starter-data-r2dbc",
          "HikariCP", "r2dbc-pool"}
-STYLES_WITH_DATABASE = {"axiz-framework-batch-spring-boot-starter"}
+STYLES_WITH_DATABASE = {"axiz-structure-batch-spring-boot-starter"}
 
 
 def text(element, tag):
@@ -46,7 +46,7 @@ def runtime_dependencies(project):
 
 def check_style_starters(modules, errors):
     for artifact, (path, deps) in sorted(modules.items()):
-        if not ("/frameworks/" in path and artifact.endswith("-spring-boot-starter")):
+        if not (("/structures/" in path or "/extensions/" in path) and artifact.endswith("-spring-boot-starter")):
             continue
         if artifact in STYLES_WITH_DATABASE:
             continue
@@ -62,7 +62,7 @@ def check_style_starters(modules, errors):
             if group and group.startswith("pe.axiz") and name in modules:
                 stack += [(d, via + [name]) for d in modules[name][1]]
         if trail:
-            errors.append(f"{path}: the style starter brings a connection pool ({trail}); make that "
+            errors.append(f"{path}: the structure/extension starter brings a connection pool ({trail}); make that "
                           "dependency optional and let the service choose its persistence")
 
 

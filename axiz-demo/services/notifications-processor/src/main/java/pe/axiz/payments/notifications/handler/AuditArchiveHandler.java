@@ -2,8 +2,8 @@ package pe.axiz.payments.notifications.handler;
 
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
-import pe.axiz.framework.eda.HandlesEvent;
-import pe.axiz.framework.eda.TypedEventHandler;
+import pe.axiz.core.messaging.HandlesEvent;
+import pe.axiz.core.messaging.TypedEventHandler;
 import pe.axiz.payments.notifications.archive.AuditArchive;
 import pe.axiz.payments.notifications.event.AuditRecord;
 

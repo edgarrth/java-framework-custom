@@ -10,8 +10,9 @@ axiz add lock-redis
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-lock-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`lock`](lock.md) |
-| Dependencias | `pe.axiz:axiz-core-lock-redis`<br>`org.springframework.boot:spring-boot-starter-data-redis` |
+| Dependencias | `pe.axiz:axiz-adapter-lock-redis`<br>`org.springframework.boot:spring-boot-starter-data-redis` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -37,5 +38,3 @@ axiz.lock.store: redis
 
 - [`axiz-lock-spring-boot-autoconfigure`](../referencia/spring/axiz-lock-spring-boot-autoconfigure.md)
 - [`axiz-core-lock`](../referencia/core/axiz-core-lock.md)
-- [`axiz-core-lock-dynamodb`](../referencia/core/axiz-core-lock-dynamodb.md)
-- [`axiz-core-lock-redis`](../referencia/core/axiz-core-lock-redis.md)

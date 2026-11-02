@@ -2,20 +2,27 @@
 
 {{project.description}}.
 
-A new axiz capability, built like the framework modules:
+A new axiz capability, built from a core library and Spring Boot wiring:
 
 | Module | Layer | Contents |
 |---|---|---|
-| `{{project.name}}` | 1 | Plain Java API and implementation (no Spring) |
-| `{{project.name}}-spring-boot-autoconfigure` | 2 | `{{platform.autoConfigurationClass}}` and `{{platform.propertiesClass}}` (`{{platform.prefix}}.*`) |
-| `{{project.name}}-spring-boot-starter` | 2 | The dependency services add |
+| `{{platform.coreArtifact}}` | 1 | Plain Java API and implementation (no Spring) |
+| `{{platform.capabilityArtifact}}-spring-boot-autoconfigure` | 3 | `{{platform.autoConfigurationClass}}` and `{{platform.propertiesClass}}` (`{{platform.prefix}}.*`) |
+| `{{platform.capabilityArtifact}}-spring-boot-starter` | 3 | The dependency services add |
+
+The core types remain under `{{project.basePackage}}`; Spring wiring lives separately under
+`{{platform.springPackage}}`.
 
 Rules: layer 1 never depends on Spring; the auto-configuration depends only on its own library
 (and the foundation starter if needed); every bean is `@ConditionalOnMissingBean`; properties are an
 immutable record with defaults; tests use `ApplicationContextRunner`. A capability that enters the
-framework arrives through an RFC and with its use case in the demo.
+structure arrives through an RFC and with its use case in the demo.
 
-`./mvnw verify` builds the three modules; `develop` publishes SNAPSHOTs and release tags publish
-the release to Nexus. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
+The aggregator inherits `axiz-parent` to share the tool versions; each child keeps its own
+layer parent. `./mvnw verify` builds the three modules. `ci.yaml` uses the Axiz 2.0.0 `lib-build` contract to
+retain tested Maven bytes and a signed manifest. `deploy.yaml` independently promotes a completed
+successful run with its attempt, external manifest SHA-256, environment and predecessor hash.
+Builds use Nexus read credentials; promotion uses separate publish credentials. Release-please
+prepares a draft which promotion publishes after retaining the verified signed manifest. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
 nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
 `release-please-config.json`); later ones follow Conventional Commits.

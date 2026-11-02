@@ -8,7 +8,7 @@ Salida de `--help` de cada comando de la versión publicada.
 ```text
 Usage: axiz [-hV] [COMMAND]
 axiz platform: create services from a contract and keep them coherent with the
-framework.
+structure.
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
@@ -30,24 +30,28 @@ Commands:
 ```text
 Usage: axiz new [-hiV] [--force] [-a=<archetype>] [--asyncapi=<asyncapi>]
                 [--axiz-version=<axizVersion>] [-d=<dir>]
-                [--description=<description>] [-f=<framework>] [-g=<group>]
+                [--description=<description>] [-f=<structure>] [-g=<group>]
                 [-o=<output>] [--openapi=<openapi>] [-p=<persistence>]
                 [--package=<basePackage>] [-s=<stack>] [--server=<server>]
-                [-c=<capabilities>]... [<name>]
+                [-c=<capabilities>]... [--extension=<extensions>[,
+                <extensions>...]]... [<name>]
 Creates a project from an archetype (interactive with -i).
-      [<name>]              Project name in kebab-case, e.g. payments-business.
+      [<name>]              Project capability name in kebab-case, e.g.
+                              payment-orders.
   -a, --archetype=<archetype>
                             Archetype (see axiz catalog).
       --asyncapi=<asyncapi> AsyncAPI contract of the events (optional).
       --axiz-version=<axizVersion>
-                            Framework version (default: the one of this CLI).
+                            Structure version (default: the one of this CLI).
   -c, --capability=<capabilities>
                             Extra capability (repeatable).
   -d, --dir=<dir>           Project directory (default: current directory).
       --description=<description>
                             One-line description.
-  -f, --framework=<framework>
-                            Style: layered, hexagonal, cqrs, eda, bff, batch.
+      --extension, --extensions=<extensions>[,<extensions>...]
+                            Optional extensions: cqrs (hexagonal only).
+  -f, --structure=<structure>
+                            Structure: layered, hexagonal, eda, bff, batch.
       --force               Overwrite files of an existing folder.
   -g, --group=<group>       Maven group (default pe.axiz.<domain>).
   -h, --help                Show this help message and exit.
@@ -65,7 +69,8 @@ Creates a project from an archetype (interactive with -i).
   -V, --version             Print version information and exit.
 
 Examples:
-  axiz new payments-business --archetype business --openapi api.yaml
+  axiz new payment-orders --archetype business --structure hexagonal --openapi
+api.yaml
   axiz new notifications-processor --archetype event-processor -c inbox -c
 messaging-sns
   axiz new -i
@@ -131,14 +136,22 @@ Commands:
 ## `axiz upgrade --help`
 
 ```text
-Usage: axiz upgrade [-hV] [--dry-run] [--skip-rewrite] [-d=<dir>] [--to=<to>]
+Usage: axiz upgrade [-hV] [--dry-run] [--skip-rewrite]
+                    [--archetype=<archetype>] [-d=<dir>] [--rename=<rename>]
+                    [--to=<to>]
 Upgrades the axiz version applying the OpenRewrite recipes.
-  -d, --dir=<dir>      Project directory (default: current directory).
-      --dry-run        Show what would change (rewrite:dryRun), change nothing.
-  -h, --help           Show this help message and exit.
-      --skip-rewrite   Only update the versions.
-      --to=<to>        Target version (default: the version of this CLI).
-  -V, --version        Print version information and exit.
+      --archetype=<archetype>
+                          Resolve legacy integration explicitly: core or
+                            gateway.
+  -d, --dir=<dir>         Project directory (default: current directory).
+      --dry-run           Show what would change (rewrite:dryRun), change
+                            nothing.
+  -h, --help              Show this help message and exit.
+      --rename=<rename>   New deployment name; preserves stateful identities
+                            and Java packages.
+      --skip-rewrite      Only update the versions.
+      --to=<to>           Target version (default: the version of this CLI).
+  -V, --version           Print version information and exit.
 ```
 
 ## `axiz doctor --help`

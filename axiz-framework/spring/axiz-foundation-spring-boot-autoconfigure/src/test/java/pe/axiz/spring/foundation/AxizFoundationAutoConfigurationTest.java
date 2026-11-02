@@ -60,6 +60,67 @@ class AxizFoundationAutoConfigurationTest {
   }
 
   @Test
+  void numericAndTextualMoneyKeepExactlyTheSameDecimalValue() {
+    JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
+    for (String literal :
+        java.util.List.of(
+            "9007199254740992.01",
+            "-9007199254740992.01",
+            "999999999999999999999999999999.99",
+            "1e-2",
+            "150.500",
+            "0")) {
+      Money expected = Money.ofExact(literal, "PEN");
+      for (String amount : java.util.List.of(literal, "\"" + literal + "\"")) {
+        for (String json :
+            java.util.List.of(
+                "{\"amount\":" + amount + ",\"currency\":\"PEN\"}",
+                "{\"currency\":\"PEN\",\"extra\":{\"nested\":[1]},\"amount\":" + amount + "}")) {
+          Money actual = mapper.readValue(json, Money.class);
+          assertEquals(expected, actual);
+          assertEquals(expected, mapper.readValue(mapper.writeValueAsString(actual), Money.class));
+        }
+      }
+    }
+    for (String value :
+        java.util.List.of(
+            "0.100000000000000000001",
+            "-0.100000000000000000001",
+            "9007199254740992.001",
+            "1e-3")) {
+      for (String amount : java.util.List.of(value, "\"" + value + "\"")) {
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                mapper.readValue("{\"currency\":\"PEN\",\"amount\":" + amount + "}", Money.class));
+      }
+    }
+  }
+
+  @Test
+  void invalidOrAmbiguousMoneyJsonIsRejected() {
+    JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
+    for (String json :
+        java.util.List.of(
+            "[]",
+            "42",
+            "true",
+            "{}",
+            "{\"currency\":\"PEN\"}",
+            "{\"amount\":null,\"currency\":\"PEN\"}",
+            "{\"amount\":false,\"currency\":\"PEN\"}",
+            "{\"amount\":[],\"currency\":\"PEN\"}",
+            "{\"amount\":\"invalid\",\"currency\":\"PEN\"}",
+            "{\"amount\":1,\"currency\":1}",
+            "{\"amount\":1,\"currency\":null}",
+            "{\"amount\":1,\"amount\":2,\"currency\":\"PEN\"}",
+            "{\"amount\":1,\"currency\":\"PEN\",\"currency\":\"USD\"}",
+            "{\"amount\":1,\"currency\":\"PEN\"")) {
+      assertThrows(JacksonException.class, () -> mapper.readValue(json, Money.class), json);
+    }
+  }
+
+  @Test
   void validatorUsesRegistry() {
     IdentifierConstraintValidator v = new IdentifierConstraintValidator();
     v.initialize(Holder.class.getRecordComponents()[0].getAnnotation(ValidIdentifier.class));

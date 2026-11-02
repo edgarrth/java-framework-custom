@@ -112,13 +112,14 @@ public final class ContractSync {
             manifest.basePackage(),
             "",
             manifest.archetype(),
-            manifest.framework(),
+            manifest.structure(),
             manifest.stack(),
             manifest.persistence(),
             List.of(),
             text,
             null,
-            manifest.axizVersion());
+            manifest.axizVersion(),
+            manifest.extensions());
     Map<String, Object> context = generator.context(request, archetype, contract);
     Map<String, byte[]> rendered =
         JavaFormatter.formatAll(TemplateSet.load("service").render(context));

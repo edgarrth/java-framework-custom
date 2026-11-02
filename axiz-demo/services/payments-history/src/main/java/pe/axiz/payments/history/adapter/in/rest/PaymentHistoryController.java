@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
-import pe.axiz.framework.cqrs.spring.ReactiveQueryBus;
+import pe.axiz.extension.cqrs.spring.ReactiveQueryBus;
 import pe.axiz.payments.history.api.model.PaymentHistoryItem;
 import pe.axiz.payments.history.api.model.PaymentHistoryPage;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;

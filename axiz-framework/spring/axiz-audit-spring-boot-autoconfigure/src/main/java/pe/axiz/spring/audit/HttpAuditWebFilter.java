@@ -3,6 +3,7 @@ package pe.axiz.spring.audit;
 import java.net.InetSocketAddress;
 import java.util.Locale;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.HandlerMapping;
@@ -11,20 +12,45 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import org.springframework.web.util.pattern.PathPattern;
 import pe.axiz.core.audit.AuditTrail;
+import pe.axiz.core.errors.AxizException;
 import reactor.core.publisher.Mono;
 
 /** Reactive counterpart of {@link HttpAuditFilter}. */
 public class HttpAuditWebFilter implements WebFilter, Ordered {
 
-  private final AuditTrail trail;
+  private final @Nullable AuditTrail trail;
+  private final @Nullable ReactiveAuditTrail nativeTrail;
   private final AuditContextResolver context;
   private final HttpAuditRules rules;
 
   public HttpAuditWebFilter(
       AuditTrail trail, AuditContextResolver context, AxizAuditProperties.Http http) {
-    this.trail = Objects.requireNonNull(trail);
-    this.context = Objects.requireNonNull(context);
-    this.rules = new HttpAuditRules(http);
+    this(
+        Objects.requireNonNull(trail),
+        null,
+        Objects.requireNonNull(context),
+        new HttpAuditRules(http));
+  }
+
+  /** Native variant; audit completion participates in the request's reactive lifecycle. */
+  public HttpAuditWebFilter(
+      ReactiveAuditTrail trail, AuditContextResolver context, AxizAuditProperties.Http http) {
+    this(
+        null,
+        Objects.requireNonNull(trail),
+        Objects.requireNonNull(context),
+        new HttpAuditRules(http));
+  }
+
+  private HttpAuditWebFilter(
+      @Nullable AuditTrail trail,
+      @Nullable ReactiveAuditTrail nativeTrail,
+      AuditContextResolver context,
+      HttpAuditRules rules) {
+    this.trail = trail;
+    this.nativeTrail = nativeTrail;
+    this.context = context;
+    this.rules = rules;
   }
 
   @Override
@@ -33,6 +59,8 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
     if (!rules.audited(method, exchange.getRequest().getPath().pathWithinApplication().value())) {
       return chain.filter(exchange);
     }
+    if (nativeTrail != null) return nativeFilter(nativeTrail, exchange, chain, method);
+    AuditTrail imperative = Objects.requireNonNull(trail);
     InetSocketAddress remote = exchange.getRequest().getRemoteAddress();
     AuditTrail.Context ctx =
         context.current(
@@ -48,7 +76,7 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
               HttpStatusCode status = exchange.getResponse().getStatusCode();
               int code = status != null ? status.value() : 200;
               AuditTrail.Builder record =
-                  trail
+                  imperative
                       .record(
                           "http." + method.toLowerCase(Locale.ROOT),
                           pattern != null ? pattern.getPatternString() : "unmatched")
@@ -65,6 +93,56 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
                     .warn("Audit event could not be recorded", e);
               }
             });
+  }
+
+  private Mono<Void> nativeFilter(
+      ReactiveAuditTrail nativeAudit,
+      ServerWebExchange exchange,
+      WebFilterChain chain,
+      String method) {
+    return Mono.deferContextual(
+        ctx -> {
+          InetSocketAddress remote = exchange.getRequest().getRemoteAddress();
+          AuditTrail.Context actor =
+              ReactiveAuditContext.current(
+                  context,
+                  ctx,
+                  remote != null && remote.getAddress() != null
+                      ? remote.getAddress().getHostAddress()
+                      : null);
+          return ReactiveAudit.around(
+              Mono.defer(() -> chain.filter(exchange)),
+              ignored -> nativeRecord(nativeAudit, exchange, method, actor, null),
+              error -> nativeRecord(nativeAudit, exchange, method, actor, error));
+        });
+  }
+
+  private static Mono<Void> nativeRecord(
+      ReactiveAuditTrail trail,
+      ServerWebExchange exchange,
+      String method,
+      AuditTrail.Context actor,
+      @Nullable Throwable error) {
+    return Mono.defer(
+        () -> {
+          PathPattern pattern =
+              exchange.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+          HttpStatusCode status = exchange.getResponse().getStatusCode();
+          int code = status != null ? status.value() : error == null ? 200 : 500;
+          var record =
+              trail
+                  .record(
+                      "http." + method.toLowerCase(Locale.ROOT),
+                      pattern != null ? pattern.getPatternString() : "unmatched")
+                  .context(actor)
+                  .detail("status", code);
+          if (error != null)
+            return record.failure(
+                error instanceof AxizException ax
+                    ? ax.code().value()
+                    : error.getClass().getSimpleName());
+          return code >= 400 ? record.failure("HTTP-" + code) : record.success();
+        });
   }
 
   @Override

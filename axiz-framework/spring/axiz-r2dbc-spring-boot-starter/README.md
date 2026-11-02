@@ -1,4 +1,3 @@
-<!-- generated -->
 # axiz-r2dbc-spring-boot-starter
 
 Aurora PostgreSQL for reactive services over R2DBC.
@@ -13,3 +12,9 @@ Aurora PostgreSQL for reactive services over R2DBC.
 ```
 
 The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Native images
+
+The starter includes native-image metadata that initializes the R2DBC proxy observation
+listener at application startup. Its Micrometer logger therefore uses the running application's
+logging backend. The setting is scoped to that listener; SQL observations remain enabled.

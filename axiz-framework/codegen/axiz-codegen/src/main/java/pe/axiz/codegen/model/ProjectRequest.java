@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
  * @param basePackage base Java package
  * @param description one-line description
  * @param archetype archetype id
- * @param framework style
+ * @param structure style
  * @param stack stack
  * @param persistence {@code none}, {@code aurora} or {@code dynamodb}
  * @param capabilities extra capability ids
@@ -26,20 +26,57 @@ public record ProjectRequest(
     String basePackage,
     String description,
     String archetype,
-    Framework framework,
+    Structure structure,
     Stack stack,
     String persistence,
     List<String> capabilities,
     @Nullable String openApi,
     @Nullable String asyncApi,
-    String frameworkVersion) {
+    String frameworkVersion,
+    List<Extension> extensions) {
+
+  public ProjectRequest(
+      String name,
+      String groupId,
+      String basePackage,
+      String description,
+      String archetype,
+      Structure structure,
+      Stack stack,
+      String persistence,
+      List<String> capabilities,
+      @Nullable String openApi,
+      @Nullable String asyncApi,
+      String frameworkVersion) {
+    this(
+        name,
+        groupId,
+        basePackage,
+        description,
+        archetype,
+        structure,
+        stack,
+        persistence,
+        capabilities,
+        openApi,
+        asyncApi,
+        frameworkVersion,
+        List.of());
+  }
+
+  public boolean cqrs() {
+    return extensions.contains(Extension.CQRS);
+  }
 
   public ProjectRequest {
+    extensions = List.copyOf(extensions);
+    if (new java.util.HashSet<>(extensions).size() != extensions.size())
+      throw new IllegalArgumentException("Duplicate service extension");
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(groupId, "groupId");
     Objects.requireNonNull(basePackage, "basePackage");
     Objects.requireNonNull(archetype, "archetype");
-    Objects.requireNonNull(framework, "framework");
+    Objects.requireNonNull(structure, "structure");
     Objects.requireNonNull(stack, "stack");
     Objects.requireNonNull(persistence, "persistence");
     capabilities = List.copyOf(capabilities);

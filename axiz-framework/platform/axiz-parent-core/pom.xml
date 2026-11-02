@@ -50,7 +50,7 @@
             <configuration>
               <rules>
                 <bannedDependencies>
-                  <message>Layer 1 (core) is pure Java: Spring, Quarkus and compile-scope test libraries are not allowed</message>
+                  <message>Core contracts cannot depend on technology, reactive APIs, runtimes or upper layers</message>
                   <excludes>
                     <exclude>org.springframework:*</exclude>
                     <exclude>org.springframework.boot:*</exclude>
@@ -61,6 +61,27 @@
                     <exclude>org.assertj:*:*:*:compile</exclude>
                     <exclude>org.mockito:*:*:*:compile</exclude>
                     <exclude>org.testcontainers:*:*:*:compile</exclude>
+
+                    <exclude>software.amazon.awssdk:*:*:*:compile</exclude>
+                    <exclude>software.amazon.awssdk:*:*:*:runtime</exclude>
+                    <exclude>io.lettuce:*:*:*:compile</exclude>
+                    <exclude>io.lettuce:*:*:*:runtime</exclude>
+                    <exclude>org.apache.kafka:*:*:*:compile</exclude>
+                    <exclude>org.apache.kafka:*:*:*:runtime</exclude>
+                    <exclude>io.r2dbc:*:*:*:compile</exclude>
+                    <exclude>io.r2dbc:*:*:*:runtime</exclude>
+                    <exclude>jakarta.persistence:*:*:*:compile</exclude>
+                    <exclude>jakarta.persistence:*:*:*:runtime</exclude>
+                    <exclude>com.nimbusds:*:*:*:compile</exclude>
+                    <exclude>com.nimbusds:*:*:*:runtime</exclude>
+                    <exclude>io.projectreactor:*:*:*:compile</exclude>
+                    <exclude>io.projectreactor:*:*:*:runtime</exclude>
+                    <exclude>org.reactivestreams:*:*:*:compile</exclude>
+                    <exclude>org.reactivestreams:*:*:*:runtime</exclude>
+                    <exclude>pe.axiz:axiz-adapter-*:*:*:compile</exclude>
+                    <exclude>pe.axiz:axiz-adapter-*:*:*:runtime</exclude>
+                    <exclude>pe.axiz:axiz-kit-*:*:*:compile</exclude>
+                    <exclude>pe.axiz:axiz-kit-*:*:*:runtime</exclude>
                   </excludes>
                   <searchTransitive>true</searchTransitive>
                 </bannedDependencies>

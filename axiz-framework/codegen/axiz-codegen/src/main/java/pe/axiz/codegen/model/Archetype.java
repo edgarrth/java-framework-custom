@@ -9,7 +9,7 @@ import java.util.Objects;
  *
  * @param name archetype id
  * @param role short description
- * @param frameworks allowed styles, the first one is the default
+ * @param structures allowed styles, the first one is the default
  * @param stacks allowed stacks, the first one is the default
  * @param persistence allowed persistence options ({@code none}, {@code aurora}, {@code dynamodb}),
  *     first is default; empty when the archetype has no persistence
@@ -22,30 +22,32 @@ import java.util.Objects;
 public record Archetype(
     String name,
     String role,
-    List<Framework> frameworks,
+    List<Structure> structures,
     List<Stack> stacks,
     List<String> persistence,
     List<String> starters,
     String deployment,
     boolean rest,
     String kind,
-    Map<String, Object> properties) {
+    Map<String, Object> properties,
+    List<Extension> extensions) {
 
   public Archetype {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(role, "role");
-    if (frameworks.isEmpty() || stacks.isEmpty()) {
-      throw new IllegalArgumentException("Archetype " + name + " needs frameworks and stacks");
+    if (structures.isEmpty() || stacks.isEmpty()) {
+      throw new IllegalArgumentException("Archetype " + name + " needs structures and stacks");
     }
-    frameworks = List.copyOf(frameworks);
+    extensions = List.copyOf(extensions);
+    structures = List.copyOf(structures);
     stacks = List.copyOf(stacks);
     persistence = List.copyOf(persistence);
     starters = List.copyOf(starters);
     properties = Catalog.ordered(properties);
   }
 
-  public Framework defaultFramework() {
-    return frameworks.get(0);
+  public Structure defaultStructure() {
+    return structures.get(0);
   }
 
   public Stack defaultStack() {

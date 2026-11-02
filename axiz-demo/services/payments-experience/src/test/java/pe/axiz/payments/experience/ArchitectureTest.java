@@ -8,6 +8,6 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.verify("pe.axiz.payments.experience", AxizArchitecture.Style.BFF);
+    AxizArchitecture.of("pe.axiz.payments.experience").archetype(pe.axiz.quality.archunit.Archetype.UX).stack(pe.axiz.quality.archunit.Stack.REACTIVE).structure(pe.axiz.quality.archunit.Structure.BFF).verify();
   }
 }

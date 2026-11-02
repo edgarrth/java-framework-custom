@@ -1,6 +1,7 @@
 package pe.axiz.payments.process.adapter.in.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,23 @@ class PaymentOrderCreatedHandlerTest {
     assertThat(handler.eventType()).isEqualTo("pe.axiz.payments.payment-order.created.v1");
     assertThat(handler.payloadType())
         .isEqualTo(PaymentOrderCreatedHandler.PaymentOrderCreated.class);
+  }
+
+  @Test
+  void inexactEventDoesNotStartThePaymentProcess() {
+    var e = event();
+    var invalid =
+        new PaymentOrderCreatedHandler.PaymentOrderCreated(
+            e.orderId(),
+            e.customerId(),
+            e.operationNumber(),
+            e.debtorAccount(),
+            e.creditorCci(),
+            new BigDecimal("150.005"),
+            e.currency());
+    assertThatThrownBy(() -> handler.handle(invalid, null))
+        .isInstanceOf(pe.axiz.core.errors.BusinessException.class);
+    assertThat(processes.calls).isEmpty();
   }
 
   @Test

@@ -1,0 +1,25 @@
+<!-- generated -->
+# axiz-adapter-idempotency-dynamodb
+
+Idempotency store on DynamoDB with TTL.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-idempotency-dynamodb</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `DynamoDbIdempotencyStore` | Idempotency store on DynamoDB: conditional put to start (new key or expired record), strongly consistent reads, TTL attribute `ttl` for retention. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-idempotency-dynamodb verify`.

@@ -10,8 +10,9 @@ axiz add secrets
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-secrets-spring-boot-starter` |
-| Dependencias | `pe.axiz:axiz-core-secrets-aws`<br>`software.amazon.awssdk:secretsmanager`<br>`software.amazon.awssdk:ssm` |
-| Incluida por defecto en | integration |
+| Stacks del catálogo | servlet, reactive |
+| Dependencias | `pe.axiz:axiz-adapter-secrets-aws`<br>`software.amazon.awssdk:secretsmanager`<br>`software.amazon.awssdk:ssm` |
+| Incluida por defecto en | business, core, gateway |
 
 ## Propiedades que agrega
 
@@ -38,4 +39,3 @@ SecretValue apiKey = secretResolver.require("partner-api-key");
 
 - [`axiz-secrets-spring-boot-autoconfigure`](../referencia/spring/axiz-secrets-spring-boot-autoconfigure.md)
 - [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)
-- [`axiz-core-secrets-aws`](../referencia/core/axiz-core-secrets-aws.md)

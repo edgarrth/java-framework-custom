@@ -1,11 +1,13 @@
 # axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
 # Keep it in version control; the CLI updates it when it changes the project.
-schema: 1
+schema: 2
+kind: service
 name: {{project.name}}
 groupId: {{project.groupId}}
 basePackage: {{project.basePackage}}
 archetype: {{archetype.name}}
-framework: {{fw.id}}
+structure: {{fw.id}}
+extensions: [{{#extensions}}{{id}}{{/extensions}}]
 stack: {{stack.id}}
 persistence: {{persistence.id}}
 axizVersion: {{axizVersion}}

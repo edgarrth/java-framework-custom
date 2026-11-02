@@ -298,9 +298,19 @@ class AuditBehaviourTest {
   @Test
   void theReactiveAuditRecordsTheCallerAddressAndStatus() {
     new ReactiveWebApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
+        .withConfiguration(
+            AutoConfigurations.of(
+                AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.async.enabled=false", "axiz.audit.http.enabled=true")
-        .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
+        .withBean(
+            AsyncAuditSink.class,
+            () ->
+                new AsyncAuditSink(
+                    "memory",
+                    event -> {
+                      events.add(event);
+                      return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    }))
         .run(
             ctx -> {
               HttpAuditWebFilter filter = ctx.getBean(HttpAuditWebFilter.class);

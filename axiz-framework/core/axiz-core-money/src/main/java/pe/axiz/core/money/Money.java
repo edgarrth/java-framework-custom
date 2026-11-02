@@ -13,7 +13,8 @@ import pe.axiz.core.errors.BusinessException;
 
 /**
  * Monetary amount in an ISO 4217 currency. The amount always has the currency's number of decimals
- * (PEN and USD: 2) and arithmetic never mixes currencies. Immutable and thread-safe.
+ * (PEN and USD: 2), at most {@link #MAX_INTEGER_DIGITS} integer digits, and arithmetic never mixes
+ * currencies. Every factory and operation preserves these invariants. Immutable and thread-safe.
  *
  * <p>Text form is {@code "PEN 150.00"}; JSON adapters serialize the amount as a string to avoid
  * binary floating point in clients.
@@ -33,6 +34,7 @@ public final class Money implements Comparable<Money> {
   private final Currency currency;
 
   private Money(BigDecimal amount, Currency currency) {
+    requireBounded(amount);
     this.amount = amount;
     this.currency = currency;
   }
@@ -208,11 +210,14 @@ public final class Money implements Comparable<Money> {
   }
 
   public Money divide(BigDecimal divisor, RoundingMode rounding) {
+    // Bound the operand before BigDecimal can expand an arbitrarily large power of ten.
+    requireBounded(Objects.requireNonNull(divisor, "divisor"));
     return new Money(amount.divide(divisor, amount.scale(), rounding), currency);
   }
 
   /** Applies a percentage, e.g. {@code percentage(new BigDecimal("18"))} for 18 %. */
   public Money percentage(BigDecimal percent) {
+    requireBounded(Objects.requireNonNull(percent, "percent"));
     return multiply(percent.movePointLeft(2));
   }
 

@@ -9,7 +9,12 @@ import java.util.Objects;
  * @param value token value
  * @param expiresAt expiry instant
  */
-public record AccessToken(String value, Instant expiresAt) {
+public record AccessToken(
+    @pe.axiz.core.sensitive.Sensitive(
+            level = pe.axiz.core.sensitive.SensitivityLevel.CRITICAL,
+            mask = pe.axiz.core.sensitive.MaskType.FULL)
+        String value,
+    Instant expiresAt) {
 
   public AccessToken {
     Objects.requireNonNull(value);

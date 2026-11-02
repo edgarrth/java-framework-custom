@@ -49,7 +49,7 @@ class DoctorCommandTest {
         m.groupId(),
         m.basePackage(),
         m.archetype(),
-        m.framework(),
+        m.structure(),
         m.stack(),
         m.persistence(),
         axizVersion,
@@ -57,6 +57,44 @@ class DoctorCommandTest {
         m.asyncapi(),
         capabilities,
         operations);
+  }
+
+  @Test
+  void reactivePlansUseExplicitInstrumentationRatherThanAnUnrelatedAutodetectionFlag(
+      @TempDir Path root) throws Exception {
+    Path project = CliHarness.service(root, "--stack", "reactive");
+    var clean = messages(doctor().checks(project), DoctorCommand.Level.ERROR);
+    assertEquals(List.of(), clean, clean.toString());
+    Path application;
+    try (var files = Files.walk(project.resolve("src/test/java"))) {
+      application =
+          files
+              .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+              .findFirst()
+              .orElseThrow();
+    }
+    String annotated = Files.readString(application);
+    Files.writeString(
+        application,
+        annotated.replace(
+            "@ExtendWith(BlockHoundExtension.class)", "// @ExtendWith(BlockHoundExtension.class)"));
+    assertTrue(
+        any(
+            messages(doctor().checks(project), DoctorCommand.Level.ERROR),
+            "must declare @ExtendWith"));
+    Path configuration = project.resolve("src/test/resources/junit-platform.properties");
+    Files.createDirectories(configuration.getParent());
+    Files.writeString(configuration, "junit.jupiter.extensions.autodetection.enabled=true\n");
+    assertTrue(
+        any(
+            messages(doctor().checks(project), DoctorCommand.Level.ERROR),
+            "must declare @ExtendWith"));
+    Files.writeString(
+        application,
+        annotated.replace(
+            "@ExtendWith(BlockHoundExtension.class)",
+            "@org.junit.jupiter.api.extension.ExtendWith(pe.axiz.spring.test.BlockHoundExtension.class)"));
+    assertEquals(List.of(), messages(doctor().checks(project), DoctorCommand.Level.ERROR));
   }
 
   @Test
@@ -77,6 +115,41 @@ class DoctorCommandTest {
     CliHarness dirty = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, dirty.run("doctor", "--dir", p.toString()));
     assertTrue(dirty.output().contains("Possible secret in src/main/resources/application.yaml"));
+  }
+
+  @Test
+  void technologyImportsStayInPersistenceAndTheDomainRemainsIndependent(@TempDir Path tmp)
+      throws Exception {
+    Path p = CliHarness.service(tmp);
+    Path sources = p.resolve("src/main/java/pe/axiz/orders");
+    Path domain = Files.createDirectories(sources.resolve("domain"));
+    Files.writeString(
+        domain.resolve("Bad.java"),
+        """
+        package pe.axiz.orders.domain;
+        import org.springframework.stereotype.Component;
+        import pe.axiz.kit.jpa.JpaRepositories;
+        import pe.axiz.adapter.cache.redis.RedisByteCache;
+        """);
+    Files.writeString(
+        domain.resolve("Good.java"),
+        """
+        package pe.axiz.orders.domain;
+        import java.math.BigDecimal;
+        import org.jspecify.annotations.Nullable;
+        import pe.axiz.orders.domain.Order;
+        import pe.axiz.core.money.Money;
+        """);
+    Path persistence = Files.createDirectories(sources.resolve("adapter/out/persistence"));
+    Files.writeString(
+        persistence.resolve("Persistence.java"),
+        "package pe.axiz.orders.adapter.out.persistence;\nimport pe.axiz.kit.jpa.JpaRepositories;\n");
+    List<String> errors = messages(doctor().checks(p), DoctorCommand.Level.ERROR);
+    assertTrue(any(errors, "hexagonal domain"), errors.toString());
+    assertTrue(any(errors, "kits are only allowed"), errors.toString());
+    assertTrue(any(errors, "technology adapters"), errors.toString());
+    assertFalse(any(errors, "Good.java"), errors.toString());
+    assertFalse(any(errors, "Persistence.java"), errors.toString());
   }
 
   @Test
@@ -141,12 +214,12 @@ class DoctorCommandTest {
             "e-private-key: local-only",
             "f-password:",
             ""));
-    Path code = p.resolve("src/main/java/pe/axiz/orders/business/adapter/out/Notes.java");
+    Path code = p.resolve("src/main/java/pe/axiz/orders/adapter/out/Notes.java");
     Files.writeString(
         code,
         String.join(
             "\n",
-            "package pe.axiz.orders.business.adapter.out;",
+            "package pe.axiz.orders.adapter.out;",
             "class Notes {",
             "  // System.out.println(\"commented out\");",
             "   * Thread.sleep(10) in a Javadoc line",

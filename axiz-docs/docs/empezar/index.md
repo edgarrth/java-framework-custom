@@ -36,7 +36,7 @@ ningún número de documento o tarjeta como query parameter. Los eventos se desc
 ```bash
 axiz new payments-business \
   --archetype business \
-  --framework hexagonal \
+  --structure hexagonal \
   --persistence aurora \
   --openapi payments-business.yaml \
   -c outbox -c sequence
@@ -49,7 +49,7 @@ generador valida la combinación y el contrato antes de escribir nada.
 | Opción | Valores |
 |---|---|
 | `--archetype` | `experience`, `business`, `process`, `integration`, `event-processor`, `batch`, `crud`, `library`, `starter` |
-| `--framework` | `layered`, `hexagonal`, `cqrs`, `eda`, `bff`, `batch` (según el arquetipo) |
+| `--structure` | `layered`, `hexagonal`, `cqrs`, `eda`, `bff`, `batch` (según el arquetipo) |
 | `--stack` | `servlet` (virtual threads, por defecto) o `reactive` (WebFlux) |
 | `--persistence` | `none`, `aurora` (JPA en servlet, R2DBC en reactivo), `dynamodb` |
 | `-c` | capacidades extra (repetible), ver [Capacidades](../capacidades/index.md) |
@@ -103,11 +103,11 @@ En el estilo hexagonal cada operación del contrato tiene su caso de uso en
 controlador solo adapta:
 
 ```java
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 @UseCase
 public class CreatePaymentOrderUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<CreatePaymentOrderUseCase.Input, PaymentOrder> {
+    implements pe.axiz.structure.hexagonal.UseCase<CreatePaymentOrderUseCase.Input, PaymentOrder> {
 
   public record Input(CreatePaymentOrderRequest body) {}
 

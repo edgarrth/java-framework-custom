@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-idempotency-redis</artifactId>
+  <name>axiz :: adapter :: idempotency-redis</name>
+  <description>Idempotency store on Redis (ElastiCache)</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-idempotency-redis</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.idempotency.redis</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-idempotency</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.lettuce</groupId>
+      <artifactId>lettuce-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-store-contract-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+  </dependencies>
+</project>

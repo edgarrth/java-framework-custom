@@ -55,6 +55,15 @@ public final class PomEditor {
     return pom.substring(0, lineStart) + entry + pom.substring(lineStart);
   }
 
+  /** Replaces only the project artifact id, leaving parent and dependency coordinates intact. */
+  public static String setArtifactId(String pom, String artifactId) {
+    int parentEnd = pom.indexOf("</parent>");
+    int start = parentEnd < 0 ? 0 : parentEnd + "</parent>".length();
+    Matcher matcher = Pattern.compile("<artifactId>([^<]+)</artifactId>").matcher(pom);
+    if (!matcher.find(start)) throw new IllegalArgumentException("Missing project artifactId");
+    return pom.substring(0, matcher.start(1)) + artifactId + pom.substring(matcher.end(1));
+  }
+
   /** Replaces the version of the parent. */
   public static String setParentVersion(String pom, String version) {
     Matcher m = PARENT_VERSION.matcher(pom);

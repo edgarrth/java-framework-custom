@@ -1,48 +1,40 @@
 # Arquetipos
 
-Un arquetipo es el **rol** del servicio en el ecosistema. Define qué estilos, stacks y
-persistencias admite, qué capacidades trae siempre, si expone REST (y entonces exige contrato) y
-cómo se despliega. El [catálogo](catalogo.md) tiene el detalle generado desde el código.
+El arquetipo define el rol y los límites de un servicio. Es independiente de su estructura,
+stack de ejecución y extensiones. El [catálogo](catalogo.md) se genera desde el mismo modelo
+que utilizan la CLI e Initializr.
 
-```mermaid
-flowchart LR
-  ch["Canales: web, móvil, partners"] --> exp["experience"]
-  exp --> proc["process"]
-  exp --> bus["business"]
-  proc --> bus
-  proc --> int["integration"]
-  bus --> int
-  int --> core["Sistemas de registro, legacy, terceros"]
-  evt["event-processor"] -.eventos.- bus
-  bat["batch"] -.archivos.- int
-  crud["crud"] --- exp
-```
+| Arquetipo | Responsabilidad | Estructuras |
+|---|---|---|
+| `business` | Reglas de negocio, procesos de dominio y datos propios | hexagonal, layered |
+| `core` | Anticorrupción frente a sistemas internos core | hexagonal |
+| `gateway` | Frontera frente a sistemas externos | hexagonal |
+| `ux` | Composición y adaptación para canales | bff |
+| `support` | Capacidad transversal sin dependencia de dominios | hexagonal, layered |
+| `event-processor` | Reacción a eventos sin API REST de negocio | eda, hexagonal |
+| `batch` | Procesos por lotes activados por el planificador | batch |
 
-Las dependencias entre servicios solo bajan: `experience → process → business → integration`;
-nunca suben ni saltan al canal. Los eventos permiten reaccionar sin acoplar.
+CQRS es opcional sobre hexagonal para `business` y `event-processor`.
+`library` y `starter` son tipos de proyecto de plataforma; no son arquetipos de servicio.
 
-| Arquetipo | Cuándo | Estilos | Despliegue |
-|---|---|---|---|
-| `experience` | API de un canal: adapta y agrega, no tiene dominio | bff | Deployment |
-| `business` | dueño de un dominio y sus datos | hexagonal, cqrs, layered | Deployment |
-| `process` | procesos largos entre dominios (sagas) | hexagonal, cqrs | Deployment |
-| `integration` | capa anticorrupción frente a core, legacy y terceros | hexagonal, cqrs | Deployment |
-| `event-processor` | reacciona a eventos, sin API pública | eda | Deployment |
-| `batch` | archivos y conciliaciones | batch | CronJob |
-| `crud` | tablas de mantenimiento y catálogos simples | layered | Deployment |
-| `library` | librería Java pura para el ecosistema | – | Nexus |
-| `starter` | capacidad nueva (librería + starter de Spring Boot) | – | Nexus |
+## Comunicación
 
-## Cómo elegir
+`ux` llama a `business` y `support`; nunca llama directamente a `core` o `gateway`.
+`business`, `event-processor` y `batch` pueden llamar a `business`, `core`, `gateway` y `support`.
+Se prefieren eventos para propagar cambios entre dominios; REST sirve para consultas y pasos de saga.
 
-- ¿Hay reglas de negocio y datos propios? **business** (hexagonal; cqrs si lecturas y escrituras
-  tienen cargas o modelos distintos; layered solo si el dominio es casi inexistente).
-- ¿Coordina varios dominios con pasos que se deben deshacer? **process** con una saga.
-- ¿Habla con un sistema que no controlas? **integration**: traduce su modelo y sus errores al
-  vuestro y aísla credenciales, timeouts y reintentos.
-- ¿Lo usa directamente una app o un partner? **experience** (BFF): compone, adapta por canal,
-  cachea lecturas y aplica idempotencia de canal.
-- ¿Su entrada son eventos? **event-processor**. ¿Archivos o procesos programados? **batch**.
-- ¿Es un catálogo con poca lógica? **crud**.
+`core` llama exclusivamente a los sistemas internos core que integra. `gateway` llama a sistemas
+externos. `support` puede llamar a sus proveedores de commodity, como SMTP, SMS o push, y no
+llama a dominios de negocio. Estos tres bordes no llaman a otros servicios Axiz.
+Los procesadores y batch se activan por eventos o planificación, no por REST.
 
-En el [demo](../demo.md) hay un servicio de cada arquetipo resolviendo un mismo flujo de pagos.
+Los contratos OpenAPI declaran `info.x-axiz-archetype`. La generación de clientes verifica
+la matriz de llamadas. Una integración técnica se identifica como `internal-system`,
+`external-system` o `commodity-provider`, en lugar de inventar otro arquetipo de servicio.
+
+## Elección
+
+Usa `business` para reglas y datos de un dominio, incluido CRUD o una saga. Elige `core` o `gateway`
+según si el sistema integrado pertenece a la empresa. Usa `ux` para un canal, `support` para
+una capacidad reutilizable, `event-processor` cuando la entrada es un evento y `batch` para un job.
+Los nombres describen la capacidad; no añaden sufijos como `-business`, `-crud` o `-integration`.

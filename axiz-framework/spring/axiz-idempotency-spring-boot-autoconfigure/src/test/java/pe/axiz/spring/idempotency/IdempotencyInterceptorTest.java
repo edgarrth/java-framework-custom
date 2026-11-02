@@ -65,6 +65,12 @@ class IdempotencyInterceptorTest {
     }
   }
 
+  private final pe.axiz.core.idempotency.AsyncIdempotencyService asyncService =
+      new pe.axiz.core.idempotency.AsyncIdempotencyService(
+          new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
+          Duration.ofSeconds(30),
+          Duration.ofHours(1),
+          Clock.systemUTC());
   private final IdempotencyService service =
       new IdempotencyService(
           new InMemoryIdempotencyStore(),
@@ -74,10 +80,10 @@ class IdempotencyInterceptorTest {
   private final Payments target = new Payments();
   private final Payments payments = proxy(target, service);
 
-  private static Payments proxy(Payments target, IdempotencyService service) {
+  private Payments proxy(Payments target, IdempotencyService service) {
     ProxyFactory pf = new ProxyFactory(target);
     pf.setProxyTargetClass(true);
-    pf.addAdvice(new IdempotencyMethodInterceptor(() -> service));
+    pf.addAdvice(new IdempotencyMethodInterceptor(() -> service, () -> asyncService));
     return (Payments) pf.getProxy();
   }
 
@@ -169,8 +175,11 @@ class IdempotencyInterceptorTest {
             .contextWrite(Context.of(ReactiveIdempotency.CONTEXT_KEY, first))
             .block(T),
         "already decided for this exchange");
-    service.complete(
-        execution, new StoredResponse(200, Map.of(), "{}".getBytes(StandardCharsets.UTF_8)));
+    asyncService
+        .complete(
+            execution, new StoredResponse(200, Map.of(), "{}".getBytes(StandardCharsets.UTF_8)))
+        .toCompletableFuture()
+        .join();
 
     assertThrows(
         IdempotentReplay.class,

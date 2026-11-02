@@ -7,8 +7,8 @@ import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
-import pe.axiz.core.sequence.dynamodb.DynamoDbSequenceStore;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** Sequence counters on DynamoDB for services without a relational database. */

@@ -1,21 +1,18 @@
-# axiz-framework pipeline (shared axiz workflows):
-#   pull request   pr checks + build with every quality gate + generated sample projects
-#   develop        the same, then the SNAPSHOT is published to Nexus
-#   tag v*         release published to Nexus (tags come from release.yaml)
-# Publication is a separate job that needs every gate (build, wrapper, samples) and promotes the
-# artifacts the build verified; a failing gate never publishes.
+# Build only. The separate deploy.yaml consumes this completed run and its signed manifest;
+# failure of any job (including wrapper, samples and API compatibility) prevents promotion.
 name: ci
 
 on:
   pull_request:
   push:
     branches: [develop, main, "release/**", "hotfix/**"]
-    tags: ["v*"]
+    tags: ["v*", "candidate/**"]
 
 permissions:
   contents: read
   pull-requests: read
   security-events: write
+  id-token: write
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -32,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -44,69 +41,92 @@ jobs:
     if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
+  parameters:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      candidate: ${{ steps.version.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Resolve final coordinates and optional candidate identity
+        id: version
+        run: |
+          set -euo pipefail
+          version=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("pom.xml").getroot().findtext("{*}properties/{*}revision"))')
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          candidate=
+          if [[ "$GITHUB_REF" == refs/tags/candidate/* ]]; then
+            candidate=${GITHUB_REF#refs/tags/candidate/}
+            [[ "$candidate" =~ ^([0-9]+\.[0-9]+\.[0-9]+)/[1-9][0-9]*$ && "${BASH_REMATCH[1]}" == "$version" ]]
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            [[ "${GITHUB_REF#refs/tags/v}" == "$version" ]]
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
+
   build:
-    needs: axiz-workflows-trust
+    needs: [axiz-workflows-trust, parameters]
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/lib-build.yaml@v2.0.0
     with:
-      # store contracts against PostgreSQL, Valkey and DynamoDB containers must run, not skip
-      maven-args: -Daxiz.it.requireDocker=true
-      stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
+      version: ${{ needs.parameters.outputs.version }}
+      source-sha: ${{ github.sha }}
+      candidate: ${{ needs.parameters.outputs.candidate }}
+      maven-args: '["-Daxiz.it.requireDocker=true"]'
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  publish:
-    needs: [axiz-workflows-trust, build, wrapper, samples, api-compat]
-    # api-compat is skipped until the repository sets AXIZ_API_BASELINE; it never fails silently
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled()       && needs.build.result == 'success'       && needs.wrapper.result == 'success'       && needs.samples.result == 'success'       && (needs.api-compat.result == 'success' || needs.api-compat.result == 'skipped')       && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))) }}
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0
-    # release provenance: attached to the GitHub release, signed with the KMS key (OIDC)
-    permissions:
-      contents: write
-      id-token: write
-    secrets:
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-
-
   api-compat:
-    # public API and SPI compatibility with the last release (opt-in before 1.0.0: set the
-    # repository variable AXIZ_API_BASELINE to the released version to compare with)
+    # Mandatory before promotion; 2.0 is reviewed against the published 1.x API inventory.
     needs: [axiz-workflows-trust, build]
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (vars.AXIZ_API_BASELINE != '') }}
     runs-on: ubuntu-24.04
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      BASELINE: ${{ vars.AXIZ_API_BASELINE }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      BASELINE: ${{ vars.AXIZ_API_BASELINE || '1.0.0' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: japicmp against the baseline
-        run: ./mvnw -B -ntp verify -DskipTests -Papi-compat -Daxiz.api.baseline="$BASELINE"
+        run: |
+          set -euo pipefail
+          if [[ "$BASELINE" == 1.* ]]; then
+            ./mvnw --bootstrap -B -ntp verify -Papi-compat,api-migration -Daxiz.api.baseline="$BASELINE"
+            python3 .github/scripts/check-api-compatibility.py --baseline "$BASELINE"
+          else
+            ./mvnw --bootstrap -B -ntp verify -Papi-compat -Daxiz.api.baseline="$BASELINE"
+          fi
+
+  native-reactive:
+    needs: axiz-workflows-trust
+    uses: ./.github/workflows/native-reactive.yaml
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
 
   wrapper:
     # the Maven wrapper (also copied into every generated project) verifies the distribution
@@ -116,12 +136,34 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13"
+      - name: Install pinned framework policy dependencies in an isolated environment
+        run: |
+          python3 -m venv "$RUNNER_TEMP/axiz-framework-python"
+          "$RUNNER_TEMP/axiz-framework-python/bin/python" -m pip install \
+            --disable-pip-version-check --quiet -r .github/scripts/requirements.txt
+          echo "$RUNNER_TEMP/axiz-framework-python/bin" >> "$GITHUB_PATH"
       - name: Wrapper verification scenarios
         run: .github/scripts/test-mvnw.sh
-      - name: Publication waits for every gate
-        run: python3 .github/scripts/check-publish-gates.py .github/workflows/ci.yaml
+      - name: Build inputs survive a fresh checkout
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_build_inputs.py'
+          python3 -m unittest discover -s .github/scripts -p 'test_api_compatibility.py'
+          python3 .github/scripts/check-build-inputs.py .
+      - name: Publication consumes only an independent successful build
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_publish_gates.py'
+          python3 .github/scripts/check-publish-gates.py .github/workflows/ci.yaml .github/workflows/deploy.yaml
+      - name: Framework workflows and native sample selection stay current
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_sample_workflows.py'
+          python3 .github/scripts/check-sample-workflows.py
       - name: One version per third-party library, defined once
         run: python3 .github/scripts/check-dependency-governance.py .
+      - name: architecture contract module names, parents and closed reactive exceptions
+        run: python3 .github/scripts/check-layer-structure.py .
       - name: spring.factories only registers environment post-processors
         run: python3 .github/scripts/check-spring-factories.py .
       - name: Contract rules and response examples (Spectral)
@@ -145,15 +187,15 @@ jobs:
     # architecture rules and quality gates of a real team project
     runs-on: ubuntu-24.04
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Install the framework and generate the samples

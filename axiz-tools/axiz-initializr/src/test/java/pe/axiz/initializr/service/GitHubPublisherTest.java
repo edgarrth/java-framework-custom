@@ -31,7 +31,7 @@ class GitHubPublisherTest {
     for (String path : paths) {
       files.put(path, "x".getBytes(StandardCharsets.UTF_8));
     }
-    return new GeneratedProject("orders-business", files);
+    return new GeneratedProject("orders", files);
   }
 
   @Test
@@ -44,24 +44,24 @@ class GitHubPublisherTest {
         .andExpect(jsonPath("$.description").value(""))
         .andRespond(
             withSuccess(
-                "{\"full_name\":\"ana/orders-business\",\"html_url\":\"https://github.test/ana/orders-business\"}",
+                "{\"full_name\":\"ana/orders\",\"html_url\":\"https://github.test/ana/orders\"}",
                 MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/ana/orders-business/git/ref/heads/main"))
+        .expect(requestTo("https://api.github.test/repos/ana/orders/git/ref/heads/main"))
         .andRespond(withSuccess("{\"object\":{\"sha\":\"c0\"}}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/ana/orders-business/git/commits/c0"))
+        .expect(requestTo("https://api.github.test/repos/ana/orders/git/commits/c0"))
         .andRespond(withSuccess("{\"tree\":{\"sha\":\"t0\"}}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/ana/orders-business/git/trees"))
+        .expect(requestTo("https://api.github.test/repos/ana/orders/git/trees"))
         .andExpect(jsonPath("$.tree[?(@.path == 'mvnw')].mode").value("100755"))
         .andExpect(jsonPath("$.tree[?(@.path == 'README.md')].mode").value("100644"))
         .andRespond(withSuccess("{\"sha\":\"t1\"}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/ana/orders-business/git/commits"))
+        .expect(requestTo("https://api.github.test/repos/ana/orders/git/commits"))
         .andRespond(withSuccess("{\"sha\":\"c1\"}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/ana/orders-business/git/refs/heads/main"))
+        .expect(requestTo("https://api.github.test/repos/ana/orders/git/refs/heads/main"))
         .andExpect(method(HttpMethod.PATCH))
         .andRespond(withSuccess());
 
@@ -69,7 +69,7 @@ class GitHubPublisherTest {
         new GitHubPublisher(builder, props(null, 100))
             .publish(project("mvnw", "README.md"), "user-token", null);
 
-    assertThat(repo.fullName()).isEqualTo("ana/orders-business");
+    assertThat(repo.fullName()).isEqualTo("ana/orders");
     server.verify();
   }
 
@@ -96,12 +96,12 @@ class GitHubPublisherTest {
     RestClient.Builder builder = RestClient.builder();
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     String created =
-        "{\"full_name\":\"acme/orders-business\",\"html_url\":\"https://github.test/acme/orders-business\",\"default_branch\":\"trunk\"}";
+        "{\"full_name\":\"acme/orders\",\"html_url\":\"https://github.test/acme/orders\",\"default_branch\":\"trunk\"}";
     server
         .expect(requestTo("https://api.github.test/orgs/acme/repos"))
         .andRespond(withSuccess(created, MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/ref/heads/trunk"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/ref/heads/trunk"))
         .andRespond(withSuccess());
     assertThatThrownBy(
             () ->
@@ -116,7 +116,7 @@ class GitHubPublisherTest {
         .expect(requestTo("https://api.github.test/orgs/acme/repos"))
         .andRespond(withSuccess(created, MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/ref/heads/trunk"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/ref/heads/trunk"))
         .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
     assertThatThrownBy(
             () ->
@@ -150,7 +150,7 @@ class GitHubPublisherTest {
             "1.0.0", URI.create("https://api.github.test"), "acme", 100, "axiz-initializr");
     GeneratedProject project =
         new GeneratedProject(
-            "orders-business",
+            "orders",
             Map.of(
                 "pom.xml",
                 "<project/>".getBytes(StandardCharsets.UTF_8),
@@ -164,34 +164,33 @@ class GitHubPublisherTest {
         .andExpect(jsonPath("$.private").value(true))
         .andRespond(
             withSuccess(
-                "{\"full_name\":\"acme/orders-business\",\"html_url\":\"https://github.test/acme/orders-business\",\"default_branch\":\"main\"}",
+                "{\"full_name\":\"acme/orders\",\"html_url\":\"https://github.test/acme/orders\",\"default_branch\":\"main\"}",
                 MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/ref/heads/main"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/ref/heads/main"))
         .andRespond(withSuccess("{\"object\":{\"sha\":\"c0\"}}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/commits/c0"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/commits/c0"))
         .andRespond(withSuccess("{\"tree\":{\"sha\":\"t0\"}}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/trees"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/trees"))
         .andExpect(jsonPath("$.base_tree").value("t0"))
         .andExpect(jsonPath("$.tree[?(@.path == 'local/localstack/init.sh')].mode").value("100755"))
         .andRespond(withSuccess("{\"sha\":\"t1\"}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/commits"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/commits"))
         .andExpect(jsonPath("$.parents[0]").value("c0"))
-        .andExpect(
-            jsonPath("$.message").value("feat: generate orders-business with axiz initializr"))
+        .andExpect(jsonPath("$.message").value("feat: generate orders with axiz initializr"))
         .andRespond(withSuccess("{\"sha\":\"c1\"}", MediaType.APPLICATION_JSON));
     server
-        .expect(requestTo("https://api.github.test/repos/acme/orders-business/git/refs/heads/main"))
+        .expect(requestTo("https://api.github.test/repos/acme/orders/git/refs/heads/main"))
         .andExpect(method(HttpMethod.PATCH))
         .andExpect(jsonPath("$.sha").value("c1"))
         .andRespond(withSuccess());
 
     GitHubPublisher.Repository repo =
         new GitHubPublisher(builder, props).publish(project, "user-token", "Orders");
-    assertThat(repo.url()).isEqualTo("https://github.test/acme/orders-business");
+    assertThat(repo.url()).isEqualTo("https://github.test/acme/orders");
     server.verify();
   }
 }

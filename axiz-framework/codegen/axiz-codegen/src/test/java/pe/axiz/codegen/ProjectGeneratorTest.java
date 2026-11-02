@@ -14,9 +14,9 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import pe.axiz.codegen.model.Archetype;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.output.GeneratedProject;
 
 class ProjectGeneratorTest {
@@ -25,11 +25,11 @@ class ProjectGeneratorTest {
   private static final Pattern PACKAGE = Pattern.compile("^package ([\\w.]+);", Pattern.MULTILINE);
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
 
-  /** Every valid archetype x framework x stack x persistence combination. */
+  /** Every valid archetype x structure x stack x persistence combination. */
   private List<ProjectRequest> combinations() {
     List<ProjectRequest> out = new ArrayList<>();
     for (Archetype a : generator.catalog().archetypes()) {
-      for (Framework f : a.frameworks()) {
+      for (Structure f : a.structures()) {
         for (Stack s : a.stacks()) {
           for (String p : a.persistence().isEmpty() ? List.of("none") : a.persistence()) {
             ProjectRequest r = Fixtures.request(a.name(), f, s, p, List.of());
@@ -51,7 +51,7 @@ class ProjectGeneratorTest {
     for (ProjectRequest r : all) {
       GeneratedProject p = generator.generate(r);
       String where =
-          r.archetype() + "/" + r.framework().id() + "/" + r.stack().id() + "/" + r.persistence();
+          r.archetype() + "/" + r.structure().id() + "/" + r.stack().id() + "/" + r.persistence();
       for (Map.Entry<String, byte[]> e : p.files().entrySet()) {
         String path = e.getKey();
         String text = new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
@@ -82,8 +82,8 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "business", Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of("outbox")));
-    String base = "src/main/java/pe/axiz/orders/ordersbusiness/";
+                "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("outbox")));
+    String base = "src/main/java/pe/axiz/orders/orders/";
     for (String f :
         List.of(
             "application/usecase/CreateOrderUseCase.java",
@@ -92,7 +92,7 @@ class ProjectGeneratorTest {
             "adapter/in/rest/CustomersController.java",
             "config/UseCaseConfiguration.java",
             "domain/package-info.java",
-            "OrdersBusinessApplication.java")) {
+            "OrdersApplication.java")) {
       assertTrue(p.files().containsKey(base + f), f);
     }
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
@@ -112,26 +112,32 @@ class ProjectGeneratorTest {
     assertTrue(p.text(".mvn/wrapper/maven-wrapper.properties").contains("distributionUrl="));
     assertTrue(p.text(".mvn/jvm.config").contains("jdk.compiler"), "Error Prone needs the exports");
     String ci = p.text(".github/workflows/ci.yaml");
-    assertTrue(ci.contains("service: orders-business"), ci);
+    assertTrue(ci.contains("service: orders"), ci);
     Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
     Map<?, ?> jobs = (Map<?, ?>) workflow.get("jobs");
-    List<? extends Map<?, ?>> deployments =
+    assertTrue(
         jobs.values().stream()
             .map(job -> (Map<?, ?>) job)
-            .filter(job -> String.valueOf(job.get("uses")).contains("service-cd.yaml@"))
-            .toList();
-    assertFalse(deployments.isEmpty());
-    deployments.forEach(
-        job -> {
-          List<?> needs = (List<?>) job.get("needs");
-          assertTrue(needs.contains("ci"), "deployments wait for the build and image");
-          assertTrue(
-              needs.contains("axiz-workflows-trust"), "deployments require a trusted release");
-        });
-    assertTrue(ci.contains("image-digest: ${{ needs.ci.outputs.image-digest }}"), ci);
+            .noneMatch(
+                job -> {
+                  String ref = String.valueOf(job.get("uses"));
+                  return List.of(
+                          "/service-deploy.yaml@",
+                          "/service-cd.yaml@",
+                          "/lib-deploy.yaml@",
+                          "/lib-promote.yaml@")
+                      .stream()
+                      .anyMatch(ref::contains);
+                }),
+        "the producer run must never invoke deployment");
+    assertTrue(ci.contains("service-build.yaml@v2.0.0"), ci);
+    assertTrue(ci.contains("source-sha: ${{ github.sha }}"), ci);
+    assertTrue(ci.contains("version: ${{ needs.parameters.outputs.version }}"), ci);
+    assertTrue(ci.contains("base-image:"), ci);
     assertFalse(ci.contains("<%"), "delimiters fully rendered");
-    assertTrue(p.text(".github/workflows/cd.yaml").contains("workflow_dispatch"));
-    assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@v1"));
+    assertSeparatedDeployment(p, "service-deploy");
+    assertFalse(p.files().containsKey(".github/workflows/cd.yaml"));
+    assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@v2.0.0"));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
     // nothing released yet; the first release is the version the pom targets (release-please
@@ -148,23 +154,30 @@ class ProjectGeneratorTest {
         pom.contains("<artifactId>axiz-jpa-spring-boot-starter</artifactId>"),
         "outbox requires jpa");
     assertTrue(
-        pom.contains("<artifactId>axiz-framework-hexagonal-spring-boot-starter</artifactId>"));
+        pom.contains("<artifactId>axiz-structure-hexagonal-spring-boot-starter</artifactId>"));
     assertTrue(pom.contains("<artifactId>spring-boot-starter-webmvc</artifactId>"));
-    assertTrue(p.files().containsKey("deploy/helm/orders-business/templates/deployment.yaml"));
-    assertFalse(p.files().containsKey("deploy/helm/orders-business/templates/cronjob.yaml"));
+    assertTrue(p.files().containsKey("deploy/helm/orders/templates/deployment.yaml"));
+    assertFalse(p.files().containsKey("deploy/helm/orders/templates/cronjob.yaml"));
     assertTrue(p.files().containsKey("src/test/resources/contract-examples/createOrder.json"));
     assertTrue(p.text("src/main/resources/application.yaml").contains("ddl-auto: validate"));
   }
 
   @Test
-  void cqrsReactiveUsesTheBusesOffTheEventLoop() {
+  void cqrsReactiveUsesNativeAsyncBusesForDynamoDb() {
     GeneratedProject p =
         generator.generate(
-            Fixtures.request("business", Framework.CQRS, Stack.REACTIVE, "dynamodb", List.of()));
-    String base = "src/main/java/pe/axiz/orders/ordersbusiness/";
+            Fixtures.request(
+                "business",
+                Structure.HEXAGONAL,
+                Stack.REACTIVE,
+                "dynamodb",
+                List.of(),
+                pe.axiz.codegen.model.Extension.CQRS));
+    String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("Mono<ResponseEntity<Order>>"));
-    assertTrue(controller.contains("subscribeOn(Schedulers.boundedElastic())"));
+    assertFalse(controller.contains("boundedElastic"));
+    assertTrue(controller.contains("ReactiveCommandBus"));
     assertTrue(p.files().containsKey(base + "application/command/CreateOrderCommand.java"));
     assertTrue(p.files().containsKey(base + "application/query/GetOrderQuery.java"));
     assertFalse(p.files().containsKey("src/main/resources/db/migration/V1__init.sql"));
@@ -178,11 +191,12 @@ class ProjectGeneratorTest {
         generator.generate(
             Fixtures.request(
                 "business",
-                Framework.CQRS,
+                Structure.HEXAGONAL,
                 Stack.REACTIVE,
                 "aurora",
-                List.of("outbox", "inbox", "scheduling")));
-    String base = "src/main/java/pe/axiz/orders/ordersbusiness/";
+                List.of("outbox", "inbox", "scheduling"),
+                pe.axiz.codegen.model.Extension.CQRS));
+    String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("private final ReactiveCommandBus commandBus;"), controller);
     assertTrue(
@@ -199,21 +213,21 @@ class ProjectGeneratorTest {
     String pom = p.text("pom.xml");
     assertTrue(pom.contains("<artifactId>axiz-r2dbc-spring-boot-starter</artifactId>"));
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"), "JPA blocks: never on reactive");
-    assertTrue(pom.contains("<artifactId>axiz-core-outbox-r2dbc</artifactId>"));
-    assertTrue(pom.contains("<artifactId>axiz-core-inbox-r2dbc</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-adapter-outbox-r2dbc</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-adapter-inbox-r2dbc</artifactId>"));
     assertTrue(pom.contains("<artifactId>shedlock-provider-r2dbc</artifactId>"));
     String app = p.text("src/main/resources/application.yaml");
     assertTrue(app.contains("r2dbc:postgresql://"), app);
     assertTrue(app.contains("store: r2dbc"), app);
     assertFalse(app.contains("datasource"), app);
     String local = p.text("src/main/resources/application-local.yaml");
-    assertTrue(local.contains("url: r2dbc:postgresql://localhost:5432/orders_business"), local);
+    assertTrue(local.contains("url: r2dbc:postgresql://localhost:5432/orders"), local);
     String migration = p.text("src/main/resources/db/migration/V1__init.sql");
     assertTrue(migration.contains("only uses R2DBC"));
     assertTrue(migration.contains("CREATE TABLE IF NOT EXISTS axiz_outbox"));
     assertTrue(p.text("compose.yaml").contains("postgres:"));
     assertTrue(
-        p.text("src/test/java/pe/axiz/orders/ordersbusiness/OrdersBusinessApplicationTest.java")
+        p.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java")
             .contains("PostgresTestConfiguration"));
     assertTrue(p.text(".axiz/project.yaml").contains("r2dbc"));
   }
@@ -223,7 +237,7 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "event-processor", Framework.EDA, Stack.REACTIVE, "aurora", List.of("inbox")));
+                "event-processor", Structure.EDA, Stack.REACTIVE, "aurora", List.of("inbox")));
     String handler =
         p.files().entrySet().stream()
             .filter(e -> e.getKey().endsWith("handler/ExampleCreatedHandler.java"))
@@ -232,13 +246,48 @@ class ProjectGeneratorTest {
             .orElseThrow();
     assertTrue(handler.contains("extends ReactiveTypedEventHandler<ExampleCreated>"), handler);
     assertTrue(handler.contains("protected Publisher<Void> on("));
-    assertTrue(p.text("pom.xml").contains("axiz-core-inbox-r2dbc"));
+    assertTrue(p.text("pom.xml").contains("axiz-adapter-inbox-r2dbc"));
+  }
+
+  @Test
+  void asyncApiSnapshotPreservesTheContractUsedForGeneration() {
+    ProjectRequest base =
+        Fixtures.request("event-processor", Structure.EDA, Stack.REACTIVE, "aurora", List.of());
+    String contract = "asyncapi: 3.0.0\ninfo: {title: Orders, version: 1.0.0}\nchannels: {}\n";
+    GeneratedProject project =
+        generator.generate(
+            new ProjectRequest(
+                base.name(),
+                base.groupId(),
+                base.basePackage(),
+                base.description(),
+                base.archetype(),
+                base.structure(),
+                base.stack(),
+                base.persistence(),
+                base.capabilities(),
+                base.openApi(),
+                contract,
+                base.frameworkVersion(),
+                base.extensions()));
+    assertEquals(
+        project.text("src/main/asyncapi/asyncapi.yaml"),
+        project.text(".axiz/asyncapi.snapshot.yaml"));
+    assertEquals(contract.strip(), project.text(".axiz/asyncapi.snapshot.yaml").strip());
+    GeneratedProject withoutContract = generator.generate(base);
+    assertFalse(withoutContract.files().containsKey(".axiz/asyncapi.snapshot.yaml"));
   }
 
   @Test
   void descriptionsAreEscapedForEveryFormat() throws Exception {
     ProjectRequest base =
-        Fixtures.request("business", Framework.CQRS, Stack.SERVLET, "aurora", List.of());
+        Fixtures.request(
+            "business",
+            Structure.HEXAGONAL,
+            Stack.SERVLET,
+            "aurora",
+            List.of(),
+            pe.axiz.codegen.model.Extension.CQRS);
     ProjectRequest r =
         new ProjectRequest(
             base.name(),
@@ -246,7 +295,7 @@ class ProjectGeneratorTest {
             base.basePackage(),
             "History: read model <R2DBC> & \"events\" -- see */ docs",
             base.archetype(),
-            base.framework(),
+            base.structure(),
             base.stack(),
             base.persistence(),
             base.capabilities(),
@@ -256,15 +305,14 @@ class ProjectGeneratorTest {
     GeneratedProject p = generator.generate(r);
     Object chart =
         new Yaml(new SafeConstructor(new LoaderOptions()))
-            .load(p.text("deploy/helm/orders-business/Chart.yaml"));
+            .load(p.text("deploy/helm/orders/Chart.yaml"));
     assertEquals(
         "History: read model <R2DBC> & \"events\" -- see */ docs",
         ((java.util.Map<?, ?>) chart).get("description"));
     javax.xml.parsers.DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
         .parse(new java.io.ByteArrayInputStream(p.files().get("pom.xml")));
-    String application =
-        p.text("src/main/java/pe/axiz/orders/ordersbusiness/OrdersBusinessApplication.java");
+    String application = p.text("src/main/java/pe/axiz/orders/orders/OrdersApplication.java");
     assertFalse(application.contains("see */"));
     assertTrue(application.contains("read model &lt;R2DBC&gt; &amp;"), "doclint-safe HTML");
   }
@@ -289,8 +337,14 @@ class ProjectGeneratorTest {
       for (String archetype : List.of("library", "business")) {
         ProjectRequest base =
             "library".equals(archetype)
-                ? Fixtures.request("library", Framework.NONE, Stack.SERVLET, "none", List.of())
-                : Fixtures.request("business", Framework.CQRS, Stack.SERVLET, "aurora", List.of());
+                ? Fixtures.request("library", Structure.NONE, Stack.SERVLET, "none", List.of())
+                : Fixtures.request(
+                    "business",
+                    Structure.HEXAGONAL,
+                    Stack.SERVLET,
+                    "aurora",
+                    List.of(),
+                    pe.axiz.codegen.model.Extension.CQRS);
         ProjectRequest r =
             new ProjectRequest(
                 base.name(),
@@ -298,7 +352,7 @@ class ProjectGeneratorTest {
                 base.basePackage(),
                 description,
                 base.archetype(),
-                base.framework(),
+                base.structure(),
                 base.stack(),
                 base.persistence(),
                 base.capabilities(),
@@ -341,7 +395,7 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "batch", Framework.BATCH, Stack.SERVLET, "aurora", List.of("scheduling")));
+                "batch", Structure.BATCH, Stack.SERVLET, "aurora", List.of("scheduling")));
     assertTrue(p.files().containsKey("deploy/helm/orders-batch/templates/cronjob.yaml"));
     assertFalse(p.files().containsKey("deploy/helm/orders-batch/templates/deployment.yaml"));
     assertTrue(
@@ -357,13 +411,13 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "event-processor", Framework.EDA, Stack.SERVLET, "dynamodb", List.of("inbox")));
+                "event-processor", Structure.EDA, Stack.SERVLET, "dynamodb", List.of("inbox")));
     assertTrue(
         p.files().keySet().stream()
             .anyMatch(f -> f.endsWith("handler/ExampleCreatedHandler.java")));
     assertTrue(p.files().keySet().stream().noneMatch(f -> f.endsWith("Controller.java")));
     assertTrue(
-        p.text("pom.xml").contains("axiz-core-inbox-dynamodb"),
+        p.text("pom.xml").contains("axiz-adapter-inbox-dynamodb"),
         "inbox store follows the persistence");
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: dynamodb"));
     assertTrue(p.text("compose.yaml").contains("kafka:"));
@@ -374,8 +428,8 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "experience", Framework.BFF, Stack.REACTIVE, "none", List.of("idempotency-redis")));
-    String base = "src/main/java/pe/axiz/orders/ordersexperience/";
+                "ux", Structure.BFF, Stack.REACTIVE, "none", List.of("idempotency-redis")));
+    String base = "src/main/java/pe/axiz/orders/ordersux/";
     assertTrue(p.text(base + "composition/OrdersComposition.java").contains("Mono.error("));
     assertTrue(p.text("compose.yaml").contains("valkey"));
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: redis"));
@@ -386,26 +440,29 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "integration",
-                Framework.HEXAGONAL,
-                Stack.SERVLET,
-                "none",
-                List.of("crypto", "soap")));
+                "core", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of("crypto", "soap")));
     String app = p.text("src/main/resources/application.yaml").toLowerCase(java.util.Locale.ROOT);
     assertFalse(app.contains("password:"));
-    String values = p.text("deploy/helm/orders-integration/values.yaml");
+    String values = p.text("deploy/helm/orders-core/values.yaml");
     assertTrue(values.contains("- field-key-v1"), "secrets come from the ExternalSecret");
     assertTrue(
-        p.text("deploy/helm/orders-integration/values-prod.yaml")
-            .contains("# axiz.crypto.kms.key-id:"));
+        p.text("deploy/helm/orders-core/values-prod.yaml").contains("# axiz.crypto.kms.key-id:"));
   }
 
   @Test
   void platformArchetypes() {
     GeneratedProject lib =
         generator.generate(
-            Fixtures.request("library", Framework.NONE, Stack.SERVLET, "none", List.of()));
+            Fixtures.request("library", Structure.NONE, Stack.SERVLET, "none", List.of()));
     assertTrue(lib.text("pom.xml").contains("<artifactId>axiz-parent-core</artifactId>"));
+    assertSeparatedDeployment(lib, "lib-deploy");
+    assertTrue(lib.text(".github/workflows/ci.yaml").contains("lib-build.yaml@v2.0.0"));
+    assertEquals(
+        Boolean.TRUE,
+        new Yaml(new SafeConstructor(new LoaderOptions()))
+            .<Map<?, ?>>load(lib.text("release-please-config.json"))
+            .get("draft"));
+
     assertTrue(
         lib.files().containsKey("src/main/java/pe/axiz/orders/orderslibrary/OrdersLibrary.java"));
     ProjectRequest starter =
@@ -415,7 +472,7 @@ class ProjectGeneratorTest {
             "pe.axiz.core.geo",
             "",
             "starter",
-            Framework.NONE,
+            Structure.NONE,
             Stack.SERVLET,
             "none",
             List.of(),
@@ -423,36 +480,131 @@ class ProjectGeneratorTest {
             null,
             "1.0.0");
     GeneratedProject s = generator.generate(starter);
+    assertSeparatedDeployment(s, "lib-deploy");
+    assertEquals(
+        Boolean.TRUE,
+        new Yaml(new SafeConstructor(new LoaderOptions()))
+            .<Map<?, ?>>load(s.text("release-please-config.json"))
+            .get("draft"));
+
     assertTrue(
         s.files()
             .containsKey(
-                "axiz-geo-spring-boot-autoconfigure/src/main/java/pe/axiz/core/geo/spring/GeoAutoConfiguration.java"));
+                "axiz-geo-spring-boot-autoconfigure/src/main/java/pe/axiz/spring/geo/GeoAutoConfiguration.java"));
     assertTrue(
         s.text(
-                "axiz-geo-spring-boot-autoconfigure/src/main/java/pe/axiz/core/geo/spring/GeoProperties.java")
+                "axiz-geo-spring-boot-autoconfigure/src/main/java/pe/axiz/spring/geo/GeoProperties.java")
             .contains("@ConfigurationProperties(\"axiz.geo\")"));
     assertTrue(
         s.text(
                 "axiz-geo-spring-boot-autoconfigure/src/main/resources/META-INF/spring/"
                     + "org.springframework.boot.autoconfigure.AutoConfiguration.imports")
-            .contains("pe.axiz.core.geo.spring.GeoAutoConfiguration"));
+            .contains("pe.axiz.spring.geo.GeoAutoConfiguration"));
+    assertTrue(s.text("pom.xml").contains("<module>axiz-core-geo</module>"));
+    assertTrue(s.text("pom.xml").contains("<artifactId>axiz-parent</artifactId>"));
+    assertTrue(s.text("axiz-core-geo/pom.xml").contains("<artifactId>axiz-core-geo</artifactId>"));
+    assertTrue(
+        s.text("axiz-geo-spring-boot-autoconfigure/pom.xml")
+            .contains("<artifactId>axiz-core-geo</artifactId>"));
+    assertTrue(s.files().containsKey("axiz-core-geo/src/main/java/pe/axiz/core/geo/Geo.java"));
+    assertFalse(
+        s.files().keySet().stream()
+            .anyMatch(path -> path.contains("spring-boot-") && path.contains("pe/axiz/core/")));
+  }
+
+  @Test
+  void starterWithExplicitCorePrefixKeepsItsCapabilityNameAndSiblingSpringPackage() {
+    GeneratedProject project =
+        generator.generate(
+            new ProjectRequest(
+                "axiz-core-geo",
+                "pe.axiz",
+                "pe.axiz.core.geo",
+                "",
+                "starter",
+                Structure.NONE,
+                Stack.SERVLET,
+                "none",
+                List.of(),
+                null,
+                null,
+                "2.0.0"));
+    assertTrue(project.text("pom.xml").contains("<module>axiz-core-geo</module>"));
+    assertTrue(
+        project
+            .text(
+                "axiz-geo-spring-boot-autoconfigure/src/main/java/pe/axiz/spring/geo/GeoProperties.java")
+            .contains("@ConfigurationProperties(\"axiz.geo\")"));
+    assertTrue(
+        project
+            .text("axiz-geo-spring-boot-starter/pom.xml")
+            .contains("<artifactId>axiz-geo-spring-boot-autoconfigure</artifactId>"));
+    assertFalse(
+        project
+            .text("axiz-core-geo/src/main/java/pe/axiz/core/geo/Geo.java")
+            .contains("org.springframework"));
   }
 
   @Test
   void zipEntriesLiveUnderTheProjectFolder() throws Exception {
     GeneratedProject p =
         generator.generate(
-            Fixtures.request("crud", Framework.LAYERED, Stack.SERVLET, "aurora", List.of()));
+            Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of()));
     java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
     p.writeZip(out);
     try (java.util.zip.ZipInputStream zip =
         new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(out.toByteArray()))) {
       int n = 0;
       for (java.util.zip.ZipEntry e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
-        assertTrue(e.getName().startsWith("orders-crud/"), e.getName());
+        assertTrue(e.getName().startsWith("orders/"), e.getName());
         n++;
       }
       assertEquals(p.files().size(), n);
     }
+  }
+
+  private static void assertSeparatedDeployment(GeneratedProject project, String reusable) {
+    assertEquals(
+        Boolean.TRUE,
+        new Yaml(new SafeConstructor(new LoaderOptions()))
+            .<Map<?, ?>>load(project.text("release-please-config.json"))
+            .get("force-tag-creation"));
+    String deploy = project.text(".github/workflows/deploy.yaml");
+    assertTrue(deploy.contains("workflow_dispatch"));
+    assertTrue(deploy.contains("/" + reusable + ".yaml@v2.0.0"));
+    assertFalse(deploy.contains("image-tag:"));
+    assertFalse(deploy.contains("mvnw"));
+    assertFalse(deploy.contains("/setup-maven@"));
+    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(deploy);
+    Object trigger = workflow.containsKey("on") ? workflow.get("on") : workflow.get(Boolean.TRUE);
+    Map<?, ?> dispatch = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_dispatch");
+    Map<?, ?> inputs = (Map<?, ?>) dispatch.get("inputs");
+    Map<?, ?> job = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("deploy");
+    Map<?, ?> forwarded = (Map<?, ?>) job.get("with");
+    for (String key :
+        List.of(
+            "build-run-id",
+            "build-run-attempt",
+            "manifest-sha256",
+            "environment",
+            "previous-manifest-sha256")) {
+      assertEquals(Boolean.TRUE, ((Map<?, ?>) inputs.get(key)).get("required"), key);
+      String source = "service-deploy".equals(reusable) ? " || needs.automatic.outputs." + key : "";
+      assertEquals("${{ inputs." + key + source + " }}", forwarded.get(key), key);
+    }
+    if ("service-deploy".equals(reusable)) {
+      assertEquals(
+          "${{ inputs.values-revision || needs.automatic.outputs.values-revision }}",
+          forwarded.get("values-revision"));
+      Map<?, ?> automaticTrigger = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_run");
+      assertEquals(List.of("ci"), automaticTrigger.get("workflows"));
+      assertEquals(List.of("completed"), automaticTrigger.get("types"));
+      Map<?, ?> automatic = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("automatic");
+      assertEquals(Map.of("contents", "read", "actions", "read"), automatic.get("permissions"));
+      Map<?, ?> step = (Map<?, ?>) ((List<?>) automatic.get("steps")).getFirst();
+      assertEquals("axiz/axiz-workflows/actions/resolve-service-build@v2.0.0", step.get("uses"));
+      assertEquals("dev", ((Map<?, ?>) step.get("with")).get("environment"));
+      assertTrue(job.get("if").toString().contains("needs.automatic.result == 'success'"));
+    } else assertEquals("${{ inputs.destination }}", forwarded.get("destination"));
   }
 }

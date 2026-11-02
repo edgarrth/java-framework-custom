@@ -78,11 +78,7 @@ public final class IdempotencyService {
    * @throws BusinessException with 400, 409 or 422 errors
    */
   public Decision begin(String scope, @Nullable String idempotencyKey, String fingerprint) {
-    if (!IdempotencyKeys.isValid(idempotencyKey)) {
-      throw new BusinessException(
-          IdempotencyErrors.KEY_REQUIRED, "missing or invalid Idempotency-Key");
-    }
-    String key = scope + ":" + idempotencyKey;
+    String key = scopedKey(scope, idempotencyKey);
     Instant now = clock.instant();
     Optional<Proceed> started = tryStart(key, fingerprint, now);
     if (started.isPresent()) {
@@ -96,7 +92,18 @@ public final class IdempotencyService {
           .orElseThrow(
               () -> new BusinessException(IdempotencyErrors.IN_PROGRESS, "concurrent request"));
     }
-    IdempotencyRecord r = existing.get();
+    return existingDecision(existing.get(), fingerprint);
+  }
+
+  static String scopedKey(String scope, @Nullable String idempotencyKey) {
+    if (!IdempotencyKeys.isValid(idempotencyKey)) {
+      throw new BusinessException(
+          IdempotencyErrors.KEY_REQUIRED, "missing or invalid Idempotency-Key");
+    }
+    return scope + ":" + idempotencyKey;
+  }
+
+  static Decision existingDecision(IdempotencyRecord r, String fingerprint) {
     if (!r.fingerprint().equals(fingerprint)) {
       throw new BusinessException(
           IdempotencyErrors.KEY_REUSED, "key reused with a different request");

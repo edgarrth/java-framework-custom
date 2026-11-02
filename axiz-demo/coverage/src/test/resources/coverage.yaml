@@ -1,0 +1,88 @@
+# Where the demo uses each axiz capability: service, file (relative to services/<service>) and a
+# text that proves the use. CapabilityCoverageTest fails when a catalog capability has no entry or
+# an entry no longer matches the code, so the demo keeps showing every capability.
+foundation:
+  - {service: payments-business, file: src/main/java/pe/axiz/payments/business/config/PaymentsConfiguration.java, contains: CutoffTime}
+web:
+  - {service: beneficiaries-crud, file: src/main/java/pe/axiz/payments/beneficiaries/controller/BeneficiariesController.java, contains: "@Paging"}
+errors:
+  - {service: core-integration, file: src/main/java/pe/axiz/payments/coreintegration/domain/IntegrationErrors.java, contains: ErrorDefinition.of}
+logging:
+  - {service: payments-business, file: src/main/resources/application.yaml, contains: "logging:"}
+observability:
+  - {service: payments-experience, file: src/main/resources/application.yaml, contains: "otlp:"}
+metrics:
+  - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementSummaryTasklet.java, contains: MetricEvent.of("settlement.file")}
+config:
+  - {service: payments-business, file: deploy/helm/payments-business/templates/configmap.yaml, contains: mounted in /etc/axiz/config/service}
+i18n:
+  - {service: payments-experience, file: src/main/resources/messages_en.properties, contains: error.PAYMENTS-PAYMENTSEXPERIENCE-0001}
+sensitive:
+  - {service: payments-experience, file: src/main/java/pe/axiz/payments/experience/composition/ChannelViews.java, contains: MaskType.NAME}
+security:
+  - {service: payments-experience, file: src/main/java/pe/axiz/payments/experience/composition/Customer.java, contains: m.subject()}
+http-client:
+  - {service: core-integration, file: src/main/java/pe/axiz/payments/coreintegration/adapter/out/corebanking/CoreBankingClientConfiguration.java, contains: "@ImportHttpServices"}
+resilience:
+  - {service: payment-process, file: src/main/resources/application.yaml, contains: "resilience:"}
+soap:
+  - {service: core-integration, file: src/main/java/pe/axiz/payments/coreintegration/adapter/out/soap/CoreCreditGateway.java, contains: SoapClients}
+secrets:
+  - {service: core-integration, file: deploy/helm/core-integration/values.yaml, contains: core-banking-client-secret}
+jpa:
+  - {service: payments-business, file: src/main/java/pe/axiz/payments/business/adapter/out/persistence/PaymentOrderEntity.java, contains: AuditableEntity}
+r2dbc:
+  - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRow.java, contains: AuditableRow}
+  - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRepository.java, contains: ReactiveCrudRepository}
+dynamodb:
+  - {service: beneficiaries-crud, file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java, contains: CursorCodec}
+cache:
+  - {service: beneficiaries-crud, file: src/main/java/pe/axiz/payments/beneficiaries/service/BeneficiariesService.java, contains: getOrLoad}
+cache-redis:
+  - {service: payments-experience, file: src/main/java/pe/axiz/payments/experience/composition/BeneficiaryDirectory.java, contains: "@AxizCacheable"}
+storage-s3:
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: ObjectStorage}
+sequence:
+  - {service: payments-business, file: src/main/java/pe/axiz/payments/business/adapter/out/sequence/OperationNumberAdapter.java, contains: Sequences}
+messaging-kafka:
+  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/messaging/PaymentOrderCreatedHandler.java, contains: EventHandler}
+messaging-sqs:
+  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "queues:"}
+messaging-sns:
+  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "arn:aws:sns"}
+outbox:
+  - {service: payments-business, file: src/main/java/pe/axiz/payments/business/adapter/out/messaging/PaymentEventsOutboxAdapter.java, contains: TransactionalEvents}
+inbox:
+  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "inbox:"}
+  - {service: payments-history, file: src/main/resources/application.yaml, contains: "store: r2dbc"}
+idempotency:
+  - {service: beneficiaries-crud, file: src/main/java/pe/axiz/payments/beneficiaries/controller/BeneficiariesController.java, contains: "@Idempotent"}
+idempotency-redis:
+  - {service: payments-experience, file: src/main/java/pe/axiz/payments/experience/controller/PaymentsController.java, contains: "@Idempotent"}
+idempotency-dynamodb:
+  - {service: beneficiaries-crud, file: local/localstack/init.sh, contains: axiz-idempotency}
+saga:
+  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/application/saga/PaymentSaga.java, contains: SagaDefinition}
+lock:
+  - {service: core-integration, file: src/main/java/pe/axiz/payments/coreintegration/application/usecase/AccountLocks.java, contains: LockTemplate}
+lock-redis:
+  - {service: core-integration, file: src/main/resources/application.yaml, contains: "store: redis"}
+lock-dynamodb:
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: withLock}
+scheduling:
+  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/scheduling/SagaRecoveryJob.java, contains: "@SchedulerLock"}
+  - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementRunner.java, contains: LockingTaskExecutor}
+audit:
+  - {service: core-integration, file: src/main/java/pe/axiz/payments/coreintegration/application/usecase/DebitAccountUseCase.java, contains: "@Auditable"}
+audit-kafka:
+  - {service: payments-business, file: deploy/helm/payments-business/values-prod.yaml, contains: axiz.audit.kafka.topic}
+audit-sqs:
+  - {service: core-integration, file: deploy/helm/core-integration/values-prod.yaml, contains: axiz.audit.sqs.queue-url}
+crypto:
+  - {service: payments-business, file: src/main/java/pe/axiz/payments/business/adapter/out/persistence/PaymentOrderPersistenceAdapter.java, contains: BlindIndex}
+tenancy:
+  - {service: payment-process, file: src/main/resources/application.yaml, contains: "tenancy:"}
+featureflags:
+  - {service: payments-experience, file: src/main/java/pe/axiz/payments/experience/composition/PaymentsComposition.java, contains: flags.isEnabled}
+notification:
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/handler/PaymentNotificationHandler.java, contains: NotificationSender}

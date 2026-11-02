@@ -10,7 +10,8 @@ import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 /**
  * Business sequences ({@code axiz.sequence.*}), e.g. operation numbers {@code OP-2026-00001234}.
  *
- * @param store {@code jdbc} (Aurora) or {@code dynamodb}
+ * @param store {@code jdbc} (Aurora; native R2DBC in a reactive service), {@code r2dbc}, or {@code
+ *     dynamodb}
  * @param table counters table
  * @param initializeSchema when the JDBC table is created by the starter
  * @param sequences sequences by name

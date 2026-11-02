@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-sequence</artifactId>
   <name>axiz :: core :: sequence</name>
-  <description>Atomic formatted sequences with JDBC (PostgreSQL SEQUENCE) store</description>
+  <description>Atomic formatted sequences with JDBC (atomic counter blocks) store</description>
 
   <properties>
     <axiz.module.name>pe.axiz.core.sequence</axiz.module.name>

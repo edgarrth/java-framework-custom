@@ -10,7 +10,7 @@ import picocli.CommandLine.Spec;
     mixinStandardHelpOptions = true,
     versionProvider = Version.class,
     description =
-        "axiz platform: create services from a contract and keep them coherent with the framework.",
+        "axiz platform: create services from a contract and keep them coherent with the structure.",
     subcommands = {
       NewCommand.class,
       AddCommand.class,

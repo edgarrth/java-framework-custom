@@ -21,6 +21,26 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 @AnalyzeClasses(packages = "pe.axiz", importOptions = ImportOption.DoNotIncludeTests.class)
 class FrameworkArchitectureTest {
 
+  /** Request/event code cannot disguise blocking I/O with a worker scheduler. */
+  @ArchTest
+  static final ArchRule FRAMEWORK_DOES_NOT_OFFLOAD_BLOCKING_IO =
+      noClasses()
+          .that()
+          .resideInAnyPackage("pe.axiz.spring..", "pe.axiz.structure..", "pe.axiz.extension..")
+          .should()
+          .callMethodWhere(
+              new DescribedPredicate<>("create or use an elastic worker scheduler") {
+                @Override
+                public boolean test(com.tngtech.archunit.core.domain.JavaMethodCall call) {
+                  return call.getTargetOwner().getName().equals("reactor.core.scheduler.Schedulers")
+                      && java.util.Set.of(
+                              "boundedElastic", "newBoundedElastic", "elastic", "newElastic")
+                          .contains(call.getName());
+                }
+              })
+          .because(
+              "architecture contract requires native asynchronous I/O, including CQRS and outbound authentication");
+
   /** Layer 1 is plain Java: no Spring, no Quarkus, no upper layers. */
   @ArchTest
   static final ArchRule CORE_IS_PLAIN_JAVA =
@@ -30,7 +50,21 @@ class FrameworkArchitectureTest {
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage(
-              "org.springframework..", "io.quarkus..", "pe.axiz.spring..", "pe.axiz.framework..")
+              "org.springframework..",
+              "io.quarkus..",
+              "pe.axiz.spring..",
+              "pe.axiz.structure..",
+              "pe.axiz.extension..",
+              "pe.axiz.adapter..",
+              "pe.axiz.kit..",
+              "software.amazon.awssdk..",
+              "io.lettuce..",
+              "org.apache.kafka..",
+              "io.r2dbc..",
+              "jakarta.persistence..",
+              "com.nimbusds..",
+              "reactor..",
+              "org.reactivestreams..")
           .because("layer 1 is framework-neutral so a Quarkus extension can wire the same core");
 
   /** Layer 2 never depends on layer 3. */
@@ -41,7 +75,7 @@ class FrameworkArchitectureTest {
           .resideInAPackage("pe.axiz.spring..")
           .should()
           .dependOnClassesThat()
-          .resideInAPackage("pe.axiz.framework..");
+          .resideInAnyPackage("pe.axiz.structure..", "pe.axiz.extension..");
 
   /** Framework contracts (-api) are plain Java over layer 1. */
   @ArchTest
@@ -72,13 +106,137 @@ class FrameworkArchitectureTest {
   /** No cycles between framework styles. */
   @ArchTest
   static final ArchRule FRAMEWORKS_HAVE_NO_CYCLES =
-      slices().matching("pe.axiz.framework.(*)..").should().beFreeOfCycles();
+      slices().matching("pe.axiz.structure.(*)..").should().beFreeOfCycles();
+
+  @ArchTest
+  static final ArchRule TECHNOLOGY_HAS_NO_RUNTIME =
+      noClasses()
+          .that()
+          .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage(
+              "pe.axiz.spring..",
+              "pe.axiz.structure..",
+              "pe.axiz.extension..",
+              "org.springframework..",
+              "io.quarkus..");
+
+  @ArchTest
+  static final ArchRule ADAPTERS_ONLY_IMPLEMENT_THEIR_CONTRACT =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAPackage("pe.axiz.adapter..")
+          .should(
+              new ArchCondition<>(
+                  "only use their contract, technology kit and AWS instrumentation") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  String own = item.getPackageName().substring("pe.axiz.adapter.".length());
+                  String[] segments = own.split("\\.");
+                  String capability = segments[0] + "." + segments[1];
+                  item.getDirectDependenciesFromSelf()
+                      .forEach(
+                          d -> {
+                            String target = d.getTargetClass().getPackageName();
+                            if (target.startsWith("pe.axiz.adapter.")
+                                && !target.equals("pe.axiz.adapter." + capability)
+                                && !target.startsWith("pe.axiz.adapter." + capability + ".")
+                                && !(aws(item)
+                                    && target.startsWith("pe.axiz.adapter.observability.aws"))) {
+                              events.add(SimpleConditionEvent.violated(d, d.getDescription()));
+                            }
+                          });
+                }
+              });
+
+  @ArchTest
+  static final ArchRule REACTOR_API_ONLY_IN_R2DBC_TECHNOLOGY =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..")
+          .should(
+              new ArchCondition<>("keep Reactor in native R2DBC and RS in SDK interoperability") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  if (r2dbc(item) || !publiclyVisible(item)) return;
+                  item.getDirectDependenciesFromSelf()
+                      .forEach(
+                          d -> {
+                            String target = d.getTargetClass().getPackageName();
+                            if (target.startsWith("reactor.")
+                                || ((target.equals("org.reactivestreams")
+                                        || target.startsWith("org.reactivestreams."))
+                                    && !aws(item))) {
+                              events.add(SimpleConditionEvent.violated(d, d.getDescription()));
+                            }
+                          });
+                }
+              });
+
+  @ArchTest
+  static final ArchRule TECHNOLOGY_PUBLIC_API_USES_PORT_TYPES =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..")
+          .should(
+              new ArchCondition<>("expose port types in public signatures") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  if (r2dbc(item) || !publiclyVisible(item)) return;
+                  item.getMethods().stream()
+                      .filter(
+                          m ->
+                              m.getModifiers()
+                                  .contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC))
+                      .forEach(
+                          m -> {
+                            java.util.List<JavaClass> types =
+                                new java.util.ArrayList<>(
+                                    m.getReturnType().getAllInvolvedRawTypes());
+                            types.add(m.getRawReturnType());
+                            types.addAll(m.getRawParameterTypes());
+                            m.getParameterTypes()
+                                .forEach(
+                                    parameter -> types.addAll(parameter.getAllInvolvedRawTypes()));
+                            types.stream()
+                                .filter(
+                                    t ->
+                                        t.getPackageName().startsWith("reactor.")
+                                            || (t.getPackageName().equals("org.reactivestreams")
+                                                || t.getPackageName()
+                                                    .startsWith("org.reactivestreams.")))
+                                .forEach(
+                                    t ->
+                                        events.add(
+                                            SimpleConditionEvent.violated(
+                                                m, m.getFullName() + " exposes " + t.getName())));
+                          });
+                }
+              });
+
+  static boolean publiclyVisible(JavaClass type) {
+    if (!type.getModifiers().contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC))
+      return false;
+    return type.getEnclosingClass().map(FrameworkArchitectureTest::publiclyVisible).orElse(true);
+  }
+
+  private static boolean aws(JavaClass type) {
+    return type.getPackageName()
+        .matches("pe\\.axiz\\.adapter\\..*\\.(aws|dynamodb|s3|sqs|sns|kms)(\\..*)?");
+  }
+
+  private static boolean r2dbc(JavaClass type) {
+    return type.getPackageName()
+        .matches("pe\\.axiz\\.(kit\\.r2dbc|adapter\\.(inbox|outbox)\\.r2dbc)(\\..*)?");
+  }
 
   static DescribedPredicate<JavaClass> apiPackages() {
     return DescribedPredicate.describe(
         "framework api classes",
         c ->
-            c.getPackageName().startsWith("pe.axiz.framework.")
+            (c.getPackageName().startsWith("pe.axiz.structure.")
+                    || c.getPackageName().startsWith("pe.axiz.extension."))
                 && !c.getPackageName().contains(".spring"));
   }
 

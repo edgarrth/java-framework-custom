@@ -10,7 +10,8 @@ axiz add audit
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-audit-spring-boot-starter` |
-| Incluida por defecto en | business, batch |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | business, core, gateway, batch |
 
 ## Propiedades que agrega
 
@@ -30,7 +31,5 @@ axiz.audit.async.enabled: true
 
 - [`axiz-audit-spring-boot-autoconfigure`](../referencia/spring/axiz-audit-spring-boot-autoconfigure.md)
 - [`axiz-core-audit`](../referencia/core/axiz-core-audit.md)
-- [`axiz-core-audit-kafka`](../referencia/core/axiz-core-audit-kafka.md)
-- [`axiz-core-audit-sqs`](../referencia/core/axiz-core-audit-sqs.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)

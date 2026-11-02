@@ -25,10 +25,18 @@ class AxizArchitectureTest {
 
   @Test
   void everyStyleHasRules() {
-    for (AxizArchitecture.Style style : AxizArchitecture.Style.values()) {
-      assertFalse(AxizArchitecture.rules("pe.axiz.x", style).isEmpty());
+    for (Structure structure : Structure.values()) {
+      Archetype role =
+          switch (structure) {
+            case EDA -> Archetype.EVENT_PROCESSOR;
+            case BFF -> Archetype.UX;
+            case BATCH -> Archetype.BATCH;
+            default -> Archetype.BUSINESS;
+          };
+      assertFalse(
+          AxizArchitecture.of("pe.axiz.x").archetype(role).structure(structure).rules().isEmpty());
     }
-    assertEquals(AxizArchitecture.Style.CQRS, AxizArchitecture.Style.parse(" cqrs "));
+    assertEquals(Extension.CQRS, Extension.parse(" cqrs "));
   }
 
   @Test
@@ -110,16 +118,72 @@ class AxizArchitectureTest {
         assertThrows(
             AssertionError.class,
             () ->
-                AxizArchitecture.verify(
-                    importer.importPackages("pe.axiz.quality.archunit.sample.reactive"),
-                    "pe.axiz.quality.archunit.sample.reactive",
-                    AxizArchitecture.Style.CQRS));
+                AxizArchitecture.of("pe.axiz.quality.archunit.sample.reactive")
+                    .extensions(Extension.CQRS)
+                    .verify(importer.importPackages("pe.axiz.quality.archunit.sample.reactive")));
     assertTrue(e.getMessage().contains("Mono/Flux block"), e.getMessage());
     assertTrue(e.getMessage().contains("Reactor Hooks"), e.getMessage());
-    AxizArchitecture.verify(
-        importer.importPackages("pe.axiz.quality.archunit.sample.reactiveclean"),
-        "pe.axiz.quality.archunit.sample.reactiveclean",
-        AxizArchitecture.Style.CQRS);
+    AxizArchitecture.of("pe.axiz.quality.archunit.sample.reactiveclean")
+        .extensions(Extension.CQRS)
+        .verify(importer.importPackages("pe.axiz.quality.archunit.sample.reactiveclean"));
+  }
+
+  @Test
+  void reactiveStackRejectsOffloadAndFutureWaits() {
+    JavaClasses bad =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.reactive");
+    String report =
+        ReactiveRules.rules().stream()
+            .map(rule -> rule.evaluate(bad).getFailureReport().toString())
+            .collect(java.util.stream.Collectors.joining("\n"));
+    for (String violation :
+        java.util.List.of(
+            "Mono.block()",
+            "Flux.blockLast()",
+            "boundedElastic()",
+            "CompletableFuture.join()",
+            "SecretResolver",
+            "DataKeyProvider",
+            "EnvelopeEncryptor",
+            "AuditPublisher",
+            "AuditTrail",
+            "AccessTokenProvider",
+            "NotificationSender")) {
+      assertTrue(report.contains(violation), report);
+    }
+    JavaClasses clean =
+        new ClassFileImporter().importPackages("pe.axiz.quality.archunit.sample.reactiveclean");
+    ReactiveRules.rules()
+        .forEach(rule -> assertFalse(rule.evaluate(clean).hasViolation(), rule.getDescription()));
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "BUSINESS,SERVLET,HEXAGONAL,true,true", "BUSINESS,REACTIVE,LAYERED,false,true",
+    "SUPPORT,SERVLET,HEXAGONAL,false,true", "SUPPORT,REACTIVE,LAYERED,false,true",
+    "CORE,REACTIVE,HEXAGONAL,false,true", "GATEWAY,SERVLET,HEXAGONAL,false,true",
+    "UX,REACTIVE,BFF,false,true", "EVENT_PROCESSOR,REACTIVE,EDA,false,true",
+    "EVENT_PROCESSOR,REACTIVE,HEXAGONAL,true,true", "BATCH,SERVLET,BATCH,false,true",
+    "BATCH,REACTIVE,BATCH,false,false", "BUSINESS,SERVLET,EDA,false,false",
+    "GATEWAY,SERVLET,LAYERED,false,false", "CORE,REACTIVE,HEXAGONAL,true,false",
+    "UX,REACTIVE,BFF,true,false", "BUSINESS,SERVLET,LAYERED,true,false",
+    "SUPPORT,SERVLET,HEXAGONAL,true,false", "UX,SERVLET,HEXAGONAL,false,false"
+  })
+  void serviceSelectorsEnforceTheAdrCatalog(
+      Archetype role, Stack stack, Structure structure, boolean cqrs, boolean valid) {
+    var architecture =
+        AxizArchitecture.of("pe.axiz.example").archetype(role).stack(stack).structure(structure);
+    if (cqrs) architecture.extensions(Extension.CQRS);
+    if (valid) org.junit.jupiter.api.Assertions.assertDoesNotThrow(architecture::rules);
+    else assertThrows(IllegalArgumentException.class, architecture::rules);
+  }
+
+  @Test
+  void aWrongBasePackageCannotSilentlyPassWithNoProductionClasses() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> AxizArchitecture.of("pe.axiz.nonexistent.service").verify());
+    assertThrows(IllegalArgumentException.class, () -> AxizArchitecture.of(" "));
   }
 
   @Test

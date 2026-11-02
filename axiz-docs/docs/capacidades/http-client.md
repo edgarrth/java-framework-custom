@@ -10,8 +10,9 @@ axiz add http-client
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-http-client-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`resilience`](resilience.md) |
-| Incluida por defecto en | experience, process, integration |
+| Incluida por defecto en | core, gateway, ux |
 
 ## Propiedades que agrega
 

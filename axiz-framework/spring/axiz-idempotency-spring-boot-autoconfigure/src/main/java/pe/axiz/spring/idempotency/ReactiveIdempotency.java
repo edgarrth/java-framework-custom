@@ -11,10 +11,10 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
+import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /** Reactive half of {@link IdempotencyMethodInterceptor}; loaded only when Reactor is present. */
 final class ReactiveIdempotency {
@@ -32,7 +32,7 @@ final class ReactiveIdempotency {
       MethodInvocation invocation,
       Idempotent rule,
       String operation,
-      Supplier<IdempotencyService> service) {
+      Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> service) {
     Mono<Void> gate =
         Mono.deferContextual(
             ctx -> {
@@ -51,8 +51,7 @@ final class ReactiveIdempotency {
               }
               RequestMetadata caller = ctx.getOrDefault(RequestContext.KEY, null);
               String scope = IdempotencySupport.scope(operation, caller);
-              return Mono.fromCallable(() -> service.get().begin(scope, key, fingerprint))
-                  .subscribeOn(Schedulers.boundedElastic())
+              return ReactiveStages.from(() -> service.get().begin(scope, key, fingerprint))
                   .flatMap(
                       decision -> {
                         if (decision instanceof IdempotencyService.Replay replay) {

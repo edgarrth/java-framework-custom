@@ -41,6 +41,8 @@ class SecretsTest {
     Files.writeString(dir.resolve("payments.api-key"), "key-1\n");
     FileSecretResolver files = new FileSecretResolver(dir);
     assertEquals("key-1", files.require("payments/api-key").reveal());
+    Files.writeString(dir.resolve("payments.db.password"), "field-override");
+    assertEquals("field-override", files.require("payments/db#password").reveal());
     assertTrue(files.resolve("missing").isEmpty());
     assertThrows(IllegalArgumentException.class, () -> files.resolve("../etc/passwd"));
     assertThrows(IllegalArgumentException.class, () -> files.resolve("a b"));

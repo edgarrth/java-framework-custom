@@ -10,6 +10,7 @@ axiz add scheduling
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-scheduling-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -53,5 +54,3 @@ void purge() { ... }
 ## Módulos
 
 - [`axiz-scheduling-spring-boot-autoconfigure`](../referencia/spring/axiz-scheduling-spring-boot-autoconfigure.md)
-- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)
-- [`axiz-core-test`](../referencia/core/axiz-core-test.md)

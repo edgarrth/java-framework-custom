@@ -5,9 +5,9 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 
 /** Shared test data. */
 public final class Fixtures {
@@ -24,11 +24,17 @@ public final class Fixtures {
 
   public static ProjectRequest request(
       String archetype,
-      Framework framework,
+      Structure structure,
       Stack stack,
       String persistence,
-      List<String> capabilities) {
-    String name = "orders-" + archetype;
+      List<String> capabilities,
+      pe.axiz.codegen.model.Extension... extensions) {
+    String name =
+        switch (archetype) {
+          case "business" -> "orders";
+          case "event-processor" -> "orders-processor";
+          default -> "orders-" + archetype;
+        };
     boolean rest = !List.of("event-processor", "batch", "library", "starter").contains(archetype);
     return new ProjectRequest(
         name,
@@ -36,12 +42,13 @@ public final class Fixtures {
         "pe.axiz.orders." + name.replace("-", ""),
         "Orders of the example domain",
         archetype,
-        framework,
+        structure,
         stack,
         persistence,
         capabilities,
         rest ? orders() : null,
         null,
-        "1.0.0");
+        "2.0.0",
+        List.of(extensions));
   }
 }

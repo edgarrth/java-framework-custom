@@ -10,7 +10,8 @@ axiz add messaging-sns
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-messaging-spring-boot-starter` |
-| Dependencias | `pe.axiz:axiz-core-messaging-sns`<br>`software.amazon.awssdk:sns`<br>`pe.axiz:axiz-core-observability-awssdk` |
+| Stacks del catálogo | servlet, reactive |
+| Dependencias | `pe.axiz:axiz-adapter-messaging-sns`<br>`software.amazon.awssdk:sns`<br>`pe.axiz:axiz-adapter-observability-aws` |
 | Incluida por defecto en | ningún arquetipo |
 
 Perfil `local` (`application-local.yaml`):
@@ -35,8 +36,4 @@ axiz.messaging.destinations.notifications: arn:aws:sns:<region>:<account>:notifi
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
-- [`axiz-core-messaging-kafka`](../referencia/core/axiz-core-messaging-kafka.md)
-- [`axiz-core-messaging-sns`](../referencia/core/axiz-core-messaging-sns.md)
-- [`axiz-core-messaging-sqs`](../referencia/core/axiz-core-messaging-sqs.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
-- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)

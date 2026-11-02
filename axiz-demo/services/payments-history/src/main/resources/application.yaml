@@ -55,6 +55,7 @@ axiz:
     # taken for an application that may read every customer's data
     claims:
       subject-as-client: false
+      machine: [axiz_token_kind=service]
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:

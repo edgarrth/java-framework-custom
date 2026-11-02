@@ -29,12 +29,12 @@ class SampleProjectsTest {
             tmp, contract(), false, "1.0.0", new PrintStream(log, true, StandardCharsets.UTF_8));
     int archetypes = ProjectGenerator.withDefaults().catalog().archetypes().size();
     assertEquals(archetypes, names.size(), log.toString(StandardCharsets.UTF_8));
-    assertTrue(names.contains("sample-business"));
+    assertTrue(names.contains("sample-orders"));
     assertTrue(names.contains("axiz-sample-library"));
-    assertTrue(Files.isRegularFile(tmp.resolve("sample-batch/pom.xml")));
-    assertTrue(Files.isRegularFile(tmp.resolve("sample-business/mvnw")));
+    assertTrue(Files.isRegularFile(tmp.resolve("sample-settlement-batch/pom.xml")));
+    assertTrue(Files.isRegularFile(tmp.resolve("sample-orders/mvnw")));
     String modules = Files.readString(tmp.resolve("modules.json"));
-    assertTrue(modules.startsWith("[\"") && modules.contains("sample-crud"), modules);
+    assertTrue(modules.startsWith("[\"") && modules.contains("sample-orders"), modules);
   }
 
   @Test
@@ -46,8 +46,15 @@ class SampleProjectsTest {
             true,
             "1.0.0",
             new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
-    assertTrue(names.contains("sample-business-cqrs-reactive-dynamodb"), names.toString());
-    assertTrue(names.contains("sample-experience-bff-servlet-none"), names.toString());
+    boolean cqrs = false;
+    for (String name : names) {
+      var project = pe.axiz.codegen.project.ProjectManifest.read(tmp.resolve(name));
+      if (project.cqrs()
+          && project.stack() == pe.axiz.codegen.model.Stack.REACTIVE
+          && project.persistence().equals("dynamodb")) cqrs = true;
+    }
+    assertTrue(cqrs, "must cover CQRS + reactive + DynamoDB");
+    assertTrue(names.stream().anyMatch(n -> n.endsWith("-ux")), names.toString());
     assertTrue(names.size() > 20, names.toString());
   }
 }

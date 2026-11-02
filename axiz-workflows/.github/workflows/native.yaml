@@ -1,34 +1,57 @@
-# Native binaries (GraalVM) for Linux, macOS and Windows; attached to the GitHub release.
+# Build-only native components; lib-build verifies and binds all platforms to one manifest.
 name: native
 on:
   workflow_call:
     inputs:
+      version:
+        type: string
+        required: true
+      source-sha:
+        type: string
+        required: true
       module:
-        description: Maven module to compile natively
+        description: Native Maven module relative to the reactor
         type: string
         required: true
       binary:
-        description: Binary name (imageName of the native profile)
+        description: Native executable name
         type: string
         required: true
-      release:
-        description: Attach the binaries to the release of the tag
-        type: boolean
-        default: false
+      candidate:
+        type: string
+        default: ''
+      maven-args:
+        type: string
+        default: '[]'
+      axiz-version:
+        type: string
+        default: ''
+      candidate-repository:
+        type: string
+        default: ''
+      candidate-build-run-id:
+        type: string
+        default: ''
+      candidate-build-run-attempt:
+        type: string
+        default: ''
+      candidate-manifest-sha256:
+        type: string
+        default: ''
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN:
-        description: Read-only token for private immutable release verification (optional for public repositories)
         required: false
       NEXUS_URL:
         required: true
-      NEXUS_USERNAME:
+      NEXUS_READ_USERNAME:
         required: true
-      NEXUS_PASSWORD:
+      NEXUS_READ_PASSWORD:
         required: true
-
+      CANDIDATE_READ_TOKEN:
+        required: false
 permissions:
-  contents: write
-
+  contents: read
+  id-token: write
 jobs:
   axiz-workflows-trust:
     runs-on: ubuntu-24.04
@@ -40,7 +63,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -49,6 +72,7 @@ jobs:
 
   build:
     needs: axiz-workflows-trust
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -60,55 +84,80 @@ jobs:
           - os: windows-2025
             suffix: windows-x64
     runs-on: ${{ matrix.os }}
-    env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      NATIVE_MODULE: ${{ inputs.module }}
-      NATIVE_BINARY: ${{ inputs.binary }}
-      NATIVE_SUFFIX: ${{ matrix.suffix }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          ref: ${{ inputs.source-sha }}
+          fetch-depth: 0
+          persist-credentials: false
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0 # x-release-please-version
+      - uses: axiz/axiz-workflows/actions/consume-build@v2.0.0 # x-release-please-version
+        id: candidate
+        if: inputs.candidate-manifest-sha256 != '' || inputs.candidate-repository != '' || inputs.candidate-build-run-id != '' || inputs.candidate-build-run-attempt
+          != ''
         with:
-          distribution: graalvm
+          repository: ${{ inputs.candidate-repository }}
+          build-run-id: ${{ inputs.candidate-build-run-id }}
+          build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+          manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          kind: maven-library
+          token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: axiz/axiz-workflows/actions/build-inputs@v2.0.0 # x-release-please-version
+        id: inputs
+        with:
+          version: ${{ inputs.version }}
+          source-sha: ${{ inputs.source-sha }}
+          candidate: ${{ inputs.candidate }}
+          maven-args: ${{ inputs.maven-args }}
+          axiz-version: ${{ inputs.axiz-version }}
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          kind: native-component
+          native-module: ${{ inputs.module }}
+          native-binary: ${{ inputs.binary }}
+          native-platforms: '["linux-x64","macos-arm64","windows-x64"]'
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0 # x-release-please-version
+        with:
           nexus-url: ${{ secrets.NEXUS_URL }}
-      - name: Native image
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          candidate-source-repository: ${{ inputs.candidate-repository }}
+          distribution: graalvm
+      - name: Compile and smoke the native executable
         shell: bash
-        run: mvn -B -ntp -Pnative -pl "$NATIVE_MODULE" -am package -DskipTests
-      - name: Smoke test
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+          VERSION: ${{ inputs.version }}
+          NATIVE_MODULE: ${{ inputs.module }}
+          NATIVE_BINARY: ${{ inputs.binary }}
+          NATIVE_PLATFORM: ${{ matrix.suffix }}
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/maven_version.py" --version "$VERSION"
+          "$PYTHON" "$TOOLS/native_components.py" compile --metadata "$METADATA"
+          "$PYTHON" "$TOOLS/native_components.py" create --metadata "$METADATA" \
+            --module "$NATIVE_MODULE" --binary "$NATIVE_BINARY" --platform "$NATIVE_PLATFORM" \
+            --output target/native-component
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+      - name: Sign exact native component bytes and smoke evidence
         shell: bash
         run: |
-          bin="$NATIVE_MODULE/target/$NATIVE_BINARY"
-          [ -f "$bin.exe" ] && bin="$bin.exe"
-          "$bin" --version
-          "$bin" catalog > /dev/null
-      - name: Package
-        shell: bash
-        run: |
-          cd "$NATIVE_MODULE/target"
-          name="${NATIVE_BINARY}-${GITHUB_REF_NAME}-${NATIVE_SUFFIX}"
-          if [ -f "$NATIVE_BINARY.exe" ]; then 7z a "$name.zip" "$NATIVE_BINARY.exe"; else tar czf "$name.tar.gz" "$NATIVE_BINARY"; fi
-          sha256sum "$name".* > "$name.sha256" 2>/dev/null || shasum -a 256 "$name".* > "$name.sha256"
+          set -euo pipefail
+          cosign sign-blob --yes --bundle target/native-component/native-component.sigstore.json \
+            target/native-component/native-component.json
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: ${{ inputs.binary }}-${{ matrix.suffix }}
-          path: |
-            ${{ inputs.module }}/target/${{ inputs.binary }}-*.tar.gz
-            ${{ inputs.module }}/target/${{ inputs.binary }}-*.zip
-            ${{ inputs.module }}/target/${{ inputs.binary }}-*.sha256
-
-  release:
-    needs: build
-    if: inputs.release && startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          path: dist
-          merge-multiple: true
-      - name: Attach to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber
+          name: native-component-${{ github.run_attempt }}-${{ matrix.suffix }}
+          path: target/native-component
+          retention-days: 90
+          if-no-files-found: error

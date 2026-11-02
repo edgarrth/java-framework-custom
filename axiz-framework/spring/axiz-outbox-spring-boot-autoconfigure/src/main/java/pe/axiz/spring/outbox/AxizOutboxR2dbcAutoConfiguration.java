@@ -16,16 +16,16 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
+import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
-import pe.axiz.core.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.core.outbox.r2dbc.ReactiveOutboxWriter;
-import pe.axiz.core.persistence.r2dbc.R2dbcSql;
-import pe.axiz.core.persistence.r2dbc.R2dbcTransactionRunner;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.kit.r2dbc.R2dbcSql;
+import pe.axiz.kit.r2dbc.R2dbcTransactionRunner;
+import pe.axiz.kit.r2dbc.ReactiveSql;
 
 /**
  * Transactional outbox for reactive services on Aurora over R2DBC. Business code enqueues with
@@ -41,7 +41,7 @@ import pe.axiz.core.resilience.Backoff;
       "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration"
     })
 @ConditionalOnClass(
-    name = {"pe.axiz.core.outbox.r2dbc.R2dbcOutboxStore", "io.r2dbc.spi.ConnectionFactory"})
+    name = {"pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore", "io.r2dbc.spi.ConnectionFactory"})
 @ConditionalOnBean({ConnectionFactory.class, ReactiveSql.class})
 @ConditionalOnMissingBean(DataSource.class)
 @ConditionalOnBooleanProperty(name = "axiz.outbox.enabled", matchIfMissing = true)

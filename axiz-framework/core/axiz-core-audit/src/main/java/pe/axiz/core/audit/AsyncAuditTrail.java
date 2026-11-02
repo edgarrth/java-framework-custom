@@ -1,0 +1,72 @@
+package pe.axiz.core.audit;
+
+import java.time.Clock;
+import java.util.Objects;
+import java.util.concurrent.CompletionStage;
+import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.Stages;
+import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.sensitive.ObjectMasker;
+
+/** Sanitized audit records with native asynchronous acceptance; no executor or blocking bridge. */
+public final class AsyncAuditTrail {
+  private final String service;
+  private final AsyncAuditEventPublisher publisher;
+  private final ObjectMasker masker;
+  private final IdGenerator ids;
+  private final Clock clock;
+
+  public AsyncAuditTrail(
+      String service,
+      AsyncAuditEventPublisher publisher,
+      ObjectMasker masker,
+      IdGenerator ids,
+      Clock clock) {
+    this.service = Objects.requireNonNull(service);
+    this.publisher = Objects.requireNonNull(publisher);
+    this.masker = Objects.requireNonNull(masker);
+    this.ids = Objects.requireNonNull(ids);
+    this.clock = Objects.requireNonNull(clock);
+  }
+
+  /** Builders belong to one recording operation and must not be shared across concurrent calls. */
+  public Builder record(String action, String resourceType) {
+    return new Builder(action, resourceType);
+  }
+
+  /** Builder for one sanitized asynchronous record. */
+  public final class Builder {
+    private final AuditRecord record;
+
+    private Builder(String action, String resourceType) {
+      record = new AuditRecord(service, masker, ids, clock, action, resourceType);
+    }
+
+    public Builder resourceId(@Nullable String value) {
+      record.resourceId(value);
+      return this;
+    }
+
+    public Builder context(AuditTrail.Context value) {
+      record.context(value);
+      return this;
+    }
+
+    public Builder detail(String key, @Nullable Object value) {
+      record.detail(key, value);
+      return this;
+    }
+
+    public CompletionStage<Void> success() {
+      return publish(AuditEvent.Outcome.SUCCESS, null);
+    }
+
+    public CompletionStage<Void> failure(@Nullable String errorCode) {
+      return publish(AuditEvent.Outcome.FAILURE, errorCode);
+    }
+
+    private CompletionStage<Void> publish(AuditEvent.Outcome outcome, @Nullable String errorCode) {
+      return Stages.call(() -> publisher.publish(record.event(outcome, errorCode)));
+    }
+  }
+}

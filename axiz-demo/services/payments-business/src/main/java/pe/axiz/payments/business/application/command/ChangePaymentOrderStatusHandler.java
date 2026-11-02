@@ -4,7 +4,7 @@ import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;
-import pe.axiz.framework.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.CommandHandler;
 import pe.axiz.payments.business.application.port.out.PaymentEvents;
 import pe.axiz.payments.business.application.port.out.PaymentOrders;
 import pe.axiz.payments.business.domain.PaymentOrder;

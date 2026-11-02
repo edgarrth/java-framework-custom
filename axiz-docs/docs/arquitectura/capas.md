@@ -1,51 +1,54 @@
-# Capas
+# Capas del framework
 
-| Capa | Carpeta | Artefactos | Regla |
+Axiz 2.0 separa contratos, tecnología, integración con Spring y organización del servicio.
+Los arquetipos describen el rol del servicio y no son capas de ejecución.
+
+| Capa | Carpeta | Artefactos | Parent y responsabilidad |
 |---|---|---|---|
-| Plataforma | `platform/` | `axiz-parent-*`, `axiz-dependencies`, `axiz-bom` | Versiones y gates de build |
-| 1. core | `core/` | `axiz-core-<capacidad>[-<tecnología>]` | Solo JDK, SLF4J, JSpecify y Micrometer; las librerías de tecnología solo en los adaptadores |
-| 2. Spring | `spring/` | `axiz-<capacidad>-spring-boot-autoconfigure` + `-starter` | Solo cableado; un starter nunca depende de otro |
-| 3. frameworks | `frameworks/` | `axiz-framework-<estilo>-api` + `-spring-boot-starter` | Un estilo por servicio |
-| Generación | `codegen/` | `axiz-codegen`, plantillas, arquetipos | Compartido por la CLI y el initializr |
-| Calidad | `quality/` | `axiz-code-standards`, `axiz-archunit-rules`, pruebas de arquitectura | Reglas verificadas por máquina |
+| Plataforma | `platform/` | `axiz-parent-*`, `axiz-dependencies`, `axiz-bom` | Versiones, dependencias y controles de build |
+| 1. Core | `core/` | `axiz-core-<capacidad>` | `axiz-parent-core`: puertos, tipos y lógica sin tecnología ni runtime |
+| 2. Tecnología | `adapters/` | `axiz-adapter-<capacidad>-<tecnología>` | `axiz-parent-technology`: implementa los puertos con un SDK o driver |
+| 2. Persistencia | `kits/` | `axiz-kit-jpa`, `axiz-kit-r2dbc`, `axiz-kit-dynamodb` | `axiz-parent-technology`: tipos y herramientas de persistencia |
+| 3. Spring | `spring/` | `axiz-<capacidad>-spring-boot-autoconfigure` y `-starter` | `axiz-parent-spring`: lifecycle, beans, transacciones y fachadas |
+| 4. Estructuras | `structures/` | `axiz-structure-<estructura>-api` y `-spring-boot-starter` | Una estructura por servicio |
+| 4. Extensiones | `extensions/` | `axiz-extension-cqrs-api` y `-spring-boot-starter` | Capacidades estructurales opcionales; CQRS se monta sobre hexagonal |
+| Generación | `codegen/` | Catálogo, plantillas y `axiz-codegen` | Modelo compartido por CLI e Initializr |
+| Calidad | `quality/` | Reglas, contratos y soporte de pruebas | `axiz-parent-test` para soporte de pruebas; sin dependencia productiva desde core |
 
-## Capa 1: core
+## Contratos y tecnología
 
-Java puro: la lógica de cada capacidad (errores, identificadores, cifrado, outbox, sagas...) sin
-Spring ni Quarkus, para probarla con pruebas unitarias simples y poder cablearla con otro runtime.
-Una capacidad expone **puertos** (`OutboxStore`, `IdempotencyStore`, `DistributedLock`,
-`SecretResolver`...) y los módulos `-<tecnología>` los implementan: `axiz-core-lock-redis`,
-`axiz-core-lock-dynamodb`, `axiz-core-secrets-aws`. El AWS SDK v2, Lettuce o los clientes de Kafka
-solo aparecen en esos módulos.
+Core admite JDK, JSpecify, SLF4J, Micrometer y otros módulos core. Prohíbe Spring, Quarkus,
+Reactor, Reactive Streams y SDKs de tecnología. Publica puertos síncronos y puertos `Async*`
+con `CompletionStage` o `Flow.Publisher`; los adaptadores tecnológicos implementan esos puertos.
 
-## Capa 2: Spring Boot
+Los kits son herramientas de persistencia. Una entidad JPA puede extender `AuditableEntity`;
+una fila R2DBC puede usar `EncryptedText`; un repositorio DynamoDB puede usar `DynamoRepository`.
+Estos tipos se importan en `repository` o `adapter.out.persistence`, nunca en el dominio.
+El dominio puede usar contratos de Axiz sin adquirir una dependencia de un framework tercero.
 
-Cada capacidad tiene su auto-configuración y su starter. Las auto-configuraciones:
+La excepción de Reactor en tecnología es cerrada: `axiz-kit-r2dbc`,
+`axiz-adapter-inbox-r2dbc` y `axiz-adapter-outbox-r2dbc`. Conservan Reactor para transportar
+la transacción en el contexto. Los adaptadores AWS pueden interoperar internamente con Reactive
+Streams, pero sus APIs públicas exponen los tipos neutrales del puerto.
 
-- se registran en `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports`
-  (nunca `spring.factories` ni escaneo de paquetes);
-- declaran cada bean con `@ConditionalOnMissingBean`, así el servicio puede reemplazarlo;
-- personalizan los beans de Boot con customizers en lugar de reemplazarlos (`ObjectMapper`,
-  `RestClient.Builder`, `WebClient.Builder`);
-- leen propiedades tipadas e inmutables bajo `axiz.<capacidad>.*`, validadas al arrancar;
-- activan la variante servlet o reactiva con `@ConditionalOnWebApplication`.
+## Integración y estructura
 
-Un servicio declara solo starters; las versiones vienen del BOM.
+Spring registra autoconfiguraciones en `AutoConfiguration.imports`, usa propiedades tipadas,
+permite reemplazar beans y selecciona la variante de ejecución. Una capacidad Spring depende de
+su propio paquete y de `foundation`; conversa con otras capacidades mediante puertos core.
+Los starters agrupan dependencias y no contienen otra implementación del algoritmo core.
 
-## Capa 3: frameworks
+Las estructuras y extensiones componen capacidades y entregan contratos, integración, plantillas
+y reglas. Sus módulos `-api` usan `axiz-parent-api`; los starters usan `axiz-parent-spring`.
+Los contratos reactivos de estructura pueden usar `Publisher`, sin importar Spring ni Reactor.
 
-Un estilo define cómo se estructura **todo** el servicio y se elige una vez. Cada estilo entrega un
-módulo `-api` (contratos en Java puro), un starter que compone los starters de la capa 2, reglas
-ArchUnit, plantillas de código y su guía. Ver [Estilos](../estilos/index.md).
+El servicio declara su estructura, sus extensiones y los starters de capacidades elegidos.
+Los kits se declaran en compile cuando son necesarios; los adaptadores tecnológicos, en runtime.
+La aplicación no importa autoconfiguraciones ni implementaciones `pe.axiz.adapter.*`.
 
-## Cómo se verifica
+## Verificación
 
-- `maven-enforcer`: `bannedDependencies` por parent (la capa 1 prohíbe Spring, Quarkus, AWS SDK v1,
-  librerías de GCP, Hazelcast, Vault, agentes de OpenTelemetry, Retrofit, Feign), convergencia de
-  dependencias, versiones de plugins fijadas y README obligatorio por módulo.
-- `axiz-architecture-tests`: la capa 1 no conoce Spring ni capas superiores, la capa 2 no conoce la
-  3, los `-api` de los frameworks solo dependen de la capa 1, cada starter usa solo su capacidad (o
-  la fundación) y no hay ciclos entre capacidades ni entre estilos.
-- `axiz-archunit-rules`: las reglas de cada estilo, que cada servicio corre en su `ArchitectureTest`
-  (ver [Reglas de arquitectura](../calidad/arquitectura.md)).
-
+Enforcer controla dependencias y scopes; `FrameworkArchitectureTest` controla el uso de clases,
+firmas públicas, aislamiento y ciclos. `check-layer-structure.py` comprueba nombres, parents,
+pertenencia al reactor y la lista cerrada de módulos R2DBC.
+Cada servicio ejecuta [sus reglas de arquitectura](../calidad/arquitectura.md).

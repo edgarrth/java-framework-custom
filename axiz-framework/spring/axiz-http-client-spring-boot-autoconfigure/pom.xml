@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-http-client-spring-boot-autoconfigure</artifactId>
@@ -19,6 +19,12 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>io.micrometer</groupId><artifactId>context-propagation</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-reactor-netty</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>

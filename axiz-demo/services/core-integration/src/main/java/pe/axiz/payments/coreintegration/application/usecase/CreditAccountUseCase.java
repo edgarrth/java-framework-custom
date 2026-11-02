@@ -4,7 +4,7 @@ import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 import pe.axiz.payments.coreintegration.application.port.out.CoreAccounts;
 import pe.axiz.payments.coreintegration.domain.Movement;
 import pe.axiz.payments.coreintegration.domain.MovementOrder;
@@ -12,7 +12,7 @@ import pe.axiz.payments.coreintegration.domain.MovementOrder;
 /** Credits an account of the core (the core exposes credits only through SOAP). */
 @UseCase
 public class CreditAccountUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<CreditAccountUseCase.Input, Movement> {
+    implements pe.axiz.structure.hexagonal.UseCase<CreditAccountUseCase.Input, Movement> {
 
   /**
    * Input of the use case.

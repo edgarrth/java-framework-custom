@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.core.inbox.dynamodb.DynamoDbInboxStore;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** The purge of expired inbox rows and the DynamoDB store. */

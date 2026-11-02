@@ -20,7 +20,7 @@ serviceAccount:
 # shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
 sharedConfigMap: axiz-common
 
-javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 env: []
 
 resources:

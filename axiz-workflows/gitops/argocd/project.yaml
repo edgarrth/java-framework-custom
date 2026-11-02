@@ -9,6 +9,8 @@ spec:
   description: axiz microservices (one Application per service and environment)
   sourceRepos:
     - https://github.com/axiz/*
+    # Replace this exact organization registry prefix if BUILD_REGISTRY uses a private registry.
+    - oci://ghcr.io/axiz/*
   destinations:
     - server: https://kubernetes.default.svc
       namespace: axiz-dev
@@ -40,6 +42,6 @@ spec:
       kind: ExternalSecret
   roles:
     - name: ci-read
-      description: Read-only token used by service-cd to wait for a release
+      description: Read-only token used by service-deploy to confirm immutable sources and health
       policies:
         - p, proj:axiz-services:ci-read, applications, get, axiz-services/*, allow

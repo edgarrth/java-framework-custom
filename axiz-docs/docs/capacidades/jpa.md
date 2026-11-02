@@ -10,6 +10,8 @@ axiz add jpa
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-jpa-spring-boot-starter` |
+| Stacks del catálogo | servlet |
+| Dependencias | `pe.axiz:axiz-kit-jpa` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -49,4 +51,3 @@ Sin configuración adicional.
 
 - [`axiz-jpa-spring-boot-autoconfigure`](../referencia/spring/axiz-jpa-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
-- [`axiz-core-persistence-jpa`](../referencia/core/axiz-core-persistence-jpa.md)

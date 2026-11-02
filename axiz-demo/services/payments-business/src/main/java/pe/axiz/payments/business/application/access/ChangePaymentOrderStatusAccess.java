@@ -2,8 +2,8 @@ package pe.axiz.payments.business.application.access;
 
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
-import pe.axiz.framework.cqrs.AccessPolicy;
-import pe.axiz.framework.cqrs.Caller;
+import pe.axiz.extension.cqrs.AccessPolicy;
+import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.business.application.command.ChangePaymentOrderStatusCommand;
 
 /** Status changes belong to the payment process; customers cannot move their own orders. */

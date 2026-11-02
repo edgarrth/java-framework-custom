@@ -1,0 +1,33 @@
+<!-- generated -->
+# axiz-adapter-secrets-aws
+
+Secret resolvers for AWS Secrets Manager and Parameter Store.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-secrets-aws</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `ParameterStoreResolver` | Resolves parameters (including SecureString) from AWS Systems Manager Parameter Store under a path such as `/axiz/prod/payments/`. |
+| `SecretsManagerResolver` | Resolves secrets from AWS Secrets Manager. |
+| `SecretsManagerAsyncResolver` | Native `SecretsManagerAsyncClient` lookup, including `name#field` JSON selection. |
+| `ParameterStoreAsyncResolver` | Native `SsmAsyncClient` SecureString lookup, mapping `#` to `/`. |
+
+Native resolvers return JDK `CompletionStage` values and preserve cancellation of the SDK call.
+They borrow their SDK clients; the application owns client shutdown. Only the SDK's not-found
+response allows source fallback. Transport, authorization and malformed JSON errors propagate;
+invalid JSON diagnostics do not include secret data. Structured JSON fields remain valid JSON.
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-secrets-aws verify`.

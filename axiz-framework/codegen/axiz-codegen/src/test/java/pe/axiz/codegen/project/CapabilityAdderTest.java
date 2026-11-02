@@ -12,15 +12,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.Fixtures;
 import pe.axiz.codegen.ProjectGenerator;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 
 class CapabilityAdderTest {
 
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
   private final CapabilityAdder adder = new CapabilityAdder(generator.catalog());
 
-  private Path project(Path dir, String archetype, Framework f, Stack s, String persistence)
+  private Path project(Path dir, String archetype, Structure f, Stack s, String persistence)
       throws Exception {
     generator
         .generate(Fixtures.request(archetype, f, s, persistence, List.of()))
@@ -30,21 +30,21 @@ class CapabilityAdderTest {
 
   @Test
   void addsStarterAdaptersPropertiesKeysAndManifest(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "business", Framework.HEXAGONAL, Stack.SERVLET, "aurora");
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
     CapabilityAdder.Result r = adder.add(dir, "idempotency-redis");
     assertEquals(List.of("idempotency", "idempotency-redis"), r.added());
     String pom = Files.readString(dir.resolve("pom.xml"));
     assertTrue(pom.contains("<artifactId>axiz-idempotency-spring-boot-starter</artifactId>"));
-    assertTrue(pom.contains("<artifactId>axiz-core-idempotency-redis</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-adapter-idempotency-redis</artifactId>"));
     assertTrue(pom.contains("<artifactId>spring-boot-starter-data-redis</artifactId>"));
     assertEquals(
         1, pom.split("axiz-idempotency-spring-boot-starter").length - 1, "starter added once");
     String app = Files.readString(dir.resolve("src/main/resources/application.yaml"));
     assertTrue(app.startsWith("# "), "header comment kept");
     assertTrue(app.contains("store: redis"));
-    assertTrue(app.contains("name: orders-business"), "existing properties kept");
+    assertTrue(app.contains("name: orders"), "existing properties kept");
     assertTrue(
-        Files.readString(dir.resolve("deploy/helm/orders-business/values-prod.yaml"))
+        Files.readString(dir.resolve("deploy/helm/orders/values-prod.yaml"))
             .contains("#   spring.data.redis.url:"));
     assertTrue(ProjectManifest.read(dir).capabilities().contains("idempotency-redis"));
     assertTrue(r.example().contains("axiz.idempotency.store"));
@@ -55,7 +55,7 @@ class CapabilityAdderTest {
 
   @Test
   void addsTheTablesAsANewMigration(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "business", Framework.HEXAGONAL, Stack.SERVLET, "aurora");
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
     CapabilityAdder.Result r = adder.add(dir, "outbox");
     // continues the project numbering after V1__init.sql
     Path migration = dir.resolve("src/main/resources/db/migration/V2__axiz_outbox.sql");
@@ -78,16 +78,16 @@ class CapabilityAdderTest {
 
   @Test
   void addsSecretsToTheExternalSecret(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "integration", Framework.HEXAGONAL, Stack.SERVLET, "none");
+    Path dir = project(tmp, "core", Structure.HEXAGONAL, Stack.SERVLET, "none");
     adder.add(dir, "crypto");
-    String values = Files.readString(dir.resolve("deploy/helm/orders-integration/values.yaml"));
+    String values = Files.readString(dir.resolve("deploy/helm/orders-core/values.yaml"));
     assertTrue(values.contains("    - field-key-v1\n    - blind-index-key"), values);
     assertFalse(values.contains("    []"));
   }
 
   @Test
   void rejectsIncompatibleCapabilities(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "business", Framework.CQRS, Stack.REACTIVE, "dynamodb");
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.REACTIVE, "dynamodb");
     assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "outbox"));
     assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "nope"));
     assertFalse(
@@ -96,9 +96,9 @@ class CapabilityAdderTest {
 
   @Test
   void storeFollowsThePersistence(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "event-processor", Framework.EDA, Stack.SERVLET, "dynamodb");
+    Path dir = project(tmp, "event-processor", Structure.EDA, Stack.SERVLET, "dynamodb");
     adder.add(dir, "sequence");
-    assertTrue(Files.readString(dir.resolve("pom.xml")).contains("axiz-core-sequence-dynamodb"));
+    assertTrue(Files.readString(dir.resolve("pom.xml")).contains("axiz-adapter-sequence-dynamodb"));
     assertTrue(
         Files.readString(dir.resolve("src/main/resources/application.yaml"))
             .contains("store: dynamodb"));
@@ -106,11 +106,11 @@ class CapabilityAdderTest {
 
   @Test
   void reactiveAuroraProjectsGetTheR2dbcVariants(@TempDir Path tmp) throws Exception {
-    Path dir = project(tmp, "business", Framework.CQRS, Stack.REACTIVE, "aurora");
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.REACTIVE, "aurora");
     CapabilityAdder.Result r = adder.add(dir, "outbox");
     assertEquals(List.of("outbox"), r.added(), "r2dbc came with the project");
     String pom = Files.readString(dir.resolve("pom.xml"));
-    assertTrue(pom.contains("axiz-core-outbox-r2dbc"));
+    assertTrue(pom.contains("axiz-adapter-outbox-r2dbc"));
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"));
     assertTrue(
         Files.list(dir.resolve(Migrations.DIR))
@@ -119,7 +119,7 @@ class CapabilityAdderTest {
     assertTrue(Files.readString(dir.resolve("pom.xml")).contains("shedlock-provider-r2dbc"));
     IllegalArgumentException jpa =
         assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "saga"));
-    assertTrue(jpa.getMessage().contains("not available on the reactive stack"), jpa.getMessage());
+    assertTrue(jpa.getMessage().contains("does not support reactive"), jpa.getMessage());
     assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "sequence"));
   }
 }

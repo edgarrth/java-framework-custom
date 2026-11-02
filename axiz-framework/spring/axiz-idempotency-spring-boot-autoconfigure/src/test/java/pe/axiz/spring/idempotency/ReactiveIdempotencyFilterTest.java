@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import pe.axiz.core.idempotency.IdempotencyService;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
-import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
+import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import reactor.core.publisher.Mono;
 
@@ -51,9 +51,9 @@ class ReactiveIdempotencyFilterTest {
     }
   }
 
-  private final IdempotencyService service =
-      new IdempotencyService(
-          new InMemoryIdempotencyStore(),
+  private final AsyncIdempotencyService service =
+      new AsyncIdempotencyService(
+          new InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
           Duration.ofSeconds(30),
           Duration.ofHours(1),
           Clock.systemUTC());
@@ -62,7 +62,12 @@ class ReactiveIdempotencyFilterTest {
   private WebTestClient client(int maxResponseSize) {
     ProxyFactory factory = new ProxyFactory(api);
     factory.setProxyTargetClass(true);
-    factory.addAdvice(new IdempotencyMethodInterceptor(() -> service));
+    factory.addAdvice(
+        new IdempotencyMethodInterceptor(
+            () -> {
+              throw new AssertionError("reactive code must not use the synchronous service");
+            },
+            () -> service));
     return WebTestClient.bindToController(factory.getProxy())
         .controllerAdvice(new IdempotencyReplayHandler())
         .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize))

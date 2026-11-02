@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-lock-spring-boot-autoconfigure</artifactId>
@@ -16,9 +16,11 @@
 
   <properties>
     <axiz.module.name>pe.axiz.spring.lock</axiz.module.name>
+    <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED</axiz.test.argLine>
   </properties>
 
   <dependencies>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -30,13 +32,13 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-lock-redis</artifactId>
+      <artifactId>axiz-adapter-lock-redis</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-lock-dynamodb</artifactId>
+      <artifactId>axiz-adapter-lock-dynamodb</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -55,5 +57,9 @@
       <artifactId>spring-boot-data-redis</artifactId>
       <optional>true</optional>
     </dependency>
+<dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+<dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
   </dependencies>
 </project>

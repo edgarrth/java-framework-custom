@@ -2,7 +2,7 @@ package pe.axiz.payments.notifications.contact;
 
 import java.util.Optional;
 import org.springframework.stereotype.Component;
-import pe.axiz.core.persistence.dynamodb.DynamoRepository;
+import pe.axiz.kit.dynamodb.DynamoRepository;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
 
 /** {@link ContactDirectory} on the {@code notification-contacts} table. */

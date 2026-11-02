@@ -16,7 +16,15 @@ final class Version implements CommandLine.IVersionProvider {
 
   static String axiz() {
     String v = PROPERTIES.getProperty("axizVersion", "");
-    return v.isBlank() || v.startsWith("${") ? "1.0.0" : v;
+    return v.isBlank() || v.startsWith("${") ? "2.0.0" : v;
+  }
+
+  static String rewritePlugin() {
+    String value = PROPERTIES.getProperty("rewritePluginVersion", "");
+    if (!value.matches("[0-9]+\\.[0-9]+\\.[0-9]+")) {
+      throw new IllegalStateException("Missing curated OpenRewrite Maven plugin version");
+    }
+    return value;
   }
 
   @Override

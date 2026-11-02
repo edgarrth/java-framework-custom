@@ -11,14 +11,14 @@ Las herramientas y el demo consumen el BOM publicado, igual que un servicio real
 
 ## Parents y BOMs
 
-`axiz-parent` es el `pom.xml` raíz del framework: no contiene código y ningún servicio lo usa.
+`axiz-parent` es el `pom.xml` raíz del structure: no contiene código y ningún servicio lo usa.
 Agrega todos los módulos y define una sola vez lo compartido (Java 25, plugins y versiones,
 enforcer, formato, análisis estático, publicación). De él heredan los tres parents publicados:
 
 | Parent | Quién lo hereda | Qué agrega |
 |---|---|---|
 | `axiz-parent-core` | módulos de la capa 1 y librerías Java puras de los equipos | Prohíbe Spring y Quarkus; sin Boot |
-| `axiz-parent-spring-lib` | starters, frameworks y librerías Spring de los equipos | Gestión de Spring Boot, metadata de propiedades, hints AOT; sin fat JAR |
+| `axiz-parent-spring` | starters, frameworks y librerías Spring de los equipos | Gestión de Spring Boot, metadata de propiedades, hints AOT; sin fat JAR |
 | `axiz-parent-service` | microservicios | Repackage, imagen con Jib (o nativa), perfiles de gates, pruebas de integración, generación de modelos desde el contrato |
 
 Los BOMs son distintos de los parents: un parent dice **cómo** se construye y se hereda; un BOM

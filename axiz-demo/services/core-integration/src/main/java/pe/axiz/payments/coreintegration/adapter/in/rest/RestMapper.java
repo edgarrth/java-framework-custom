@@ -16,14 +16,14 @@ final class RestMapper {
   static MovementOrder order(MovementRequest r) {
     return new MovementOrder(
         r.getAccountId(),
-        Money.of(r.getAmount(), r.getCurrency()),
+        Money.ofExact(r.getAmount(), r.getCurrency()),
         r.getReference(),
         r.getHolderId());
   }
 
   static TransferOrder order(TransferRequest r) {
     return new TransferOrder(
-        r.getCreditorCci(), Money.of(r.getAmount(), r.getCurrency()), r.getReference());
+        r.getCreditorCci(), Money.ofExact(r.getAmount(), r.getCurrency()), r.getReference());
   }
 
   static Movement toApi(pe.axiz.payments.coreintegration.domain.Movement m) {

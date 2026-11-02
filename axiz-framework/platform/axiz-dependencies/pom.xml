@@ -27,7 +27,7 @@
   </distributionManagement>
 
   <properties>
-    <revision>1.0.0</revision>
+    <revision>2.0.0</revision>
     <axiz.nexus.url>https://nexus.axiz.internal</axiz.nexus.url>
 
     <!-- 4.1.2 manages Tomcat 11.0.27 (fixes of 11.0.25 to 11.0.27, see the Tomcat 11 security page) -->

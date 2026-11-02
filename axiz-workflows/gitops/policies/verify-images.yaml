@@ -1,7 +1,6 @@
-# Admission policy (Kyverno): pods of the service namespaces only run images from the Nexus
-# registry signed by the CI key in AWS KMS (cosign, see service-ci) and with a signed SLSA
-# provenance that names the shared service-ci workflow as builder. The policy is managed by the
-# platform team; the public key is exported once from KMS (cosign public-key --key awskms:///...).
+# Admission policy: the registry prefix must match BUILD_REGISTRY's build namespace.
+# Images require keyless signatures and SLSA provenance from the exact immutable service-build
+# release. Keep the subject and builder version aligned when adopting a new workflow release.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -22,44 +21,40 @@ spec:
               namespaces: [axiz-dev, axiz-qa, axiz-prod]
       verifyImages:
         - imageReferences:
-            - "nexus-docker.axiz.internal/axiz/*"
-          mutateDigest: true
+            - "ghcr.io/axiz/builds/*"
+          mutateDigest: false
           verifyDigest: true
           required: true
           attestors:
             - entries:
-                - keys:
-                    kms: awskms:///alias/axiz-image-signing
+                - keyless:
+                    subject: https://github.com/axiz/axiz-workflows/.github/workflows/service-build.yaml@refs/tags/v2.0.0 # x-release-please-version
+                    issuer: https://token.actions.githubusercontent.com
                     rekor:
-                      ignoreTlog: true
-                    ctlog:
-                      ignoreSCT: true
-          # SLSA build provenance signed with the same key: the image was built by the shared
-          # service-ci workflow (service-ci attests it next to the SBOM)
+                      url: https://rekor.sigstore.dev
           attestations:
             - type: https://slsa.dev/provenance/v1
               attestors:
                 - entries:
-                    - keys:
-                        kms: awskms:///alias/axiz-image-signing
+                    - keyless:
+                        subject: https://github.com/axiz/axiz-workflows/.github/workflows/service-build.yaml@refs/tags/v2.0.0 # x-release-please-version
+                        issuer: https://token.actions.githubusercontent.com
                         rekor:
-                          ignoreTlog: true
-                        ctlog:
-                          ignoreSCT: true
+                          url: https://rekor.sigstore.dev
               conditions:
                 - all:
-                    - key: "{{ starts_with(runDetails.builder.id, 'https://github.com/axiz/axiz-workflows/.github/workflows/service-ci.yaml@') }}"
+                    - key: "{{ runDetails.builder.id }}"
                       operator: Equals
-                      value: true
-    - name: only-nexus-registry
+                      value: https://github.com/axiz/axiz-workflows/.github/workflows/service-build.yaml@refs/tags/v2.0.0 # x-release-please-version
+    - name: only-build-registry
       match:
         any:
           - resources:
               kinds: [Pod]
               namespaces: [axiz-dev, axiz-qa, axiz-prod]
       validate:
-        message: Images must come from the Nexus registry.
+        message: Images must come from the approved build registry and use a content digest.
         pattern:
           spec:
             containers:
-              - image: "nexus-docker.axiz.internal/*"
+              - image: "ghcr.io/axiz/builds/*@sha256:*"

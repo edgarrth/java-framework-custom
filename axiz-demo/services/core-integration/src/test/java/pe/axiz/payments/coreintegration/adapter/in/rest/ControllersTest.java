@@ -1,6 +1,7 @@
 package pe.axiz.payments.coreintegration.adapter.in.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
@@ -148,5 +149,34 @@ class ControllersTest {
     assertThat(body.getStatus()).isEqualTo("SETTLED");
     assertThat(body.getReference()).isEqualTo("E2E-1");
     assertThat(sent).containsExactly("00219100123456789053 10.00 key-4");
+  }
+
+  @Test
+  void inexactInputsNeverReachTheBankOrTheTransferNetwork() {
+    TransfersController transfers =
+        new TransfersController(
+            new SendTransferUseCase(
+                (order, key) -> {
+                  throw new AssertionError("Inexact amount reached transfer network");
+                },
+                IdentifierRegistry.withDiscoveredTypes(),
+                metrics));
+    for (String amount : List.of("150.005", "150.755", "1e99999999")) {
+      MovementRequest request = movement("C-1001").amount(new BigDecimal(amount));
+      assertThatThrownBy(() -> movements.debitAccount("debit-key", request))
+          .isInstanceOf(pe.axiz.core.errors.BusinessException.class);
+      assertThatThrownBy(() -> movements.creditAccount("credit-key", request))
+          .isInstanceOf(pe.axiz.core.errors.BusinessException.class);
+      TransferRequest transfer =
+          new TransferRequest()
+              .creditorCci("00219100123456789053")
+              .amount(new BigDecimal(amount))
+              .currency("PEN")
+              .reference("EXACT-1");
+      assertThatThrownBy(() -> transfers.sendTransfer("transfer-key", transfer))
+          .isInstanceOf(pe.axiz.core.errors.BusinessException.class);
+    }
+    assertThat(core.calls).isEmpty();
+    assertThat(core.orders).isEmpty();
   }
 }

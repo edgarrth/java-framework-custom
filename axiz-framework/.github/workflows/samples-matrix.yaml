@@ -1,4 +1,4 @@
-# Nightly: every combination the generator offers (archetype x framework x web stack x
+# Nightly: every combination the generator offers (archetype x structure/extension x web stack x
 # persistence, MODE=all), not only the defaults that the pull request job builds. Each project is
 # built with its own wrapper and without any AWS configuration in the environment, as on a laptop
 # or a fresh CI runner: a project that needs a region, a profile or credentials just to start its
@@ -24,7 +24,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -36,8 +36,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       MODE: all
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -45,7 +45,7 @@ jobs:
           persist-credentials: false
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: axiz/axiz-workflows/actions/setup-maven@v1.0.0
+      - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Install the framework and generate every combination

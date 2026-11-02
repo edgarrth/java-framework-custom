@@ -13,6 +13,22 @@ inputs:
   nexus-url:
     description: Nexus base URL
     required: true
+  candidate-bundle:
+    description: Bundle already signature-verified by consume-build (optional)
+    default: ""
+  candidate-manifest-sha256:
+    description: External expected candidate manifest hash
+    default: ""
+  candidate-source-repository:
+    description: Expected candidate producer repository
+    default: ""
+outputs:
+  local-repository:
+    description: Isolated local repository when consuming a candidate
+    value: ${{ steps.settings.outputs.local-repository }}
+  candidate-repository:
+    description: Read-only candidate copy, separate from original build evidence
+    value: ${{ steps.settings.outputs.candidate-repository }}
 runs:
   using: composite
   steps:
@@ -21,29 +37,34 @@ runs:
       with:
         distribution: temurin
         java-version: ${{ inputs.java-version }}
-        cache: maven
+        cache: ${{ inputs.candidate-bundle == '' && 'maven' || '' }}
     - if: inputs.distribution == 'graalvm'
       uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
       with:
         java-version: ${{ inputs.java-version }}
         distribution: graalvm-community
-        cache: maven
+        cache: ${{ inputs.candidate-bundle == '' && 'maven' || '' }}
         github-token: ${{ github.token }}
-    - name: Maven settings (Nexus mirror; credentials resolved from the environment at run time)
+    - name: Maven settings and isolated verified candidate
+      id: settings
       shell: bash
       env:
         NEXUS_URL: ${{ inputs.nexus-url }}
+        CANDIDATE_BUNDLE: ${{ inputs.candidate-bundle }}
+        EXPECTED_HASH: ${{ inputs.candidate-manifest-sha256 }}
+        SOURCE_REPOSITORY: ${{ inputs.candidate-source-repository }}
       run: |
-        mkdir -p ~/.m2
-        cat > ~/.m2/settings.xml <<XML
-        <settings>
-          <mirrors>
-            <mirror><id>nexus</id><mirrorOf>*</mirrorOf><url>${NEXUS_URL}/repository/maven-public/</url></mirror>
-          </mirrors>
-          <servers>
-            <server><id>nexus</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
-            <server><id>nexus-releases</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
-            <server><id>nexus-snapshots</id><username>\${env.NEXUS_USERNAME}</username><password>\${env.NEXUS_PASSWORD}</password></server>
-          </servers>
-        </settings>
-        XML
+        set -euo pipefail
+        args=()
+        python=python3
+        if [[ -n "$CANDIDATE_BUNDLE" || -n "$EXPECTED_HASH" || -n "$SOURCE_REPOSITORY" ]]; then
+          [[ -n "$CANDIDATE_BUNDLE" && -n "$EXPECTED_HASH" && -n "$SOURCE_REPOSITORY" ]]
+          verifier=$(mktemp -d "$RUNNER_TEMP/axiz-maven-verifier.XXXXXXXX")
+          python3 -m venv "$verifier"
+          python="$verifier/bin/python"
+          if [[ ! -x "$python" ]]; then python="$verifier/Scripts/python.exe"; fi
+          "$python" -m pip install --quiet -r "$GITHUB_ACTION_PATH/../build-manifest/requirements.txt"
+          args+=(--candidate "$CANDIDATE_BUNDLE" --manifest-sha256 "$EXPECTED_HASH" --repository "$SOURCE_REPOSITORY")
+        fi
+        "$python" "$GITHUB_ACTION_PATH/settings.py" --settings "$HOME/.m2/settings.xml" \
+          --temporary "$RUNNER_TEMP" --nexus-url "$NEXUS_URL" "${args[@]}"

@@ -32,13 +32,14 @@
       <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 {{/stack.servlet}}
+
+{{/caps.web}}
 {{#stack.reactive}}
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
     </dependency>
 {{/stack.reactive}}
-{{/caps.web}}
 {{#caps.httpclient}}
 {{#stack.reactive}}
     <!-- Spring Boot's WebClient support (builder, codecs, observation) for the reactive HTTP clients -->
@@ -72,7 +73,8 @@
     <dependency>
       <groupId>{{groupId}}</groupId>
       <artifactId>{{artifactId}}</artifactId>
-    </dependency>
+{{#runtime}}      <scope>runtime</scope>
+{{/runtime}}    </dependency>
 {{/dependencies}}
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->

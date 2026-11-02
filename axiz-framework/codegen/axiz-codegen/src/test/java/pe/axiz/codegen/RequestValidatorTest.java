@@ -6,9 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 
 class RequestValidatorTest {
 
@@ -28,17 +28,17 @@ class RequestValidatorTest {
         generator
             .validate(
                 Fixtures.request(
-                    "business", Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()))
+                    "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()))
             .valid());
   }
 
   @Test
   void reactiveServicesUseAuroraOverR2dbc() {
-    for (Framework framework : List.of(Framework.CQRS)) {
+    for (Structure structure : List.of(Structure.HEXAGONAL)) {
       ProjectRequest r =
           Fixtures.request(
               "business",
-              framework,
+              structure,
               Stack.REACTIVE,
               "aurora",
               List.of("outbox", "inbox", "scheduling"));
@@ -48,7 +48,7 @@ class RequestValidatorTest {
         generator
             .validate(
                 Fixtures.request(
-                    "event-processor", Framework.EDA, Stack.REACTIVE, "aurora", List.of("outbox")))
+                    "event-processor", Structure.EDA, Stack.REACTIVE, "aurora", List.of("outbox")))
             .valid());
   }
 
@@ -57,81 +57,84 @@ class RequestValidatorTest {
     assertTrue(
         mentions(
             problems(
-                Fixtures.request("business", Framework.EDA, Stack.SERVLET, "aurora", List.of())),
-            "supports frameworks"));
+                Fixtures.request("business", Structure.EDA, Stack.SERVLET, "aurora", List.of())),
+            "supports structures"));
+    assertTrue(
+        generator
+            .validate(
+                Fixtures.request(
+                    "business", Structure.HEXAGONAL, Stack.REACTIVE, "dynamodb", List.of()))
+            .valid());
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "business", Framework.HEXAGONAL, Stack.REACTIVE, "dynamodb", List.of())),
-            "Stack reactive"));
-    assertTrue(
-        mentions(
-            problems(
-                Fixtures.request(
-                    "business", Framework.CQRS, Stack.REACTIVE, "aurora", List.of("saga"))),
+                    "business", Structure.HEXAGONAL, Stack.REACTIVE, "aurora", List.of("saga"))),
             "need JPA, which blocks"));
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "business", Framework.CQRS, Stack.REACTIVE, "aurora", List.of("sequence"))),
+                    "business",
+                    Structure.HEXAGONAL,
+                    Stack.REACTIVE,
+                    "aurora",
+                    List.of("sequence"))),
             "not available on aurora (reactive stack, R2DBC)"));
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "business", Framework.CQRS, Stack.SERVLET, "aurora", List.of("r2dbc"))),
+                    "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("r2dbc"))),
             "Capability r2dbc is not available"));
     assertTrue(
         mentions(
-            problems(
-                Fixtures.request("experience", Framework.BFF, Stack.SERVLET, "aurora", List.of())),
-            "no persistence"));
+            problems(Fixtures.request("ux", Structure.BFF, Stack.SERVLET, "aurora", List.of())),
+            "supports persistence"));
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "integration", Framework.HEXAGONAL, Stack.SERVLET, "none", List.of("outbox"))),
+                    "core", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of("outbox"))),
             "Capability outbox is not available on none"));
     assertTrue(
-        mentions(
-            problems(
+        generator
+            .validate(
                 Fixtures.request(
-                    "event-processor", Framework.EDA, Stack.SERVLET, "none", List.of("inbox"))),
-            "it supports aurora"));
+                    "event-processor", Structure.EDA, Stack.SERVLET, "none", List.of("inbox")))
+            .valid());
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "business", Framework.HEXAGONAL, Stack.SERVLET, "dynamodb", List.of("saga"))),
+                    "business", Structure.HEXAGONAL, Stack.SERVLET, "dynamodb", List.of("saga"))),
             "need Aurora"));
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "business", Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of("teleport"))),
+                    "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("teleport"))),
             "Unknown capability"));
     assertTrue(
         mentions(
             problems(
                 Fixtures.request(
-                    "library", Framework.NONE, Stack.SERVLET, "none", List.of("cache"))),
+                    "library", Structure.NONE, Stack.SERVLET, "none", List.of("cache"))),
             "services only"));
   }
 
   @Test
   void restArchetypesNeedAValidContract() {
     ProjectRequest base =
-        Fixtures.request("crud", Framework.LAYERED, Stack.SERVLET, "aurora", List.of());
+        Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of());
     ProjectRequest missing =
         new ProjectRequest(
             base.name(),
             base.groupId(),
             base.basePackage(),
             "",
-            "crud",
-            Framework.LAYERED,
+            "business",
+            Structure.LAYERED,
             Stack.SERVLET,
             "aurora",
             List.of(),
@@ -145,8 +148,8 @@ class RequestValidatorTest {
             base.groupId(),
             base.basePackage(),
             "",
-            "crud",
-            Framework.LAYERED,
+            "business",
+            Structure.LAYERED,
             Stack.SERVLET,
             "aurora",
             List.of(),
@@ -159,15 +162,15 @@ class RequestValidatorTest {
   @Test
   void rejectsUnsafeNames() {
     ProjectRequest base =
-        Fixtures.request("crud", Framework.LAYERED, Stack.SERVLET, "aurora", List.of());
+        Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of());
     ProjectRequest evil =
         new ProjectRequest(
             "../../etc",
             "pe.axiz",
             "pe.axiz.x",
             "",
-            "crud",
-            Framework.LAYERED,
+            "business",
+            Structure.LAYERED,
             Stack.SERVLET,
             "aurora",
             List.of(),
@@ -181,7 +184,7 @@ class RequestValidatorTest {
   @Test
   void descriptionsAreOneLineOfAnyPunctuation() {
     ProjectRequest base =
-        Fixtures.request("crud", Framework.LAYERED, Stack.SERVLET, "aurora", List.of());
+        Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of());
     for (String text : List.of("Payments --- reconciliation <v2> & more", "x".repeat(200))) {
       assertTrue(generator.validate(withDescription(base, text)).valid(), text);
     }
@@ -197,7 +200,7 @@ class RequestValidatorTest {
         b.basePackage(),
         description,
         b.archetype(),
-        b.framework(),
+        b.structure(),
         b.stack(),
         b.persistence(),
         b.capabilities(),

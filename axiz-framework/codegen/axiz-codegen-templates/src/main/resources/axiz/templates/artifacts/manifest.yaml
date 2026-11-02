@@ -18,7 +18,8 @@ files:
   - {template: sql/entity.sql.mustache, path: "src/main/resources/db/migration/V{{artifact.version}}__create_{{artifact.table}}.sql", when: type.entity && persistence.aurora}
   - {template: java/JpaRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora && stack.servlet}
   - {template: java/R2dbcRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.aurora && stack.reactive}
-  - {template: java/DynamoRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.dynamodb}
+  - {template: java/DynamoRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.dynamodb && stack.servlet}
+  - {template: java/ReactiveDynamoRepository.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.repositoryPath}}/{{artifact.className}}Repository.java", when: type.repository && persistence.dynamodb && stack.reactive}
   - {template: java/Controller.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/{{artifact.className}}Controller.java", when: type.controller}
   - {template: java/Dto.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/dto/{{artifact.className}}.java", when: type.dto}
   - {template: java/Mapper.java.mustache, path: "src/main/java/{{project.packagePath}}/{{fw.restPath}}/{{artifact.className}}Mapper.java", when: type.mapper}

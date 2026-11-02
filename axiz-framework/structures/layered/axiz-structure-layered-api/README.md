@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-structure-layered-api
+
+Layered style for simple CRUD services: controller, service and repository (contracts, plain Java).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-structure-layered-api</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `CommandService` | Write operations of a resource. |
+| `CrudService` | Read and write operations of a simple resource (catalogs, parameters, maintenance tables). |
+| `InMemoryCrudService` | Map-backed `CrudService` for tests, prototypes and the local profile. |
+| `QueryService` | Read operations of a resource. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/layered/axiz-structure-layered-api verify`.

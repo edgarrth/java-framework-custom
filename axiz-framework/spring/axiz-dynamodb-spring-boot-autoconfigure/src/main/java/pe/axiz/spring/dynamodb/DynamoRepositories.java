@@ -1,7 +1,7 @@
 package pe.axiz.spring.dynamodb;
 
 import java.util.Objects;
-import pe.axiz.core.persistence.dynamodb.DynamoRepository;
+import pe.axiz.kit.dynamodb.DynamoRepository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 

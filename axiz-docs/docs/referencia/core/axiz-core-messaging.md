@@ -33,6 +33,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `PayloadException` | The payload could not be decoded: retrying will not help. |
 | `PublishException` | The broker did not confirm the event: the failure is always visible to the caller. |
 | `PublishResult` | Confirmation of a published event. |
+| `RoutingAsyncEventPublisher` | Selects the first supporting native publisher; preserves its acknowledgement and cancellation, with no broker fallback after failure. |
 | `RoutingEventPublisher` | Delegates to the first publisher that supports the destination. |
 
 ## Tests

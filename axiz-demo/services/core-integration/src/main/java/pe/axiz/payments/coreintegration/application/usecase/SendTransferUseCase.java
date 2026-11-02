@@ -8,7 +8,7 @@ import pe.axiz.core.identifiers.IdentifierRegistry;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 import pe.axiz.payments.coreintegration.application.port.out.PaymentNetwork;
 import pe.axiz.payments.coreintegration.domain.IntegrationErrors;
 import pe.axiz.payments.coreintegration.domain.Transfer;
@@ -20,7 +20,7 @@ import pe.axiz.payments.coreintegration.domain.TransferOrder;
  */
 @UseCase
 public class SendTransferUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<SendTransferUseCase.Input, Transfer> {
+    implements pe.axiz.structure.hexagonal.UseCase<SendTransferUseCase.Input, Transfer> {
 
   /**
    * Input of the use case.

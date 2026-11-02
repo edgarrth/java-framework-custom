@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-secrets-aws</artifactId>
+  <name>axiz :: adapter :: secrets-aws</name>
+  <description>Secret resolvers for AWS Secrets Manager and Parameter Store</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-secrets-aws</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.secrets.aws</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <!-- how the framework builds this adapter's AWS client (endpoint, region, observation): the
+         auto-configuration uses it, so it travels with the adapter -->
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-observability-aws</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-secrets</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>secretsmanager</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>ssm</artifactId>
+    </dependency>
+  </dependencies>
+</project>

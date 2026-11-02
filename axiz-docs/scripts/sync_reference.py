@@ -27,9 +27,13 @@ STORE_LABELS = {
     'dynamodb': 'DynamoDB',
 }
 LAYERS = [
+    ('platform', 'Plataforma: parents y BOMs'),
     ('core', 'Capa 1: core (Java puro)'),
-    ('spring', 'Capa 2: Spring Boot'),
-    ('frameworks', 'Capa 3: frameworks'),
+    ('adapters', 'Capa 2: adaptadores tecnológicos'),
+    ('kits', 'Capa 2: kits de persistencia'),
+    ('spring', 'Capa 3: Spring Boot'),
+    ('structures', 'Capa 4: estructuras'),
+    ('extensions', 'Capa 4: extensiones'),
     ('codegen', 'Generación'),
     ('quality', 'Calidad'),
 ]
@@ -90,6 +94,7 @@ def capabilities(framework, out, modules):
         parts = [f'# {name}\n', description + '\n']
         parts.append(f'```bash\naxiz add {name}\n```\n')
         facts = [['Starter', f'`pe.axiz:{c["starter"]}`']]
+        facts.append(['Stacks del catálogo', ', '.join(c.get('stacks') or ['servlet'])])
         if c.get('requires'):
             facts.append(['Agrega también', ', '.join(f'[`{r}`]({r}.md)' for r in c['requires'])])
         if c.get('dependencies'):
@@ -150,11 +155,11 @@ def archetype_catalog(archetypes, out):
     rows = []
     for a in archetypes:
         persistence = ', '.join(a.get('persistence') or []) or '–'
-        rows.append([f'`{a["name"]}`', a['role'], ', '.join(a['frameworks']), ', '.join(a['stacks']),
+        rows.append([f'`{a["name"]}`', a['role'], ', '.join(a['structures']), ', '.join(a.get('extensions') or []), ', '.join(a['stacks']),
                      persistence, a['deployment'], 'sí' if a.get('rest') else 'no'])
     parts = ['# Catálogo de arquetipos\n',
-             'El primer estilo, stack y persistencia de cada lista es el valor por defecto.\n',
-             table(rows, ['Arquetipo', 'Rol', 'Estilos', 'Stack', 'Persistencia', 'Despliegue', 'API REST']) + '\n']
+             'La primera estructura, stack y persistencia de cada lista es el valor por defecto. Las extensiones son opcionales.\n',
+             table(rows, ['Arquetipo', 'Rol', 'Estructuras', 'Extensiones', 'Stack', 'Persistencia', 'Despliegue', 'API REST']) + '\n']
     for a in archetypes:
         parts.append(f'## {a["name"]}\n')
         parts.append(a['role'] + '\n')

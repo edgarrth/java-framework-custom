@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
@@ -17,21 +18,25 @@ class NewCommandTest {
     ProjectManifest m = ProjectManifest.read(project);
     assertEquals("pe.axiz.orders", m.groupId(), "group defaults to pe.axiz.<domain>");
     assertEquals(
-        "pe.axiz.orders.business",
-        m.basePackage(),
-        "package defaults to pe.axiz.<domain>.<service>");
-    assertEquals("hexagonal", m.framework().id());
+        "pe.axiz.orders", m.basePackage(), "package defaults to pe.axiz.<domain>.<service>");
+    assertEquals("hexagonal", m.structure().id());
     assertTrue(
         Files.exists(
             project.resolve(
-                "src/main/java/pe/axiz/orders/business/application/usecase/CreateOrderUseCase.java")));
+                "src/main/java/pe/axiz/orders/application/usecase/CreateOrderUseCase.java")));
+  }
+
+  @Test
+  void acceptsTheAdrSingularExtensionOption(@TempDir Path tmp) throws Exception {
+    Path project = CliHarness.service(tmp, "--extension", "cqrs");
+    assertEquals(
+        List.of(pe.axiz.codegen.model.Extension.CQRS), ProjectManifest.read(project).extensions());
   }
 
   @Test
   void restArchetypesNeedAContract(@TempDir Path tmp) {
     CliHarness h = new CliHarness();
-    int code =
-        h.run("new", "orders-business", "--archetype", "business", "--output", tmp.toString());
+    int code = h.run("new", "orders", "--archetype", "business", "--output", tmp.toString());
     assertEquals(ExitCodes.PROBLEMS, code);
     assertTrue(h.output().contains("required"), h.output());
   }
@@ -42,14 +47,16 @@ class NewCommandTest {
     int code =
         h.run(
             "new",
-            "orders-business",
+            "orders",
             "--archetype",
             "business",
             "--stack",
             "reactive",
             "--persistence",
             "aurora",
-            "--framework",
+            "--structure",
+            "hexagonal",
+            "--extensions",
             "cqrs",
             "-c",
             "saga",
@@ -58,7 +65,7 @@ class NewCommandTest {
             "--output",
             tmp.toString());
     assertEquals(ExitCodes.PROBLEMS, code);
-    assertTrue(h.output().contains("need JPA, which blocks"), h.output());
+    assertTrue(h.output().contains("saga"), h.output());
   }
 
   @Test
@@ -68,9 +75,9 @@ class NewCommandTest {
     h.input =
         String.join(
                 "\n",
-                "beneficiaries-crud",
-                "crud",
-                "",
+                "beneficiaries",
+                "business",
+                "layered",
                 "",
                 "dynamodb",
                 "",
@@ -81,8 +88,8 @@ class NewCommandTest {
             + "\n";
     int code = h.run("new", "-i", "--output", tmp.toString());
     assertEquals(0, code, h.output());
-    ProjectManifest m = ProjectManifest.read(tmp.resolve("beneficiaries-crud"));
-    assertEquals("layered", m.framework().id());
+    ProjectManifest m = ProjectManifest.read(tmp.resolve("beneficiaries"));
+    assertEquals("layered", m.structure().id());
     assertEquals("dynamodb", m.persistence());
     assertTrue(m.capabilities().contains("cache"));
   }
@@ -94,7 +101,7 @@ class NewCommandTest {
     int code =
         h.run(
             "new",
-            "orders-business",
+            "orders",
             "--archetype",
             "business",
             "--openapi",

@@ -10,13 +10,13 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-service</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <groupId>pe.axiz.payments</groupId>
   <artifactId>payments-experience</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>Payments Experience</name>
   <description>Payments API for the channels</description>
 
@@ -103,11 +103,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-framework-bff-spring-boot-starter</artifactId>
+      <artifactId>axiz-structure-bff-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-idempotency-redis</artifactId>
+      <artifactId>axiz-adapter-idempotency-redis</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -115,7 +115,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-cache-redis</artifactId>
+      <artifactId>axiz-adapter-cache-redis</artifactId>
     </dependency>
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->

@@ -38,7 +38,7 @@ Map<String, Object> record = DETAIL.parse(line, lineNumber);   // FileFormatExce
 
 ## Jobs
 
-Ver el estilo [Batch](../estilos/batch.md): lectores reiniciables sobre S3
+Ver el estilo [Batch](../estructuras/batch.md): lectores reiniciables sobre S3
 (`StorageRecordItemReader` con `CsvRecordReader` o `FixedWidthRecordReader`), totales de control
 en un step de validación, escritura idempotente, observación de cada ejecución y código de salida
 del proceso para el CronJob.

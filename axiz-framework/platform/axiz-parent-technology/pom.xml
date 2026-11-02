@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  axiz-parent-technology: parent of layer 2 technology adapters and persistence kits.
+  Allows SDKs, excludes Spring/Quarkus runtime wiring and limits direct Reactor to native R2DBC.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-parent-technology</artifactId>
+  <packaging>pom</packaging>
+  <name>axiz :: parent :: technology</name>
+  <description>Parent for technology adapters and persistence kits (layer 2)</description>
+
+  <properties><axiz.technology.reactive-native>false</axiz.technology.reactive-native></properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>axiz-technology-runtime-isolation</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <message>Layer 2 technology must not depend on Spring, Quarkus or compile-scope test libraries; runtime wiring belongs in layer 3</message>
+                  <excludes>
+                    <exclude>org.springframework:*</exclude>
+                    <exclude>org.springframework.boot:*</exclude>
+                    <exclude>org.springframework.cloud:*</exclude>
+                    <exclude>io.awspring.cloud:*</exclude>
+                    <exclude>io.quarkus:*</exclude>
+                    <exclude>org.junit.jupiter:*:*:*:compile</exclude>
+                    <exclude>org.assertj:*:*:*:compile</exclude>
+                    <exclude>org.mockito:*:*:*:compile</exclude>
+                    <exclude>org.testcontainers:*:*:*:compile</exclude>
+                  </excludes>
+                  <searchTransitive>true</searchTransitive>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+          <execution><id>axiz-technology-reactor-declarations</id><goals><goal>enforce</goal></goals>
+            <configuration><skip>${axiz.technology.reactive-native}</skip><rules><bannedDependencies>
+              <message>Only native R2DBC technology modules may declare Reactor; SDK transitive dependencies are retained</message>
+              <excludes><exclude>io.projectreactor:*</exclude><exclude>org.reactivestreams:*</exclude></excludes><searchTransitive>false</searchTransitive>
+            </bannedDependencies></rules></configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>quality</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-code-standards</artifactId>
+                <version>${axiz.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-code-standards</artifactId>
+                <version>${axiz.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <configuration>
+              <targetClasses>
+                <param>pe.axiz.*</param>
+              </targetClasses>
+              <targetTests>
+                <param>pe.axiz.*</param>
+              </targetTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>mutation</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

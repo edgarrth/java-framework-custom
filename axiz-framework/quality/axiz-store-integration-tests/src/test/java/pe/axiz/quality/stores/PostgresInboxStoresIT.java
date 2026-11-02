@@ -16,16 +16,17 @@ import org.junit.jupiter.api.TestFactory;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore;
 import pe.axiz.core.commons.jdbc.JdbcTransactions;
-import pe.axiz.core.contracts.InboxStoreContract;
 import pe.axiz.core.inbox.JdbcInboxStore;
-import pe.axiz.core.inbox.r2dbc.R2dbcInboxStore;
-import pe.axiz.core.persistence.r2dbc.R2dbcSql;
+import pe.axiz.kit.r2dbc.R2dbcSql;
+import pe.axiz.test.contracts.InboxStoreContract;
 
 /**
  * Inbox contract on PostgreSQL (Aurora) through JDBC and R2DBC: row locks, conditional updates,
  * timestamps and the shipped DDL.
  */
+@org.junit.jupiter.api.extension.ExtendWith(pe.axiz.spring.test.BlockHoundExtension.class)
 class PostgresInboxStoresIT {
 
   private static final PostgreSQLContainer POSTGRES =
@@ -40,6 +41,7 @@ class PostgresInboxStoresIT {
   @BeforeAll
   static void start() throws Exception {
     Docker.require();
+    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
     POSTGRES.start();
     dataSource = new PGSimpleDataSource();
     dataSource.setUrl(POSTGRES.getJdbcUrl());
@@ -70,6 +72,9 @@ class PostgresInboxStoresIT {
   @AfterAll
   static void stop() {
     POSTGRES.stop();
+    org.junit.jupiter.api.Assertions.assertTrue(
+        pe.axiz.spring.test.BlockHoundExtension.detectedBlockingCalls().isEmpty(),
+        () -> pe.axiz.spring.test.BlockHoundExtension.detectedBlockingCalls().toString());
   }
 
   @TestFactory
@@ -88,5 +93,48 @@ class PostgresInboxStoresIT {
                     new R2dbcSql(connections), "axiz_inbox", Duration.ofSeconds(10)))
         .stream()
         .map(c -> DynamicTest.dynamicTest(c.name(), c::run));
+  }
+
+  @TestFactory
+  Stream<DynamicTest> nativeR2dbcContract() {
+    return pe.axiz.test.contracts.AsyncInboxStoreContract.checks(
+            () ->
+                NativeInboxContractAdapters.r2dbc(
+                    new pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore(
+                        new R2dbcSql(connections), "axiz_inbox")),
+            command -> reactor.core.scheduler.Schedulers.parallel().schedule(command))
+        .stream()
+        .map(check -> DynamicTest.dynamicTest("native: " + check.name(), check::run));
+  }
+
+  @org.junit.jupiter.api.Test
+  void nativeInboxKeepsTheCallingTransactionContextAcrossThreadChanges() {
+    var sql = new R2dbcSql(connections);
+    var store = new pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore(sql, "axiz_inbox");
+    var now = java.time.Instant.now();
+    String id = java.util.UUID.randomUUID().toString();
+    var rollback =
+        sql.inTransaction(
+            tx ->
+                store
+                    .tryAcquire("tx", id, "a", now, now.plusSeconds(30), now.plusSeconds(3600))
+                    .publishOn(reactor.core.scheduler.Schedulers.parallel())
+                    .then(
+                        reactor.core.publisher.Mono.error(new IllegalStateException("rollback"))));
+    reactor.test.StepVerifier.create(
+            rollback.subscribeOn(reactor.core.scheduler.Schedulers.parallel()))
+        .expectErrorMessage("rollback")
+        .verify(Duration.ofSeconds(30));
+    reactor.test.StepVerifier.create(
+            store
+                .tryAcquire("tx", id, "b", now, now.plusSeconds(30), now.plusSeconds(3600))
+                .subscribeOn(reactor.core.scheduler.Schedulers.parallel()))
+        .assertNext(
+            acquisition ->
+                org.junit.jupiter.api.Assertions.assertEquals(
+                    pe.axiz.core.inbox.InboxStore.Acquisition.Status.ACQUIRED,
+                    acquisition.status()))
+        .expectComplete()
+        .verify(Duration.ofSeconds(30));
   }
 }

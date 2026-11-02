@@ -20,35 +20,35 @@ public final class CqrsRules {
     rules.add(
         classes()
             .that()
-            .implement("pe.axiz.framework.cqrs.Command")
+            .implement("pe.axiz.extension.cqrs.Command")
             .should()
             .beRecords()
             .because("commands are immutable"));
     rules.add(
         classes()
             .that()
-            .implement("pe.axiz.framework.cqrs.Query")
+            .implement("pe.axiz.extension.cqrs.Query")
             .should()
             .beRecords()
             .because("queries are immutable"));
     rules.add(
         noClasses()
             .that()
-            .implement("pe.axiz.framework.cqrs.QueryHandler")
+            .implement("pe.axiz.extension.cqrs.QueryHandler")
             .should()
             .dependOnClassesThat()
-            .implement("pe.axiz.framework.cqrs.CommandHandler")
+            .implement("pe.axiz.extension.cqrs.CommandHandler")
             .because("the read side never triggers writes"));
     rules.add(
         noClasses()
             .that()
-            .implement("pe.axiz.framework.cqrs.ReactiveQueryHandler")
+            .implement("pe.axiz.extension.cqrs.ReactiveQueryHandler")
             .should()
             .dependOnClassesThat()
-            .implement("pe.axiz.framework.cqrs.ReactiveCommandHandler")
+            .implement("pe.axiz.extension.cqrs.ReactiveCommandHandler")
             .orShould()
             .dependOnClassesThat()
-            .haveFullyQualifiedName("pe.axiz.framework.cqrs.spring.ReactiveCommandBus")
+            .haveFullyQualifiedName("pe.axiz.extension.cqrs.spring.ReactiveCommandBus")
             .because("the read side never triggers writes"));
     return rules;
   }

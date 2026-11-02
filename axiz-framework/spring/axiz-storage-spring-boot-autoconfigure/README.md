@@ -16,8 +16,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 ## Main types
 
+`ReactiveStorage.presignUpload` defers creation of signed PUT instructions until subscription;
+the caller must send every returned header along with the returned URI.
+
 | Type | Purpose |
 |---|---|
+| `ReactiveStorage` | Deferred native operations and automatic response cleanup via content(key). |
 | `AxizStorageAutoConfiguration` | In-memory storage for tests and local runs (`axiz.storage.type=memory`). |
 | `AxizStorageProperties` | Object storage (`axiz.storage.*`). |
 | `AxizStorageS3AutoConfiguration` | Amazon S3 storage: streaming upload/download, SSE-KMS, presigned URLs with bounded validity. |
@@ -25,3 +29,26 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-storage-spring-boot-autoconfigure verify`.
+
+## Execution stack
+
+Servlet applications receive `ObjectStorage` and `S3Client`. Reactive applications receive
+`AsyncObjectStorage`, `ReactiveStorage` and `S3AsyncClient`; no synchronous storage bean is created.
+Supplying a native port backs off the default S3 resources. Supplying both client and presigner
+also avoids creating default credentials. A default native client and presigner share owned,
+warmed credentials and release resources on context shutdown. Custom clients/signers must
+preserve the same non-blocking credential and transport contract.
+
+```yaml
+axiz:
+  aws:
+    region: us-east-1
+  storage:
+    type: s3
+    bucket: reports
+    max-presign-ttl: 15m
+```
+
+`ReactiveStorage.content(key)` releases a response on completion, error and cancellation.
+`get(key)` transfers that responsibility to its caller. All facade operations are deferred until
+subscription. `type=memory` uses the native bounded implementation only in local/test environments.

@@ -23,6 +23,13 @@ public interface ObjectStorage {
   /** Time-limited download URL; never longer than the configured maximum. */
   URL presignGet(String key, Duration ttl);
 
-  /** Time-limited upload URL bound to a content type. */
+  /** URL portion of a signed upload; use {@link #presignUpload} to obtain required headers too. */
   URL presignPut(String key, String contentType, Duration ttl);
+
+  /** Complete upload instructions, including content type and backend-specific signed headers. */
+  default PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
+    return new PresignedUpload(
+        java.net.URI.create(presignPut(key, contentType, ttl).toString()),
+        java.util.Map.of("Content-Type", java.util.List.of(contentType)));
+  }
 }

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-spring</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../../platform/axiz-parent-spring/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-extension-cqrs-spring-boot-starter</artifactId>
+  <name>axiz :: extension :: cqrs :: starter</name>
+  <description>CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-framework-cqrs-spring-boot-starter</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.extension.cqrs.spring</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-extension-cqrs-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-structure-hexagonal-spring-boot-starter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-idempotency-spring-boot-starter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-audit-spring-boot-starter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-idempotency</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-audit</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-metrics</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-observability</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-tx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>context-propagation</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-core</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-r2dbc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-test-support</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+  </dependencies>
+</project>

@@ -6,11 +6,11 @@ import java.util.List;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 {{#fw.reactiveHandlers}}
-import pe.axiz.framework.cqrs.ReactiveQueryHandler;
+import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 import reactor.core.publisher.Mono;
 {{/fw.reactiveHandlers}}
 {{^fw.reactiveHandlers}}
-import pe.axiz.framework.cqrs.QueryHandler;
+import pe.axiz.extension.cqrs.QueryHandler;
 {{/fw.reactiveHandlers}}
 {{#item.hasResponseModel}}
 import {{item.modelPackage}}.{{item.responseModel}};

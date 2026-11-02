@@ -1,7 +1,7 @@
 package pe.axiz.payments.business.application.query;
 
 import pe.axiz.core.commons.Page;
-import pe.axiz.framework.cqrs.QueryHandler;
+import pe.axiz.extension.cqrs.QueryHandler;
 import pe.axiz.payments.business.application.port.out.PaymentOrders;
 import pe.axiz.payments.business.domain.PaymentOrder;
 

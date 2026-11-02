@@ -1,7 +1,7 @@
 package pe.axiz.payments.history.application.query;
 
 import pe.axiz.core.commons.Page;
-import pe.axiz.framework.cqrs.ReactiveQueryHandler;
+import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;

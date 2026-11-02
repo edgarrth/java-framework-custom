@@ -1,0 +1,125 @@
+name: consume-build
+description: Downloads and verifies an immutable signed build from an explicit producer run and external manifest hash.
+inputs:
+  repository:
+    description: Expected source repository (owner/name)
+    required: true
+  build-run-id:
+    description: Explicit producer Actions run id
+    required: true
+  build-run-attempt:
+    description: Explicit producer run attempt
+    required: true
+  manifest-sha256:
+    description: Expected manifest hash supplied outside the downloaded artifact
+    required: true
+  kind:
+    description: maven-library or service
+    required: true
+  workflows-tag:
+    description: Allowed immutable axiz-workflows release
+    default: v2.0.0 # x-release-please-version
+  token:
+    description: Read-only Actions token for the producer repository
+    required: true
+outputs:
+  python:
+    description: Isolated verifier Python executable
+    value: ${{ steps.verifier.outputs.python }}
+  tools-path:
+    description: Trusted build tooling from this action release
+    value: ${{ steps.verifier.outputs.tools }}
+  bundle-path:
+    description: Verified bundle path
+    value: ${{ steps.paths.outputs.bundle }}
+  source-sha:
+    description: Commit actually built by the producer
+    value: ${{ steps.producer.outputs.sha }}
+runs:
+  using: composite
+  steps:
+    - name: Validate producer identity and immutable workflow release
+      id: producer
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        GH_HOST: github.com
+        SOURCE_REPOSITORY: ${{ inputs.repository }}
+        BUILD_RUN_ID: ${{ inputs.build-run-id }}
+        BUILD_ATTEMPT: ${{ inputs.build-run-attempt }}
+        EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
+        PRODUCT_KIND: ${{ inputs.kind }}
+        WORKFLOWS_TAG: ${{ inputs.workflows-tag }}
+      run: |
+        set -euo pipefail
+        [[ "$SOURCE_REPOSITORY" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]
+        [[ "$BUILD_RUN_ID" =~ ^[1-9][0-9]*$ && "$BUILD_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+        [[ "$EXPECTED_HASH" =~ ^[0-9a-f]{64}$ ]]
+        [[ "$PRODUCT_KIND" == maven-library || "$PRODUCT_KIND" == service ]]
+        [[ "$WORKFLOWS_TAG" =~ ^v2\.[0-9]+\.[0-9]+$ ]]
+        release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$WORKFLOWS_TAG")
+        jq -e --arg tag "$WORKFLOWS_TAG" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+        object=$(gh api "repos/axiz/axiz-workflows/git/ref/tags/$WORKFLOWS_TAG" --jq '.object')
+        while [[ $(jq -r '.type' <<< "$object") == tag ]]; do
+          object=$(gh api "repos/axiz/axiz-workflows/git/tags/$(jq -r '.sha' <<< "$object")" --jq '.object')
+        done
+        [[ $(jq -r '.type' <<< "$object") == commit ]]
+        workflow_sha=$(jq -r '.sha' <<< "$object")
+        [[ "$workflow_sha" =~ ^[0-9a-f]{40}$ ]]
+        echo "workflow-sha=$workflow_sha" >> "$GITHUB_OUTPUT"
+        producer=$(gh api "repos/$SOURCE_REPOSITORY/actions/runs/$BUILD_RUN_ID/attempts/$BUILD_ATTEMPT")
+        jq -e --arg repository "$SOURCE_REPOSITORY" --argjson attempt "$BUILD_ATTEMPT" \
+          '.repository.full_name == $repository and .run_attempt == $attempt and .status == "completed" and .conclusion == "success"' <<< "$producer" >/dev/null
+        sha=$(jq -r '.head_sha' <<< "$producer")
+        [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+        echo "sha=$sha" >> "$GITHUB_OUTPUT"
+    - name: Isolated download directory
+      id: paths
+      shell: bash
+      run: |
+        set -euo pipefail
+        bundle=$(mktemp -d "$RUNNER_TEMP/axiz-build.XXXXXXXX")
+        echo "bundle=$bundle" >> "$GITHUB_OUTPUT"
+    - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      with:
+        name: build-bundle-${{ inputs.manifest-sha256 }}
+        repository: ${{ inputs.repository }}
+        run-id: ${{ inputs.build-run-id }}
+        github-token: ${{ inputs.token }}
+        path: ${{ steps.paths.outputs.bundle }}
+    - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+    - name: Verify expected hash, schema, signature, producer, gates and product bytes
+      id: verifier
+      shell: bash
+      env:
+        BUNDLE: ${{ steps.paths.outputs.bundle }}
+        SOURCE_REPOSITORY: ${{ inputs.repository }}
+        SOURCE_SHA: ${{ steps.producer.outputs.sha }}
+        EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
+        PRODUCT_KIND: ${{ inputs.kind }}
+        BUILD_RUN_ID: ${{ inputs.build-run-id }}
+        BUILD_ATTEMPT: ${{ inputs.build-run-attempt }}
+        WORKFLOWS_TAG: ${{ inputs.workflows-tag }}
+        WORKFLOWS_SHA: ${{ steps.producer.outputs.workflow-sha }}
+      run: |
+        set -euo pipefail
+        python3 -m venv "$BUNDLE/../axiz-manifest-verifier-$(basename "$BUNDLE")"
+        python="$BUNDLE/../axiz-manifest-verifier-$(basename "$BUNDLE")/bin/python"
+        if [[ ! -x "$python" ]]; then python="$BUNDLE/../axiz-manifest-verifier-$(basename "$BUNDLE")/Scripts/python.exe"; fi
+        "$python" -m pip install --quiet -r "$GITHUB_ACTION_PATH/../build-manifest/requirements.txt"
+        "$python" "$GITHUB_ACTION_PATH/../build-manifest/manifest.py" verify "$BUNDLE/build-manifest.json" \
+          --bundle "$BUNDLE" --expected-sha256 "$EXPECTED_HASH" --repository "$SOURCE_REPOSITORY" --source-sha "$SOURCE_SHA"
+        workflow=lib-build.yaml
+        if [[ "$PRODUCT_KIND" == service ]]; then workflow=service-build.yaml; fi
+        jq -e --arg kind "$PRODUCT_KIND" --arg ref "refs/tags/$WORKFLOWS_TAG" --arg workflow ".github/workflows/$workflow" \
+          --arg workflow_sha "$WORKFLOWS_SHA" --argjson run "$BUILD_RUN_ID" --argjson attempt "$BUILD_ATTEMPT" \
+          '.kind == $kind and .build.run_id == $run and .build.run_attempt == $attempt and .build.workflow.ref == $ref and .build.workflow.path == $workflow and .build.workflow.sha == $workflow_sha' \
+          "$BUNDLE/build-manifest.json" >/dev/null
+        cosign verify-blob --bundle "$BUNDLE/build-manifest.sigstore.json" \
+          --certificate-identity "https://github.com/axiz/axiz-workflows/.github/workflows/$workflow@refs/tags/$WORKFLOWS_TAG" \
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+          --certificate-github-workflow-repository "$SOURCE_REPOSITORY" \
+          --certificate-github-workflow-sha "$SOURCE_SHA" "$BUNDLE/build-manifest.json"
+        chmod -R a-w "$BUNDLE"
+        echo "python=$python" >> "$GITHUB_OUTPUT"
+        echo "tools=$GITHUB_ACTION_PATH/../build-manifest" >> "$GITHUB_OUTPUT"

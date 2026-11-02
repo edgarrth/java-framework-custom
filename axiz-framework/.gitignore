@@ -1,3 +1,10 @@
+# Maven configuration is source, even when a developer globally ignores .mvn.
+!.mvn/
+!.mvn/jvm.config
+!.mvn/maven.config
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+
 target/
 .flattened-pom.xml
 *.iml

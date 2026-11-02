@@ -43,6 +43,7 @@ public class AxizIdempotencyAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   IdempotencyStore axizInMemoryIdempotencyStore(
       AxizIdempotencyProperties p, ObjectProvider<Clock> clock, Environment env) {
     if (!"memory".equals(p.store())) {
@@ -67,6 +68,7 @@ public class AxizIdempotencyAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   IdempotencyService axizIdempotencyService(
       IdempotencyStore store, AxizIdempotencyProperties p, ObjectProvider<Clock> clock) {
     return new IdempotencyService(
@@ -80,7 +82,9 @@ public class AxizIdempotencyAutoConfiguration {
    */
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-  static Advisor axizIdempotencyAdvisor(ObjectProvider<IdempotencyService> service) {
+  static Advisor axizIdempotencyAdvisor(
+      ObjectProvider<IdempotencyService> service,
+      ObjectProvider<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService) {
     ClassFilter controllers = type -> AnnotatedElementUtils.hasAnnotation(type, Controller.class);
     Pointcut onClass =
         new ComposablePointcut(new AnnotationMatchingPointcut(Idempotent.class, true))
@@ -91,7 +95,7 @@ public class AxizIdempotencyAutoConfiguration {
     DefaultPointcutAdvisor advisor =
         new DefaultPointcutAdvisor(
             new ComposablePointcut(onClass).union(onMethod),
-            new IdempotencyMethodInterceptor(service::getObject));
+            new IdempotencyMethodInterceptor(service::getObject, asyncService::getObject));
     advisor.setOrder(IdempotencyMethodInterceptor.ORDER);
     return advisor;
   }
@@ -120,8 +124,33 @@ public class AxizIdempotencyAutoConfiguration {
   static class ReactiveConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean
+    pe.axiz.core.idempotency.AsyncIdempotencyStore axizInMemoryAsyncIdempotencyStore(
+        AxizIdempotencyProperties p, ObjectProvider<Clock> clock, Environment env) {
+      if (!"memory".equals(p.store()))
+        throw new IllegalStateException("Async idempotency store unavailable: " + p.store());
+      Environments.requireSingleProcess(
+          env.getProperty("axiz.config.environment"),
+          "axiz.idempotency.store=memory",
+          "redis or dynamodb",
+          "replicas need a shared store");
+      return new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(
+          clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    pe.axiz.core.idempotency.AsyncIdempotencyService axizAsyncIdempotencyService(
+        pe.axiz.core.idempotency.AsyncIdempotencyStore store,
+        AxizIdempotencyProperties p,
+        ObjectProvider<Clock> clock) {
+      return new pe.axiz.core.idempotency.AsyncIdempotencyService(
+          store, p.inProgressTtl(), p.retention(), clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
     IdempotencyWebFilter axizIdempotencyWebFilter(
-        IdempotencyService service, AxizIdempotencyProperties p) {
+        pe.axiz.core.idempotency.AsyncIdempotencyService service, AxizIdempotencyProperties p) {
       return new IdempotencyWebFilter(service, p.maxBodySize(), p.maxResponseSize());
     }
   }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+ <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version><relativePath>../axiz-parent-core/pom.xml</relativePath></parent>
+ <artifactId>axiz-parent-api</artifactId><packaging>pom</packaging><name>axiz :: parent :: api</name>
+ <description>Neutral structure and extension APIs: core contracts plus the Reactive Streams interoperability standard; no Reactor or runtime.</description>
+ <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes><include>org.reactivestreams:reactive-streams</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
+</project>

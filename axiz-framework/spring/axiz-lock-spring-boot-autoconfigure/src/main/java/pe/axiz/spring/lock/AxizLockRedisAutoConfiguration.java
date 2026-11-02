@@ -10,15 +10,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.lock.redis.RedisDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
-import pe.axiz.core.lock.redis.RedisDistributedLock;
 
 /** Redis locks (SET NX PX with owner token, atomic release and renewal). */
 @AutoConfiguration(
     afterName = "org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration")
 @ConditionalOnClass(
     name = {
-      "pe.axiz.core.lock.redis.RedisDistributedLock",
+      "pe.axiz.adapter.lock.redis.RedisDistributedLock",
       "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory"
     })
 @ConditionalOnBean(LettuceConnectionFactory.class)
@@ -36,9 +36,22 @@ public class AxizLockRedisAutoConfiguration {
   }
 
   @Bean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   DistributedLock axizRedisLock(
       @Qualifier("axizLockRedisConnection") StatefulRedisConnection<String, String> c,
       AxizLockProperties p) {
     return new RedisDistributedLock(c.sync(), p.keyPrefix());
+  }
+
+  @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
+      type =
+          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
+              .REACTIVE)
+  pe.axiz.core.lock.AsyncDistributedLock axizRedisAsyncLock(
+      @Qualifier("axizLockRedisConnection") StatefulRedisConnection<String, String> connection,
+      AxizLockProperties p) {
+    return new pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock(
+        connection.async(), p.keyPrefix());
   }
 }

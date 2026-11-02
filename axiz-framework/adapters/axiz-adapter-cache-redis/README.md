@@ -1,0 +1,25 @@
+<!-- generated -->
+# axiz-adapter-cache-redis
+
+Redis (ElastiCache/Valkey) cache with SCAN-based eviction and failure tolerance.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-cache-redis</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `RedisByteCache` | Redis (ElastiCache / Valkey) cache tier. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-cache-redis verify`.

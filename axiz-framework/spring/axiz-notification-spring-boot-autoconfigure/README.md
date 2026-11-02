@@ -20,6 +20,15 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `AxizNotificationAutoConfiguration` | Notifications (email, SMS, push) as `notification.requested.v1` events to the service that delivers them; the destination is `axiz.notification.destination` (default `notifications`). |
 
+## Reactive notifications
+
+Reactive applications expose `ReactiveNotifications` and `AsyncNotificationSender`, using the
+native messaging port. An application with only an imperative publisher fails at startup rather
+than using it as a fallback. `axiz.notification.enabled=false` disables both stacks; a supplied
+native sender replaces the default. Publication starts at subscription, waits for broker acceptance,
+and cancels the native send when cancelled. Request ids and the `notification.requested.v1` schema
+remain compatible with existing delivery services and imperative producers.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-notification-spring-boot-autoconfigure verify`.

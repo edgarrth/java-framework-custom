@@ -39,7 +39,13 @@ public final class CachedPendingCount {
   public double value() {
     Sample s = last.get();
     if (s.at().plus(maxAge).isBefore(clock.instant()) && refreshing.compareAndSet(false, true)) {
-      Thread.ofVirtual().name("axiz-outbox-pending").start(this::refresh);
+      // A previous refresh may have finished between reading the sample and acquiring the flag.
+      s = last.get();
+      if (s.at().plus(maxAge).isBefore(clock.instant())) {
+        Thread.ofVirtual().name("axiz-outbox-pending").start(this::refresh);
+      } else {
+        refreshing.set(false);
+      }
     }
     return s.value();
   }

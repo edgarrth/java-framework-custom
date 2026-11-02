@@ -41,18 +41,18 @@ import pe.axiz.core.commons.PageRequest;
 {{#fw.cqrs}}
 {{^fw.reactiveHandlers}}
 {{#item.usesCommands}}
-import pe.axiz.framework.cqrs.CommandBus;
+import pe.axiz.extension.cqrs.CommandBus;
 {{/item.usesCommands}}
 {{#item.usesQueries}}
-import pe.axiz.framework.cqrs.QueryBus;
+import pe.axiz.extension.cqrs.QueryBus;
 {{/item.usesQueries}}
 {{/fw.reactiveHandlers}}
 {{#fw.reactiveHandlers}}
 {{#item.usesCommands}}
-import pe.axiz.framework.cqrs.spring.ReactiveCommandBus;
+import pe.axiz.extension.cqrs.spring.ReactiveCommandBus;
 {{/item.usesCommands}}
 {{#item.usesQueries}}
-import pe.axiz.framework.cqrs.spring.ReactiveQueryBus;
+import pe.axiz.extension.cqrs.spring.ReactiveQueryBus;
 {{/item.usesQueries}}
 {{/fw.reactiveHandlers}}
 {{/fw.cqrs}}
@@ -61,11 +61,7 @@ import pe.axiz.spring.web.Paging;
 {{/item.usesPaging}}
 {{#stack.reactive}}
 import reactor.core.publisher.Mono;
-{{#fw.cqrs}}
-{{^fw.reactiveHandlers}}
-import reactor.core.scheduler.Schedulers;
-{{/fw.reactiveHandlers}}
-{{/fw.cqrs}}
+
 {{/stack.reactive}}
 {{#item.models}}
 import {{item.modelPackage}}.{{name}};
@@ -130,39 +126,12 @@ public class {{item.className}}Controller {
 {{/stack.servlet}}
 {{#stack.reactive}}
   public Mono<ResponseEntity<{{responseType}}>> {{methodName}}({{{controllerParams}}}) {
-{{#fw.cqrs}}
-{{#fw.reactiveHandlers}}
 {{#hasResponse}}
     return {{> invoke}}.map(result -> ResponseEntity.status({{status}}).body(result));
 {{/hasResponse}}
 {{^hasResponse}}
-    return {{> invoke}}
-        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
+    return {{> invoke}}.then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
 {{/hasResponse}}
-{{/fw.reactiveHandlers}}
-{{^fw.reactiveHandlers}}
-    // the handlers block (DynamoDB client): they run on the bounded elastic scheduler
-{{#hasResponse}}
-    return Mono.fromCallable(() -> {{> invoke}})
-        .subscribeOn(Schedulers.boundedElastic())
-        .map(result -> ResponseEntity.status({{status}}).body(result));
-{{/hasResponse}}
-{{^hasResponse}}
-    return Mono.fromRunnable(() -> {{> invoke}})
-        .subscribeOn(Schedulers.boundedElastic())
-        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
-{{/hasResponse}}
-{{/fw.reactiveHandlers}}
-{{/fw.cqrs}}
-{{#fw.bff}}
-{{#hasResponse}}
-    return {{> invoke}}.map(result -> ResponseEntity.status({{status}}).body(result));
-{{/hasResponse}}
-{{^hasResponse}}
-    return {{> invoke}}
-        .then(Mono.fromSupplier(() -> ResponseEntity.status({{status}}).<Void>build()));
-{{/hasResponse}}
-{{/fw.bff}}
   }
 {{/stack.reactive}}
 {{/item.operations}}

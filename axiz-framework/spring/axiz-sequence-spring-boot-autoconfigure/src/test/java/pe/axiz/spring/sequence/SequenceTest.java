@@ -14,6 +14,41 @@ import org.springframework.transaction.PlatformTransactionManager;
 class SequenceTest {
 
   @Test
+  void businessRollbackCannotReturnAReservedBlockToAnotherReplica() {
+    JdbcDataSource h2 = new JdbcDataSource();
+    h2.setURL("jdbc:h2:mem:seq-rollback;DB_CLOSE_DELAY=-1");
+    DataSourceTransactionManager transactions = new DataSourceTransactionManager(h2);
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizSequenceAutoConfiguration.class))
+        .withBean(DataSource.class, () -> h2)
+        .withBean(PlatformTransactionManager.class, () -> transactions)
+        .withPropertyValues("axiz.sequence.sequences.operation.block-size=10")
+        .run(
+            context -> {
+              Sequences firstReplica = context.getBean(Sequences.class);
+              org.springframework.transaction.support.TransactionTemplate business =
+                  new org.springframework.transaction.support.TransactionTemplate(transactions);
+              assertThrows(
+                  IllegalStateException.class,
+                  () ->
+                      business.execute(
+                          status -> {
+                            firstReplica.next("operation");
+                            throw new IllegalStateException("rollback business only");
+                          }));
+              Sequences secondReplica =
+                  new Sequences(
+                      context.getBean(AxizSequenceProperties.class),
+                      context.getBean(pe.axiz.core.sequence.SequenceStore.class),
+                      java.time.Clock.systemUTC());
+              org.junit.jupiter.api.Assertions.assertEquals(
+                  "00000002", firstReplica.next("operation"));
+              org.junit.jupiter.api.Assertions.assertEquals(
+                  "00000011", secondReplica.next("operation"));
+            });
+  }
+
+  @Test
   void formattedSequencesOnJdbc() {
     JdbcDataSource h2 = new JdbcDataSource();
     h2.setURL("jdbc:h2:mem:seq;DB_CLOSE_DELAY=-1");

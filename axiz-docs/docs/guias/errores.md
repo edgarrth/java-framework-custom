@@ -67,7 +67,7 @@ error.PAYMENTS-BENEFICIARIESCRUD-0003=Llegaste al máximo de {max} beneficiarios
 
 Cada idioma soportado tiene su archivo (`messages_en.properties` para inglés,
 `messages.properties` para el idioma por defecto), como los servicios generados y el propio
-framework: el bundle raíz se consulta después del idioma por defecto, así que sin
+structure: el bundle raíz se consulta después del idioma por defecto, así que sin
 `messages_en.properties` una request en inglés recibiría el texto del idioma por defecto.
 
 El catálogo también se puede publicar como ConfigMap `<servicio>-errors` (valores `errors` del

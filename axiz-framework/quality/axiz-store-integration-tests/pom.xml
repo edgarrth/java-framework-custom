@@ -6,9 +6,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-core</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-store-integration-tests</artifactId>
@@ -20,41 +20,125 @@
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.stores</axiz.module.name>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <!-- Internal tests have no published binary API or 1.x jar. -->
+    <axiz.api.skip>true</axiz.api.skip>
     <maven.install.skip>true</maven.install.skip>
     <!-- no production code here: the stores are mutation-tested in their own modules -->
     <skipPitest>true</skipPitest>
     <!-- CI sets it to true: without Docker the build fails instead of skipping these tests -->
     <axiz.it.requireDocker>false</axiz.it.requireDocker>
+    <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-notification-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-messaging-sqs</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-messaging-sns</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-audit-sqs</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-secrets-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-secrets-aws</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-crypto-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-crypto-kms</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-dynamodb-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-storage-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-storage-s3</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webflux</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.r2dbc</groupId>
+      <artifactId>r2dbc-pool</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-store-contracts</artifactId>
+      <artifactId>axiz-sequence-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-idempotency-redis</artifactId>
+      <artifactId>axiz-adapter-sequence-dynamodb</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-idempotency-dynamodb</artifactId>
+      <artifactId>axiz-outbox-spring-boot-autoconfigure</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-inbox-dynamodb</artifactId>
+      <artifactId>axiz-adapter-outbox-r2dbc</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.projectreactor.tools</groupId>
+      <artifactId>blockhound</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-test-spring-boot-starter</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-r2dbc-spring-boot-autoconfigure</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-structure-hexagonal-spring-boot-starter</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-store-contract-tests</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-inbox-r2dbc</artifactId>
+      <artifactId>axiz-adapter-idempotency-redis</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-idempotency-dynamodb</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-inbox-dynamodb</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-inbox-r2dbc</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

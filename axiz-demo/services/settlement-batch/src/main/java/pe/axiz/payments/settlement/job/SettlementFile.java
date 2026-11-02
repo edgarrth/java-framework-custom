@@ -13,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.fileformats.FileFormatException;
 import pe.axiz.core.fileformats.FixedField;
 import pe.axiz.core.fileformats.FixedWidthLayout;
-import pe.axiz.framework.batch.FixedWidthRecordReader;
+import pe.axiz.structure.batch.FixedWidthRecordReader;
 
 /**
  * Layout of the daily settlement file of the payment network (fixed width, ISO-8859-1 safe ASCII):

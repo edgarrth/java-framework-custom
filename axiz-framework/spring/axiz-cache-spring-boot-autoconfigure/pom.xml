@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-cache-spring-boot-autoconfigure</artifactId>
@@ -30,7 +30,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-cache-redis</artifactId>
+      <artifactId>axiz-adapter-cache-redis</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -103,5 +103,6 @@
       <artifactId>spring-security-oauth2-jose</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
   </dependencies>
 </project>

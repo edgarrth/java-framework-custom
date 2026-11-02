@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-crypto-kms</artifactId>
+  <name>axiz :: adapter :: crypto-kms</name>
+  <description>AWS KMS key provider for envelope encryption with data key cache</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-crypto-kms</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.crypto.kms</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <!-- how the framework builds this adapter's AWS client (endpoint, region, observation): the
+         auto-configuration uses it, so it travels with the adapter -->
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-observability-aws</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-crypto</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>kms</artifactId>
+    </dependency>
+  </dependencies>
+</project>

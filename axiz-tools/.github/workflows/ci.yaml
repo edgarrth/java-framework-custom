@@ -1,27 +1,29 @@
-# axiz-tools pipeline (shared axiz workflows):
-#   pull request  pr checks + build of the CLI, the initializr and the recipes
-#   develop       SNAPSHOT of the recipes and the CLI published to Nexus
-#   main          initializr image, deployed to dev and qa (GitOps, applied by Argo CD)
-#   tag v*        release: recipes to Nexus, CLI jar and native binaries attached to the GitHub
-#                 release, initializr image deployed to prod after approval
+# Build only. Independent deploy workflows consume one completed run and its signed Maven or service manifest.
 name: ci
-
 on:
   pull_request:
   push:
-    branches: [main, develop]
-    tags: ["v*"]
-
+    branches: [main, develop, "release/**", "hotfix/**"]
+    tags: ["v*", "candidate/**"]
+  workflow_dispatch:
+    inputs:
+      native-cli: {description: Build signed CLI binaries for all supported operating systems, type: boolean, default: false}
+      version: {description: Optional final build coordinate; defaults to the source POM without -SNAPSHOT, type: string, default: ''}
+      variant: {type: choice, options: [jvm, native], default: jvm}
+      platforms: {description: JSON image platforms, type: string, default: '["linux/amd64"]'}
+      base-image: {description: Registry base image pinned by digest; overrides the platform variable, type: string, default: ''}
+      candidate-repository: {description: Optional framework candidate producer repository, type: string, default: ''}
+      candidate-build-run-id: {type: string, default: ''}
+      candidate-build-run-attempt: {type: string, default: ''}
+      candidate-manifest-sha256: {description: External signed framework candidate manifest SHA256, type: string, default: ''}
 permissions:
   contents: read
   pull-requests: read
   security-events: write
   id-token: write
-
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   axiz-workflows-trust:
     runs-on: ubuntu-24.04
@@ -33,142 +35,167 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
           release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
           jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
 
+  parameters:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      candidate: ${{ steps.version.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Resolve final coordinates and candidate identity
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$REQUESTED_VERSION"
+          if [[ -z "$version" ]]; then
+            version=$(python3 -c 'import xml.etree.ElementTree as E; p=E.parse("pom.xml").getroot(); print(p.findtext("{*}version") or p.findtext("{*}properties/{*}revision") or "")')
+            version=${version%-SNAPSHOT}
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          candidate=
+          if [[ "$GITHUB_REF" == refs/tags/candidate/* ]]; then
+            candidate=${GITHUB_REF#refs/tags/candidate/}
+            [[ "$candidate" =~ ^([0-9]+\.[0-9]+\.[0-9]+)/[1-9][0-9]*$ && "${BASH_REMATCH[1]}" == "$version" ]]
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            [[ "${GITHUB_REF#refs/tags/v}" == "$version" ]]
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
+
   pr:
     needs: axiz-workflows-trust
     if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
-  build:
-    needs: axiz-workflows-trust
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
-    with:
-      stage: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
-    secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  # recipes and CLI reach Nexus only after the build and the initializr checks passed (and, on
-  # tags, the native binaries): the staged artifacts of this run are promoted, never rebuilt
-  publish:
-    needs: [axiz-workflows-trust, build, initializr, cli-native]
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled()       && needs.build.result == 'success'       && needs.initializr.result == 'success'       && (needs.cli-native.result == 'success' || needs.cli-native.result == 'skipped')       && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v'))) }}
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-promote.yaml@v1.0.0
-    # release provenance: attached to the GitHub release, signed with the KMS key (OIDC)
-    permissions:
-      contents: write
-      id-token: write
-    secrets:
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-
   cli-native:
-    needs: [axiz-workflows-trust, build]
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (startsWith(github.ref, 'refs/tags/v')) }}
+    needs: [axiz-workflows-trust, parameters]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (startsWith(github.ref, 'refs/tags/v') || inputs.native-cli == true) }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/native.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/native.yaml@v2.0.0
     with:
       module: axiz-cli
       binary: axiz
-      release: true
+      version: ${{ needs.parameters.outputs.version }}
+      source-sha: ${{ github.sha }}
+      candidate: ${{ needs.parameters.outputs.candidate }}
+      axiz-version: '2.0.0'
+      candidate-repository: ${{ inputs.candidate-repository }}
+      candidate-build-run-id: ${{ inputs.candidate-build-run-id }}
+      candidate-build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+      candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
 
-  initializr:
-    needs: [axiz-workflows-trust, build]
+  build:
+    needs: [axiz-workflows-trust, parameters, cli-native]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && needs.parameters.result == 'success' && (needs.cli-native.result == 'success' || (needs.cli-native.result == 'skipped' && !startsWith(github.ref, 'refs/tags/v') && inputs.native-cli != true))) }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/service-ci.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/lib-build.yaml@v2.0.0
     with:
-      service: axiz-initializr
-      module: axiz-initializr
-      openapi: axiz-initializr/docs/openapi.yaml
-      chart: axiz-initializr/deploy/helm/axiz-initializr
+      version: ${{ needs.parameters.outputs.version }}
+      source-sha: ${{ github.sha }}
+      candidate: ${{ needs.parameters.outputs.candidate }}
+      axiz-version: '2.0.0'
+      candidate-repository: ${{ inputs.candidate-repository }}
+      candidate-build-run-id: ${{ inputs.candidate-build-run-id }}
+      candidate-build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+      candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+      native-module: ${{ (startsWith(github.ref, 'refs/tags/v') || inputs.native-cli == true) && 'axiz-cli' || '' }}
+      native-binary: ${{ (startsWith(github.ref, 'refs/tags/v') || inputs.native-cli == true) && 'axiz' || '' }}
+      native-platforms: ${{ (startsWith(github.ref, 'refs/tags/v') || inputs.native-cli == true) && '["linux-x64","macos-arm64","windows-x64"]' || '[]' }}
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-      NEXUS_DOCKER_REGISTRY: ${{ secrets.NEXUS_DOCKER_REGISTRY }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  initializr-dev:
-    needs: [axiz-workflows-trust, initializr]
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.ref == 'refs/heads/main') }}
+  initializr:
+    needs: [axiz-workflows-trust, parameters]
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.0.0
     with:
       service: axiz-initializr
-      environment: dev
+      module: axiz-initializr
       chart: axiz-initializr/deploy/helm/axiz-initializr
-      image-tag: ${{ needs.initializr.outputs.image-tag }}
-      image-digest: ${{ needs.initializr.outputs.image-digest }}
+      version: ${{ needs.parameters.outputs.version }}
+      source-sha: ${{ github.sha }}
+      variant: ${{ inputs.variant || 'jvm' }}
+      platforms: ${{ inputs.platforms || '["linux/amd64"]' }}
+      base-image: ${{ inputs.base-image || (inputs.variant == 'native' && vars.AXIZ_NATIVE_BASE_IMAGE || vars.AXIZ_JVM_BASE_IMAGE) }}
+      axiz-version: 2.0.0
+      candidate-repository: ${{ inputs.candidate-repository }}
+      candidate-build-run-id: ${{ inputs.candidate-build-run-id }}
+      candidate-build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+      candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
-      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
-      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+      CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      BUILD_REGISTRY: ${{ secrets.BUILD_REGISTRY }}
+      REGISTRY_BUILD_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
+      REGISTRY_BUILD_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
 
-  initializr-qa:
-    needs: [axiz-workflows-trust, initializr, initializr-dev]
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
-    with:
-      service: axiz-initializr
-      environment: qa
-      chart: axiz-initializr/deploy/helm/axiz-initializr
-      image-tag: ${{ needs.initializr.outputs.image-tag }}
-      image-digest: ${{ needs.initializr.outputs.image-digest }}
-    secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
-      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
-      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-
-  initializr-prod:
-    needs: [axiz-workflows-trust, initializr]
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (startsWith(github.ref, 'refs/tags/v')) }}
-    # Immutable internal release: axiz-workflows-trust must succeed first.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/service-cd.yaml@v1.0.0
-    with:
-      service: axiz-initializr
-      environment: prod
-      chart: axiz-initializr/deploy/helm/axiz-initializr
-      image-tag: ${{ needs.initializr.outputs.image-tag }}
-      image-digest: ${{ needs.initializr.outputs.image-digest }}
-    secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
-      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
-      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+  pipeline-contracts:
+    needs: axiz-workflows-trust
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          repository: axiz/axiz-workflows
+          ref: v2.0.0
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          path: target/workflow-contracts
+          persist-credentials: false
+      - name: Verify consumer inputs, secret contracts and build/deploy separation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/axiz-pipeline-contracts"
+          python="$RUNNER_TEMP/axiz-pipeline-contracts/bin/python"
+          "$python" -m pip install --quiet PyYAML==6.0.3
+          checks=target/workflow-contracts/actions/check-workflow-security
+          workflows=target/workflow-contracts/.github/workflows
+          "$python" "$checks/check_workflow_security.py" .
+          "$python" "$checks/check_pipeline_contracts.py" --consumer .github/workflows/ci.yaml --phase build --workflows "$workflows"
+          for deploy in .github/workflows/deploy.yaml .github/workflows/deploy-initializr.yaml; do
+            "$python" "$checks/check_pipeline_contracts.py" --consumer "$deploy" --phase deploy --workflows "$workflows"
+          done

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-crypto-jose</artifactId>
+  <name>axiz :: adapter :: crypto-jose</name>
+  <description>JWS and JWE utilities</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-crypto-jose</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.adapter.crypto.jose</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-crypto</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+    </dependency>
+  </dependencies>
+</project>

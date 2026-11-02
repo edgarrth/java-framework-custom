@@ -18,11 +18,11 @@ import org.springframework.web.server.WebFilterChain;
 import pe.axiz.core.commons.StandardHeaders;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.spring.foundation.ReactiveStages;
 import pe.axiz.spring.idempotency.ReactiveIdempotency.IdempotencyExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * Reactive counterpart of {@link IdempotencyFilter}: for unsafe requests it fingerprints the
@@ -38,11 +38,14 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyWebFilter.class);
 
-  private final IdempotencyService service;
+  private final pe.axiz.core.idempotency.AsyncIdempotencyService service;
   private final int maxBodySize;
   private final int maxResponseSize;
 
-  public IdempotencyWebFilter(IdempotencyService service, int maxBodySize, int maxResponseSize) {
+  public IdempotencyWebFilter(
+      pe.axiz.core.idempotency.AsyncIdempotencyService service,
+      int maxBodySize,
+      int maxResponseSize) {
     this.service = Objects.requireNonNull(service);
     this.maxBodySize = maxBodySize;
     this.maxResponseSize = maxResponseSize;
@@ -90,7 +93,7 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
   private Mono<Void> proceed(
       ServerWebExchange exchange, WebFilterChain chain, IdempotencyExchange state, byte[] body) {
     BoundedCapture captured = new BoundedCapture(maxResponseSize);
-    AtomicBoolean settled = new AtomicBoolean();
+    AtomicBoolean written = new AtomicBoolean();
     ServerHttpRequestDecorator request =
         new ServerHttpRequestDecorator(exchange.getRequest()) {
           @Override
@@ -103,6 +106,7 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
         new ServerHttpResponseDecorator(exchange.getResponse()) {
           @Override
           public Mono<Void> writeWith(Publisher<? extends DataBuffer> data) {
+            written.set(true);
             return super.writeWith(
                     Flux.from(data)
                         .map(
@@ -113,7 +117,10 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
                               captured.write(chunk);
                               return exchange.getResponse().bufferFactory().wrap(chunk);
                             }))
-                .doFinally(signal -> written(signal, state, this, captured, settled));
+                .doFinally(
+                    signal -> {
+                      if (signal != SignalType.ON_COMPLETE) captured.markOverflowed();
+                    });
           }
 
           @Override
@@ -121,76 +128,54 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
               Publisher<? extends Publisher<? extends DataBuffer>> body) {
             // streamed (flushed) responses are stored without body: replaying a stream is not
             // supported, its status and headers are
+            written.set(true);
             captured.markOverflowed();
             return super.writeAndFlushWith(body)
-                .doFinally(signal -> written(signal, state, this, captured, settled));
+                .doFinally(
+                    signal -> {
+                      if (signal != SignalType.ON_COMPLETE) captured.markOverflowed();
+                    });
           }
 
           @Override
           public Mono<Void> setComplete() {
+            written.set(true);
             return super.setComplete()
-                .doFinally(signal -> written(signal, state, this, captured, settled));
+                .doFinally(
+                    signal -> {
+                      if (signal != SignalType.ON_COMPLETE) captured.markOverflowed();
+                    });
           }
         };
     ServerWebExchange mutated = exchange.mutate().request(request).response(response).build();
-    return chain
-        .filter(mutated)
-        .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, state))
-        .doOnError(
-            e -> {
-              if (settled.compareAndSet(false, true)) {
-                detached(() -> release(state));
-              }
-            })
-        // a response that was never written (nothing to store) still settles the key
-        .then(Mono.fromRunnable(() -> settle(state, response, captured, settled)));
+    return Mono.usingWhen(
+        Mono.just(state),
+        resource ->
+            chain
+                .filter(mutated)
+                .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, resource)),
+        resource -> finish(resource, response, captured),
+        (resource, error) ->
+            written.get() ? finish(resource, response, captured) : release(resource),
+        resource -> {
+          if (written.get()) {
+            captured.markOverflowed();
+            return finish(resource, response, captured);
+          }
+          return release(resource);
+        });
   }
 
-  /**
-   * The response was written, or the client went away while it was. The record is settled on a
-   * worker that is not tied to the request: once the response is out the server may cancel the
-   * request's work (for example when the client closes the connection), which would interrupt a
-   * store call made in that work and leave the key in progress until its lease expires. If the
-   * write did not complete, the body may be partial, so the outcome is stored without it: the
-   * request already took effect and must never run again.
-   */
-  private void written(
-      SignalType signal,
-      IdempotencyExchange state,
-      ServerHttpResponseDecorator response,
-      BoundedCapture captured,
-      AtomicBoolean settled) {
-    if (signal != SignalType.ON_COMPLETE) {
-      captured.markOverflowed();
-    }
-    settle(state, response, captured, settled);
-  }
-
-  private void settle(
-      IdempotencyExchange state,
-      ServerHttpResponseDecorator response,
-      BoundedCapture captured,
-      AtomicBoolean settled) {
-    if (settled.compareAndSet(false, true)) {
-      detached(() -> finish(state, response, captured));
-    }
-  }
-
-  private static void detached(Runnable work) {
-    Schedulers.boundedElastic().schedule(work);
-  }
-
-  private void finish(
+  private Mono<Void> finish(
       IdempotencyExchange state, ServerHttpResponseDecorator response, BoundedCapture captured) {
     IdempotencyService.Proceed execution = state.execution();
     if (execution == null) {
-      return; // not idempotent, rejected before deciding, or a replay
+      return Mono.empty(); // not idempotent, rejected before deciding, or a replay
     }
     HttpStatusCode status = response.getStatusCode();
     int code = status != null ? status.value() : HttpStatus.OK.value();
     if (code >= 500) {
-      release(state);
-      return;
+      return release(state);
     }
     StoredResponse stored =
         captured.overflowed()
@@ -200,26 +185,26 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
                 code,
                 IdempotencySupport.replayedHeaders(response.getHeaders()::getFirst),
                 captured.bytes());
-    try {
-      if (!service.complete(execution, stored)) {
-        LOG.warn(
-            "Idempotency key lost before completion (lock expired); response not stored: {}",
-            execution.key());
-      }
-    } catch (RuntimeException e) {
-      LOG.error("Idempotency store unavailable while finishing {}", execution.key(), e);
-    }
+    return ReactiveStages.from(() -> service.complete(execution, stored))
+        .doOnNext(
+            saved -> {
+              if (!saved) LOG.warn("Idempotency key lost before completion: {}", execution.key());
+            })
+        .doOnError(
+            error ->
+                LOG.error(
+                    "Idempotency store unavailable while finishing {}", execution.key(), error))
+        .then();
   }
 
-  private void release(IdempotencyExchange state) {
+  private Mono<Void> release(IdempotencyExchange state) {
     IdempotencyService.Proceed execution = state.execution();
-    if (execution == null) {
-      return;
-    }
-    try {
-      service.fail(execution);
-    } catch (RuntimeException e) {
-      LOG.error("Idempotency store unavailable while releasing {}", execution.key(), e);
-    }
+    if (execution == null) return Mono.empty();
+    return ReactiveStages.from(() -> service.fail(execution))
+        .doOnError(
+            error ->
+                LOG.error(
+                    "Idempotency store unavailable while releasing {}", execution.key(), error))
+        .then();
   }
 }

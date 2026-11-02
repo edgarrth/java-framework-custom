@@ -32,11 +32,11 @@ import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
-import pe.axiz.core.persistence.r2dbc.EncryptedText;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
-import pe.axiz.core.persistence.r2dbc.SqlParams;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.EncryptedText;
+import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 

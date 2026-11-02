@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "axiz.sequence.pool.max-size",
+      "type": "java.lang.Integer",
+      "defaultValue": 2,
+      "description": "Maximum connections in the framework-owned reservation pool (1..32), independent of the business pool."
+    },
+    {
+      "name": "axiz.sequence.pool.acquire-timeout",
+      "type": "java.time.Duration",
+      "defaultValue": "5s",
+      "description": "Maximum reservation connection acquisition time; at least 250ms."
+    }
+  ]
+}

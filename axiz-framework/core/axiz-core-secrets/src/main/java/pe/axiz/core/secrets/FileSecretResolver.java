@@ -24,10 +24,7 @@ public final class FileSecretResolver implements SecretResolver {
 
   @Override
   public Optional<SecretValue> resolve(String name) {
-    String fileName = name.replace('/', '.');
-    if (!SAFE_NAME.matcher(fileName).matches() || fileName.contains("..")) {
-      throw new IllegalArgumentException("Invalid secret name");
-    }
+    String fileName = fileName(name);
     Path file = directory.resolve(fileName).normalize();
     if (!file.startsWith(directory) || !Files.isRegularFile(file)) {
       return Optional.empty();
@@ -38,5 +35,13 @@ public final class FileSecretResolver implements SecretResolver {
     } catch (IOException e) {
       throw new UncheckedIOException("Cannot read secret file " + fileName, e);
     }
+  }
+
+  static String fileName(String name) {
+    String fileName = name.replace('/', '.').replace('#', '.');
+    if (!SAFE_NAME.matcher(fileName).matches() || fileName.contains("..")) {
+      throw new IllegalArgumentException("Invalid secret name");
+    }
+    return fileName;
   }
 }

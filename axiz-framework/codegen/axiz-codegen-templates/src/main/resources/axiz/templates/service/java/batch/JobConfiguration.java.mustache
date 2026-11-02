@@ -16,8 +16,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.transaction.PlatformTransactionManager;
 import pe.axiz.core.storage.ObjectStorage;
-import pe.axiz.framework.batch.CsvRecordReader;
-import pe.axiz.framework.batch.spring.StorageRecordItemReader;
+import pe.axiz.structure.batch.CsvRecordReader;
+import pe.axiz.structure.batch.spring.StorageRecordItemReader;
 
 /**
  * The {@code {{project.name}}} job: loads the input file from S3 into Aurora in chunks. The reader

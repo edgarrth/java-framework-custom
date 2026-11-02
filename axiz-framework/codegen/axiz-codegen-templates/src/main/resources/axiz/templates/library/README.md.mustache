@@ -2,10 +2,15 @@
 
 {{project.description}}.
 
-Plain Java library for the axiz ecosystem (layer 1): it depends on no framework, so it can be used
+Plain Java library for the axiz ecosystem (layer 1): it depends on no structure, so it can be used
 from Spring, Quarkus or plain Java. Build with `./mvnw verify` (enforcer rules and tests);
 `./mvnw -Pquality verify` adds the format check, Checkstyle, Error Prone + NullAway and coverage, as CI does.
-Releases are published to Nexus from `v*` tags. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
+`ci.yaml` uses `lib-build@v2.0.0` to build and retain signed Maven staging bytes. It receives the
+version, source commit and optional framework candidate identity. `deploy.yaml` independently
+promotes a completed successful producer run using its attempt and external manifest SHA-256;
+it never executes Maven. Release-please prepares a draft; promotion retains the signed manifest
+before publishing that release. Use separate Nexus read credentials for builds and
+`NEXUS_PUBLISH_USERNAME/PASSWORD` for promotion. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
 nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
 `release-please-config.json`); later ones follow Conventional Commits.
 

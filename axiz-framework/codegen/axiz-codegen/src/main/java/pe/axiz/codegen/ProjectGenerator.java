@@ -10,9 +10,9 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.model.Style;
 import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
@@ -59,9 +59,25 @@ public final class ProjectGenerator {
       throw new GenerationException(result.problems(), result.findings());
     }
     Map<String, Object> context = context(request, archetype, result.contract());
-    String set = archetype.isService() ? "service" : archetype.kind();
-    return new GeneratedProject(
-        request.name(), JavaFormatter.formatAll(TemplateSet.load(set).render(context)));
+    String set = archetype.isService() ? "service" : archetype.name();
+    Map<String, byte[]> files = new LinkedHashMap<>(TemplateSet.load(set).render(context));
+    String asyncApi = request.asyncApi();
+    if (archetype.isService() && asyncApi != null && !asyncApi.isBlank()) {
+      files.putAll(
+          EventPayloads.generate(
+              request.basePackage(),
+              request.groupId(),
+              request.structure(),
+              pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi)));
+      files.putAll(
+          EventAdapters.generate(
+              request.basePackage(),
+              request.groupId(),
+              request.structure(),
+              request.stack(),
+              pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi)));
+    }
+    return new GeneratedProject(request.name(), JavaFormatter.formatAll(files));
   }
 
   /** Template context; also used by the artifact generators of the CLI. */
@@ -95,9 +111,17 @@ public final class ProjectGenerator {
     c.put("project", project);
     Map<String, Object> platform = new LinkedHashMap<>();
     String core = r.name().startsWith("axiz-") ? r.name().substring(5) : r.name();
+    if (r.name().startsWith("axiz-core-")) core = core.substring(5);
+    String capabilityArtifact = r.name().startsWith("axiz-") ? "axiz-" + core : r.name();
+    platform.put("capabilityArtifact", capabilityArtifact);
+    platform.put("coreArtifact", r.name().startsWith("axiz-") ? "axiz-core-" + core : r.name());
     platform.put("prefix", r.name().startsWith("axiz-") ? "axiz." + core : core);
-    platform.put("springPackage", r.basePackage() + ".spring");
-    platform.put("springPackagePath", Names.packagePath(r.basePackage() + ".spring"));
+    String springPackage =
+        r.basePackage().contains(".core.")
+            ? r.basePackage().replaceFirst("\\.core\\.", ".spring.")
+            : r.basePackage() + ".spring";
+    platform.put("springPackage", springPackage);
+    platform.put("springPackagePath", Names.packagePath(springPackage));
     platform.put("propertiesClass", Names.pascal(core) + "Properties");
     platform.put("autoConfigurationClass", Names.pascal(core) + "AutoConfiguration");
     platform.put("mainClass", Names.pascal(core));
@@ -111,30 +135,38 @@ public final class ProjectGenerator {
     archetype.put("rest", a.rest());
     archetype.put("cronjob", "cronjob".equals(a.deployment()));
     archetype.put("deployment", "deployment".equals(a.deployment()));
-    archetype.put("process", "process".equals(a.name()));
+    archetype.put("process", r.capabilities().contains("saga"));
+    archetype.put("enum", a.name().replace("-", "_").toUpperCase(java.util.Locale.ROOT));
     archetype.put(a.name().replace("-", ""), true);
     c.put("archetype", archetype);
 
+    String suppliedAsyncApi = r.asyncApi();
     Map<String, Object> fw = new LinkedHashMap<>();
-    fw.put("id", r.framework().id());
-    for (Framework f : Framework.values()) {
-      fw.put(f.id(), f == r.framework());
+    fw.put("id", r.structure().id());
+    fw.put(
+        "exampleEvents",
+        r.structure() == Structure.EDA && (suppliedAsyncApi == null || suppliedAsyncApi.isBlank()));
+    for (Structure f : Structure.values()) {
+      fw.put(f.id(), f == r.structure());
     }
-    fw.put("starter", r.framework().starter());
-    fw.put("enum", r.framework().name());
+    fw.put("cqrs", r.cqrs());
+    fw.put("hexagonal", r.structure() == Structure.HEXAGONAL && !r.cqrs());
+    fw.put("starter", r.structure().starter());
+    fw.put("enum", r.structure().name());
     String restPackage =
-        switch (r.framework()) {
-          case HEXAGONAL, CQRS -> "adapter.in.rest";
+        switch (r.structure()) {
+          case HEXAGONAL -> "adapter.in.rest";
           default -> "controller";
         };
     fw.put("restPackage", restPackage);
     fw.put("restPath", restPackage.replace('.', '/'));
-    fw.put("packages", packages(r.framework()));
-    fw.put(
-        "hasApplicationModels",
-        r.framework() == Framework.HEXAGONAL || r.framework() == Framework.CQRS);
-    fw.put("usecases", r.framework() == Framework.HEXAGONAL);
-    fw.put("handlers", r.framework() == Framework.CQRS);
+    fw.put("packages", packages(r.structure()));
+    c.put(
+        "extensions",
+        r.extensions().stream().map(e -> Map.of("id", e.id(), "enum", e.name())).toList());
+    fw.put("hasApplicationModels", r.structure() == Structure.HEXAGONAL);
+    fw.put("usecases", r.structure() == Structure.HEXAGONAL && !r.cqrs());
+    fw.put("handlers", r.cqrs());
     c.put("fw", fw);
 
     Map<String, Object> stack = new LinkedHashMap<>();
@@ -154,9 +186,7 @@ public final class ProjectGenerator {
     persistence.put("none", "none".equals(r.persistence()));
     c.put("persistence", persistence);
     // reactive styles get non-blocking handlers unless the store only has a blocking client
-    fw.put(
-        "reactiveHandlers",
-        r.stack() == Stack.REACTIVE && !Catalog.DYNAMODB.equals(r.persistence()));
+    fw.put("reactiveHandlers", r.stack() == Stack.REACTIVE);
 
     List<Capability> resolved = catalog.resolve(capabilityNames(catalog, r, a), store);
     Map<String, Object> caps = new LinkedHashMap<>();
@@ -176,16 +206,20 @@ public final class ProjectGenerator {
     }
     List<Map<String, Object>> starters = new ArrayList<>();
     starterIds.forEach(id -> starters.add(Map.of("artifactId", id)));
-    if (r.framework() != Framework.NONE) {
-      starters.add(Map.of("artifactId", r.framework().starter()));
+    if (r.structure() != Structure.NONE) {
+      starters.add(Map.of("artifactId", r.structure().starter()));
     }
+    r.extensions().forEach(e -> starters.add(Map.of("artifactId", e.starter())));
     List<Map<String, Object>> dependencies = new ArrayList<>();
     for (String d : dependencyIds) {
       String[] ga = d.split(":", -1);
-      dependencies.add(Map.of("groupId", ga[0], "artifactId", ga[1]));
+      dependencies.add(
+          Map.of(
+              "groupId", ga[0], "artifactId", ga[1], "runtime", ga[1].startsWith("axiz-adapter-")));
     }
+    caps.put("technicalinboxdynamodb", caps.containsKey("inbox") && "none".equals(r.persistence()));
     c.put("caps", caps);
-    c.put("schema", schema(catalog.style(r.framework()), caps, Catalog.AURORA.equals(store)));
+    c.put("schema", schema(catalog.style(r.structure()), caps, Catalog.AURORA.equals(store)));
     c.put("capabilities", capabilityRows);
     c.put("starters", starters);
     c.put("dependencies", dependencies);
@@ -208,15 +242,14 @@ public final class ProjectGenerator {
     if (contract != null) {
       for (ApiOperation op : contract.operations()) {
         Map<String, Object> o = operation(op, r.basePackage());
-        if (r.framework() == Framework.CQRS) {
+        if (r.cqrs()) {
           o.put("modelPackage", r.basePackage() + ".application.model");
         }
         operations.add(o);
         byTag.computeIfAbsent(op.tag(), t -> new ArrayList<>()).add(o);
       }
     }
-    if ((r.framework() == Framework.HEXAGONAL || r.framework() == Framework.CQRS)
-        && contract != null) {
+    if ((r.structure() == Structure.HEXAGONAL) && contract != null) {
       c.put("applicationModels", ApplicationModels.records(contract, r.basePackage()));
     }
     c.put("operations", operations);
@@ -242,21 +275,21 @@ public final class ProjectGenerator {
           t.put("models", models.stream().map(m -> Map.of("name", m)).toList());
           t.put("modelPackage", r.basePackage() + ".api.model");
           List<String[]> fields = new ArrayList<>();
-          switch (r.framework()) {
-            case HEXAGONAL ->
+          switch (r.structure()) {
+            case HEXAGONAL -> {
+              if (r.cqrs()) {
+                String prefix = Boolean.TRUE.equals(fw.get("reactiveHandlers")) ? "Reactive" : "";
+                if (any(ops, "write"))
+                  fields.add(new String[] {prefix + "CommandBus", "commandBus"});
+                if (any(ops, "readOnly"))
+                  fields.add(new String[] {prefix + "QueryBus", "queryBus"});
+              } else {
                 ops.forEach(
                     o ->
                         fields.add(
                             new String[] {
                               o.get("className") + "UseCase", o.get("methodName") + "UseCase"
                             }));
-            case CQRS -> {
-              String prefix = Boolean.TRUE.equals(fw.get("reactiveHandlers")) ? "Reactive" : "";
-              if (any(ops, "write")) {
-                fields.add(new String[] {prefix + "CommandBus", "commandBus"});
-              }
-              if (any(ops, "readOnly")) {
-                fields.add(new String[] {prefix + "QueryBus", "queryBus"});
               }
             }
             case LAYERED -> fields.add(new String[] {Names.pascal(tag) + "Service", "service"});
@@ -330,29 +363,19 @@ public final class ProjectGenerator {
   }
 
   /** Packages of each style with their role (package-info files of the skeleton). */
-  static List<Map<String, Object>> packages(Framework framework) {
+  static List<Map<String, Object>> packages(Structure structure) {
     // name and role, in order; an exhaustive switch expression: a new style must declare its own
     List<String> p =
-        switch (framework) {
+        switch (structure) {
           case HEXAGONAL ->
               List.of(
-                  "domain", "Domain model: plain Java, no framework dependencies.",
+                  "domain", "Domain model: plain Java, no structure dependencies.",
                   "application.usecase", "Use cases: one class per operation, transactional.",
                   "application.model", "Owned application contracts independent of HTTP models.",
                   "application.port.out", "Outbound ports implemented by adapters.",
                   "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
                   "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
                   "config", "Wiring of use cases, ports and adapters.");
-          case CQRS ->
-              List.of(
-                  "domain", "Domain model: plain Java, no framework dependencies.",
-                  "application.command", "Commands and their handlers (write side).",
-                  "application.model", "Owned application contracts independent of HTTP models.",
-                  "application.query", "Queries and their handlers (read side).",
-                  "application.port.out", "Outbound ports implemented by adapters.",
-                  "adapter.in.rest", "REST adapter generated from the OpenAPI contract.",
-                  "adapter.out", "Outbound adapters: persistence, HTTP clients, messaging.",
-                  "config", "Wiring of handlers, ports and adapters.");
           case LAYERED ->
               List.of(
                   "controller", "REST controllers generated from the OpenAPI contract.",
@@ -387,7 +410,7 @@ public final class ProjectGenerator {
     Set<String> names = new LinkedHashSet<>(a.starters());
     String store = Catalog.store(r.persistence(), r.stack());
     // what the style starter brings: the service gets its tables, properties and resources too
-    for (String implied : catalog.style(r.framework()).capabilities()) {
+    for (String implied : catalog.style(r.structure()).capabilities()) {
       if (catalog.capability(implied).map(c -> c.supports(store)).orElse(false)) {
         names.add(implied);
       }
@@ -433,7 +456,7 @@ public final class ProjectGenerator {
   }
 
   /**
-   * Framework tables the initial migration creates: those of the chosen capabilities, plus those
+   * Structure tables the initial migration creates: those of the chosen capabilities, plus those
    * the style starter wires on its own when the service has a JDBC database. A store that is wired
    * always has its table, so nothing fails later on the first write or poll.
    */
@@ -523,6 +546,9 @@ public final class ProjectGenerator {
       Set<String> secrets) {
     Map<String, Object> app = new LinkedHashMap<>();
     app.put("spring.application.name", r.name());
+    app.put(
+        "spring.main.web-application-type",
+        r.stack() == Stack.REACTIVE ? "reactive" : (a.rest() ? "servlet" : "none"));
     boolean web = caps.stream().anyMatch(cap -> cap.name().equals("web"));
     if (web) {
       app.put("server.port", 8080);
@@ -552,10 +578,21 @@ public final class ProjectGenerator {
       app.put("axiz.messaging.type-prefix", r.groupId() + ".");
     }
     app.putAll(a.properties());
-    if (r.framework() == Framework.EDA) {
+    String asyncApi = r.asyncApi();
+    if (r.structure() == Structure.EDA && (asyncApi == null || asyncApi.isBlank())) {
       app.put("axiz.messaging.consumer.subscriptions[0]", r.groupId() + ".example.created.v1");
     }
     caps.forEach(cap -> app.putAll(cap.properties(store)));
+    if (asyncApi != null && !asyncApi.isBlank()) {
+      app.keySet()
+          .removeIf(
+              key ->
+                  key.equals("axiz.messaging.consumer.subscriptions")
+                      || key.startsWith("axiz.messaging.consumer.subscriptions["));
+      var consumed = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi).consumed();
+      for (int i = 0; i < consumed.size(); i++)
+        app.put("axiz.messaging.consumer.subscriptions[" + i + "]", consumed.get(i).type());
+    }
 
     Map<String, Object> local = new LinkedHashMap<>();
     local.put("axiz.logging.json", false);

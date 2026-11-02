@@ -21,6 +21,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `InboxDeduplicator` | Connects the inbox to the event dispatcher: a message is processed once per consumer within the retention period. |
 | `InboxException` | Inbox persistence failure. |
 | `InboxStore` | Registry of consumed messages per consumer (idempotent consumer pattern). |
+| `AsyncInboxStore` | CompletionStage port with the same owner fencing, leases and retention semantics. |
 | `JdbcInboxStore` | JDBC inbox (Aurora PostgreSQL). |
 
 ## Tests

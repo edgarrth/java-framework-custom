@@ -66,7 +66,12 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
       String environment =
           env.getProperty("axiz.config.environment", "default").toLowerCase(Locale.ROOT);
       String prefix = env.getProperty("axiz.config.parameter-store.prefix", "/axiz");
-      imports.add("optional:aws-parameterstore:" + prefix + "/" + environment + "/" + app + "/");
+      String stableApp = env.getProperty("axiz.config.parameter-store.application", app);
+      if (!stableApp.matches("[a-zA-Z0-9][a-zA-Z0-9_.-]*")) {
+        throw new IllegalArgumentException("Invalid axiz.config.parameter-store.application");
+      }
+      imports.add(
+          "optional:aws-parameterstore:" + prefix + "/" + environment + "/" + stableApp + "/");
     }
     if (cluster) {
       String dir = env.getProperty("axiz.config.directory", DEFAULT_DIRECTORY);

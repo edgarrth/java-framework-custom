@@ -18,6 +18,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `AsyncDataKeyProvider` | Native envelope-key generation/decryption using CompletionStage. |
+| `AsyncEnvelopeEncryptor` | Shared wire format with bounded, coalesced key caches; last-caller cancellation reaches the provider. |
 | `AesGcm` | AES-256-GCM authenticated encryption with a random 96-bit IV per message and optional additional authenticated data (AAD). |
 | `BlindIndex` | Blind index for searching encrypted columns by equality: HMAC-SHA256 of the normalized value with a dedicated key (never the encryption key), truncated to limit leakage. |
 | `CryptoException` | Cryptographic operation failed (wrong key, tampered data, unavailable provider). |

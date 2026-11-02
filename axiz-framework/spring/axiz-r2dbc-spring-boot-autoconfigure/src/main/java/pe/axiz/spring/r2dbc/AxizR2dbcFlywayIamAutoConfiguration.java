@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProp
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /** With IAM authentication, Flyway connects over JDBC with a token of its own. */
 @AutoConfiguration(

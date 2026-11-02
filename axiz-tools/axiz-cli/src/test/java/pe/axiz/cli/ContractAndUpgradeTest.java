@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
@@ -67,7 +66,7 @@ class ContractAndUpgradeTest {
             m.groupId(),
             m.basePackage(),
             m.archetype(),
-            m.framework(),
+            m.structure(),
             m.stack(),
             m.persistence(),
             m.axizVersion(),
@@ -125,14 +124,18 @@ class ContractAndUpgradeTest {
   }
 
   @Test
-  void aDryRunOnlyRunsTheRecipesInDryRunMode(@TempDir Path tmp) throws Exception {
+  void aDryRunRunsTheRecipesInAnIsolatedCopy(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     String pom = Files.readString(p.resolve("pom.xml"));
     CliHarness h = new CliHarness();
     assertEquals(0, h.run("upgrade", "--to", "1.3.0", "--dry-run", "--dir", p.toString()));
     assertEquals(pom, Files.readString(p.resolve("pom.xml")), "nothing is written");
     assertTrue(
-        h.processes.commands.get(0).contains("org.openrewrite.maven:rewrite-maven-plugin:dryRun"));
+        h.processes
+            .commands
+            .get(0)
+            .contains(
+                "org.openrewrite.maven:rewrite-maven-plugin:" + Version.rewritePlugin() + ":run"));
     assertTrue(h.output().contains("Dry run done"), h.output());
   }
 
@@ -149,14 +152,47 @@ class ContractAndUpgradeTest {
     assertEquals(
         ExitCodes.PROBLEMS, failing.run("upgrade", "--to", "1.4.0", "--dir", p.toString()));
     assertTrue(failing.output().contains("OpenRewrite exited with 3"), failing.output());
-    assertEquals("1.4.0", ProjectManifest.read(p).axizVersion(), "the version change is kept");
+    assertEquals(
+        "1.3.0",
+        ProjectManifest.read(p).axizVersion(),
+        "failed recipes must not advance the manifest");
 
     Files.delete(p.resolve("mvnw"));
+    Files.deleteIfExists(p.resolve("mvnw.cmd"));
     CliHarness noMaven = new CliHarness();
     noMaven.processes.installed.clear();
-    assertEquals(0, noMaven.run("upgrade", "--to", "1.5.0", "--dir", p.toString()));
+    assertEquals(
+        ExitCodes.PROBLEMS, noMaven.run("upgrade", "--to", "1.5.0", "--dir", p.toString()));
     assertTrue(noMaven.output().contains("Maven not found"), noMaven.output());
     assertTrue(noMaven.processes.commands.isEmpty());
-    assertTrue(Set.of("1.5.0").contains(ProjectManifest.read(p).axizVersion()));
+    assertEquals("1.3.0", ProjectManifest.read(p).axizVersion());
+  }
+
+  @Test
+  void currentVersionAndSkippedRecipesStillRejectInvalidArchitecture(@TempDir Path tmp)
+      throws Exception {
+    Path p = CliHarness.service(tmp);
+    Path source = p.resolve("src/main/java/pe/axiz/orders/domain/BadDependency.java");
+    Files.createDirectories(source.getParent());
+    Files.writeString(
+        source,
+        """
+        package pe.axiz.orders.domain;
+        import org.springframework.stereotype.Component;
+        @Component class BadDependency {}
+        """);
+    CliHarness current = new CliHarness();
+    assertEquals(
+        ExitCodes.PROBLEMS,
+        current.run(
+            "upgrade", "--to", ProjectManifest.read(p).axizVersion(), "--dir", p.toString()),
+        current.output());
+    CliHarness skipped = new CliHarness();
+    assertEquals(
+        ExitCodes.PROBLEMS,
+        skipped.run("upgrade", "--to", "2.0.1", "--skip-rewrite", "--dir", p.toString()),
+        skipped.output());
+    assertTrue(current.processes.commands.isEmpty());
+    assertTrue(skipped.processes.commands.isEmpty());
   }
 }

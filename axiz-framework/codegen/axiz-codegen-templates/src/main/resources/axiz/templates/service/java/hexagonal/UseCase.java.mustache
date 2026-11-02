@@ -9,9 +9,10 @@ import org.jspecify.annotations.Nullable;
 {{#item.paged}}
 import pe.axiz.core.commons.PageRequest;
 {{/item.paged}}
-import pe.axiz.core.errors.AxizException;
+{{#stack.reactive}}import reactor.core.publisher.Mono;
+{{/stack.reactive}}import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 {{#item.models}}
 import {{project.basePackage}}.application.model.{{name}};
 {{/item.models}}
@@ -22,13 +23,14 @@ import {{project.basePackage}}.application.model.{{name}};
  */
 @UseCase{{#item.readOnly}}(readOnly = true){{/item.readOnly}}
 public class {{item.className}}UseCase
-    implements pe.axiz.framework.hexagonal.UseCase<{{item.className}}UseCase.Input, {{item.responseType}}> {
+    implements pe.axiz.structure.hexagonal.{{#stack.reactive}}Reactive{{/stack.reactive}}UseCase<{{item.className}}UseCase.Input, {{item.responseType}}> {
 
   /** Input of the use case: path and query parameters, paging and request body. */
   public record Input({{{item.inputComponents}}}) {}
 
   @Override
-  public {{item.responseType}} execute(Input input) {
-    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet");
+  public {{#stack.reactive}}Mono<{{/stack.reactive}}{{item.responseType}}{{#stack.reactive}}>{{/stack.reactive}} execute(Input input) {
+{{#stack.servlet}}    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet");{{/stack.servlet}}
+{{#stack.reactive}}    return Mono.error(new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{item.operationId}} is not implemented yet"));{{/stack.reactive}}
   }
 }

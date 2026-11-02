@@ -10,6 +10,7 @@ axiz add notification
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-notification-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`messaging-sns`](messaging-sns.md) |
 | Incluida por defecto en | ningún arquetipo |
 

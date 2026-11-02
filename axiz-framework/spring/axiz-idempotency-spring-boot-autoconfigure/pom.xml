@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-idempotency-spring-boot-autoconfigure</artifactId>
@@ -48,13 +48,13 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-idempotency-redis</artifactId>
+      <artifactId>axiz-adapter-idempotency-redis</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-idempotency-dynamodb</artifactId>
+      <artifactId>axiz-adapter-idempotency-dynamodb</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -108,5 +108,6 @@
       <artifactId>spring-boot-starter-webflux-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
   </dependencies>
 </project>

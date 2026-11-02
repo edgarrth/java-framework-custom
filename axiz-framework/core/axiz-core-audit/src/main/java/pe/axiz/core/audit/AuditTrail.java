@@ -1,14 +1,11 @@
 package pe.axiz.core.audit;
 
 import java.time.Clock;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
-import pe.axiz.core.sensitive.OutputChannel;
 
 /**
  * Builds sanitized audit events and hands them to the publisher. Sanitizing is always active: the
@@ -56,30 +53,25 @@ public final class AuditTrail {
 
   /** Builder of one audit record. */
   public final class Builder {
-    private final String action;
-    private final String resourceType;
-    private @Nullable String resourceId;
-    private Context context = Context.system();
-    private final Map<String, @Nullable Object> details = new LinkedHashMap<>();
+    private final AuditRecord record;
 
     private Builder(String action, String resourceType) {
-      this.action = action;
-      this.resourceType = resourceType;
+      record = new AuditRecord(service, masker, ids, clock, action, resourceType);
     }
 
     public Builder resourceId(@Nullable String value) {
-      this.resourceId = value;
+      record.resourceId(value);
       return this;
     }
 
     public Builder context(Context value) {
-      this.context = value;
+      record.context(value);
       return this;
     }
 
     /** Adds a detail; the value is sanitized for the audit channel. */
     public Builder detail(String key, @Nullable Object value) {
-      details.put(key, masker.describe(value, OutputChannel.AUDIT));
+      record.detail(key, value);
       return this;
     }
 
@@ -111,21 +103,7 @@ public final class AuditTrail {
     }
 
     private void publish(AuditEvent.Outcome outcome, @Nullable String errorCode) {
-      publisher.publish(
-          new AuditEvent(
-              ids.newId(),
-              clock.instant(),
-              service,
-              action,
-              resourceType,
-              resourceId,
-              context.actor(),
-              outcome,
-              errorCode,
-              context.correlationId(),
-              context.channel(),
-              context.tenant(),
-              details));
+      publisher.publish(record.event(outcome, errorCode));
     }
   }
 }

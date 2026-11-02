@@ -37,3 +37,26 @@ Thank you for improving the axiz framework (core libraries, Spring Boot starters
 Public APIs and SPIs follow semantic versioning. From 1.0.0 the `api-compat` profile
 (`./mvnw -Papi-compat verify -Daxiz.api.baseline=<last release>`) must pass; an intentional break
 automated.
+
+## Pipeline and generated sample checks
+
+Framework Python policy dependencies are pinned in `.github/scripts/requirements.txt`. CI installs
+them in an isolated environment. To run the same policies locally:
+
+```bash
+python3 -m venv /tmp/axiz-framework-policy
+/tmp/axiz-framework-policy/bin/python -m pip install -r .github/scripts/requirements.txt
+/tmp/axiz-framework-policy/bin/python -m unittest discover -s .github/scripts -p 'test_*.py'
+```
+
+`.github/scripts/samples.sh` generates the catalog defaults and checks that `native-nightly.yaml`
+selects exactly the generated service projects. Libraries and starters remain part of JVM sample
+validation. Update the native selection when changing sample names or service roles. `MODE=all`
+generates the full structure, extension, stack and persistence matrix for the separate nightly job.
+
+The mandatory `native-reactive` gate and nightly also run
+`bash .github/scripts/reactive-native-sample.sh`. It requires GraalVM JDK 25 and Docker, installs
+the framework from source in the local Maven repository, and generates a fresh fixture under
+`target/reactive-native-acceptance`. JVM tests exercise BlockHound, event contracts and decimal
+precision; the compiled ELF must then boot with disposable dependencies and pass its health,
+liveness and readiness probes. It uses the PRNG default compiled by the service parent.

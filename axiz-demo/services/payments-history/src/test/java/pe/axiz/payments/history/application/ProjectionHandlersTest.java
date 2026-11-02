@@ -64,6 +64,23 @@ class ProjectionHandlersTest {
   }
 
   @Test
+  void anInexactEventIsNotWrittenToTheReadModel() {
+    var command =
+        new RecordPaymentRegisteredCommand(
+            "invalid",
+            "OP-invalid",
+            "C-1001",
+            "00219100123456789053",
+            new BigDecimal("150.005"),
+            "PEN",
+            LocalDate.parse("2026-10-12"),
+            T0);
+    assertThatThrownBy(() -> registered.handle(command).block(T))
+        .isInstanceOf(pe.axiz.core.errors.BusinessException.class);
+    assertThat(store.entries).isEmpty();
+  }
+
+  @Test
   void unknownPaymentsAreNotFound() {
     assertThatThrownBy(() -> new GetPaymentHandler(store).handle(new GetPaymentQuery("x")).block(T))
         .isInstanceOf(NotFoundException.class);

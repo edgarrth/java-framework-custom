@@ -25,6 +25,20 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `SecretNotFoundException` | A required secret is not available in any source. |
 | `SecretResolver` | Resolves secrets by name. |
 | `SecretValue` | A secret value. |
+| `AsyncSecretResolver` | Native asynchronous lookup and required lookup, with cancellation of the active source. |
+| `CompositeAsyncSecretResolver` | Tries the next source only for absence; failures stop the chain. |
+| `CachingAsyncSecretResolver` | Bounded coalesced remote loads; missing and failed values are not retained. |
+| `EnvironmentAsyncSecretResolver` | CPU-only lookup from an immutable environment snapshot. |
+| `RefreshingFileSecretResolver` | Mounted-file snapshot read at startup and refreshed by an owned background worker. |
+
+Reactive requests use `AsyncSecretResolver`. Mounted-file lookup reads an immutable memory
+snapshot; filesystem access occurs at startup and on the refresh worker. Close the file resolver
+with its application lifecycle. Refresh failures fail closed until a successful refresh.
+Snapshots allow at most 1,000 files, 1 MiB per file and 16 MiB total. Invalid UTF-8 is rejected.
+
+Logical names such as `database#password` select a JSON field in Secrets Manager. File sources
+map `/` and `#` to `.`, allowing mounted overrides such as `database.password`. Environment
+sources use their documented uppercase underscore mapping. Never log `SecretValue.reveal()`.
 
 ## Tests
 

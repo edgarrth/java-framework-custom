@@ -33,7 +33,8 @@ public record Capability(
     List<String> configMapKeys,
     List<String> secrets,
     String example,
-    Map<String, Store> persistence) {
+    Map<String, Store> persistence,
+    List<Stack> stacks) {
 
   /**
    * Store-specific additions.
@@ -61,6 +62,7 @@ public record Capability(
   }
 
   public Capability {
+    stacks = List.copyOf(stacks);
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(starter, "starter");
     dependencies = List.copyOf(dependencies);
@@ -70,6 +72,10 @@ public record Capability(
     configMapKeys = List.copyOf(configMapKeys);
     secrets = List.copyOf(secrets);
     persistence = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(persistence));
+  }
+
+  public boolean supports(Stack stack) {
+    return stacks.contains(stack);
   }
 
   /** Whether the capability works with the given store. */

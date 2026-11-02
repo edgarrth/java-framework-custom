@@ -21,7 +21,7 @@ import org.springframework.data.r2dbc.dialect.DialectResolver;
 import org.springframework.r2dbc.core.DatabaseClient;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
+import pe.axiz.kit.r2dbc.ReactiveSql;
 
 /**
  * Reactive relational persistence on Aurora PostgreSQL: a {@link ReactiveSql} that joins the
@@ -74,7 +74,8 @@ public class AxizR2dbcAutoConfiguration {
             Binder.get(env)
                 .bind("spring.r2dbc.properties", Bindable.mapOf(String.class, String.class))
                 .orElseGet(Map::of),
-            decorators.orderedStream().toList()));
+            decorators.orderedStream().toList()),
+        iam);
   }
 
   /** axiz column types for Spring Data R2DBC entities. */

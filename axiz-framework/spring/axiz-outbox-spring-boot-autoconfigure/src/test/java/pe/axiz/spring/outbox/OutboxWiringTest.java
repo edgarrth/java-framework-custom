@@ -34,9 +34,9 @@ import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
 import pe.axiz.core.resilience.Backoff;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 /** The relay loop, the reactive relay wiring and the pending gauge. */
 class OutboxWiringTest {

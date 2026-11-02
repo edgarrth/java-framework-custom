@@ -31,11 +31,11 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.util.backoff.FixedBackOff;
+import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
+import pe.axiz.adapter.messaging.kafka.KafkaEventPublisher;
+import pe.axiz.adapter.messaging.kafka.MskIam;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.PayloadException;
-import pe.axiz.core.messaging.kafka.KafkaEnvelopes;
-import pe.axiz.core.messaging.kafka.KafkaEventPublisher;
-import pe.axiz.core.messaging.kafka.MskIam;
 
 /**
  * Amazon MSK: IAM-authenticated idempotent producer for {@code kafka:} destinations, and listener
@@ -45,7 +45,7 @@ import pe.axiz.core.messaging.kafka.MskIam;
 @AutoConfiguration
 @ConditionalOnClass(
     name = {
-      "pe.axiz.core.messaging.kafka.KafkaEventPublisher",
+      "pe.axiz.adapter.messaging.kafka.KafkaEventPublisher",
       "org.springframework.kafka.core.KafkaTemplate"
     })
 @ConditionalOnExpression(

@@ -3,19 +3,27 @@
 
 Tipos públicos principales de cada módulo, generados desde los README del framework (en inglés, como el código).
 
+## Plataforma: parents y BOMs
+
+| Módulo | Descripción |
+|---|---|
+| [`axiz-bom`](platform/axiz-bom.md) | Bill of materials of the axiz artifacts: every `pe.axiz` module at the same version. Services that |
+| [`axiz-dependencies`](platform/axiz-dependencies.md) | Versions of every third-party library the platform uses (Spring Boot and Spring Cloud trains, AWS |
+| [`axiz-parent-api`](platform/axiz-parent-api.md) | Neutral structure and extension APIs: core contracts plus the Reactive Streams interoperability standard; no Reactor or runtime. |
+| [`axiz-parent-core`](platform/axiz-parent-core.md) | Parent of layer 1 modules and of the plain Java libraries of the teams: Java 25, the quality gates |
+| [`axiz-parent-service`](platform/axiz-parent-service.md) | Parent of every microservice: Spring Boot repackage, Jib image (non-root, immutable tag; the |
+| [`axiz-parent-spring`](platform/axiz-parent-spring.md) | Parent of layer 2 starters, layer 3 frameworks and the Spring libraries of the teams: Spring Boot |
+| [`axiz-parent-technology`](platform/axiz-parent-technology.md) | Maven parent of technology adapters and persistence kits. Inherits shared standards and tests; forbids runtime-framework coupling. It governs technology dependencies independently of pure core contracts. |
+| [`axiz-parent-test`](platform/axiz-parent-test.md) | Test-support libraries: fixtures and contract suites. This parent is only for quality modules and is never a runtime contract. |
+
 ## Capa 1: core (Java puro)
 
 | Módulo | Descripción |
 |---|---|
 | [`axiz-core-audit`](core/axiz-core-audit.md) | Immutable audit events, publication policies, sanitization and asynchronous publishers. |
-| [`axiz-core-audit-kafka`](core/axiz-core-audit-kafka.md) | Audit publisher for Amazon MSK (Kafka). |
-| [`axiz-core-audit-sqs`](core/axiz-core-audit-sqs.md) | Audit publisher for Amazon SQS. |
 | [`axiz-core-cache`](core/axiz-core-cache.md) | Cache port, two-level cache and in-memory implementation. |
-| [`axiz-core-cache-redis`](core/axiz-core-cache-redis.md) | Redis (ElastiCache/Valkey) cache with SCAN-based eviction and failure tolerance. |
 | [`axiz-core-commons`](core/axiz-core-commons.md) | Result type, request and page metadata, header catalog, dates and preconditions. |
 | [`axiz-core-crypto`](core/axiz-core-crypto.md) | AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation. |
-| [`axiz-core-crypto-jose`](core/axiz-core-crypto-jose.md) | JWS and JWE utilities. |
-| [`axiz-core-crypto-kms`](core/axiz-core-crypto-kms.md) | AWS KMS key provider for envelope encryption with data key cache. |
 | [`axiz-core-domain`](core/axiz-core-domain.md) | DDD building blocks: aggregate root, entity, value object, domain events, typed ids, common value objects. |
 | [`axiz-core-errors`](core/axiz-core-errors.md) | Error model: types, categories with HTTP mapping, AxizException, RFC 9457 problem, externalized catalog. |
 | [`axiz-core-featureflags`](core/axiz-core-featureflags.md) | Feature flags with targeting by channel, tenant or percentage; OpenFeature-compatible provider. |
@@ -24,49 +32,64 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-i18n`](core/axiz-core-i18n.md) | Message resolution from multiple bundles with locale fallback. |
 | [`axiz-core-id`](core/axiz-core-id.md) | Time-ordered UUIDv7, ULID, correlation and idempotency ids. |
 | [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | API idempotency: key and fingerprint, stored responses, conflict detection. |
-| [`axiz-core-idempotency-dynamodb`](core/axiz-core-idempotency-dynamodb.md) | Idempotency store on DynamoDB with TTL. |
-| [`axiz-core-idempotency-redis`](core/axiz-core-idempotency-redis.md) | Idempotency store on Redis (ElastiCache). |
 | [`axiz-core-identifiers`](core/axiz-core-identifiers.md) | Generic identifier SPI with validators (national documents, bank accounts, cards, contact data). |
 | [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer: processed-message registry with JDBC store. |
-| [`axiz-core-inbox-dynamodb`](core/axiz-core-inbox-dynamodb.md) | Inbox store on DynamoDB with TTL. |
-| [`axiz-core-inbox-r2dbc`](core/axiz-core-inbox-r2dbc.md) | Inbox (idempotent consumer) on Aurora PostgreSQL over R2DBC. |
 | [`axiz-core-lock`](core/axiz-core-lock.md) | Distributed lock port with lease, background renewal and lock template; in-memory implementation. |
-| [`axiz-core-lock-dynamodb`](core/axiz-core-lock-dynamodb.md) | Distributed lock on DynamoDB conditional writes. |
-| [`axiz-core-lock-redis`](core/axiz-core-lock-redis.md) | Distributed lock on Redis. |
 | [`axiz-core-logging`](core/axiz-core-logging.md) | Structured logging fields, scoped MDC, operation logging and header allow-list. |
 | [`axiz-core-messaging`](core/axiz-core-messaging.md) | EventPublisher and EventHandler over CloudEvents 1.0, business headers, retry and DLQ policies. |
-| [`axiz-core-messaging-kafka`](core/axiz-core-messaging-kafka.md) | Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication. |
-| [`axiz-core-messaging-sns`](core/axiz-core-messaging-sns.md) | Amazon SNS publisher adapter (standard and FIFO). |
-| [`axiz-core-messaging-sqs`](core/axiz-core-messaging-sqs.md) | Amazon SQS publisher and consumer adapter (standard and FIFO). |
 | [`axiz-core-metrics`](core/axiz-core-metrics.md) | Generic event metrics: seven instruments parameterized by the event tag with cardinality protection. |
 | [`axiz-core-money`](core/axiz-core-money.md) | Money value object with ISO 4217 currencies, rounding and safe arithmetic; exchange rate port. |
 | [`axiz-core-notification`](core/axiz-core-notification.md) | Notification requests (email, SMS, push) with templates, published as events. |
 | [`axiz-core-observability`](core/axiz-core-observability.md) | Observation conventions, standard attributes and helpers for framework spans and structured events. |
-| [`axiz-core-observability-awssdk`](core/axiz-core-observability-awssdk.md) | AWS SDK v2 execution interceptor producing Micrometer observations. |
 | [`axiz-core-outbox`](core/axiz-core-outbox.md) | Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once. |
-| [`axiz-core-outbox-r2dbc`](core/axiz-core-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
-| [`axiz-core-persistence-dynamodb`](core/axiz-core-persistence-dynamodb.md) | Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters. |
-| [`axiz-core-persistence-jpa`](core/axiz-core-persistence-jpa.md) | JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters. |
-| [`axiz-core-persistence-r2dbc`](core/axiz-core-persistence-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens. |
 | [`axiz-core-resilience`](core/axiz-core-resilience.md) | Retry policies with backoff and jitter, idempotency-aware retry decisions and timeouts. |
 | [`axiz-core-saga`](core/axiz-core-saga.md) | Orchestrated sagas with retries, compensation and persistent, resumable state. |
 | [`axiz-core-secrets`](core/axiz-core-secrets.md) | SecretResolver port with environment and file resolvers and TTL cache. |
-| [`axiz-core-secrets-aws`](core/axiz-core-secrets-aws.md) | Secret resolvers for AWS Secrets Manager and Parameter Store. |
 | [`axiz-core-security`](core/axiz-core-security.md) | AxizPrincipal, claim mapping, authority model, rate-limit keys and request signatures. |
-| [`axiz-core-security-redis`](core/axiz-core-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
 | [`axiz-core-sensitive`](core/axiz-core-sensitive.md) | Sensitivity levels, masking strategies and annotations for responses, logs and audit. |
-| [`axiz-core-sequence`](core/axiz-core-sequence.md) | Atomic formatted sequences with JDBC (PostgreSQL SEQUENCE) store. |
-| [`axiz-core-sequence-dynamodb`](core/axiz-core-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
+| [`axiz-core-sequence`](core/axiz-core-sequence.md) | Atomic formatted sequences with synchronous and native asynchronous ports. PostgreSQL uses a |
 | [`axiz-core-soap`](core/axiz-core-soap.md) | Lightweight SOAP 1.1/1.2 client support: envelopes, WS-Security UsernameToken, fault mapping. |
 | [`axiz-core-storage`](core/axiz-core-storage.md) | Object storage port with streaming, presigned URLs and metadata; in-memory implementation. |
-| [`axiz-core-storage-s3`](core/axiz-core-storage-s3.md) | Amazon S3 object storage with SSE-KMS and presigned URLs. |
-| [`axiz-core-store-contracts`](core/axiz-core-store-contracts.md) | Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests. |
 | [`axiz-core-tenancy`](core/axiz-core-tenancy.md) | Tenant context, resolution and propagation. |
-| [`axiz-core-test`](core/axiz-core-test.md) | Test fixtures for layer 1: mutable clock, recording publisher, metric assertions and an in-memory R2DBC fake. |
 | [`axiz-core-time`](core/axiz-core-time.md) | Injectable clock, business calendar, holidays, cut-off times and due dates. |
 | [`core`](core/core.md) | Plain Java capabilities (`axiz-core-<capability>[-<technology>]`): JDK, SLF4J, JSpecify and |
 
-## Capa 2: Spring Boot
+## Capa 2: adaptadores tecnológicos
+
+| Módulo | Descripción |
+|---|---|
+| [`adapters`](adapters/adapters.md) | Technology adapters implement the synchronous and asynchronous ports from core. Services select them at runtime; their code imports ports and persistence kits instead of adapter implementations. |
+| [`axiz-adapter-audit-kafka`](adapters/axiz-adapter-audit-kafka.md) | Audit publisher for Amazon MSK (Kafka). |
+| [`axiz-adapter-audit-sqs`](adapters/axiz-adapter-audit-sqs.md) | Audit publisher for Amazon SQS. |
+| [`axiz-adapter-cache-redis`](adapters/axiz-adapter-cache-redis.md) | Redis (ElastiCache/Valkey) cache with SCAN-based eviction and failure tolerance. |
+| [`axiz-adapter-crypto-jose`](adapters/axiz-adapter-crypto-jose.md) | JWS and JWE utilities. |
+| [`axiz-adapter-crypto-kms`](adapters/axiz-adapter-crypto-kms.md) | AWS KMS key provider for envelope encryption with data key cache. |
+| [`axiz-adapter-idempotency-dynamodb`](adapters/axiz-adapter-idempotency-dynamodb.md) | Idempotency store on DynamoDB with TTL. |
+| [`axiz-adapter-idempotency-redis`](adapters/axiz-adapter-idempotency-redis.md) | Idempotency store on Redis (ElastiCache). |
+| [`axiz-adapter-inbox-dynamodb`](adapters/axiz-adapter-inbox-dynamodb.md) | Inbox store on DynamoDB with TTL. |
+| [`axiz-adapter-inbox-r2dbc`](adapters/axiz-adapter-inbox-r2dbc.md) | Inbox (idempotent consumer) on Aurora PostgreSQL over R2DBC. |
+| [`axiz-adapter-lock-dynamodb`](adapters/axiz-adapter-lock-dynamodb.md) | Distributed lock on DynamoDB conditional writes. |
+| [`axiz-adapter-lock-redis`](adapters/axiz-adapter-lock-redis.md) | Distributed lock on Redis. |
+| [`axiz-adapter-messaging-kafka`](adapters/axiz-adapter-messaging-kafka.md) | Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication. |
+| [`axiz-adapter-messaging-sns`](adapters/axiz-adapter-messaging-sns.md) | Amazon SNS publisher adapter (standard and FIFO). |
+| [`axiz-adapter-messaging-sqs`](adapters/axiz-adapter-messaging-sqs.md) | Amazon SQS publisher and consumer adapter (standard and FIFO). |
+| [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | AWS SDK v2 execution interceptor producing Micrometer observations. |
+| [`axiz-adapter-outbox-r2dbc`](adapters/axiz-adapter-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
+| [`axiz-adapter-secrets-aws`](adapters/axiz-adapter-secrets-aws.md) | Secret resolvers for AWS Secrets Manager and Parameter Store. |
+| [`axiz-adapter-security-redis`](adapters/axiz-adapter-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
+| [`axiz-adapter-sequence-dynamodb`](adapters/axiz-adapter-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
+| [`axiz-adapter-storage-s3`](adapters/axiz-adapter-storage-s3.md) | Amazon S3 object storage with SSE-KMS and presigned URLs. |
+
+## Capa 2: kits de persistencia
+
+| Módulo | Descripción |
+|---|---|
+| [`axiz-kit-dynamodb`](kits/axiz-kit-dynamodb.md) | Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters. |
+| [`axiz-kit-jpa`](kits/axiz-kit-jpa.md) | JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters. |
+| [`axiz-kit-r2dbc`](kits/axiz-kit-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens. |
+| [`kits`](kits/kits.md) | Public technology APIs used by service persistence adapters. Kits have compile scope and are confined to persistence packages. They do not depend on Spring or higher layers. |
+
+## Capa 3: Spring Boot
 
 | Módulo | Descripción |
 |---|---|
@@ -124,7 +147,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-security-spring-boot-starter`](spring/axiz-security-spring-boot-starter.md) | OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit. |
 | [`axiz-sensitive-spring-boot-autoconfigure`](spring/axiz-sensitive-spring-boot-autoconfigure.md) | Masking of @Sensitive and @Mask fields in JSON responses, logs and audit (auto-configuration). |
 | [`axiz-sensitive-spring-boot-starter`](spring/axiz-sensitive-spring-boot-starter.md) | Masking of @Sensitive and @Mask fields in JSON responses, logs and audit. |
-| [`axiz-sequence-spring-boot-autoconfigure`](spring/axiz-sequence-spring-boot-autoconfigure.md) | Formatted atomic sequences on PostgreSQL or DynamoDB (auto-configuration). |
+| [`axiz-sequence-spring-boot-autoconfigure`](spring/axiz-sequence-spring-boot-autoconfigure.md) | Formatted atomic sequences on JDBC, native R2DBC or DynamoDB, selected by application stack. |
 | [`axiz-sequence-spring-boot-starter`](spring/axiz-sequence-spring-boot-starter.md) | Formatted atomic sequences on PostgreSQL or DynamoDB. |
 | [`axiz-soap-spring-boot-autoconfigure`](spring/axiz-soap-spring-boot-autoconfigure.md) | SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations (auto-configuration). |
 | [`axiz-soap-spring-boot-starter`](spring/axiz-soap-spring-boot-starter.md) | SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations. |
@@ -137,23 +160,28 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-web-spring-boot-starter`](spring/axiz-web-spring-boot-starter.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata. |
 | [`spring`](spring/spring.md) | Spring Boot 4.1 auto-configuration and integration adapters for each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans |
 
-## Capa 3: frameworks
+## Capa 4: estructuras
 
 | Módulo | Descripción |
 |---|---|
-| [`axiz-framework-batch-api`](frameworks/axiz-framework-batch-api.md) | Batch style on Spring Batch: restartable jobs, chunked steps, files on S3, CronJob or ShedLock execution (contracts, plain Java). |
-| [`axiz-framework-batch-spring-boot-starter`](frameworks/axiz-framework-batch-spring-boot-starter.md) | Batch style on Spring Batch: restartable jobs, chunked steps, files on S3, CronJob or ShedLock execution. |
-| [`axiz-framework-bff-api`](frameworks/axiz-framework-bff-api.md) | Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache (contracts, plain Java). |
-| [`axiz-framework-bff-spring-boot-starter`](frameworks/axiz-framework-bff-spring-boot-starter.md) | Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache. |
-| [`axiz-framework-cqrs-api`](frameworks/axiz-framework-cqrs-api.md) | CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections (contracts, plain Java). |
-| [`axiz-framework-cqrs-spring-boot-starter`](frameworks/axiz-framework-cqrs-spring-boot-starter.md) | CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections. |
-| [`axiz-framework-eda-api`](frameworks/axiz-framework-eda-api.md) | Event-driven style: typed event handlers, idempotent consumption, outbox publication, retries and DLQ (contracts, plain Java). |
-| [`axiz-framework-eda-spring-boot-starter`](frameworks/axiz-framework-eda-spring-boot-starter.md) | Event-driven style: typed event handlers, idempotent consumption, outbox publication, retries and DLQ. |
-| [`axiz-framework-hexagonal-api`](frameworks/axiz-framework-hexagonal-api.md) | Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit (contracts, plain Java). |
-| [`axiz-framework-hexagonal-spring-boot-starter`](frameworks/axiz-framework-hexagonal-spring-boot-starter.md) | Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit. |
-| [`axiz-framework-layered-api`](frameworks/axiz-framework-layered-api.md) | Layered style for simple CRUD services: controller, service and repository (contracts, plain Java). |
-| [`axiz-framework-layered-spring-boot-starter`](frameworks/axiz-framework-layered-spring-boot-starter.md) | Layered style for simple CRUD services: controller, service and repository. |
-| [`frameworks`](frameworks/frameworks.md) | One architectural style per service, chosen when it is created: `layered`, `hexagonal`, `cqrs`, |
+| [`axiz-structure-batch-api`](structures/axiz-structure-batch-api.md) | Batch style on Spring Batch: restartable jobs, chunked steps, files on S3, CronJob or ShedLock execution (contracts, plain Java). |
+| [`axiz-structure-batch-spring-boot-starter`](structures/axiz-structure-batch-spring-boot-starter.md) | Batch style on Spring Batch: restartable jobs, chunked steps, files on S3, CronJob or ShedLock execution. |
+| [`axiz-structure-bff-api`](structures/axiz-structure-bff-api.md) | Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache (contracts, plain Java). |
+| [`axiz-structure-bff-spring-boot-starter`](structures/axiz-structure-bff-spring-boot-starter.md) | Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache. |
+| [`axiz-structure-eda-spring-boot-starter`](structures/axiz-structure-eda-spring-boot-starter.md) | Event-driven style: typed event handlers, idempotent consumption, outbox publication, retries and DLQ. |
+| [`axiz-structure-hexagonal-api`](structures/axiz-structure-hexagonal-api.md) | Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit (contracts, plain Java). |
+| [`axiz-structure-hexagonal-spring-boot-starter`](structures/axiz-structure-hexagonal-spring-boot-starter.md) | Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit. |
+| [`axiz-structure-layered-api`](structures/axiz-structure-layered-api.md) | Layered style for simple CRUD services: controller, service and repository (contracts, plain Java). |
+| [`axiz-structure-layered-spring-boot-starter`](structures/axiz-structure-layered-spring-boot-starter.md) | Layered style for simple CRUD services: controller, service and repository. |
+| [`structures`](structures/structures.md) | Service structures: layered, hexagonal, BFF, EDA and batch. Each structure has neutral contracts and Spring wiring. CQRS is an extension, located in extensions/. |
+
+## Capa 4: extensiones
+
+| Módulo | Descripción |
+|---|---|
+| [`axiz-extension-cqrs-api`](extensions/axiz-extension-cqrs-api.md) | CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections (contracts, plain Java). |
+| [`axiz-extension-cqrs-spring-boot-starter`](extensions/axiz-extension-cqrs-spring-boot-starter.md) | CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections. |
+| [`extensions`](extensions/extensions.md) | Optional structural patterns. CQRS extends hexagonal with separate command/query buses and behaviors, while composing core capabilities through Spring wiring. |
 
 ## Generación
 
@@ -172,5 +200,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-archunit-rules`](quality/axiz-archunit-rules.md) | Architecture rules for axiz services: general hygiene and one rule set per architectural style. |
 | [`axiz-code-standards`](quality/axiz-code-standards.md) | Checkstyle, SpotBugs, Semgrep, Spectral and gitleaks configuration. |
 | [`axiz-coverage-report`](quality/axiz-coverage-report.md) | Aggregates the JaCoCo reports of every module with production code (`./mvnw -Pquality verify`, |
+| [`axiz-store-contract-tests`](quality/axiz-store-contract-tests.md) | Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests. |
 | [`axiz-store-integration-tests`](quality/axiz-store-integration-tests.md) | Internal module, never published: it is not a dependency for services. |
+| [`axiz-test-support`](quality/axiz-test-support.md) | Test fixtures for layer 1: mutable clock, recording publisher, metric assertions and an in-memory R2DBC fake. |
 | [`quality`](quality/quality.md) | Machine-checked rules: `axiz-code-standards` (Checkstyle, SpotBugs, Spotless, Semgrep, Spectral and |

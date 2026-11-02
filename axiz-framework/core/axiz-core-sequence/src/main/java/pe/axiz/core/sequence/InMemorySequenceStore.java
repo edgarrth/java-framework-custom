@@ -11,8 +11,9 @@ public final class InMemorySequenceStore implements SequenceStore {
 
   @Override
   public long increment(String name, String period, int increment) {
+    if (increment <= 0) throw new IllegalArgumentException("increment must be positive");
     return counters
         .computeIfAbsent(name + "|" + period, k -> new AtomicLong())
-        .addAndGet(increment);
+        .updateAndGet(value -> Math.addExact(value, increment));
   }
 }

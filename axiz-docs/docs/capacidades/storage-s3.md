@@ -10,7 +10,8 @@ axiz add storage-s3
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-storage-spring-boot-starter` |
-| Dependencias | `pe.axiz:axiz-core-storage-s3`<br>`software.amazon.awssdk:s3` |
+| Stacks del catálogo | servlet, reactive |
+| Dependencias | `pe.axiz:axiz-adapter-storage-s3`<br>`software.amazon.awssdk:s3` |
 | Incluida por defecto en | batch |
 
 ## Propiedades que agrega
@@ -37,11 +38,11 @@ spring.cloud.aws.region.static: us-east-1
 
 ```java
 storage.put("in/file.txt", content, ObjectMetadata.of("text/plain", length));
+// Servlet: ObjectStorage + InputStream. Reactive: ReactiveStorage + Publisher<ByteBuffer>, returns Mono<Void>.
+// Consume downloads with reactiveStorage.content(key) to release responses on completion/error/cancellation.
 ```
 
 ## Módulos
 
 - [`axiz-storage-spring-boot-autoconfigure`](../referencia/spring/axiz-storage-spring-boot-autoconfigure.md)
-- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)
 - [`axiz-core-storage`](../referencia/core/axiz-core-storage.md)
-- [`axiz-core-storage-s3`](../referencia/core/axiz-core-storage-s3.md)

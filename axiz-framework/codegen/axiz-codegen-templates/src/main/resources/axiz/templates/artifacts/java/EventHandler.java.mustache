@@ -5,8 +5,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
 {{#fw.eda}}
-import pe.axiz.framework.eda.HandlesEvent;
-import pe.axiz.framework.eda.TypedEventHandler;
+import pe.axiz.core.messaging.HandlesEvent;
+import pe.axiz.core.messaging.TypedEventHandler;
 {{/fw.eda}}
 {{^fw.eda}}
 import pe.axiz.core.messaging.EventHandler;

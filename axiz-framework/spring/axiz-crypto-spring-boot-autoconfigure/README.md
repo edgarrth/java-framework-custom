@@ -18,6 +18,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `ReactiveEnvelopeEncryption` | Deferred native KMS envelope encryption for reactive applications; no synchronous client fallback. |
 | `AxizCryptoAutoConfiguration` | Field encryption with keys from the secret store, blind indexes, and password hashing (Argon2id by default). |
 | `AxizCryptoKmsAutoConfiguration` | Envelope encryption with AWS KMS data keys (cached by age and use count). |
 | `AxizCryptoProperties` | Cryptography (`axiz.crypto.*`). |

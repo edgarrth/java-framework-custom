@@ -20,7 +20,7 @@ public class PaymentsConfiguration {
     Map<String, Money> limits = new LinkedHashMap<>();
     properties
         .dailyLimits()
-        .forEach((currency, amount) -> limits.put(currency, Money.of(amount, currency)));
+        .forEach((currency, amount) -> limits.put(currency, Money.ofExact(amount, currency)));
     return new PaymentLimits(limits);
   }
 

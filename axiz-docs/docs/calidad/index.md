@@ -168,3 +168,19 @@ SemVer con un tren alineado a la minor de Spring Boot; se soportan la versión a
 anterior. Toda API obsoleta se marca `@Deprecated(forRemoval = true)` con al menos una minor de
 aviso, y cada release incluye recetas OpenRewrite para migrar los servicios. Conventional Commits y
 changelog automático.
+
+## Reproducibilidad desde Git
+
+La configuración `.mvn/jvm.config`, `.mvn/maven.config` y `.mvn/wrapper/maven-wrapper.properties`
+es código de build y debe versionarse. Los wrappers y scripts de entrada conservan el modo Git
+`100755`; `chmod` local no basta si `core.filemode=false`. El módulo `coverage` del demo también
+contiene fuentes y pruebas, aunque el nombre coincida con exclusiones globales de herramientas.
+Los `.gitignore` de los repositorios y de los proyectos generados preservan esos archivos y siguen
+excluyendo targets, POM aplanados y secretos.
+
+El gate `check-build-inputs.py` del framework comprueba el índice de Git, los permisos y los POM de
+los módulos. Sus regresiones recrean un repositorio donde los archivos existen localmente pero no
+están versionados. La validación de entrega debe exportar el árbol que se va a publicar a un
+directorio vacío y ejecutar el wrapper y el perfil de calidad allí, sin copiar configuración del
+workspace. Los artefactos del repositorio local de Maven son una caché de dependencias; no sustituyen
+las fuentes ni los archivos de configuración del proyecto exportado.

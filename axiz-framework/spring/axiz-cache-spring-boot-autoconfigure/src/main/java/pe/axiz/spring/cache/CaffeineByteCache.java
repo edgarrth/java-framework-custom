@@ -5,10 +5,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import java.time.Duration;
 import java.util.Optional;
-import pe.axiz.core.cache.ByteCache;
 
 /** L1 on Caffeine with a TTL per entry and size-based eviction. */
-public final class CaffeineByteCache implements ByteCache {
+public final class CaffeineByteCache implements pe.axiz.core.cache.LocalByteCache {
 
   /** Internal holder; a class rather than a record because it holds an array. */
   private static final class Entry {

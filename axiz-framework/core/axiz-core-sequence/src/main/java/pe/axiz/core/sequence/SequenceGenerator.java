@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Pattern;
 
 /**
  * Formatted, gap-tolerant sequence. Values are allocated from the store in blocks of {@code
@@ -12,8 +11,6 @@ import java.util.regex.Pattern;
  * no state is shared between generators.
  */
 public final class SequenceGenerator {
-
-  private static final Pattern NAME = Pattern.compile("^[a-z][a-z0-9_-]{0,62}$");
 
   private final String name;
   private final SequenceFormat format;
@@ -23,16 +20,11 @@ public final class SequenceGenerator {
   private final ReentrantLock lock = new ReentrantLock();
   private String currentPeriod = "\u0000";
   private long next;
-  private long last = -1;
+  private int remaining;
 
   public SequenceGenerator(
       String name, SequenceFormat format, SequenceStore store, int blockSize, Clock clock) {
-    if (!NAME.matcher(name).matches()) {
-      throw new IllegalArgumentException("Invalid sequence name " + name);
-    }
-    if (blockSize < 1 || blockSize > 10_000) {
-      throw new IllegalArgumentException("blockSize must be between 1 and 10000");
-    }
+    SequenceAllocation.validate(name, blockSize);
     this.name = name;
     this.format = Objects.requireNonNull(format);
     this.store = Objects.requireNonNull(store);
@@ -43,14 +35,21 @@ public final class SequenceGenerator {
   /** Next raw value for the current period. */
   public long nextValue() {
     String period = format.reset().period(LocalDate.now(clock.withZone(format.zone())));
+    return nextValue(period);
+  }
+
+  private long nextValue(String period) {
     lock.lock();
     try {
-      if (!period.equals(currentPeriod) || next > last) {
-        last = store.increment(name, period, blockSize);
-        next = last - blockSize + 1;
+      if (!period.equals(currentPeriod) || remaining == 0) {
+        long last = store.increment(name, period, blockSize);
+        next = SequenceAllocation.first(last, blockSize);
+        remaining = blockSize;
         currentPeriod = period;
       }
-      return next++;
+      long value = next;
+      if (--remaining > 0) next++;
+      return value;
     } finally {
       lock.unlock();
     }
@@ -59,7 +58,7 @@ public final class SequenceGenerator {
   /** Next formatted value, e.g. {@code OP-20260131-000123}. */
   public String next() {
     String period = format.reset().period(LocalDate.now(clock.withZone(format.zone())));
-    long value = nextValue();
+    long value = nextValue(period);
     return format.render(period, value);
   }
 }

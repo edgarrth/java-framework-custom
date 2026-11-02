@@ -10,6 +10,7 @@ axiz add outbox
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-outbox-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -30,7 +31,7 @@ Agrega también: [`jpa`](jpa.md)
 
 Agrega también: [`r2dbc`](r2dbc.md)
 
-- `pe.axiz:axiz-core-outbox-r2dbc`
+- `pe.axiz:axiz-adapter-outbox-r2dbc`
 
 ## Uso
 
@@ -45,5 +46,3 @@ transactionalEvents.enqueue("orders", event.id(), "order-created.v1", "order", o
 - [`axiz-outbox-spring-boot-autoconfigure`](../referencia/spring/axiz-outbox-spring-boot-autoconfigure.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
 - [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)
-- [`axiz-core-outbox-r2dbc`](../referencia/core/axiz-core-outbox-r2dbc.md)
-- [`axiz-core-test`](../referencia/core/axiz-core-test.md)

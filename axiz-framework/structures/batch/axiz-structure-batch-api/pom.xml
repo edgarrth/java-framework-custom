@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-api</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../../platform/axiz-parent-api/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-structure-batch-api</artifactId>
+  <name>axiz :: structure :: batch :: api</name>
+  <description>Batch style on Spring Batch: restartable jobs, chunked steps, files on S3, CronJob or ShedLock execution (contracts, plain Java)</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-framework-batch-api</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.structure.batch</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-fileformats</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-errors</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>

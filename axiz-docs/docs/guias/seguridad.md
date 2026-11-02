@@ -48,17 +48,37 @@ lo reconoce de tres formas:
 - cuando no hay `sub`;
 - cuando el token tiene una de las marcas de `axiz.security.claims.machine`.
 
-Las marcas por defecto son `idtyp=app` (Microsoft Entra) y
-`preferred_username^=service-account-` (cuentas de servicio de Keycloak, cuyo `sub` es el id de
-un usuario técnico). Cada marca puede tener una de estas formas:
+La marca por defecto es `idtyp=app` (Microsoft Entra). Otros proveedores deben emitir un
+**claim de tipo de token controlado por el emisor**, cuyo valor no provenga del perfil del usuario.
+Solo se admite la comparación exacta `claim=valor`, sensible a mayúsculas. Las marcas por presencia,
+prefijos y atributos de perfil como `preferred_username`, `name` o `email` se rechazan al iniciar.
+Un nombre como `service-account-payments-web` nunca convierte a una persona en aplicación.
 
-- `claim`: el claim está presente;
-- `claim=valor`: el claim tiene ese valor;
-- `claim^=prefijo`: el claim empieza con ese prefijo.
+```yaml
+axiz:
+  security:
+    claims:
+      machine: [token_kind=service]
+      subject-as-client: false
+```
 
-Con otro proveedor, configura la marca que distinga sus tokens de aplicación. Si no la
-configuras, una cuenta de servicio se tratará como una persona y las políticas le negarán el
-acceso.
+El proveedor debe garantizar que `token_kind=service` solo aparezca en tokens de aplicación,
+incluso cuando permita atributos personalizados o federación. Esa garantía debe cumplirse para
+todos los emisores admitidos por el servicio. Para proveedores con modelos distintos, se puede
+registrar un `ClaimsMapper` propio que aplique una política explícita por emisor.
+
+**Migración desde las heurísticas anteriores.** Se eliminó la marca automática de username de
+Keycloak. En el demo, únicamente los clientes confidenciales con client credentials habilitado y
+los flujos de usuario deshabilitados emiten `axiz_token_kind=service` mediante un mapper fijo del
+cliente; los servicios configuran esa marca exacta. No se debe instalar ese mapper en un scope
+compartido con usuarios ni en un cliente que admita también flujos de usuario. Una cuenta técnica
+con UUID en `sub`, sin la marca configurada, se tratará como usuario: configurar el emisor antes de
+actualizar los consumidores y comprobar ambos tipos de token.
+
+`subject-as-client` ahora vale `false` por defecto. Activarlo solo permite usar `sub` como client id
+cuando **también coincide una marca de aplicación confiable**. Un token de usuario sin `azp` o
+`client_id` se rechaza; habilitar la opción no convierte automáticamente a cualquier sujeto en
+aplicación. Siguen admitidos los formatos estándar con `sub` igual al client id o sin usuario final.
 
 En servlet se configura un `SecurityFilterChain` y en reactivo un `SecurityWebFilterChain`. Por
 defecto la única ruta anónima es health (las sondas de Kubernetes); el resto del actuator exige
@@ -131,7 +151,7 @@ public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery>
 - Las políticas corren en la etapa de autorización del pipeline. Esto ocurre después de
   `@RequiresAuthority` y antes de la idempotencia, la transacción y el handler. En buses reactivos,
   una `AccessPolicy` corre fuera del event loop. Si la política lee estado a través de un
-  repositorio reactivo, usa `pe.axiz.framework.cqrs.ReactiveAccessPolicy` del módulo API, que devuelve
+  repositorio reactivo, usa `pe.axiz.extension.cqrs.ReactiveAccessPolicy` del módulo API, que devuelve
   `Publisher<Void>` (por ejemplo, `Mono<Void>`) y no bloquea. Las
   reglas de arquitectura de los servicios reactivos prohíben `block()`.
 - Hay dos formas de negar: `AccessException` (403) y `NotFoundException` (404). Usa 404 cuando

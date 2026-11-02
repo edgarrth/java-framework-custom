@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.ContractDiff;
 import pe.axiz.codegen.project.ProjectManifest;
 
@@ -41,7 +41,7 @@ class ContractSyncTest {
   private Path project(Path dir) throws Exception {
     generator
         .generate(
-            Fixtures.request("business", Framework.HEXAGONAL, Stack.SERVLET, "aurora", List.of()))
+            Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()))
         .writeTo(dir, false);
     return dir;
   }
@@ -67,7 +67,7 @@ class ContractSyncTest {
     ContractSync.Result r = sync.sync(dir, false);
     assertTrue(r.applied(), r.toString());
     assertEquals(List.of("refundOrder"), r.added());
-    String base = "src/main/java/pe/axiz/orders/ordersbusiness/";
+    String base = "src/main/java/pe/axiz/orders/orders/";
     assertTrue(
         r.created().contains(base + "application/usecase/RefundOrderUseCase.java"),
         r.created().toString());

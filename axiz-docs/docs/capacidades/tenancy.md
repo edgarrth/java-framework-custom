@@ -10,6 +10,7 @@ axiz add tenancy
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-tenancy-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega

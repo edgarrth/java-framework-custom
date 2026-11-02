@@ -3,11 +3,11 @@ package pe.axiz.payments.business.config;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.FilterType;
-import pe.axiz.framework.cqrs.AccessPolicy;
-import pe.axiz.framework.cqrs.CommandHandler;
-import pe.axiz.framework.cqrs.QueryHandler;
-import pe.axiz.framework.cqrs.ReactiveCommandHandler;
-import pe.axiz.framework.cqrs.ReactiveQueryHandler;
+import pe.axiz.extension.cqrs.AccessPolicy;
+import pe.axiz.extension.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.QueryHandler;
+import pe.axiz.extension.cqrs.ReactiveCommandHandler;
+import pe.axiz.extension.cqrs.ReactiveQueryHandler;
 
 /** Registers plain application handlers and policies from the composition root. */
 @Configuration(proxyBeanMethods = false)

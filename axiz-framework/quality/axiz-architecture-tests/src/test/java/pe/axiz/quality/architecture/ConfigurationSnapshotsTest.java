@@ -26,7 +26,7 @@ class ConfigurationSnapshotsTest {
       configurationCollectionsCannotBeChangedThroughConstructorArgumentsOrAccessors() {
     return new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-            .importPackages("pe.axiz.spring", "pe.axiz.framework")
+            .importPackages("pe.axiz.spring", "pe.axiz.structure", "pe.axiz.extension")
             .stream()
             .filter(type -> type.getName().matches(".*Properties(?:\\$.*)?"))
             .map(type -> type.reflect())

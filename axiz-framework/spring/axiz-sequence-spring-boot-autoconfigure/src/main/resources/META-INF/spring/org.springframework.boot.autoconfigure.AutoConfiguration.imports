@@ -1,2 +1,3 @@
 pe.axiz.spring.sequence.AxizSequenceDynamoDbAutoConfiguration
+pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration
 pe.axiz.spring.sequence.AxizSequenceAutoConfiguration

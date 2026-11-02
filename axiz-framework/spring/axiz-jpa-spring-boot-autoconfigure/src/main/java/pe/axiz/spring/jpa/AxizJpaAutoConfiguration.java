@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import pe.axiz.core.persistence.jpa.AuditorProvider;
+import pe.axiz.kit.jpa.AuditorProvider;
 
 /**
  * Relational persistence conventions: auditing of {@code AuditableEntity} from the authenticated

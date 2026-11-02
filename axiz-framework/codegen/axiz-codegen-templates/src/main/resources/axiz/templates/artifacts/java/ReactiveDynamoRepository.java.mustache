@@ -1,0 +1,38 @@
+package {{project.basePackage}}.{{fw.repositoryPackage}};
+
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Repository;
+import pe.axiz.core.commons.Page;
+import pe.axiz.spring.dynamodb.ReactiveDynamoRepositories;
+import pe.axiz.spring.dynamodb.ReactiveDynamoRepository;
+import reactor.core.publisher.Mono;
+{{#fw.layered}}
+import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Item;
+{{/fw.layered}}
+
+/** Native asynchronous data access of {@link {{artifact.className}}Item}. */
+@Repository
+public class {{artifact.className}}Repository {
+
+  private final ReactiveDynamoRepository<{{artifact.className}}Item> items;
+
+  public {{artifact.className}}Repository(ReactiveDynamoRepositories repositories) {
+    this.items = repositories.create("{{artifact.plural}}", {{artifact.className}}Item.class);
+  }
+
+  public Mono<{{artifact.className}}Item> findById(String id) {
+    return items.findById(id);
+  }
+
+  public Mono<Void> save({{artifact.className}}Item item) {
+    return items.save(item);
+  }
+
+  public Mono<Void> delete(String id) {
+    return items.delete(id);
+  }
+
+  public Mono<Page<{{artifact.className}}Item>> byPartition(String partitionKey, int limit, @Nullable String cursor) {
+    return items.query(partitionKey, limit, cursor);
+  }
+}

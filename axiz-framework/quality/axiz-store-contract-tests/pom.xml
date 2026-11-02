@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-test</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-test/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-store-contract-tests</artifactId>
+  <name>axiz :: quality :: store contracts</name>
+  <description>Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-core-store-contracts</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.test.contracts</axiz.module.name>
+    <!-- test fixtures: their value is measured by the stores they check -->
+    <skipPitest>true</skipPitest>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-idempotency</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-inbox</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-messaging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-test-support</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

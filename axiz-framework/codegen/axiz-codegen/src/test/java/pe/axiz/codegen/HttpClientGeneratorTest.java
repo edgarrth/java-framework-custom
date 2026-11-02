@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class HttpClientGeneratorTest {
@@ -97,12 +97,12 @@ class HttpClientGeneratorTest {
     }
   }
 
-  private static ProjectManifest project(Framework f, Stack s) {
+  private static ProjectManifest project(Structure f, Stack s) {
     return new ProjectManifest(
         "payments-experience",
         "pe.axiz.payments",
         "pe.axiz.payments.experience",
-        "experience",
+        "ux",
         f,
         s,
         "none",
@@ -125,7 +125,7 @@ class HttpClientGeneratorTest {
   void generatesInterfaceModelsAndGroupRegistration() {
     HttpClientGenerator.Result r =
         HttpClientGenerator.generate(
-            project(Framework.HEXAGONAL, Stack.SERVLET), "order-service", Fixtures.orders());
+            project(Structure.HEXAGONAL, Stack.SERVLET), "order-service", Fixtures.orders());
     String client = file(r, "adapter/out/orderservice/OrderServiceClient.java");
     assertTrue(client.contains("@HttpExchange"));
     assertTrue(client.contains("@PostExchange(\"/v1/orders\")"));
@@ -162,7 +162,7 @@ class HttpClientGeneratorTest {
   void reactiveClientsReturnMonos() {
     HttpClientGenerator.Result r =
         HttpClientGenerator.generate(
-            project(Framework.BFF, Stack.REACTIVE), "order-service", Fixtures.orders());
+            project(Structure.BFF, Stack.REACTIVE), "order-service", Fixtures.orders());
     String client = file(r, "client/orderservice/OrderServiceClient.java");
     assertTrue(client.contains("Mono<Order> getOrder("), client);
     assertTrue(client.contains("Mono<Void> cancelOrder("), client);
@@ -175,6 +175,6 @@ class HttpClientGeneratorTest {
         IllegalArgumentException.class,
         () ->
             HttpClientGenerator.generate(
-                project(Framework.BFF, Stack.SERVLET), "Bad Name", Fixtures.orders()));
+                project(Structure.BFF, Stack.SERVLET), "Bad Name", Fixtures.orders()));
   }
 }

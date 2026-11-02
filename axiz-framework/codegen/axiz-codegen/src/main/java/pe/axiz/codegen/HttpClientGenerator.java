@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.project.ProjectManifest;
@@ -62,10 +62,15 @@ public final class HttpClientGenerator {
       throw new IllegalArgumentException("HTTP clients are generated in services");
     }
     OpenApiDocument contract = OpenApiDocument.parse(contractText);
+    Object info = contract.raw().get("info");
+    Object role = info instanceof Map<?, ?> values ? values.get("x-axiz-archetype") : null;
+    if (!(role instanceof String target) || target.isBlank())
+      throw new IllegalArgumentException("Target contract must declare info.x-axiz-archetype");
+    ServiceRoles.requireCall(project.archetype(), target);
     String segment = Names.packageSegment(name);
     String pkg =
         project.basePackage()
-            + (project.framework() == Framework.HEXAGONAL || project.framework() == Framework.CQRS
+            + (project.structure() == Structure.HEXAGONAL
                 ? ".adapter.out." + segment
                 : ".client." + segment);
     String modelPkg = pkg + ".model";
@@ -73,6 +78,8 @@ public final class HttpClientGenerator {
     boolean reactive = project.stack() == Stack.REACTIVE;
     Map<String, byte[]> files = new LinkedHashMap<>();
     String base = "src/main/java/" + Names.packagePath(pkg) + "/";
+
+    files.put(".axiz/clients/" + name + ".yaml", utf8(contractText));
 
     Set<String> models = new TreeSet<>();
     Map<String, Object> schemas = map(map(contract.raw().get("components")).get("schemas"));

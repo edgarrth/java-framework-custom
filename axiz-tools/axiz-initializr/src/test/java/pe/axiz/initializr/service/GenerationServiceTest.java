@@ -10,9 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.codegen.GenerationException;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 
 public class GenerationServiceTest {
 
@@ -28,12 +28,12 @@ public class GenerationServiceTest {
 
   private static ProjectRequest request(String contract) {
     return new ProjectRequest(
-        "orders-business",
+        "orders",
         "pe.axiz.orders",
-        "pe.axiz.orders.business",
+        "pe.axiz.orders",
         "",
         "business",
-        Framework.HEXAGONAL,
+        Structure.HEXAGONAL,
         Stack.SERVLET,
         "aurora",
         List.of(),

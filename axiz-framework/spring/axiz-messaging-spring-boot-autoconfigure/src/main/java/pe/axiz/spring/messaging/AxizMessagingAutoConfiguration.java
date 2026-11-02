@@ -2,14 +2,20 @@ package pe.axiz.spring.messaging;
 
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.ReactiveTransactionManager;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.ConsumerRetryPolicy;
 import pe.axiz.core.messaging.Deduplicator;
@@ -17,6 +23,7 @@ import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.messaging.EventRoutes;
 import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.messaging.RoutingEventPublisher;
 import pe.axiz.core.resilience.Backoff;
@@ -37,6 +44,42 @@ import tools.jackson.databind.json.JsonMapper;
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)
 public class AxizMessagingAutoConfiguration {
+
+  @Bean
+  @ConditionalOnBooleanProperty(
+      name = "axiz.messaging.consumer.transactional",
+      matchIfMissing = true)
+  static TransactionalEventHandlerPostProcessor axizTransactionalEventHandlers(
+      ObjectProvider<PlatformTransactionManager> tx) {
+    return new TransactionalEventHandlerPostProcessor(tx);
+  }
+
+  /** Reactive handlers: transaction, context and timeout (reactive services). */
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "reactor.core.publisher.Mono")
+  static class ReactiveConfiguration {
+
+    @Bean
+    static ReactiveEventHandlerPostProcessor axizReactiveEventHandlers(
+        ObjectProvider<ReactiveTransactionManager> tx, Environment env) {
+      // a static post-processor cannot take @ConfigurationProperties: bind the values with Spring
+      // Boot's conversions ("100ms", "30s", relaxed names). Environment.getProperty(Duration) only
+      // works when the environment carries Boot's conversion service, not in every context
+      Binder binder = Binder.get(env);
+      return new ReactiveEventHandlerPostProcessor(
+          tx,
+          binder.bind("axiz.messaging.consumer.transactional", Boolean.class).orElseGet(() -> true),
+          binder
+              .bind("axiz.messaging.consumer.handler-timeout", Duration.class)
+              .orElseGet(() -> Duration.ofSeconds(30)));
+    }
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  EventRoutes axizEventRoutes(AxizMessagingProperties p) {
+    return new EventRoutes(p.routes().defaultDestination(), p.routes().byType());
+  }
 
   @Bean
   @ConditionalOnMissingBean

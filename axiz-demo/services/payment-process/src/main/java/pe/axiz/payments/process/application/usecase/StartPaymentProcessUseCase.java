@@ -11,7 +11,7 @@ import pe.axiz.core.saga.SagaOrchestrator;
 import pe.axiz.core.saga.SagaResult;
 import pe.axiz.core.saga.SagaState;
 import pe.axiz.core.saga.SagaStateStore;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 import pe.axiz.payments.process.application.saga.PaymentContext;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 import pe.axiz.payments.process.domain.PaymentProcess;
@@ -22,7 +22,7 @@ import pe.axiz.payments.process.domain.PaymentProcess;
  */
 @UseCase
 public class StartPaymentProcessUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<
+    implements pe.axiz.structure.hexagonal.UseCase<
         StartPaymentProcessUseCase.Input, PaymentProcess> {
 
   /**

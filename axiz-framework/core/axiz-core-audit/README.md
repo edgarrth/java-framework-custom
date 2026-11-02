@@ -18,7 +18,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
-| `AsyncAuditPublisher` | Real asynchronous publication: a bounded queue drained by a virtual thread. |
+| `AsyncAuditPublisher` | Imperative background delivery: bounded queue drained by a virtual thread; serves servlet/worker callers. |
+| `AsyncAuditEventPublisher` | Native acceptance port returning a cancellable `CompletionStage<Void>`; no I/O wait during submission. |
+| `AsyncAuditTrail` | Sanitized asynchronous records with the same wire policy as `AuditTrail`. |
+| `AuditRecord` | Shared CPU-only construction of immutable, sanitized event snapshots. |
+| `CompositeAsyncAuditPublisher` | Native fan-out: all sinks attempted, failures reported, active send cancelled on cancellation. |
+| `LoggingAsyncAuditPublisher` | Hand-off to a non-blocking appender; completion acknowledges log hand-off, not durable storage. |
 | `AuditEvent` | Immutable audit record of who did what, on which resource, when and with what result. |
 | `AuditPolicy` | When an audited action is recorded. |
 | `AuditPublishException` | An audit event could not be delivered to its destination. |
@@ -27,6 +32,14 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Auditable` | Audits a method: actor, action, resource, outcome and (sanitized) arguments and result. |
 | `CompositeAuditPublisher` | Publishes to several publishers; a failing one does not prevent the others. |
 | `LoggingAuditPublisher` | Writes audit events as JSON lines to the `axiz.audit` logger. |
+
+## Native delivery
+
+Reactive integrations select `AsyncAuditEventPublisher`, never the background queue publisher.
+Builders belong to one operation. Each event receives an immutable snapshot of sanitized details;
+subsequent builder changes cannot alter a delivered event. Native transport ownership stays with
+its application owner. For transactional evidence, use Spring's reactive durable audit and R2DBC
+outbox in the business transaction. Logging requires a non-blocking appender and remains best effort.
 
 ## Tests
 

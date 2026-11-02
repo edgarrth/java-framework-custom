@@ -20,7 +20,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -31,7 +31,7 @@ jobs:
     needs: axiz-workflows-trust
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v2.0.0
     with:
       modules: >-
         ["services/payments-experience", "services/payments-business",
@@ -40,5 +40,5 @@ jobs:
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}

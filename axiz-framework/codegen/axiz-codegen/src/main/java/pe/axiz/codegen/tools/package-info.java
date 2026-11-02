@@ -1,4 +1,4 @@
-/** Command-line utilities of the generation engine used by the framework's own CI. */
+/** Command-line utilities of the generation engine used by the structure's own CI. */
 @NullMarked
 package pe.axiz.codegen.tools;
 

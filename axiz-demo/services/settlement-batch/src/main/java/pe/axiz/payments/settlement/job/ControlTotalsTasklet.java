@@ -9,7 +9,7 @@ import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import pe.axiz.core.fileformats.ControlTotals;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.core.storage.StoredObject;
-import pe.axiz.framework.batch.FixedWidthRecordReader;
+import pe.axiz.structure.batch.FixedWidthRecordReader;
 
 /**
  * First step: reads the whole file and checks the trailer's record count and total before anything

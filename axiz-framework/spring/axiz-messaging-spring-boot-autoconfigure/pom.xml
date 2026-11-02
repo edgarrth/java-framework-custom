@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-spring-lib</artifactId>
+    <artifactId>axiz-parent-spring</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-spring-lib/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-messaging-spring-boot-autoconfigure</artifactId>
@@ -19,6 +19,11 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -49,19 +54,19 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-kafka</artifactId>
+      <artifactId>axiz-adapter-messaging-kafka</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-sqs</artifactId>
+      <artifactId>axiz-adapter-messaging-sqs</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-sns</artifactId>
+      <artifactId>axiz-adapter-messaging-sns</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -86,7 +91,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-observability-awssdk</artifactId>
+      <artifactId>axiz-adapter-observability-aws</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
@@ -96,5 +101,10 @@
       <artifactId>micrometer-tracing-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>io.micrometer</groupId><artifactId>context-propagation</artifactId></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-r2dbc</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
   </dependencies>
 </project>

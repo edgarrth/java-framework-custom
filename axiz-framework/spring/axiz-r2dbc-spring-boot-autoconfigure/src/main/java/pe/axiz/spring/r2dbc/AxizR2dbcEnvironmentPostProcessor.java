@@ -7,7 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
-import pe.axiz.core.persistence.r2dbc.R2dbcUrls;
+import pe.axiz.kit.r2dbc.R2dbcUrls;
 
 /**
  * R2DBC defaults (lowest precedence) suited to Aurora: connections are validated against the server

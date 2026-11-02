@@ -1,7 +1,7 @@
 package pe.axiz.payments.business.application.access;
 
-import pe.axiz.framework.cqrs.AccessPolicy;
-import pe.axiz.framework.cqrs.Caller;
+import pe.axiz.extension.cqrs.AccessPolicy;
+import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.payments.business.application.command.CreatePaymentOrderCommand;
 
 /**

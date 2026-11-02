@@ -21,6 +21,19 @@ import pe.axiz.core.logging.NoLog;
 @ExtendWith(OutputCaptureExtension.class)
 class LoggingTest {
 
+  @org.junit.jupiter.api.Test
+  void reactiveLoggingUsesAsyncConsoleAndAllowsExplicitConfiguration() {
+    var env = new org.springframework.mock.env.MockEnvironment();
+    var application = new SpringApplication();
+    application.setWebApplicationType(org.springframework.boot.WebApplicationType.REACTIVE);
+    new AxizLoggingEnvironmentPostProcessor().postProcessEnvironment(env, application);
+    assertEquals(
+        "classpath:pe/axiz/spring/logging/logback-reactive.xml", env.getProperty("logging.config"));
+    env.setProperty("logging.config", "classpath:custom-logback.xml");
+    new AxizLoggingEnvironmentPostProcessor().postProcessEnvironment(env, application);
+    assertEquals("classpath:custom-logback.xml", env.getProperty("logging.config"));
+  }
+
   public static class Transfers {
     @LogOperation("transfer")
     public String transfer(String account, @NoLog String pin) {

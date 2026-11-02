@@ -30,7 +30,7 @@ externalSecret:
 config:
   axiz.config.environment: qa
   management.tracing.sampling.probability: "1.0"
-  axiz.initializr.framework-version: "1.0.0"
+  axiz.initializr.structure-version: "1.0.0"
   # set per environment:
   # spring.security.oauth2.resourceserver.jwt.issuer-uri: https://sso.example/realms/axiz
   # spring.security.oauth2.client.provider.sso.issuer-uri: https://sso.example/realms/axiz

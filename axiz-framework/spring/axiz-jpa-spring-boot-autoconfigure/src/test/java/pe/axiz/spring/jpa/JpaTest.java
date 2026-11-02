@@ -15,7 +15,7 @@ import org.springframework.core.Ordered;
 import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.persistence.jpa.AuditorProvider;
+import pe.axiz.kit.jpa.AuditorProvider;
 
 class JpaTest {
 

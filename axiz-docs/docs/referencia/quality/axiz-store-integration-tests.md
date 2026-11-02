@@ -3,7 +3,7 @@
 
 Internal module, never published: it is not a dependency for services.
 
-Runs the store contracts of `axiz-core-store-contracts` against real backends in containers
+Runs the store contracts of `axiz-store-contract-tests` against real backends in containers
 (Testcontainers): PostgreSQL for the JDBC and R2DBC inbox, Valkey for the Redis idempotency store
 and LocalStack DynamoDB for the DynamoDB idempotency and inbox stores.
 

@@ -25,6 +25,7 @@ public class AxizLockAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   DistributedLock axizInMemoryLock(
       AxizLockProperties p, ObjectProvider<Clock> clock, Environment env) {
     if (!"memory".equals(p.store())) {
@@ -46,7 +47,39 @@ public class AxizLockAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   LockTemplate axizLockTemplate(DistributedLock lock, AxizLockProperties p) {
     return new LockTemplate(lock, p.pollInterval());
+  }
+
+  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnClass(
+      name = "reactor.core.publisher.Mono")
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
+      type =
+          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
+              .REACTIVE)
+  static class ReactiveConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    pe.axiz.core.lock.AsyncDistributedLock axizInMemoryAsyncLock(
+        AxizLockProperties p, ObjectProvider<Clock> clock, Environment env) {
+      if (!"memory".equals(p.store()))
+        throw new IllegalStateException("Async lock store unavailable: " + p.store());
+      Environments.requireSingleProcess(
+          env.getProperty("axiz.config.environment"),
+          "axiz.lock.store=memory",
+          "redis or dynamodb",
+          "replicas require a shared lock store");
+      return new pe.axiz.core.lock.InMemoryAsyncDistributedLock(
+          clock.getIfAvailable(Clock::systemUTC));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    ReactiveLocks axizReactiveLocks(
+        pe.axiz.core.lock.AsyncDistributedLock lock, AxizLockProperties p) {
+      return new ReactiveLocks(lock, p.pollInterval());
+    }
   }
 }

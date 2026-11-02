@@ -50,7 +50,11 @@ class RecipesTest {
                 ? String.valueOf(m.keySet().iterator().next())
                 : String.valueOf(step);
         if (name.startsWith("pe.axiz.")) {
-          assertTrue(recipes.containsKey(name), "unknown recipe " + name);
+          if (!recipes.containsKey(name)) {
+            assertTrue(
+                org.openrewrite.Recipe.class.isAssignableFrom(Class.forName(name)),
+                "unknown recipe " + name);
+          }
         }
       }
     }

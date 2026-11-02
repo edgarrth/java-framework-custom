@@ -10,8 +10,9 @@ axiz add cache-redis
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-cache-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`cache`](cache.md) |
-| Dependencias | `pe.axiz:axiz-core-cache-redis`<br>`org.springframework.boot:spring-boot-starter-data-redis` |
+| Dependencias | `pe.axiz:axiz-adapter-cache-redis`<br>`org.springframework.boot:spring-boot-starter-data-redis` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -37,6 +38,5 @@ spring.data.redis.url: ${REDIS_URL:redis://localhost:6379}
 
 - [`axiz-cache-spring-boot-autoconfigure`](../referencia/spring/axiz-cache-spring-boot-autoconfigure.md)
 - [`axiz-core-cache`](../referencia/core/axiz-core-cache.md)
-- [`axiz-core-cache-redis`](../referencia/core/axiz-core-cache-redis.md)
 - [`axiz-core-security`](../referencia/core/axiz-core-security.md)
 - [`axiz-core-tenancy`](../referencia/core/axiz-core-tenancy.md)

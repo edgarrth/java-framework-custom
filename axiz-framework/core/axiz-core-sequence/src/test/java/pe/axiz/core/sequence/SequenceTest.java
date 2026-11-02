@@ -129,4 +129,76 @@ class SequenceTest {
     assertEquals(200L, values.stream().mapToLong(Long::longValue).max().orElseThrow());
     assertEquals(5, store.increment("op", "20260201", 5));
   }
+
+  @Test
+  void formattedValueUsesTheSamePeriodAsItsReservation() {
+    java.util.concurrent.atomic.AtomicInteger reads =
+        new java.util.concurrent.atomic.AtomicInteger();
+    Clock clock =
+        new Clock() {
+          @Override
+          public ZoneId getZone() {
+            return ZoneOffset.UTC;
+          }
+
+          @Override
+          public Clock withZone(ZoneId zone) {
+            return this;
+          }
+
+          @Override
+          public Instant instant() {
+            return reads.getAndIncrement() == 0
+                ? Instant.parse("2026-01-31T23:59:59Z")
+                : Instant.parse("2026-02-01T00:00:00Z");
+          }
+        };
+    java.util.List<String> periods = new java.util.ArrayList<>();
+    SequenceGenerator generator =
+        new SequenceGenerator(
+            "operation",
+            new SequenceFormat("OP-", 2, ResetPolicy.DAILY, "-", ZoneOffset.UTC),
+            (name, period, increment) -> {
+              periods.add(period);
+              return 1;
+            },
+            1,
+            clock);
+    assertEquals("OP-20260131-01", generator.next());
+    assertEquals(java.util.List.of("20260131"), periods);
+    assertEquals(1, reads.get());
+  }
+
+  @Test
+  void exhaustedLongCounterNeverWrapsTheCachedRange() {
+    java.util.concurrent.atomic.AtomicInteger calls =
+        new java.util.concurrent.atomic.AtomicInteger();
+    SequenceGenerator generator =
+        new SequenceGenerator(
+            "operation",
+            new SequenceFormat("OP-", 19, ResetPolicy.NEVER, "-", LIMA),
+            (name, period, increment) -> {
+              if (calls.incrementAndGet() == 1) return Long.MAX_VALUE;
+              throw new ArithmeticException("exhausted");
+            },
+            2,
+            new MutableClock());
+    assertEquals(Long.MAX_VALUE - 1, generator.nextValue());
+    assertEquals(Long.MAX_VALUE, generator.nextValue());
+    assertThrows(ArithmeticException.class, generator::nextValue);
+    InMemorySequenceStore memory = new InMemorySequenceStore();
+    assertThrows(IllegalArgumentException.class, () -> memory.increment("operation", "", 0));
+    assertThrows(IllegalArgumentException.class, () -> memory.increment("operation", "", -1));
+    assertEquals(1, memory.increment("operation", "", 1));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            new SequenceGenerator(
+                    "operation",
+                    new SequenceFormat("", 2, ResetPolicy.NEVER, "", LIMA),
+                    (name, period, increment) -> 0,
+                    1,
+                    new MutableClock())
+                .nextValue());
+  }
 }

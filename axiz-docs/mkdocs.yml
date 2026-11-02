@@ -86,16 +86,19 @@ nav:
       - Infraestructura AWS: arquitectura/aws.md
       - Arquetipos: arquetipos/index.md
       - Catálogo de arquetipos: arquetipos/catalogo.md
-  - Estilos:
-      - estilos/index.md
-      - Layered: estilos/layered.md
-      - Hexagonal: estilos/hexagonal.md
-      - CQRS: estilos/cqrs.md
-      - EDA: estilos/eda.md
-      - BFF: estilos/bff.md
-      - Batch: estilos/batch.md
+  - Estructuras:
+      - estructuras/index.md
+      - Layered: estructuras/layered.md
+      - Hexagonal: estructuras/hexagonal.md
+      - EDA: estructuras/eda.md
+      - BFF: estructuras/bff.md
+      - Batch: estructuras/batch.md
+  - Extensiones:
+      - extensiones/index.md
+      - CQRS: extensiones/cqrs.md
   - Guías:
       - guias/index.md
+      - Elegir servicio: guias/elegir-servicio.md
       - Errores: guias/errores.md
       - Seguridad: guias/seguridad.md
       - Datos sensibles y auditoría: guias/datos-sensibles.md
@@ -127,6 +130,7 @@ nav:
       - Anti-patrones: calidad/anti-patrones.md
   - Migración:
       - migracion/index.md
+      - Migrar a Axiz 2.0: migracion/axiz-2.md
   - architecture contract: adr/index.md
   - Demo: demo.md
   - Referencia: referencia/index.md

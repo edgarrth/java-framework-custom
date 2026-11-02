@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.Objects;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.r2dbc.core.DatabaseClient;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
+import pe.axiz.kit.r2dbc.ReactiveSql;
 import reactor.core.publisher.Mono;
 
 /**
@@ -20,10 +20,19 @@ public final class ReaderDatabase implements DisposableBean {
   private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(10);
 
   private final ConnectionFactory connectionFactory;
+  private final @org.jspecify.annotations.Nullable AutoCloseable credentials;
   private final DatabaseClient client;
   private final ReactiveSql sql;
 
   public ReaderDatabase(ConnectionFactory connectionFactory) {
+    this(connectionFactory, null);
+  }
+
+  /** Owns reader-specific IAM resources as well as the connection pool. */
+  public ReaderDatabase(
+      ConnectionFactory connectionFactory,
+      @org.jspecify.annotations.Nullable AutoCloseable credentials) {
+    this.credentials = credentials;
     this.connectionFactory = Objects.requireNonNull(connectionFactory);
     this.client = DatabaseClient.create(connectionFactory);
     this.sql = new DatabaseClientReactiveSql(client);
@@ -45,8 +54,18 @@ public final class ReaderDatabase implements DisposableBean {
 
   @Override
   public void destroy() {
-    if (connectionFactory instanceof Closeable closeable) {
-      Mono.from(closeable.close()).block(CLOSE_TIMEOUT);
+    try {
+      if (connectionFactory instanceof Closeable closeable)
+        Mono.from(closeable.close()).block(CLOSE_TIMEOUT);
+    } finally {
+      if (credentials != null) {
+        try {
+          credentials.close();
+        } catch (Exception failure) {
+          if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
+          throw new IllegalStateException("Could not close reader credential resources", failure);
+        }
+      }
     }
   }
 }

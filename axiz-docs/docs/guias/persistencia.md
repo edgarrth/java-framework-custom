@@ -98,6 +98,30 @@ repo.update(beneficiary);                                     // bloqueo optimis
 - `IdentifierRegistry`: DNI, RUC, CE, CCI, PAN, IBAN, E.164 y email con dígitos verificadores;
   tipos propios por SPI (`IdentifierTypeProvider`) o variantes (`cci-strict` en el demo).
 
+### Contrato monetario del framework
+
+`axiz-core-money` es independiente de Spring. `Money` conserva la escala de la moneda y un máximo
+de 30 dígitos enteros en **todas** sus fábricas y resultados: si una operación excede el rango,
+falla con `MoneyErrors.INVALID_AMOUNT` antes de devolver un valor. Todo resultado exitoso admite
+el recorrido `Money.parse(value.toString())`, incluido el acarreo al redondear y las asignaciones.
+
+En fronteras externas —HTTP, mensajes, archivos, configuración y lectura de importes persistidos—
+se usa `Money.ofExact(amount, currency)`. Acepta `150.5` y `150.000` en PEN como `150.50` y `150.00`,
+pero rechaza `150.005`. Para cálculos que requieren redondeo se mantienen `Money.of`, `multiply`,
+`divide` y `percentage`, con una política explícita (por defecto `HALF_EVEN`). Las entradas se
+acotan antes de expandir exponentes; las fábricas, divisores y porcentajes admiten hasta 100
+posiciones decimales dentro del rango documentado por `Money`.
+
+El módulo `axiz-foundation` adapta este contrato a Jackson: lee los tokens numéricos directamente
+como `BigDecimal`, sin pasar por `double`, y acepta también importes textuales. Por ejemplo,
+`9007199254740992.01` conserva sus centavos en ambos formatos. La salida sigue siendo textual para
+que los clientes no introduzcan coma flotante. Campos monetarios duplicados, tipos incorrectos,
+monedas ausentes y valores inexactos se rechazan. La política pertenece al framework; las aplicaciones
+solo aplican su API en los adaptadores.
+
+Al migrar, revisar consumidores que dependían del redondeo implícito de entradas o de resultados
+fuera del rango. La demo ilustra este contrato, sin introducir una implementación monetaria propia.
+
 ## Multi-tenancy
 
 `axiz add tenancy`: el tenant sale del token (o de un header de confianza puesto por la

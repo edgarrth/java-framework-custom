@@ -18,7 +18,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
-| `AxizExchangeFilter` | Reactive counterpart of `AxizRestClientInterceptor`, without blocking: credentials that need I/O are obtained on a worker scheduler, errors are translated from the response body and retries use Reactor's backoff for idempotent calls only. |
+| `AxizExchangeFilter` | Reactive counterpart of `AxizRestClientInterceptor`, without blocking: credentials use native asynchronous secret and token transports, with cancellation propagated to I/O, errors are translated from the response body and retries use Reactor's backoff for idempotent calls only. |
 | `AxizHttpClientAutoConfiguration` | Declarative HTTP clients (`@HttpExchange`) on Spring's HTTP service groups: every group whose name matches `axiz.http-client.clients.<name>` gets the axiz transport, timeouts, credentials, resilience, propagation, error translation and logging. |
 | `AxizHttpClientProperties` | Logical HTTP clients (`axiz.http-client.clients.<name>`). |
 | `AxizHttpClients` | Applies the axiz settings of a logical client to a `RestClient.Builder`: Apache HttpClient 5 transport with pool and timeouts and without its own retries, observation name, error translation and the axiz interceptor. |
@@ -26,10 +26,29 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `ClientNameObservationConvention` | Uses the logical client name as `client.name` in metrics and spans. |
 | `ClientResilience` | Circuit breaker, bulkhead and retry decisions of one client. |
 | `ExternalErrorHandler` | Translates error responses of a dependency into `ExternalServiceException` with the category chosen from the status; an empty body is preserved. |
-| `HttpClientRegistry` | Validated settings and shared per-client components (resilience, credentials, transport). |
-| `OutboundAuth` | Adds the outbound credentials of a client: OAuth2 client credentials (cached, renewed early), token relay of the inbound bearer token, or an API key from the secret store. |
+| `HttpClientRegistry` | Validated settings and startup-owned per-client components (resilience, credentials, transport), closed with the application. |
+| `OutboundAuth` | Owns outbound authentication of a client: OAuth2 client credentials (cached, renewed early), token relay of the inbound bearer token, or an API key from the secret store. |
 | `OutboundHeaders` | Headers forwarded to a dependency from the current request: correlation id, language and the catalog headers in the client's allow-list. |
 | `ReactiveClientNameObservationConvention` | Uses the logical client name as `client.name` in metrics and spans of a WebClient. |
+
+## Reactive credentials
+
+Reactive groups use `AsyncSecretResolver` and the core `AsyncHttpExchange` port. OAuth client
+credentials use a private WebClient/Reactor Netty transport: native DNS, bounded pool (2 connections,
+16 pending acquisitions, 5 second acquisition timeout), request deadline, 64 KiB token response limit,
+and no redirects. Concurrent renewals share one request and read the current secret again on renewal.
+Cancellation reaches secret lookup or the HTTP exchange; credentials use no worker offload.
+
+The registry builds resources at startup and closes their pools and event loops at shutdown. A
+reactive application with OAuth/API key settings and only a synchronous secret resolver fails at
+startup. TLS uses the configured client SSL bundle (including key managers for mTLS), or system
+trust, captured during startup; hostname verification remains enabled.
+
+`OutboundAuth.headers()` exposes immutable maps of redacted `SecretValue` values, revealed only
+when constructing wire headers. The filter releases bulkhead/circuit permissions on cancellation,
+errors, and empty responses. Local context scopes preserve the caller observation during token
+acquisition and callbacks without installing global Reactor hooks. The servlet path retains its
+imperative API. CPU-only authentication remains usable without optional reactive dependencies.
 
 ## Tests
 

@@ -21,7 +21,7 @@ class ProjectCommandsTest {
     String pom = Files.readString(p.resolve("pom.xml"));
     assertTrue(
         pom.contains("axiz-cache-spring-boot-starter")
-            && pom.contains("axiz-core-cache-redis")
+            && pom.contains("axiz-adapter-cache-redis")
             && pom.contains("axiz-lock-spring-boot-starter"));
     assertTrue(h.output().contains("spring.data.redis.url"), "ConfigMap keys are listed");
     assertTrue(h.output().contains("Example:"));
@@ -32,7 +32,7 @@ class ProjectCommandsTest {
   @Test
   void generatesArtifactsAndErrorCodes(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
-    String base = "src/main/java/pe/axiz/orders/business/";
+    String base = "src/main/java/pe/axiz/orders/";
     assertEquals(
         0, new CliHarness().run("generate", "usecase", "approve-order", "--dir", p.toString()));
     assertTrue(Files.exists(p.resolve(base + "application/usecase/ApproveOrderUseCase.java")));
@@ -62,14 +62,12 @@ class ProjectCommandsTest {
                 "forbidden",
                 "--dir",
                 p.toString()));
-    String errors = Files.readString(p.resolve(base + "domain/OrdersBusinessErrors.java"));
+    String errors = Files.readString(p.resolve(base + "domain/OrdersErrors.java"));
     assertTrue(
-        errors.contains("ORDERS-ORDERSBUSINESS-0001")
-            && errors.contains("ORDERS-ORDERSBUSINESS-0002"),
-        errors);
+        errors.contains("ORDERS-ORDERS-0001") && errors.contains("ORDERS-ORDERS-0002"), errors);
     assertTrue(errors.contains("ErrorCategory.FORBIDDEN"));
     String messages = Files.readString(p.resolve("src/main/resources/messages.properties"));
-    assertTrue(messages.contains("error.ORDERS-ORDERSBUSINESS-0002=account blocked"), messages);
+    assertTrue(messages.contains("error.ORDERS-ORDERS-0002=account blocked"), messages);
 
     assertEquals(
         0,
@@ -89,7 +87,7 @@ class ProjectCommandsTest {
 
     CliHarness wrong = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, wrong.run("generate", "command", "x", "--dir", p.toString()));
-    assertTrue(wrong.output().contains("does not apply to the hexagonal style"));
+    assertTrue(wrong.output().contains("CQRS"));
   }
 
   @Test
@@ -110,7 +108,7 @@ class ProjectCommandsTest {
     assertTrue(
         Files.exists(
             p.resolve(
-                "src/main/java/pe/axiz/orders/business/adapter/out/orderservice/OrderServiceClient.java")));
+                "src/main/java/pe/axiz/orders/adapter/out/orderservice/OrderServiceClient.java")));
     assertTrue(
         Files.readString(p.resolve("src/main/resources/application.yaml"))
             .contains("order-service:"));
@@ -158,12 +156,50 @@ class ProjectCommandsTest {
     assertEquals("1.2.0", ProjectManifest.read(p).axizVersion());
     List<String> command = h.processes.commands.get(0);
     // generated projects ship the Maven wrapper, so the recipes run through it
-    assertEquals("./mvnw", command.get(0));
+    Path executable = Path.of(command.get(0));
+    assertTrue(executable.isAbsolute());
+    assertEquals(
+        java.io.File.separatorChar == '\\' ? "mvnw.cmd" : "mvnw",
+        executable.getFileName().toString());
     assertTrue(
         command.contains("-Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:1.2.0"));
     assertEquals(
         ExitCodes.PROBLEMS,
         new CliHarness().run("upgrade", "--to", "latest!", "--dir", p.toString()));
+  }
+
+  @Test
+  void renamePreservesPackageAndDoctorGuardsRecordedIdentities(@TempDir Path tmp) throws Exception {
+    Path project = CliHarness.service(tmp);
+    String basePackage = ProjectManifest.read(project).basePackage();
+    CliHarness upgrade = new CliHarness();
+    assertEquals(
+        0,
+        upgrade.run(
+            "upgrade",
+            "--to",
+            "2.0.0",
+            "--rename",
+            "payment-orders",
+            "--skip-rewrite",
+            "--dir",
+            project.toString()),
+        upgrade.output());
+    assertEquals("payment-orders", ProjectManifest.read(project).name());
+    assertEquals(basePackage, ProjectManifest.read(project).basePackage());
+    Path application = project.resolve("src/main/resources/application.yaml");
+    String current = Files.readString(application);
+    assertTrue(current.contains("urn:axiz:orders"));
+    assertTrue(
+        Files.readString(project.resolve("pom.xml"))
+            .contains("<artifactId>payment-orders</artifactId>"));
+    assertTrue(pe.axiz.codegen.project.ProjectRename.problems(project).isEmpty());
+    pe.axiz.codegen.project.CapabilityAdder.mergeYaml(
+        application, java.util.Map.of("axiz.messaging.consumer.name", "incorrect"));
+    CliHarness doctor = new CliHarness();
+    assertEquals(
+        ExitCodes.PROBLEMS, doctor.run("doctor", "--dir", project.toString()), doctor.output());
+    assertTrue(doctor.output().contains("Stable identity changed"));
   }
 
   @Test
@@ -210,10 +246,10 @@ class ProjectCommandsTest {
         p.resolve("src/main/resources/application-local.yaml"),
         "db:\n  password: Sup3rS3cret!\n",
         java.nio.file.StandardOpenOption.APPEND);
-    Path java = p.resolve("src/main/java/pe/axiz/orders/business/adapter/out/Bad.java");
+    Path java = p.resolve("src/main/java/pe/axiz/orders/adapter/out/Bad.java");
     Files.writeString(
         java,
-        "package pe.axiz.orders.business.adapter.out;\n"
+        "package pe.axiz.orders.adapter.out;\n"
             + "class Bad { void x() { System.out.println(1); } }\n");
     Files.writeString(
         p.resolve("pom.xml"),

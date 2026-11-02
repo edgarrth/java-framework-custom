@@ -1,43 +1,58 @@
 #!/usr/bin/env python3
-"""Fails when a workflow could publish without every gate: the job that promotes to Nexus must
-need every other job of the pipeline (except the pull-request checks), and no build job may
-publish on its own. Usage: check-publish-gates.py <workflow.yaml>..."""
+"""Require framework gates in build and a separate deployment with an external producer identity."""
+import re
 import sys
+from pathlib import Path
 
 import yaml
 
-PROMOTE = "lib-promote.yaml"
-NOT_GATES = {"pr"}
+GATES = {"build", "wrapper", "samples", "api-compat", "native-reactive"}
+DEPLOY = re.compile(r"/(?:lib-deploy|lib-promote|service-deploy|service-cd)\.yaml@")
 
 
-def check(path):
+def check(build_path, deploy_path):
+    build = yaml.safe_load(Path(build_path).read_text())
+    deploy = yaml.safe_load(Path(deploy_path).read_text())
     errors = []
-    jobs = yaml.safe_load(open(path, encoding="utf-8"))["jobs"]
-    promoters = [n for n, j in jobs.items() if PROMOTE in str(j.get("uses", ""))]
-    if not promoters:
-        errors.append(f"{path}: no job promotes with {PROMOTE}")
+    jobs = build.get("jobs", {})
+    if GATES - set(jobs):
+        errors.append("framework build is missing mandatory gates: " + ", ".join(sorted(GATES - set(jobs))))
+    if "/lib-build.yaml@" not in jobs.get("build", {}).get("uses", ""):
+        errors.append("build must use the reusable lib-build contract")
+    if jobs.get("native-reactive", {}).get("uses") != "./.github/workflows/native-reactive.yaml":
+        errors.append("native-reactive must execute the generated service JVM/native acceptance workflow")
     for name, job in jobs.items():
-        if "lib-publish.yaml" in str(job.get("uses", "")) and job.get("with", {}).get("publish"):
-            errors.append(f"{path}: job {name} publishes from the build itself")
-    for name in promoters:
-        needs = jobs[name].get("needs", [])
-        needs = {needs} if isinstance(needs, str) else set(needs)
-        upstream = {n for n in jobs if n not in NOT_GATES and n != name}
-        # deployment jobs that themselves depend on the promotion are not gates
-        upstream = {n for n in upstream if name not in str(jobs[n].get("needs", ""))}
-        # gates are the jobs the build verification consists of: everything that is not a
-        # deployment of an already verified image
-        gates = {n for n in upstream if not n.startswith("initializr-")}
-        missing = sorted(gates - needs)
-        if missing:
-            errors.append(f"{path}: job {name} publishes without waiting for {missing}")
+        if DEPLOY.search(job.get("uses", "")):
+            errors.append(f"build job {name} invokes deployment in the producer run")
+        if name in GATES and ("if" in job or job.get("continue-on-error")):
+            errors.append(f"mandatory gate {name} may not be conditional or ignore failures")
+    calls = [job for job in deploy.get("jobs", {}).values() if "/lib-deploy.yaml@" in job.get("uses", "")]
+    if len(calls) != 1:
+        errors.append("deploy must call exactly one independent lib-deploy workflow")
+    for job in calls:
+        for name in ("build-run-id", "build-run-attempt", "manifest-sha256", "environment", "destination", "previous-manifest-sha256"):
+            if job.get("with", {}).get(name) != "${{ inputs." + name + " }}":
+                errors.append(f"deployment must forward the explicit {name} input")
+    triggers = deploy.get("on", deploy.get(True, {}))
+    inputs = triggers.get("workflow_dispatch", {}).get("inputs", {})
+    for name in ("build-run-id", "build-run-attempt", "manifest-sha256"):
+        if inputs.get(name, {}).get("required") is not True or "default" in inputs.get(name, {}):
+            errors.append(f"deployment identity {name} must be explicit and required")
+    for job in deploy.get("jobs", {}).values():
+        for step in [job, *job.get("steps", [])]:
+            if re.search(r"/(?:lib-build|lib-publish)\.yaml@|/setup-maven@", step.get("uses", "")):
+                errors.append("deployment must not invoke a build or configure Maven")
+            if re.search(r"(?:^|\s)(?:mvn|\./mvnw)(?:\s|$)", step.get("run", "")):
+                errors.append("deployment must not execute Maven")
     return errors
 
 
 if __name__ == "__main__":
-    problems = [e for p in sys.argv[1:] for e in check(p)]
-    for e in problems:
-        print("::error::" + e)
+    if len(sys.argv) != 3:
+        raise SystemExit("Usage: check-publish-gates.py ci.yaml deploy.yaml")
+    problems = check(*sys.argv[1:])
+    for error in problems:
+        print("::error::" + error)
     if problems:
-        sys.exit(1)
-    print("publication waits for every gate")
+        raise SystemExit(1)
+    print("All framework gates belong to the completed producer; deployment has an independent explicit identity")

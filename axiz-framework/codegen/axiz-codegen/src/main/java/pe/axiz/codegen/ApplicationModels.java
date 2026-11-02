@@ -12,6 +12,11 @@ final class ApplicationModels {
 
   static List<Map<String, Object>> records(OpenApiDocument contract, String basePackage) {
     Map<?, ?> schemas = mapping(mapping(contract.raw().get("components")).get("schemas"));
+    return recordsForPackage(schemas, basePackage + ".application.model", true);
+  }
+
+  static List<Map<String, Object>> recordsForPackage(
+      Map<?, ?> schemas, String namespace, boolean nullableAnnotations) {
     List<Map<String, Object>> result = new ArrayList<>();
     for (var entry : schemas.entrySet()) {
       String name = Names.pascal(entry.getKey().toString());
@@ -60,7 +65,7 @@ final class ApplicationModels {
             schema.get("required") instanceof List<?> names && names.contains(propertyName);
         boolean nullable =
             propertySchema.get("type") instanceof List<?> types && types.contains("null");
-        String javaType = type(propertySchema, basePackage);
+        String javaType = type(propertySchema, namespace);
         String copy = null;
         if (javaType.startsWith("java.util.List<")) {
           copy = "java.util.List.copyOf(" + propertyName + ")";
@@ -78,7 +83,7 @@ final class ApplicationModels {
                   + copy
                   + ";");
         }
-        if (!required || nullable) {
+        if (nullableAnnotations && (!required || nullable)) {
           int generic = javaType.indexOf('<');
           String rawType = generic < 0 ? javaType : javaType.substring(0, generic);
           int qualifier = rawType.lastIndexOf('.') + 1;
@@ -113,16 +118,14 @@ final class ApplicationModels {
     return value instanceof Map<?, ?> map ? map : Map.of();
   }
 
-  private static String type(Map<?, ?> schema, String basePackage) {
+  private static String type(Map<?, ?> schema, String namespace) {
     Object ref = schema.get("$ref");
     if (ref instanceof String text) {
       if (!text.startsWith("#/components/schemas/")) {
         throw new IllegalArgumentException(
             "Application models require local schema references: " + text);
       }
-      return basePackage
-          + ".application.model."
-          + Names.pascal(text.substring(text.lastIndexOf('/') + 1));
+      return namespace + "." + Names.pascal(text.substring(text.lastIndexOf('/') + 1));
     }
     Object declared = schema.get("type");
     String kind =
@@ -144,7 +147,7 @@ final class ApplicationModels {
       case "integer" -> "int64".equals(schema.get("format")) ? "Long" : "Integer";
       case "number" -> "java.math.BigDecimal";
       case "boolean" -> "Boolean";
-      case "array" -> "java.util.List<" + type(mapping(schema.get("items")), basePackage) + ">";
+      case "array" -> "java.util.List<" + type(mapping(schema.get("items")), namespace) + ">";
       default -> "java.util.Map<String, Object>";
     };
   }

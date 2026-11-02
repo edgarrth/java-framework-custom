@@ -51,3 +51,27 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl codegen/axiz-codegen verify`.
+
+## AsyncAPI evolution
+
+`AsyncApiDocument` resolves local AsyncAPI 3 operations into the versioned CloudEvents types the
+service publishes and consumes. It rejects duplicate YAML keys, remote/cyclic references,
+unflattened traits and expansion beyond its size/depth budget. `AsyncApiDiff` preserves published
+identities and accepts optional field additions, including nested objects/array items; other wire
+changes require a parallel versioned type. Editorial descriptions/examples may change without
+changing the wire schema; changes to business meaning still require human review.
+
+`EventPayloads` shares the application record type mapping and produces payload records with JDK
+types, without framework annotations. Initial generation uses the actual receive subscriptions
+and omits the unrelated EDA example. `AsyncContractSync` preserves implementations, creates new
+records, writes `.axiz-new` proposals and advances the generation snapshot only after compatibility
+and destination checks. `AsyncApiSubscriptions` checks base configuration and explicit profile
+overrides without bootstrapping Spring or resolving secrets. CLI integration and the build gate
+are documented in `axiz-tools/axiz-cli` and `axiz-workflows/docs/pipelines-v2.md`.
+
+`EventAdapters` generates typed consumer skeletons and per-payload Spring AOT binding configurations
+outside the owned payload package. The stack selects the imperative or reactive handler base;
+receivers use their declared CloudEvents identity and reject messages until business handling is
+implemented. Synchronization creates missing adapters and preserves existing implementations and
+binding configuration. Consuming contracts require a declared messaging capability. Reference
+expansion has a shared budget across the whole contract, including repeated operations.

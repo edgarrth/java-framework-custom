@@ -2,10 +2,10 @@ package pe.axiz.spring.r2dbc;
 
 import java.util.Objects;
 import org.springframework.r2dbc.core.DatabaseClient;
-import pe.axiz.core.persistence.r2dbc.R2dbcRow;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
-import pe.axiz.core.persistence.r2dbc.RowMapper;
-import pe.axiz.core.persistence.r2dbc.SqlParams;
+import pe.axiz.kit.r2dbc.R2dbcRow;
+import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.kit.r2dbc.RowMapper;
+import pe.axiz.kit.r2dbc.SqlParams;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

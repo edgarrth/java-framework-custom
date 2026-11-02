@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Catalog;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.model.Style;
 import pe.axiz.codegen.output.GeneratedProject;
 
@@ -58,7 +58,7 @@ class StyleSchemaTest {
     for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
       GeneratedProject p =
           generator.generate(
-              Fixtures.request("event-processor", Framework.EDA, stack, "aurora", List.of()));
+              Fixtures.request("event-processor", Structure.EDA, stack, "aurora", List.of()));
       String v1 = p.text(V1);
       assertTrue(v1.contains(TABLE_DDL.get("inbox")), stack + ": " + v1);
       // the style starter wires the JDBC outbox (the R2DBC one comes with the outbox capability)
@@ -71,9 +71,9 @@ class StyleSchemaTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "event-processor", Framework.EDA, Stack.SERVLET, "dynamodb", List.of()));
+                "event-processor", Structure.EDA, Stack.SERVLET, "dynamodb", List.of()));
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: dynamodb"));
-    assertTrue(p.text("pom.xml").contains("<artifactId>axiz-core-inbox-dynamodb</artifactId>"));
+    assertTrue(p.text("pom.xml").contains("<artifactId>axiz-adapter-inbox-dynamodb</artifactId>"));
     assertTrue(p.text("local/localstack/init.sh").contains("table axiz-inbox pk:S:HASH"));
   }
 
@@ -81,7 +81,7 @@ class StyleSchemaTest {
   void anEventProcessorWithoutPersistenceHasNoInboxStore() {
     GeneratedProject p =
         generator.generate(
-            Fixtures.request("event-processor", Framework.EDA, Stack.SERVLET, "none", List.of()));
+            Fixtures.request("event-processor", Structure.EDA, Stack.SERVLET, "none", List.of()));
     assertFalse(p.files().containsKey(V1));
     assertFalse(p.text("src/main/resources/application.yaml").contains("axiz:\n  inbox:"));
   }
@@ -91,7 +91,7 @@ class StyleSchemaTest {
   void everyWiredStoreHasItsTableInEveryCombination() {
     int checked = 0;
     for (Archetype a : catalog.archetypes()) {
-      for (Framework f : a.frameworks()) {
+      for (Structure f : a.structures()) {
         for (Stack s : a.stacks()) {
           for (String persistence : a.persistence()) {
             ProjectRequest r = Fixtures.request(a.name(), f, s, persistence, List.of());
@@ -125,14 +125,14 @@ class StyleSchemaTest {
    */
   @Test
   void stylesDeclareExactlyTheStoresTheirStartersCarry() throws IOException {
-    Path frameworks = Path.of("../../frameworks").toAbsolutePath().normalize();
-    Assumptions.assumeTrue(Files.isDirectory(frameworks), "framework reactor not next to codegen");
+    Path structures = Path.of("../../structures").toAbsolutePath().normalize();
+    Assumptions.assumeTrue(Files.isDirectory(structures), "structure reactor not next to codegen");
     Pattern artifact = Pattern.compile("<artifactId>([\\w.-]+)</artifactId>");
-    for (Framework f : Framework.values()) {
-      if (f == Framework.NONE) {
+    for (Structure f : Structure.values()) {
+      if (f == Structure.NONE) {
         continue;
       }
-      Path pom = frameworks.resolve(f.id()).resolve(f.starter()).resolve("pom.xml");
+      Path pom = structures.resolve(f.id()).resolve(f.starter()).resolve("pom.xml");
       String xml = Files.readString(pom, StandardCharsets.UTF_8);
       String dependencies = xml.substring(xml.indexOf("<dependencies>"));
       Set<String> carried = new TreeSet<>();

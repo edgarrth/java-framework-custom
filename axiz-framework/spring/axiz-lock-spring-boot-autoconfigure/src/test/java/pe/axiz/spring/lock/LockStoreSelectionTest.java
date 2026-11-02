@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.LockTemplate;
-import pe.axiz.core.lock.dynamodb.DynamoDbDistributedLock;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** The lock store is chosen explicitly; a lock that cannot exclude other replicas is refused. */

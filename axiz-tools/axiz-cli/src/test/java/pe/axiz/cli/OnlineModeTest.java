@@ -77,7 +77,7 @@ class OnlineModeTest {
   String[] newCommand(Path tmp) throws IOException {
     return new String[] {
       "new",
-      "orders-business",
+      "orders",
       "--archetype",
       "business",
       "--openapi",
@@ -94,9 +94,9 @@ class OnlineModeTest {
     answer =
         zip(
             Map.of(
-                "orders-business/", "",
-                "orders-business/pom.xml", "<project/>",
-                "orders-business/src/main/java/App.java", "class App {}"));
+                "orders/", "",
+                "orders/pom.xml", "<project/>",
+                "orders/src/main/java/App.java", "class App {}"));
     CliHarness h = new CliHarness();
     h.env = Map.of("AXIZ_TOKEN", "user-token");
 
@@ -104,11 +104,11 @@ class OnlineModeTest {
 
     assertEquals(List.of("Bearer user-token"), authorizations);
     String body = bodies.get(0);
-    assertTrue(body.contains("\"name\":\"orders-business\""), body);
+    assertTrue(body.contains("\"name\":\"orders\""), body);
     assertTrue(body.contains("\"archetype\":\"business\""), body);
     assertTrue(body.contains("\"openApi\":\"openapi: 3.1"), body);
-    assertEquals("<project/>", Files.readString(tmp.resolve("orders-business/pom.xml")));
-    assertTrue(Files.exists(tmp.resolve("orders-business/src/main/java/App.java")));
+    assertEquals("<project/>", Files.readString(tmp.resolve("orders/pom.xml")));
+    assertTrue(Files.exists(tmp.resolve("orders/src/main/java/App.java")));
     assertTrue(h.output().contains("Next steps:"));
   }
 

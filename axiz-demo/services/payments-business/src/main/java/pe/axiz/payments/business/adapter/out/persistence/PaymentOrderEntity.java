@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.persistence.jpa.AuditableEntity;
-import pe.axiz.core.persistence.jpa.EncryptedConverter;
+import pe.axiz.kit.jpa.AuditableEntity;
+import pe.axiz.kit.jpa.EncryptedConverter;
 
 /**
  * Row of {@code payment_order}. Account numbers are encrypted (AES-GCM keys from the secret store,

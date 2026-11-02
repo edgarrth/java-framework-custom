@@ -9,7 +9,7 @@ import org.springframework.data.convert.WritingConverter;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.persistence.r2dbc.EncryptedText;
+import pe.axiz.kit.r2dbc.EncryptedText;
 
 /**
  * Column converters of axiz types for Spring Data R2DBC: {@link EncryptedText} is stored as

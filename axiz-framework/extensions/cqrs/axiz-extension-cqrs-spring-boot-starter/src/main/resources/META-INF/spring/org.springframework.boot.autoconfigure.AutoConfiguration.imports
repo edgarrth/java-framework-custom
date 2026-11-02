@@ -1,0 +1,2 @@
+pe.axiz.extension.cqrs.spring.AxizCqrsAutoConfiguration
+pe.axiz.extension.cqrs.spring.AxizReactiveCqrsAutoConfiguration

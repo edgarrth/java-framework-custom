@@ -8,7 +8,14 @@ T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
 REPO="$T/repo/org/apache/maven/apache-maven/9.9.9"
 mkdir -p "$REPO" "$T/p/.mvn/wrapper" "$T/build/apache-maven-9.9.9/bin"
-printf '#!/bin/sh\necho fake-mvn "$@"\n' > "$T/build/apache-maven-9.9.9/bin/mvn"
+cat > "$T/build/apache-maven-9.9.9/bin/mvn" <<'FAKE'
+#!/bin/sh
+if [ -n "${FAKE_MAVEN_ARGUMENT_LOG:-}" ]; then
+  printf 'BEGIN\n' >> "$FAKE_MAVEN_ARGUMENT_LOG"
+  printf '%s\n' "$@" >> "$FAKE_MAVEN_ARGUMENT_LOG"
+fi
+echo fake-mvn "$@"
+FAKE
 chmod +x "$T/build/apache-maven-9.9.9/bin/mvn"
 (cd "$T/build" && zip -qr "$REPO/apache-maven-9.9.9-bin.zip" apache-maven-9.9.9)
 (cd "$REPO" && sha512sum apache-maven-9.9.9-bin.zip | cut -d' ' -f1 > apache-maven-9.9.9-bin.zip.sha512)
@@ -45,4 +52,24 @@ out=$(cd "$T/p" && MAVEN_USER_HOME="$T/home" ./mvnw 2>/dev/null) || fail "verifi
 [ "$out" != "UNVERIFIED" ] || fail "an unverified cached distribution was executed"
 cmp -s "$ROOT/mvnw" "$ROOT/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvnw" \
   || fail "the generated projects' wrapper differs from the framework's"
+# Fresh-source model bootstrap uses only local install goals, preserving argument boundaries.
+mkdir -p "$T/p/platform/axiz-dependencies" "$T/p/platform/axiz-bom"
+touch "$T/p/platform/axiz-dependencies/pom.xml" "$T/p/platform/axiz-bom/pom.xml"
+(cd "$T/p" && MAVEN_USER_HOME="$T/home" FAKE_MAVEN_ARGUMENT_LOG="$T/bootstrap-args" \
+  ./mvnw --bootstrap '-Dmaven.repo.local=repository with spaces' -s 'settings with spaces.xml' verify >/dev/null)
+python3 - "$T/bootstrap-args" "$T/p" <<'PYTEST'
+import sys
+from pathlib import Path
+calls = [part.splitlines() for part in Path(sys.argv[1]).read_text().split('BEGIN\n')[1:]]
+root = Path(sys.argv[2])
+assert len(calls) == 3, calls
+for call, module in zip(calls[:2], ['axiz-dependencies', 'axiz-bom']):
+    assert call == ['-B', '-ntp', '-f', str(root / 'platform' / module / 'pom.xml'), 'install',
+                    '-Dmaven.repo.local=repository with spaces', '-s', 'settings with spaces.xml'], call
+assert calls[2] == ['-f', str(root / 'pom.xml'), '-Dmaven.repo.local=repository with spaces',
+                    '-s', 'settings with spaces.xml', 'verify'], calls[2]
+PYTEST
+rm "$T/p/platform/axiz-bom/pom.xml"
+(cd "$T/p" && MAVEN_USER_HOME="$T/home" ./mvnw --bootstrap verify >/dev/null 2>&1) \
+  && fail "bootstrap accepted an incomplete framework checkout"
 echo "mvnw: all checks passed"

@@ -5,7 +5,7 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.ConnectionFactoryProvider;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 /**
  * Test driver for {@code r2dbc:axiztest://...} URLs: records the options it receives, so a test can

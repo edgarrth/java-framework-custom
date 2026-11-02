@@ -13,7 +13,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.errors.BusinessException;
-import pe.axiz.core.persistence.dynamodb.CursorCodec;
+import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.model.BeneficiaryErrors;
 import pe.axiz.payments.beneficiaries.model.NewBeneficiary;

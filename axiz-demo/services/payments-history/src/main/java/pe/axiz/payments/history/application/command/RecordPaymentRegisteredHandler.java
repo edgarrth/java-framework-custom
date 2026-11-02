@@ -1,7 +1,7 @@
 package pe.axiz.payments.history.application.command;
 
 import pe.axiz.core.money.Money;
-import pe.axiz.framework.cqrs.ReactiveCommandHandler;
+import pe.axiz.extension.cqrs.ReactiveCommandHandler;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;
@@ -22,7 +22,7 @@ public class RecordPaymentRegisteredHandler
         new PaymentHistory.Registration(
             c.operationNumber(),
             c.creditorCci(),
-            Money.of(c.amount(), c.currency()),
+            Money.ofExact(c.amount(), c.currency()),
             c.processingDate());
     return histories
         .apply(

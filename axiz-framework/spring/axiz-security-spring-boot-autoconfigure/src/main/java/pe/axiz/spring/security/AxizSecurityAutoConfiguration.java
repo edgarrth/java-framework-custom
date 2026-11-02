@@ -132,10 +132,20 @@ public class AxizSecurityAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   RateLimiter axizRateLimiter(ObjectProvider<Clock> clock) {
     org.slf4j.LoggerFactory.getLogger(AxizSecurityAutoConfiguration.class)
         .warn("Rate limits use an in-memory store: limits apply per instance, not per cluster");
     return new InMemoryRateLimiter(clock.getIfAvailable(Clock::systemUTC));
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  pe.axiz.core.security.AsyncRateLimiter axizAsyncRateLimiter(ObjectProvider<Clock> clock) {
+    return new pe.axiz.core.security.InMemoryAsyncRateLimiter(
+        clock.getIfAvailable(Clock::systemUTC));
   }
 
   static String actuatorBase(Environment env) {
@@ -252,7 +262,7 @@ public class AxizSecurityAutoConfiguration {
         AxizSecurityProperties p,
         JwtIssuerReactiveAuthenticationManagerResolver resolver,
         SecurityProblems problems,
-        ObjectProvider<RateLimiter> limiter) {
+        ObjectProvider<pe.axiz.core.security.AsyncRateLimiter> limiter) {
       String actuator = actuatorBase(env);
       ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems);
       http.csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -285,7 +295,7 @@ public class AxizSecurityAutoConfiguration {
           .exceptionHandling(
               e -> e.authenticationEntryPoint(handlers).accessDeniedHandler(handlers))
           .addFilterAfter(new CallerContextWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION);
-      RateLimiter rl = limiter.getIfAvailable();
+      pe.axiz.core.security.AsyncRateLimiter rl = limiter.getIfAvailable();
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
             new RateLimitWebFilter(

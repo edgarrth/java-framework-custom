@@ -4,6 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent</artifactId>
+    <version>{{axizVersion}}</version>
+    <relativePath/>
+  </parent>
+
   <groupId>{{project.groupId}}</groupId>
   <artifactId>{{project.artifactId}}-aggregator</artifactId>
   <version>0.1.0-SNAPSHOT</version>
@@ -16,8 +23,8 @@
   </properties>
 
   <modules>
-    <module>{{project.name}}</module>
-    <module>{{project.name}}-spring-boot-autoconfigure</module>
-    <module>{{project.name}}-spring-boot-starter</module>
+    <module>{{platform.coreArtifact}}</module>
+    <module>{{platform.capabilityArtifact}}-spring-boot-autoconfigure</module>
+    <module>{{platform.capabilityArtifact}}-spring-boot-starter</module>
   </modules>
 </project>

@@ -330,6 +330,12 @@ class IdempotencyTest {
   /** Regression on WebFlux: the decision is taken inside reactive method security. */
   @Test
   void reactiveReplaysAlsoPassAuthorizationFirst() {
+    var asyncService =
+        new pe.axiz.core.idempotency.AsyncIdempotencyService(
+            new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
+            Duration.ofSeconds(30),
+            Duration.ofHours(1),
+            Clock.systemUTC());
     ReactivePaymentsController target = new ReactivePaymentsController();
     ProxyFactory factory = new ProxyFactory(target);
     factory.setProxyTargetClass(true);
@@ -347,7 +353,7 @@ class IdempotencyTest {
                         return Mono.error(e);
                       }
                     }));
-    factory.addAdvice(new IdempotencyMethodInterceptor(() -> service));
+    factory.addAdvice(new IdempotencyMethodInterceptor(() -> service, () -> asyncService));
     ReactivePaymentsController reactive = (ReactivePaymentsController) factory.getProxy();
     String fp = IdempotencyService.fingerprint("POST", "/payments", null, new byte[0]);
 
@@ -358,7 +364,10 @@ class IdempotencyTest {
         reactive.pay().contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, first)).block());
     IdempotencyService.Proceed execution = first.execution();
     assertTrue(execution != null);
-    service.complete(execution, new StoredResponse(201, Map.of(), "p-1".getBytes()));
+    asyncService
+        .complete(execution, new StoredResponse(201, Map.of(), "p-1".getBytes()))
+        .toCompletableFuture()
+        .join();
 
     allowed.set(false);
     ReactiveIdempotency.IdempotencyExchange denied =

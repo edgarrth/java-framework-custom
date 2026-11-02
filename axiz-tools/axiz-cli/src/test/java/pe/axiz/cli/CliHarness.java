@@ -27,6 +27,7 @@ final class CliHarness {
     final List<List<String>> commands = new ArrayList<>();
     final Set<String> installed;
     int exitCode;
+    java.util.function.Consumer<Path> beforeRun = ignored -> {};
     @Nullable IOException failure;
 
     FakeProcesses(Set<String> installed) {
@@ -35,6 +36,7 @@ final class CliHarness {
 
     @Override
     public int run(Path directory, List<String> command) throws IOException {
+      beforeRun.accept(directory);
       commands.add(command);
       IOException e = failure;
       if (e != null) {
@@ -91,7 +93,7 @@ final class CliHarness {
         new ArrayList<>(
             List.of(
                 "new",
-                "orders-business",
+                "orders",
                 "--archetype",
                 "business",
                 "--openapi",
@@ -103,6 +105,6 @@ final class CliHarness {
     if (code != 0) {
       throw new AssertionError(h.output());
     }
-    return dir.resolve("orders-business");
+    return dir.resolve("orders");
   }
 }

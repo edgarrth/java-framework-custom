@@ -1,0 +1,28 @@
+<!-- generated -->
+# axiz-structure-bff-api
+
+Backend for frontend: parallel composition, partial results, per-channel adaptation and read cache (contracts, plain Java).
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-structure-bff-api</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `ChannelAdapter` | Shapes a composed result for one channel (mobile, web, partner...). |
+| `ChannelAdapters` | Chooses the adapter of the caller's channel, falling back to the default one (`*`). |
+| `Composer` | Calls several dependencies in parallel on virtual threads and composes the result. |
+| `Composition` | Result of a `Composer` run. |
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/bff/axiz-structure-bff-api verify`.

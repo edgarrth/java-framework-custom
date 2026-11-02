@@ -21,6 +21,8 @@
   </properties>
 
   <modules>
+    <module>axiz-test-support</module>
+    <module>axiz-store-contract-tests</module>
     <module>axiz-architecture-tests</module>
     <module>axiz-archunit-rules</module>
     <module>axiz-coverage-report</module>

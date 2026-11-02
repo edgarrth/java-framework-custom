@@ -6,8 +6,8 @@ import java.time.LocalDate;
 import pe.axiz.core.sensitive.MaskType;
 import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
-import pe.axiz.framework.cqrs.Command;
-import pe.axiz.framework.cqrs.OpenAccess;
+import pe.axiz.extension.cqrs.Command;
+import pe.axiz.extension.cqrs.OpenAccess;
 
 /**
  * payments-business registered an order: add it to the customer's history.

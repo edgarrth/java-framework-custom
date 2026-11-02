@@ -10,8 +10,9 @@ axiz add crypto
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-crypto-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`secrets`](secrets.md) |
-| Dependencias | `pe.axiz:axiz-core-crypto-kms`<br>`software.amazon.awssdk:kms` |
+| Dependencias | `pe.axiz:axiz-adapter-crypto-kms`<br>`software.amazon.awssdk:kms` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -55,6 +56,4 @@ Llaves del Secret que sincroniza el ExternalSecret desde AWS Secrets Manager:
 
 - [`axiz-crypto-spring-boot-autoconfigure`](../referencia/spring/axiz-crypto-spring-boot-autoconfigure.md)
 - [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
-- [`axiz-core-crypto-jose`](../referencia/core/axiz-core-crypto-jose.md)
-- [`axiz-core-crypto-kms`](../referencia/core/axiz-core-crypto-kms.md)
 - [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)

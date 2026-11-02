@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.codegen.ArtifactGenerator;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.service.GenerationService;
 
@@ -33,9 +33,9 @@ public class MetadataController {
     out.put(
         "archetypes",
         generation.catalog().archetypes().stream().map(MetadataController::archetype).toList());
-    List<Map<String, Object>> frameworks =
-        java.util.Arrays.stream(Framework.values())
-            .filter(f -> f != Framework.NONE)
+    List<Map<String, Object>> structures =
+        java.util.Arrays.stream(Structure.values())
+            .filter(f -> f != Structure.NONE)
             .map(
                 f ->
                     Map.<String, Object>of(
@@ -43,7 +43,7 @@ public class MetadataController {
                         "stacks", f.stacks().stream().map(Stack::id).sorted().toList(),
                         "artifacts", ArtifactGenerator.typesFor(f)))
             .toList();
-    out.put("frameworks", frameworks);
+    out.put("structures", structures);
     out.put(
         "capabilities",
         generation.catalog().capabilities().stream().map(MetadataController::capability).toList());
@@ -55,7 +55,8 @@ public class MetadataController {
     m.put("name", a.name());
     m.put("role", a.role());
     m.put("kind", a.kind());
-    m.put("frameworks", a.frameworks().stream().map(Framework::id).toList());
+    m.put("structures", a.structures().stream().map(Structure::id).toList());
+    m.put("extensions", a.extensions().stream().map(pe.axiz.codegen.model.Extension::id).toList());
     m.put("stacks", a.stacks().stream().map(Stack::id).toList());
     m.put("persistence", a.persistence());
     m.put("starters", a.starters());
@@ -70,6 +71,7 @@ public class MetadataController {
     m.put("description", c.description());
     m.put("starter", c.starter());
     m.put("requires", c.requires());
+    m.put("stacks", c.stacks().stream().map(Stack::id).toList());
     m.put("persistence", List.copyOf(c.persistence().keySet()));
     return m;
   }

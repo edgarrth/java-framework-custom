@@ -125,10 +125,13 @@ class MessagingWiringTest {
             false,
             List.of(),
             deferInterval,
-            Duration.ofMinutes(1)),
+            Duration.ofMinutes(1),
+            true,
+            Duration.ofSeconds(30)),
         kafka,
         new AxizMessagingProperties.Sqs(
-            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)));
+            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)),
+        new AxizMessagingProperties.Routes("domain-events", Map.of()));
   }
 
   private static AxizMessagingProperties.Kafka kafka(String servers, boolean iam) {

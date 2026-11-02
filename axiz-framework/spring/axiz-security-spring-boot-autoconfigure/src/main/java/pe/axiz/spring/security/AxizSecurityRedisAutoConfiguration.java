@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.core.security.RateLimiter;
-import pe.axiz.core.security.redis.RedisRateLimiter;
 
 /**
  * Cluster-wide rate limits on ElastiCache (Redis/Valkey), using the connection settings of Boot's
@@ -21,7 +21,7 @@ import pe.axiz.core.security.redis.RedisRateLimiter;
     before = AxizSecurityAutoConfiguration.class)
 @ConditionalOnClass(
     name = {
-      "pe.axiz.core.security.redis.RedisRateLimiter",
+      "pe.axiz.adapter.security.redis.RedisRateLimiter",
       "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory"
     })
 @ConditionalOnBean(LettuceConnectionFactory.class)
@@ -39,10 +39,22 @@ public class AxizSecurityRedisAutoConfiguration {
   }
 
   @Bean
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   RateLimiter axizRedisRateLimiter(
       StatefulRedisConnection<String, String> axizRateLimitRedisConnection,
       AxizSecurityProperties p) {
     return new RedisRateLimiter(
         axizRateLimitRedisConnection.sync(), "axiz:", p.rateLimit().failOpen());
+  }
+
+  @Bean
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
+      type =
+          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
+              .REACTIVE)
+  pe.axiz.core.security.AsyncRateLimiter axizRedisAsyncRateLimiter(
+      StatefulRedisConnection<String, String> axizRateLimitRedisConnection) {
+    return new pe.axiz.adapter.security.redis.RedisAsyncRateLimiter(
+        axizRateLimitRedisConnection.async(), "axiz:");
   }
 }

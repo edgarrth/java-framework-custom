@@ -15,7 +15,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * Archetypes and capabilities shipped with the framework ({@code axiz/archetypes/catalog.yaml} and
+ * Archetypes and capabilities shipped with the structure ({@code axiz/archetypes/catalog.yaml} and
  * {@code axiz/archetypes/capabilities.yaml}).
  */
 public final class Catalog {
@@ -26,12 +26,12 @@ public final class Catalog {
 
   private final Map<String, Archetype> archetypes;
   private final Map<String, Capability> capabilities;
-  private final Map<Framework, Style> styles;
+  private final Map<Structure, Style> styles;
 
   private Catalog(
       Map<String, Archetype> archetypes,
       Map<String, Capability> capabilities,
-      Map<Framework, Style> styles) {
+      Map<Structure, Style> styles) {
     this.archetypes = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(archetypes));
     this.capabilities = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(capabilities));
     this.styles = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(styles));
@@ -45,14 +45,15 @@ public final class Catalog {
           new Archetype(
               str(a, "name"),
               str(a, "role"),
-              strings(a.get("frameworks")).stream().map(Framework::of).toList(),
+              strings(a.get("structures")).stream().map(Structure::of).toList(),
               strings(a.get("stacks")).stream().map(Stack::of).toList(),
               strings(a.get("persistence")),
               strings(a.get("starters")),
               str(a, "deployment"),
               Boolean.TRUE.equals(a.get("rest")),
               str(a, "kind"),
-              map(a.get("properties")));
+              map(a.get("properties")),
+              strings(a.get("extensions")).stream().map(Extension::of).toList());
       archetypes.put(archetype.name(), archetype);
     }
     Map<String, Object> capabilityDoc = read(cl, "axiz/archetypes/capabilities.yaml");
@@ -70,16 +71,17 @@ public final class Catalog {
               strings(c.get("configMapKeys")),
               strings(c.get("secrets")),
               String.valueOf(c.getOrDefault("example", "")).strip(),
-              stores(c.get("persistence")));
+              stores(c.get("persistence")),
+              strings(c.get("stacks")).stream().map(Stack::of).toList());
       capabilities.put(cap.name(), cap);
     }
-    Map<Framework, Style> styles = new LinkedHashMap<>();
+    Map<Structure, Style> styles = new LinkedHashMap<>();
     map(capabilityDoc.get("styles"))
         .forEach(
             (id, v) -> {
               Map<String, Object> m = map(v);
               styles.put(
-                  Framework.of(id),
+                  Structure.of(id),
                   new Style(strings(m.get("capabilities")), strings(m.get("jdbc-tables"))));
             });
     Catalog catalog = new Catalog(archetypes, capabilities, styles);
@@ -88,7 +90,7 @@ public final class Catalog {
   }
 
   /** Stores a capability can declare in its {@code persistence} map. */
-  public static final List<String> STORES = List.of(AURORA, R2DBC, DYNAMODB);
+  public static final List<String> STORES = List.of(AURORA, R2DBC, DYNAMODB, "none");
 
   /**
    * The store of a service: its persistence, except Aurora from the reactive stack, which is
@@ -133,17 +135,17 @@ public final class Catalog {
       }
     }
     styles.forEach(
-        (framework, style) -> {
+        (structure, style) -> {
           for (String c : style.capabilities()) {
             if (!capabilities.containsKey(c)) {
               throw new IllegalStateException(
-                  "Style " + framework.id() + " brings unknown capability " + c);
+                  "Style " + structure.id() + " brings unknown capability " + c);
             }
           }
           for (String t : style.jdbcTables()) {
             if (!Style.TABLES.contains(t)) {
               throw new IllegalStateException(
-                  "Style " + framework.id() + " declares unknown table " + t);
+                  "Style " + structure.id() + " declares unknown table " + t);
             }
           }
         });
@@ -201,8 +203,8 @@ public final class Catalog {
   }
 
   /** What the starter of a style brings by itself ({@link Style#NONE} when nothing). */
-  public Style style(Framework framework) {
-    return styles.getOrDefault(framework, Style.NONE);
+  public Style style(Structure structure) {
+    return styles.getOrDefault(structure, Style.NONE);
   }
 
   public Optional<Archetype> archetype(String name) {

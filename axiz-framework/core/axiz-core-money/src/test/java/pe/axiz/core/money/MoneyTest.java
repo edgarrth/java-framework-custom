@@ -23,6 +23,52 @@ class MoneyTest {
   private static final Currency USD = Currency.getInstance("USD");
 
   @Test
+  void everyFactoryAndArithmeticResultKeepsTheMoneyRange() {
+    for (String code : List.of("PEN", "JPY", "KWD")) {
+      Money max = Money.ofExact("9".repeat(Money.MAX_INTEGER_DIGITS), code);
+      Money one = Money.ofExact("1", code);
+      assertThrows(BusinessException.class, () -> max.plus(one));
+      assertThrows(BusinessException.class, () -> max.negate().minus(one));
+      assertThrows(BusinessException.class, () -> max.multiply(new BigDecimal("2")));
+      assertThrows(
+          BusinessException.class, () -> max.divide(new BigDecimal("0.1"), RoundingMode.HALF_EVEN));
+      assertThrows(BusinessException.class, () -> max.percentage(new BigDecimal("200")));
+      // Every successful operation still round-trips, including allocations and negative values.
+      for (Money value :
+          List.of(
+              max,
+              max.minus(one),
+              max.negate(),
+              max.negate().abs(),
+              max.divide(new BigDecimal("3"), RoundingMode.HALF_EVEN),
+              max.percentage(new BigDecimal("10")),
+              Money.ofMinor(Long.MIN_VALUE, code),
+              Money.zero(code))) {
+        assertEquals(value, Money.parse(value.toString()));
+        for (Money share : value.allocate(2, 3, 5)) {
+          assertEquals(share, Money.parse(share.toString()));
+        }
+      }
+    }
+    for (String sign : List.of("", "-")) {
+      assertThrows(
+          BusinessException.class,
+          () -> Money.of(sign + "9".repeat(Money.MAX_INTEGER_DIGITS) + ".995", "PEN"));
+    }
+  }
+
+  @Test
+  void arithmeticRejectsUnboundedOperandsBeforeExpandingPowersOfTen() {
+    Money one = Money.ofExact("1", "PEN");
+    for (String value : List.of("1e99999999", "1e-99999999")) {
+      BigDecimal operand = new BigDecimal(value);
+      assertThrows(BusinessException.class, () -> one.divide(operand, RoundingMode.HALF_EVEN));
+      assertThrows(BusinessException.class, () -> one.percentage(operand));
+      assertThrows(BusinessException.class, () -> one.multiply(operand));
+    }
+  }
+
+  @Test
   void scaleAndRoundingFollowCurrency() {
     assertEquals("PEN 150.00", Money.of("150", "PEN").toString());
     assertEquals("PEN 0.12", Money.of("0.125", "PEN").toString());

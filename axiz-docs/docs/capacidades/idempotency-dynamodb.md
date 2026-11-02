@@ -10,8 +10,9 @@ axiz add idempotency-dynamodb
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-idempotency-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`idempotency`](idempotency.md), [`dynamodb`](dynamodb.md) |
-| Dependencias | `pe.axiz:axiz-core-idempotency-dynamodb` |
+| Dependencias | `pe.axiz:axiz-adapter-idempotency-dynamodb` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -34,5 +35,3 @@ axiz.idempotency.store: dynamodb
 - [`axiz-idempotency-spring-boot-autoconfigure`](../referencia/spring/axiz-idempotency-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-idempotency`](../referencia/core/axiz-core-idempotency.md)
-- [`axiz-core-idempotency-dynamodb`](../referencia/core/axiz-core-idempotency-dynamodb.md)
-- [`axiz-core-idempotency-redis`](../referencia/core/axiz-core-idempotency-redis.md)

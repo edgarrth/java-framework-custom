@@ -29,7 +29,7 @@ cd payments-business && local/dev-secrets.sh && docker compose up -d
 
 - **[Crear un servicio](empezar/index.md)**: del contrato al servicio corriendo en tu máquina.
 - **[Arquitectura](arquitectura/index.md)**: capas, configuración, AWS y arquetipos.
-- **[Estilos](estilos/index.md)**: layered, hexagonal, CQRS, EDA, BFF y batch.
+- **[Estilos](estructuras/index.md)**: layered, hexagonal, CQRS, EDA, BFF y batch.
 - **[Guías](guias/index.md)**: errores, seguridad, eventos, sagas, métricas y más.
 - **[Capacidades](capacidades/index.md)**: lo que `axiz add` agrega a un servicio.
 - **[Operación](operacion/index.md)**: CI/CD, despliegue GitOps y observabilidad.

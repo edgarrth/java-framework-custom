@@ -1,7 +1,7 @@
 package pe.axiz.payments.business.application.command;
 
 import org.jspecify.annotations.Nullable;
-import pe.axiz.framework.cqrs.AuditedCommand;
+import pe.axiz.extension.cqrs.AuditedCommand;
 import pe.axiz.payments.business.domain.PaymentOrder;
 import pe.axiz.payments.business.domain.PaymentStatus;
 

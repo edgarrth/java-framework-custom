@@ -8,19 +8,21 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.RateLimiter;
+import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-/** Reactive rate limit; the limiter call runs off the event loop. */
+/** Reactive rate limit; the limiter uses native asynchronous I/O. */
 public class RateLimitWebFilter implements WebFilter {
 
-  private final RateLimiter limiter;
+  private final AsyncRateLimiter limiter;
   private final RateLimitRules rules;
   private final SecurityProblems problems;
   private final boolean failOpen;
 
-  public RateLimitWebFilter(RateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
+  public RateLimitWebFilter(
+      AsyncRateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
     this(limiter, rules, problems, true);
   }
 
@@ -30,7 +32,7 @@ public class RateLimitWebFilter implements WebFilter {
    * @param failOpen policy when the limiter store is unavailable, for rules without their own
    */
   public RateLimitWebFilter(
-      RateLimiter limiter, RateLimitRules rules, SecurityProblems problems, boolean failOpen) {
+      AsyncRateLimiter limiter, RateLimitRules rules, SecurityProblems problems, boolean failOpen) {
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);
     this.problems = Objects.requireNonNull(problems);
@@ -55,11 +57,10 @@ public class RateLimitWebFilter implements WebFilter {
             key ->
                 key.isEmpty()
                     ? chain.filter(exchange)
-                    : Mono.fromCallable(
+                    : ReactiveStages.from(
                             () ->
                                 limiter.tryAcquire(
                                     key.get(), r.limit(), r.window(), r.failOpen(failOpen)))
-                        .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(d -> decide(exchange, chain, d)));
   }
 

@@ -155,7 +155,9 @@ public final class Names {
   }
 
   public static boolean isPackage(String text) {
-    return PACKAGE.matcher(text).matches() && text.length() <= 120;
+    return PACKAGE.matcher(text).matches()
+        && text.length() <= 120
+        && javax.lang.model.SourceVersion.isName(text);
   }
 
   public static String packagePath(String pkg) {

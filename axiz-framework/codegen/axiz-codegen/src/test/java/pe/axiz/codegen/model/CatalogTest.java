@@ -22,13 +22,13 @@ class CatalogTest {
   void hasTheSevenServiceArchetypesAndTwoPlatformOnes() {
     assertEquals(
         List.of(
-            "experience",
             "business",
-            "process",
-            "integration",
+            "core",
+            "gateway",
+            "ux",
+            "support",
             "event-processor",
             "batch",
-            "crud",
             "library",
             "starter"),
         catalog.archetypes().stream().map(Archetype::name).toList());
@@ -38,18 +38,18 @@ class CatalogTest {
   @Test
   void defaultsFollowTheDefinition() {
     Archetype business = catalog.archetype("business").orElseThrow();
-    assertEquals(Framework.HEXAGONAL, business.defaultFramework());
+    assertEquals(Structure.HEXAGONAL, business.defaultStructure());
     assertEquals(Stack.SERVLET, business.defaultStack());
     assertEquals("aurora", business.defaultPersistence());
     assertEquals("cronjob", catalog.archetype("batch").orElseThrow().deployment());
     assertFalse(catalog.archetype("event-processor").orElseThrow().rest());
-    assertEquals(Framework.BFF, catalog.archetype("experience").orElseThrow().defaultFramework());
+    assertEquals(Structure.BFF, catalog.archetype("ux").orElseThrow().defaultStructure());
   }
 
   @Test
   void everyDefaultCombinationIsSupportedByItsFramework() {
     for (Archetype a : catalog.archetypes()) {
-      assertTrue(a.defaultFramework().stacks().contains(a.defaultStack()), a.name());
+      assertTrue(a.defaultStructure().stacks().contains(a.defaultStack()), a.name());
     }
   }
 
@@ -66,9 +66,9 @@ class CatalogTest {
     Capability inbox = catalog.capability("inbox").orElseThrow();
     assertTrue(inbox.supports("aurora"));
     assertTrue(inbox.supports("dynamodb"));
-    assertFalse(inbox.supports("none"));
+    assertTrue(inbox.supports("none"));
     assertEquals("dynamodb", inbox.properties("dynamodb").get("axiz.inbox.store"));
-    assertTrue(inbox.dependencies("dynamodb").contains("pe.axiz:axiz-core-inbox-dynamodb"));
+    assertTrue(inbox.dependencies("dynamodb").contains("pe.axiz:axiz-adapter-inbox-dynamodb"));
     assertTrue(catalog.capability("cache").orElseThrow().supports("none"));
   }
 
@@ -88,7 +88,7 @@ class CatalogTest {
     }
   }
 
-  /** Inside the framework repository every referenced axiz artifact must exist as a module. */
+  /** Inside the structure repository every referenced axiz artifact must exist as a module. */
   @Test
   void referencedAxizArtifactsExist() throws IOException {
     Path root = Path.of("").toAbsolutePath().getParent().getParent();
@@ -97,7 +97,8 @@ class CatalogTest {
     }
     Set<String> modules;
     try (Stream<Path> s =
-        Stream.of("core", "spring", "frameworks").flatMap(d -> walk(root.resolve(d)))) {
+        Stream.of("core", "spring", "structures", "extensions", "adapters", "kits")
+            .flatMap(d -> walk(root.resolve(d)))) {
       modules =
           s.filter(p -> p.getFileName().toString().equals("pom.xml"))
               .map(p -> p.getParent().getFileName().toString())
@@ -116,8 +117,8 @@ class CatalogTest {
             .forEach(d -> assertTrue(modules.contains(d.substring(8)), c.name() + " -> " + d));
       }
     }
-    for (Framework f : Framework.values()) {
-      if (f != Framework.NONE) {
+    for (Structure f : Structure.values()) {
+      if (f != Structure.NONE) {
         assertTrue(modules.contains(f.starter()), f.starter());
       }
     }

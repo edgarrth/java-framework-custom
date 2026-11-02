@@ -10,6 +10,7 @@ axiz add featureflags
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-featureflags-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega

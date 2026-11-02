@@ -169,6 +169,14 @@ channel flow, M2M calls to business, process and core-integration, and error cas
 
 - `coverage/`: fails when a capability of the axiz catalog is no longer used by the demo, or when
   the evidence listed in `coverage.yaml` disappears from the code.
-- `.github/workflows/ci.yaml`: each service through the shared `service-ci` pipeline (build,
+- `.github/workflows/ci.yaml`: each service through the shared `service-build` pipeline (build,
   Spotless, Checkstyle, Error Prone + NullAway, SpotBugs, tests, OpenAPI lint and breaking
   changes, Helm validation, image, SBOM); `e2e.yaml`: the whole demo in kind every night.
+
+The root CI and each standalone service's CI build only. Their independent `deploy.yaml`
+workflows consume a completed successful run, attempt and external signed manifest hash, plus
+an environment, predecessor hash and full values revision. The service is taken from the
+verified manifest; each service built in the root matrix has its own hash. No CI job promotes
+a service automatically. Configure separate dependency-read, registry-build, registry-read and
+GitOps credentials as described in [Pipelines 2.0](../axiz-workflows/docs/pipelines-v2.md).
+The kind end-to-end workflow deploys an ephemeral test environment as part of its test scenario.

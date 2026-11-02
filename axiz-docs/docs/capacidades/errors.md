@@ -10,7 +10,8 @@ axiz add errors
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-errors-spring-boot-starter` |
-| Incluida por defecto en | experience, business, process, integration, event-processor, batch, crud |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | business, core, gateway, ux, support, event-processor, batch |
 
 ## Propiedades que agrega
 

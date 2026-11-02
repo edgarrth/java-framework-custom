@@ -6,12 +6,12 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-core</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <artifactId>axiz-cli</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>axiz :: tools :: cli</name>
   <description>axiz command line: new, add, generate, contract sync, upgrade, doctor and local environment</description>
 
@@ -134,6 +134,7 @@
               <mainClass>${axiz.cli.main}</mainClass>
               <buildArgs>
                 <buildArg>--no-fallback</buildArg>
+                <buildArg>-march=compatibility</buildArg>
                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                 <buildArg>--enable-url-protocols=https,http</buildArg>
               </buildArgs>

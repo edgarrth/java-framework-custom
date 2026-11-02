@@ -11,10 +11,10 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
-import pe.axiz.core.contracts.IdempotencyStoreContract;
+import pe.axiz.adapter.idempotency.redis.RedisIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
-import pe.axiz.core.idempotency.redis.RedisIdempotencyStore;
-import pe.axiz.core.test.MutableClock;
+import pe.axiz.test.contracts.IdempotencyStoreContract;
+import pe.axiz.test.support.MutableClock;
 
 /** Idempotency store contract on a real Valkey (ElastiCache): Lua scripts and server TTL. */
 class ValkeyIdempotencyStoreIT {

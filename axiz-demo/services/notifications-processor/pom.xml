@@ -10,13 +10,13 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-service</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <groupId>pe.axiz.payments</groupId>
   <artifactId>notifications-processor</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>Notifications Processor</name>
   <description>Customer notifications and audit archive</description>
 
@@ -88,11 +88,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-framework-eda-spring-boot-starter</artifactId>
+      <artifactId>axiz-structure-eda-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-kafka</artifactId>
+      <artifactId>axiz-adapter-messaging-kafka</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -104,7 +104,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-sqs</artifactId>
+      <artifactId>axiz-adapter-messaging-sqs</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -112,11 +112,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-observability-awssdk</artifactId>
+      <artifactId>axiz-adapter-observability-aws</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-sns</artifactId>
+      <artifactId>axiz-adapter-messaging-sns</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -124,11 +124,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-inbox-dynamodb</artifactId>
+      <artifactId>axiz-adapter-inbox-dynamodb</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-storage-s3</artifactId>
+      <artifactId>axiz-adapter-storage-s3</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -136,7 +136,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-lock-dynamodb</artifactId>
+      <artifactId>axiz-adapter-lock-dynamodb</artifactId>
     </dependency>
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->

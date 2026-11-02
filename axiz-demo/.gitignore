@@ -1,4 +1,16 @@
+# This is a source module, not generated coverage output.
+!/coverage/
+!/coverage/**
+
+# Maven configuration is source, even when a developer globally ignores .mvn.
+!.mvn/
+!.mvn/jvm.config
+!.mvn/maven.config
+!.mvn/wrapper/
+!.mvn/wrapper/maven-wrapper.properties
+
 target/
+.flattened-pom.xml
 .mvn/wrapper/maven-wrapper.jar
 *.class
 *.log

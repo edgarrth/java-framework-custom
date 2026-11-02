@@ -73,6 +73,24 @@ as skeletons that answer `501 Not Implemented` until each operation is implement
 {{/operations}}
 {{/api.present}}
 
+{{#api.hasAsyncapi}}
+## Event contracts
+
+`src/main/asyncapi/asyncapi.yaml` declares the CloudEvents types this service sends and receives.
+Payload records use JDK types and retain the version in their class names. `axiz generate event
+<name-vN>` reads the declared payload. `axiz contract sync --type asyncapi` creates new records
+and `.axiz-new` proposals without replacing existing implementations. Review and merge proposals,
+then implement the subscribed handlers before consuming live messages. The generated typed
+skeletons reject messages until their business action is implemented; their Spring AOT binding
+metadata stays in `config`, outside the payload layer.
+
+`axiz doctor` checks receive subscriptions and the snapshot. `axiz contract diff --type asyncapi
+old.yaml new.yaml` rejects incompatible published types; optional fields can extend vN, while
+other changes require a new type in parallel. CI compares the contract with an earlier immutable
+Git revision even when the current snapshot was updated. Local lint checks structure; corporate
+Spectral rules run in CI. Business meaning still requires human review.
+{{/api.hasAsyncapi}}
+
 ## Structure
 
 {{#fw.packages}}
@@ -111,13 +129,25 @@ Keys each environment must define:
 
 `deploy/helm/{{project.name}}` contains the chart: {{#archetype.deployment}}Deployment with probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
 ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@v1.0.0`; Renovate pins its commit and proposes new releases):
+The workflows use the immutable Axiz 2.0.0 contracts:
 
-- `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
-  builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
-  to prod after the approval of the `prod` environment.
-- Deployments are GitOps: the pipeline records the release (chart commit, image tag and digest) in
-  the GitOps repository and Argo CD applies it. `cd.yaml` redeploys or rolls back an existing image.
+- `ci.yaml` builds and validates the product. It records the source commit, final version,
+  JVM/native variant, platforms and pinned base image in a signed build manifest. Set
+  `AXIZ_JVM_BASE_IMAGE` and `AXIZ_NATIVE_BASE_IMAGE` to registry references with SHA-256 digests;
+  a manual build can supply a specific `base-image`. Optional framework candidate inputs bind
+  the dependency to its producer run, attempt and signed manifest hash.
+- `deploy.yaml` also listens for completed `ci` runs and promotes a verified service build to dev
+  through a signed producer proof. It requires the source to be the current HEAD of protected
+  main and a repository secret `GITOPS_READ_TOKEN` with read-only access to GitOps. The resolver
+  reads the predecessor without using the GitHub App's write credential; the independent deploy
+  checks that predecessor again before writing. CI runs without a product proof do not deploy.
+- `deploy.yaml` promotes or rolls back a completed successful build. Supply its run id, attempt,
+  manifest SHA-256, environment, full values commit and previous deployed manifest hash
+  (`initial-deployment` for the first deployment). It reuses image/chart digests, updates GitOps
+  and waits for Argo CD; deployment never rebuilds. Protected environments provide approval.
+- Build credentials are `NEXUS_READ_USERNAME/PASSWORD`, `BUILD_REGISTRY` and
+  `REGISTRY_BUILD_USERNAME/PASSWORD`. Deploy uses registry read credentials plus the GitOps App
+  and Argo read token. Configure `GITOPS_REPOSITORY` and `ARGOCD_SERVER` as repository variables.
 - `release.yaml`: release-please keeps a release pull request with the next version and the
   changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
   the last released version (`0.0.0`: nothing released yet); the pom holds the next one

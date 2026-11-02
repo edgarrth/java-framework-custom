@@ -8,7 +8,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.ProducerFactory;
-import pe.axiz.core.audit.kafka.KafkaAuditPublisher;
+import pe.axiz.adapter.audit.kafka.KafkaAuditPublisher;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
  * MSK sink for audit events, active when {@code axiz.audit.kafka.topic} is set. It reuses the
@@ -18,7 +19,7 @@ import pe.axiz.core.audit.kafka.KafkaAuditPublisher;
     afterName = "org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration")
 @ConditionalOnClass(
     name = {
-      "pe.axiz.core.audit.kafka.KafkaAuditPublisher",
+      "pe.axiz.adapter.audit.kafka.KafkaAuditPublisher",
       "org.springframework.kafka.core.ProducerFactory"
     })
 @ConditionalOnProperty("axiz.audit.kafka.topic")
@@ -28,6 +29,7 @@ public class AxizAuditKafkaAutoConfiguration {
 
   @Bean
   @SuppressWarnings("unchecked")
+  @ConditionalOnImperativeApplication
   AuditSink axizKafkaAuditSink(ProducerFactory<?, ?> producers, AxizAuditProperties properties) {
     Producer<String, String> producer = (Producer<String, String>) producers.createProducer();
     String topic = java.util.Objects.requireNonNull(properties.kafka().topic());

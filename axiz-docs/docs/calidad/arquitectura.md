@@ -6,12 +6,17 @@ Cada servicio corre sus reglas en `ArchitectureTest`:
 class ArchitectureTest {
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.verify("pe.axiz.payments.business", AxizArchitecture.Style.CQRS);
+    AxizArchitecture.of("pe.axiz.payments.orders")
+        .archetype(Archetype.BUSINESS)
+        .stack(Stack.SERVLET)
+        .structure(Structure.HEXAGONAL)
+        .extensions(Extension.CQRS)
+        .verify();
   }
 }
 ```
 
-`verify` importa las clases de producción del paquete y revisa las reglas del estilo más las
+`verify` importa las clases de producción del paquete y revisa las reglas del arquetipo, stack, estructura y extensiones más las
 generales, fallando con **todas** las violaciones a la vez.
 
 ## Reglas generales
@@ -30,19 +35,24 @@ generales, fallando con **todas** las violaciones a la vez.
 | Sin AWS SDK v1 | un solo SDK: v2 |
 | Sin APIs `@Deprecated` (Spring, AWS SDK, Jackson, axiz) | un framework nuevo no arranca con deuda: lo deprecado se reemplaza, no se suprime |
 
-## Reglas por estilo
+## Reglas por estructura y extensión
 
-| Estilo | Reglas |
+| Selector | Reglas |
 |---|---|
 | Layered | `controller → service → repository`; controladores y repositorios en su paquete |
 | Hexagonal | dependencias hacia adentro; dominio sin Spring, JPA, AWS SDK ni Jackson; aplicación sin Spring Web, JPA ni AWS SDK; nombres en su paquete |
-| CQRS | las de hexagonal; commands y queries como records; queries (bloqueantes o reactivas) sin depender de commands ni del `ReactiveCommandBus` |
+| Extensión CQRS | las de hexagonal; commands y queries como records; queries (bloqueantes o reactivas) sin depender de commands ni del `ReactiveCommandBus` |
 | EDA | handlers en `handler`; sin controladores REST |
 | BFF | sin JPA, Spring Data JPA ni DynamoDB Enhanced |
 | Batch | `*Processor` en `job`; sin controladores REST |
 
 ## Reglas del propio framework
 
-`axiz-architecture-tests` verifica que la capa 1 sea Java puro, que la capa 2 no conozca la 3, que
-los `-api` de los estilos dependan solo de la capa 1, que cada starter use solo su capacidad o la
-fundación y que no haya ciclos entre capacidades ni entre estilos.
+`axiz-architecture-tests` verifica la independencia de core, el aislamiento de tecnología,
+las firmas públicas neutrales de adaptadores, la excepción cerrada de Reactor en R2DBC y
+la comunicación entre capacidades Spring por puertos. Los `-api` estructurales no importan
+Spring ni Reactor; los contratos reactivos admiten Reactive Streams.
+
+Un paquete base sin clases de producción hace fallar `verify`: una errata en el paquete no
+puede convertir las reglas en una prueba vacía. El rol restringe las llamadas y la persistencia;
+`ReactiveRules` prohíbe puertos síncronos, SDKs bloqueantes, esperas y offload en el flujo reactive.

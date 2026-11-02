@@ -10,13 +10,13 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-core</artifactId>
-    <version>1.0.0</version>
+    <artifactId>axiz-parent</artifactId>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <artifactId>axiz-rewrite-recipes</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>axiz :: tools :: rewrite recipes</name>
   <description>Declarative OpenRewrite recipes to upgrade services between axiz versions</description>
 
@@ -50,6 +50,85 @@
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-sensitive</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-r2dbc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-kit-jpa</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-r2dbc-spring-boot-autoconfigure</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-dynamodb-spring-boot-autoconfigure</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-xml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-messaging-spring-boot-autoconfigure</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.projectreactor</groupId>
+      <artifactId>reactor-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-archunit-rules</artifactId>
+      <version>2.0.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-java</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-yaml</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.openrewrite</groupId>
+      <artifactId>rewrite-test</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- recipes referenced by the declarative ones; resolved by rewrite-maven-plugin with this artifact -->
     <dependency>
       <groupId>org.openrewrite.recipe</groupId>
@@ -78,7 +157,6 @@
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 

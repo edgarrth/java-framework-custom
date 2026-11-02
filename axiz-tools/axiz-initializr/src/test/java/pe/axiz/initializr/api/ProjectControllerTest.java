@@ -50,9 +50,9 @@ class ProjectControllerTest {
 
   private String body(String archetype, String contract) {
     Map<String, Object> m = new LinkedHashMap<>();
-    m.put("name", "orders-business");
+    m.put("name", "orders");
     m.put("groupId", "pe.axiz.orders");
-    m.put("basePackage", "pe.axiz.orders.business");
+    m.put("basePackage", "pe.axiz.orders");
     m.put("archetype", archetype);
     m.put("capabilities", List.of("cache"));
     m.put("openApi", contract);
@@ -68,7 +68,7 @@ class ProjectControllerTest {
   void servesTheCatalog() throws Exception {
     mvc.perform(get("/v1/metadata").with(jwt()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.archetypes[0].name").value("experience"))
+        .andExpect(jsonPath("$.archetypes[0].name").value("business"))
         .andExpect(
             jsonPath("$.capabilities[?(@.name == 'idempotency-redis')].requires[0]")
                 .value("idempotency"));
@@ -83,8 +83,7 @@ class ProjectControllerTest {
                 .content(body("business", GenerationServiceTest.contract())))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "application/zip"))
-        .andExpect(
-            header().string("Content-Disposition", "attachment; filename=\"orders-business.zip\""));
+        .andExpect(header().string("Content-Disposition", "attachment; filename=\"orders.zip\""));
   }
 
   @Test

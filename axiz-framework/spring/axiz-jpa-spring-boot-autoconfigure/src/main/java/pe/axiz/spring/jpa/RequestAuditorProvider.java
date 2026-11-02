@@ -3,7 +3,7 @@ package pe.axiz.spring.jpa;
 import java.util.Optional;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.persistence.jpa.AuditorProvider;
+import pe.axiz.kit.jpa.AuditorProvider;
 
 /**
  * Auditor of {@code createdBy}/{@code updatedBy}: the end user, or the calling application for

@@ -2,8 +2,8 @@ package pe.axiz.payments.history.application.command;
 
 import java.time.Instant;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.framework.cqrs.Command;
-import pe.axiz.framework.cqrs.OpenAccess;
+import pe.axiz.extension.cqrs.Command;
+import pe.axiz.extension.cqrs.OpenAccess;
 import pe.axiz.payments.history.domain.PaymentStatus;
 
 /**

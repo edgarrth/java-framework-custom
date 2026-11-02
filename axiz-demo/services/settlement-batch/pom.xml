@@ -10,13 +10,13 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-service</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <groupId>pe.axiz.payments</groupId>
   <artifactId>settlement-batch</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>Settlement Batch</name>
   <description>Daily settlement and reconciliation</description>
 
@@ -72,11 +72,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-framework-batch-spring-boot-starter</artifactId>
+      <artifactId>axiz-structure-batch-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-storage-s3</artifactId>
+      <artifactId>axiz-adapter-storage-s3</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

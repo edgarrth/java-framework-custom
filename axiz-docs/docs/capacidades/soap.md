@@ -10,6 +10,7 @@ axiz add soap
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-soap-spring-boot-starter` |
+| Stacks del catálogo | servlet |
 | Agrega también | [`secrets`](secrets.md) |
 | Incluida por defecto en | ningún arquetipo |
 

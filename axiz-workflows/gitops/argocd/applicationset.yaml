@@ -1,7 +1,7 @@
 # One Argo CD Application per file environments/<env>/<service>.yaml of the GitOps repository
-# (written by the service-cd workflow). The chart comes from the service repository at the exact
-# commit that was built; values.yaml + values-<env>.yaml come from the same commit, and the image
-# tag and digest from the GitOps file. Rollback = revert the commit in the GitOps repository.
+# (written by service-deploy). Requires native OCI sources in Argo CD 3.1 or newer.
+# Chart and image come from the signed build by digest; environment values use a separate full
+# Git commit. Rollback deploys the previous verified manifest with explicit approved values.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -22,22 +22,30 @@ spec:
       labels:
         axiz.pe/service: "{{ .service }}"
         axiz.pe/environment: "{{ .environment }}"
+      annotations:
+        axiz.pe/build-manifest-sha256: "{{ .manifest_sha256 }}"
+        axiz.pe/deploy-record-sha256: "{{ .deploy_record_sha256 }}"
     spec:
       project: axiz-services
-      source:
-        repoURL: "{{ .source.repoURL }}"
-        targetRevision: "{{ .source.revision }}"
-        path: "{{ .source.chart }}"
-        helm:
-          releaseName: "{{ .service }}"
-          valueFiles:
-            - values.yaml
-            - "values-{{ .environment }}.yaml"
-          parameters:
-            - name: image.tag
-              value: "{{ .image.tag }}"
-            - name: image.digest
-              value: "{{ .image.digest }}"
+      sources:
+        - repoURL: "{{ .chart.oci }}"
+          targetRevision: "{{ .chart.digest }}"
+          path: .
+          helm:
+            releaseName: "{{ .service }}"
+            valueFiles:
+              - "$values/{{ index .values.files 0 }}"
+              - "$values/{{ index .values.files 1 }}"
+            parameters:
+              - name: image.repository
+                value: "{{ .image.repository }}"
+              - name: image.tag
+                value: "{{ .image.tag }}"
+              - name: image.digest
+                value: "{{ .image.digest }}"
+        - repoURL: "{{ .values.repoURL }}"
+          targetRevision: "{{ .values.revision }}"
+          ref: values
       destination:
         server: https://kubernetes.default.svc
         namespace: "axiz-{{ .environment }}"

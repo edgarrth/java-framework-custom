@@ -2,45 +2,45 @@ package pe.axiz.core.secrets;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import pe.axiz.core.commons.AsyncLoadingCache;
+import pe.axiz.core.commons.Stages;
 
 /**
- * Caches resolved secrets for a TTL to avoid calling the secret store on every use while still
- * picking up rotations. Missing secrets are not cached.
+ * Synchronous secret cache. Shares bounded TTL/coalescing/eviction bookkeeping with the native
+ * variant; its delegate executes on the synchronous caller, outside the cache bookkeeping lock.
  */
 public final class CachingSecretResolver implements SecretResolver {
-
+  static final int MAX_CACHED_SECRETS = 1000;
   private final SecretResolver delegate;
-  private final Duration ttl;
-  private final Clock clock;
-  private final Map<String, Entry> cache = new ConcurrentHashMap<>();
+  private final AsyncLoadingCache<Optional<SecretValue>> cache;
 
   public CachingSecretResolver(SecretResolver delegate, Duration ttl, Clock clock) {
     this.delegate = Objects.requireNonNull(delegate);
-    this.ttl = Objects.requireNonNull(ttl);
-    this.clock = Objects.requireNonNull(clock);
+    cache =
+        new AsyncLoadingCache<>(
+            ttl, Long.MAX_VALUE, MAX_CACHED_SECRETS, clock, Optional::isPresent);
   }
 
   @Override
   public Optional<SecretValue> resolve(String name) {
-    Instant now = clock.instant();
-    Entry e = cache.get(name);
-    if (e != null && now.isBefore(e.expiresAt)) {
-      return Optional.of(e.value);
+    try {
+      return cache
+          .get(name, () -> CompletableFuture.completedFuture(delegate.resolve(name)))
+          .toCompletableFuture()
+          .join();
+    } catch (CompletionException failure) {
+      Throwable cause = Stages.unwrap(failure);
+      if (cause instanceof RuntimeException runtime) throw runtime;
+      if (cause instanceof Error error) throw error;
+      throw failure;
     }
-    Optional<SecretValue> v = delegate.resolve(name);
-    v.ifPresentOrElse(
-        value -> cache.put(name, new Entry(value, now.plus(ttl))), () -> cache.remove(name));
-    return v;
   }
 
   public void evict(String name) {
-    cache.remove(name);
+    cache.evict(name);
   }
-
-  private record Entry(SecretValue value, Instant expiresAt) {}
 }

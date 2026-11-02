@@ -7,13 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
-import pe.axiz.framework.eda.HandlesEvent;
+import pe.axiz.core.messaging.HandlesEvent;
 {{#stack.reactive}}
-import pe.axiz.framework.eda.ReactiveTypedEventHandler;
+import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 import reactor.core.publisher.Mono;
 {{/stack.reactive}}
 {{^stack.reactive}}
-import pe.axiz.framework.eda.TypedEventHandler;
+import pe.axiz.core.messaging.TypedEventHandler;
 {{/stack.reactive}}
 import {{project.basePackage}}.event.ExampleCreated;
 
@@ -24,7 +24,7 @@ import {{project.basePackage}}.event.ExampleCreated;
 {{#stack.reactive}}
  * Non-blocking: the returned publisher runs in a reactive transaction{{#persistence.r2dbc}} (R2DBC
  * writes and outbox events commit together){{/persistence.r2dbc}} and the consumer waits for it,
- * bounded by {@code axiz.eda.handler-timeout}.
+ * bounded by {@code axiz.messaging.consumer.handler-timeout}.
 {{/stack.reactive}}
  */
 @Component

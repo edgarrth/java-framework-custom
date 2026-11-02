@@ -1,6 +1,6 @@
 package pe.axiz.payments.history.application.command;
 
-import pe.axiz.framework.cqrs.ReactiveCommandHandler;
+import pe.axiz.extension.cqrs.ReactiveCommandHandler;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import reactor.core.publisher.Mono;

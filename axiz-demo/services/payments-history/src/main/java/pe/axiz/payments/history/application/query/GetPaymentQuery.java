@@ -1,6 +1,6 @@
 package pe.axiz.payments.history.application.query;
 
-import pe.axiz.framework.cqrs.Query;
+import pe.axiz.extension.cqrs.Query;
 import pe.axiz.payments.history.domain.PaymentHistory;
 
 /**

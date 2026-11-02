@@ -6,10 +6,11 @@ import java.util.List;
 {{#item.usesNullable}}
 import org.jspecify.annotations.Nullable;
 {{/item.usesNullable}}
-import org.springframework.stereotype.Service;
-{{#persistence.aurora}}
+{{#stack.reactive}}import reactor.core.publisher.Mono;
+{{/stack.reactive}}import org.springframework.stereotype.Service;
+{{#persistence.jpa}}
 import org.springframework.transaction.annotation.Transactional;
-{{/persistence.aurora}}
+{{/persistence.jpa}}
 {{#item.usesPaging}}
 import pe.axiz.core.commons.PageRequest;
 {{/item.usesPaging}}
@@ -24,20 +25,21 @@ import {{item.modelPackage}}.{{name}};
  * (layered starter) instead of writing each operation.
  */
 @Service
-{{#persistence.aurora}}
+{{#persistence.jpa}}
 @Transactional
-{{/persistence.aurora}}
+{{/persistence.jpa}}
 public class {{item.className}}Service {
 {{#item.operations}}
 
   /** {{summary}}. */
-{{#persistence.aurora}}
+{{#persistence.jpa}}
 {{#readOnly}}
   @Transactional(readOnly = true)
 {{/readOnly}}
-{{/persistence.aurora}}
-  public {{returnType}} {{methodName}}({{{inputComponents}}}) {
-    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet");
+{{/persistence.jpa}}
+  public {{#stack.reactive}}Mono<{{/stack.reactive}}{{returnType}}{{#stack.reactive}}>{{/stack.reactive}} {{methodName}}({{{inputComponents}}}) {
+{{#stack.servlet}}    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet");{{/stack.servlet}}
+{{#stack.reactive}}    return Mono.error(new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet"));{{/stack.reactive}}
   }
 {{/item.operations}}
 }

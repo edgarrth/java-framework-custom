@@ -1,7 +1,7 @@
 package pe.axiz.payments.coreintegration.application.usecase;
 
 import pe.axiz.core.audit.Auditable;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 import pe.axiz.payments.coreintegration.application.port.out.CoreAccounts;
 import pe.axiz.payments.coreintegration.domain.Movement;
 
@@ -10,7 +10,7 @@ import pe.axiz.payments.coreintegration.domain.Movement;
  */
 @UseCase
 public class ReverseDebitUseCase
-    implements pe.axiz.framework.hexagonal.UseCase<ReverseDebitUseCase.Input, Movement> {
+    implements pe.axiz.structure.hexagonal.UseCase<ReverseDebitUseCase.Input, Movement> {
 
   /**
    * Input of the use case.

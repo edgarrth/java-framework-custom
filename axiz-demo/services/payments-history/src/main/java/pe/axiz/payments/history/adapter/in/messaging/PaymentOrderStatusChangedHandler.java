@@ -4,9 +4,9 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
-import pe.axiz.framework.cqrs.spring.ReactiveCommandBus;
-import pe.axiz.framework.eda.HandlesEvent;
-import pe.axiz.framework.eda.ReactiveTypedEventHandler;
+import pe.axiz.extension.cqrs.spring.ReactiveCommandBus;
+import pe.axiz.core.messaging.HandlesEvent;
+import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 import pe.axiz.payments.history.application.command.RecordPaymentStatusChangedCommand;
 import pe.axiz.payments.history.domain.PaymentStatus;
 

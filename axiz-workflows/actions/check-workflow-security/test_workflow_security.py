@@ -15,17 +15,21 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class PolicyTest(unittest.TestCase):
     def setUp(self):
-        self.document = yaml.safe_load((ROOT / '.github/workflows/lib-publish.yaml').read_text())
+        self.document = yaml.safe_load((ROOT / '.github/workflows/lib-build.yaml').read_text())
+        self.document['jobs']['verify'] = self.document['jobs'].pop('build')
+        self.document['jobs']['consumer'] = {
+            'needs': GUARD, 'uses': 'axiz/axiz-workflows/.github/workflows/lib-build.yaml@v2.0.0',
+            'secrets': {'NEXUS_URL': '${{ secrets.NEXUS_URL }}'}}
 
     def test_current_workflow(self):
         self.assertEqual([], validate(self.document))
 
     def test_no_global_secrets(self):
-        self.document['jobs']['publish']['secrets'] = 'inherit'
+        self.document['jobs']['consumer']['secrets'] = 'inherit'
         self.assertTrue(validate(self.document))
 
     def test_unknown_secret_rejected(self):
-        self.document['jobs']['publish']['secrets']['UNRELATED_PRODUCTION_KEY'] = '${{ secrets.KEY }}'
+        self.document['jobs']['consumer']['secrets']['UNRELATED_PRODUCTION_KEY'] = '${{ secrets.KEY }}'
         self.assertTrue(validate(self.document))
 
     def test_missing_guard(self):

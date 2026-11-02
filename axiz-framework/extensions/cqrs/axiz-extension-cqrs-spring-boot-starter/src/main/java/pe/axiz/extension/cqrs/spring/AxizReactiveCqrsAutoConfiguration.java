@@ -1,0 +1,156 @@
+package pe.axiz.extension.cqrs.spring;
+
+import jakarta.validation.Validator;
+import java.util.List;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.transaction.ReactiveTransactionManager;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
+import pe.axiz.core.metrics.EventMetrics;
+import pe.axiz.core.observability.ArchitectureObservation;
+import pe.axiz.extension.cqrs.AccessPolicies;
+import pe.axiz.extension.cqrs.AccessPolicy;
+import pe.axiz.extension.cqrs.Buses;
+import pe.axiz.extension.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.QueryHandler;
+import pe.axiz.extension.cqrs.ReactiveAccessPolicy;
+import pe.axiz.extension.cqrs.ReactiveCommandHandler;
+import pe.axiz.extension.cqrs.ReactiveQueryHandler;
+import pe.axiz.spring.audit.ReactiveAuditTrail;
+import tools.jackson.databind.json.JsonMapper;
+
+/**
+ * Reactive CQRS: {@link ReactiveCommandBus} and {@link ReactiveQueryBus} over all {@link
+ * ReactiveCommandHandler} and {@link ReactiveQueryHandler} beans, with the same ordered pipeline as
+ * the blocking buses built from non-blocking behaviors (the transaction is reactive, over the R2DBC
+ * transaction manager). A request type with both a blocking and a reactive handler fails startup.
+ */
+@AutoConfiguration(
+    after = AxizCqrsAutoConfiguration.class,
+    afterName = {
+      "pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration",
+      "pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration"
+    })
+@ConditionalOnClass(name = "reactor.core.publisher.Mono")
+public class AxizReactiveCqrsAutoConfiguration {
+
+  @Bean
+  @ConditionalOnBean(ArchitectureObservation.class)
+  ReactiveBehaviors.Observation axizReactiveCqrsObservation(ArchitectureObservation observation) {
+    return new ReactiveBehaviors.Observation(observation);
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "jakarta.validation.Validator")
+  @ConditionalOnBean(Validator.class)
+  static class ValidationConfiguration {
+    @Bean
+    ReactiveBehaviors.Validation axizReactiveCqrsValidation(Validator validator) {
+      return new ReactiveBehaviors.Validation(validator);
+    }
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(
+      name = "org.springframework.security.core.context.ReactiveSecurityContextHolder")
+  static class AuthorizationConfiguration {
+    @Bean
+    ReactiveBehaviors.Authorization axizReactiveCqrsAuthorization(
+        ObjectProvider<AccessPolicy<?>> policies,
+        ObjectProvider<ReactiveAccessPolicy<?>> reactivePolicies) {
+      return new ReactiveBehaviors.Authorization(
+          AccessPolicies.none(), reactivePolicies.orderedStream().toList());
+    }
+  }
+
+  @Bean
+  @ConditionalOnBean(AsyncIdempotencyService.class)
+  ReactiveBehaviors.Idempotency axizReactiveCqrsIdempotency(
+      AsyncIdempotencyService service, ObjectProvider<JsonMapper> mapper) {
+    return new ReactiveBehaviors.Idempotency(
+        service, mapper.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build()));
+  }
+
+  @Bean
+  @ConditionalOnBean(ReactiveTransactionManager.class)
+  ReactiveBehaviors.Transaction axizReactiveCqrsTransaction(ReactiveTransactionManager tx) {
+    return new ReactiveBehaviors.Transaction(tx);
+  }
+
+  @Bean
+  @ConditionalOnBean(ReactiveAuditTrail.class)
+  ReactiveBehaviors.Audit axizReactiveCqrsAudit(ReactiveAuditTrail trail) {
+    return new ReactiveBehaviors.Audit(trail);
+  }
+
+  @Bean
+  @ConditionalOnBean(EventMetrics.class)
+  ReactiveBehaviors.Metrics axizReactiveCqrsMetrics(EventMetrics metrics) {
+    return new ReactiveBehaviors.Metrics(metrics);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  ReactiveBuses axizReactiveBuses(
+      ObjectProvider<ReactiveCommandHandler<?, ?>> commands,
+      ObjectProvider<ReactiveQueryHandler<?, ?>> queries,
+      ObjectProvider<CommandHandler<?, ?>> blockingCommands,
+      ObjectProvider<QueryHandler<?, ?>> blockingQueries,
+      ObjectProvider<ReactivePipelineBehavior> behaviors,
+      ObjectProvider<AccessPolicy<?>> policies,
+      ObjectProvider<ReactiveAccessPolicy<?>> reactivePolicies,
+      ObjectProvider<AsyncIdempotencyService> nativeIdempotency,
+      ObjectProvider<ReactiveAuditTrail> nativeAudit,
+      Environment environment) {
+    List<ReactiveAccessPolicy<?>> nonBlocking = reactivePolicies.orderedStream().toList();
+    List<ReactiveBuses.Registration> reactive =
+        HandlerRegistrations.reactive(
+            commands.orderedStream().toList(), queries.orderedStream().toList());
+    List<Buses.Registration> blocking =
+        HandlerRegistrations.of(
+            blockingCommands.orderedStream().toList(), blockingQueries.orderedStream().toList());
+    HandlerRegistrations.requireSingleStyle(blocking, reactive);
+    if (reactive.stream()
+            .anyMatch(
+                r ->
+                    pe.axiz.extension.cqrs.IdempotentCommand.class.isAssignableFrom(
+                        r.requestType()))
+        && nativeIdempotency.getIfAvailable() == null)
+      throw new IllegalStateException(
+          "Reactive idempotent commands require AsyncIdempotencyService");
+    if (reactive.stream()
+            .anyMatch(
+                r -> pe.axiz.extension.cqrs.AuditedCommand.class.isAssignableFrom(r.requestType()))
+        && nativeAudit.getIfAvailable() == null)
+      throw new IllegalStateException("Reactive audited commands require ReactiveAuditTrail");
+    if (!reactive.isEmpty() && policies.stream().findAny().isPresent())
+      throw new IllegalStateException(
+          "Reactive CQRS requires ReactiveAccessPolicy; imperative access policies are not supported");
+    AuthorizationCoverage.verify(
+        reactive.stream()
+            .<Class<?>>map(ReactiveBuses.Registration::requestType)
+            .filter(t -> nonBlocking.stream().noneMatch(p -> p.requestType().isAssignableFrom(t)))
+            .toList(),
+        AccessPolicies.none(),
+        environment.getProperty(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY, "warn"));
+    return new ReactiveBuses(reactive, behaviors.orderedStream().toList());
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  ReactiveCommandBus axizReactiveCommandBus(ReactiveBuses buses) {
+    return buses;
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  ReactiveQueryBus axizReactiveQueryBus(ReactiveBuses buses) {
+    return buses;
+  }
+}

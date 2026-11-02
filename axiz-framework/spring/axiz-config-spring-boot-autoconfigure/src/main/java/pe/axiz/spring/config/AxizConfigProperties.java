@@ -28,5 +28,7 @@ public record AxizConfigProperties(
    * @param prefix root of the parameter hierarchy
    */
   public record ParameterStore(
-      @DefaultValue("false") boolean enabled, @DefaultValue("/axiz") String prefix) {}
+      @DefaultValue("false") boolean enabled,
+      @DefaultValue("/axiz") String prefix,
+      @org.jspecify.annotations.Nullable String application) {}
 }

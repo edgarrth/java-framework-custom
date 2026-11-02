@@ -130,8 +130,8 @@ class HexagonalIsolationTest {
             Map.of(
                 "sample.application.port.out.Store",
                 "package sample.application.port.out; "
-                    + "@pe.axiz.framework.hexagonal.annotation.OutboundPort public interface Store {}",
-                "pe.axiz.framework.hexagonal.annotation.OutboundPort",
-                "package pe.axiz.framework.hexagonal.annotation; public @interface OutboundPort {}")));
+                    + "@pe.axiz.structure.hexagonal.annotation.OutboundPort public interface Store {}",
+                "pe.axiz.structure.hexagonal.annotation.OutboundPort",
+                "package pe.axiz.structure.hexagonal.annotation; public @interface OutboundPort {}")));
   }
 }

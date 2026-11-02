@@ -10,13 +10,13 @@
   <parent>
     <groupId>pe.axiz</groupId>
     <artifactId>axiz-parent-service</artifactId>
-    <version>1.0.0</version>
+    <version>2.0.0</version>
     <relativePath/>
   </parent>
 
   <groupId>pe.axiz.payments</groupId>
   <artifactId>payments-business</artifactId>
-  <version>1.0.0</version>
+  <version>2.0.0</version>
   <name>Payments Business</name>
   <description>Owner of payment orders</description>
 
@@ -105,11 +105,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-framework-cqrs-spring-boot-starter</artifactId>
+      <artifactId>axiz-extension-cqrs-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-secrets-aws</artifactId>
+      <artifactId>axiz-adapter-secrets-aws</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -121,7 +121,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-crypto-kms</artifactId>
+      <artifactId>axiz-adapter-crypto-kms</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -129,7 +129,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-messaging-kafka</artifactId>
+      <artifactId>axiz-adapter-messaging-kafka</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -141,7 +141,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-audit-kafka</artifactId>
+      <artifactId>axiz-adapter-audit-kafka</artifactId>
     </dependency>
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->

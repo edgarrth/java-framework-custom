@@ -10,8 +10,9 @@ axiz add lock-dynamodb
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-lock-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`lock`](lock.md), [`dynamodb`](dynamodb.md) |
-| Dependencias | `pe.axiz:axiz-core-lock-dynamodb` |
+| Dependencias | `pe.axiz:axiz-adapter-lock-dynamodb` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -33,5 +34,3 @@ axiz.lock.store: dynamodb
 
 - [`axiz-lock-spring-boot-autoconfigure`](../referencia/spring/axiz-lock-spring-boot-autoconfigure.md)
 - [`axiz-core-lock`](../referencia/core/axiz-core-lock.md)
-- [`axiz-core-lock-dynamodb`](../referencia/core/axiz-core-lock-dynamodb.md)
-- [`axiz-core-lock-redis`](../referencia/core/axiz-core-lock-redis.md)

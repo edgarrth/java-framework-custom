@@ -10,7 +10,8 @@ axiz add inbox
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-inbox-spring-boot-starter` |
-| Incluida por defecto en | ningún arquetipo |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | event-processor |
 
 ## Propiedades que agrega
 
@@ -22,13 +23,24 @@ axiz.inbox.retention: 14d
 
 ## Según la persistencia del servicio
 
+### none
+
+Agrega también: [`dynamodb`](dynamodb.md)
+
+- `pe.axiz:axiz-adapter-inbox-dynamodb`
+
+```yaml
+axiz.inbox.store: dynamodb
+axiz.inbox.table: ${axiz.dynamodb.table-prefix}axiz-inbox
+```
+
 ### Aurora en servlet (JDBC/JPA)
 
 Sin configuración adicional.
 
 ### Aurora en reactivo (R2DBC)
 
-- `pe.axiz:axiz-core-inbox-r2dbc`
+- `pe.axiz:axiz-adapter-inbox-r2dbc`
 
 ```yaml
 axiz.inbox.store: r2dbc
@@ -36,7 +48,7 @@ axiz.inbox.store: r2dbc
 
 ### DynamoDB
 
-- `pe.axiz:axiz-core-inbox-dynamodb`
+- `pe.axiz:axiz-adapter-inbox-dynamodb`
 
 ```yaml
 axiz.inbox.store: dynamodb
@@ -53,6 +65,3 @@ axiz.inbox.table: ${axiz.dynamodb.table-prefix}axiz-inbox
 
 - [`axiz-inbox-spring-boot-autoconfigure`](../referencia/spring/axiz-inbox-spring-boot-autoconfigure.md)
 - [`axiz-core-inbox`](../referencia/core/axiz-core-inbox.md)
-- [`axiz-core-inbox-dynamodb`](../referencia/core/axiz-core-inbox-dynamodb.md)
-- [`axiz-core-inbox-r2dbc`](../referencia/core/axiz-core-inbox-r2dbc.md)
-- [`axiz-core-test`](../referencia/core/axiz-core-test.md)

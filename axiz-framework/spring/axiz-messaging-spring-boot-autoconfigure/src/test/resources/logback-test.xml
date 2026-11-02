@@ -1,0 +1,10 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder><pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{48} - %msg%n</pattern></encoder>
+  </appender>
+  <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <queueSize>512</queueSize><discardingThreshold>0</discardingThreshold><neverBlock>true</neverBlock>
+    <appender-ref ref="STDOUT"/>
+  </appender>
+  <root level="INFO"><appender-ref ref="ASYNC"/></root>
+</configuration>

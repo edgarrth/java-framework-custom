@@ -11,7 +11,7 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.money.Money;
-import pe.axiz.framework.bff.spring.ReactiveComposer;
+import pe.axiz.structure.bff.spring.ReactiveComposer;
 import pe.axiz.payments.experience.api.model.PaymentRequest;
 import pe.axiz.payments.experience.api.model.PaymentView;
 import pe.axiz.payments.experience.client.beneficiariescrud.model.Beneficiary;

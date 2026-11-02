@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Local cache tier with TTL and a size bound (oldest entries are dropped first when full). Used as
  * L1 when Caffeine is not on the classpath and in tests.
  */
-public final class InMemoryByteCache implements ByteCache {
+public final class InMemoryByteCache implements pe.axiz.core.cache.LocalByteCache {
 
   private final Map<String, Entry> map = new ConcurrentHashMap<>();
   private final int maxEntries;

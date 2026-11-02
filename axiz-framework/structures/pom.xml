@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent</artifactId><version>${revision}</version><relativePath>../pom.xml</relativePath></parent>
+  <artifactId>axiz-structures-aggregator</artifactId><packaging>pom</packaging>
+  <name>axiz :: structures</name>
+  <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
+  <modules>
+    <module>batch/axiz-structure-batch-api</module>
+    <module>batch/axiz-structure-batch-spring-boot-starter</module>
+    <module>bff/axiz-structure-bff-api</module>
+    <module>bff/axiz-structure-bff-spring-boot-starter</module>
+    <module>eda/axiz-structure-eda-api</module>
+    <module>eda/axiz-structure-eda-spring-boot-starter</module>
+    <module>hexagonal/axiz-structure-hexagonal-api</module>
+    <module>hexagonal/axiz-structure-hexagonal-spring-boot-starter</module>
+    <module>layered/axiz-structure-layered-api</module>
+    <module>layered/axiz-structure-layered-spring-boot-starter</module>
+  </modules>
+</project>

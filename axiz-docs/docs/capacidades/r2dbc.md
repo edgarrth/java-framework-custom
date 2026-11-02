@@ -10,6 +10,8 @@ axiz add r2dbc
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-r2dbc-spring-boot-starter` |
+| Stacks del catálogo | reactive |
+| Dependencias | `pe.axiz:axiz-kit-r2dbc` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -49,5 +51,3 @@ interface PaymentRows extends ReactiveCrudRepository<PaymentRow, UUID> {}
 - [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
 - [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-money`](../referencia/core/axiz-core-money.md)
-- [`axiz-core-persistence-r2dbc`](../referencia/core/axiz-core-persistence-r2dbc.md)
-- [`axiz-core-test`](../referencia/core/axiz-core-test.md)

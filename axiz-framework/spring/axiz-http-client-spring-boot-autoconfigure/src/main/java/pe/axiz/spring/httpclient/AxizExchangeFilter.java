@@ -22,14 +22,14 @@ import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.http.ExternalErrorTranslator;
+import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.util.retry.Retry;
 
 /**
  * Reactive counterpart of {@link AxizRestClientInterceptor}, without blocking: credentials that
- * need I/O are obtained on a worker scheduler, errors are translated from the response body and
- * retries use Reactor's backoff for idempotent calls only.
+ * need I/O use native asynchronous ports, errors are translated from the response body and retries
+ * use Reactor's backoff for idempotent calls only.
  */
 public class AxizExchangeFilter implements ExchangeFilterFunction {
 
@@ -61,8 +61,9 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                 ctx -> {
                   RequestMetadata m = ctx.getOrDefault(RequestContext.KEY, null);
                   Mono<ClientRequest> prepared =
-                      Mono.fromCallable(
-                              () -> {
+                      ReactiveStages.from(auth::headers)
+                          .map(
+                              credentials -> {
                                 ClientRequest.Builder b = ClientRequest.from(request);
                                 b.headers(
                                     h -> {
@@ -73,13 +74,13 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                                           h.set(e.getKey(), e.getValue());
                                         }
                                       }
-                                      auth.apply(h::set);
+                                      credentials.forEach(
+                                          (name, value) -> h.set(name, value.reveal()));
                                       token.ifPresent(
                                           t -> h.set(HttpHeaders.AUTHORIZATION, "Bearer " + t));
                                     });
                                 return b.build();
-                              })
-                          .subscribeOn(Schedulers.boundedElastic());
+                              });
                   return prepared.flatMap(req -> attempt(req, next, settings));
                 }));
   }
@@ -108,17 +109,30 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
               attempt[0]++;
               resilience.acquire();
               long start = System.nanoTime();
-              return next.exchange(req)
+              var released = new java.util.concurrent.atomic.AtomicBoolean();
+              return Mono.defer(() -> next.exchange(req))
+                  .switchIfEmpty(
+                      Mono.error(
+                          new IllegalStateException("HTTP exchange completed without a response")))
                   .timeout(settings.timeouts().read())
+                  .doOnCancel(
+                      () -> {
+                        if (released.compareAndSet(false, true))
+                          resilience.release(
+                              start,
+                              new java.util.concurrent.CancellationException("cancelled"),
+                              -1);
+                      })
                   .doOnError(
                       e -> {
-                        resilience.release(start, e, -1);
+                        if (released.compareAndSet(false, true)) resilience.release(start, e, -1);
                         log(settings, method, req, -1, start, attempt[0]);
                       })
                   .flatMap(
                       res -> {
                         int status = res.statusCode().value();
-                        resilience.release(start, null, status);
+                        if (released.compareAndSet(false, true))
+                          resilience.release(start, null, status);
                         log(settings, method, req, status, start, attempt[0]);
                         if (status >= 400) {
                           return res.bodyToMono(String.class)

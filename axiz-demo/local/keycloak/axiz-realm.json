@@ -53,7 +53,7 @@
     {
       "name": "profile",
       "protocol": "openid-connect",
-      "description": "Username of the caller (preferred_username): service-account-<client> marks client-credentials tokens",
+      "description": "Display username only; never used to classify application tokens",
       "attributes": {
         "include.in.token.scope": "true"
       },
@@ -156,6 +156,22 @@
         "profile",
         "payments:process",
         "tenant"
+      ],
+      "implicitFlowEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "application-token-kind",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "axiz_token_kind",
+            "claim.value": "service",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
       ]
     },
     {
@@ -172,6 +188,22 @@
         "audience",
         "profile",
         "tenant"
+      ],
+      "implicitFlowEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "application-token-kind",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "axiz_token_kind",
+            "claim.value": "service",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
       ]
     },
     {

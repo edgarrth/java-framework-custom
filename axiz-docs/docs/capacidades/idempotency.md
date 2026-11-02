@@ -10,7 +10,8 @@ axiz add idempotency
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-idempotency-spring-boot-starter` |
-| Incluida por defecto en | ningún arquetipo |
+| Stacks del catálogo | servlet, reactive |
+| Incluida por defecto en | gateway |
 
 ## Propiedades que agrega
 
@@ -32,5 +33,3 @@ axiz.idempotency.retention: 24h
 - [`axiz-idempotency-spring-boot-autoconfigure`](../referencia/spring/axiz-idempotency-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-idempotency`](../referencia/core/axiz-core-idempotency.md)
-- [`axiz-core-idempotency-dynamodb`](../referencia/core/axiz-core-idempotency-dynamodb.md)
-- [`axiz-core-idempotency-redis`](../referencia/core/axiz-core-idempotency-redis.md)

@@ -1,3 +1,5 @@
 pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration
 pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration
 pe.axiz.spring.messaging.AxizMessagingAutoConfiguration
+pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration
+pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration

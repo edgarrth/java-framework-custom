@@ -7,9 +7,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Catalog;
-import pe.axiz.codegen.model.Framework;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 
 /** How an API request becomes an engine request: archetype defaults and explicit choices. */
 class ProjectRequestBodyTest {
@@ -28,24 +28,25 @@ class ProjectRequestBodyTest {
 
   static ProjectRequestBody body(
       String description,
-      String framework,
+      String structure,
       String stack,
       String persistence,
       List<String> capabilities,
       String version) {
     return new ProjectRequestBody(
-        "orders-business",
+        "orders",
         "pe.axiz.orders",
-        "pe.axiz.orders.business",
+        "pe.axiz.orders",
         description,
         "business",
-        framework,
+        structure,
         stack,
         persistence,
         capabilities,
         "openapi: 3.1.0",
         null,
-        version);
+        version,
+        null);
   }
 
   @Test
@@ -57,7 +58,7 @@ class ProjectRequestBodyTest {
       ProjectRequest r = b.toRequest(CATALOG, "9.9.9");
 
       assertThat(r.description()).isEmpty();
-      assertThat(r.framework()).isEqualTo(business.defaultFramework());
+      assertThat(r.structure()).isEqualTo(business.defaultStructure());
       assertThat(r.stack()).isEqualTo(business.defaultStack());
       assertThat(r.persistence()).isEqualTo(business.defaultPersistence());
       assertThat(r.capabilities()).isEmpty();
@@ -70,11 +71,11 @@ class ProjectRequestBodyTest {
   @Test
   void explicitChoicesAreKeptCaseInsensitively() {
     ProjectRequest r =
-        body("Orders", "CQRS", "Reactive", "dynamodb", List.of("cache"), "1.2.3")
+        body("Orders", "Layered", "Reactive", "dynamodb", List.of("cache"), "1.2.3")
             .toRequest(CATALOG, "9.9.9");
 
     assertThat(r.description()).isEqualTo("Orders");
-    assertThat(r.framework()).isEqualTo(Framework.of("cqrs"));
+    assertThat(r.structure()).isEqualTo(Structure.of("layered"));
     assertThat(r.stack()).isEqualTo(Stack.of("reactive"));
     assertThat(r.persistence()).isEqualTo("dynamodb");
     assertThat(r.capabilities()).containsExactly("cache");
@@ -86,7 +87,7 @@ class ProjectRequestBodyTest {
   void anUnknownArchetypeIsAnInvalidRequest() {
     ProjectRequestBody b =
         new ProjectRequestBody(
-            "x", "g", "p", null, "teleport", null, null, null, null, null, null, null);
+            "x", "g", "p", null, "teleport", null, null, null, null, null, null, null, null);
 
     assertThatThrownBy(() -> b.toRequest(CATALOG, "1.0.0"))
         .isInstanceOf(IllegalArgumentException.class)

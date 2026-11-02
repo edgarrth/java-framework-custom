@@ -81,6 +81,20 @@ public class AxizFoundationAutoConfiguration {
     return registry;
   }
 
+  /** Runs before bean initialization, so clients never seed on an event loop. */
+  @Configuration(proxyBeanMethods = false)
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
+      type =
+          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
+              .REACTIVE)
+  static class ReactiveRandomConfiguration {
+    @Bean
+    static org.springframework.beans.factory.config.BeanFactoryPostProcessor
+        axizReactiveRandomBootstrap() {
+      return beanFactory -> ReactiveInfrastructureBootstrap.initialize();
+    }
+  }
+
   /** Money (de)serialization as {@code {"amount":"150.00","currency":"PEN"}}. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "tools.jackson.databind.json.JsonMapper")

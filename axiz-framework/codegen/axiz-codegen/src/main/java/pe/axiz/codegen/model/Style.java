@@ -9,13 +9,13 @@ import java.util.List;
  *
  * @param capabilities capabilities added to every service of the style whose store supports them
  *     (for example the inbox of an event processor: every consumer is de-duplicated)
- * @param jdbcTables framework tables of the stores the style starter wires on its own when the
+ * @param jdbcTables structure tables of the stores the style starter wires on its own when the
  *     service has a JDBC database (servlet stack on Aurora): their DDL is emitted even without the
  *     capability
  */
 public record Style(List<String> capabilities, List<String> jdbcTables) {
 
-  /** Framework tables a migration can create: the SQL partials of the generator. */
+  /** Structure tables a migration can create: the SQL partials of the generator. */
   public static final List<String> TABLES =
       List.of("outbox", "inbox", "saga", "sequence", "shedlock");
 

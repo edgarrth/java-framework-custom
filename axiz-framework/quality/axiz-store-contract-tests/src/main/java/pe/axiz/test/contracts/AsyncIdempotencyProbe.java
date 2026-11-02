@@ -1,0 +1,54 @@
+package pe.axiz.test.contracts;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import pe.axiz.core.idempotency.AsyncIdempotencyStore;
+import pe.axiz.core.idempotency.IdempotencyRecord;
+import pe.axiz.core.idempotency.IdempotencyStore;
+import pe.axiz.core.idempotency.StoredResponse;
+
+/**
+ * Test boundary only: runs the same ownership/expiry contract against a native asynchronous store
+ * with bounded waits.
+ */
+public final class AsyncIdempotencyProbe implements IdempotencyStore {
+  private final AsyncIdempotencyStore store;
+
+  public AsyncIdempotencyProbe(AsyncIdempotencyStore store) {
+    this.store = store;
+  }
+
+  private static <T> T await(CompletionStage<T> result) {
+    try {
+      return result.toCompletableFuture().get(10, TimeUnit.SECONDS);
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
+      throw new AssertionError("Interrupted async contract", interrupted);
+    } catch (java.util.concurrent.ExecutionException
+        | java.util.concurrent.TimeoutException failure) {
+      throw new AssertionError("Asynchronous store contract failed", failure);
+    }
+  }
+
+  @Override
+  public boolean tryStart(IdempotencyRecord record) {
+    return await(store.tryStart(record));
+  }
+
+  @Override
+  public Optional<IdempotencyRecord> find(String key, Instant now) {
+    return await(store.find(key, now));
+  }
+
+  @Override
+  public boolean complete(String key, String owner, StoredResponse response, Instant expiresAt) {
+    return await(store.complete(key, owner, response, expiresAt));
+  }
+
+  @Override
+  public boolean release(String key, String owner) {
+    return await(store.release(key, owner));
+  }
+}

@@ -18,6 +18,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `AsyncLoadingCache` | Bounded TTL/use-count cache and pending native loads, with coalescing, eviction fencing and last-caller cancellation. |
+| `BoundedCallbackExecutor` | Startup-created callback workers with lock-free bounded admission, immediate rejection and no caller-runs fallback. |
+| `Stages` | Native stage composition, cancellation and scoped callback context through a JDK-only SPI. |
 | `ApiResponse` | Optional response envelope for services whose consumers require one. |
 | `Checks` | Argument preconditions that fail fast with `IllegalArgumentException`. |
 | `Dates` | Date helpers. |

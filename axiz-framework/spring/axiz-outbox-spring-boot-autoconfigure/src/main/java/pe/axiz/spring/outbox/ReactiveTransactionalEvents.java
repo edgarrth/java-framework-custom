@@ -6,11 +6,11 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.reactive.TransactionSynchronizationManager;
+import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
-import pe.axiz.core.outbox.r2dbc.ReactiveOutboxWriter;
 import reactor.core.publisher.Mono;
 
 /**

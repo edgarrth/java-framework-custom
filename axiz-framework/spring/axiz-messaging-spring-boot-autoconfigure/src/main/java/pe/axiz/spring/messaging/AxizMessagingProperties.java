@@ -25,7 +25,8 @@ public record AxizMessagingProperties(
     @DefaultValue Map<String, String> destinations,
     @DefaultValue Consumer consumer,
     @DefaultValue Kafka kafka,
-    @DefaultValue Sqs sqs) {
+    @DefaultValue Sqs sqs,
+    @DefaultValue Routes routes) {
   public AxizMessagingProperties {
     destinations =
         java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(destinations));
@@ -61,9 +62,20 @@ public record AxizMessagingProperties(
       @DefaultValue("false") boolean ignoreUnknownTypes,
       @DefaultValue List<String> subscriptions,
       @DefaultValue("10s") Duration deferInterval,
-      @DefaultValue("10m") Duration deferMaxWait) {
+      @DefaultValue("10m") Duration deferMaxWait,
+      @DefaultValue("true") boolean transactional,
+      @DefaultValue("30s") Duration handlerTimeout) {
     public Consumer {
       subscriptions = List.copyOf(subscriptions);
+    }
+  }
+
+  /** Outbound event routing, independent of the service structure. */
+  public record Routes(
+      @DefaultValue("domain-events") String defaultDestination,
+      @DefaultValue Map<String, String> byType) {
+    public Routes {
+      byType = Map.copyOf(byType);
     }
   }
 

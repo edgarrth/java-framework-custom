@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent</artifactId><version>${revision}</version><relativePath>../pom.xml</relativePath></parent>
+  <artifactId>axiz-adapters-aggregator</artifactId><packaging>pom</packaging>
+  <name>axiz :: adapters</name>
+  <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
+  <modules>
+    <module>axiz-adapter-audit-kafka</module>
+    <module>axiz-adapter-audit-sqs</module>
+    <module>axiz-adapter-cache-redis</module>
+    <module>axiz-adapter-crypto-jose</module>
+    <module>axiz-adapter-crypto-kms</module>
+    <module>axiz-adapter-idempotency-dynamodb</module>
+    <module>axiz-adapter-idempotency-redis</module>
+    <module>axiz-adapter-inbox-dynamodb</module>
+    <module>axiz-adapter-inbox-r2dbc</module>
+    <module>axiz-adapter-lock-dynamodb</module>
+    <module>axiz-adapter-lock-redis</module>
+    <module>axiz-adapter-messaging-kafka</module>
+    <module>axiz-adapter-messaging-sns</module>
+    <module>axiz-adapter-messaging-sqs</module>
+    <module>axiz-adapter-observability-aws</module>
+    <module>axiz-adapter-outbox-r2dbc</module>
+    <module>axiz-adapter-secrets-aws</module>
+    <module>axiz-adapter-security-redis</module>
+    <module>axiz-adapter-sequence-dynamodb</module>
+    <module>axiz-adapter-storage-s3</module>
+  </modules>
+</project>

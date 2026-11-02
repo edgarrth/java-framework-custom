@@ -11,7 +11,7 @@ import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;
 import pe.axiz.core.money.Money;
 import pe.axiz.core.time.CutoffTime;
-import pe.axiz.framework.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.CommandHandler;
 import pe.axiz.payments.business.application.port.out.OperationNumbers;
 import pe.axiz.payments.business.application.port.out.PaymentEvents;
 import pe.axiz.payments.business.application.port.out.PaymentOrders;

@@ -1,5 +1,4 @@
-# Releases with release-please (shared axiz workflow): merging the release pull request creates the
-# tag v<x.y.z>, which runs ci.yaml to publish the release (Nexus, binaries, prod).
+# Release-please prepares a draft and tag; ci builds it and independent deploy publishes verified bytes.
 name: release
 
 on:
@@ -24,7 +23,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
@@ -35,7 +34,7 @@ jobs:
     needs: axiz-workflows-trust
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/release.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/release.yaml@v2.0.0
     secrets:
       RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
       RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}

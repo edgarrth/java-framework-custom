@@ -1,0 +1,5 @@
+# architecture contract: modules introduced in 2.0 without a predecessor.
+# These parents are POMs; japicmp compares published JARs only.
+axiz-parent-api
+axiz-parent-technology
+axiz-parent-test

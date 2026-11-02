@@ -12,13 +12,13 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.observability.awssdk.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsClients;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
  * ShedLock on DynamoDB ({@code axiz.scheduling.store=dynamodb}). The client is the application's
  * {@link DynamoDbClient} (DynamoDB starter); without one, and with {@code
- * axiz-core-observability-awssdk} present, it is built with the same settings.
+ * axiz-adapter-observability-aws} present, it is built with the same settings.
  */
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "net.javacrumbs.shedlock.provider.dynamodb2.DynamoDBLockProvider")
@@ -27,7 +27,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public class AxizSchedulingDynamoDbAutoConfiguration {
 
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnClass(name = "pe.axiz.core.observability.awssdk.AwsClients")
+  @ConditionalOnClass(name = "pe.axiz.adapter.observability.aws.AwsClients")
   static class Client {
 
     @Bean(destroyMethod = "close")

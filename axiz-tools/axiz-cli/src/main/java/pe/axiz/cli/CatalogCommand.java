@@ -4,7 +4,7 @@ import java.util.concurrent.Callable;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
-import pe.axiz.codegen.model.Framework;
+import pe.axiz.codegen.model.Structure;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -28,9 +28,9 @@ class CatalogCommand extends BaseCommand implements Callable<Integer> {
         if (a.isService()) {
           out()
               .printf(
-                  "  %-16s framework %s / stack %s / persistence %s%n",
+                  "  %-16s structure %s / stack %s / persistence %s%n",
                   "",
-                  String.join("|", a.frameworks().stream().map(Framework::id).toList()),
+                  String.join("|", a.structures().stream().map(Structure::id).toList()),
                   String.join("|", a.stacks().stream().map(s -> s.id()).toList()),
                   a.persistence().isEmpty() ? "none" : String.join("|", a.persistence()));
         }

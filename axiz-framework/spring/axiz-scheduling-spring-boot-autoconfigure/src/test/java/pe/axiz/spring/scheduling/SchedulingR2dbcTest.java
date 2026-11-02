@@ -9,7 +9,7 @@ import net.javacrumbs.shedlock.provider.r2dbc.R2dbcLockProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 class SchedulingR2dbcTest {
 

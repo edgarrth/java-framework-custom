@@ -8,6 +8,6 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.verify("pe.axiz.payments.beneficiaries", AxizArchitecture.Style.LAYERED);
+    AxizArchitecture.of("pe.axiz.payments.beneficiaries").archetype(pe.axiz.quality.archunit.Archetype.BUSINESS).stack(pe.axiz.quality.archunit.Stack.SERVLET).structure(pe.axiz.quality.archunit.Structure.LAYERED).verify();
   }
 }

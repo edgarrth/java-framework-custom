@@ -9,9 +9,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.messaging.sns.SnsEventPublisher;
-import pe.axiz.core.messaging.sqs.SqsEventPublisher;
-import pe.axiz.core.observability.awssdk.AwsClients;
+import pe.axiz.adapter.messaging.sns.SnsEventPublisher;
+import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
+import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.core.resilience.Backoff;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -21,15 +21,18 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  * come from the SDK default chain (IRSA or EKS Pod Identity).
  */
 @AutoConfiguration
+@org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty(
+    name = "axiz.messaging.enabled",
+    matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)
 public class AxizMessagingAwsAutoConfiguration {
 
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = {
-        "pe.axiz.core.messaging.sqs.SqsEventPublisher",
+        "pe.axiz.adapter.messaging.sqs.SqsEventPublisher",
         "software.amazon.awssdk.services.sqs.SqsClient",
-        "pe.axiz.core.observability.awssdk.AwsClients"
+        "pe.axiz.adapter.observability.aws.AwsClients"
       })
   static class SqsConfiguration {
 
@@ -61,9 +64,9 @@ public class AxizMessagingAwsAutoConfiguration {
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = {
-        "pe.axiz.core.messaging.sns.SnsEventPublisher",
+        "pe.axiz.adapter.messaging.sns.SnsEventPublisher",
         "software.amazon.awssdk.services.sns.SnsClient",
-        "pe.axiz.core.observability.awssdk.AwsClients"
+        "pe.axiz.adapter.observability.aws.AwsClients"
       })
   static class SnsConfiguration {
 

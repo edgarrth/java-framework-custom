@@ -1,0 +1,32 @@
+asyncapi: 3.0.0
+info: {title: Orders, version: 1.0.0}
+channels:
+  orders:
+    address: orders
+    messages:
+      created: {$ref: '#/components/messages/created'}
+operations:
+  publish:
+    action: send
+    channel: {$ref: '#/channels/orders'}
+  consume:
+    action: receive
+    channel: {$ref: '#/channels/orders'}
+    messages: [{$ref: '#/channels/orders/messages/created'}]
+components:
+  messages:
+    created:
+      name: pe.axiz.order.created.v1
+      payload: {$ref: '#/components/schemas/Created'}
+  schemas:
+    Created:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string}
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              amount: {type: number}

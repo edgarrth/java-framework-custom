@@ -1,0 +1,29 @@
+<!-- generated -->
+# axiz-adapter-audit-sqs
+
+Audit publisher for Amazon SQS.
+
+## Dependency
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-audit-sqs</artifactId>
+</dependency>
+```
+
+The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `SqsAsyncAuditPublisher` | Native SDK acceptance with cancellation reaching the exact SDK future; borrows its client. |
+| `SqsAuditPublisher` | Publishes audit events to an Amazon SQS queue. |
+
+Both paths share CloudEvents encoding and FIFO request construction. Event ids remain deduplication
+ids, and group ids remain resource type/id, so imperative and native producers coexist on the same queue.
+
+## Tests
+
+Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-audit-sqs verify`.

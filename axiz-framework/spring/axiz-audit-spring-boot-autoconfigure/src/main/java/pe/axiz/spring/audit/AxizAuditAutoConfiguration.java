@@ -30,6 +30,7 @@ import pe.axiz.core.audit.CompositeAuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
  * Audit: {@link Auditable} through an infrastructure advisor, sanitized immutable events, real
@@ -49,6 +50,7 @@ public class AxizAuditAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @ConditionalOnImperativeApplication
   AuditPublisher axizAuditPublisher(
       AxizAuditProperties properties, ObjectProvider<AuditSink> sinks, BeanFactory beans) {
     List<AuditPublisher> delegates = sinks.orderedStream().map(AuditSink::publisher).toList();
@@ -120,6 +122,7 @@ public class AxizAuditAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
+  @ConditionalOnImperativeApplication
   AuditTrail axizAuditTrail(
       Environment env,
       AuditPublisher publisher,
@@ -136,6 +139,7 @@ public class AxizAuditAutoConfiguration {
 
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  @ConditionalOnImperativeApplication
   static Advisor axizAuditableAdvisor(
       ObjectProvider<AuditTrail> trail, ObjectProvider<AuditContextResolver> context) {
     DefaultPointcutAdvisor advisor =
@@ -171,7 +175,7 @@ public class AxizAuditAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     HttpAuditWebFilter axizHttpAuditWebFilter(
-        AuditTrail trail, AuditContextResolver context, AxizAuditProperties properties) {
+        ReactiveAuditTrail trail, AuditContextResolver context, AxizAuditProperties properties) {
       return new HttpAuditWebFilter(trail, context, properties.http());
     }
   }

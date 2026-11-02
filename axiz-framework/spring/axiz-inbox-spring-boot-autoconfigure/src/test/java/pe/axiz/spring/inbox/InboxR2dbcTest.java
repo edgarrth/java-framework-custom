@@ -12,13 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.core.inbox.r2dbc.R2dbcInboxStore;
 import pe.axiz.core.messaging.Deduplicator;
-import pe.axiz.core.persistence.r2dbc.R2dbcSql;
-import pe.axiz.core.persistence.r2dbc.ReactiveSql;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.kit.r2dbc.R2dbcSql;
+import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 class InboxR2dbcTest {
 

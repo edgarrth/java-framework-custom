@@ -46,6 +46,7 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
   private static final boolean REACTOR = ClassUtils.isPresent("reactor.core.publisher.Mono", null);
 
   private final SingletonSupplier<AxizCaches> caches;
+  private final SingletonSupplier<AsyncCacheSettings> asyncCaches;
   private final SingletonSupplier<JsonMapper> mapper;
   private final SingletonSupplier<@Nullable CacheCallerResolver> callers;
   private final Map<Method, Plan> plans = new ConcurrentHashMap<>();
@@ -65,9 +66,33 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
       Supplier<AxizCaches> caches,
       Supplier<JsonMapper> mapper,
       Supplier<@Nullable CacheCallerResolver> callers) {
+    this(
+        caches,
+        mapper,
+        callers,
+        () -> {
+          throw new IllegalStateException(
+              "Reactive caching requires native asynchronous cache settings");
+        });
+  }
+
+  public AxizCacheableInterceptor(
+      Supplier<AxizCaches> caches,
+      Supplier<JsonMapper> mapper,
+      Supplier<@Nullable CacheCallerResolver> callers,
+      Supplier<AsyncCacheSettings> asyncCaches) {
+    this.asyncCaches = SingletonSupplier.of(asyncCaches);
     this.caches = SingletonSupplier.of(caches);
     this.mapper = SingletonSupplier.of(mapper);
     this.callers = SingletonSupplier.of(callers);
+  }
+
+  AsyncCacheSettings asyncCaches() {
+    return asyncCaches.obtain();
+  }
+
+  JsonMapper json() {
+    return mapper.obtain();
   }
 
   @Nullable CacheCallerResolver callers() {
@@ -132,9 +157,14 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     if (a == null) {
       return null;
     }
-    Duration ttl = a.ttl().isBlank() ? caches.obtain().ttl(a.value()) : Duration.parse(a.ttl());
-    Type generic = method.getGenericReturnType();
     String reactive = REACTOR ? ReactiveCaching.kind(method.getReturnType()) : null;
+    Duration ttl =
+        a.ttl().isBlank()
+            ? (reactive == null
+                ? caches.obtain().ttl(a.value())
+                : asyncCaches.obtain().ttl(a.value()))
+            : Duration.parse(a.ttl());
+    Type generic = method.getGenericReturnType();
     Type valueType = generic;
     if (reactive != null && generic instanceof ParameterizedType p) {
       valueType = p.getActualTypeArguments()[0];

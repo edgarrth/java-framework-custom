@@ -51,7 +51,7 @@ transactionalEvents.enqueue(
   publicar, así la request, la publicación y los consumidores quedan en una sola traza (ver
   [Observabilidad](../operacion/observabilidad.md#contexto-y-correlacion)).
 - En hexagonal, los eventos de dominio registrados por el agregado van al outbox automáticamente
-  con la capacidad `outbox` (ver [Hexagonal](../estilos/hexagonal.md)).
+  con la capacidad `outbox` (ver [Hexagonal](../estructuras/hexagonal.md)).
 - En SQS FIFO el id del evento es el id de deduplicación.
 - En servicios reactivos sobre Aurora (R2DBC) se usa `ReactiveTransactionalEvents`: `enqueue(...)`
   devuelve un `Mono` que inserta en el outbox con la misma conexión y transacción reactiva del
@@ -77,7 +77,7 @@ transactionalEvents.enqueue(
 
 ## Consumir
 
-Ver el estilo [EDA](../estilos/eda.md): handlers tipados con `@HandlesEvent`, suscripciones
+Ver el estilo [EDA](../estructuras/eda.md): handlers tipados con `@HandlesEvent`, suscripciones
 verificadas al arrancar, reintentos con backoff, DLQ para fallos permanentes. Un servicio de otro
 estilo también puede consumir eventos con handlers en `adapter/in/messaging` (en el demo,
 `payment-process` arranca su saga desde `PaymentOrderCreatedHandler`).

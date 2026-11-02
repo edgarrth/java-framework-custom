@@ -18,6 +18,7 @@ public class AxizStorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnProperty(name = "axiz.storage.type", havingValue = "memory")
+  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
   ObjectStorage axizInMemoryObjectStorage(Environment env) {
     Environments.requireSingleProcess(
         env.getProperty("axiz.config.environment"),
@@ -25,5 +26,30 @@ public class AxizStorageAutoConfiguration {
         "s3",
         "objects kept in memory are lost on restart and invisible to other replicas");
     return new InMemoryObjectStorage();
+  }
+
+  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
+  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
+      type =
+          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
+              .REACTIVE)
+  static class ReactiveConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(name = "axiz.storage.type", havingValue = "memory")
+    pe.axiz.core.storage.AsyncObjectStorage axizInMemoryAsyncObjectStorage(Environment env) {
+      Environments.requireSingleProcess(
+          env.getProperty("axiz.config.environment"),
+          "axiz.storage.type=memory",
+          "s3",
+          "objects kept in memory are lost on restart and invisible to other replicas");
+      return new pe.axiz.core.storage.InMemoryAsyncObjectStorage();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    ReactiveStorage axizReactiveStorage(pe.axiz.core.storage.AsyncObjectStorage storage) {
+      return new ReactiveStorage(storage);
+    }
   }
 }

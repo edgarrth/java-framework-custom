@@ -10,6 +10,8 @@ axiz add dynamodb
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-dynamodb-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
+| Dependencias | `pe.axiz:axiz-kit-dynamodb` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -41,5 +43,3 @@ DynamoRepository<Item> items = repositories.create("items", Item.class);
 ## Módulos
 
 - [`axiz-dynamodb-spring-boot-autoconfigure`](../referencia/spring/axiz-dynamodb-spring-boot-autoconfigure.md)
-- [`axiz-core-observability-awssdk`](../referencia/core/axiz-core-observability-awssdk.md)
-- [`axiz-core-persistence-dynamodb`](../referencia/core/axiz-core-persistence-dynamodb.md)

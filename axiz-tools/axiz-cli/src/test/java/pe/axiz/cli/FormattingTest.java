@@ -26,7 +26,7 @@ class FormattingTest {
         0,
         h.run(
             "new",
-            "orders-business",
+            "orders",
             "--archetype",
             "business",
             "--openapi",
@@ -35,7 +35,7 @@ class FormattingTest {
             tmp.toString()),
         h.output());
     assertTrue(h.processes.commands.isEmpty(), "nothing else runs to format");
-    try (Stream<Path> files = Files.walk(tmp.resolve("orders-business/src"))) {
+    try (Stream<Path> files = Files.walk(tmp.resolve("orders/src"))) {
       for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
         String source = Files.readString(file, StandardCharsets.UTF_8);
         assertEquals(source, JavaFormatter.format(source), file + " is formatted");
@@ -103,7 +103,7 @@ class FormattingTest {
         0,
         h.run(
             "new",
-            "orders-business",
+            "orders",
             "--archetype",
             "business",
             "--openapi",
@@ -111,6 +111,6 @@ class FormattingTest {
             "--output",
             dir.toString()),
         h.output());
-    return dir.resolve("orders-business");
+    return dir.resolve("orders");
   }
 }

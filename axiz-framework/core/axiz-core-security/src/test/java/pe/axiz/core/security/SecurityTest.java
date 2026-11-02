@@ -104,7 +104,18 @@ class SecurityTest {
   @Test
   void mapsMachineTokenAndRejectsIncompleteTokens() {
     AxizPrincipal p =
-        mapper.map(Map.of("iss", "i", "sub", "batch-client", "scp", List.of("a", "b"), "aud", "x"));
+        mapper.map(
+            Map.of(
+                "iss",
+                "i",
+                "sub",
+                "batch-client",
+                "azp",
+                "batch-client",
+                "scp",
+                List.of("a", "b"),
+                "aud",
+                "x"));
     assertTrue(p.isMachine());
     assertEquals("batch-client", p.clientId());
     assertEquals("batch-client", p.name());
@@ -127,75 +138,111 @@ class SecurityTest {
     assertEquals("ops", c.attributes().get("department"));
   }
 
-  /** A Keycloak service account has its own user id in sub: it is still the application. */
+  private static ClaimsMapper withMachineMarker(String marker) {
+    ClaimMapping defaults = ClaimMapping.defaults();
+    return new ClaimsMapper(
+        new ClaimMapping(
+            defaults.subject(),
+            defaults.clientId(),
+            defaults.scopes(),
+            defaults.roles(),
+            defaults.tenant(),
+            defaults.attributes(),
+            List.of(marker)));
+  }
+
   @Test
-  void serviceAccountTokensAreMachinesEvenWhenSubIsAUserId() {
-    AxizPrincipal keycloak =
-        mapper.map(
-            Map.of(
-                "iss", "i",
-                "sub", "5f0c4e8a-service-account-user",
-                "azp", "payment-process",
-                "preferred_username", "service-account-payment-process"));
-    assertTrue(keycloak.isMachine());
-    assertEquals("payment-process", keycloak.subject());
-    AxizPrincipal entra =
-        mapper.map(Map.of("iss", "i", "sub", "object-id", "azp", "app", "idtyp", "app"));
-    assertTrue(entra.isMachine());
-    AxizPrincipal user =
-        mapper.map(
-            Map.of(
-                "iss", "i", "sub", "C-1001", "azp", "payments-web", "preferred_username", "ana"));
-    assertFalse(user.isMachine());
-    assertEquals("C-1001", user.subject());
-    ClaimsMapper presence =
-        new ClaimsMapper(
-            new ClaimMapping(
-                List.of("sub"),
-                List.of("azp"),
-                List.of("scope"),
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of("client_id")));
+  void onlyIssuerOwnedExactMarkersIdentifyTechnicalUsers() {
+    AxizPrincipal service =
+        withMachineMarker("token.kind=service")
+            .map(
+                Map.of(
+                    "iss",
+                    "i",
+                    "sub",
+                    "technical-user-id",
+                    "azp",
+                    "service-client",
+                    "token",
+                    Map.of("kind", "service")));
+    assertTrue(service.isMachine());
+    assertEquals("service-client", service.subject());
     assertTrue(
-        presence.map(Map.of("iss", "i", "sub", "u-1", "azp", "c", "client_id", "c")).isMachine());
+        mapper
+            .map(Map.of("iss", "i", "sub", "object-id", "azp", "app", "idtyp", "app"))
+            .isMachine());
+    for (Object marker :
+        List.of("App", "application", "user", true, 1, List.of("app"), Map.of("value", "app"))) {
+      AxizPrincipal user =
+          mapper.map(Map.of("iss", "i", "sub", "user-1", "azp", "app", "idtyp", marker));
+      assertFalse(user.isMachine());
+      assertEquals("user-1", user.subject());
+    }
   }
 
-  /** A username the user may choose never turns an end user into an application. */
   @Test
-  void aUsernameThatOnlyLooksLikeAServiceAccountIsAnEndUser() {
-    AxizPrincipal user =
-        mapper.map(
-            Map.of(
-                "iss", "i",
-                "sub", "C-1001",
-                "azp", "payments-web",
-                "preferred_username", "service-account-payment-process"));
-    assertFalse(user.isMachine());
-    assertEquals("C-1001", user.subject());
-    AxizPrincipal upperCase =
-        mapper.map(
-            Map.of(
-                "iss", "i",
-                "sub", "5f0c4e8a",
-                "azp", "Payment-Process",
-                "preferred_username", "service-account-payment-process"));
-    assertTrue(upperCase.isMachine());
+  void userProfileNamesNeverChangeIdentityOrAuthorities() {
+    for (String username :
+        List.of(
+            "ana",
+            "service-account-payment-process",
+            "service-account-payments-web",
+            "SERVICE-ACCOUNT-PAYMENTS-WEB")) {
+      AxizPrincipal user =
+          mapper.map(
+              Map.of(
+                  "iss",
+                  "i",
+                  "sub",
+                  "C-1001",
+                  "azp",
+                  "payments-web",
+                  "preferred_username",
+                  username,
+                  "scope",
+                  "payments:read",
+                  "email",
+                  "service-account-payments-web"));
+      assertFalse(user.isMachine());
+      assertEquals("C-1001", user.subject());
+      assertEquals("C-1001", user.name());
+      assertEquals("payments-web", user.clientId());
+      assertEquals(Set.of("SCOPE_payments:read"), AuthorityMapper.authorities(user));
+    }
   }
 
-  /** Without the fallback, a token that names no client is rejected, never taken for one. */
   @Test
-  void tokensWithoutAClientClaimAreRejectedWhenSubIsNotAcceptedAsClient() {
-    ClaimsMapper strict = new ClaimsMapper(ClaimMapping.defaults(), false);
-    assertThrows(
-        AccessException.class, () -> strict.map(Map.of("iss", "i", "sub", "C-1001", "scope", "x")));
-    AxizPrincipal app = strict.map(Map.of("iss", "i", "sub", "batch", "azp", "batch"));
-    assertTrue(app.isMachine());
-    AxizPrincipal user = strict.map(Map.of("iss", "i", "sub", "C-1001", "azp", "payments-web"));
-    assertFalse(user.isMachine());
-    // the default keeps accepting sub as the client
-    assertTrue(mapper.map(Map.of("iss", "i", "sub", "batch-client")).isMachine());
+  void unsafeOrAmbiguousMachineMarkerConfigurationFailsEarly() {
+    for (String marker :
+        List.of(
+            "",
+            "idtyp",
+            "idtyp=",
+            "=app",
+            "idtyp^=a",
+            "preferred_username=x",
+            "profile.name=x",
+            "email=service@example.test",
+            "idtyp= ",
+            "idtyp =app")) {
+      assertThrows(IllegalArgumentException.class, () -> withMachineMarker(marker), marker);
+    }
+  }
+
+  @Test
+  void subjectAsClientRequiresOptInAndAnIndependentMachineMarker() {
+    Map<String, Object> user = Map.of("iss", "i", "sub", "C-1001", "scope", "x");
+    ClaimsMapper optIn = new ClaimsMapper(ClaimMapping.defaults(), true);
+    assertThrows(AccessException.class, () -> mapper.map(user));
+    assertThrows(AccessException.class, () -> optIn.map(user));
+    assertThrows(AccessException.class, () -> optIn.map(Map.of("iss", "i", "idtyp", "app")));
+    Map<String, Object> machine = Map.of("iss", "i", "sub", "batch-client", "idtyp", "app");
+    assertThrows(AccessException.class, () -> mapper.map(machine));
+    AxizPrincipal principal = optIn.map(machine);
+    assertTrue(principal.isMachine());
+    assertEquals("batch-client", principal.clientId());
+    assertTrue(mapper.map(Map.of("iss", "i", "sub", "batch", "azp", "batch")).isMachine());
+    assertFalse(mapper.map(Map.of("iss", "i", "sub", "C-1001", "azp", "payments-web")).isMachine());
   }
 
   @Test

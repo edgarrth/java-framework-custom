@@ -1,25 +1,26 @@
 {{=<% %>=}}
-# Pipeline of <% project.name %> (shared axiz workflows, pinned to an immutable release; Renovate pins its commit):
-#   pull request  pr checks (title, secrets, dependencies, Semgrep, Trivy, actionlint) + build
-#   develop       build and publish the SNAPSHOT to Nexus
-#   tag v*        build and publish the release (tags come from release.yaml)
+# Build only. deploy.yaml independently consumes a completed successful run and manifest hash.
 name: ci
-
 on:
   pull_request:
   push:
-    branches: [main, develop]
-    tags: ["v*"]
-
+    branches: [main, develop, "release/**", "hotfix/**"]
+    tags: ["v*", "candidate/**"]
+  workflow_dispatch:
+    inputs:
+      version: {description: Optional final build coordinate; defaults to the source POM without -SNAPSHOT, type: string, default: ''}
+      candidate-repository: {description: Optional framework candidate producer repository, type: string, default: ''}
+      candidate-build-run-id: {type: string, default: ''}
+      candidate-build-run-attempt: {type: string, default: ''}
+      candidate-manifest-sha256: {description: External signed framework candidate manifest SHA256, type: string, default: ''}
 permissions:
   contents: read
   pull-requests: read
   security-events: write
-
+  id-token: write
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 jobs:
   axiz-workflows-trust:
     runs-on: ubuntu-24.04
@@ -31,37 +32,78 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v1.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
           release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
           jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
 
+  parameters:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      candidate: ${{ steps.version.outputs.candidate }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Resolve final coordinates and candidate identity
+        id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$REQUESTED_VERSION"
+          if [[ -z "$version" ]]; then
+            version=$(python3 -c 'import xml.etree.ElementTree as E; p=E.parse("pom.xml").getroot(); print(p.findtext("{*}version") or p.findtext("{*}properties/{*}revision") or "")')
+            version=${version%-SNAPSHOT}
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          candidate=
+          if [[ "$GITHUB_REF" == refs/tags/candidate/* ]]; then
+            candidate=${GITHUB_REF#refs/tags/candidate/}
+            [[ "$candidate" =~ ^([0-9]+\.[0-9]+\.[0-9]+)/[1-9][0-9]*$ && "${BASH_REMATCH[1]}" == "$version" ]]
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            [[ "${GITHUB_REF#refs/tags/v}" == "$version" ]]
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
+
   pr:
     needs: axiz-workflows-trust
     if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
   build:
-    needs: axiz-workflows-trust
+    needs: [axiz-workflows-trust, parameters]
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-publish.yaml@v1.0.0
+    uses: axiz/axiz-workflows/.github/workflows/lib-build.yaml@v2.0.0
     with:
-      publish: ${{ github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/v') }}
+      version: ${{ needs.parameters.outputs.version }}
+      source-sha: ${{ github.sha }}
+      candidate: ${{ needs.parameters.outputs.candidate }}
+      axiz-version: <% axizVersion %>
+      candidate-repository: ${{ inputs.candidate-repository }}
+      candidate-build-run-id: ${{ inputs.candidate-build-run-id }}
+      candidate-build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+      candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

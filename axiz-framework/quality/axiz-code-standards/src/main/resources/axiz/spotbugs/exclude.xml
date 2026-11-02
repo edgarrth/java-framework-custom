@@ -40,7 +40,7 @@
   </Match>
   <!-- SqsClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.audit.sqs.SqsAuditPublisher"/>
+    <Class name="pe.axiz.adapter.audit.sqs.SqsAuditPublisher"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="sqs"/>
   </Match>
@@ -70,7 +70,7 @@
   </Match>
   <!-- KmsClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.crypto.kms.KmsDataKeyProvider"/>
+    <Class name="pe.axiz.adapter.crypto.kms.KmsDataKeyProvider"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="kms"/>
   </Match>
@@ -100,31 +100,31 @@
   </Match>
   <!-- DynamoDbClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.idempotency.dynamodb.DynamoDbIdempotencyStore"/>
+    <Class name="pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="dynamo"/>
   </Match>
   <!-- DynamoDbClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.inbox.dynamodb.DynamoDbInboxStore"/>
+    <Class name="pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="dynamo"/>
   </Match>
   <!-- DynamoDbClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.lock.dynamodb.DynamoDbDistributedLock"/>
+    <Class name="pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="dynamo"/>
   </Match>
   <!-- SnsClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.messaging.sns.SnsEventPublisher"/>
+    <Class name="pe.axiz.adapter.messaging.sns.SnsEventPublisher"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="sns"/>
   </Match>
   <!-- SqsClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.messaging.sqs.SqsEventPublisher"/>
+    <Class name="pe.axiz.adapter.messaging.sqs.SqsEventPublisher"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="sqs"/>
   </Match>
@@ -148,7 +148,7 @@
   </Match>
   <!-- ObservationRegistry is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.observability.awssdk.ObservationExecutionInterceptor"/>
+    <Class name="pe.axiz.adapter.observability.aws.ObservationExecutionInterceptor"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="registry"/>
   </Match>
@@ -166,43 +166,68 @@
   </Match>
   <!-- R2dbcOutboxStore is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.outbox.r2dbc.ReactiveOutboxWriter"/>
+    <Class name="pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="store"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.core.persistence.dynamodb.DynamoRepository"/>
+    <Class name="pe.axiz.kit.dynamodb.DynamoRepository"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient,java.lang.String,software.amazon.awssdk.enhanced.dynamodb.TableSchema" returns="void"/>
   </Match>
   <!-- Intentional access to the underlying AWS table for operations outside the convenience repository API. -->
   <Match>
-    <Class name="pe.axiz.core.persistence.dynamodb.DynamoRepository"/>
+    <Class name="pe.axiz.kit.dynamodb.DynamoRepository"/>
     <Bug pattern="EI_EXPOSE_REP"/>
     <Field name="table"/>
   </Match>
   <!-- SsmClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.secrets.aws.ParameterStoreResolver"/>
+    <Class name="pe.axiz.adapter.secrets.aws.ParameterStoreResolver"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="client"/>
   </Match>
   <!-- SecretsManagerClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
+  <!-- Native SDK clients are likewise borrowed, thread-safe resources. Only these private fields
+       are excluded; adapters neither expose nor close the supplied clients. -->
   <Match>
-    <Class name="pe.axiz.core.secrets.aws.SecretsManagerResolver"/>
+    <Class name="pe.axiz.adapter.secrets.aws.SecretsManagerAsyncResolver"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="client"/>
+  </Match>
+  <Match>
+    <Class name="pe.axiz.adapter.secrets.aws.ParameterStoreAsyncResolver"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="client"/>
+  </Match>
+  <Match>
+    <Class name="pe.axiz.adapter.secrets.aws.SecretsManagerResolver"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="client"/>
   </Match>
   <!-- DynamoDbClient is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.sequence.dynamodb.DynamoDbSequenceStore"/>
+    <Class name="pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="dynamo"/>
   </Match>
+  <!-- The facade shares the injected port and its backend lifecycle, never an owned mutable value. -->
+  <Match>
+    <Class name="pe.axiz.spring.storage.ReactiveStorage"/>
+    <Field name="storage"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <!-- The native S3 client is a borrowed, thread-safe collaborator; copying would lose lifecycle
+       and transport ownership. Its private field is never returned. -->
+  <Match>
+    <Class name="pe.axiz.adapter.storage.s3.S3AsyncObjectStorage"/>
+    <Field name="s3"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
   <!-- S3Client is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.core.storage.s3.S3ObjectStorage"/>
+    <Class name="pe.axiz.adapter.storage.s3.S3ObjectStorage"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="s3"/>
   </Match>
@@ -226,151 +251,151 @@
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.batch.spring.StorageRecordItemReader"/>
+    <Class name="pe.axiz.structure.batch.spring.StorageRecordItemReader"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.core.storage.ObjectStorage,java.lang.String,java.util.function.Function" returns="void"/>
   </Match>
   <!-- ObjectStorage is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.batch.spring.StorageRecordItemReader"/>
+    <Class name="pe.axiz.structure.batch.spring.StorageRecordItemReader"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="storage"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.bff.spring.Compositions"/>
+    <Class name="pe.axiz.structure.bff.spring.Compositions"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="io.micrometer.context.ContextSnapshotFactory,java.time.Duration" returns="void"/>
   </Match>
   <!-- ContextSnapshotFactory is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.bff.spring.Compositions"/>
+    <Class name="pe.axiz.structure.bff.spring.Compositions"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="snapshots"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.AuditBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.AuditBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.core.audit.AuditTrail" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.AuthorizationBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.AuthorizationBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.AuthorizationBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.AuthorizationBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-    <Method name="&lt;init&gt;" params="pe.axiz.framework.cqrs.AccessPolicies" returns="void"/>
+    <Method name="&lt;init&gt;" params="pe.axiz.extension.cqrs.AccessPolicies" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.IdempotencyBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.IdempotencyBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.core.idempotency.IdempotencyService,tools.jackson.databind.json.JsonMapper" returns="void"/>
   </Match>
   <!-- JsonMapper is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.IdempotencyBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.IdempotencyBehavior"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="mapper"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.MetricsBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.MetricsBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.core.metrics.EventMetrics" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.ObservationBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.ObservationBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.core.observability.ArchitectureObservation" returns="void"/>
   </Match>
   <!-- JsonMapper is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.ReactiveBehaviors$Idempotency"/>
+    <Class name="pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Idempotency"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="mapper"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.TransactionBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.TransactionBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="org.springframework.transaction.PlatformTransactionManager" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.cqrs.spring.ValidationBehavior"/>
+    <Class name="pe.axiz.extension.cqrs.spring.ValidationBehavior"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="jakarta.validation.Validator" returns="void"/>
   </Match>
   <!-- Abstract application extension point validates handler metadata at construction; subclasses are trusted application code and no finalizer is used. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.TypedEventHandler"/>
+    <Class name="pe.axiz.core.messaging.TypedEventHandler"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.spring.Reactions"/>
+    <Class name="pe.axiz.structure.eda.spring.Reactions"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-    <Method name="&lt;init&gt;" params="pe.axiz.spring.outbox.TransactionalEvents,pe.axiz.framework.eda.EventRoutes" returns="void"/>
+    <Method name="&lt;init&gt;" params="pe.axiz.spring.outbox.TransactionalEvents,pe.axiz.core.messaging.EventRoutes" returns="void"/>
   </Match>
   <!-- TransactionalEvents is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.spring.Reactions"/>
+    <Class name="pe.axiz.structure.eda.spring.Reactions"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="events"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.spring.ReactiveReactions"/>
+    <Class name="pe.axiz.structure.eda.spring.ReactiveReactions"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-    <Method name="&lt;init&gt;" params="pe.axiz.spring.outbox.ReactiveTransactionalEvents,pe.axiz.framework.eda.EventRoutes" returns="void"/>
+    <Method name="&lt;init&gt;" params="pe.axiz.spring.outbox.ReactiveTransactionalEvents,pe.axiz.core.messaging.EventRoutes" returns="void"/>
   </Match>
   <!-- ReactiveTransactionalEvents is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.spring.ReactiveReactions"/>
+    <Class name="pe.axiz.structure.eda.spring.ReactiveReactions"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="events"/>
   </Match>
   <!-- TransactionTemplate is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.eda.spring.TransactionalEventHandler"/>
+    <Class name="pe.axiz.spring.messaging.TransactionalEventHandler"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="transaction"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.hexagonal.spring.ApplicationEventDomainEventSink"/>
+    <Class name="pe.axiz.structure.hexagonal.spring.ApplicationEventDomainEventSink"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="org.springframework.context.ApplicationEventPublisher" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.hexagonal.spring.OutboxDomainEventSink"/>
+    <Class name="pe.axiz.structure.hexagonal.spring.OutboxDomainEventSink"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.spring.outbox.TransactionalEvents,java.lang.String,java.util.Map,java.lang.String" returns="void"/>
   </Match>
   <!-- TransactionalEvents is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
-    <Class name="pe.axiz.framework.hexagonal.spring.OutboxDomainEventSink"/>
+    <Class name="pe.axiz.structure.hexagonal.spring.OutboxDomainEventSink"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="events"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.hexagonal.spring.SpringUseCaseTransaction"/>
+    <Class name="pe.axiz.structure.hexagonal.spring.SpringUseCaseTransaction"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="org.springframework.transaction.PlatformTransactionManager" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
-    <Class name="pe.axiz.framework.layered.InMemoryCrudService"/>
+    <Class name="pe.axiz.structure.layered.InMemoryCrudService"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="java.lang.String,java.util.function.Function,java.util.function.BiFunction" returns="void"/>
   </Match>
@@ -636,13 +661,13 @@
   <Match>
     <Class name="pe.axiz.spring.outbox.ReactiveTransactionalEvents"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-    <Method name="&lt;init&gt;" params="pe.axiz.core.messaging.EventFactory,pe.axiz.core.outbox.r2dbc.ReactiveOutboxWriter" returns="void"/>
+    <Method name="&lt;init&gt;" params="pe.axiz.core.messaging.EventFactory,pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter" returns="void"/>
   </Match>
   <!-- Rejects invalid construction; no finalizer or publication of this. Public extension/proxy compatibility is retained; subclasses are trusted application code. -->
   <Match>
     <Class name="pe.axiz.spring.outbox.ReactiveTransactionalEvents"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
-    <Method name="&lt;init&gt;" params="pe.axiz.core.messaging.EventFactory,pe.axiz.core.outbox.r2dbc.ReactiveOutboxWriter,io.micrometer.observation.ObservationRegistry" returns="void"/>
+    <Method name="&lt;init&gt;" params="pe.axiz.core.messaging.EventFactory,pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter,io.micrometer.observation.ObservationRegistry" returns="void"/>
   </Match>
   <!-- ObservationRegistry is an injected collaborator whose identity and lifecycle must be shared, not copied. -->
   <Match>
@@ -817,5 +842,18 @@
     <Class name="pe.axiz.spring.web.RequestMetadataWebFilter"/>
     <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     <Method name="&lt;init&gt;" params="pe.axiz.spring.web.RequestMetadataResolver,pe.axiz.core.errors.ProblemFactory" returns="void"/>
+  </Match>
+  <!-- Native producer borrows the application's live ObservationRegistry. Identity/lifecycle and
+       tracing handlers are intentionally shared, just like ObservedEventPublisher; there is no getter. -->
+  <Match>
+    <Class name="pe.axiz.spring.messaging.ObservedAsyncEventPublisher"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="registry"/>
+  </Match>
+  <!-- Deprecated public compatibility bridge must retain its original simple name and descriptor;
+       the API interface is the migration target. Renaming it would introduce an unapproved API break. -->
+  <Match>
+    <Class name="pe.axiz.extension.cqrs.spring.ReactiveAccessPolicy"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </Match>
 </FindBugsFilter>

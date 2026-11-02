@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+ <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version><relativePath>../axiz-parent-core/pom.xml</relativePath></parent>
+ <artifactId>axiz-parent-test</artifactId><packaging>pom</packaging><name>axiz :: parent :: test</name>
+ <description>Test-support libraries: fixtures and contract suites. This parent is only for quality modules and is never a runtime contract.</description>
+ <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><executions><execution><id>axiz-core-layer-rules</id><configuration><rules><bannedDependencies><includes><include>io.projectreactor:*</include><include>org.reactivestreams:*</include><include>io.r2dbc:*</include></includes></bannedDependencies></rules></configuration></execution></executions></plugin></plugins></build>
+</project>

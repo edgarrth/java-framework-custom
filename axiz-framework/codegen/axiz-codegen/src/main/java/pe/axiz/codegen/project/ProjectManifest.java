@@ -9,23 +9,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.codegen.model.Framework;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 
 /**
  * The {@code .axiz/project.yaml} manifest of a generated project: what the CLI needs to generate
- * code coherent with the project (framework, stack, packages, capabilities and contract).
+ * code coherent with the project (structure, stack, packages, capabilities and contract).
  *
  * @param name service name
  * @param groupId Maven group
  * @param basePackage base Java package
  * @param archetype archetype id
- * @param framework style
+ * @param structure style
  * @param stack stack
  * @param persistence {@code none}, {@code aurora} or {@code dynamodb}
- * @param axizVersion framework version
+ * @param axizVersion structure version
  * @param openapi contract path, relative to the project, if any
  * @param asyncapi AsyncAPI path, if any
  * @param capabilities capabilities of the project
@@ -36,18 +37,55 @@ public record ProjectManifest(
     String groupId,
     String basePackage,
     String archetype,
-    Framework framework,
+    Structure structure,
     Stack stack,
     String persistence,
     String axizVersion,
     @Nullable String openapi,
     @Nullable String asyncapi,
     List<String> capabilities,
-    List<String> operations) {
+    List<String> operations,
+    List<Extension> extensions) {
 
   public static final String PATH = ".axiz/project.yaml";
 
+  public ProjectManifest(
+      String name,
+      String groupId,
+      String basePackage,
+      String archetype,
+      Structure structure,
+      Stack stack,
+      String persistence,
+      String axizVersion,
+      @Nullable String openapi,
+      @Nullable String asyncapi,
+      List<String> capabilities,
+      List<String> operations) {
+    this(
+        name,
+        groupId,
+        basePackage,
+        archetype,
+        structure,
+        stack,
+        persistence,
+        axizVersion,
+        openapi,
+        asyncapi,
+        capabilities,
+        operations,
+        List.of());
+  }
+
+  public boolean cqrs() {
+    return extensions.contains(Extension.CQRS);
+  }
+
   public ProjectManifest {
+    extensions = List.copyOf(extensions);
+    if (new java.util.HashSet<>(extensions).size() != extensions.size())
+      throw new IllegalArgumentException("Duplicate service extension");
     Objects.requireNonNull(name, "name");
     capabilities = List.copyOf(capabilities);
     operations = List.copyOf(operations);
@@ -55,6 +93,15 @@ public record ProjectManifest(
 
   /** Reads the manifest of the project in {@code dir}. */
   public static ProjectManifest read(Path dir) throws IOException {
+    return read(dir, null);
+  }
+
+  /** Reads schema 1 with an explicit resolution for the former integration role. */
+  public static ProjectManifest read(Path dir, @Nullable String integrationRole)
+      throws IOException {
+    if (integrationRole != null && !List.of("core", "gateway").contains(integrationRole)) {
+      throw new IllegalArgumentException("Legacy integration must choose core or gateway");
+    }
     Path file = dir.resolve(PATH);
     if (!Files.isRegularFile(file)) {
       throw new IOException("Not an axiz project (missing " + PATH + ") in " + dir);
@@ -63,20 +110,47 @@ public record ProjectManifest(
     if (!(doc instanceof Map<?, ?> m)) {
       throw new IOException(PATH + " is not a YAML mapping");
     }
+    Object schema = m.get("schema");
+    if (!(schema instanceof Number number)
+        || (number.doubleValue() != 1 && number.doubleValue() != 2)) {
+      throw new IOException("Unsupported project manifest schema: " + schema);
+    }
+    boolean legacy = ((Number) schema).intValue() == 1;
+    String structure = String.valueOf(m.get(legacy ? "framework" : "structure"));
+    List<Extension> extensions =
+        legacy && structure.equals("cqrs")
+            ? List.of(Extension.CQRS)
+            : strings(m.get("extensions")).stream().map(Extension::of).toList();
+    if (structure.equals("cqrs")) structure = "hexagonal";
+    String role = required(m, "archetype");
+    if (legacy)
+      role =
+          switch (role) {
+            case "experience" -> "ux";
+            case "crud", "process" -> "business";
+            case "integration" -> {
+              if (integrationRole == null)
+                throw new IOException(
+                    "schema 1 integration requires --archetype core or --archetype gateway");
+              yield integrationRole;
+            }
+            default -> role;
+          };
     Map<?, ?> contract = m.get("contract") instanceof Map<?, ?> c ? c : Map.of();
     return new ProjectManifest(
         required(m, "name"),
         required(m, "groupId"),
         required(m, "basePackage"),
-        required(m, "archetype"),
-        Framework.of(String.valueOf(m.containsKey("framework") ? m.get("framework") : "none")),
+        role,
+        Structure.of(structure),
         Stack.of(String.valueOf(m.containsKey("stack") ? m.get("stack") : "servlet")),
         String.valueOf(m.containsKey("persistence") ? m.get("persistence") : "none"),
         required(m, "axizVersion"),
         optional(contract.get("openapi")),
         optional(contract.get("asyncapi")),
         strings(m.get("capabilities")),
-        strings(m.get("operations")));
+        strings(m.get("operations")),
+        extensions);
   }
 
   /** Writes the manifest back (same layout as the generated one). */
@@ -86,12 +160,16 @@ public record ProjectManifest(
         "# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade,"
             + " doctor).\n");
     b.append("# Keep it in version control; the CLI updates it when it changes the project.\n");
-    b.append("schema: 1\n");
+    b.append("schema: 2\n");
+    b.append("kind: ").append(isService() ? "service" : "platform").append('\n');
     b.append("name: ").append(name).append('\n');
     b.append("groupId: ").append(groupId).append('\n');
     b.append("basePackage: ").append(basePackage).append('\n');
     b.append("archetype: ").append(archetype).append('\n');
-    b.append("framework: ").append(framework.id()).append('\n');
+    b.append("structure: ").append(structure.id()).append('\n');
+    b.append("extensions: [")
+        .append(String.join(", ", extensions.stream().map(Extension::id).toList()))
+        .append("]\n");
     b.append("stack: ").append(stack.id()).append('\n');
     b.append("persistence: ").append(persistence).append('\n');
     b.append("axizVersion: ").append(axizVersion).append('\n');
@@ -111,7 +189,7 @@ public record ProjectManifest(
   }
 
   public boolean isService() {
-    return framework != Framework.NONE;
+    return structure != Structure.NONE;
   }
 
   public ProjectManifest withCapabilities(List<String> newCapabilities) {
@@ -120,14 +198,15 @@ public record ProjectManifest(
         groupId,
         basePackage,
         archetype,
-        framework,
+        structure,
         stack,
         persistence,
         axizVersion,
         openapi,
         asyncapi,
         newCapabilities,
-        operations);
+        operations,
+        extensions);
   }
 
   public ProjectManifest withOperations(List<String> newOperations) {
@@ -136,14 +215,33 @@ public record ProjectManifest(
         groupId,
         basePackage,
         archetype,
-        framework,
+        structure,
         stack,
         persistence,
         axizVersion,
         openapi,
         asyncapi,
         capabilities,
-        newOperations);
+        newOperations,
+        extensions);
+  }
+
+  /** Changes the deployment name without changing the explicitly declared Java package. */
+  public ProjectManifest withName(String newName) {
+    return new ProjectManifest(
+        newName,
+        groupId,
+        basePackage,
+        archetype,
+        structure,
+        stack,
+        persistence,
+        axizVersion,
+        openapi,
+        asyncapi,
+        capabilities,
+        operations,
+        extensions);
   }
 
   public ProjectManifest withAxizVersion(String version) {
@@ -152,14 +250,15 @@ public record ProjectManifest(
         groupId,
         basePackage,
         archetype,
-        framework,
+        structure,
         stack,
         persistence,
         version,
         openapi,
         asyncapi,
         capabilities,
-        operations);
+        operations,
+        extensions);
   }
 
   private static String required(Map<?, ?> m, String key) throws IOException {

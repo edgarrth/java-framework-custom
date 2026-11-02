@@ -12,7 +12,13 @@ public final class SpringTransactionRunner implements TransactionRunner {
   private final TransactionTemplate template;
 
   public SpringTransactionRunner(PlatformTransactionManager transactions) {
+    this(transactions, org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRED);
+  }
+
+  /** Explicit propagation for independent durable operations such as sequence reservations. */
+  public SpringTransactionRunner(PlatformTransactionManager transactions, int propagation) {
     this.template = new TransactionTemplate(Objects.requireNonNull(transactions));
+    this.template.setPropagationBehavior(propagation);
   }
 
   @Override

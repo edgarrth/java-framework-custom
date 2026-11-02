@@ -8,6 +8,6 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.verify("pe.axiz.payments.coreintegration", AxizArchitecture.Style.HEXAGONAL);
+    AxizArchitecture.of("pe.axiz.payments.coreintegration").archetype(pe.axiz.quality.archunit.Archetype.CORE).stack(pe.axiz.quality.archunit.Stack.SERVLET).structure(pe.axiz.quality.archunit.Structure.HEXAGONAL).verify();
   }
 }

@@ -123,7 +123,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
 
   @Override
   public Money reservedOn(String customerId, String currency, LocalDate processingDate) {
-    return Money.of(repository.reserved(customerId, currency, processingDate), currency);
+    return Money.ofExact(repository.reserved(customerId, currency, processingDate), currency);
   }
 
   @Override
@@ -144,7 +144,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
         e.getCustomerId(),
         e.getDebtorAccount(),
         e.getCreditorCci(),
-        Money.of(e.getAmount(), e.getCurrency()),
+        Money.ofExact(e.getAmount(), e.getCurrency()),
         e.getDescription(),
         e.getProcessingDate(),
         java.util.Objects.requireNonNullElse(e.getCreatedAt(), java.time.Instant.EPOCH),

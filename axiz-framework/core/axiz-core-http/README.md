@@ -20,6 +20,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `AccessToken` | OAuth2 access token. |
 | `AccessTokenProvider` | Supplies access tokens for outbound calls. |
+| `AsyncAccessTokenProvider` | Native token acquisition with caller-owned cancellation. |
+| `AsyncHttpExchange` | JDK request/response contract for bounded, cancellable HTTP with native DNS and no redirects. |
+| `ClientCredentialsAsyncTokenProvider` | Coalesces native renewal and asynchronous secret lookup through the HTTP port. |
 | `AuthSettings` | Outbound authentication settings. |
 | `AuthType` | Outbound authentication of an HTTP client. |
 | `ClientCredentialsTokenProvider` | OAuth2 client credentials with cache and early renewal: the token is renewed when less than `renewBefore` remains. |
@@ -27,6 +30,18 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `ExternalErrorTranslator` | Translates an error response from a dependency into an `ExternalServiceException`. |
 | `HeaderPropagation` | Computes the headers forwarded to a dependency: correlation id and Accept-Language always, plus the client's allow-list. |
 | `HttpRetryRules` | Retry decision for an outbound HTTP call under a client's settings. |
+
+The synchronous and native providers share OAuth form encoding and response validation. Expiry
+starts at submission; responses that arrive expired, invalid expiry values and unsupported token
+types are rejected. Invalid JSON diagnostics never include its token payload. Access tokens and
+token responses redact their string representation and are marked CRITICAL for masking in all
+channels. Native pending loads use the common bounded cache, so cancellation of one caller leaves
+other callers active and cancellation of the last caller reaches the transport or secret lookup.
+
+The native provider borrows `AsyncHttpExchange`; core has no dependency on Reactor, Netty or Spring.
+The transport must enforce the request timeout, byte limit and cancellation without following
+redirects. The Spring capability supplies an owned WebClient/Netty implementation. Unit tests use
+a local JDK HTTP driver independently of that production transport.
 
 ## Tests
 

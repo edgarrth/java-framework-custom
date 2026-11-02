@@ -140,7 +140,7 @@ public final class LockTemplate {
 
   /** Until when a lease asked for at {@code sent} is trusted: the lease minus the drift margin. */
   static long validUntil(long sent, Duration lease) {
-    return sent + lease.toNanos() - (lease.toNanos() / 100 + TimeUnit.MILLISECONDS.toNanos(2));
+    return LockTiming.validUntil(sent, lease);
   }
 
   private static void releaseQuietly(LockHandle handle) {

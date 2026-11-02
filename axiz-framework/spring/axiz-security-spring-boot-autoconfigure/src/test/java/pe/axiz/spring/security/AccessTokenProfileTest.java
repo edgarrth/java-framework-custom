@@ -102,6 +102,40 @@ class AccessTokenProfileTest {
     return decoders.servlet(ISSUER).decode(token).getSubject();
   }
 
+  @ParameterizedTest(name = "reactive={0}")
+  @ValueSource(booleans = {false, true})
+  void signedUsernamesCannotPromoteUsersAndTrustedMarkersStillIdentifyApplications(boolean reactive)
+      throws Exception {
+    AxizJwtConverter converter = new AxizJwtConverter(new ClaimsMapper(ClaimMapping.defaults()));
+    for (boolean service : List.of(false, true)) {
+      String signed =
+          token(
+              JWSAlgorithm.RS256,
+              b -> {
+                b.claim("preferred_username", "service-account-mobile")
+                    .claim("scope", "payments:read");
+                return service ? b.claim("idtyp", "app") : b;
+              });
+      var jwt =
+          reactive
+              ? decoders.reactive(ISSUER).decode(signed).block(T)
+              : decoders.servlet(ISSUER).decode(signed);
+      var authentication = converter.convert(jwt);
+      var principal = (pe.axiz.core.security.AxizPrincipal) authentication.getPrincipal();
+      assertEquals(service, principal.isMachine());
+      assertEquals(service ? "mobile" : "customer-1", principal.subject());
+      assertThat(authentication.getAuthorities())
+          .extracting("authority")
+          .containsExactly("SCOPE_payments:read");
+    }
+    String missingClient = token(JWSAlgorithm.RS256, b -> b.claim("azp", null));
+    var jwt =
+        reactive
+            ? decoders.reactive(ISSUER).decode(missingClient).block(T)
+            : decoders.servlet(ISSUER).decode(missingClient);
+    assertThrows(AccessException.class, () -> converter.convert(jwt));
+  }
+
   private static void rejected(boolean reactive, String token, @Nullable String reason) {
     JwtException e = assertThrows(JwtException.class, () -> decode(reactive, token));
     if (reason != null) {

@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.boot.http.client.reactive.ClientHttpConnectorBuilder;
@@ -20,6 +21,7 @@ import org.springframework.web.client.support.RestClientHttpServiceGroupConfigur
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientHttpServiceGroupConfigurer;
 import org.springframework.web.service.registry.HttpServiceGroupConfigurer;
+import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
 
 /**
@@ -48,6 +50,8 @@ public class AxizHttpClientAutoConfiguration {
       Environment env,
       ObjectProvider<CircuitBreakerRegistry> circuitBreakers,
       ObjectProvider<SecretResolver> secrets,
+      ObjectProvider<AsyncSecretResolver> asyncSecrets,
+      ObjectProvider<ObservationRegistry> observations,
       ObjectProvider<SslBundles> ssl,
       ObjectProvider<Clock> clock) {
     String tenantHeader =
@@ -58,9 +62,21 @@ public class AxizHttpClientAutoConfiguration {
         properties,
         circuitBreakers.getIfAvailable(CircuitBreakerRegistry::ofDefaults),
         secrets.getIfAvailable(),
+        asyncSecrets.getIfAvailable(),
         ssl.getIfAvailable(),
         clock.getIfAvailable(Clock::systemUTC),
-        tenantHeader);
+        tenantHeader,
+        observations.getIfAvailable(() -> ObservationRegistry.NOOP));
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  static class NativeCredentialValidation {
+    @Bean
+    org.springframework.beans.factory.SmartInitializingSingleton axizNativeHttpCredentialsReady(
+        HttpClientRegistry registry) {
+      return () -> registry.all().values().forEach(registry::asyncAuth);
+    }
   }
 
   /** Blocking stack: {@code RestClient} (scales with virtual threads). */
@@ -135,7 +151,7 @@ public class AxizHttpClientAutoConfiguration {
                                     .filter(
                                         new AxizExchangeFilter(
                                             registry.resilience(s),
-                                            registry.auth(s),
+                                            registry.asyncAuth(s),
                                             registry.tenantHeader()));
                               }));
     }

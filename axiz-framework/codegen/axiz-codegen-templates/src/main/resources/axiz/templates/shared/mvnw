@@ -11,6 +11,7 @@
 # Set MVNW_REQUIRE_PINNED_CHECKSUM=true (release pipelines) to accept only a pinned checksum,
 # also with a distribution already in the cache.
 # "./mvnw --pin-checksum" downloads the official checksum once and pins it in the properties file.
+# "./mvnw --bootstrap <goals/options>" first installs the two independent source BOMs locally.
 set -eu
 BASEDIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 PROPS="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
@@ -99,5 +100,54 @@ if [ "$CACHED" != "true" ]; then
   VERIFIED=$(verify "$TMP/maven.zip")
   unzip -q "$TMP/maven.zip" -d "$HOME_DIR"
   echo "$VERIFIED" > "$MARKER"
+fi
+
+# These independent BOMs must be available before Maven can read the root model. Use the same
+# verified Maven, settings, local repository and revision as the requested build. No deploy goal
+# or project selection is forwarded to this local model bootstrap.
+bootstrap_bom() {
+  axiz_bootstrap_pom=$1
+  shift
+  axiz_bootstrap_started=false
+  axiz_bootstrap_setting=false
+  for axiz_bootstrap_arg in "$@"; do
+    if [ "$axiz_bootstrap_started" = false ]; then
+      set -- -B -ntp -f "$axiz_bootstrap_pom" install
+      axiz_bootstrap_started=true
+    fi
+    if [ "$axiz_bootstrap_setting" = true ]; then
+      set -- "$@" "$axiz_bootstrap_arg"
+      axiz_bootstrap_setting=false
+      continue
+    fi
+    case "$axiz_bootstrap_arg" in
+      -D*|-o|--offline|-U|--update-snapshots|-C|--strict-checksums|-nsu|--no-snapshot-updates|--settings=*|--global-settings=*)
+        set -- "$@" "$axiz_bootstrap_arg" ;;
+      -s|--settings|-gs|--global-settings)
+        set -- "$@" "$axiz_bootstrap_arg"
+        axiz_bootstrap_setting=true ;;
+    esac
+  done
+  if [ "$axiz_bootstrap_started" = false ]; then
+    set -- -B -ntp -f "$axiz_bootstrap_pom" install
+  fi
+  if [ "$axiz_bootstrap_setting" = true ]; then
+    echo "Missing Maven settings path in bootstrap arguments" >&2
+    exit 1
+  fi
+  "$HOME_DIR/$NAME/bin/mvn" "$@"
+}
+
+if [ "${1:-}" = "--bootstrap" ]; then
+  shift
+  for axiz_bootstrap_module in axiz-dependencies axiz-bom; do
+    if [ ! -f "$BASEDIR/platform/$axiz_bootstrap_module/pom.xml" ]; then
+      echo "--bootstrap requires a framework source checkout with both platform BOMs" >&2
+      exit 1
+    fi
+  done
+  bootstrap_bom "$BASEDIR/platform/axiz-dependencies/pom.xml" "$@"
+  bootstrap_bom "$BASEDIR/platform/axiz-bom/pom.xml" "$@"
+  if [ "$#" -eq 0 ]; then exit 0; fi
 fi
 exec "$HOME_DIR/$NAME/bin/mvn" -f "$BASEDIR/pom.xml" "$@"

@@ -4,7 +4,7 @@
 `axiz-tools` junto con su checksum; también corre como `java -jar axiz-cli.jar`.
 
 ```text
-axiz new <name> --archetype <a> [--framework] [--stack] [--persistence] [-c <capability>]... --openapi <file>
+axiz new <name> --archetype <a> [--structure] [--stack] [--persistence] [-c <capability>]... --openapi <file>
 axiz new -i                                   interactivo
 axiz add <capability>...                      starter, propiedades, llaves de ConfigMap, tablas, ejemplo
 axiz generate <type> <name>                   usecase, command, query, handler, event, event-handler,

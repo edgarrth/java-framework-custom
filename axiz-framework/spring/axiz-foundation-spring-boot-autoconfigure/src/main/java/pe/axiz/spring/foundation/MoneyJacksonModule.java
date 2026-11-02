@@ -1,12 +1,12 @@
 package pe.axiz.spring.foundation;
 
 import java.math.BigDecimal;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.money.Money;
 import tools.jackson.core.JsonGenerator;
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
 import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.SerializationContext;
 import tools.jackson.databind.deser.std.StdDeserializer;
 import tools.jackson.databind.module.SimpleModule;
@@ -50,16 +50,43 @@ public final class MoneyJacksonModule extends SimpleModule {
       if (p.currentToken() == JsonToken.VALUE_STRING) {
         return Money.parse(p.getString());
       }
-      JsonNode node = ctxt.readTree(p);
-      JsonNode amount = node.get("amount");
-      JsonNode currency = node.get("currency");
-      if (amount == null || currency == null) {
+      if (p.currentToken() != JsonToken.START_OBJECT) {
+        return ctxt.reportInputMismatch(Money.class, "Money must be an object or text");
+      }
+      @Nullable BigDecimal amount = null;
+      @Nullable String currency = null;
+      while (p.nextToken() == JsonToken.PROPERTY_NAME) {
+        String field = p.currentName();
+        JsonToken token = p.nextToken();
+        if ("amount".equals(field)) {
+          if (amount != null) {
+            return ctxt.reportInputMismatch(Money.class, "Duplicate Money amount");
+          }
+          if (token == JsonToken.VALUE_NUMBER_INT || token == JsonToken.VALUE_NUMBER_FLOAT) {
+            // Read the decimal token directly: a tree's DoubleNode may have already lost cents.
+            amount = p.getDecimalValue();
+          } else if (token == JsonToken.VALUE_STRING) {
+            try {
+              amount = new BigDecimal(p.getString().strip());
+            } catch (NumberFormatException e) {
+              return ctxt.reportInputMismatch(Money.class, "Invalid Money amount");
+            }
+          } else {
+            return ctxt.reportInputMismatch(Money.class, "Money amount must be a number or text");
+          }
+        } else if ("currency".equals(field)) {
+          if (currency != null || token != JsonToken.VALUE_STRING) {
+            return ctxt.reportInputMismatch(Money.class, "Money needs one textual currency");
+          }
+          currency = p.getString();
+        } else {
+          p.skipChildren();
+        }
+      }
+      if (p.currentToken() != JsonToken.END_OBJECT || amount == null || currency == null) {
         return ctxt.reportInputMismatch(Money.class, "Money needs 'amount' and 'currency'");
       }
-      BigDecimal value =
-          amount.isNumber() ? amount.decimalValue() : new BigDecimal(amount.asString());
-      // an amount from a client is never rounded: more decimals than the currency is an error
-      return Money.ofExact(value, currency.asString());
+      return Money.ofExact(amount, currency);
     }
   }
 }

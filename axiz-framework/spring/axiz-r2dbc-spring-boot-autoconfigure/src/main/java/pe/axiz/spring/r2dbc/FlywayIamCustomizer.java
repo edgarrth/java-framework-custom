@@ -4,7 +4,7 @@ import java.util.Objects;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /**
  * Gives Flyway a JDBC connection authenticated with an IAM token (the migration runs once at

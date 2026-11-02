@@ -80,13 +80,10 @@ public record AxizSecurityProperties(
    * @param roles role claims
    * @param tenant tenant claims
    * @param attributes extra claims copied to the principal
-   * @param machine markers of client-credentials tokens whose {@code sub} is a service-account id
-   *     ({@code claim}, {@code claim=value} or {@code claim^=prefix}, the prefix followed by the
-   *     token's client id): they are mapped with the client as subject, so a service account is
-   *     never taken for an end user
-   * @param subjectAsClient whether a token without any client claim takes its {@code sub} as the
-   *     client and is mapped as an application; set it to false when the provider always sends a
-   *     client claim, so an end-user token without one is rejected (401) instead
+   * @param machine exact issuer-owned {@code claim=value} markers of application tokens; user
+   *     profile claims, presence and prefix heuristics are rejected
+   * @param subjectAsClient opt-in to use sub as client only when a machine marker also matches;
+   *     otherwise tokens without a client claim are rejected (401)
    */
   public record Claims(
       @DefaultValue("sub") List<String> subject,
@@ -95,8 +92,8 @@ public record AxizSecurityProperties(
       @DefaultValue({"roles", "realm_access.roles", "groups"}) List<String> roles,
       @DefaultValue({"tenant", "tenant_id", "tid"}) List<String> tenant,
       @DefaultValue List<String> attributes,
-      @DefaultValue({"idtyp=app", "preferred_username^=service-account-"}) List<String> machine,
-      @DefaultValue("true") boolean subjectAsClient) {
+      @DefaultValue("idtyp=app") List<String> machine,
+      @DefaultValue("false") boolean subjectAsClient) {
     public Claims {
       attributes = List.copyOf(attributes);
       clientId = List.copyOf(clientId);

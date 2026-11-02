@@ -10,8 +10,9 @@ axiz add audit-sqs
 |  |  |
 |---|---|
 | Starter | `pe.axiz:axiz-audit-spring-boot-starter` |
+| Stacks del catálogo | servlet, reactive |
 | Agrega también | [`audit`](audit.md) |
-| Dependencias | `pe.axiz:axiz-core-audit-sqs`<br>`software.amazon.awssdk:sqs` |
+| Dependencias | `pe.axiz:axiz-adapter-audit-sqs`<br>`software.amazon.awssdk:sqs` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -42,7 +43,5 @@ axiz.audit.sqs.queue-url: https://sqs.<region>.amazonaws.com/<account>/audit
 
 - [`axiz-audit-spring-boot-autoconfigure`](../referencia/spring/axiz-audit-spring-boot-autoconfigure.md)
 - [`axiz-core-audit`](../referencia/core/axiz-core-audit.md)
-- [`axiz-core-audit-kafka`](../referencia/core/axiz-core-audit-kafka.md)
-- [`axiz-core-audit-sqs`](../referencia/core/axiz-core-audit-sqs.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)

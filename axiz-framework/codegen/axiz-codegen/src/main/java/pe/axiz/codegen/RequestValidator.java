@@ -12,7 +12,7 @@ import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 
-/** Compatibility rules of archetype × framework × stack × persistence × capabilities. */
+/** Compatibility rules of archetype × structure × stack × persistence × capabilities. */
 public final class RequestValidator {
 
   /**
@@ -75,6 +75,16 @@ public final class RequestValidator {
       problems.add(
           "description must be a single line of at most " + MAX_DESCRIPTION + " characters");
     }
+    boolean consumesEvents = false;
+    String asyncApi = r.asyncApi();
+    if (asyncApi != null && !asyncApi.isBlank()) {
+      try {
+        consumesEvents =
+            !pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi).consumed().isEmpty();
+      } catch (IllegalArgumentException problem) {
+        problems.add("Invalid AsyncAPI: " + problem.getMessage());
+      }
+    }
     Archetype a = catalog.archetype(r.archetype()).orElse(null);
     OpenApiDocument contract = null;
     if (a == null) {
@@ -85,21 +95,29 @@ public final class RequestValidator {
               + String.join(", ", catalog.archetypes().stream().map(Archetype::name).toList()));
       return new Result(null, null, problems, findings);
     }
-    if (!a.frameworks().contains(r.framework())) {
+    if (a.isService() && !ServiceRoles.validName(a.name(), r.name()))
+      problems.add("Service name does not follow the convention for " + a.name());
+    if (!a.extensions().containsAll(r.extensions())
+        || (r.cqrs() && r.structure() != pe.axiz.codegen.model.Structure.HEXAGONAL)) {
+      problems.add(
+          "Extensions are incompatible with archetype or structure; "
+              + "CQRS requires hexagonal business or event-processor");
+    }
+    if (!a.structures().contains(r.structure())) {
       problems.add(
           "Archetype "
               + a.name()
-              + " supports frameworks "
-              + a.frameworks().stream().map(f -> f.id()).toList());
+              + " supports structures "
+              + a.structures().stream().map(f -> f.id()).toList());
     }
-    if (!r.framework().stacks().contains(r.stack()) || !a.stacks().contains(r.stack())) {
+    if (!r.structure().stacks().contains(r.stack()) || !a.stacks().contains(r.stack())) {
       problems.add(
           "Stack "
               + r.stack().id()
               + " is not available for "
               + a.name()
               + " with "
-              + r.framework().id());
+              + r.structure().id());
     }
     if (!a.persistence().isEmpty() && !a.persistence().contains(r.persistence())) {
       problems.add("Archetype " + a.name() + " supports persistence " + a.persistence());
@@ -114,6 +132,11 @@ public final class RequestValidator {
         known = false;
       }
     }
+    String declaredOpenApi = r.openApi();
+    if (!a.isService()
+        && ((declaredOpenApi != null && !declaredOpenApi.isBlank())
+            || (asyncApi != null && !asyncApi.isBlank())))
+      problems.add("OpenAPI and AsyncAPI contracts apply to services only");
     if (!a.isService() && !r.capabilities().isEmpty()) {
       problems.add("Capabilities apply to services only, not to " + a.kind() + " projects");
     }
@@ -121,6 +144,12 @@ public final class RequestValidator {
       String store = Catalog.store(r.persistence(), r.stack());
       List<Capability> capabilities =
           catalog.resolve(ProjectGenerator.capabilityNames(catalog, r, a), store);
+      if (consumesEvents
+          && capabilities.stream()
+              .noneMatch(
+                  capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
+        problems.add(
+            "Consuming AsyncAPI events requires a messaging capability: messaging, messaging-sqs or messaging-kafka");
       List<String> resolved = capabilities.stream().map(Capability::name).toList();
       if (resolved.contains("jpa") && !"aurora".equals(r.persistence())) {
         problems.add("Capabilities " + needing(r, "jpa") + " need Aurora: use persistence aurora");
@@ -131,6 +160,13 @@ public final class RequestValidator {
                 + " need JPA, which blocks: on the reactive stack Aurora is used through r2dbc");
       }
       for (Capability c : capabilities) {
+        if (!c.supports(r.stack()))
+          problems.add("Capability " + c.name() + " does not support stack " + r.stack().id());
+        if (java.util.Set.of("ux", "core", "gateway").contains(a.name())
+            && java.util.Set.of("messaging", "outbox", "inbox", "notification")
+                .contains(c.name())) {
+          problems.add("Archetype " + a.name() + " cannot use domain messaging");
+        }
         if (!c.supports(store)) {
           problems.add(
               "Capability "

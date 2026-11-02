@@ -36,10 +36,10 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
-import pe.axiz.core.persistence.r2dbc.DatabasePasswordProvider;
-import pe.axiz.core.persistence.r2dbc.EncryptedText;
-import pe.axiz.core.persistence.r2dbc.RdsIamPasswordProvider;
-import pe.axiz.core.test.r2dbc.FakeR2dbc;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.kit.r2dbc.EncryptedText;
+import pe.axiz.kit.r2dbc.RdsIamPasswordProvider;
+import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.regions.Region;
 

@@ -2,12 +2,12 @@ package {{project.basePackage}}.application.usecase;
 
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
-import pe.axiz.framework.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
 
 /** {{artifact.title}}: runs in a transaction with an observation; domain events publish at commit. */
 @UseCase
 public class {{artifact.className}}UseCase
-    implements pe.axiz.framework.hexagonal.UseCase<{{artifact.className}}UseCase.Input, {{artifact.className}}UseCase.Output> {
+    implements pe.axiz.structure.hexagonal.UseCase<{{artifact.className}}UseCase.Input, {{artifact.className}}UseCase.Output> {
 
   /** Input of the use case. */
   public record Input(String id) {}

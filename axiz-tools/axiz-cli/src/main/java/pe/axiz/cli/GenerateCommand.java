@@ -87,6 +87,70 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       formatSources(dir);
       return ExitCodes.OK;
     }
+    String asyncPath = manifest.asyncapi();
+    if (List.of("event", "handler", "event-handler").contains(type) && asyncPath != null) {
+      if (!manifest.isService())
+        throw new IllegalArgumentException("Event artifacts require a service");
+      var document =
+          pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(
+              Files.readString(SafePaths.target(dir, asyncPath)));
+      String localName =
+          name.startsWith(manifest.groupId() + ".")
+              ? name.substring(manifest.groupId().length() + 1)
+              : name;
+      String requestedClass = pe.axiz.codegen.Names.pascal(localName);
+      var payloads =
+          pe.axiz.codegen.EventPayloads.generate(
+              manifest.basePackage(), manifest.groupId(), manifest.structure(), document);
+      Map<String, byte[]> selected = new java.util.LinkedHashMap<>();
+      payloads.forEach(
+          (path, bytes) -> {
+            String generated = SafePaths.fileName(Path.of(path)).replace(".java", "");
+            if (generated.equals(requestedClass)
+                || generated.replaceFirst("V[1-9][0-9]*$", "").equals(requestedClass))
+              selected.put(path, bytes);
+          });
+      if (selected.size() != 1)
+        throw new IllegalArgumentException(
+            "Select exactly one AsyncAPI event by its versioned name; matched " + selected.size());
+      String generatedClass =
+          SafePaths.fileName(Path.of(selected.keySet().iterator().next())).replace(".java", "");
+      var adapters =
+          pe.axiz.codegen.EventAdapters.generate(
+              manifest.basePackage(),
+              manifest.groupId(),
+              manifest.structure(),
+              manifest.stack(),
+              document);
+      boolean handlerRequested = !type.equals("event");
+      if (handlerRequested
+          && pe.axiz.codegen.model.Catalog.load()
+              .resolve(
+                  manifest.capabilities(),
+                  pe.axiz.codegen.model.Catalog.store(manifest.persistence(), manifest.stack()))
+              .stream()
+              .noneMatch(
+                  capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
+        throw new IllegalArgumentException(
+            "Consuming AsyncAPI events requires a messaging capability: axiz add messaging-sqs");
+      boolean handlerFound = false;
+      for (var adapter : adapters.entrySet()) {
+        String file = SafePaths.fileName(Path.of(adapter.getKey()));
+        if (file.equals(generatedClass + "PayloadConfiguration.java"))
+          selected.put(adapter.getKey(), adapter.getValue());
+        if (handlerRequested && file.equals(generatedClass + "Handler.java")) {
+          selected.put(adapter.getKey(), adapter.getValue());
+          handlerFound = true;
+        }
+      }
+      if (handlerRequested && !handlerFound)
+        throw new IllegalArgumentException(
+            "The AsyncAPI event is not declared as received by this service");
+      write(dir, selected);
+      if (handlerRequested) warn("Implement the event handler before consuming live messages");
+      formatSources(dir);
+      return ExitCodes.OK;
+    }
     ArtifactGenerator generator = new ArtifactGenerator(environment.clock());
     ArtifactGenerator.Options options =
         new ArtifactGenerator.Options(category, title, source, target);

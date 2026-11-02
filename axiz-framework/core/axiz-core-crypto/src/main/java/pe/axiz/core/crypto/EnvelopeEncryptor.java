@@ -1,7 +1,5 @@
 package pe.axiz.core.crypto;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +39,7 @@ public final class EnvelopeEncryptor {
   public EnvelopeEncryptor(DataKeyProvider provider, Duration maxAge, long maxUses, Clock clock) {
     this.provider = Objects.requireNonNull(provider);
     this.maxAge = Objects.requireNonNull(maxAge);
+    EnvelopePayload.validatePolicy(maxAge, maxUses);
     this.maxUses = maxUses;
     this.clock = Objects.requireNonNull(clock);
   }
@@ -59,35 +58,12 @@ public final class EnvelopeEncryptor {
 
   public byte[] encrypt(byte[] plaintext, String context) {
     CachedKey key = currentKey(context);
-    byte[] ct =
-        AesGcm.encrypt(
-            AesGcm.key(key.plaintext), plaintext, context.getBytes(StandardCharsets.UTF_8));
-    byte[] ek = key.encrypted;
-    if (ek.length > 0xFFFF) {
-      throw new CryptoException("Encrypted data key too large");
-    }
-    return ByteBuffer.allocate(2 + ek.length + ct.length)
-        .putShort((short) ek.length)
-        .put(ek)
-        .put(ct)
-        .array();
+    return EnvelopePayload.seal(plaintext, key.plaintext, key.encrypted, context);
   }
 
   public byte[] decrypt(byte[] envelope, String context) {
-    if (envelope.length < 3) {
-      throw new CryptoException("Envelope too short");
-    }
-    ByteBuffer buf = ByteBuffer.wrap(envelope);
-    int len = Short.toUnsignedInt(buf.getShort());
-    if (len == 0 || envelope.length < 2 + len) {
-      throw new CryptoException("Malformed envelope");
-    }
-    byte[] ek = new byte[len];
-    buf.get(ek);
-    byte[] ct = new byte[buf.remaining()];
-    buf.get(ct);
-    return AesGcm.decrypt(
-        AesGcm.key(dataKey(ek, context)), ct, context.getBytes(StandardCharsets.UTF_8));
+    EnvelopePayload payload = EnvelopePayload.parse(envelope);
+    return payload.open(dataKey(payload.encryptedKey(), context), context);
   }
 
   /** The decrypted data key for exactly these encrypted key bytes and context. */

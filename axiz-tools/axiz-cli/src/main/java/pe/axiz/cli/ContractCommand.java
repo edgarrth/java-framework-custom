@@ -22,7 +22,7 @@ import picocli.CommandLine.Parameters;
 @Command(
     mixinStandardHelpOptions = true,
     name = "contract",
-    description = "Works with the OpenAPI contract of the service.",
+    description = "Works with the OpenAPI and AsyncAPI contracts of the service.",
     subcommands = {
       ContractCommand.Sync.class,
       ContractCommand.Lint.class,
@@ -58,6 +58,17 @@ class ContractCommand implements Runnable {
     }
   }
 
+  enum Type {
+    openapi,
+    asyncapi
+  }
+
+  static boolean async(Path directory, @Nullable Type type) throws IOException {
+    if (type != null) return type == Type.asyncapi;
+    ProjectManifest manifest = ProjectManifest.read(directory);
+    return manifest.openapi() == null && manifest.asyncapi() != null;
+  }
+
   /** Regenerates from the updated contract. */
   @Command(
       mixinStandardHelpOptions = true,
@@ -71,8 +82,29 @@ class ContractCommand implements Runnable {
         description = "Apply even if existing consumers break (new major version).")
     boolean allowBreaking;
 
+    @Option(
+        names = "--type",
+        description = "Contract: openapi or asyncapi (default: OpenAPI when present).")
+    @Nullable Type type;
+
     @Override
     public Integer call() throws IOException {
+      if (async(project(), type)) {
+        if (allowBreaking)
+          throw new IllegalArgumentException(
+              "AsyncAPI requires a new .vN type; --allow-breaking cannot replace a published type");
+        var result = new pe.axiz.codegen.AsyncContractSync().sync(project());
+        print(this, result.changes(), false);
+        if (!result.applied()) {
+          fail("Preserve the published .vN type and introduce .vN+1 in parallel");
+          return ExitCodes.PROBLEMS;
+        }
+        result.created().forEach(path -> ok("Created " + path));
+        result.proposed().forEach(path -> warn("Review and merge " + path));
+        if (!result.created().isEmpty() || !result.proposed().isEmpty()) formatSources(project());
+        ok("AsyncAPI payloads and generation snapshot synchronized");
+        return ExitCodes.OK;
+      }
       ContractSync.Result r =
           new ContractSync(ProjectGenerator.withDefaults()).sync(project(), allowBreaking);
       print(this, r.findings());
@@ -108,19 +140,40 @@ class ContractCommand implements Runnable {
     @Parameters(arity = "0..1", description = "Contract file (default: the project's).")
     @Nullable Path file;
 
+    @Option(names = "--type", description = "Contract: openapi or asyncapi.")
+    @Nullable Type type;
+
     @Override
     public Integer call() throws IOException {
       Path contract = file;
       if (contract == null) {
         ProjectManifest manifest = ProjectManifest.read(project());
-        if (manifest.openapi() == null) {
-          throw new IllegalArgumentException("The project has no OpenAPI contract");
-        }
-        contract = project().resolve(manifest.openapi());
+        String path = async(project(), type) ? manifest.asyncapi() : manifest.openapi();
+        if (path == null)
+          throw new IllegalArgumentException(
+              "The project has no "
+                  + (type == Type.asyncapi ? "AsyncAPI" : "OpenAPI")
+                  + " contract");
+        contract = pe.axiz.codegen.output.SafePaths.target(project(), path);
       }
-      List<LintFinding> findings =
-          OpenApiLinter.lint(
-              OpenApiDocument.parse(Files.readString(contract, StandardCharsets.UTF_8)));
+      String text = Files.readString(contract, StandardCharsets.UTF_8);
+      boolean isAsync =
+          type == Type.asyncapi
+              || (type == null
+                  && pe.axiz.codegen.openapi.SafeYaml.create(2 * 1024 * 1024).load(text)
+                      instanceof java.util.Map<?, ?> root
+                  && root.containsKey("asyncapi"));
+      if (isAsync) {
+        var document = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(text);
+        ok(
+            "AsyncAPI structure: "
+                + document.published().size()
+                + " published types, "
+                + document.consumed().size()
+                + " consumed types; corporate Spectral rules run in CI");
+        return ExitCodes.OK;
+      }
+      List<LintFinding> findings = OpenApiLinter.lint(OpenApiDocument.parse(text));
       print(this, findings);
       long errors = findings.stream().filter(LintFinding::error).count();
       if (findings.isEmpty()) {
@@ -143,12 +196,19 @@ class ContractCommand implements Runnable {
     @Parameters(index = "1", description = "New contract.")
     Path current = Path.of("");
 
+    @Option(names = "--type", description = "Contract: openapi or asyncapi (default: openapi).")
+    Type type = Type.openapi;
+
     @Override
     public Integer call() throws IOException {
       List<ContractDiff.Change> changes =
-          ContractDiff.compare(
-              OpenApiDocument.parse(Files.readString(previous, StandardCharsets.UTF_8)),
-              OpenApiDocument.parse(Files.readString(current, StandardCharsets.UTF_8)));
+          type == Type.asyncapi
+              ? pe.axiz.codegen.asyncapi.AsyncApiDiff.compare(
+                  pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(previous)),
+                  pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(current)))
+              : ContractDiff.compare(
+                  OpenApiDocument.parse(Files.readString(previous, StandardCharsets.UTF_8)),
+                  OpenApiDocument.parse(Files.readString(current, StandardCharsets.UTF_8)));
       print(this, changes, false);
       if (changes.isEmpty()) {
         ok("No changes");

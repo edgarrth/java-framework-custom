@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-api</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../../platform/axiz-parent-api/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-structure-eda-api</artifactId>
+  <name>axiz :: structure :: eda :: api</name>
+  <description>EDA structure namespace; handler contracts belong to the messaging capability</description>
+
+  <properties>
+    <axiz.api.baseline.artifactId>axiz-framework-eda-api</axiz.api.baseline.artifactId>
+
+    <axiz.module.name>pe.axiz.structure.eda</axiz.module.name>
+    <!-- architecture contract retains this artifact, but it now contains package-info only. Messaging owns
+         the handlers and their mutation-tested algorithms; no executable EDA API code exists. -->
+    <skipPitest>true</skipPitest>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-messaging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
+</project>
