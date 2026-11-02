@@ -59,7 +59,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           service: <%project.name%>
-          module: '.'
+          module: <%#project.moduleYaml%><%project.moduleYaml%><%/project.moduleYaml%><%^project.moduleYaml%>'.'<%/project.moduleYaml%>
           environment: dev
           gitops-repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
           gitops-branch: ${{ vars.GITOPS_BRANCH || 'main' }}

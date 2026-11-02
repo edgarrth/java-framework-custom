@@ -56,12 +56,13 @@ jobs:
         id: version
         env:
           REQUESTED_VERSION: ${{ inputs.version }}
+          SOURCE_POM: <%#project.pomYaml%><%project.pomYaml%><%/project.pomYaml%><%^project.pomYaml%>pom.xml<%/project.pomYaml%>
         shell: bash
         run: |
           set -euo pipefail
           version="$REQUESTED_VERSION"
           if [[ -z "$version" ]]; then
-            version=$(python3 -c 'import xml.etree.ElementTree as E; p=E.parse("pom.xml").getroot(); print(p.findtext("{*}version") or p.findtext("{*}properties/{*}revision") or "")')
+            version=$(python3 -c 'import os, xml.etree.ElementTree as E; p=E.parse(os.environ["SOURCE_POM"]).getroot(); print(p.findtext("{*}version") or p.findtext("{*}properties/{*}revision") or "")')
             version=${version%-SNAPSHOT}
           fi
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -95,8 +96,8 @@ jobs:
     uses: axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.0.0
     with:
       service: <% project.name %>
-      module: '.'
-      chart: deploy/helm/<% project.name %>
+      module: <%#project.moduleYaml%><%project.moduleYaml%><%/project.moduleYaml%><%^project.moduleYaml%>'.'<%/project.moduleYaml%>
+      chart: <%#project.chartYaml%><%project.chartYaml%><%/project.chartYaml%><%^project.chartYaml%>deploy/helm/<% project.name %><%/project.chartYaml%>
       version: ${{ needs.parameters.outputs.version }}
       source-sha: ${{ github.sha }}
       variant: ${{ inputs.variant || 'jvm' }}

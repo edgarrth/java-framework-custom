@@ -24,11 +24,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `HttpClientGenerator` | `axiz generate http-client <name> --contract <openapi>`: a declarative client (`@HttpExchange` interface, one method per operation) of a third-party or downstream API, its models as records and its registration in the HTTP service group `<name>`, which the http-client capability configures from `axiz.http-client.clients.<name>.*` (base URL, timeouts, retries, circuit breaker, OAuth2 client credentials, observations). |
 | `Names` | Naming conventions for generated code. |
 | `ProjectGenerator` | Generates a complete project (service, library or starter) from a request: validation, context and templates. |
-| `RequestValidator` | Compatibility rules of archetype × framework × stack × persistence × capabilities. |
+| `RequestValidator` | Compatibility rules of archetype × structure × extensions × stack × persistence × capabilities. |
 | `Archetype` | Role of a service in the ecosystem and the defaults it preselects. |
 | `Capability` | A capability that the initializr and `axiz add` can add to a service. |
 | `Catalog` | Archetypes and capabilities shipped with the framework (`axiz/archetypes/catalog.yaml` and `axiz/archetypes/capabilities.yaml`). |
-| `Framework` | Architectural style (layer 3) and the stacks it supports in v1. |
+| `Structure` | Application structure: hexagonal, layered, DDD, EDA or BFF; platform projects use `NONE`. |
+| `Extension` | Optional architectural extension, such as CQRS, validated against the archetype and structure. |
 | `ProjectRequest` | What to generate. |
 | `Stack` | Web stack of a service. |
 | `ApiOperation` | One operation of the contract. |
@@ -43,7 +44,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `CapabilityAdder` | `axiz add <capability>`: adds the starter and its adapters to the pom, its properties to `application.yaml` (and the local profile), the ConfigMap keys to the Helm values of every environment, its secrets to the ExternalSecret, the tables it needs as a new Flyway migration and the capability to the manifest. |
 | `Migrations` | Flyway versions of new migrations: the next integer after the highest `V<n>__` file, so generated migrations continue the project's own numbering (`V1__init`, `V2__...`). |
 | `PomEditor` | Minimal, formatting-preserving edits of a `pom.xml`: adds dependencies before the closing `</dependencies>` of the project (never inside dependencyManagement or profiles) and updates the parent version. |
-| `ProjectManifest` | The `.axiz/project.yaml` manifest of a generated project: what the CLI needs to generate code coherent with the project (framework, stack, packages, capabilities and contract). |
+| `ProjectManifest` | The `.axiz/project.yaml` schema 2 manifest: role, structure, extensions, stack, packages, capabilities and contract paths used by project editors. |
+| `MavenReactor` | Reads declared reactor POMs and their Axiz parents without executing Maven; rejects duplicate/cyclic modules, outside paths, symlinks and external XML entities. |
+| `ProjectLayout` | Selects one application module and resolves its generated destinations and owned Helm charts. Manifest, snapshots and identity metadata remain at the project root. |
 | `GeneratedProject` | Generated files kept in memory until written. |
 | `SafePaths` | Validation of generated relative paths and safe writes under a base directory: no absolute paths, no `..`, and no symbolic link followed below the base (a link planted in the destination, such as `src -> /etc`, would otherwise redirect the write outside it). |
 | `SampleProjects` | Generates sample projects so CI can build them as a team would: `defaults` creates one project per archetype with its default style, stack and persistence; `all` creates every valid combination. |
@@ -51,6 +54,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl codegen/axiz-codegen verify`.
+
+Project editors share `ProjectLayout` when a service lives below a Maven aggregator. A single
+application configuration identifies its module; with multiple candidates the manifest contract
+paths must select exactly one. Ambiguity fails before writes. Owned charts may live at the root
+or in the application module and retain their directory when deployment names change. This is
+a structural reader, not a Maven effective-model resolver: module declarations must have literal
+relative paths.
 
 ## AsyncAPI evolution
 

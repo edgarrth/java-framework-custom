@@ -1,21 +1,35 @@
 // Release version of a generated project, computed by release-please itself (the library that the
-// pinned release-please-action uses) against a local fixture: no GitHub call, no pull request.
+// pinned release-please-action uses) against actual generated projects: no remote calls.
 //
 //   npm ci --prefix .github/scripts/release-version
-//   node .github/scripts/release-version/test.cjs
+//   node .github/scripts/release-version/test.cjs target/samples/modules.json
 //
 // The configuration under test is the template every generated project gets.
 'use strict';
 const path = require('path');
 const fs = require('fs');
 const {Manifest} = require('release-please');
+const assert = require('node:assert/strict');
+const {DOMParser} = require('@xmldom/xmldom');
 
-const TEMPLATES = path.resolve(
-  __dirname,
-  '../../../codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/release');
-const config = JSON.parse(fs.readFileSync(path.join(TEMPLATES, 'release-please-config.json'), 'utf8'));
-const initial = JSON.parse(
-  fs.readFileSync(path.join(TEMPLATES, 'release-please-manifest.json'), 'utf8'))['.'];
+if (process.argv.length !== 3) throw new Error('Pass modules.json from actual generated projects');
+const projects = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+assert(Array.isArray(projects) && projects.length > 0, 'Generated projects are required');
+let projectRoot, config, initial;
+const source = file => {
+  const target = path.resolve(projectRoot, file);
+  assert(target.startsWith(projectRoot + path.sep), 'Fixture paths must remain in the project');
+  assert(fs.existsSync(target), `Generated fixture is missing ${file}`);
+  return fs.readFileSync(target, 'utf8');
+};
+function pomVersions(xml) {
+  const document = new DOMParser().parseFromString(xml, 'application/xml');
+  const nodes = Array.from(document.getElementsByTagName('*')).filter(n => n.localName === 'version');
+  return {
+    own: nodes.filter(n => n.parentNode === document.documentElement).map(n => n.textContent),
+    foreign: nodes.filter(n => n.parentNode !== document.documentElement).map(n => n.textContent),
+  };
+}
 
 const RELEASE_SHA = 'r'.repeat(40);
 
@@ -57,7 +71,7 @@ function repository(commits, released) {
 async function next(commits, released) {
   const manifest = await Manifest.fromManifest(repository(commits, released), 'main');
   const prs = await manifest.buildPullRequests();
-  return prs[0] && prs[0].version ? prs[0].version.toString() : null;
+  return prs[0];
 }
 
 const INITIAL = 'feat: generate orders-business with axiz initializr';
@@ -74,12 +88,31 @@ const CASES = [
 
 (async () => {
   let failed = 0;
+  for (const project of projects) {
+    projectRoot = path.resolve(project);
+    config = JSON.parse(source('release-please-config.json'));
+    initial = JSON.parse(source('.release-please-manifest.json'))['.'];
+    const poms = config['extra-files'].filter(file => typeof file === 'object' && file.type === 'xml')
+      .map(file => file.path);
+    assert(poms.length > 0, 'Generated projects must update actual Maven coordinates');
   for (const c of CASES) {
-    const actual = await next(c.commits, c.released);
+    const pr = await next(c.commits, c.released);
+    const actual = pr && pr.version ? pr.version.toString() : null;
     const ok = actual === c.expected;
     failed += ok ? 0 : 1;
-    console.log(`${ok ? 'PASS' : 'FAIL'} ${c.name}: expected ${c.expected}, got ${actual}`);
+    for (const pom of poms) {
+      const update = pr.updates.find(update => update.path === pom);
+      assert(update, `Release plan omitted ${pom}`);
+      const original = source(pom);
+      const updated = update.updater.updateContent(original);
+      assert.equal(pomVersions(updated).own[0], c.expected, `${project}/${pom}: wrong Maven coordinate`);
+      assert.deepEqual(pomVersions(updated).foreign, pomVersions(original).foreign,
+        `${project}/${pom}: SDK parents and dependency versions must remain independent`);
+    }
+    console.log(`${ok ? 'PASS' : 'FAIL'} ${path.basename(projectRoot)}: ${c.name}: expected ${c.expected}, got ${actual}`);
   }
+  }
+  console.log(`Validated ${projects.length * CASES.length} actual release plans and their Maven POM updates`);
   process.exitCode = failed === 0 ? 0 : 1;
 })().catch((e) => {
   console.error(e);

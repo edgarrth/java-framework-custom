@@ -23,11 +23,32 @@ Todos los comandos aceptan `-h` y `-V`; los que trabajan sobre un proyecto acept
 ## Código formateado
 
 Lo que generan `new`, `add`, `generate` y `contract sync` queda con el formato que exige
-`spotless:check`, así que el primer `./mvnw -Pquality verify` pasa sin `spotless:apply`. El jar
+`spotless:check`, sin necesitar `spotless:apply` adicional. Aprobar `quality` también requiere
+implementar y probar el comportamiento del servicio y cumplir sus umbrales de cobertura. El jar
 trae google-java-format y declara en su manifiesto (`Add-Exports`) el acceso a `jdk.compiler` que
 necesita; basta con ejecutarlo en un JDK 25. El binario nativo no puede correr el formateador:
 al terminar ejecuta `./mvnw -q spotless:apply` en el proyecto (o `mvn` si no hay wrapper) y, si no
 encuentra Maven, avisa qué correr.
+
+## Servicios dentro de un reactor Maven
+
+Usa `--dir` con la raíz que contiene `.axiz/project.yaml` y el POM agregador. Los comandos
+siguen los módulos declarados y seleccionan la aplicación que contiene la configuración base
+`application.yaml`, `application.yml` o `application.properties`. Si hay varias aplicaciones,
+las rutas de contratos del manifiesto deben identificar exactamente una; una selección
+ambigua se rechaza antes de escribir.
+
+Fuentes, dependencias, configuración y migraciones se modifican en ese módulo. Los snapshots
+y el registro de identidades permanecen junto al manifiesto raíz. `upgrade --rename` conserva
+el artifactId del agregador y las bibliotecas hermanas; actualiza los parents Axiz declarados
+y renombra el servicio preservando sus identidades persistentes. Doctor exige BlockHound en
+las pruebas de la aplicación reactiva, sin exigirlo a una biblioteca Java pura del reactor.
+
+La migración de workflows estándar fija el módulo, su POM y el directorio existente del chart
+para los consumidores independientes de build y deploy. Los workflows personalizados y un POM
+de servicio con nombre distinto de `pom.xml` producen una propuesta para revisión y conservan
+el proyecto original. El lector estructural no resuelve el modelo efectivo de Maven ni módulos
+cuyas rutas dependan de propiedades.
 
 ## Modo offline y online
 

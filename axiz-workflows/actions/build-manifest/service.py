@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 import yaml
 
 from manifest import read_json, safe_file
+from maven_version import update as update_reactor_version
 
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
 REPOSITORY = re.compile(r"[a-z0-9][a-z0-9._:-]*(?:/[a-z0-9][a-z0-9._-]*)+")
@@ -114,7 +115,7 @@ def inspect(reference, expression="{{json .}}"):
 
 
 def set_project_version(data, root):
-    """Apply the explicit build version to the service only, preserving its Axiz parent."""
+    """Apply final reactor coordinates while preserving external parents and dependencies."""
     path = safe_file(Path(root), (PurePosixPath(data["parameters"]["module"]) / "pom.xml").as_posix())
     document = minidom.parseString(path.read_bytes())
     try:
@@ -122,13 +123,9 @@ def set_project_version(data, root):
                     if node.nodeType == Node.ELEMENT_NODE and node.localName == "version"]
         if len(versions) != 1:
             raise ValueError("Service source must declare its own project version")
-        version = versions[0]
-        for child in list(version.childNodes):
-            version.removeChild(child)
-        version.appendChild(document.createTextNode(data["version"]))
-        path.write_bytes(document.toxml(encoding="UTF-8"))
     finally:
         document.unlink()
+    update_reactor_version(root, data["version"])
 
 
 def main():

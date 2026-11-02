@@ -27,6 +27,12 @@ ejecución pueden coexistir sin reemplazarse. Se conservan durante 90 días.
   variante, para conservar candidatas distintas con la misma versión. Se firman la imagen, el
   manifiesto y las attestations de SBOM, procedencia y manifiesto.
   El escaneo de la imagen recorre todas las plataformas declaradas, por el mismo digest aprobado.
+  Para un servicio bajo un agregador, `module` selecciona su directorio desde el POM raíz.
+  Maven construye también sus dependencias del reactor y las instala en el repositorio local
+  aislado del job; Jib consume esos mismos artefactos. Los goals nativos sólo se ejecutan sobre
+  el servicio. La versión final se aplica al reactor y a sus referencias internas en la copia
+  de build; los parents del SDK y las dependencias externas conservan sus versiones.
+  Esta instalación local no publica librerías ni invoca el deploy.
 - Gates comunes: pruebas, quality, mutación, encapsulación, SBOM y escaneo. En servicios son
   obligatorias además las evidencias de contratos y charts. Los contratos se descubren en
   `src/main/{openapi,asyncapi}/` o `docs/` del módulo; una ubicación ambigua falla. Las reglas

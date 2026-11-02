@@ -19,7 +19,7 @@ class ContractSyncTest {
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
   private final ContractSync sync = new ContractSync(generator);
 
-  private static final String NEW_OPERATION =
+  static final String NEW_OPERATION =
       """
         /v1/orders/{orderId}/refunds:
           post:

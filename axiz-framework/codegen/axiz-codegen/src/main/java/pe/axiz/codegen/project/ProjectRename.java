@@ -16,7 +16,6 @@ import pe.axiz.codegen.render.YamlProperties;
 /** Preserves identities across deployment renames, with a version-controlled doctor ledger. */
 public final class ProjectRename {
   public static final String LEDGER = ".axiz/identities.yaml";
-  private static final String RESOURCES = "src/main/resources/";
   private static final List<String> STABLE =
       List.of(
           "axiz.messaging.source",
@@ -35,6 +34,8 @@ public final class ProjectRename {
     dir = dir.toAbsolutePath().normalize();
     List<String> existingProblems = problems(dir);
     if (!existingProblems.isEmpty()) throw new IOException(String.join("; ", existingProblems));
+    ProjectLayout layout = ProjectLayout.read(dir, manifest);
+    String resources = layout.relative("src/main/resources") + "/";
     Map<String, String> edits = new LinkedHashMap<>();
     Map<String, Object> ledger = readMap(SafePaths.target(dir, LEDGER));
     Map<String, Object> tracked =
@@ -42,8 +43,8 @@ public final class ProjectRename {
             ? stringMap(previous)
             : new LinkedHashMap<>();
     String application =
-        RESOURCES
-            + (Files.isRegularFile(SafePaths.target(dir, RESOURCES + "application.yaml"))
+        resources
+            + (Files.isRegularFile(SafePaths.target(dir, resources + "application.yaml"))
                 ? "application.yaml"
                 : "application.yml");
     if (!Files.isRegularFile(SafePaths.target(dir, application))) {
@@ -63,7 +64,7 @@ public final class ProjectRename {
             old,
             STABLE.get(3),
             old);
-    try (Stream<Path> paths = Files.walk(SafePaths.target(dir, "src/main/resources"))) {
+    try (Stream<Path> paths = Files.walk(layout.target("src/main/resources"))) {
       for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
         String file = SafePaths.fileName(path);
         if (file.startsWith("application") && file.endsWith(".properties")) {
@@ -101,72 +102,65 @@ public final class ProjectRename {
         edits.put(relative, YamlProperties.merge(Files.readString(path), changes));
       }
     }
-    Path charts = SafePaths.target(dir, "deploy/helm");
-    if (Files.isDirectory(charts)) {
-      try (Stream<Path> paths = Files.list(charts)) {
-        for (Path chart : paths.filter(Files::isDirectory).toList()) {
-          SafePaths.target(dir, dir.relativize(chart).toString());
-          Path values =
-              SafePaths.target(dir, dir.relativize(chart.resolve("values.yaml")).toString());
-          if (!Files.isRegularFile(values)) continue;
-          Path metadata =
-              SafePaths.target(dir, dir.relativize(chart.resolve("Chart.yaml")).toString());
-          if (Files.isRegularFile(metadata)) {
-            edits.put(
-                dir.relativize(metadata).toString(),
-                YamlProperties.merge(Files.readString(metadata), Map.of("name", name)));
+    for (Path chart : layout.charts()) {
+      SafePaths.target(dir, dir.relativize(chart).toString());
+      Path values = SafePaths.target(dir, dir.relativize(chart.resolve("values.yaml")).toString());
+      if (!Files.isRegularFile(values)) continue;
+      Path metadata = SafePaths.target(dir, dir.relativize(chart.resolve("Chart.yaml")).toString());
+      if (Files.isRegularFile(metadata)) {
+        edits.put(
+            dir.relativize(metadata).toString(),
+            YamlProperties.merge(Files.readString(metadata), Map.of("name", name)));
+      }
+      Map<String, Object> current = flat(values);
+      List<String> aliases = new ArrayList<>();
+      Object previous = current.get("migration.serviceAliases");
+      if (previous instanceof List<?> list) list.forEach(v -> aliases.add(String.valueOf(v)));
+      if (!aliases.contains(old)) aliases.add(old);
+      aliases.remove(name);
+      Map<String, Object> changes = new LinkedHashMap<>();
+      changes.put("nameOverride", name);
+      changes.put("migration.serviceAliases", aliases);
+      changes.put("migration.previousAudience", old);
+      changes.put("migration.currentAudience", name);
+      // Chart overrides take precedence over the packaged application configuration.
+      Map<String, Object> identities = new LinkedHashMap<>();
+      try (Stream<Path> valuesFiles = Files.list(chart)) {
+        for (Path v :
+            valuesFiles
+                .filter(
+                    p ->
+                        (SafePaths.fileName(p).equals("values.yaml")
+                            || (SafePaths.fileName(p).startsWith("values-")
+                                && SafePaths.fileName(p).endsWith(".yaml"))))
+                .toList()) {
+          SafePaths.target(dir, dir.relativize(v).toString());
+          Map<String, Object> config = flat(v);
+          Map<String, Object> updates = new LinkedHashMap<>();
+          for (String key : STABLE) {
+            Object value = config.get("config." + key);
+            if (value != null)
+              updates.put(
+                  "config." + key,
+                  String.valueOf(value).replace("${spring.application.name}", old));
           }
-          Map<String, Object> current = flat(values);
-          List<String> aliases = new ArrayList<>();
-          Object previous = current.get("migration.serviceAliases");
-          if (previous instanceof List<?> list) list.forEach(v -> aliases.add(String.valueOf(v)));
-          if (!aliases.contains(old)) aliases.add(old);
-          aliases.remove(name);
-          Map<String, Object> changes = new LinkedHashMap<>();
-          changes.put("nameOverride", name);
-          changes.put("migration.serviceAliases", aliases);
-          changes.put("migration.previousAudience", old);
-          changes.put("migration.currentAudience", name);
-          // Chart overrides take precedence over the packaged application configuration.
-          Map<String, Object> identities = new LinkedHashMap<>();
-          try (Stream<Path> valuesFiles = Files.list(chart)) {
-            for (Path v :
-                valuesFiles
-                    .filter(
-                        p ->
-                            (SafePaths.fileName(p).equals("values.yaml")
-                                || (SafePaths.fileName(p).startsWith("values-")
-                                    && SafePaths.fileName(p).endsWith(".yaml"))))
-                    .toList()) {
-              SafePaths.target(dir, dir.relativize(v).toString());
-              Map<String, Object> config = flat(v);
-              Map<String, Object> updates = new LinkedHashMap<>();
-              for (String key : STABLE) {
-                Object value = config.get("config." + key);
-                if (value != null)
-                  updates.put(
-                      "config." + key,
-                      String.valueOf(value).replace("${spring.application.name}", old));
-              }
-              audienceAliases(config, updates, old, name);
-              if (v.equals(values)) updates.putAll(changes);
-              String relative = dir.relativize(v).toString();
-              identities.clear();
-              updates.forEach(
-                  (k, value) -> {
-                    if (k.startsWith("config.axiz.messaging.")
-                        || k.equals("config.axiz.config.parameter-store.application"))
-                      identities.put(k, value);
-                  });
-              tracked.put(relative, new LinkedHashMap<>(identities));
-              edits.put(relative, YamlProperties.merge(Files.readString(v), updates));
-            }
-          }
-          edits.put(
-              dir.relativize(chart.resolve("templates/migration-service-aliases.yaml")).toString(),
-              ALIAS_TEMPLATE);
+          audienceAliases(config, updates, old, name);
+          if (v.equals(values)) updates.putAll(changes);
+          String relative = dir.relativize(v).toString();
+          identities.clear();
+          updates.forEach(
+              (k, value) -> {
+                if (k.startsWith("config.axiz.messaging.")
+                    || k.equals("config.axiz.config.parameter-store.application"))
+                  identities.put(k, value);
+              });
+          tracked.put(relative, new LinkedHashMap<>(identities));
+          edits.put(relative, YamlProperties.merge(Files.readString(v), updates));
         }
       }
+      edits.put(
+          dir.relativize(chart.resolve("templates/migration-service-aliases.yaml")).toString(),
+          ALIAS_TEMPLATE);
     }
     ledger.putIfAbsent("originalName", old);
     ledger.put("currentName", name);

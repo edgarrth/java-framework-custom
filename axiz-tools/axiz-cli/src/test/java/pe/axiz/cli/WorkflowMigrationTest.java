@@ -17,7 +17,7 @@ import pe.axiz.codegen.project.ProjectRename;
 import pe.axiz.codegen.render.TemplateSet;
 
 class WorkflowMigrationTest {
-  private static ProjectManifest legacy(Path project) throws IOException {
+  static ProjectManifest legacy(Path project) throws IOException {
     ProjectManifest manifest = ProjectManifest.read(project).withAxizVersion("1.0.0");
     TemplateSet set = TemplateSet.load(manifest.isService() ? "service" : "library");
     Map<String, Object> context =
@@ -101,9 +101,12 @@ class WorkflowMigrationTest {
     ProjectRename.apply(project, before, "payment-orders", false);
     ProjectManifest after = before.withName("payment-orders").withAxizVersion("2.0.0");
     assertTrue(WorkflowMigration.migrate(project, before, after));
-    assertTrue(
-        Files.readString(project.resolve(".github/workflows/ci.yaml"))
-            .contains("chart: deploy/helm/orders"));
+    Map<?, ?> document =
+        SafeYaml.create(1_000_000)
+            .load(Files.readString(project.resolve(".github/workflows/ci.yaml")));
+    Map<?, ?> jobs = (Map<?, ?>) document.get("jobs");
+    Map<?, ?> build = (Map<?, ?>) jobs.get("build");
+    assertEquals("deploy/helm/orders", ((Map<?, ?>) build.get("with")).get("chart"));
     assertTrue(
         Files.readString(project.resolve(".github/workflows/ci.yaml"))
             .contains("service: payment-orders"));

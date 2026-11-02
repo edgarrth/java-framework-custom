@@ -69,6 +69,7 @@ public final class CapabilityAdder {
    *     project
    */
   public Result add(Path dir, String capability) throws IOException {
+    dir = dir.toAbsolutePath().normalize();
     ProjectManifest manifest = ProjectManifest.read(dir);
     if (!manifest.isService()) {
       throw new IllegalArgumentException("Capabilities apply to services only");
@@ -123,19 +124,23 @@ public final class CapabilityAdder {
                 + ")");
       }
     }
+    ProjectLayout layout = ProjectLayout.read(dir, manifest);
+    List<Path> charts = layout.charts();
+    SafePaths.target(dir, ProjectManifest.PATH);
+    layout.target("src/main/resources/application.yaml");
+    layout.target("src/main/resources/application-local.yaml");
+    layout.target(Migrations.DIR);
+    for (Path chart : charts) {
+      try (Stream<Path> entries = Files.list(chart)) {
+        for (Path file : entries.toList()) SafePaths.target(dir, dir.relativize(file).toString());
+      }
+    }
     List<String> changed = new ArrayList<>();
 
-    Path pom = dir.resolve("pom.xml");
+    Path pom = layout.pom();
     String pomText = Files.readString(pom, StandardCharsets.UTF_8);
     String updated = pomText;
     for (Capability c : missing) {
-      if (!c.supports(manifest.stack()))
-        throw new IllegalArgumentException(
-            "Capability " + c.name() + " does not support " + manifest.stack().id());
-      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
-          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
-        throw new IllegalArgumentException(
-            "Archetype " + manifest.archetype() + " cannot use domain messaging");
       updated = PomEditor.addDependency(updated, "pe.axiz", c.starter(), null);
       for (String d : c.dependencies(store)) {
         String[] ga = d.split(":", -1);
@@ -144,7 +149,7 @@ public final class CapabilityAdder {
     }
     if (!updated.equals(pomText)) {
       Files.writeString(pom, updated, StandardCharsets.UTF_8);
-      changed.add("pom.xml");
+      changed.add(dir.relativize(pom).toString());
     }
 
     Map<String, Object> properties = new LinkedHashMap<>();
@@ -152,27 +157,19 @@ public final class CapabilityAdder {
     Set<String> keys = new LinkedHashSet<>();
     Set<String> secrets = new LinkedHashSet<>();
     for (Capability c : missing) {
-      if (!c.supports(manifest.stack()))
-        throw new IllegalArgumentException(
-            "Capability " + c.name() + " does not support " + manifest.stack().id());
-      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
-          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
-        throw new IllegalArgumentException(
-            "Archetype " + manifest.archetype() + " cannot use domain messaging");
       properties.putAll(c.properties(store));
       local.putAll(c.localProperties());
       keys.addAll(c.configMapKeys());
       secrets.addAll(c.secrets());
     }
-    if (mergeYaml(dir.resolve("src/main/resources/application.yaml"), properties)) {
-      changed.add("src/main/resources/application.yaml");
+    if (mergeYaml(layout.target("src/main/resources/application.yaml"), properties)) {
+      changed.add(layout.relative("src/main/resources/application.yaml"));
     }
-    if (mergeYaml(dir.resolve("src/main/resources/application-local.yaml"), local)) {
-      changed.add("src/main/resources/application-local.yaml");
+    if (mergeYaml(layout.target("src/main/resources/application-local.yaml"), local)) {
+      changed.add(layout.relative("src/main/resources/application-local.yaml"));
     }
 
-    Path chart = dir.resolve("deploy/helm/" + manifest.name());
-    if (Files.isDirectory(chart)) {
+    for (Path chart : charts) {
       if (!keys.isEmpty()) {
         try (Stream<Path> files = Files.list(chart)) {
           for (Path values :
@@ -194,13 +191,6 @@ public final class CapabilityAdder {
       StringBuilder sql = new StringBuilder();
       TemplateSet service = TemplateSet.load("service");
       for (Capability c : missing) {
-        if (!c.supports(manifest.stack()))
-          throw new IllegalArgumentException(
-              "Capability " + c.name() + " does not support " + manifest.stack().id());
-        if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
-            && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
-          throw new IllegalArgumentException(
-              "Archetype " + manifest.archetype() + " cannot use domain messaging");
         String schema = SCHEMAS.get(c.name());
         if (schema != null) {
           sql.append('\n')
@@ -208,9 +198,9 @@ public final class CapabilityAdder {
         }
       }
       if (!sql.isEmpty()) {
-        String version = Migrations.next(dir);
+        String version = Migrations.next(layout.module());
         Path migration =
-            dir.resolve(
+            layout.target(
                 Migrations.DIR
                     + "/V"
                     + version

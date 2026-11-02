@@ -160,14 +160,18 @@ jobs:
           mkdir -p target/build-reports
           "$PYTHON" "$TOOLS/service.py" set-version --metadata "$METADATA"
           profiles=quality
-          goals=(verify)
           if [[ "$VARIANT" == native ]]; then
             case "$(uname -m)" in x86_64) platform=linux/amd64 ;; aarch64) platform=linux/arm64 ;; *) exit 1 ;; esac
             jq -e --arg platform "$platform" '. == [$platform]' <<< "$PLATFORMS" >/dev/null
             profiles=quality,native
-            goals+=(native:compile native:test)
           fi
-          mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" "${goals[@]}" 2>&1 | tee target/build-reports/verify.log
+          # Build required sibling modules from this checkout. Install only into this job's
+          # isolated local repository so the later Jib invocation resolves those same bytes.
+          mvn -B -ntp -f pom.xml -pl "$MODULE" -am "-P$profiles" install 2>&1 | tee target/build-reports/verify.log
+          if [[ "$VARIANT" == native ]]; then
+            # Native goals belong to the service, not to its aggregator or Java libraries.
+            mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" native:compile native:test 2>&1 | tee -a target/build-reports/verify.log
+          fi
           if [[ "$BASE_IMAGE" == scratch ]]; then
             # A dynamically linked native executable cannot run in an empty filesystem.
             readelf -l "$MODULE/target/$SERVICE" > target/build-reports/native-elf.txt

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -15,6 +14,7 @@ import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.CapabilityAdder;
 import pe.axiz.codegen.project.Migrations;
 import pe.axiz.codegen.project.PomEditor;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -68,6 +68,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
   public Integer call() throws IOException {
     Path dir = project();
     ProjectManifest manifest = ProjectManifest.read(dir);
+    ProjectLayout layout = ProjectLayout.read(dir, manifest);
     if (type.equals("http-client")) {
       if (contract == null) {
         throw new IllegalArgumentException("http-client needs --contract <openapi file>");
@@ -75,10 +76,10 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       HttpClientGenerator.Result r =
           HttpClientGenerator.generate(
               manifest, name, Files.readString(contract, StandardCharsets.UTF_8));
-      write(dir, r.files());
+      write(layout, r.files());
       // the first real client replaces the placeholder the http-client capability adds
       if (CapabilityAdder.mergeYaml(
-          dir.resolve("src/main/resources/application.yaml"),
+          layout.target("src/main/resources/application.yaml"),
           r.properties(),
           List.of("axiz.http-client.clients.example"))) {
         ok("Updated src/main/resources/application.yaml");
@@ -146,7 +147,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       if (handlerRequested && !handlerFound)
         throw new IllegalArgumentException(
             "The AsyncAPI event is not declared as received by this service");
-      write(dir, selected);
+      write(layout, selected);
       if (handlerRequested) warn("Implement the event handler before consuming live messages");
       formatSources(dir);
       return ExitCodes.OK;
@@ -154,12 +155,12 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
     ArtifactGenerator generator = new ArtifactGenerator(environment.clock());
     ArtifactGenerator.Options options =
         new ArtifactGenerator.Options(category, title, source, target);
-    String migration = Migrations.next(dir);
+    String migration = Migrations.next(layout.module());
     ArtifactGenerator.Result r = generator.generate(manifest, type, name, options, null, migration);
     if (type.equals("error-code")) {
       // the errors class may exist already: generate again appending to it
       for (String path : r.created().keySet()) {
-        Path existing = dir.resolve(path);
+        Path existing = layout.target(path);
         if (Files.exists(existing)) {
           r =
               generator.generate(
@@ -171,23 +172,26 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
         }
       }
     }
-    write(dir, r.created());
+    write(layout, r.created());
     for (Map.Entry<String, byte[]> e : r.updated().entrySet()) {
-      SafePaths.write(dir, e.getKey(), e.getValue(), true);
+      SafePaths.write(dir, layout.relative(e.getKey()), e.getValue(), true);
       ok("Updated " + e.getKey());
     }
     for (Map.Entry<String, String> e : r.appended().entrySet()) {
-      Path file = SafePaths.target(dir, e.getKey());
+      Path file = layout.target(e.getKey());
       if (Files.exists(file)) {
         String current = Files.readString(file, StandardCharsets.UTF_8);
         String prefix = current.isEmpty() || current.endsWith("\n") ? "" : "\n";
-        Files.writeString(
-            file, prefix + e.getValue(), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        SafePaths.write(
+            dir,
+            layout.relative(e.getKey()),
+            (current + prefix + e.getValue()).getBytes(StandardCharsets.UTF_8),
+            true);
         ok("Updated " + e.getKey());
       }
     }
     if (!r.dependencies().isEmpty()) {
-      Path pom = dir.resolve("pom.xml");
+      Path pom = layout.pom();
       String text = Files.readString(pom, StandardCharsets.UTF_8);
       String updated = text;
       for (String d : r.dependencies()) {
@@ -195,7 +199,11 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
         updated = PomEditor.addDependency(updated, ga[0], ga[1], null);
       }
       if (!updated.equals(text)) {
-        Files.writeString(pom, updated, StandardCharsets.UTF_8);
+        SafePaths.write(
+            dir,
+            dir.toAbsolutePath().normalize().relativize(pom).toString(),
+            updated.getBytes(StandardCharsets.UTF_8),
+            true);
         ok("Updated pom.xml (" + String.join(", ", r.dependencies()) + ")");
       }
     }
@@ -204,10 +212,11 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
     return ExitCodes.OK;
   }
 
-  private void write(Path dir, Map<String, byte[]> files) throws IOException {
+  private void write(ProjectLayout layout, Map<String, byte[]> files) throws IOException {
+    for (String path : files.keySet()) layout.target(path);
     for (Map.Entry<String, byte[]> e : files.entrySet()) {
       // validated path, no symbolic link followed inside the project
-      if (!SafePaths.write(dir, e.getKey(), e.getValue(), force)) {
+      if (!SafePaths.write(layout.root(), layout.relative(e.getKey()), e.getValue(), force)) {
         warn("Exists, not overwritten: " + e.getKey());
         continue;
       }

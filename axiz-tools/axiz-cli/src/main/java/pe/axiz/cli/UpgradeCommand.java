@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.project.MavenReactor;
 import pe.axiz.codegen.project.PomEditor;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.project.ProjectRename;
 import picocli.CommandLine.Command;
@@ -102,12 +104,12 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
           return ExitCodes.PROBLEMS;
         }
       }
-      Path rootPom = working.resolve("pom.xml");
+      Path deploymentPom = ProjectLayout.read(working, manifest).pom();
       for (MavenReactor.Module module : MavenReactor.read(working)) {
-        if (module.axizParent() || rename != null && module.pom().equals(rootPom)) {
+        if (module.axizParent() || rename != null && module.pom().equals(deploymentPom)) {
           String text = Files.readString(module.pom(), StandardCharsets.UTF_8);
           if (module.axizParent()) text = PomEditor.setParentVersion(text, target);
-          if (rename != null && module.pom().equals(rootPom))
+          if (rename != null && module.pom().equals(deploymentPom))
             text = PomEditor.setArtifactId(text, rename);
           pe.axiz.codegen.output.SafePaths.write(
               working,

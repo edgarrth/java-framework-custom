@@ -18,6 +18,26 @@ mvn -pl axiz-cli -am -Pnative package    # native binary target/axiz (GraalVM 25
 
 Commands and options: see the README of `axiz-tools` and `axiz --help`.
 
+## Maven aggregators
+
+Run project commands with `--dir` pointing at the directory containing `.axiz/project.yaml`
+and the root POM. The CLI follows declared Maven modules and selects the application containing
+the base `application.yaml`, `application.yml` or `application.properties`. With multiple
+applications, the manifest's contract paths must identify exactly one of them; an ambiguous
+selection fails before writing files. Module paths cannot escape the project or follow symlinks.
+
+Generation, contract synchronization, capability dependencies and Flyway migrations use that
+application module. Snapshots and the identity ledger stay beside the root manifest. Reactive
+checks require BlockHound in the application tests, without requiring it in a sibling Java library.
+An upgrade updates all declared Axiz parents; `--rename` changes only the application's artifactId
+and deployment identity. It preserves the aggregator, sibling artifacts, Java packages and stateful
+identities. Standard generated workflows migrate to separate build/deploy consumers using the
+application module, its source POM and the existing owned chart directory. Customized legacy
+workflows remain a patch for review.
+Explicitly named reactor POMs can be read by the editors, but the standard service build
+requires `<module>/pom.xml`; upgrading that workflow with another POM filename also produces
+a proposal and preserves the original project.
+
 ## AsyncAPI contracts
 
 Use `axiz new ... --asyncapi events.yaml` to generate Java payload records, typed inbound

@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
+import pe.axiz.codegen.project.MavenReactor;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.project.ProjectRename;
 import pe.axiz.codegen.render.TemplateSet;
@@ -51,26 +53,62 @@ final class WorkflowMigration {
     TemplateSet templates = TemplateSet.load(set);
     String originalName = originalName(directory, before);
     Map<String, Object> oldContext = context(before, originalName);
-    Map<String, Object> newContext = context(after, after.name());
+    Map<String, Object> newContext = new LinkedHashMap<>(context(after, after.name()));
+    List<Path> charts = List.of();
+    boolean standardServicePom = true;
+    if (after.isService()) {
+      ProjectLayout layout = ProjectLayout.read(directory, after);
+      // The reusable service build contract selects <module>/pom.xml.
+      standardServicePom = SafePaths.fileName(layout.pom()).equals("pom.xml");
+      charts = layout.charts();
+      String module =
+          directory
+              .toAbsolutePath()
+              .normalize()
+              .relativize(layout.module())
+              .toString()
+              .replace('\\', '/');
+      String pom =
+          directory
+              .toAbsolutePath()
+              .normalize()
+              .relativize(layout.pom())
+              .toString()
+              .replace('\\', '/');
+      String chart =
+          charts.size() == 1
+              ? directory
+                  .toAbsolutePath()
+                  .normalize()
+                  .relativize(charts.getFirst())
+                  .toString()
+                  .replace('\\', '/')
+              : "deploy/helm/" + originalName;
+      newContext.put(
+          "project",
+          Map.of(
+              "name",
+              after.name(),
+              "moduleYaml",
+              JsonWriter.write(module.isEmpty() ? "." : module),
+              "pomYaml",
+              JsonWriter.write(pom),
+              "chartYaml",
+              JsonWriter.write(chart)));
+    }
     String oldCi = templates.renderTemplate("/migration/v1/" + set + "-ci.fixture", oldContext);
     String newCi =
         templates.renderTemplate(
             before.isService() ? "github/ci.yaml.mustache" : "ci.yaml.mustache", newContext);
-    boolean safe = same(directory, CI, oldCi);
+    boolean safe = standardServicePom && same(directory, CI, oldCi);
     if (before.isService()) {
       safe &=
           same(
               directory,
               CD,
               templates.renderTemplate("/migration/v1/service-cd.fixture", oldContext));
-      // Deployment paths can stay stable across a service rename, while chart metadata follows
-      // the new capability name. The identity ledger, audiences and aliases remain authoritative.
-      String oldChart = "deploy/helm/" + originalName;
-      newCi = newCi.replace("      chart: deploy/helm/" + after.name(), "      chart: " + oldChart);
-      if (!before.name().equals(after.name())) {
-        Path chart = SafePaths.target(directory, oldChart + "/Chart.yaml");
-        if (!Files.isRegularFile(chart)) safe = false;
-      }
+      // Charts retain their directories across renames, including charts inside the service module.
+      if (charts.size() != 1) safe = false;
     }
     Path existingDeploy = SafePaths.target(directory, DEPLOY);
     if (Files.exists(existingDeploy)) safe = false;
@@ -173,6 +211,35 @@ final class WorkflowMigration {
     }
     if (!manifest.isService()) changed.put("draft", true);
     changed.put("force-tag-creation", true);
+    Object extras = changed.get("extra-files");
+    List<Object> files = new java.util.ArrayList<>();
+    if (extras instanceof List<?> list) files.addAll(list);
+    else if (extras != null) throw new IOException("release-please extra-files must be a list");
+    List<Path> poms =
+        manifest.isService()
+            ? List.of(ProjectLayout.read(directory, manifest).pom())
+            : MavenReactor.read(directory).stream().map(MavenReactor.Module::pom).toList();
+    for (Path pom : poms) {
+      String relative =
+          directory.toAbsolutePath().normalize().relativize(pom).toString().replace('\\', '/');
+      boolean configured =
+          files.stream()
+              .anyMatch(
+                  file ->
+                      relative.equals(file)
+                          || file instanceof Map<?, ?> settings
+                              && relative.equals(settings.get("path")));
+      if (!configured)
+        files.add(
+            Map.of(
+                "type",
+                "xml",
+                "path",
+                relative,
+                "xpath",
+                "/*[local-name()='project']/*[local-name()='version']"));
+    }
+    changed.put("extra-files", files);
     SafePaths.write(
         directory,
         "release-please-config.json",

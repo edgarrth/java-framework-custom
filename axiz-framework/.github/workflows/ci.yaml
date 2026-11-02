@@ -170,10 +170,6 @@ jobs:
         run: node .github/scripts/test-contracts.cjs
       - name: The aggregated coverage report lists every module with code
         run: python3 .github/scripts/check-coverage-aggregate.py .
-      - name: Release versions of a generated project (release-please calculation)
-        run: |
-          npm install --prefix .github/scripts/release-version --no-audit --no-fund --ignore-scripts
-          node .github/scripts/release-version/test.cjs
       - name: Maven distribution checksum pinned (repository and generated projects)
         run: |
           for f in .mvn/wrapper/maven-wrapper.properties \
@@ -200,6 +196,10 @@ jobs:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Install the framework and generate the samples
         run: .github/scripts/samples.sh
+      - name: Release versions and POM updates of actual generated projects
+        run: |
+          npm ci --prefix .github/scripts/release-version --no-audit --no-fund --ignore-scripts
+          node .github/scripts/release-version/test.cjs target/samples/modules.json
       - name: Build every sample (verify)
         run: |
           failed=()

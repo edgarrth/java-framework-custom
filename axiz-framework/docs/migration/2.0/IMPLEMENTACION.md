@@ -1,5 +1,5 @@
 
-Estado: **en implementación**, actualizado el 1 de noviembre de 2026. Este registro no declara
+Estado: **en implementación**, actualizado el 2 de noviembre de 2026. Este registro no declara
 terminada ni publicada la versión 2.0. La referencia normativa es el
 
 Se preservan las correcciones previas de precisión monetaria, identidad y reproducibilidad.
@@ -720,13 +720,101 @@ La comprobación contra nueve proyectos generados realmente —siete servicios y
 de plataforma— también aprobó (`sample-workflows-generated-defaults1.log`). Esta comprobación
 valida la selección del pipeline; no sustituye la compilación nativa de todas las muestras.
 
+## Continuación: servicios bajo agregadores Maven (2 de noviembre)
+
+El lector seguro de reactores pasó del CLI al generador compartido. `ProjectLayout` selecciona
+el módulo de aplicación y lo usan generación de artefactos, sincronización OpenAPI/AsyncAPI,
+adición de capacidades, renombre, upgrade y doctor. Los metadatos y snapshots permanecen en
+la raíz; las dependencias, configuración, fuentes y migraciones se escriben en el servicio.
+Con varias aplicaciones, los contratos del manifiesto deben seleccionar una de ellas. Se
+rechazan ambigüedades, módulos repetidos/cíclicos, rutas externas, symlinks y entidades XML
+antes de aplicar cambios. El lector no ejecuta Maven ni sustituye su modelo efectivo.
+
+Upgrade actualiza todos los parents Axiz declarados y renombra exclusivamente el artifactId
+del servicio. Conserva el agregador, las bibliotecas hermanas y los paquetes Java. Doctor
+comprueba las fuentes del reactor, pero exige el opt-in BlockHound al módulo de aplicación,
+sin imponer instrumentación a una biblioteca Java pura. Los charts conservan su directorio,
+también si están dentro del módulo. La migración de workflows fija el módulo, el POM desde el
+que leer la versión y el chart existente. Los workflows personalizados y un POM de servicio
+con nombre distinto de `pom.xml` requieren revisión: no se aplican automáticamente a un
+contrato reutilizable que necesita `<module>/pom.xml`.
+
+El build de servicios construye el módulo y sus dependencias desde el reactor raíz. La versión
+final se aplica a los POM y referencias internas de la copia de build, conservando parents del
+SDK y dependencias externas. Los artefactos se instalan sólo en el repositorio Maven local del
+job para que Jib y el SBOM resuelvan los mismos bytes. Los goals nativos permanecen limitados al
+servicio. Build y deploy siguen siendo ejecuciones independientes.
+
+También se corrigió el versionado de los proyectos nuevos: release-please actualiza mediante
+selectores XML las versiones propias de los POM del servicio, biblioteca o tres módulos del
+starter. No cambia las versiones de parents del SDK ni de dependencias externas. La prueba
+permanente usa release-please real sobre las muestras recién generadas, dentro del job de
+muestras; dejó de buscar una plantilla JSON que había pasado a Mustache. Aprobaron 54 planes
+de release sobre nueve muestras y doce planes sobre los dos proyectos multimódulo migrados.
+
+La aceptación generó un servicio hexagonal/servlet con el CLI real 1.0.0, lo colocó en un módulo
+con una biblioteca Java hermana y ejecutó OpenRewrite real hacia 2.0.0. El dry-run conservó
+los 82 archivos fuente y produjo un patch aplicable. Después del upgrade, doctor, generación
+de una migración Flyway, adición de HTTP client y sincronización OpenAPI aprobaron sin crear
+`src` en la raíz. Los hashes de OpenAPI, realm OAuth y SQL inicial permanecieron idénticos;
+el source de eventos conserva `urn:axiz:modular-orders` y el despliegue pasa a `payment-orders`.
+
+El reactor migrado aprobó quality con Docker obligatorio y ocho pruebas, incluidas aceptación
+de precisión monetaria, paginación, copia defensiva y rechazo de operaciones aún no implementadas.
+El fixture incorporó esas pruebas de su código generado; no se redujeron los umbrales del
+framework. Un SBOM real generado desde el POM hijo contiene 235 componentes y la biblioteca
+hermana con coordenada final `0.1.0`. La evidencia detallada está en
+`multimodule-acceptance/RESULTADOS.json`, `multimodule-actual-build4.log` y
+`multimodule-actual-sbom2.log`. Esta aceptación local no acredita una publicación ni un deploy remoto.
+
+Las regresiones de políticas aprobaron 24 pruebas del framework, 24 de workflows y 79 del
+contrato build/deploy. Las suites finales desde los reactores reales aprobaron 124 pruebas del
+motor y 71 del CLI, sin fallos, errores ni omisiones, con cobertura y quality. El motor terminó
+con cero hallazgos SpotBugs. El CLI conserva únicamente la advertencia previa sobre
+`ProcessBuilder(List)`, revisada porque ejecuta argumentos separados sin shell; no se ocultó
+esa advertencia ni se añadieron supresiones generales.
+
+La mutación completa detectó 1.151 de 1.551 mutantes del motor (1.150 muertos y un timeout,
+74 %) y 495 de 687 del CLI (493 muertos y dos timeouts, 72 %). Tras simplificar la comprobación
+de una lista y fijar el valor nullable del contrato, se repitió además la mutación de las clases
+afectadas en copias aisladas: 25 de 41 mutantes en `ContractSync` y 46 de 68 en
+`WorkflowMigration`; todos los umbrales aprobaron. La suite final del reactor real repitió las
+124/71 pruebas después de esos ajustes. Los 63 reportes de mutación del framework y el del CLI
+no contienen errores de trabajadores; esta inspección no representa una nueva ejecución de
+PIT sobre todos los módulos del framework.
+
+La estructura sigue siendo consistente en los 159 módulos y la gobernanza de dependencias
+aprueba con 70 propiedades de versión. Los contratos verifican 53 consumidores, actionlint
+aprueba 83 workflows fuente/generados/migrados y la política de seguridad revisa 57 archivos,
+además de los seis workflows de los proyectos multimódulo migrados.
+Japicmp se regeneró contra 1.0.0 después de empaquetar los JAR finales: el control exacto
+mantiene las 185 rupturas previstas y 161 reubicaciones, sin ampliar excepciones.
+
+El CLI final compiló con GraalVM 25 en Fedora WSL, con límites locales de 4 GiB y cuatro hilos.
+Los hashes de sus fuentes y dependencias coinciden con los validados. El ELF aprobó versión,
+catálogo, doctor servlet y una segunda migración real: servicio 1.0.0 reactivo/CQRS en un módulo
+con biblioteca Java pura. Su dry-run conservó los 88 archivos fuente; el patch es aplicable.
+El upgrade real, doctor, generación de SQL y sincronización OpenAPI aprobaron sobre el módulo
+hijo. La recompilación aprobó cinco pruebas con PostgreSQL real, arquitectura y BlockHound;
+el resultado es hexagonal con extensión CQRS. Se preservaron los hashes de OpenAPI, realm OAuth
+y SQL inicial. Un segundo upgrade reconoce la versión actual y conserva la validación doctor.
+Contract sync conserva las implementaciones y deja sus propuestas `.axiz-new` para revisión.
+
+El binario validado está disponible en `axiz-tools/axiz-cli/target/axiz`; su SHA-256 es
+`162885ba233e053afd412f517e55ac2e444f0f86739a7b1702d463ae258d9848`.
+La evidencia está en `multimodule-acceptance/RESULTADOS-NATIVE.json` y
+`multimodule-native-final-acceptance1.log`. El sitio se sincronizó con los README actuales y
+aprobó MkDocs estricto (`multimodule-docs-build2.log`). Esta continuación valida el alcance
+afectado; no vuelve a presentar la ejecución global anterior como una nueva aceptación de todo
+
 
 1. Completar las capacidades nativas asíncronas restantes, sus fachadas y cableado:
    Kafka (eventos y auditoría). Auditoría SQS/R2DBC, CQRS y credenciales HTTP ya consumen puertos nativos. Validar arranque en
    frío, refresco de credenciales, reconexión, fallo, timeout y cancelación con BlockHound. Completar
    el precalentamiento de pools físicos al arrancar, además de los recursos ya inicializados.
-2. Completar los escenarios de migración y convivencia restantes, incluidos agregadores con
-   el servicio en un módulo y EDA cuando se complete Kafka nativo. La migración completa servlet
+2. Completar los escenarios de migración y convivencia restantes y EDA cuando se complete Kafka
+   nativo. Los agregadores con un servicio hijo y biblioteca hermana ya tienen aceptación local.
+   La migración completa servlet
    de tres estructuras, las dos combinaciones reactivas descritas, doctor de agregadores y
    propuestas de pipelines ya están comprobados. AsyncAPI tiene evolución compatible,
    records, handlers, binding AOT y comparación de suscripciones; falta la evidencia para autorizar
@@ -741,10 +829,12 @@ valida la selección del pipeline; no sustituye la compilación nativa de todas 
    controles afectados por esas futuras modificaciones; los resultados actuales no aceptan
    automáticamente capacidades todavía pendientes.
 
-El índice Git real conserva los cambios sin preparar: el control de checkout detecta 45 POMs
-nuevos/renombrados aún sin incorporar al índice. La comprobación con un índice de revisión
-temporal que incluye el árbol completo pasa y no modifica el índice del usuario. Esos archivos
-deben formar parte del futuro commit; no se relajó el control de checkout.
+El usuario incorporó los cambios anteriores en el commit `f589011`. Los 45 POMs antes pendientes
+ya forman parte del checkout. Se corrigió además el modo ejecutable de
+`.github/scripts/reactive-native-sample.sh` en el índice: con `core.filemode=false`, un `chmod`
+local no bastaba para conservarlo al clonar. El control real de entradas de build aprueba para
+framework, tools y demo (`multimodule-build-inputs1.log`, cero problemas), sin un índice temporal
+ni excepciones en la política. Esta continuación no crea otro commit.
 
 No se ha publicado una candidata ni se ha ejecutado un despliegue remoto.
 
@@ -795,3 +885,47 @@ proyecto conserva el resumen aunque se limpie `/tmp`.
 | Capas y catálogo actualizados | `native-catalog-architecture1.log`, `native-layer-structure1.log`, `native-dependency-governance1.log` | 48 comprobaciones de arquitectura, 159 módulos y gobernanza aprobados |
 | Procesos de mutación | `storage-final-mutation-health1.log` | 63 reportes; 0 RUN_ERROR/MEMORY_ERROR/NOT_STARTED/STARTED |
 | API de esta continuación | `api-native-gate3.log`, `api-native-refresh1.log`, `api-native-refresh2.log`, `api-native-refresh3.log` | Inventario aprobado antes de repetir el reactor completo |
+
+## Validación independiente (2 de noviembre de 2026)
+
+Revisión del estado posterior al commit `f589011` más los cambios sin commit. Se repitieron los
+
+| Comprobación | Resultado |
+|---|---|
+| `axiz-framework`: `./mvnw --bootstrap clean install -Pquality` | Aprobado: 159 módulos, 1.469 pruebas (incluidas integraciones con Testcontainers), 0 fallas, 51:56 min |
+| `axiz-tools`: `./mvnw clean verify -Pquality` | Aprobado: 124 pruebas, 0 fallas |
+| `axiz-workflows`: pruebas Python (venv como `self-check.yaml`) | Aprobado: build-manifest 79, check-workflow-security 24, encapsulation 7, setup-maven 3, sbom 1, mutations 1 |
+| Esquema `build-manifest-v1` contra sus fixtures (criterio 1b) | Aprobado: 2 válidos aceptados, 5 inválidos rechazados |
+| Scripts del framework (`.github/scripts`) | Aprobado: 24 pruebas |
+| `axiz-docs`: `mkdocs build --strict` | Aprobado |
+| Grafo de dependencias de los POM (capas 1–4, §7.3) | Sin dependencias hacia arriba, sin adaptador→adaptador (salvo `observability-aws`), sin Spring en capas 1–2, core solo con JDK/SLF4J/JSpecify/Micrometer, parents correctos |
+| Nombres 1.x residuales | Solo en las líneas base de japicmp (correcto) |
+| `axiz-demo`: `./mvnw clean verify` | **Falla**: el enforcer rechaza adaptadores en `compile` (`payments-experience`; los 8 servicios tienen el mismo problema) |
+
+### Observaciones abiertas
+
+1. **Demo sin migrar (§11).** Los 8 servicios siguen con `schema: 1`, arquetipos 1.x (`crud`,
+   `integration`, `process`, `experience`), adaptadores en `compile` y nombres anteriores; no
+   existe `payment-network-gateway`; `payments-history` aún depende de `axiz-structure-eda-api`;
+   BlockHound solo en 1 prueba por servicio reactivo. Solo la separación `ci.yaml`/`deploy.yaml`
+   está hecha.
+2. **DoS al parsear `Money` (seguridad).** `Money.parseAmount` y la rama de texto de
+   `MoneyJacksonModule` crean `new BigDecimal(texto)` sin límite de longitud y validan el rango
+   después. Medido en JDK 25: 1.000.000 de dígitos tarda 12,4 s; 5.000.000 no termina en 2 min.
+   Corrección: rechazar textos de más de ~`MAX_INTEGER_DIGITS + MAX_SCALE + 10` caracteres antes
+   de construir el `BigDecimal`.
+3. **Regla faltante de §7.5.** Ninguna regla de `axiz-archunit-rules` impide que un servicio
+   importe clases `*AutoConfiguration` (sí existen las de adaptadores y kits).
+4. **`HexagonalRules` con lista manual de adaptadores.** Enumera 15 paquetes `pe.axiz.adapter.*`
+   (faltan audit, security, sequence y observability) y conserva `pe.axiz.core.persistence..`, que
+   ya no existe. Debería usar `pe.axiz.adapter..` y `pe.axiz.kit..`.
+5. **Nombres de reglas de `FrameworkArchitectureTest`.** Siguen como `SPRING_DOES_NOT_KNOW_FRAMEWORKS`,
+   `*_STRUCTURES`. La regla de APIs no verifica "sin otro `-api` de estructura" (salvo
+   cqrs→hexagonal) ni existe `CORE_DOES_NOT_KNOW_TECHNOLOGY` con ese nombre (lo cubre
+   `CORE_IS_PLAIN_JAVA`). Los ciclos solo se verifican en `structure`, no en `extension`.
+6. **Resto obsoleto.** `frameworks/README.md` sigue versionado y describe el modelo 1.x.
+7. **Desviación documentada pendiente.** Los `-api` de capa 4 usan `axiz-parent-api` (más estricto)
+8. **Calidad menor.** `PaymentsComposition` valida el monto después de consultar el beneficiario
+   (debería validar antes de cualquier I/O) y usa `java.math.BigDecimal` calificado; ~600 usos de
+   nombres calificados `java.util.*` en el código (incluidas pruebas); 21 pruebas con `Thread.sleep`;
+   `LockTemplate.renewLoop` no restaura la interrupción (inocuo porque es su propio hilo).

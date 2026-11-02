@@ -12,6 +12,7 @@ import pe.axiz.codegen.asyncapi.AsyncApiDiff;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.openapi.ContractDiff;
 import pe.axiz.codegen.output.SafePaths;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 
 /**
@@ -34,7 +35,9 @@ public final class AsyncContractSync {
   }
 
   public Result sync(Path directory) throws IOException {
+    directory = directory.toAbsolutePath().normalize();
     ProjectManifest manifest = ProjectManifest.read(directory);
+    ProjectLayout layout = ProjectLayout.read(directory, manifest);
     String contractPath = manifest.asyncapi();
     if (contractPath == null)
       throw new IllegalArgumentException("The project has no AsyncAPI contract");
@@ -69,8 +72,13 @@ public final class AsyncContractSync {
             manifest.structure(),
             manifest.stack(),
             current);
-    Map<String, byte[]> generated = new java.util.LinkedHashMap<>(payloads);
-    generated.putAll(adapters);
+    Map<String, byte[]> generated = new java.util.LinkedHashMap<>();
+    for (var entry : payloads.entrySet())
+      generated.put(layout.relative(entry.getKey()), entry.getValue());
+    for (var entry : adapters.entrySet())
+      generated.put(layout.relative(entry.getKey()), entry.getValue());
+    java.util.Set<String> payloadPaths = new java.util.LinkedHashSet<>();
+    for (String path : payloads.keySet()) payloadPaths.add(layout.relative(path));
     List<String> created = new ArrayList<>();
     List<String> proposed = new ArrayList<>();
     // Validate every destination before any write, including potential proposal files.
@@ -83,7 +91,7 @@ public final class AsyncContractSync {
       if (!Files.exists(target)) {
         SafePaths.write(directory, entry.getKey(), entry.getValue(), false);
         created.add(entry.getKey());
-      } else if (payloads.containsKey(entry.getKey())
+      } else if (payloadPaths.contains(entry.getKey())
           && !Arrays.equals(Files.readAllBytes(target), entry.getValue())) {
         String proposal = entry.getKey() + ContractSync.PROPOSAL;
         SafePaths.write(directory, proposal, entry.getValue(), true);

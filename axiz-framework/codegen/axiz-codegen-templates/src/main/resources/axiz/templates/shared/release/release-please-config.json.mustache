@@ -3,6 +3,12 @@
   "release-type": "simple",
   "draft": {{#archetype.library}}true{{/archetype.library}}{{^archetype.library}}{{#archetype.starter}}true{{/archetype.starter}}{{^archetype.starter}}false{{/archetype.starter}}{{/archetype.library}},
   "force-tag-creation": true,
+  "extra-files": [
+    {"type": "xml", "path": "pom.xml", "xpath": "/*[local-name()='project']/*[local-name()='version']"}{{#archetype.starter}},
+    {"type": "xml", "path": "{{platform.coreArtifact}}/pom.xml", "xpath": "/*[local-name()='project']/*[local-name()='version']"},
+    {"type": "xml", "path": "{{platform.capabilityArtifact}}-spring-boot-autoconfigure/pom.xml", "xpath": "/*[local-name()='project']/*[local-name()='version']"},
+    {"type": "xml", "path": "{{platform.capabilityArtifact}}-spring-boot-starter/pom.xml", "xpath": "/*[local-name()='project']/*[local-name()='version']"}{{/archetype.starter}}
+  ],
   "initial-version": "0.1.0",
   "include-component-in-tag": false,
   "include-v-in-tag": true,

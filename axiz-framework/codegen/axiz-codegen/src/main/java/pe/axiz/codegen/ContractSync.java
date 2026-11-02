@@ -17,6 +17,7 @@ import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 import pe.axiz.codegen.output.SafePaths;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
 import pe.axiz.codegen.render.TemplateSet;
@@ -76,14 +77,17 @@ public final class ContractSync {
    * @param allowBreaking apply even when the contract breaks existing consumers
    */
   public Result sync(Path dir, boolean allowBreaking) throws IOException {
+    dir = dir.toAbsolutePath().normalize();
     ProjectManifest manifest = ProjectManifest.read(dir);
-    if (manifest.openapi() == null) {
+    ProjectLayout layout = ProjectLayout.read(dir, manifest);
+    String contractPath = manifest.openapi();
+    if (contractPath == null) {
       throw new IllegalArgumentException("The project has no OpenAPI contract");
     }
-    String text = Files.readString(dir.resolve(manifest.openapi()), StandardCharsets.UTF_8);
+    String text = Files.readString(SafePaths.target(dir, contractPath), StandardCharsets.UTF_8);
     OpenApiDocument contract = OpenApiDocument.parse(text);
     List<LintFinding> findings = OpenApiLinter.lint(contract);
-    Path snapshot = dir.resolve(SNAPSHOT);
+    Path snapshot = SafePaths.target(dir, SNAPSHOT);
     List<ContractDiff.Change> changes =
         Files.isRegularFile(snapshot)
             ? ContractDiff.compare(
@@ -127,6 +131,8 @@ public final class ContractSync {
     List<String> addedClasses = added.stream().map(Names::pascal).toList();
     List<String> created = new ArrayList<>();
     List<String> proposed = new ArrayList<>();
+    Map<String, byte[]> selected = new LinkedHashMap<>();
+    java.util.Set<String> adapterPaths = new java.util.LinkedHashSet<>();
     for (Map.Entry<String, byte[]> e : rendered.entrySet()) {
       String path = e.getKey();
       String file = path.substring(path.lastIndexOf('/') + 1);
@@ -149,18 +155,28 @@ public final class ContractSync {
       if (!operationFile && !adapterFile) {
         continue;
       }
-      Path target = dir.resolve(path);
+      String relative = layout.relative(path);
+      selected.put(relative, e.getValue());
+      if (adapterFile) adapterPaths.add(relative);
+    }
+    SafePaths.target(dir, ProjectManifest.PATH);
+    for (String path : selected.keySet()) {
+      SafePaths.target(dir, path);
+      SafePaths.target(dir, path + PROPOSAL);
+    }
+    for (Map.Entry<String, byte[]> e : selected.entrySet()) {
+      String path = e.getKey();
+      boolean adapterFile = adapterPaths.contains(path);
+      Path target = SafePaths.target(dir, path);
       if (!Files.exists(target)) {
-        Files.createDirectories(SafePaths.parentOf(target));
-        Files.write(target, e.getValue());
+        SafePaths.write(dir, path, e.getValue(), false);
         created.add(path);
       } else if (adapterFile && !Arrays.equals(Files.readAllBytes(target), e.getValue())) {
-        Files.write(dir.resolve(path + PROPOSAL), e.getValue());
+        SafePaths.write(dir, path + PROPOSAL, e.getValue(), true);
         proposed.add(path + PROPOSAL);
       }
     }
-    Files.createDirectories(SafePaths.parentOf(snapshot));
-    Files.writeString(snapshot, text, StandardCharsets.UTF_8);
+    SafePaths.write(dir, SNAPSHOT, text.getBytes(StandardCharsets.UTF_8), true);
     manifest.withOperations(ids).write(dir);
     return new Result(added, removed, created, proposed, changes, findings, true);
   }

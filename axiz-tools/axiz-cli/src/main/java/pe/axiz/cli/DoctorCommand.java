@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -22,7 +21,9 @@ import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
 import pe.axiz.codegen.output.SafePaths;
+import pe.axiz.codegen.project.MavenReactor;
 import pe.axiz.codegen.project.PomEditor;
+import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 import picocli.CommandLine.Command;
 
@@ -155,6 +156,13 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       out.add(new Check(Level.ERROR, "Invalid Maven reactor: " + problem.getMessage()));
       return out;
     }
+    ProjectLayout layout;
+    try {
+      layout = ProjectLayout.read(dir, manifest);
+    } catch (IOException | IllegalArgumentException problem) {
+      out.add(new Check(Level.ERROR, "Invalid service module: " + problem.getMessage()));
+      return out;
+    }
     List<String> reactorPoms = new ArrayList<>();
     for (MavenReactor.Module module : modules)
       reactorPoms.add(Files.readString(module.pom(), StandardCharsets.UTF_8));
@@ -268,12 +276,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       try {
         Path contract = SafePaths.target(dir, manifest.asyncapi());
         var document = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(contract));
-        Path contractModule =
-            modules.stream()
-                .map(module -> SafePaths.parentOf(module.pom()))
-                .filter(contract::startsWith)
-                .max(Comparator.comparingInt(Path::getNameCount))
-                .orElse(dir.toAbsolutePath().normalize());
+        Path contractModule = layout.module();
         var subscriptionProblems =
             pe.axiz.codegen.asyncapi.AsyncApiSubscriptions.problems(contractModule, document);
         subscriptionProblems.forEach(problem -> out.add(new Check(Level.ERROR, problem)));
@@ -319,7 +322,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
             architectureImports(p, rel, manifest, out);
           }
         }
-        if (manifest.stack() == Stack.REACTIVE) {
+        if (manifest.stack() == Stack.REACTIVE && moduleDirectory.equals(layout.module())) {
           boolean instrumented = false;
           Path testSources = moduleDirectory.resolve("src/test/java");
           for (Path test : all) {
@@ -336,6 +339,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                     "Reactive tests must declare @ExtendWith(BlockHoundExtension.class)"));
         }
         if (manifest.isService()
+            && moduleDirectory.equals(layout.module())
             && all.stream().noneMatch(p -> SafePaths.fileName(p).equals("ArchitectureTest.java"))) {
           out.add(new Check(Level.WARN, "No ArchitectureTest: the style rules are not enforced"));
         }

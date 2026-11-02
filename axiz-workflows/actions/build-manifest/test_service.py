@@ -9,6 +9,38 @@ from test_manifest import fixture
 
 
 class ServiceMetadataTest(unittest.TestCase):
+    def test_service_build_versions_sibling_dependencies_from_the_declared_reactor(self):
+        (self.root / "pom.xml").write_text('''<project xmlns="http://maven.apache.org/POM/4.0.0">
+          <groupId>example</groupId><artifactId>orders-reactor</artifactId><version>0.1.0-SNAPSHOT</version>
+          <packaging>pom</packaging><modules><module>model</module><module>application</module></modules>
+        </project>''')
+        for name in ("model", "application"):
+            (self.root / name).mkdir()
+        library = self.root / "model/pom.xml"
+        library.write_text('''<project xmlns="http://maven.apache.org/POM/4.0.0">
+          <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>2.0.0</version></parent>
+          <groupId>example</groupId><artifactId>model</artifactId><version>0.1.0-SNAPSHOT</version>
+        </project>''')
+        application = self.root / "application/pom.xml"
+        application.write_text('''<project xmlns="http://maven.apache.org/POM/4.0.0">
+          <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-service</artifactId><version>2.0.0</version></parent>
+          <groupId>example</groupId><artifactId>payments</artifactId><version>0.1.0-SNAPSHOT</version>
+          <dependencies>
+            <dependency><groupId>example</groupId><artifactId>model</artifactId><version>0.1.0-SNAPSHOT</version></dependency>
+            <dependency><groupId>external</groupId><artifactId>library</artifactId><version>4.5.6</version></dependency>
+          </dependencies>
+        </project>''')
+        data = {"version": "1.3.0", "parameters": {"module": "application"}}
+        service.set_project_version(data, self.root)
+        for path in (self.root / "pom.xml", library, application):
+            project = service.ET.parse(path).getroot()
+            self.assertEqual("1.3.0", project.findtext("m:version", namespaces=service.NS))
+            if path != self.root / "pom.xml":
+                self.assertEqual("2.0.0", project.findtext("m:parent/m:version", namespaces=service.NS))
+        project = service.ET.parse(application).getroot()
+        self.assertEqual(["1.3.0", "4.5.6"],
+                         [v.text for v in project.findall("m:dependencies/m:dependency/m:version", service.NS)])
+
     def test_final_build_version_changes_only_the_service_not_its_framework_parent(self):
         data = self.parameters()
         pom = self.root / "pom.xml"

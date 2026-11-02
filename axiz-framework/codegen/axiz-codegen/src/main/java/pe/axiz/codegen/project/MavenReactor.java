@@ -1,4 +1,4 @@
-package pe.axiz.cli;
+package pe.axiz.codegen.project;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,17 +18,20 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.output.SafePaths;
 
 /** Reads declared reactor modules without following links, external entities or outside paths. */
-final class MavenReactor {
+public final class MavenReactor {
   private MavenReactor() {}
 
-  record Module(Path pom, @Nullable String parentVersion, boolean axizParent) {}
+  /** A declared module and its Axiz parent, without resolving or executing Maven. */
+  public record Module(Path pom, @Nullable String parentVersion, boolean axizParent) {}
 
-  static List<Module> read(Path directory) throws IOException {
+  /** Reads the declared reactor, rejecting unsafe, repeated and missing module paths. */
+  public static List<Module> read(Path directory) throws IOException {
     Path root = directory.toAbsolutePath().normalize();
     Map<Path, Module> modules = new LinkedHashMap<>();
     Deque<Path> pending = new ArrayDeque<>();
     pending.add(root.resolve("pom.xml"));
     while (!pending.isEmpty()) {
+      if (modules.size() >= 10_000) throw new IOException("Maven reactor exceeds 10000 modules");
       Path candidate = pending.removeFirst().normalize();
       if (!candidate.startsWith(root)) throw new IOException("Maven module is outside the project");
       Path pom = SafePaths.target(root, root.relativize(candidate).toString());
@@ -54,6 +57,7 @@ final class MavenReactor {
       @Nullable String parentVersion, boolean axizParent, List<String> children) {}
 
   private static Descriptor parse(Path pom) throws IOException {
+    if (Files.size(pom) > 2 * 1024 * 1024) throw new IOException("Maven POM exceeds 2 MiB");
     XMLInputFactory factory = XMLInputFactory.newFactory();
     factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
     factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -80,6 +84,8 @@ final class MavenReactor {
                 throw new XMLStreamException("Expected Maven project");
               project = true;
             }
+            if (path.size() >= 128)
+              throw new XMLStreamException("Maven XML nesting limit exceeded");
             path.addLast(reader.getLocalName());
             content.setLength(0);
           } else if (event == XMLStreamConstants.CHARACTERS || event == XMLStreamConstants.CDATA) {
