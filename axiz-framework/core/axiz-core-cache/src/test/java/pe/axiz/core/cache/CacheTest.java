@@ -11,10 +11,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -185,28 +188,41 @@ class CacheTest {
             Duration.ofMinutes(5));
     AtomicInteger loads = new AtomicInteger();
     CountDownLatch start = new CountDownLatch(1);
+    CountDownLatch loading = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    List<Future<String>> answers = new ArrayList<>();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       for (int i = 0; i < 20; i++) {
-        executor.submit(
-            () -> {
-              start.await();
-              return cache.getOrLoad(
-                  "c1",
-                  String.class,
-                  () -> {
-                    loads.incrementAndGet();
-                    try {
-                      Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                      Thread.currentThread().interrupt();
-                    }
-                    return "value";
-                  });
-            });
+        answers.add(
+            executor.submit(
+                () -> {
+                  start.await();
+                  return cache.getOrLoad(
+                      "c1",
+                      String.class,
+                      () -> {
+                        loads.incrementAndGet();
+                        loading.countDown();
+                        try {
+                          if (!release.await(5, TimeUnit.SECONDS))
+                            throw new AssertionError("loader not released");
+                        } catch (InterruptedException e) {
+                          Thread.currentThread().interrupt();
+                          throw new IllegalStateException(e);
+                        }
+                        return "value";
+                      });
+                }));
       }
       start.countDown();
+      try {
+        assertTrue(loading.await(5, TimeUnit.SECONDS));
+      } finally {
+        release.countDown();
+      }
+      for (Future<String> answer : answers) assertEquals("value", answer.get(5, TimeUnit.SECONDS));
     }
-    assertTrue(loads.get() <= 2, "loads=" + loads.get());
+    assertEquals(1, loads.get());
     assertEquals("value", cache.get("c1", String.class).orElseThrow());
     assertEquals(List.of("only"), cache.getOrLoad("single", List.class, () -> List.of("only")));
     assertEquals(List.of("only"), cache.get("single", List.class).orElseThrow());
@@ -219,6 +235,78 @@ class CacheTest {
         () ->
             new AxizCache(
                 "p", "Bad Name", new InMemoryByteCache(1, clock), new TextCodec(), Duration.ZERO));
+  }
+
+  @Test
+  void aDelayedMissCannotReloadAValueAnotherCallerAlreadyPublished() throws Exception {
+    var delegate = new InMemoryByteCache(10, Clock.systemUTC());
+    CountDownLatch missed = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    AtomicInteger reads = new AtomicInteger();
+    ByteCache staggered =
+        new ByteCache() {
+          @Override
+          public Optional<byte[]> get(String key) {
+            Optional<byte[]> snapshot = delegate.get(key);
+            if (reads.incrementAndGet() == 1) {
+              missed.countDown();
+              try {
+                if (!release.await(5, TimeUnit.SECONDS))
+                  throw new AssertionError("stale read not released");
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+              }
+            }
+            return snapshot;
+          }
+
+          @Override
+          public void put(String key, byte[] value, Duration ttl) {
+            delegate.put(key, value, ttl);
+          }
+
+          @Override
+          public void evict(String key) {
+            delegate.evict(key);
+          }
+
+          @Override
+          public long evictByPrefix(String prefix) {
+            return delegate.evictByPrefix(prefix);
+          }
+        };
+    var cache =
+        new AxizCache("payments", "test", staggered, new TextCodec(), Duration.ofMinutes(1));
+    AtomicInteger loads = new AtomicInteger();
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      Future<String> delayed =
+          executor.submit(
+              () ->
+                  cache.getOrLoad(
+                      "key",
+                      String.class,
+                      () -> {
+                        loads.incrementAndGet();
+                        return "duplicate";
+                      }));
+      try {
+        assertTrue(missed.await(5, TimeUnit.SECONDS));
+        assertEquals(
+            "fresh",
+            cache.getOrLoad(
+                "key",
+                String.class,
+                () -> {
+                  loads.incrementAndGet();
+                  return "fresh";
+                }));
+      } finally {
+        release.countDown();
+      }
+      assertEquals("fresh", delayed.get(5, TimeUnit.SECONDS));
+    }
+    assertEquals(1, loads.get());
   }
 
   @Test

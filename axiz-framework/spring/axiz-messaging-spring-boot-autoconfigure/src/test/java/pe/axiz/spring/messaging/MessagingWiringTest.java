@@ -17,6 +17,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -304,7 +306,7 @@ class MessagingWiringTest {
     public ReceiveMessageResponse receiveMessage(ReceiveMessageRequest request) {
       polls.incrementAndGet();
       try {
-        Thread.sleep(20);
+        new CountDownLatch(1).await(5, TimeUnit.SECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
@@ -347,10 +349,9 @@ class MessagingWiringTest {
                   .containsExactlyInAnyOrder("sqs", "sns");
               SqsEventConsumer consumer = ctx.getBean(SqsEventConsumer.class);
               assertTrue(consumer.isRunning(), "started with the context");
-              long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-              while (sqs.polls.get() == 0 && System.nanoTime() < deadline) {
-                Thread.sleep(10);
-              }
+              org.awaitility.Awaitility.await()
+                  .atMost(Duration.ofSeconds(5))
+                  .until(() -> sqs.polls.get() > 0);
               assertTrue(sqs.polls.get() > 0, "the queue is polled");
               assertEquals(0, consumer.inFlightCount());
               assertThat(ctx.getBean(EventPublisher.class)).isNotNull();
@@ -386,7 +387,7 @@ class MessagingWiringTest {
         throw new IllegalStateException("throttled");
       }
       try {
-        Thread.sleep(20);
+        new CountDownLatch(1).await(5, TimeUnit.SECONDS);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
@@ -433,10 +434,9 @@ class MessagingWiringTest {
             Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     consumer.start();
     try {
-      long deadline = System.nanoTime() + Duration.ofSeconds(15).toNanos();
-      while (sqs.receives.get() < 3 && System.nanoTime() < deadline) {
-        Thread.sleep(20);
-      }
+      org.awaitility.Awaitility.await()
+          .atMost(Duration.ofSeconds(15))
+          .until(() -> sqs.receives.get() >= 3 && consumer.inFlightCount() == 0);
       assertTrue(sqs.receives.get() >= 3, "polling resumed after the failed receive");
       assertEquals(List.of("hello"), handler.seen);
       assertEquals(List.of("delete"), sqs.settled);

@@ -3,7 +3,7 @@
 # channel API, the payment saga (debit, transfer, completion) finishes the order and the history
 # read model (payments-history, Kafka -> R2DBC) catches up with it.
 #
-# Local (scripts/demo.sh up): waits until the 7 services are UP, then runs.
+# Local (scripts/demo.sh up): waits until the 8 services are UP, then runs.
 # Elsewhere, point it at the deployment and skip the local wait:
 #   SMOKE_LOCAL=0 KC_URL=... CHANNEL_URL=... CRUD_URL=... HISTORY_URL=... scripts/smoke.sh
 # Every step prints what it checks; a failing step prints the HTTP status and body and exits 1.
@@ -85,8 +85,8 @@ token=$(echo "$body" | jq -r .access_token)
 echo "token ok (${#token} chars)"
 auth=(-H "Authorization: Bearer $token" -H "Content-Type: application/json")
 
-step "beneficiary of C-1001 (beneficiaries-crud $CRUD_URL)"
-involved=(beneficiaries-crud)
+step "beneficiary of C-1001 (beneficiaries $CRUD_URL)"
+involved=(beneficiaries)
 call POST "$CRUD_URL/v1/customers/C-1001/beneficiaries" "${auth[@]}" -H "Idempotency-Key: $(key)" \
   -d '{"alias":"Landlord","holderName":"Ana Torres","cci":"00219100123456789053","currency":"PEN"}'
 if [ "$code" = 201 ] || [ "$code" = 200 ]; then
@@ -102,8 +102,8 @@ else
   echo "reusing $beneficiary"
 fi
 
-step "payment through the channel API (payments-experience $CHANNEL_URL)"
-involved=(payments-experience beneficiaries-crud payments-business)
+step "payment through the channel API (payments-ux $CHANNEL_URL)"
+involved=(payments-ux beneficiaries payment-orders)
 # a different amount per run: the same amount to the same beneficiary on the same day is rejected
 # as a probable duplicate (PAYMENTS-PAYMENTSEXPERIENCE-0004)
 amount=$(printf '1%02d.%02d' $((RANDOM % 100)) $((RANDOM % 100)))
@@ -114,7 +114,7 @@ id=$(echo "$body" | jq -r .paymentId)
 echo "payment $id: $(echo "$body" | jq -c .)"
 
 step "saga: waiting for COMPLETED"
-involved=(payments-experience payments-business payment-process core-integration)
+involved=(payments-ux payment-orders payment-process banking-core)
 status=""
 for _ in $(seq 1 "${SMOKE_POLLS:-60}"); do
   call GET "$CHANNEL_URL/v1/payments/$id" "${auth[@]}"
@@ -123,7 +123,7 @@ for _ in $(seq 1 "${SMOKE_POLLS:-60}"); do
   echo "status $status"
   [ "$status" = COMPLETED ] && break
   [ "$status" = REJECTED ] && show_logs && fail "payment rejected: $(echo "$body" | jq -c .)
-  check WireMock (http://localhost:8089/__admin/requests) and .run/core-integration.log, .run/payment-process.log"
+  check WireMock (http://localhost:8089/__admin/requests) and .run/banking-core.log, .run/payment-process.log"
   sleep "${SMOKE_POLL:-2}"
 done
 # RECEIVED: the saga never started. Shows whether payment-process consumes the payments topic
@@ -145,7 +145,7 @@ kafka_state() {
 if [ "$status" != COMPLETED ]; then
   show_logs
   [ "$status" = RECEIVED ] && kafka_state
-  fail "payment still $status after $(( ${SMOKE_POLLS:-60} * 2 ))s; see .run/payment-process.log and .run/payments-business.log"
+  fail "payment still $status after $(( ${SMOKE_POLLS:-60} * 2 ))s; see .run/payment-process.log and .run/payment-orders.log"
 fi
 
 step "history read model (payments-history $HISTORY_URL)"

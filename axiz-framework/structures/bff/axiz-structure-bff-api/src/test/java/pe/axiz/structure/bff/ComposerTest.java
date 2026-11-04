@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.ExternalServiceException;
 
@@ -14,24 +17,25 @@ class ComposerTest {
   @Test
   void optionalPartsDegradeAndRequiredPartsFail() {
     long start = System.nanoTime();
+    CyclicBarrier together = new CyclicBarrier(2);
     Composition c =
         Composer.within(Duration.ofMillis(500))
             .required(
                 "account",
                 () -> {
-                  Thread.sleep(100);
+                  together.await(2, TimeUnit.SECONDS);
                   return "acc-1";
                 })
             .required(
                 "balance",
                 () -> {
-                  Thread.sleep(100);
+                  together.await(2, TimeUnit.SECONDS);
                   return 150;
                 })
             .optional(
                 "offers",
                 () -> {
-                  Thread.sleep(5000);
+                  new CountDownLatch(1).await(5, TimeUnit.SECONDS);
                   return List.of("x");
                 },
                 List::of)
@@ -60,7 +64,7 @@ class ComposerTest {
                 .required(
                     "slow",
                     () -> {
-                      Thread.sleep(2000);
+                      new CountDownLatch(1).await(5, TimeUnit.SECONDS);
                       return 1;
                     })
                 .run());

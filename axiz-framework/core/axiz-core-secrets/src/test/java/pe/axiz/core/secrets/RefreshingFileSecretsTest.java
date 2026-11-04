@@ -3,7 +3,6 @@ package pe.axiz.core.secrets;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,9 +28,11 @@ class RefreshingFileSecretsTest {
   }
 
   private static void eventually(BooleanSupplier condition) throws InterruptedException {
-    long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-    while (!condition.getAsBoolean() && System.nanoTime() < deadline) Thread.sleep(10);
-    assertTrue(condition.getAsBoolean(), "background snapshot did not refresh");
+    org.awaitility.Awaitility.await()
+        .pollDelay(Duration.ZERO)
+        .pollInterval(Duration.ofMillis(10))
+        .atMost(Duration.ofSeconds(5))
+        .until(condition::getAsBoolean);
   }
 
   @Test

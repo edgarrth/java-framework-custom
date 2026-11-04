@@ -56,7 +56,7 @@ jobs:
           CRUD_URL: http://localhost:9082
           HISTORY_URL: http://localhost:9086
         run: |
-          kubectl -n axiz-demo port-forward svc/beneficiaries-crud 9082:80 &
+          kubectl -n axiz-demo port-forward svc/beneficiaries 9082:80 &
           kubectl -n axiz-demo port-forward svc/payments-history 9086:80 &
           sleep 3
           scripts/smoke.sh

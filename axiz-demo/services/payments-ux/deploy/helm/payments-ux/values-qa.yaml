@@ -1,0 +1,50 @@
+environment: qa
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/payments-experience-qa
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: qa/payments-experience
+config:
+  axiz:
+    config:
+      environment: qa
+    security:
+      issuers:
+      - issuer: https://sso.qa.axiz-demo.example/realms/axiz
+        audiences:
+        - payments-experience
+        - payments-ux
+    http-client:
+      clients:
+        payment-orders:
+          base-url: http://payment-orders.payments-qa.svc.cluster.local
+        beneficiaries:
+          base-url: http://beneficiaries.payments-qa.svc.cluster.local
+    feature-flags:
+      flags:
+        payments-usd:
+          enabled: true
+          percentage: 100
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+  spring:
+    data:
+      redis:
+        url: rediss://payments-qa.cache.demo.use1.cache.amazonaws.com:6379
+errors: []

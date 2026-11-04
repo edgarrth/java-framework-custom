@@ -62,12 +62,13 @@ components:
         creditorCci: {type: string, pattern: '^[0-9]{20}$'}
         amount: {type: number, minimum: 0.01}
         currency: {type: string, pattern: '^(PEN|USD)$'}
+        customerId: {type: string, description: 'Holder of the debtor account (checked by the core)'}
     ProcessView:
       type: object
       properties:
         processId: {type: string}
         status: {type: string}
-        failedStep: {type: string}
+        failedStep: {type: [string, "null"]}
     Problem:
       type: object
       properties:

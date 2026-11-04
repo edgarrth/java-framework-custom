@@ -1,0 +1,61 @@
+environment: prod
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/core-integration-prod
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: prod/core-integration
+config:
+  axiz:
+    config:
+      environment: prod
+    security:
+      issuers:
+      - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+        audiences:
+        - core-integration
+        - banking-core
+    http-client:
+      clients:
+        core-banking:
+          base-url: https://core-gw.prod.bank.example
+          auth:
+            type: CLIENT_CREDENTIALS
+            token-uri: https://core-gw.prod.bank.example/oauth/token
+            client-id: core-integration
+            client-secret-ref: core-banking-client-secret
+            scopes:
+            - movements
+    soap:
+      clients:
+        core-credit:
+          endpoint: https://core-gw.prod.bank.example/soap/credit
+          username: core-integration
+          password-ref: core-soap-password
+    audit:
+      sqs:
+        queue-url: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod
+  management:
+    tracing:
+      sampling:
+        probability: '0.1'
+  spring:
+    data:
+      redis:
+        url: rediss://payments-prod.cache.demo.use1.cache.amazonaws.com:6379
+errors: []

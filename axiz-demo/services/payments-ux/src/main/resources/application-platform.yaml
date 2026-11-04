@@ -1,0 +1,13 @@
+server:
+  port: 8080
+axiz:
+  http-client:
+    clients:
+      payment-orders:
+        base-url: http://localhost:8081
+        read-timeout: 8s
+        total-timeout: 12s
+      beneficiaries:
+        base-url: http://localhost:8082
+        read-timeout: 8s
+        total-timeout: 12s

@@ -155,10 +155,9 @@ class OutboxR2dbcTest {
     CachedPendingCount pending =
         new CachedPendingCount(store, Duration.ofMinutes(1), Clock.systemUTC());
     assertTrue(Double.isNaN(pending.value()));
-    long deadline = System.currentTimeMillis() + 5000;
-    while (Double.isNaN(pending.value()) && System.currentTimeMillis() < deadline) {
-      Thread.sleep(10);
-    }
+    org.awaitility.Awaitility.await()
+        .atMost(Duration.ofSeconds(5))
+        .until(() -> !Double.isNaN(pending.value()));
     assertEquals(41.0, pending.value());
     assertEquals(1, queries.get());
   }

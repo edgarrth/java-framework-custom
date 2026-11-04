@@ -7,7 +7,7 @@
 # scripts/demo.sh uses 8080/8180/3000, so both can run at the same time).
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd); root=$(dirname "$here")
-services=(payments-business beneficiaries-crud core-integration payment-process notifications-processor payments-history payments-experience settlement-batch)
+services=(payment-orders beneficiaries banking-core payment-network-gateway payment-process notifications-processor payments-history payments-ux settlement-batch)
 ns=axiz-demo
 
 if [ "${1:-}" = down ]; then kind delete cluster --name axiz-demo; exit 0; fi
@@ -45,6 +45,6 @@ done
 # run the settlement job once now (it is a CronJob)
 kubectl -n $ns create job --from=cronjob/settlement-batch settlement-batch-now || true
 echo "demo ready. End-to-end payment:"
-echo "  kubectl -n $ns port-forward svc/beneficiaries-crud 9082:80 &"
+echo "  kubectl -n $ns port-forward svc/beneficiaries 9082:80 &"
 echo "  kubectl -n $ns port-forward svc/payments-history 9086:80 &"
 echo "  SMOKE_LOCAL=0 KC_URL=http://localhost:9180 CHANNEL_URL=http://localhost:9080 CRUD_URL=http://localhost:9082 HISTORY_URL=http://localhost:9086 scripts/smoke.sh"

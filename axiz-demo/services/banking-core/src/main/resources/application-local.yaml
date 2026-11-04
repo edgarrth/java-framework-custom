@@ -1,0 +1,18 @@
+axiz:
+  logging:
+    json: false
+  config:
+    environment: local
+  security:
+    issuers:
+    - issuer: http://localhost:8180/realms/axiz
+      audiences:
+      - local-services
+  aws:
+    endpoint: http://localhost:4566
+  secrets:
+    directory: ./local/secrets
+  soap:
+    clients:
+      core-credit:
+        allow-plain-http: true

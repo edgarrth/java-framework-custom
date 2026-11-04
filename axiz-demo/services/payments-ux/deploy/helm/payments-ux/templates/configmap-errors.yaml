@@ -1,0 +1,15 @@
+# Error catalog of the service (axiz.errors.catalog), mounted in /etc/axiz/config/errors
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service.fullname" . }}-errors
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+data:
+  application.yaml: |
+    axiz.errors.catalog:
+    {{- if .Values.errors }}
+    {{- toYaml .Values.errors | nindent 6 }}
+    {{- else }}
+      []
+    {{- end }}

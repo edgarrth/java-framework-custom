@@ -8,6 +8,10 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.of("pe.axiz.payments.settlement").archetype(pe.axiz.quality.archunit.Archetype.BATCH).stack(pe.axiz.quality.archunit.Stack.SERVLET).structure(pe.axiz.quality.archunit.Structure.BATCH).verify();
+    AxizArchitecture.of("pe.axiz.payments.settlement")
+        .archetype(pe.axiz.quality.archunit.Archetype.BATCH)
+        .stack(pe.axiz.quality.archunit.Stack.SERVLET)
+        .structure(pe.axiz.quality.archunit.Structure.BATCH)
+        .verify();
   }
 }

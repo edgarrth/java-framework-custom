@@ -1,28 +1,18 @@
-# settlement-batch in dev
 environment: dev
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/settlement-batch-dev
-
 resources:
   requests:
     cpu: 250m
     memory: 512Mi
   limits:
     memory: 512Mi
-
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in dev (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: dev/settlement-batch
-
-# Environment values (no secrets: those come from the ExternalSecret). Business calendar
-# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
 config:
   axiz.config.environment: dev
   management.tracing.sampling.probability: '1.0'
@@ -31,5 +21,4 @@ config:
   spring.datasource.username: settlement-batch-app
   axiz.jpa.aws-wrapper.enabled: true
   axiz.jpa.aws-wrapper.iam: true
-
 errors: []

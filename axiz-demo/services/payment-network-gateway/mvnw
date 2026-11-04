@@ -1,0 +1,153 @@
+#!/bin/sh
+# Maven wrapper (script-only): downloads the Maven distribution declared in
+# .mvn/wrapper/maven-wrapper.properties into ~/.m2/wrapper and runs it.
+# Set MVNW_REPOURL to download from the Nexus proxy of Maven Central.
+#
+# The distribution is always verified before it is used (fail closed):
+#   1. distributionSha512Sum (or distributionSha256Sum) pinned in the properties file, or
+#   2. when nothing is pinned, the official <distribution>.sha512 published next to it.
+# A cached distribution is only reused when it was verified against the checksum pinned now
+# (a marker file records it); otherwise it is downloaded and verified again.
+# Set MVNW_REQUIRE_PINNED_CHECKSUM=true (release pipelines) to accept only a pinned checksum,
+# also with a distribution already in the cache.
+# "./mvnw --pin-checksum" downloads the official checksum once and pins it in the properties file.
+# "./mvnw --bootstrap <goals/options>" first installs the two independent source BOMs locally.
+set -eu
+BASEDIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+PROPS="$BASEDIR/.mvn/wrapper/maven-wrapper.properties"
+prop() { sed -n "s/^$1=//p" "$PROPS" | tr -d '\r'; }
+URL=$(prop distributionUrl)
+SHA512=$(prop distributionSha512Sum)
+SHA256=$(prop distributionSha256Sum)
+if [ -n "${MVNW_REPOURL:-}" ]; then
+  URL="${MVNW_REPOURL}/org/apache/maven/apache-maven/${URL##*/apache-maven/}"
+fi
+NAME=$(basename "$URL" -bin.zip)
+HOME_DIR="${MAVEN_USER_HOME:-$HOME/.m2}/wrapper/dists/$NAME"
+MARKER="$HOME_DIR/.verified-checksum"
+
+fetch() {
+  if command -v curl >/dev/null 2>&1; then curl -fsSL -o "$2" "$1"; else wget -q -O "$2" "$1"; fi
+}
+
+# sha256sum/sha512sum on Linux, shasum on macOS
+check_sum() {
+  if command -v "sha${1}sum" >/dev/null 2>&1; then "sha${1}sum" -c - >/dev/null; else shasum -a "$1" -c - >/dev/null; fi
+}
+
+pinned() {
+  if [ -n "$SHA512" ]; then
+    echo "sha512:$SHA512"
+  elif [ -n "$SHA256" ]; then
+    echo "sha256:$SHA256"
+  fi
+}
+
+# verifies $1 and prints the checksum it was verified against (sha512:<hex> or sha256:<hex>)
+verify() {
+  if [ -n "$SHA512" ]; then
+    echo "$SHA512  $1" | check_sum 512 || { echo "Checksum mismatch (pinned SHA-512) for $URL" >&2; exit 1; }
+    echo "sha512:$SHA512"
+  elif [ -n "$SHA256" ]; then
+    echo "$SHA256  $1" | check_sum 256 || { echo "Checksum mismatch (pinned SHA-256) for $URL" >&2; exit 1; }
+    echo "sha256:$SHA256"
+  else
+    fetch "$URL.sha512" "$1.sha512" || { echo "Cannot verify $URL: no pinned checksum and no $URL.sha512" >&2; exit 1; }
+    OFFICIAL=$(cut -d' ' -f1 < "$1.sha512" | tr -d '\r\n')
+    [ -n "$OFFICIAL" ] || { echo "Empty checksum file $URL.sha512" >&2; exit 1; }
+    echo "$OFFICIAL  $1" | check_sum 512 || { echo "Checksum mismatch (published SHA-512) for $URL" >&2; exit 1; }
+    echo "Verified against the published SHA-512; pin it with ./mvnw --pin-checksum" >&2
+    echo "sha512:$OFFICIAL"
+  fi
+}
+
+if [ "${1:-}" = "--pin-checksum" ]; then
+  TMP=$(mktemp -d)
+  trap 'rm -rf "$TMP"' EXIT
+  fetch "$URL.sha512" "$TMP/sum"
+  OFFICIAL=$(cut -d' ' -f1 < "$TMP/sum" | tr -d '\r\n')
+  case "$OFFICIAL" in
+    *[!0-9a-f]* | "") echo "Unexpected checksum file $URL.sha512" >&2; exit 1 ;;
+  esac
+  grep -v -e '^distributionSha256Sum=' -e '^distributionSha512Sum=' "$PROPS" > "$TMP/props" || true
+  echo "distributionSha512Sum=$OFFICIAL" >> "$TMP/props"
+  cp "$TMP/props" "$PROPS"
+  echo "Pinned distributionSha512Sum in $PROPS" >&2
+  exit 0
+fi
+
+# strict mode is checked before looking at the cache
+if [ "${MVNW_REQUIRE_PINNED_CHECKSUM:-false}" = "true" ] && [ -z "$(pinned)" ]; then
+  echo "No distributionSha512Sum pinned in $PROPS: run ./mvnw --pin-checksum" >&2
+  exit 1
+fi
+
+# reuse the cache only when it was verified, and against the checksum pinned now
+CACHED=false
+if [ -x "$HOME_DIR/$NAME/bin/mvn" ] && [ -f "$MARKER" ]; then
+  if [ -z "$(pinned)" ] || [ "$(cat "$MARKER")" = "$(pinned)" ]; then
+    CACHED=true
+  fi
+fi
+
+if [ "$CACHED" != "true" ]; then
+  rm -rf "${HOME_DIR:?}/$NAME" "$MARKER"
+  mkdir -p "$HOME_DIR"
+  TMP=$(mktemp -d)
+  trap 'rm -rf "$TMP"' EXIT
+  echo "Downloading $URL" >&2
+  fetch "$URL" "$TMP/maven.zip"
+  VERIFIED=$(verify "$TMP/maven.zip")
+  unzip -q "$TMP/maven.zip" -d "$HOME_DIR"
+  echo "$VERIFIED" > "$MARKER"
+fi
+
+# These independent BOMs must be available before Maven can read the root model. Use the same
+# verified Maven, settings, local repository and revision as the requested build. No deploy goal
+# or project selection is forwarded to this local model bootstrap.
+bootstrap_bom() {
+  axiz_bootstrap_pom=$1
+  shift
+  axiz_bootstrap_started=false
+  axiz_bootstrap_setting=false
+  for axiz_bootstrap_arg in "$@"; do
+    if [ "$axiz_bootstrap_started" = false ]; then
+      set -- -B -ntp -f "$axiz_bootstrap_pom" install
+      axiz_bootstrap_started=true
+    fi
+    if [ "$axiz_bootstrap_setting" = true ]; then
+      set -- "$@" "$axiz_bootstrap_arg"
+      axiz_bootstrap_setting=false
+      continue
+    fi
+    case "$axiz_bootstrap_arg" in
+      -D*|-o|--offline|-U|--update-snapshots|-C|--strict-checksums|-nsu|--no-snapshot-updates|--settings=*|--global-settings=*)
+        set -- "$@" "$axiz_bootstrap_arg" ;;
+      -s|--settings|-gs|--global-settings)
+        set -- "$@" "$axiz_bootstrap_arg"
+        axiz_bootstrap_setting=true ;;
+    esac
+  done
+  if [ "$axiz_bootstrap_started" = false ]; then
+    set -- -B -ntp -f "$axiz_bootstrap_pom" install
+  fi
+  if [ "$axiz_bootstrap_setting" = true ]; then
+    echo "Missing Maven settings path in bootstrap arguments" >&2
+    exit 1
+  fi
+  "$HOME_DIR/$NAME/bin/mvn" "$@"
+}
+
+if [ "${1:-}" = "--bootstrap" ]; then
+  shift
+  for axiz_bootstrap_module in axiz-dependencies axiz-bom; do
+    if [ ! -f "$BASEDIR/platform/$axiz_bootstrap_module/pom.xml" ]; then
+      echo "--bootstrap requires a framework source checkout with both platform BOMs" >&2
+      exit 1
+    fi
+  done
+  bootstrap_bom "$BASEDIR/platform/axiz-dependencies/pom.xml" "$@"
+  bootstrap_bom "$BASEDIR/platform/axiz-bom/pom.xml" "$@"
+  if [ "$#" -eq 0 ]; then exit 0; fi
+fi
+exec "$HOME_DIR/$NAME/bin/mvn" -f "$BASEDIR/pom.xml" "$@"

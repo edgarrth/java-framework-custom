@@ -3,8 +3,10 @@ package pe.axiz.spring.foundation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import org.junit.jupiter.api.Test;
@@ -18,9 +20,41 @@ import pe.axiz.core.time.BusinessCalendar;
 import pe.axiz.core.time.CutoffTime;
 import pe.axiz.core.time.TimeSettings;
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.core.json.JsonFactory;
 import tools.jackson.databind.json.JsonMapper;
 
 class AxizFoundationAutoConfigurationTest {
+
+  @Test
+  void oversizedMoneyIsRejectedBeforeDecimalConversionEvenWithRelaxedParserLimits() {
+    var factory =
+        JsonFactory.builder()
+            .streamReadConstraints(
+                StreamReadConstraints.builder().maxNumberLength(1_000_100).build())
+            .build();
+    JsonMapper mapper = JsonMapper.builder(factory).addModule(new MoneyJacksonModule()).build();
+    String boundary = "0".repeat(Money.MAX_TEXT_LENGTH - 4) + "1.00";
+    assertEquals(
+        Money.ofExact("1", "PEN"),
+        mapper.readValue("{\"amount\":\"" + boundary + "\",\"currency\":\"PEN\"}", Money.class));
+    for (String literal : java.util.List.of("9".repeat(257), "9".repeat(1_000_000))) {
+      for (String json :
+          java.util.List.of(
+              "{\"amount\":\"" + literal + "\",\"currency\":\"PEN\"}",
+              "{\"currency\":\"PEN\",\"amount\":" + literal + "}",
+              "\"PEN " + literal + "\"")) {
+        assertTimeout(
+            Duration.ofSeconds(2),
+            () -> assertThrows(RuntimeException.class, () -> mapper.readValue(json, Money.class)));
+      }
+    }
+    assertThrows(
+        JacksonException.class,
+        () ->
+            mapper.readValue(
+                "{\"amount\":\"0" + boundary + "\",\"currency\":\"PEN\"}", Money.class));
+  }
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()

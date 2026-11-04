@@ -1,0 +1,37 @@
+environment: qa
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/beneficiaries-crud-qa
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: qa/beneficiaries-crud
+config:
+  axiz:
+    config:
+      environment: qa
+    security:
+      issuers:
+      - issuer: https://sso.qa.axiz-demo.example/realms/axiz
+        audiences:
+        - beneficiaries-crud
+        - beneficiaries
+    dynamodb:
+      table-prefix: qa-
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+errors: []

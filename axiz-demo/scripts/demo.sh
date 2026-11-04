@@ -1,15 +1,15 @@
 #!/bin/bash
 # Local demo lifecycle:
 #   scripts/demo.sh up [--attach] [--no-wait] [--build]
-#                         checks, infrastructure, secrets, then the 7 services; waits until every
+#                         checks, infrastructure, secrets, then the 8 services; waits until every
 #                         service is UP (or one fails). --attach stays in the terminal showing the
 #                         logs of every service, like `docker compose up`; Ctrl+C stops the services
 #   scripts/demo.sh logs [service]              follows the logs of every service (or one);
 #                                               Ctrl+C only stops following
 #   scripts/demo.sh restart <service> [--debug] restarts one service (--debug: Spring web and axiz
 #                                               loggers at DEBUG)
-#   scripts/demo.sh status                      state of every service (exit 0 only when 7/7 UP)
-#   scripts/demo.sh wait [seconds]              waits until 7/7 UP (default 300 s)
+#   scripts/demo.sh status                      state of every service (exit 0 only when 8/8 UP)
+#   scripts/demo.sh wait [seconds]              waits until 8/8 UP (default 300 s)
 #   scripts/demo.sh smoke                       end-to-end check (pays a beneficiary)
 #   scripts/demo.sh scenarios [group...]        every functional scenario of the demo (rejections,
 #                                               compensations, security, events, notifications,
@@ -24,10 +24,10 @@
 set -Eeuo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 run="$root/.run"
-services=(payments-business beneficiaries-crud core-integration payment-process notifications-processor payments-history payments-experience)
-declare -A ports=([payments-experience]=8080 [payments-business]=8081 [beneficiaries-crud]=8082
-  [core-integration]=8083 [payment-process]=8084 [notifications-processor]=8085
-  [payments-history]=8086)
+services=(payment-orders beneficiaries banking-core payment-network-gateway payment-process notifications-processor payments-history payments-ux)
+declare -A ports=([payments-ux]=8080 [payment-orders]=8081 [beneficiaries]=8082
+  [banking-core]=8083 [payment-process]=8084 [notifications-processor]=8085
+  [payments-history]=8086 [payment-network-gateway]=8087)
 # host ports of local/compose.yaml
 infra_ports=(5432 6379 9092 4566 8180 8089 3000 4317 4318)
 
@@ -108,7 +108,7 @@ print_status() {
   [ "$ready" -eq "${#services[@]}" ]
 }
 
-# waits until 7/7 UP; fails fast when a service process ends
+# waits until 8/8 UP; fails fast when a service process ends
 wait_up() {
   local timeout=${1:-300} start=$SECONDS s st ready
   echo "waiting for the services (up to ${timeout}s; the first start takes longer)..."
@@ -268,7 +268,7 @@ start() {
     cd "$root/services/$s"
     export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   # LocalStack accepts any value
     # shellcheck disable=SC2086
-    nohup java ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1 -XX:MaxRAMPercentage=10} \
+    nohup java -Djava.security.egd=file:/dev/./urandom --enable-native-access=ALL-UNNAMED ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1 -XX:MaxRAMPercentage=10} \
       -jar "$jar" --spring.profiles.active=local,platform "${extra[@]}" > "$run/$s.log" 2>&1 &
     echo $! > "$run/$s.pid"
   )

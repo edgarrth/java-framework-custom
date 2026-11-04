@@ -34,8 +34,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 Reactive applications expose `ReactiveAuditTrail` and `ReactiveAuditPublisher`, backed by
 `AsyncAuditEventPublisher`/`AsyncAuditSink`. SQS uses `SqsAsyncClient`, startup-owned AWS resources,
-and exact native cancellation. Imperative sinks are rejected; Kafka native audit remains pending
-and a reactive Kafka audit configuration fails explicitly rather than selecting the blocking adapter.
+and exact native cancellation. Imperative sinks are rejected; Kafka audit uses the dedicated bounded asynchronous submission
+boundary described below in reactive applications.
 The global `axiz.audit.enabled=false` switch also disables native wiring.
 
 `@Auditable` supports Mono/Flux methods in reactive applications. Work and record construction are
@@ -55,3 +55,20 @@ the framework's non-blocking reactive appender; it is not an outbox durability g
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-audit-spring-boot-autoconfigure verify`.
+
+### Kafka submission in reactive applications
+
+Servlet publication keeps its synchronous adapter. In reactive applications the framework invokes
+`KafkaTemplate.send()` on dedicated workers because metadata lookup or a full producer buffer can
+wait inside `send()`. Completion means broker acknowledgement; there is no wait for that ack on a
+worker or Reactor thread. The standard Kafka client is retained.
+
+`axiz.audit.kafka.send-workers` defaults to 2 and `send-queue-capacity` to 256. Admission is
+bounded across queued work and unacknowledged sends; exhaustion fails immediately rather than
+running on the caller. The existing Kafka timeout bounds submission plus acknowledgement and
+`max.block.ms`. Metrics `axiz.transport.pending`, `.queued`, `.rejected`, and `.latency` carry the
+`transport` tag (`kafka-events` or `kafka-audit`). Producers and workers close with the context.
+
+Cancelling queued work prevents its send. Once Kafka has accepted a send, cancellation or timeout
+cannot retract it: a late acknowledgement is possible, and capacity remains reserved until the
+transport completes. Retrying must preserve the event ID and use consumer inbox deduplication.

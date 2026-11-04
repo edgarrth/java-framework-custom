@@ -1,0 +1,88 @@
+openapi: 3.1.0
+info:
+  title: Payment history
+  version: 1.0.0
+  description: >
+    Read model of the payments of each customer (fictitious payment processor of the axiz demo),
+    projected from the payment order events. Eventually consistent with payments-business.
+tags:
+  - name: payment-history
+paths:
+  /v1/customers/{customerId}/payments:
+    parameters:
+      - {name: customerId, in: path, required: true, schema: {type: string, maxLength: 20}}
+    get:
+      operationId: listCustomerPayments
+      tags: [payment-history]
+      summary: Payments of a customer, latest change first
+      parameters:
+        - {name: status, in: query, schema: {$ref: '#/components/schemas/PaymentStatus'}}
+        - {name: page, in: query, schema: {type: integer, minimum: 0}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 200}}
+      responses:
+        '200':
+          description: Page of payments
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaymentHistoryPage'}
+              example: {items: [{paymentId: 0190a1b2-0000-7000-8000-000000000001, operationNumber: OP20261011-00000001, customerId: C-1001, status: COMPLETED, amount: 150.75, currency: PEN, creditorCci: '****************9053', processingDate: '2026-10-12', lastChangeAt: '2026-10-11T15:00:05Z'}], page: 0, size: 20, totalElements: 1}
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/payments/{paymentId}:
+    parameters:
+      - {name: paymentId, in: path, required: true, schema: {type: string, maxLength: 64}}
+    get:
+      operationId: getPayment
+      tags: [payment-history]
+      summary: Gets the projected state of a payment
+      responses:
+        '200':
+          description: The payment
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PaymentHistoryItem'}
+              example: {paymentId: 0190a1b2-0000-7000-8000-000000000001, operationNumber: OP20261011-00000001, customerId: C-1001, status: REJECTED, reason: Insufficient funds, amount: 150.75, currency: PEN, creditorCci: '****************9053', processingDate: '2026-10-12', lastChangeAt: '2026-10-11T15:00:05Z'}
+        '404':
+          description: Not found (yet)
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+components:
+  schemas:
+    PaymentStatus:
+      type: string
+      enum: [RECEIVED, PROCESSING, COMPLETED, REJECTED]
+    PaymentHistoryItem:
+      type: object
+      properties:
+        paymentId: {type: string}
+        operationNumber: {type: string}
+        customerId: {type: string}
+        status: {$ref: '#/components/schemas/PaymentStatus'}
+        reason: {type: string}
+        amount: {type: number}
+        currency: {type: string}
+        creditorCci: {type: string, description: masked}
+        processingDate: {type: string, format: date}
+        lastChangeAt: {type: string, format: date-time}
+    PaymentHistoryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/PaymentHistoryItem'}
+        page: {type: integer}
+        size: {type: integer}
+        totalElements: {type: integer, format: int64}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        code: {type: string}
+

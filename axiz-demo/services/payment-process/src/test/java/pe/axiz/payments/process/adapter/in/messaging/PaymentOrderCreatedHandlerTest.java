@@ -27,7 +27,7 @@ class PaymentOrderCreatedHandlerTest {
   }
 
   @Test
-  void handlesTheCreatedEventOfPaymentsBusiness() {
+  void handlesTheCreatedEventOfPaymentOrders() {
     assertThat(handler.eventType()).isEqualTo("pe.axiz.payments.payment-order.created.v1");
     assertThat(handler.payloadType())
         .isEqualTo(PaymentOrderCreatedHandler.PaymentOrderCreated.class);

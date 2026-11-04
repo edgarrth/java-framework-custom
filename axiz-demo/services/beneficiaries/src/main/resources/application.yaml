@@ -1,0 +1,84 @@
+spring:
+  application:
+    name: beneficiaries
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  foundation:
+    zone: America/Lima
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+    parameter-store:
+      application: beneficiaries-crud
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    claims:
+      subject-as-client: false
+      machine:
+      - axiz_token_kind=service
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - beneficiaries-crud
+      - beneficiaries
+  dynamodb:
+    table-prefix: ${AXIZ_DYNAMODB_TABLE_PREFIX:local-}
+  cache:
+    default-ttl: 10m
+    redis: false
+    caches:
+      beneficiaries:
+        ttl: 5m
+  idempotency:
+    retention: 24h
+    store: dynamodb
+    table: ${axiz.dynamodb.table-prefix}axiz-idempotency
+  messaging:
+    source: urn:axiz:beneficiaries-crud
+    consumer:
+      name: beneficiaries-crud
+    kafka:
+      group-id: beneficiaries-crud
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+beneficiaries:
+  max-per-customer: 50

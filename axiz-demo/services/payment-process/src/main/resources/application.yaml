@@ -1,7 +1,3 @@
-# Payment Process: defaults shared by every environment.
-# Environment values come from the ConfigMaps axiz-common, payment-process and payment-process-errors
-# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
-# placeholders only serve local runs and tests: never write environment values or secrets here.
 spring:
   application:
     name: payment-process
@@ -28,8 +24,6 @@ axiz:
   messaging:
     type-prefix: pe.axiz.payments.
     consumer:
-      # the payments topic also carries events this service does not handle (status-changed):
-      # they are acknowledged, not dead-lettered
       ignore-unknown-types: true
       subscriptions:
       - pe.axiz.payments.payment-order.created.v1
@@ -56,11 +50,10 @@ axiz:
   sensitive:
     response: MEDIUM
   security:
-    # Keycloak always sends azp: a token without a client claim is rejected (401), never
-    # taken for an application that may read every customer's data
     claims:
       subject-as-client: false
-      machine: [axiz_token_kind=service]
+      machine:
+      - axiz_token_kind=service
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
@@ -81,7 +74,7 @@ axiz:
     default-lock-at-most-for: 10m
   http-client:
     clients:
-      payments-business:
+      payment-orders:
         base-url: ${PAYMENTS_BUSINESS_BASE_URL:http://localhost:8081}
         read-timeout: 5s
         total-timeout: 12s
@@ -90,8 +83,17 @@ axiz:
           token-uri: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}/protocol/openid-connect/token
           client-id: ${PAYMENT_PROCESS_CLIENT_ID:payment-process}
           client-secret-ref: payment-process-client-secret
-      core-integration:
+      banking-core:
         base-url: ${CORE_INTEGRATION_BASE_URL:http://localhost:8083}
+        read-timeout: 5s
+        total-timeout: 12s
+        auth:
+          type: CLIENT_CREDENTIALS
+          token-uri: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}/protocol/openid-connect/token
+          client-id: ${PAYMENT_PROCESS_CLIENT_ID:payment-process}
+          client-secret-ref: payment-process-client-secret
+      payment-network-gateway:
+        base-url: ${PAYMENT_NETWORK_GATEWAY_BASE_URL:http://localhost:8087}
         read-timeout: 5s
         total-timeout: 12s
         auth:

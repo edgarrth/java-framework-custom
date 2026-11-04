@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Currency;
@@ -21,6 +23,32 @@ class MoneyTest {
 
   private static final Currency PEN = Currency.getInstance("PEN");
   private static final Currency USD = Currency.getInstance("USD");
+
+  @Test
+  void textFactoriesRejectExcessiveLexicalLengthEvenForAnOtherwiseValidAmount() {
+    String padded = "0".repeat(4096) + "1.00";
+    assertThrows(BusinessException.class, () -> Money.of(padded, "PEN"));
+    assertThrows(BusinessException.class, () -> Money.ofExact(padded, "PEN"));
+    assertThrows(BusinessException.class, () -> Money.parse("PEN " + padded));
+  }
+
+  @Test
+  void textLengthBoundaryPreservesValidAmountsAndRejectsLargeInputsImmediately() {
+    String boundary = "0".repeat(Money.MAX_TEXT_LENGTH - 4) + "1.00";
+    assertEquals(Money.ofExact("1", "PEN"), Money.ofExact(boundary, "PEN"));
+    assertThrows(BusinessException.class, () -> Money.ofExact("0" + boundary, "PEN"));
+    String complete = "PEN" + " ".repeat(Money.MAX_TEXT_LENGTH - 4) + "1";
+    assertEquals(Money.ofExact("1", "PEN"), Money.parse(complete));
+    assertThrows(BusinessException.class, () -> Money.parse(complete + " "));
+    String attack = "9".repeat(1_000_000);
+    assertTimeout(
+        Duration.ofSeconds(2),
+        () -> {
+          assertThrows(BusinessException.class, () -> Money.of(attack, "PEN"));
+          assertThrows(BusinessException.class, () -> Money.ofExact(attack, "PEN"));
+          assertThrows(BusinessException.class, () -> Money.parse("PEN " + attack));
+        });
+  }
 
   @Test
   void everyFactoryAndArithmeticResultKeepsTheMoneyRange() {

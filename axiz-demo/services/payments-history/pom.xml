@@ -29,11 +29,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
     </dependency>
-    <!-- annotations used by the models generated from the OpenAPI contract -->
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-    </dependency>
     <!-- axiz capabilities -->
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -106,15 +101,13 @@
     <!-- ReactiveTypedEventHandler: non-blocking Kafka consumers that feed the reactive command bus -->
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-structure-eda-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-inbox-r2dbc</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-messaging-kafka</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -127,6 +120,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-secrets-aws</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -139,6 +133,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-crypto-kms</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

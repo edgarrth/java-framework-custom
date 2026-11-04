@@ -5,13 +5,13 @@ import java.time.LocalDate;
 import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.core.sensitive.MaskType;
 import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
 import pe.axiz.extension.cqrs.spring.ReactiveCommandBus;
-import pe.axiz.core.messaging.HandlesEvent;
-import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 import pe.axiz.payments.history.application.command.RecordPaymentRegisteredCommand;
+import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 
 /**
  * Projects {@code payment-order.created.v1} (topic {@code payments}, consumer group

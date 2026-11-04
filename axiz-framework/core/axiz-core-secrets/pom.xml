@@ -20,6 +20,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-commons</artifactId>
       <version>${project.version}</version>

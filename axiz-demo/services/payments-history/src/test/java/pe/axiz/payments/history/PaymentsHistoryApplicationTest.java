@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,7 @@ import reactor.util.retry.Retry;
  * payment end to end: events on Kafka, R2DBC inbox, reactive command pipeline, projection with
  * encrypted and money columns on PostgreSQL, reactive query. Needs Docker.
  */
-@SpringBootTest(properties = {"axiz.messaging.destinations.payments=kafka:payments"})
+@SpringBootTest
 @AutoConfigureWebTestClient
 @Import({
   PostgresTestConfiguration.class,
@@ -51,6 +52,10 @@ import reactor.util.retry.Retry;
 })
 @ExtendWith(BlockHoundExtension.class)
 class PaymentsHistoryApplicationTest {
+  @AfterAll
+  static void noBlockingCallWasHiddenByRetryOrErrorHandling() {
+    assertThat(BlockHoundExtension.detectedBlockingCalls()).isEmpty();
+  }
 
   /** Field encryption and blind index keys: random for every run, never committed. */
   @DynamicPropertySource
@@ -61,7 +66,9 @@ class PaymentsHistoryApplicationTest {
   private static final Duration T = Duration.ofSeconds(30);
 
   @Autowired EventFactory events;
-  @Autowired EventPublisher publisher;
+  // Test fixture acting as an external producer on the JUnit thread. The application is
+  // consumer-only; declaring a reactive Kafka publishing destination must still fail startup.
+  @Autowired EventPublisher fixturePublisher;
   @Autowired ReactiveQueryBus queries;
   @Autowired DatabaseClient db;
 
@@ -73,8 +80,8 @@ class PaymentsHistoryApplicationTest {
   @Test
   void projectsThePaymentOrderEvents() {
     String orderId = UUID.randomUUID().toString();
-    publisher.publish(
-        "payments",
+    fixturePublisher.publish(
+        "kafka:payments",
         events.create(
             orderId + "-created",
             "payment-order.created.v1",
@@ -89,8 +96,8 @@ class PaymentsHistoryApplicationTest {
                 "currency", "PEN",
                 "processingDate", LocalDate.parse("2026-10-12").toString()),
             null));
-    publisher.publish(
-        "payments",
+    fixturePublisher.publish(
+        "kafka:payments",
         events.create(
             orderId + "-completed",
             "payment-order.status-changed.v1",

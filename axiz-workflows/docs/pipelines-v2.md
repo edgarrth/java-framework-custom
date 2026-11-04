@@ -78,8 +78,10 @@ manifiesto anterior. Verifica firma, productor, gates y todos los bytes antes de
 Rechaza cualquier archivo ya publicado con contenido diferente. Reutiliza archivos idénticos
 y reanuda promociones interrumpidas sin reconstruir.
 
-Por ahora el builder admite versiones finales y promoción a `maven-releases`; la publicación
-de snapshots todavía está pendiente. El tag final debe apuntar al commit del manifiesto.
+El builder admite versiones finales y promoción a `maven-releases`. Para pruebas de una versión
+se usan candidatas inmutables con manifiesto firmado y repositorio aislado; publicar versiones
+Maven `-SNAPSHOT` queda fuera del flujo de release. Esto no elimina los snapshots OpenAPI/AsyncAPI
+que verifican compatibilidad. El tag final debe apuntar al commit del manifiesto.
 Release-please del framework prepara un draft y crea el tag; la promoción retiene los bytes
 originales del manifiesto firmado antes de publicar ese draft. El registro de despliegue firmado
 se conserva también en un release de auditoría y como artefacto de Actions.
@@ -181,3 +183,6 @@ al commit de la ejecución de deploy. Se mantienen las protecciones y revisiones
 La validación local cubre los algoritmos con archivos y ZIPs reales y respuestas API controladas;
 las firmas de estas pruebas se simulan. La aceptación de OIDC, permisos reales y despliegue en Argo
 se realiza con el release inmutable publicado y los repositorios/ambientes configurados.
+
+La guía operativa opcional de promoción dev → QA y rollback se documenta en
+[acceptance-2.0.md](acceptance-2.0.md).

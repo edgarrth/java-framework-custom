@@ -18,6 +18,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `KafkaAuditRecords` | Shared binary CloudEvents encoding for synchronous and asynchronous Kafka publication. |
 | `KafkaAuditPublisher` | Publishes audit events to an Amazon MSK (Kafka) topic. |
 
 ## Tests

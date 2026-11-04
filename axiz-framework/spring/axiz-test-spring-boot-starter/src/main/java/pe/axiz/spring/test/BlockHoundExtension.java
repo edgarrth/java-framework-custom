@@ -42,7 +42,11 @@ public class BlockHoundExtension implements BeforeAllCallback {
                   existing.or(
                       thread ->
                           thread.getName().startsWith("axiz-aws-future-")
-                              || thread.getName().startsWith("aws-java-sdk-NettyEventLoop")))
+                              || thread.getName().startsWith("aws-java-sdk-NettyEventLoop")
+                              || thread.getName().startsWith("lettuce-nioEventLoop-")
+                              || thread.getName().startsWith("lettuce-epollEventLoop-")
+                              || thread.getName().startsWith("lettuce-kqueueEventLoop-")
+                              || thread.getName().startsWith("lettuce-eventExecutorLoop-")))
           // Only the asynchronous logging boundary is allowed, never synchronous appenders.
           .allowBlockingCallsInside("ch.qos.logback.core.AsyncAppenderBase", "append")
           // An idle executor worker must wait for work. This exact JDK scheduling boundary does

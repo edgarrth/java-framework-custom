@@ -19,6 +19,14 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-otlp</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-tracing</artifactId><optional>true</optional><exclusions><exclusion><groupId>aopalliance</groupId><artifactId>aopalliance</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-micrometer-tracing</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-tracing-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>
@@ -46,6 +54,22 @@
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
       <optional>true</optional>
+    </dependency>
+    <!-- Optional repository instrumentation is installed only when Spring Data is present. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-data-commons</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-commons</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webflux</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

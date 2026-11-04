@@ -1,28 +1,18 @@
-# settlement-batch in qa
 environment: qa
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/settlement-batch-qa
-
 resources:
   requests:
     cpu: 250m
     memory: 512Mi
   limits:
     memory: 512Mi
-
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in qa (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: qa/settlement-batch
-
-# Environment values (no secrets: those come from the ExternalSecret). Business calendar
-# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
 config:
   axiz.config.environment: qa
   management.tracing.sampling.probability: '1.0'
@@ -31,5 +21,4 @@ config:
   spring.datasource.username: settlement-batch-app
   axiz.jpa.aws-wrapper.enabled: true
   axiz.jpa.aws-wrapper.iam: true
-
 errors: []

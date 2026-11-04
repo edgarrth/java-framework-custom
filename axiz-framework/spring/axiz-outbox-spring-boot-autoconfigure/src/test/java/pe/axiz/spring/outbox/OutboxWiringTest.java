@@ -133,11 +133,11 @@ class OutboxWiringTest {
   }
 
   private static void await(java.util.function.BooleanSupplier condition) throws Exception {
-    long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-    while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
-      Thread.sleep(5);
-    }
-    assertTrue(condition.getAsBoolean(), "condition not reached in time");
+    org.awaitility.Awaitility.await()
+        .pollDelay(Duration.ZERO)
+        .pollInterval(Duration.ofMillis(5))
+        .atMost(Duration.ofSeconds(5))
+        .until(condition::getAsBoolean);
   }
 
   @Test

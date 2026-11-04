@@ -1,14 +1,16 @@
 # axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
 # Keep it in version control; the CLI updates it when it changes the project.
-schema: 1
+schema: 2
+kind: service
 name: notifications-processor
 groupId: pe.axiz.payments
 basePackage: pe.axiz.payments.notifications
 archetype: event-processor
-framework: eda
+structure: eda
+extensions: []
 stack: servlet
 persistence: dynamodb
-axizVersion: 1.0.0
+axizVersion: 2.0.0
 contract:
   openapi: null
   asyncapi: src/main/asyncapi/asyncapi.yaml
@@ -30,5 +32,7 @@ capabilities:
   - storage-s3
   - lock
   - lock-dynamodb
+  - storage
+  - messaging
 operations:
   []

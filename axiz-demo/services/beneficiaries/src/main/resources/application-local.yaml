@@ -1,0 +1,18 @@
+axiz:
+  logging:
+    json: false
+  config:
+    environment: local
+  security:
+    issuers:
+    - issuer: http://localhost:8180/realms/axiz
+      audiences:
+      - local-services
+  aws:
+    endpoint: http://localhost:4566
+spring:
+  cloud:
+    aws:
+      endpoint: http://localhost:4566
+      region:
+        static: us-east-1

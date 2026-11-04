@@ -28,7 +28,8 @@ import pe.axiz.core.sensitive.ObjectMasker;
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.audit.AxizAuditAutoConfiguration",
-      "pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration"
+      "pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration",
+      "pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration"
     })
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
@@ -44,7 +45,8 @@ public class AxizNativeAuditAutoConfiguration {
     if (imperative.stream().findAny().isPresent())
       throw new IllegalStateException(
           "Reactive audit requires AsyncAuditSink; imperative AuditSink is not supported");
-    if (properties.kafka().topic() != null)
+    if (properties.kafka().topic() != null
+        && sinks.stream().noneMatch(sink -> sink.name().equals("kafka")))
       throw new IllegalStateException(
           "Reactive Kafka audit requires a native producer configuration; imperative Kafka audit is not supported");
     List<AsyncAuditEventPublisher> targets =

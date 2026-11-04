@@ -1,0 +1,37 @@
+environment: dev
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/beneficiaries-crud-dev
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: dev/beneficiaries-crud
+config:
+  axiz:
+    config:
+      environment: dev
+    security:
+      issuers:
+      - issuer: https://sso.dev.axiz-demo.example/realms/axiz
+        audiences:
+        - beneficiaries-crud
+        - beneficiaries
+    dynamodb:
+      table-prefix: dev-
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+errors: []

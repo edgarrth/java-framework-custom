@@ -163,6 +163,7 @@ public final class LockTemplate {
       try {
         Thread.sleep(every);
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         return;
       }
       if (done.get()) {

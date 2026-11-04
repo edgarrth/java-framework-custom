@@ -9,6 +9,8 @@ import io.micrometer.context.ContextRegistry;
 import io.micrometer.context.ContextSnapshotFactory;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -86,7 +88,7 @@ class BffTest {
                           .required(
                               "slow",
                               () -> {
-                                Thread.sleep(2_000);
+                                new CountDownLatch(1).await(5, TimeUnit.SECONDS);
                                 return "late";
                               })
                           .run());

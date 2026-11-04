@@ -1,0 +1,20 @@
+originalName: payments-business
+currentName: payment-orders
+files:
+  src/main/resources/application-local.yaml: {
+    }
+  src/main/resources/application-platform.yaml: {
+    }
+  src/main/resources/application.yaml:
+    axiz.messaging.source: urn:axiz:payments-business
+    axiz.messaging.consumer.name: payments-business
+    axiz.messaging.kafka.group-id: payments-business
+    axiz.config.parameter-store.application: payments-business
+  deploy/helm/payment-orders/values-prod.yaml: {
+    }
+  deploy/helm/payment-orders/values.yaml: {
+    }
+  deploy/helm/payment-orders/values-dev.yaml: {
+    }
+  deploy/helm/payment-orders/values-qa.yaml: {
+    }

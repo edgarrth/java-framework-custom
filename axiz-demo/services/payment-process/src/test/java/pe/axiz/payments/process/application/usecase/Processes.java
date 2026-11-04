@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.core.resilience.Backoff;
@@ -54,7 +55,7 @@ public final class Processes {
         }
 
         @Override
-        public PaymentContext decode(String text) {
+        public @Nullable PaymentContext decode(String text) {
           return values.get(text);
         }
       };

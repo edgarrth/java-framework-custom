@@ -108,7 +108,7 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
       JobExecution execution = jobs.start(settlementJob, params);
       LOG.info("Settlement job for {} ended {}", key, execution.getStatus());
       return execution.getStatus() == BatchStatus.COMPLETED ? 0 : 1;
-    } catch (JobInstanceAlreadyCompleteException e) {
+    } catch (JobInstanceAlreadyCompleteException _) {
       LOG.info("Settlement file {} was already loaded", key);
       if (!summary.exists(key)) {
         // e.g. the bucket was recreated: the rows are the source of truth, the summary follows them

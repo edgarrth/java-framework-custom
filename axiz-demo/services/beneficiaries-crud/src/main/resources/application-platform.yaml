@@ -1,3 +1,0 @@
-# Profile "platform": the whole demo on one machine (../../local/compose.yaml), with "local".
-server:
-  port: 8082

@@ -31,7 +31,7 @@ class SettlementRunnerTest {
     return new SettlementRunner(
         jobs,
         null,
-        config -> Optional.empty(),
+        _ -> Optional.empty(),
         new SettlementProperties(explicitKey, "in/settlement/", Duration.ofHours(1), true),
         calendar,
         summary,
@@ -64,7 +64,7 @@ class SettlementRunnerTest {
         Proxy.newProxyInstance(
             JobOperator.class.getClassLoader(),
             new Class<?>[] {JobOperator.class},
-            (p, m, a) -> {
+            (_, m, _) -> {
               if (m.getName().equals("start")) {
                 throw new JobInstanceAlreadyCompleteException("already complete");
               }

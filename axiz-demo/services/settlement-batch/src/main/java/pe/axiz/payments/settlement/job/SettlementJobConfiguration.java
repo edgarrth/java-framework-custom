@@ -10,6 +10,7 @@ import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.infrastructure.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.infrastructure.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -94,6 +95,7 @@ public class SettlementJobConfiguration {
   }
 
   @Bean
+  @DependsOnDatabaseInitialization
   @StepScope
   JdbcBatchItemWriter<SettlementLine> settlementWriter(
       DataSource dataSource, @Value("#{jobParameters['input.key']}") String inputKey) {

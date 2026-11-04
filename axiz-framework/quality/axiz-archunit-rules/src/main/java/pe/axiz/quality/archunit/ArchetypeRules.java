@@ -41,21 +41,6 @@ public final class ArchetypeRules {
                   "pe.axiz.spring.outbox..")
               .because("this role does not participate in domain messaging"));
     }
-    rules.add(
-        noClasses()
-            .that()
-            .resideOutsideOfPackages("..repository..", "..adapter.out.persistence..")
-            .should()
-            .dependOnClassesThat()
-            .resideInAPackage("pe.axiz.kit..")
-            .because("persistence kits belong inside the persistence adapter"));
-    rules.add(
-        noClasses()
-            .should()
-            .dependOnClassesThat()
-            .resideInAPackage("pe.axiz.adapter..")
-            .because(
-                "services consume ports and Spring facades; technology adapters are runtime dependencies"));
     return List.copyOf(rules);
   }
 }

@@ -5,8 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Instant;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.money.Money;
+import pe.axiz.spring.test.BlockHoundExtension;
 
+@ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryTest {
 
   private static final Instant T0 = Instant.parse("2026-10-11T15:00:00Z");

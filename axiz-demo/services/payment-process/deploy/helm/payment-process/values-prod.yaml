@@ -1,37 +1,25 @@
-# payment-process in prod
 environment: prod
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/payment-process-prod
-
 resources:
   requests:
     cpu: 500m
     memory: 1Gi
   limits:
     memory: 1Gi
-
 autoscaling:
   enabled: true
   minReplicas: 3
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
-
 topologySpread:
-  whenUnsatisfiable: DoNotSchedule   # replicas in different zones, always
-
+  whenUnsatisfiable: DoNotSchedule
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in prod (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: prod/payment-process
-
-# Environment values (no secrets: those come from the ExternalSecret). Business calendar
-# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
 config:
   axiz.config.environment: prod
   management.tracing.sampling.probability: '0.1'
@@ -44,12 +32,13 @@ config:
   axiz.jpa.aws-wrapper.enabled: true
   axiz.jpa.aws-wrapper.iam: true
   axiz.http-client.clients:
-    payments-business:
-      base-url: http://payments-business.payments-prod.svc.cluster.local
-    core-integration:
-      base-url: http://core-integration.payments-prod.svc.cluster.local
+    payment-orders:
+      base-url: http://payment-orders.payments-prod.svc.cluster.local
+    banking-core:
+      base-url: http://banking-core.payments-prod.svc.cluster.local
+    payment-network-gateway:
+      base-url: http://payment-network-gateway.payments-prod.svc.cluster.local
   spring.kafka.bootstrap-servers: b-1.payments-prod.kafka.us-east-1.amazonaws.com:9098,b-2.payments-prod.kafka.us-east-1.amazonaws.com:9098
   axiz.messaging.destinations:
     payments: kafka:payments
-
 errors: []

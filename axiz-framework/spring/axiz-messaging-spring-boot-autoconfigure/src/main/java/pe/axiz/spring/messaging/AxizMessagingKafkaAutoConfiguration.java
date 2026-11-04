@@ -1,5 +1,7 @@
 package pe.axiz.spring.messaging;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,9 +16,13 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,8 +40,12 @@ import org.springframework.util.backoff.FixedBackOff;
 import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
 import pe.axiz.adapter.messaging.kafka.KafkaEventPublisher;
 import pe.axiz.adapter.messaging.kafka.MskIam;
+import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventDispatcher;
+import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.PayloadException;
+import pe.axiz.core.messaging.PublishResult;
+import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 
 /**
  * Amazon MSK: IAM-authenticated idempotent producer for {@code kafka:} destinations, and listener
@@ -50,6 +60,7 @@ import pe.axiz.core.messaging.PayloadException;
     })
 @ConditionalOnExpression(
     "'${axiz.messaging.kafka.bootstrap-servers:${spring.kafka.bootstrap-servers:}}' != ''")
+@ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)
 public class AxizMessagingKafkaAutoConfiguration {
 
@@ -71,6 +82,7 @@ public class AxizMessagingKafkaAutoConfiguration {
   KafkaProducer<String, byte[]> axizKafkaProducer(AxizMessagingProperties p, Environment env) {
     Map<String, Object> props = common(p, env);
     props.putAll(MskIam.reliableProducer());
+    props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
     return new KafkaProducer<>(props);
@@ -81,6 +93,75 @@ public class AxizMessagingKafkaAutoConfiguration {
       KafkaProducer<String, byte[]> producer, AxizMessagingProperties p) {
     return new EventPublisherAdapter(
         "kafka", new KafkaEventPublisher(producer, p.kafka().sendTimeout()));
+  }
+
+  @Bean(destroyMethod = "close")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  BoundedAsyncDispatcher axizKafkaSendDispatcher(
+      AxizMessagingProperties p, Environment env, ObjectProvider<MeterRegistry> registries) {
+    return new BoundedAsyncDispatcher(
+        "kafka-events",
+        env.getProperty("axiz.messaging.kafka.send-workers", Integer.class, 2),
+        env.getProperty("axiz.messaging.kafka.send-queue-capacity", Integer.class, 256),
+        p.kafka().sendTimeout(),
+        registries.getIfAvailable(() -> Metrics.globalRegistry));
+  }
+
+  @Bean
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  AsyncEventPublisherAdapter axizKafkaAsyncPublisherAdapter(
+      @Qualifier("axizAsyncKafkaTemplate") KafkaTemplate<String, byte[]> template,
+      @Qualifier("axizKafkaSendDispatcher") BoundedAsyncDispatcher sends) {
+    return new AsyncEventPublisherAdapter(
+        "kafka",
+        new AsyncEventPublisher() {
+          @Override
+          public boolean supports(String destination) {
+            return destination.startsWith(KafkaEventPublisher.SCHEME)
+                || (!destination.startsWith("https://") && !destination.startsWith("arn:"));
+          }
+
+          @Override
+          public java.util.concurrent.CompletionStage<PublishResult> publish(
+              String destination, EventEnvelope event) {
+            return sends.submit(
+                () ->
+                    template
+                        .send(
+                            pe.axiz.adapter.messaging.kafka.KafkaEventRecords.create(
+                                destination, event))
+                        .thenApply(
+                            sent ->
+                                new PublishResult(
+                                    event.id(),
+                                    sent.getRecordMetadata().topic(),
+                                    sent.getRecordMetadata().partition()
+                                        + "-"
+                                        + sent.getRecordMetadata().offset())));
+          }
+        });
+  }
+
+  @Bean(destroyMethod = "destroy")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  KafkaTemplate<String, byte[]> axizAsyncKafkaTemplate(AxizMessagingProperties p, Environment env) {
+    Map<String, Object> props = common(p, env);
+    props.putAll(MskIam.reliableProducer());
+    props.put(ProducerConfig.CLIENT_ID_CONFIG, props.get("client.id") + "-reactive");
+    props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
+    var factory =
+        new DefaultKafkaProducerFactory<String, byte[]>(
+            props, new StringSerializer(), new ByteArraySerializer());
+    return new KafkaTemplate<>(factory) {
+      @Override
+      public void destroy() {
+        try {
+          super.destroy();
+        } finally {
+          factory.destroy();
+        }
+      }
+    };
   }
 
   /** Listener containers, one per configured topic. */

@@ -85,15 +85,13 @@ class ReactiveIdempotencyFilterTest {
    */
   private EntityExchangeResult<String> retry(WebTestClient client, String key, String body)
       throws InterruptedException {
-    EntityExchangeResult<String> result = null;
-    for (int i = 0; i < 50; i++) {
-      result = post(client, key, body).expectBody(String.class).returnResult();
-      if (result.getStatus().value() != 409) {
-        return result;
-      }
-      Thread.sleep(100);
-    }
-    return result;
+    return org.awaitility.Awaitility.await()
+        .pollDelay(Duration.ZERO)
+        .pollInterval(Duration.ofMillis(25))
+        .atMost(Duration.ofSeconds(5))
+        .until(
+            () -> post(client, key, body).expectBody(String.class).returnResult(),
+            result -> result.getStatus().value() != 409);
   }
 
   @Test

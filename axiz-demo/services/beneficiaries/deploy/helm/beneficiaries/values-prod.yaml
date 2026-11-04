@@ -1,0 +1,39 @@
+environment: prod
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/beneficiaries-crud-prod
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: prod/beneficiaries-crud
+config:
+  axiz:
+    config:
+      environment: prod
+    security:
+      issuers:
+      - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+        audiences:
+        - beneficiaries-crud
+        - beneficiaries
+    dynamodb:
+      table-prefix: prod-
+  management:
+    tracing:
+      sampling:
+        probability: '0.1'
+errors: []

@@ -1,7 +1,3 @@
-# Notifications Processor: defaults shared by every environment.
-# Environment values come from the ConfigMaps axiz-common, notifications-processor and notifications-processor-errors
-# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
-# placeholders only serve local runs and tests: never write environment values or secrets here.
 spring:
   application:
     name: notifications-processor
@@ -22,8 +18,6 @@ axiz:
     type-prefix: pe.axiz.payments.
     consumer:
       max-attempts: 5
-      # the payments topic also carries events this service does not handle (created): they are
-      # acknowledged, not dead-lettered
       ignore-unknown-types: true
       subscriptions:
       - pe.axiz.payments.payment-order.status-changed.v1
@@ -67,9 +61,11 @@ axiz:
     table: ${axiz.dynamodb.table-prefix}axiz-locks
   metrics:
     tags:
-      # how the customer was notified; 'channel' is the customer's channel (web, mobile...)
       medium:
-        allowed: [email, sms, push]
+        allowed:
+        - email
+        - sms
+        - push
   notification:
     destination: customer-notifications
 management:

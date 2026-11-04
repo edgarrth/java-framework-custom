@@ -4,11 +4,12 @@ Daily settlement and reconciliation.
 
 | | |
 |---|---|
-| Archetype | `batch`: File processing and reconciliations, run as a Kubernetes CronJob |
-| Style | `batch` |
+| Archetype | `batch`: Scheduled batch processing |
+| Structure | `batch` |
+| Extensions | – |
 | Stack | `servlet` |
 | Persistence | `aurora` |
-| axiz | `1.0.0` |
+| axiz | `2.0.0` |
 | Base package | `pe.axiz.payments.settlement` |
 
 ## In the demo

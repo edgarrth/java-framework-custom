@@ -104,7 +104,7 @@ class PaymentSagaTest {
     }
 
     @Override
-    public PaymentContext decode(String text) {
+    public @Nullable PaymentContext decode(String text) {
       return values.get(text);
     }
   }

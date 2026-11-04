@@ -57,7 +57,7 @@ public class PaymentHistoryController {
   private static PaymentStatus status(String value) {
     try {
       return PaymentStatus.valueOf(value);
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalArgumentException _) {
       throw new ValidationException(
           List.of(
               FieldViolation.of(

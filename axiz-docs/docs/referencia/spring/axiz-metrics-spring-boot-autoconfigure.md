@@ -23,6 +23,23 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizMetricsProperties` | Generic event metrics (`axiz.metrics.*`), usually declared in the service ConfigMap. |
 | `MeteredInterceptor` | Applies `Metered`: counts the call, times it and derives outcome and reason from the failure. |
 
+## Reactive repositories
+
+With Spring Data and WebFlux present, the framework resolves the repository metrics registry
+at startup. Repository completion callbacks reuse that initialized registry and preserve Boot's
+tags, timer name and autotimer settings. An application-defined listener takes precedence.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-metrics-spring-boot-autoconfigure verify`.
+
+## OTLP exemplar startup
+
+`AxizOtlpExemplarsAutoConfiguration` keeps metric recording callbacks independent from Spring bean
+resolution. During singleton creation it supplies no trace exemplar; metric values and tracing
+remain active. After singleton initialization it uses the cached tracer. This prevents a Redis
+connection callback from waiting for the BeanFactory lock held by the startup thread.
+
+The configuration respects `management.tracing.exemplars.include` (`none`, `all`,
+`sampled-traces`) and an application-provided `ExemplarContextProvider`. It activates only when
+tracing and OTLP exemplar classes are present. The default policies and trace/span IDs are preserved.

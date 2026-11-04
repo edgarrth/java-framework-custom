@@ -1,45 +1,24 @@
-# payments-history in dev
 environment: dev
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/payments-history-dev
-
 resources:
   requests:
     cpu: 250m
     memory: 512Mi
   limits:
     memory: 512Mi
-
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 2
   targetCPUUtilizationPercentage: 70
-
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in dev (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: dev/payments-history
-
 config:
   axiz.config.environment: dev
-  management.tracing.sampling.probability: "1.0"
-  # Keys this service needs in dev (set their values, then remove the comment):
-  # axiz.foundation.calendar.holidays:
-  # axiz.security.issuers:
-  # spring.r2dbc.url:
-  # spring.r2dbc.username:
-  # axiz.r2dbc.iam.enabled:
-  # spring.kafka.bootstrap-servers:
-  # axiz.messaging.destinations:
-  # axiz.crypto.kms.key-id:
-  # axiz.crypto.fields.current-key-id:
-  # axiz.crypto.fields.key-ids:
-
+  management.tracing.sampling.probability: '1.0'
 errors: []

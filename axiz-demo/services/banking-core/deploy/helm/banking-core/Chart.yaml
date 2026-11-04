@@ -1,0 +1,6 @@
+apiVersion: v2
+name: banking-core
+description: Anti-corruption layer of the core banking system and the payment network
+type: application
+version: 1.0.0
+appVersion: 1.0.0

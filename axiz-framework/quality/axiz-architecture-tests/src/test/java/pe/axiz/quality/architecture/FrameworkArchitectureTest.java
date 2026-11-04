@@ -13,6 +13,10 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
+import com.tngtech.archunit.library.dependencies.SliceAssignment;
+import com.tngtech.archunit.library.dependencies.SliceIdentifier;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Dependency rules of the framework itself (section 3 of the definition), checked on every build
@@ -33,8 +37,7 @@ class FrameworkArchitectureTest {
                 @Override
                 public boolean test(com.tngtech.archunit.core.domain.JavaMethodCall call) {
                   return call.getTargetOwner().getName().equals("reactor.core.scheduler.Schedulers")
-                      && java.util.Set.of(
-                              "boundedElastic", "newBoundedElastic", "elastic", "newElastic")
+                      && Set.of("boundedElastic", "newBoundedElastic", "elastic", "newElastic")
                           .contains(call.getName());
                 }
               })
@@ -67,9 +70,19 @@ class FrameworkArchitectureTest {
               "org.reactivestreams..")
           .because("layer 1 is framework-neutral so a Quarkus extension can wire the same core");
 
-  /** Layer 2 never depends on layer 3. */
+  /** Core contracts cannot acquire technology through framework adapters or persistence kits. */
   @ArchTest
-  static final ArchRule SPRING_DOES_NOT_KNOW_FRAMEWORKS =
+  static final ArchRule CORE_DOES_NOT_KNOW_TECHNOLOGY =
+      noClasses()
+          .that()
+          .resideInAPackage("pe.axiz.core..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..");
+
+  /** Spring wiring never depends on application structures or extensions. */
+  @ArchTest
+  static final ArchRule SPRING_DOES_NOT_KNOW_STRUCTURES =
       noClasses()
           .that()
           .resideInAPackage("pe.axiz.spring..")
@@ -77,15 +90,10 @@ class FrameworkArchitectureTest {
           .dependOnClassesThat()
           .resideInAnyPackage("pe.axiz.structure..", "pe.axiz.extension..");
 
-  /** Framework contracts (-api) are plain Java over layer 1. */
+  /** Structure/extension contracts use core and their own API, with CQRS to hexagonal reuse. */
   @ArchTest
-  static final ArchRule FRAMEWORK_APIS_ARE_PLAIN_JAVA =
-      noClasses()
-          .that(apiPackages())
-          .should()
-          .dependOnClassesThat()
-          .resideInAnyPackage("org.springframework..", "pe.axiz.spring..", "reactor..")
-          .because("the -api module of a framework depends only on layer 1");
+  static final ArchRule STRUCTURE_APIS_ARE_PLAIN_JAVA =
+      ArchRuleDefinition.classes().that(apiPackages()).should(onlyUseOwnApiOrCore());
 
   /**
    * A capability starter only uses its own package and the shared foundation adapters; capabilities
@@ -103,10 +111,70 @@ class FrameworkArchitectureTest {
   static final ArchRule CORE_HAS_NO_CYCLES =
       slices().matching("pe.axiz.core.(*)..").should().beFreeOfCycles();
 
-  /** No cycles between framework styles. */
+  /** No cycles within or between structures and extensions. */
   @ArchTest
-  static final ArchRule FRAMEWORKS_HAVE_NO_CYCLES =
-      slices().matching("pe.axiz.structure.(*)..").should().beFreeOfCycles();
+  static final ArchRule STRUCTURES_HAVE_NO_CYCLES = moduleSlices(Set.of("structure", "extension"));
+
+  /** No cycles between capabilities or technologies, including cross-layer module cycles. */
+  @ArchTest
+  static final ArchRule FRAMEWORK_MODULES_HAVE_NO_CYCLES =
+      moduleSlices(Set.of("core", "adapter", "kit", "spring", "structure", "extension"));
+
+  static ArchRule moduleSlices(Set<String> layers) {
+    return slices()
+        .assignedFrom(
+            new SliceAssignment() {
+              @Override
+              public SliceIdentifier getIdentifierOf(JavaClass type) {
+                String name = type.getPackageName();
+                if (!name.startsWith("pe.axiz.")) return SliceIdentifier.ignore();
+                String[] parts = name.substring("pe.axiz.".length()).split("\\.");
+                if (parts.length < 2 || !layers.contains(parts[0])) return SliceIdentifier.ignore();
+                String module = parts[0] + "." + parts[1];
+                if (parts[0].equals("adapter") && parts.length > 2) module += "." + parts[2];
+                return SliceIdentifier.of(module);
+              }
+
+              @Override
+              public String getDescription() {
+                return "Axiz modules in " + new TreeSet<>(layers);
+              }
+            })
+        .should()
+        .beFreeOfCycles();
+  }
+
+  static ArchCondition<JavaClass> onlyUseOwnApiOrCore() {
+    return new ArchCondition<>("only use core or the same neutral API (CQRS may use hexagonal)") {
+      @Override
+      public void check(JavaClass item, ConditionEvents events) {
+        String own = apiModule(item);
+        for (var dependency : item.getDirectDependenciesFromSelf()) {
+          JavaClass target = dependency.getTargetClass().getBaseComponentType();
+          String name = target.getName();
+          String other = apiModule(target);
+          boolean allowed =
+              target.isPrimitive()
+                  || name.startsWith("java.")
+                  || name.startsWith("org.jspecify.")
+                  || name.startsWith("org.slf4j.")
+                  || name.startsWith("io.micrometer.")
+                  || name.startsWith("org.reactivestreams.")
+                  || name.startsWith("pe.axiz.core.")
+                  || !own.isEmpty() && own.equals(other)
+                  || own.equals("extension.cqrs") && other.equals("structure.hexagonal");
+          if (!allowed)
+            events.add(SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+        }
+      }
+    };
+  }
+
+  static String apiModule(JavaClass type) {
+    if (!apiPackages().test(type)) return "";
+    String[] parts = type.getPackageName().substring("pe.axiz.".length()).split("\\.");
+    return parts.length >= 2 ? parts[0] + "." + parts[1] : "";
+  }
 
   @ArchTest
   static final ArchRule TECHNOLOGY_HAS_NO_RUNTIME =
@@ -233,11 +301,11 @@ class FrameworkArchitectureTest {
 
   static DescribedPredicate<JavaClass> apiPackages() {
     return DescribedPredicate.describe(
-        "framework api classes",
+        "neutral structure and extension API classes",
         c ->
             (c.getPackageName().startsWith("pe.axiz.structure.")
                     || c.getPackageName().startsWith("pe.axiz.extension."))
-                && !c.getPackageName().contains(".spring"));
+                && !c.getPackageName().matches(".*\\.spring(?:\\..*)?"));
   }
 
   static String capability(String packageName) {

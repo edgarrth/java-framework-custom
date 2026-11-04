@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -60,11 +61,11 @@ class InboxWiringTest {
   }
 
   private static void await(java.util.function.BooleanSupplier condition) throws Exception {
-    long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-    while (!condition.getAsBoolean() && System.nanoTime() < deadline) {
-      Thread.sleep(5);
-    }
-    assertTrue(condition.getAsBoolean(), "condition not reached in time");
+    org.awaitility.Awaitility.await()
+        .pollDelay(Duration.ZERO)
+        .pollInterval(Duration.ofMillis(5))
+        .atMost(Duration.ofSeconds(5))
+        .until(condition::getAsBoolean);
   }
 
   @Test
@@ -89,14 +90,16 @@ class InboxWiringTest {
   void aPurgeThatSwallowsTheInterruptStillEndsTheWorker() throws Exception {
     CountDownLatch entered = new CountDownLatch(1);
     AtomicInteger calls = new AtomicInteger();
+    AtomicReference<Thread> worker = new AtomicReference<>();
     PurgeCounter driverLike =
         new PurgeCounter() {
           @Override
           public int purgeExpired(Instant now) {
             calls.incrementAndGet();
+            worker.set(Thread.currentThread());
             entered.countDown();
             try {
-              Thread.sleep(Duration.ofSeconds(30));
+              new CountDownLatch(1).await();
             } catch (InterruptedException e) {
               // like some JDBC drivers: the interrupt is consumed and the call just returns
             }
@@ -107,7 +110,9 @@ class InboxWiringTest {
     purger.start();
     assertTrue(entered.await(5, TimeUnit.SECONDS));
     purger.stop();
-    Thread.sleep(50);
+    Thread active = java.util.Objects.requireNonNull(worker.get());
+    active.join(Duration.ofSeconds(2));
+    assertFalse(active.isAlive(), "the purge worker must terminate after stop");
     assertEquals(1, calls.get(), "the stop flag ends the loop even without the interrupt");
   }
 

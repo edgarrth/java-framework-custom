@@ -93,6 +93,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-messaging-kafka</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -105,6 +106,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-messaging-sqs</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -113,10 +115,12 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-observability-aws</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-messaging-sns</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -125,10 +129,12 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-inbox-dynamodb</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-storage-s3</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
@@ -137,6 +143,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-lock-dynamodb</artifactId>
+      <scope>runtime</scope>
     </dependency>
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->

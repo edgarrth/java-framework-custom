@@ -1,0 +1,38 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
+schema: 2
+kind: service
+name: payments-ux
+groupId: pe.axiz.payments
+basePackage: pe.axiz.payments.ux
+archetype: ux
+structure: bff
+extensions: []
+stack: reactive
+persistence: none
+axizVersion: 2.0.0
+contract:
+  openapi: src/main/openapi/openapi.yaml
+  asyncapi: null
+capabilities:
+  - foundation
+  - web
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - i18n
+  - sensitive
+  - security
+  - resilience
+  - http-client
+  - cache
+  - idempotency
+  - idempotency-redis
+  - cache-redis
+  - featureflags
+operations:
+  - createPayment
+  - getPayment
+  - listMyBeneficiaries

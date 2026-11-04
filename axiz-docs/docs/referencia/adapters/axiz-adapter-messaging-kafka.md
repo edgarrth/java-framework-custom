@@ -18,6 +18,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
+| `KafkaEventRecords` | Shared binary CloudEvents encoding for synchronous and asynchronous Kafka publication. |
 | `KafkaEnvelopes` | Maps consumed Kafka records back to envelopes. |
 | `KafkaEventPublisher` | Publishes CloudEvents (binary mode) to Amazon MSK. |
 | `MskIam` | Client properties for Amazon MSK with IAM authentication. |

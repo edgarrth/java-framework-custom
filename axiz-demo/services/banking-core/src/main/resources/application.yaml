@@ -1,0 +1,109 @@
+spring:
+  application:
+    name: banking-core
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  foundation:
+    zone: America/Lima
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+    parameter-store:
+      application: core-integration
+  i18n:
+    default-locale: es-PE
+  sensitive:
+    response: MEDIUM
+  security:
+    claims:
+      subject-as-client: false
+      machine:
+      - axiz_token_kind=service
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - core-integration
+      - banking-core
+  resilience:
+    defaults:
+      timeouts:
+        total: 15s
+  http-client:
+    clients:
+      core-banking:
+        base-url: ${CORE_BANKING_BASE_URL:http://localhost:8089}
+        read-timeout: 4s
+        total-timeout: 8s
+        max-attempts: 2
+        max-concurrent-calls: 40
+        auth:
+          type: CLIENT_CREDENTIALS
+          token-uri: ${CORE_BANKING_TOKEN_URI:http://localhost:8089/oauth/token}
+          client-id: ${CORE_BANKING_CLIENT_ID:core-integration}
+          client-secret-ref: core-banking-client-secret
+          scopes:
+          - movements
+  secrets:
+    directory: /var/run/secrets/axiz
+  soap:
+    clients:
+      core-credit:
+        endpoint: ${CORE_CREDIT_SOAP_ENDPOINT:http://localhost:8089/soap/credit}
+        timeout: 8s
+        username: ${CORE_CREDIT_SOAP_USER:core-integration}
+        password-ref: core-soap-password
+        password-mode: LEGACY_SHA1_DIGEST
+  lock:
+    store: redis
+  audit:
+    async:
+      enabled: true
+    sqs:
+      queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+  messaging:
+    source: urn:axiz:core-integration
+    consumer:
+      name: core-integration
+    kafka:
+      group-id: core-integration
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

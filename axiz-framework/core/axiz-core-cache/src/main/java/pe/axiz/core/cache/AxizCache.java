@@ -105,6 +105,14 @@ public final class AxizCache {
       }
     }
     try {
+      // A miss may have started before the preceding owner published its value and retired
+      // its flight. Recheck after becoming the owner without extending an existing entry's TTL.
+      Optional<T> published = get(key, type);
+      if (published.isPresent()) {
+        T value = published.get();
+        mine.complete(value);
+        return value;
+      }
       T value = loader.get();
       if (value != null) {
         put(key, value);

@@ -72,7 +72,7 @@ public final class PaymentSaga {
                 "transfer",
                 c -> c.sent(transfers.send(c.instruction(), c.instruction().keyFor("transfer"))),
                 true,
-                c -> {}),
+                _ -> {}),
             step(
                 "complete",
                 c -> {
@@ -88,7 +88,7 @@ public final class PaymentSaga {
                   }
                 },
                 false,
-                c -> {})));
+                _ -> {})));
   }
 
   /** Step action. */

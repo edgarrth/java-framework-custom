@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: payment-network-gateway
+  main:
+    web-application-type: servlet
+  threads:
+    virtual:
+      enabled: true
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+server:
+  port: 8080
+  shutdown: graceful
+axiz:
+  aws:
+    region: ${AWS_REGION:us-east-1}
+  foundation:
+    zone: America/Lima
+  errors:
+    type-base-uri: ${AXIZ_ERRORS_TYPE_BASE_URI:}
+  logging:
+    http:
+      enabled: true
+  config:
+    environment: ${AXIZ_ENVIRONMENT:local}
+    parameter-store:
+      application: core-integration
+  sensitive:
+    response: MEDIUM
+  web:
+    pagination:
+      default-size: 20
+      max-size: 200
+  security:
+    claims:
+      subject-as-client: false
+      machine:
+      - axiz_token_kind=service
+    issuers:
+    - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      audiences:
+      - payment-network-gateway
+  resilience:
+    defaults:
+      timeouts:
+        total: 15s
+  http-client:
+    clients:
+      payment-network:
+        base-url: ${PAYMENT_NETWORK_BASE_URL:http://localhost:8089}
+        read-timeout: 5s
+        total-timeout: 10s
+        auth:
+          type: API_KEY
+          api-key-header: X-Api-Key
+          api-key-ref: payment-network-api-key
+  secrets:
+    directory: /var/run/secrets/axiz
+  audit:
+    async:
+      enabled: true
+    sqs:
+      queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+  idempotency:
+    retention: 24h
+    store: redis
+management:
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+  otlp:
+    metrics:
+      export:
+        url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
+  tracing:
+    sampling:
+      probability: ${AXIZ_TRACE_SAMPLING:1.0}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true

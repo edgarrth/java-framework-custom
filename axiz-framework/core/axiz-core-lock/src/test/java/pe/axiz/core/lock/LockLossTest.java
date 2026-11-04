@@ -22,6 +22,25 @@ class LockLossTest {
 
   private static final Duration LEASE = Duration.ofMillis(60);
 
+  @Test
+  void anInterruptedRenewerPreservesItsInterruptWithoutRenewing() throws Exception {
+    ScriptedHandle handle = new ScriptedHandle(n -> true);
+    var held = new LockTemplate.Lease(handle, Long.MAX_VALUE, Thread.currentThread());
+    AtomicBoolean restored = new AtomicBoolean();
+    Thread renewer =
+        Thread.ofVirtual()
+            .start(
+                () -> {
+                  Thread.currentThread().interrupt();
+                  LockTemplate.renewLoop(held, LEASE, new AtomicBoolean());
+                  restored.set(Thread.currentThread().isInterrupted());
+                });
+    renewer.join(Duration.ofSeconds(2));
+    assertFalse(renewer.isAlive());
+    assertTrue(restored.get());
+    assertEquals(0, handle.renewals.get());
+  }
+
   /** A handle whose renewals answer what the test says; counts them. */
   static final class ScriptedHandle implements LockHandle {
     final AtomicInteger renewals = new AtomicInteger();
@@ -141,9 +160,11 @@ class LockLossTest {
 
   @Test
   void aStoreThatFailsOnceIsRetriedAndTheWorkSucceeds() throws Exception {
+    CountDownLatch thirdRenewal = new CountDownLatch(1);
     ScriptedHandle handle =
         new ScriptedHandle(
             n -> {
+              if (n == 3) thirdRenewal.countDown();
               if (n == 1) {
                 throw new IllegalStateException("store unavailable");
               }
@@ -156,9 +177,7 @@ class LockLossTest {
                 LEASE,
                 Duration.ofSeconds(1),
                 () -> {
-                  while (handle.renewals.get() < 3) {
-                    Thread.sleep(5);
-                  }
+                  assertTrue(thirdRenewal.await(5, TimeUnit.SECONDS));
                   return "SUCCESS";
                 });
     assertEquals("SUCCESS", result);
@@ -181,7 +200,9 @@ class LockLossTest {
                         LEASE,
                         Duration.ofSeconds(1),
                         () -> {
-                          Thread.sleep(5_000);
+                          assertFalse(
+                              new CountDownLatch(1).await(5, TimeUnit.SECONDS),
+                              "lease loss must interrupt work");
                           return "SUCCESS";
                         }));
     assertInstanceOf(IllegalStateException.class, e.getCause());

@@ -1,0 +1,58 @@
+environment: dev
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/payments-business-dev
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: dev/payments-business
+config:
+  axiz:
+    config:
+      environment: dev
+    security:
+      issuers:
+      - issuer: https://sso.dev.axiz-demo.example/realms/axiz
+        audiences:
+        - payments-business
+        - payment-orders
+    jpa:
+      aws-wrapper:
+        enabled: true
+        iam: true
+    crypto:
+      kms:
+        key-id: alias/payments-business-dev
+      fields:
+        current-key-id: v1
+        key-ids:
+        - v1
+    messaging:
+      destinations:
+        payments: kafka:payments
+    audit:
+      kafka:
+        topic: axiz-audit
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+  spring:
+    datasource:
+      url: jdbc:aws-wrapper:postgresql://payments-dev.cluster-demo.us-east-1.rds.amazonaws.com:5432/payments_business
+      username: payments-business-app
+    kafka:
+      bootstrap-servers: b-1.payments-dev.kafka.us-east-1.amazonaws.com:9098,b-2.payments-dev.kafka.us-east-1.amazonaws.com:9098
+errors: []

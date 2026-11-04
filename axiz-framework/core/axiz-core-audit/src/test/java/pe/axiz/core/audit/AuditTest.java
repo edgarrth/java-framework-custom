@@ -147,16 +147,12 @@ class AuditTest {
     try (AsyncAuditPublisher async =
         new AsyncAuditPublisher(flaky, brokenFallback, 10, Duration.ofMillis(10))) {
       async.publish(sample());
-      long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-      while (async.lostCount() == 0 && System.nanoTime() < deadline) {
-        Thread.sleep(5);
-      }
-      assertEquals(1, async.lostCount());
       assertTrue(async.workerAlive(), "the worker survives a failing fallback");
       async.publish(sample());
       AsyncAuditPublisher.Shutdown shutdown = async.shutdown();
       assertTrue(shutdown.drainedInTime());
       assertEquals(1, shutdown.lost());
+      assertEquals(1, async.lostCount());
     }
     assertEquals(1, delivered.size(), "events after the failure are still delivered");
   }

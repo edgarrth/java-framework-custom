@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs one service of the demo on this machine against local/compose.yaml:
-#   scripts/run.sh payments-business
+#   scripts/run.sh payment-orders
 # AWS calls go to LocalStack (any credentials work there; these are not real ones).
 set -Eeuo pipefail
 # -E: functions inherit the ERR trap, so an unexpected failure never ends the script silently

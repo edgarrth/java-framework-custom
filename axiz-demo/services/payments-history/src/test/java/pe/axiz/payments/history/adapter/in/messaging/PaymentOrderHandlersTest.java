@@ -10,14 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.extension.cqrs.Command;
 import pe.axiz.extension.cqrs.spring.ReactiveCommandBus;
 import pe.axiz.payments.history.application.command.RecordPaymentRegisteredCommand;
 import pe.axiz.payments.history.application.command.RecordPaymentStatusChangedCommand;
 import pe.axiz.payments.history.domain.PaymentStatus;
+import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 
+@ExtendWith(BlockHoundExtension.class)
 class PaymentOrderHandlersTest {
 
   private final List<Command<?>> sent = new ArrayList<>();
@@ -57,7 +60,7 @@ class PaymentOrderHandlersTest {
             LocalDate.parse("2026-10-12")),
         envelope(handler.eventType(), at));
     assertThat(sent).hasSize(1);
-    RecordPaymentRegisteredCommand c = (RecordPaymentRegisteredCommand) sent.get(0);
+    RecordPaymentRegisteredCommand c = (RecordPaymentRegisteredCommand) sent.getFirst();
     assertThat(c.paymentId()).isEqualTo("p-1");
     assertThat(c.occurredAt()).isEqualTo(at);
   }
@@ -69,7 +72,7 @@ class PaymentOrderHandlersTest {
         new PaymentOrderStatusChangedHandler.PaymentOrderStatusChanged(
             "p-1", "C-1001", "PROCESSING", "COMPLETED", null),
         envelope(handler.eventType(), Instant.EPOCH));
-    RecordPaymentStatusChangedCommand c = (RecordPaymentStatusChangedCommand) sent.get(0);
+    RecordPaymentStatusChangedCommand c = (RecordPaymentStatusChangedCommand) sent.getFirst();
     assertThat(c.status()).isEqualTo(PaymentStatus.COMPLETED);
   }
 }

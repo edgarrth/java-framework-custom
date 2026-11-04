@@ -3,7 +3,6 @@ package pe.axiz.payments.history.application.access;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.NotFoundException;
-import pe.axiz.extension.cqrs.AccessPolicy;
 import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.extension.cqrs.ReactiveAccessPolicy;
 import pe.axiz.payments.history.application.port.out.PaymentHistories;
@@ -26,7 +25,7 @@ public final class HistoryAccess {
   }
 
   /** Customers list their own history. */
-  public static class ListPolicy implements AccessPolicy<ListCustomerPaymentsQuery> {
+  public static class ListPolicy implements ReactiveAccessPolicy<ListCustomerPaymentsQuery> {
 
     @Override
     public Class<ListCustomerPaymentsQuery> requestType() {
@@ -34,10 +33,13 @@ public final class HistoryAccess {
     }
 
     @Override
-    public void check(ListCustomerPaymentsQuery request, Caller caller) {
-      if (!canRead(caller, request.customerId())) {
-        throw new AccessException(CoreErrors.FORBIDDEN, "history of another customer");
-      }
+    public Mono<Void> check(ListCustomerPaymentsQuery request, Caller caller) {
+      return Mono.defer(
+          () ->
+              canRead(caller, request.customerId())
+                  ? Mono.empty()
+                  : Mono.error(
+                      new AccessException(CoreErrors.FORBIDDEN, "history of another customer")));
     }
   }
 

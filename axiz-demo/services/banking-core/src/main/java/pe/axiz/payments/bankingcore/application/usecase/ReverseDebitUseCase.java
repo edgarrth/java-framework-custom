@@ -1,0 +1,34 @@
+package pe.axiz.payments.bankingcore.application.usecase;
+
+import pe.axiz.core.audit.Auditable;
+import pe.axiz.payments.bankingcore.application.port.out.CoreAccounts;
+import pe.axiz.payments.bankingcore.domain.Movement;
+import pe.axiz.structure.hexagonal.annotation.UseCase;
+
+/**
+ * Reverses a debit: the compensation of the payment saga. Repeating it with the same key is safe.
+ */
+@UseCase
+public class ReverseDebitUseCase
+    implements pe.axiz.structure.hexagonal.UseCase<ReverseDebitUseCase.Input, Movement> {
+
+  /**
+   * Input of the use case.
+   *
+   * @param movementId debit to reverse
+   * @param idempotencyKey caller key, forwarded to the core
+   */
+  public record Input(String movementId, String idempotencyKey) {}
+
+  private final CoreAccounts core;
+
+  public ReverseDebitUseCase(CoreAccounts core) {
+    this.core = core;
+  }
+
+  @Override
+  @Auditable(action = "account.debit.reverse", resource = "movement", captureArguments = false)
+  public Movement execute(Input input) {
+    return core.reverse(input.movementId(), input.idempotencyKey());
+  }
+}

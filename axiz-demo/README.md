@@ -1,6 +1,6 @@
 # axiz demo: payments
 
-A small payment processor built with the axiz framework: eight services, generated with
+A small payment processor built with the axiz framework: nine services, generated with
 `axiz new` and grown with `axiz add` / `axiz generate`, that together use **every capability of
 the axiz catalog** (checked by `coverage/`). Business flow: a customer pays a frequent beneficiary
 from the web or mobile app; the payment is debited from their account in the core banking system,
@@ -11,16 +11,17 @@ All names, accounts and data are fictitious. Local credentials are placeholders 
 
 ## Services
 
-| Service | Archetype / style / stack | Persistence | What it shows |
+| Service | Role / structure + extensions / stack | Persistence | What it shows |
 |---|---|---|---|
-| [payments-experience](services/payments-experience) | experience / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
-| [payments-business](services/payments-business) | business / cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
-| [beneficiaries-crud](services/beneficiaries-crud) | crud / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
-| [core-integration](services/core-integration) | integration / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, API keys from secrets, Redis locks, audit to SQS |
-| [payment-process](services/payment-process) | process / hexagonal / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
+| [payments-ux](services/payments-ux) | ux / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
+| [payment-orders](services/payment-orders) | business / hexagonal + cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
+| [beneficiaries](services/beneficiaries) | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
+| [banking-core](services/banking-core) | core / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
+| [payment-network-gateway](services/payment-network-gateway) | gateway / hexagonal / servlet | – | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
+| [payment-process](services/payment-process) | business / hexagonal + saga / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
 | [notifications-processor](services/notifications-processor) | event-processor / eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
 | [settlement-batch](services/settlement-batch) | batch / batch / CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
-| [payments-history](services/payments-history) | business / cqrs / reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
+| [payments-history](services/payments-history) | business / hexagonal + cqrs / reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
 
 Contracts live in [`contracts/`](contracts): OpenAPI of every REST service, the AsyncAPI of the
 events and the (simulated) external systems in `contracts/external`.
@@ -30,18 +31,18 @@ events and the (simulated) external systems in `contracts/external`.
 [`docs/architecture.drawio`](docs/architecture.drawio) holds C4 container diagrams, one per flow
 (the initiator on the left, arrows to the right):
 
-1. **Payment from the channel**: app → payments-experience → beneficiaries-crud and payments-business.
-2. **Payment execution**: payments-business → MSK → payment-process (saga) → core-integration → core banking and network.
+1. **Payment from the channel**: app → payments-ux → beneficiaries and payment-orders.
+2. **Payment execution**: payment-orders → MSK → payment-process (saga) → banking-core → core banking; payment-process → payment-network-gateway → payment network.
 3. **Closing, notification and audit**: status changes and audit events reach notifications-processor (SNS, S3).
 4. **Daily settlement**: network file on S3 → settlement-batch → Aurora and a summary on S3.
-5. **Payment history**: payments-business → MSK → payments-history → Aurora (R2DBC); API consumers read it without blocking a thread.
+5. **Payment history**: payment-orders → MSK → payments-history → Aurora (R2DBC); API consumers read it without blocking a thread.
 
 The saga of payment-process:
 
 | Step | Action | Compensation |
 |---|---|---|
-| `processing` | order → PROCESSING (payments-business) | order → REJECTED |
-| `debit` | debit the customer account (core-integration) | reverse the debit |
+| `processing` | order → PROCESSING (payment-orders) | order → REJECTED |
+| `debit` | debit the customer account (banking-core) | reverse the debit |
 | `transfer` | send the transfer (pivot) | – |
 | `complete` | order → COMPLETED (never fails the saga; settlement reconciles it) | – |
 
@@ -64,7 +65,7 @@ scripts/demo.sh smoke    # waits for 7/7 UP, pays a beneficiary through the chan
 scripts/demo.sh scenarios   # every functional scenario (about 8 minutes, see below)
 scripts/demo.sh up --attach   # same, then stays showing the logs of every service (Ctrl+C stops them)
 scripts/demo.sh logs          # follows the logs of every service (scripts/demo.sh logs <service>: one)
-scripts/demo.sh restart payments-experience --debug   # one service again, Spring web and axiz at DEBUG
+scripts/demo.sh restart payments-ux --debug   # one service again, Spring web and axiz at DEBUG
 scripts/demo.sh stop          # stops the services, keeps the infrastructure
 scripts/demo.sh down     # stops services, removes containers and volumes
 ```
@@ -77,8 +78,8 @@ holds it (a kind cluster on 8080 is the usual case).
 
 | | |
 |---|---|
-| Channel API | http://localhost:8080 (payments-experience) |
-| Services | business 8081 / crud 8082 / core-integration 8083 / process 8084 / notifications 8085 / history 8086 |
+| Channel API | http://localhost:8080 (payments-ux) |
+| Services | payment-orders 8081 / beneficiaries 8082 / banking-core 8083 / process 8084 / notifications 8085 / history 8086 / payment-network-gateway 8087 |
 | Keycloak | http://localhost:8180 (realm `axiz`, users `ana` / `luis`, passwords `local-only-<user>`) |
 | Grafana | http://localhost:3000 (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz: services* and *axiz: payments*) |
 | WireMock | http://localhost:8089 (core banking REST + SOAP, token endpoint, payment network) |
@@ -108,11 +109,11 @@ reason and the last warnings of the services involved when a check fails.
 | `rules` | duplicate payment, daily limit, USD feature flag (Spanish and English messages), currency mismatch |
 | `saga` | no funds, blocked account, closed destination (the debit is reversed), another customer's account; the daily limit is released |
 | `security` | 401, other customers' data (404/403), status changes and money movements only for payment-process, protected actuator |
-| `integration` | core-integration: holder check, SOAP credit, unknown movement, network rejection |
+| `integration` | banking-core: holder check, SOAP credit, unknown movement, network rejection |
 | `events` | outbox published, encrypted accounts, saga states, Kafka consumer groups caught up, empty DLQ, CloudEvents headers |
 | `notifications` | notification requests on SNS for completed and rejected payments |
 | `audit` | audit through SQS archived on S3 with its manifest, audit topic on Kafka, empty audit DLQ |
-| `observability` | business and HTTP metrics in Prometheus; traces looked up in Tempo by the trace ID in the logs: payment-process and core-integration in one trace, and one trace from the channel request to the saga |
+| `observability` | business and HTTP metrics in Prometheus; traces looked up in Tempo by the trace ID in the logs: payment-process and banking-core in one trace, and one trace from the channel request to the saga |
 | `settlement` | the batch loads a file of its own per run, reruns load nothing, summary on S3, a lost summary is written again by a rerun |
 | `dlq` | a malformed message ends in `payments.dlq` once per consumer group |
 | `recovery` | a debit that times out leaves the saga VERIFYING; the recovery job completes it (about 4 minutes) |
@@ -137,7 +138,7 @@ The kind cluster publishes the channel API on 9080, Keycloak on 9180 and Grafana
 can run next to the local demo. The smoke test against it (what `kind/up.sh` prints at the end):
 
 ```bash
-kubectl -n axiz-demo port-forward svc/beneficiaries-crud 9082:80 &
+kubectl -n axiz-demo port-forward svc/beneficiaries 9082:80 &
 kubectl -n axiz-demo port-forward svc/payments-history 9086:80 &
 SMOKE_LOCAL=0 KC_URL=http://localhost:9180 CHANNEL_URL=http://localhost:9080 \
   CRUD_URL=http://localhost:9082 HISTORY_URL=http://localhost:9086 scripts/smoke.sh
@@ -151,7 +152,7 @@ test.
 ### Bruno
 
 [`bruno/`](bruno) has a request collection with tests for every service: authentication, the
-channel flow, M2M calls to business, process and core-integration, and error cases
+channel flow, M2M calls to business, process and banking-core, and error cases
 (see its README for the two secret variables).
 
 ## Environments

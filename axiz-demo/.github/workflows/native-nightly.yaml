@@ -34,8 +34,8 @@ jobs:
     uses: axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v2.0.0
     with:
       modules: >-
-        ["services/payments-experience", "services/payments-business",
-         "services/beneficiaries-crud", "services/core-integration", "services/payment-process", "services/payments-history",
+        ["services/payments-ux", "services/payment-orders",
+         "services/beneficiaries", "services/banking-core", "services/payment-process", "services/payments-history",
          "services/notifications-processor", "services/settlement-batch"]
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}

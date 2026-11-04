@@ -98,22 +98,8 @@ public final class HexagonalRules {
                 "pe.axiz.spring..",
                 "pe.axiz.structure.hexagonal.spring..",
                 "pe.axiz.extension.cqrs.spring..",
-                "pe.axiz.core.persistence..",
-                "pe.axiz.adapter.messaging.kafka..",
-                "pe.axiz.adapter.messaging.sqs..",
-                "pe.axiz.adapter.messaging.sns..",
-                "pe.axiz.adapter.cache.redis..",
-                "pe.axiz.adapter.crypto.kms..",
-                "pe.axiz.adapter.crypto.jose..",
-                "pe.axiz.adapter.storage.s3..",
-                "pe.axiz.adapter.secrets.aws..",
-                "pe.axiz.adapter.idempotency.redis..",
-                "pe.axiz.adapter.idempotency.dynamodb..",
-                "pe.axiz.adapter.lock.redis..",
-                "pe.axiz.adapter.lock.dynamodb..",
-                "pe.axiz.adapter.inbox.r2dbc..",
-                "pe.axiz.adapter.inbox.dynamodb..",
-                "pe.axiz.adapter.outbox.r2dbc..")
+                "pe.axiz.adapter..",
+                "pe.axiz.kit..")
             .because("application code uses ports instead of infrastructure or transport models"),
         noClasses()
             .that()
@@ -180,7 +166,9 @@ public final class HexagonalRules {
           for (var dependency : current.getDirectDependenciesFromSelf()) {
             var target = dependency.getTargetClass();
             String name = target.getName();
-            if (name.startsWith("pe.axiz.spring.")
+            if (name.startsWith("pe.axiz.adapter.")
+                || name.startsWith("pe.axiz.kit.")
+                || name.startsWith("pe.axiz.spring.")
                 || name.startsWith("org.springframework.")
                 || name.startsWith("software.amazon.")
                 || name.startsWith("jakarta.persistence.")

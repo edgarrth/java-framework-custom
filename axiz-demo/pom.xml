@@ -15,14 +15,15 @@
   <name>axiz demo: payments</name>
 
   <modules>
-    <module>services/payments-experience</module>
-    <module>services/payments-business</module>
-    <module>services/beneficiaries-crud</module>
-    <module>services/core-integration</module>
+    <module>services/payments-ux</module>
+    <module>services/payment-orders</module>
+    <module>services/beneficiaries</module>
+    <module>services/banking-core</module>
     <module>services/payment-process</module>
     <module>services/payments-history</module>
     <module>services/notifications-processor</module>
     <module>services/settlement-batch</module>
+    <module>services/payment-network-gateway</module>
     <module>coverage</module>
   </modules>
 </project>

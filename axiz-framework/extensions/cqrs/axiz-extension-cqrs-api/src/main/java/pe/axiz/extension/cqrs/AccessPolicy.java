@@ -8,8 +8,9 @@ package pe.axiz.extension.cqrs;
  * transactions and handlers.
  *
  * <p>Deny with {@code AccessException} (403), or with {@code NotFoundException} (404) when the
- * existence of another caller's resource must not be revealed. Policies may read state (for example
- * the owner of an order); reactive buses call them off the event loop.
+ * existence of another caller's resource must not be revealed. Imperative policies may read state
+ * (for example the owner of an order). Reactive buses require {@link ReactiveAccessPolicy} and reject
+ * this imperative contract.
  *
  * @param <R> request type (or a supertype shared by several requests)
  */

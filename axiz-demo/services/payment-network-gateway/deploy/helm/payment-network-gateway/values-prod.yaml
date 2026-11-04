@@ -1,0 +1,51 @@
+environment: prod
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/payment-network-gateway-prod
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: prod/core-integration
+config:
+  axiz:
+    config:
+      environment: prod
+    security:
+      issuers:
+      - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+        audiences:
+        - payment-network-gateway
+    http-client:
+      clients:
+        payment-network:
+          base-url: https://api.network.example
+          auth:
+            type: API_KEY
+            api-key-header: X-Api-Key
+            api-key-ref: payment-network-api-key
+    audit:
+      sqs:
+        queue-url: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod
+  spring:
+    data:
+      redis:
+        url: rediss://payments-prod.cache.demo.use1.cache.amazonaws.com:6379
+  management:
+    tracing:
+      sampling:
+        probability: '0.1'
+errors: []

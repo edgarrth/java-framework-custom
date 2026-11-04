@@ -56,6 +56,7 @@ class SoapProtocolTest {
           contentType.set(exchange.getRequestHeaders().getFirst("Content-Type"));
           soapAction.set(exchange.getRequestHeaders().getFirst("SOAPAction"));
           try {
+            // Deliberately stall the HTTP peer to exercise the real transport timeout.
             Thread.sleep(delayMs);
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

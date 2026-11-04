@@ -1,0 +1,20 @@
+originalName: beneficiaries-crud
+currentName: beneficiaries
+files:
+  src/main/resources/application-local.yaml: {
+    }
+  src/main/resources/application-platform.yaml: {
+    }
+  src/main/resources/application.yaml:
+    axiz.messaging.source: urn:axiz:beneficiaries-crud
+    axiz.messaging.consumer.name: beneficiaries-crud
+    axiz.messaging.kafka.group-id: beneficiaries-crud
+    axiz.config.parameter-store.application: beneficiaries-crud
+  deploy/helm/beneficiaries/values-prod.yaml: {
+    }
+  deploy/helm/beneficiaries/values.yaml: {
+    }
+  deploy/helm/beneficiaries/values-dev.yaml: {
+    }
+  deploy/helm/beneficiaries/values-qa.yaml: {
+    }

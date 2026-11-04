@@ -45,6 +45,64 @@ class ValkeyIdempotencyStoreIT {
     VALKEY.stop();
   }
 
+  @org.junit.jupiter.api.Test
+  void restartKeepsInProgressOwnershipAndTheExactCompletedResponse() throws Exception {
+    String key = "restart-" + java.util.UUID.randomUUID();
+    String uri = "redis://" + VALKEY.getHost() + ":" + VALKEY.getMappedPort(6379);
+    var now = java.time.Instant.now();
+    var record =
+        new pe.axiz.core.idempotency.IdempotencyRecord(
+            key,
+            "request-hash",
+            pe.axiz.core.idempotency.IdempotencyRecord.Status.IN_PROGRESS,
+            "original-owner",
+            null,
+            now.plusSeconds(300));
+    try (var before = client.connect()) {
+      var store = new RedisIdempotencyStore(before.sync(), PREFIX);
+      org.junit.jupiter.api.Assertions.assertTrue(store.tryStart(record));
+    }
+    // New transport/client and async implementation reopen the same external state.
+    var restartedClient = RedisClient.create(uri);
+    try (var after = restartedClient.connect()) {
+      var store =
+          new pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore(
+              after.async(), PREFIX, java.time.Clock.systemUTC());
+      var persisted =
+          store
+              .find(key, now)
+              .toCompletableFuture()
+              .get(5, java.util.concurrent.TimeUnit.SECONDS)
+              .orElseThrow();
+      org.junit.jupiter.api.Assertions.assertEquals(record, persisted);
+      org.junit.jupiter.api.Assertions.assertFalse(
+          store
+              .tryStart(record)
+              .toCompletableFuture()
+              .get(5, java.util.concurrent.TimeUnit.SECONDS));
+      var response =
+          new pe.axiz.core.idempotency.StoredResponse(
+              201, java.util.Map.of("Location", "/payments/1"), new byte[] {0, 1, 127});
+      org.junit.jupiter.api.Assertions.assertTrue(
+          store
+              .complete(key, "original-owner", response, now.plusSeconds(300))
+              .toCompletableFuture()
+              .get(5, java.util.concurrent.TimeUnit.SECONDS));
+    } finally {
+      restartedClient.shutdown();
+    }
+    try (var finalConnection = client.connect()) {
+      var done =
+          new RedisIdempotencyStore(finalConnection.sync(), PREFIX).find(key, now).orElseThrow();
+      org.junit.jupiter.api.Assertions.assertEquals(
+          pe.axiz.core.idempotency.IdempotencyRecord.Status.COMPLETED, done.status());
+      org.junit.jupiter.api.Assertions.assertEquals(
+          201, java.util.Objects.requireNonNull(done.response()).status());
+      org.junit.jupiter.api.Assertions.assertArrayEquals(
+          new byte[] {0, 1, 127}, java.util.Objects.requireNonNull(done.response()).body());
+    }
+  }
+
   @TestFactory
   Stream<DynamicTest> contract() {
     RedisCommands<String, String> redis = connection.sync();
@@ -59,13 +117,9 @@ class ValkeyIdempotencyStoreIT {
           public void expire(IdempotencyStore store, String key, MutableClock clock)
               throws InterruptedException {
             // the server expires the key by itself: wait for it
-            long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
-            while (redis.exists(PREFIX + key) > 0) {
-              if (System.nanoTime() > deadline) {
-                throw new AssertionError("key did not expire: " + key);
-              }
-              Thread.sleep(50);
-            }
+            org.awaitility.Awaitility.await()
+                .atMost(Duration.ofSeconds(10))
+                .until(() -> redis.exists(PREFIX + key) == 0);
             clock.advance(IdempotencyStoreContract.RETENTION.plusSeconds(1));
           }
         };

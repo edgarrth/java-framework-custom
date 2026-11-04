@@ -1,14 +1,26 @@
 package pe.axiz.spring.audit;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.adapter.audit.kafka.KafkaAuditPublisher;
+import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
@@ -24,6 +36,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
     })
 @ConditionalOnProperty("axiz.audit.kafka.topic")
 @ConditionalOnBean(ProducerFactory.class)
+@ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizAuditProperties.class)
 public class AxizAuditKafkaAutoConfiguration {
 
@@ -35,5 +48,63 @@ public class AxizAuditKafkaAutoConfiguration {
     String topic = java.util.Objects.requireNonNull(properties.kafka().topic());
     return new AuditSink(
         "kafka", new KafkaAuditPublisher(producer, topic, properties.kafka().timeout()));
+  }
+
+  @Bean(destroyMethod = "close")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  BoundedAsyncDispatcher axizKafkaAuditDispatcher(
+      AxizAuditProperties p, Environment env, ObjectProvider<MeterRegistry> registries) {
+    return new BoundedAsyncDispatcher(
+        "kafka-audit",
+        env.getProperty("axiz.audit.kafka.send-workers", Integer.class, 2),
+        env.getProperty("axiz.audit.kafka.send-queue-capacity", Integer.class, 256),
+        p.kafka().timeout(),
+        registries.getIfAvailable(() -> Metrics.globalRegistry));
+  }
+
+  @Bean
+  @SuppressWarnings("unchecked")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  AsyncAuditSink axizKafkaAsyncAuditSink(
+      @Qualifier("axizAsyncAuditKafkaTemplate") KafkaTemplate<String, String> template,
+      AxizAuditProperties p,
+      @Qualifier("axizKafkaAuditDispatcher") BoundedAsyncDispatcher sends) {
+    return new AsyncAuditSink(
+        "kafka",
+        event ->
+            sends.submit(
+                () ->
+                    template
+                        .send(
+                            pe.axiz.adapter.audit.kafka.KafkaAuditRecords.create(
+                                java.util.Objects.requireNonNull(p.kafka().topic()), event))
+                        .thenApply(sent -> (Void) null)));
+  }
+
+  @Bean(destroyMethod = "destroy")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  KafkaTemplate<String, String> axizAsyncAuditKafkaTemplate(
+      ProducerFactory<?, ?> producers, AxizAuditProperties p) {
+    var properties = new java.util.HashMap<String, Object>(producers.getConfigurationProperties());
+    properties.put(
+        ProducerConfig.CLIENT_ID_CONFIG,
+        properties.getOrDefault("client.id", "axiz") + "-audit-reactive");
+    properties.put(ProducerConfig.ACKS_CONFIG, "all");
+    properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+    properties.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+    properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().timeout().toMillis());
+    var factory =
+        new DefaultKafkaProducerFactory<String, String>(
+            properties, new StringSerializer(), new StringSerializer());
+    return new KafkaTemplate<>(factory) {
+      @Override
+      public void destroy() {
+        try {
+          super.destroy();
+        } finally {
+          factory.destroy();
+        }
+      }
+    };
   }
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Topics of the demo (Terraform creates them in MSK): order events, their dead-letter topics and
-# the audit trail of payments-business (topic "audit").
+# the audit trail of payment-orders (topic "audit").
 set -euo pipefail
 k=/opt/kafka/bin/kafka-topics.sh
 for t in payments payments.dlq audit; do

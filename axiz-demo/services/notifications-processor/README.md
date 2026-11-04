@@ -4,11 +4,12 @@ Customer notifications and audit archive.
 
 | | |
 |---|---|
-| Archetype | `event-processor`: Consumes and reacts to events, without a public API |
-| Style | `eda` |
+| Archetype | `event-processor`: Processes subscribed events |
+| Structure | `eda` |
+| Extensions | – |
 | Stack | `servlet` |
 | Persistence | `dynamodb` |
-| axiz | `1.0.0` |
+| axiz | `2.0.0` |
 | Base package | `pe.axiz.payments.notifications` |
 
 ## In the demo

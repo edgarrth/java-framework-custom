@@ -201,6 +201,24 @@ class DoctorCommandTest {
   }
 
   @Test
+  void credentialMetadataIsNotASecretButCredentialValuesRemainChecked(@TempDir Path tmp)
+      throws Exception {
+    Path project = CliHarness.service(tmp);
+    Path metadata = project.resolve("src/main/resources/application-metadata.yaml");
+    Files.writeString(
+        metadata,
+        "api-key-header: X-Api-Key\npassword-mode: LEGACY_SHA1_DIGEST\n"
+            + "client:\n  api-key-header: 'X-Credential'\n  password-mode: \"TEXT\"\n");
+    assertFalse(
+        any(messages(doctor().checks(project), DoctorCommand.Level.ERROR), "Possible secret"));
+    Files.writeString(metadata, "api-key-header: X-Api-Key\napi-key: k3y-12345-live\n");
+    assertTrue(
+        any(
+            messages(doctor().checks(project), DoctorCommand.Level.ERROR),
+            "application-metadata.yaml:2"));
+  }
+
+  @Test
   void placeholdersAreNotSecretsAndCommentsAreNotCode(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     Files.writeString(

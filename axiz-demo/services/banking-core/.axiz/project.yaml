@@ -1,0 +1,37 @@
+schema: 2
+kind: service
+name: banking-core
+groupId: pe.axiz.payments
+basePackage: pe.axiz.payments.bankingcore
+archetype: core
+structure: hexagonal
+extensions: []
+stack: servlet
+persistence: none
+axizVersion: 2.0.0
+contract:
+  openapi: src/main/openapi/openapi.yaml
+  asyncapi: null
+capabilities:
+- foundation
+- web
+- errors
+- logging
+- observability
+- metrics
+- config
+- i18n
+- sensitive
+- security
+- resilience
+- http-client
+- secrets
+- soap
+- lock
+- lock-redis
+- audit
+- audit-sqs
+operations:
+- debitAccount
+- reverseDebit
+- creditAccount

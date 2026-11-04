@@ -139,6 +139,23 @@ public final class GeneralRules {
   public static final ArchRule NO_AWS_SDK_V1 =
       noClasses().should().dependOnClassesThat().resideInAPackage("com.amazonaws..");
 
+  /** Services consume ports and public starter facades; adapters are wired at runtime. */
+  public static final ArchRule NO_TECHNOLOGY_ADAPTERS =
+      noClasses().should().dependOnClassesThat().resideInAPackage("pe.axiz.adapter..");
+
+  /** Auto-configuration classes belong to the framework's wiring, not service dependencies. */
+  public static final ArchRule NO_AUTOCONFIGURATION_DEPENDENCIES =
+      noClasses().should().dependOnClassesThat().haveSimpleNameEndingWith("AutoConfiguration");
+
+  /** Technology kits are restricted to outbound persistence adapters and repositories. */
+  public static final ArchRule KITS_ONLY_IN_PERSISTENCE_PACKAGES =
+      noClasses()
+          .that()
+          .resideOutsideOfPackages("..adapter.out.persistence..", "..repository..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAPackage("pe.axiz.kit..");
+
   /**
    * A new framework starts without deprecated code: nothing may call, extend or annotate with an
    * API its owner marked {@code @Deprecated} (Spring, AWS SDK, Jackson, axiz itself).
@@ -179,6 +196,9 @@ public final class GeneralRules {
         NO_TESTING_AUTHENTICATION,
         NO_PARALLEL_HTTP_CLIENTS,
         NO_AWS_SDK_V1,
+        NO_TECHNOLOGY_ADAPTERS,
+        NO_AUTOCONFIGURATION_DEPENDENCIES,
+        KITS_ONLY_IN_PERSISTENCE_PACKAGES,
         NO_DEPRECATED_API,
         UNIQUE_BEAN_NAMES,
         NO_JVM_LOCKS_IN_BUSINESS_CODE,

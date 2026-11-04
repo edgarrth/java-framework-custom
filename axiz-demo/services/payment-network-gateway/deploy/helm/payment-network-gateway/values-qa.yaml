@@ -1,0 +1,49 @@
+environment: qa
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/payment-network-gateway-qa
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: qa/core-integration
+config:
+  axiz:
+    config:
+      environment: qa
+    security:
+      issuers:
+      - issuer: https://sso.qa.axiz-demo.example/realms/axiz
+        audiences:
+        - payment-network-gateway
+    http-client:
+      clients:
+        payment-network:
+          base-url: https://api.sandbox.network.example
+          auth:
+            type: API_KEY
+            api-key-header: X-Api-Key
+            api-key-ref: payment-network-api-key
+    audit:
+      sqs:
+        queue-url: https://sqs.us-east-1.amazonaws.com/222222222222/axiz-demo-audit-qa
+  spring:
+    data:
+      redis:
+        url: rediss://payments-qa.cache.demo.use1.cache.amazonaws.com:6379
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+errors: []

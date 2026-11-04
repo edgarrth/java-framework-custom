@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.errors.ValidationException;
@@ -23,9 +24,11 @@ import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsHandler;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
+import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 
 /** The REST adapter over the real query handlers: filters, masking and missing data. */
+@ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryControllerTest {
 
   static final Duration T = Duration.ofSeconds(5);
@@ -108,7 +111,7 @@ class PaymentHistoryControllerTest {
     registered("P-2", AT.plusSeconds(60));
     histories.entries.computeIfPresent(
         "P-1",
-        (k, h) ->
+        (_, h) ->
             PaymentHistory.statusChanged(
                 h,
                 "P-1",

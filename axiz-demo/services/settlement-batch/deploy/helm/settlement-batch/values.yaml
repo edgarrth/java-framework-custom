@@ -1,35 +1,25 @@
-# Defaults of the settlement-batch chart; values-<env>.yaml override them per environment.
-nameOverride: ""
+nameOverride: ''
 environment: dev
-
 image:
   repository: nexus-docker.axiz.internal/axiz/settlement-batch
-  tag: ""          # set by the deployment (GitOps): the commit of the image
-  digest: ""       # set by the deployment (GitOps): pins the signed image
+  tag: ''
+  digest: ''
   pullPolicy: IfNotPresent
 imagePullSecrets: []
-
 serviceAccount:
   create: true
-  name: ""
-  annotations: {}  # eks.amazonaws.com/role-arn per environment (IRSA)
-  # the pods never call the Kubernetes API (configuration is mounted as files); the AWS identity
-  # (IRSA or EKS Pod Identity) uses its own projected token
+  name: ''
+  annotations: {}
   automountToken: false
-
-# shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
 sharedConfigMap: axiz-common
-
-javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
+javaOpts: -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError
 env: []
-
 resources:
   requests:
     cpu: 250m
     memory: 512Mi
   limits:
     memory: 512Mi
-
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 65532
@@ -41,39 +31,27 @@ securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
-    drop: ["ALL"]
-
+    drop:
+    - ALL
 cronjob:
-  schedule: "0 2 * * *"
+  schedule: 0 2 * * *
   timeZone: America/Lima
   suspend: false
   startingDeadlineSeconds: 600
   backoffLimit: 1
   activeDeadlineSeconds: 7200
-
 networkPolicy:
   enabled: true
-  ingressNamespaces: []   # namespaces allowed to call the service (ingress, gateway, callers)
-  # Outbound traffic is denied except DNS and what is listed here
+  ingressNamespaces: []
   egress:
-    sameNamespace: true   # sibling services of the namespace
-    namespaces: []        # other namespaces this service calls
-    cidrs: []             # e.g. {cidr: 10.20.0.0/16, ports: [443, 5432]}: VPC endpoints, Aurora,
-                          # ElastiCache, MSK, partners. Fill per environment (values-<env>.yaml)
-
-# ConfigMap settlement-batch (application.yaml): environment values, flat Spring Boot keys
+    sameNamespace: true
+    namespaces: []
+    cidrs: []
 config: {}
-
-# ConfigMap settlement-batch-errors: error catalog (code, category, title, detail keys...)
 errors: []
-
-# Secret files mounted in /var/run/secrets/axiz (one per key). enabled: the External Secrets
-# Operator creates the Secret <fullname>-secrets from AWS Secrets Manager; disabled: the Secret is
-# created by other means (kind and local clusters, see the demo kind/ scripts).
 externalSecret:
   enabled: true
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/settlement-batch
-  keys:
-    []
+  keys: []

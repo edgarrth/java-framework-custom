@@ -8,6 +8,7 @@ Writes (and overwrites) only generated files, all marked with GENERATED:
     docs/capacidades/index.md, docs/capacidades/<capability>.md
     docs/arquetipos/catalogo.md
     docs/index.md, docs/<adr>.md
+    docs/migracion/implementacion-2.md
     docs/referencia/index.md, docs/referencia/<layer>/<module>.md
     docs/herramientas/cli-referencia.md          (with --cli-help)
 """
@@ -182,7 +183,12 @@ def adrs(framework, out):
         title = next((l[2:].strip() for l in text.splitlines() if l.startswith('# ')), f)
         status = re.search(r'(?im)^\W*(?:status|estado)\W*:?\W*(\w+)', text)
         rows.append([f'[{title}]({f})', status.group(1) if status else '–'])
-        write(os.path.join(dst, f), text)
+        write(os.path.join(dst, f), text.replace('../migration/2.0/IMPLEMENTACION.md', '../migracion/implementacion-2.md'))
+    implementation = os.path.join(framework, 'docs', 'migration', '2.0', 'IMPLEMENTACION.md')
+    if os.path.isfile(implementation):
+        with open(implementation, encoding='utf-8') as source:
+            write(os.path.join(out, 'migracion', 'implementacion-2.md'),
+                  source.read().replace('../../adr/', '../adr/'))
     write(os.path.join(dst, 'index.md'),
           '# Decisiones de arquitectura (architecture contract)\n\nDecisiones del framework, sincronizadas desde '
           '`axiz-framework/docs`. Cada servicio registra las suyas en su propio `docs`.\n\n'

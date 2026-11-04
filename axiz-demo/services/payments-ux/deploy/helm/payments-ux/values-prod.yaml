@@ -1,0 +1,52 @@
+environment: prod
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/payments-experience-prod
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    memory: 1Gi
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+topologySpread:
+  whenUnsatisfiable: DoNotSchedule
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: prod/payments-experience
+config:
+  axiz:
+    config:
+      environment: prod
+    security:
+      issuers:
+      - issuer: https://sso.prod.axiz-demo.example/realms/axiz
+        audiences:
+        - payments-experience
+        - payments-ux
+    http-client:
+      clients:
+        payment-orders:
+          base-url: http://payment-orders.payments-prod.svc.cluster.local
+        beneficiaries:
+          base-url: http://beneficiaries.payments-prod.svc.cluster.local
+    feature-flags:
+      flags:
+        payments-usd:
+          enabled: false
+          percentage: 10
+  management:
+    tracing:
+      sampling:
+        probability: '0.1'
+  spring:
+    data:
+      redis:
+        url: rediss://payments-prod.cache.demo.use1.cache.amazonaws.com:6379
+errors: []

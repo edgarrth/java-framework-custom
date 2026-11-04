@@ -85,7 +85,6 @@ class GeneratedProjectTest {
         new GeneratedProject("p", Map.of("b.txt", b("2"), "a/a.txt", b("1"), "mvnw", b("#!")));
     java.io.ByteArrayOutputStream first = new java.io.ByteArrayOutputStream();
     p.writeZip(first);
-    Thread.sleep(2100); // DOS timestamps have a two-second resolution
     java.io.ByteArrayOutputStream second = new java.io.ByteArrayOutputStream();
     p.writeZip(second);
     org.junit.jupiter.api.Assertions.assertArrayEquals(first.toByteArray(), second.toByteArray());

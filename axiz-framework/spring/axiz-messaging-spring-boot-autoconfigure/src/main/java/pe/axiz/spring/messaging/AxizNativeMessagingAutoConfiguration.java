@@ -17,7 +17,8 @@ import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration"
+      "pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration",
+      "pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration"
     })
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)

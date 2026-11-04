@@ -9,7 +9,11 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
@@ -57,25 +61,36 @@ class LockTest {
 
   @Test
   void templateSerializesWork() throws Exception {
+    CountDownLatch attempted = new CountDownLatch(10);
+    InMemoryDistributedLock store = new InMemoryDistributedLock(Clock.systemUTC());
     LockTemplate template =
-        new LockTemplate(new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(5));
+        new LockTemplate(
+            (resource, lease) -> {
+              var acquired = store.tryAcquire(resource, lease);
+              attempted.countDown();
+              return acquired;
+            },
+            Duration.ofMillis(5));
     AtomicInteger concurrent = new AtomicInteger();
     AtomicInteger maxConcurrent = new AtomicInteger();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      var results = new ArrayList<Future<?>>();
       for (int i = 0; i < 10; i++) {
-        executor.submit(
-            () ->
-                template.withLock(
-                    "account:9",
-                    Duration.ofMillis(300),
-                    Duration.ofSeconds(5),
-                    () -> {
-                      maxConcurrent.accumulateAndGet(concurrent.incrementAndGet(), Math::max);
-                      Thread.sleep(20);
-                      concurrent.decrementAndGet();
-                      return null;
-                    }));
+        results.add(
+            executor.submit(
+                () ->
+                    template.withLock(
+                        "account:9",
+                        Duration.ofMillis(300),
+                        Duration.ofSeconds(5),
+                        () -> {
+                          maxConcurrent.accumulateAndGet(concurrent.incrementAndGet(), Math::max);
+                          assertTrue(attempted.await(5, TimeUnit.SECONDS));
+                          concurrent.decrementAndGet();
+                          return null;
+                        })));
       }
+      for (Future<?> result : results) result.get(10, TimeUnit.SECONDS);
     }
     assertEquals(1, maxConcurrent.get());
   }

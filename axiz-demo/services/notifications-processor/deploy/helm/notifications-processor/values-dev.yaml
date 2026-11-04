@@ -1,34 +1,23 @@
-# notifications-processor in dev
 environment: dev
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/notifications-processor-dev
-
 resources:
   requests:
     cpu: 250m
     memory: 512Mi
   limits:
     memory: 512Mi
-
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 2
   targetCPUUtilizationPercentage: 70
-
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in dev (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: dev/notifications-processor
-
-# Environment values (no secrets: those come from the ExternalSecret). Business calendar
-# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
 config:
   axiz.config.environment: dev
   management.tracing.sampling.probability: '1.0'
@@ -41,5 +30,4 @@ config:
   axiz.messaging.sqs.dead-letter-queues:
     https://sqs.us-east-1.amazonaws.com/111111111111/axiz-demo-audit-dev: https://sqs.us-east-1.amazonaws.com/111111111111/axiz-demo-audit-dev-dlq
   axiz.storage.bucket: axiz-demo-archive-dev
-
 errors: []

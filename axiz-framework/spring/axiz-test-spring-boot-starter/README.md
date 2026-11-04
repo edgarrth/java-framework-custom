@@ -20,7 +20,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizContainers` | Containers matching the approved infrastructure: Aurora PostgreSQL, MSK (Kafka), ElastiCache (Valkey) and LocalStack for DynamoDB, SQS, SNS, S3, KMS, Secrets Manager and Parameter Store. |
-| `BlockHoundExtension` | Fails reactive tests that block an event-loop thread. |
+| `BlockHoundExtension` | Detects blocking on Reactor, AWS I/O/completion workers and Lettuce I/O/callback workers. |
 | `BlockHoundTestExecutionListener` | Installs requested blocking detection before the test plan starts creating scheduler threads. |
 | `HttpStubs` | WireMock stub for a logical HTTP client: starts on a random port and points `axiz.http-client.clients.<name>.base-url` at it. |
 | `OpenApiResponses` | Checks inline response examples and serialized MockMvc/WebTestClient bodies against the source OpenAPI 3.1 schema, including local references and format assertions. |

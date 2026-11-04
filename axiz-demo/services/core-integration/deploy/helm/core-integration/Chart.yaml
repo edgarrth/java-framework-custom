@@ -1,7 +1,0 @@
-apiVersion: v2
-name: core-integration
-description: Anti-corruption layer of the core banking system and the payment network
-type: application
-# chart version follows the chart; appVersion is replaced by the image tag in the pipeline
-version: 1.0.0
-appVersion: "1.0.0"

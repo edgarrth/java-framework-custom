@@ -62,12 +62,16 @@ public final class MoneyJacksonModule extends SimpleModule {
           if (amount != null) {
             return ctxt.reportInputMismatch(Money.class, "Duplicate Money amount");
           }
-          if (token == JsonToken.VALUE_NUMBER_INT || token == JsonToken.VALUE_NUMBER_FLOAT) {
-            // Read the decimal token directly: a tree's DoubleNode may have already lost cents.
-            amount = p.getDecimalValue();
-          } else if (token == JsonToken.VALUE_STRING) {
+          if (token == JsonToken.VALUE_NUMBER_INT
+              || token == JsonToken.VALUE_NUMBER_FLOAT
+              || token == JsonToken.VALUE_STRING) {
+            // Read the lexeme, not getDecimalValue(): conversion must follow the length guard.
+            String literal = p.getString();
+            if (literal.length() > Money.MAX_TEXT_LENGTH) {
+              return ctxt.reportInputMismatch(Money.class, "Money amount is too long");
+            }
             try {
-              amount = new BigDecimal(p.getString().strip());
+              amount = new BigDecimal(literal.strip());
             } catch (NumberFormatException e) {
               return ctxt.reportInputMismatch(Money.class, "Invalid Money amount");
             }

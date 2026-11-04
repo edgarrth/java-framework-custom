@@ -78,7 +78,7 @@ public class SettlementSummaryTasklet implements Tasklet {
                 + " GROUP BY currency, status ORDER BY currency, status")
         .param("key", key)
         .query(
-            (rs, i) ->
+            (rs, _) ->
                 new Total(
                     rs.getString("currency").strip(),
                     rs.getString("status"),

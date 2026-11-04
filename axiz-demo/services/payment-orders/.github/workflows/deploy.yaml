@@ -1,0 +1,90 @@
+# Promotion and rollback consume signed build bytes; never rebuild or accept a loose image tag.
+name: deploy
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      build-run-id: {description: Completed producer run, type: string, required: true}
+      build-run-attempt: {description: Producer attempt, type: string, required: true}
+      manifest-sha256: {description: External signed build manifest SHA256, type: string, required: true}
+      environment: {type: choice, options: [dev, qa, prod], required: true}
+      previous-manifest-sha256: {description: Current deployed manifest hash or initial-deployment, type: string, required: true}
+      values-revision: {description: Full commit SHA of authorized environment values, type: string, required: true}
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
+  automatic:
+    needs: axiz-workflows-trust
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      eligible: ${{ steps.build.outputs.eligible }}
+      build-run-id: ${{ steps.build.outputs.build-run-id }}
+      build-run-attempt: ${{ steps.build.outputs.build-run-attempt }}
+      manifest-sha256: ${{ steps.build.outputs.manifest-sha256 }}
+      environment: ${{ steps.build.outputs.environment }}
+      values-revision: ${{ steps.build.outputs.values-revision }}
+      previous-manifest-sha256: ${{ steps.build.outputs.previous-manifest-sha256 }}
+    steps:
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: axiz/axiz-workflows/actions/resolve-service-build@v2.0.0 # x-release-please-version
+        id: build
+        with:
+          repository: ${{ github.repository }}
+          service: payment-orders
+          module: '.'
+          environment: dev
+          gitops-repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
+          gitops-branch: ${{ vars.GITOPS_BRANCH || 'main' }}
+          token: ${{ secrets.BUILD_READ_TOKEN || github.token }}
+          gitops-read-token: ${{ secrets.GITOPS_READ_TOKEN }}
+
+  deploy:
+    needs: [axiz-workflows-trust, automatic]
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (!cancelled() && (github.event_name == 'workflow_dispatch' || (needs.automatic.result == 'success' && needs.automatic.outputs.eligible == 'true'))) }}
+    # Immutable internal release: axiz-workflows-trust must succeed first.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+    uses: axiz/axiz-workflows/.github/workflows/service-deploy.yaml@v2.0.0
+    with:
+      build-run-id: ${{ inputs.build-run-id || needs.automatic.outputs.build-run-id }}
+      build-run-attempt: ${{ inputs.build-run-attempt || needs.automatic.outputs.build-run-attempt }}
+      manifest-sha256: ${{ inputs.manifest-sha256 || needs.automatic.outputs.manifest-sha256 }}
+      environment: ${{ inputs.environment || needs.automatic.outputs.environment }}
+      previous-manifest-sha256: ${{ inputs.previous-manifest-sha256 || needs.automatic.outputs.previous-manifest-sha256 }}
+      values-revision: ${{ inputs.values-revision || needs.automatic.outputs.values-revision }}
+      expected-gitops-repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
+      gitops-branch: ${{ vars.GITOPS_BRANCH || 'main' }}
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
+      REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
+      REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
+      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

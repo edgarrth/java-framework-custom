@@ -1,0 +1,67 @@
+{{- if .Values.networkPolicy.enabled }}
+# Default deny in both directions. Ingress: the same namespace and the listed namespaces (gateway,
+# callers) on the HTTP port. Egress: DNS, optionally the pods of the same namespace, the listed
+# namespaces and the listed CIDRs (VPC endpoints, managed databases, brokers, partners); anything
+# else is blocked, which limits what a compromised pod can reach.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "service.selectorLabels" . | nindent 6 }}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector: {}
+        {{- range .Values.networkPolicy.ingressNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . }}
+        {{- end }}
+      ports:
+        - port: 8080
+          protocol: TCP
+  egress:
+    # name resolution (cluster DNS)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- with .Values.networkPolicy.egress }}
+    {{- if .sameNamespace }}
+    # sibling services of the namespace
+    - to:
+        - podSelector: {}
+    {{- end }}
+    {{- range .namespaces }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . }}
+    {{- end }}
+    {{- range .cidrs }}
+    - to:
+        - ipBlock:
+            cidr: {{ .cidr }}
+      {{- with .ports }}
+      ports:
+        {{- range . }}
+        - port: {{ . }}
+          protocol: TCP
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+{{- end }}

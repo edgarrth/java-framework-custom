@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.NotFoundException;
@@ -17,8 +18,10 @@ import pe.axiz.payments.history.application.InMemoryPaymentHistories;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
+import pe.axiz.spring.test.BlockHoundExtension;
 
 /** Who may read the payment history: the owner, or a service with payments:read. */
+@ExtendWith(BlockHoundExtension.class)
 class HistoryAccessTest {
 
   static final Duration T = Duration.ofSeconds(5);
@@ -71,14 +74,16 @@ class HistoryAccessTest {
     assertThatCode(
             () ->
                 list.check(
-                    new ListCustomerPaymentsQuery("C-1001", null, PageRequest.of(0, 20)),
-                    customer("C-1001")))
+                        new ListCustomerPaymentsQuery("C-1001", null, PageRequest.of(0, 20)),
+                        customer("C-1001"))
+                    .block(T))
         .doesNotThrowAnyException();
     assertThatThrownBy(
             () ->
                 list.check(
-                    new ListCustomerPaymentsQuery("C-1001", null, PageRequest.of(0, 20)),
-                    customer("C-2002")))
+                        new ListCustomerPaymentsQuery("C-1001", null, PageRequest.of(0, 20)),
+                        customer("C-2002"))
+                    .block(T))
         .isInstanceOf(AccessException.class);
   }
 }

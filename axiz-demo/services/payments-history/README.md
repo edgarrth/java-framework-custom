@@ -4,11 +4,12 @@ Payment history of each customer: read model projected from the payment order ev
 
 | | |
 |---|---|
-| Archetype | `business`: Owner of a domain and its data; business rules |
-| Style | `cqrs` |
+| Archetype | `business`: Business rules and ownership of domain data |
+| Structure | `hexagonal` |
+| Extensions | `cqrs` |
 | Stack | `reactive` |
 | Persistence | `aurora` |
-| axiz | `1.0.0` |
+| axiz | `2.0.0` |
 | Base package | `pe.axiz.payments.history` |
 
 ## What it shows
@@ -24,7 +25,7 @@ The reactive side of axiz on Aurora PostgreSQL, end to end and without blocking 
 | R2DBC inbox (`axiz.inbox.store: r2dbc`), Flyway over JDBC, IAM tokens in AWS (`axiz.r2dbc.iam.enabled`) | `application.yaml`, `db/migration` |
 | WebFlux API generated from the contract, latest change first, masked account | `adapter/in/rest` |
 
-The read model is eventually consistent with payments-business: a payment that was just paid may
+The read model is eventually consistent with payment-orders: a payment that was just paid may
 still show `RECEIVED` or `PROCESSING` for a moment, and `GET /v1/payments/{id}` answers 404 until
 its first event is projected.
 
@@ -44,7 +45,7 @@ its first event is projected.
 ./mvnw -Pnative native:compile  # GraalVM native image
 ```
 
-`ArchitectureTest` enforces the rules of the `cqrs` style and the general axiz rules;
+`ArchitectureTest` enforces the rules of the hexagonal structure and CQRS extension and the general axiz rules;
 `PaymentsHistoryApplicationTest` starts the service against real dependencies in containers.
 
 ## Run locally

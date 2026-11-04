@@ -1,5 +1,5 @@
 
-Estado: **en implementación**, actualizado el 2 de noviembre de 2026. Este registro no declara
+Estado: **implementación y validación local completadas para el alcance de 2.0.0**, actualizado el 3 de noviembre de 2026. Este registro no declara
 terminada ni publicada la versión 2.0. La referencia normativa es el
 
 Se preservan las correcciones previas de precisión monetaria, identidad y reproducibilidad.
@@ -9,14 +9,14 @@ Se preservan las correcciones previas de precisión monetaria, identidad y repro
 | Capas, nombres, parents y coordenadas 2.0 | Reactor de 159 módulos; el control de nombres, parents, pertenencia al reactor y excepción cerrada R2DBC pasa |
 | Eventos como capacidad | Contratos y handlers trasladados a core/Spring messaging; EDA conserva la coreografía; validación global aprobada |
 | Estructuras, extensiones y reglas por arquetipo/stack | API fluida y catálogo implementados; catálogo, aislamiento y rechazo de paquetes vacíos aprobados en el reactor completo |
+| Puertos, adaptadores y fachadas asíncronas | Implementados Redis y DynamoDB, SQS/SNS, caché, idempotencia, locks, rate limit, secuencias, S3, KMS, secretos, credenciales OAuth/HTTP, auditoría SQS/R2DBC y notificaciones/routing SQS/SNS; Kafka servlet/reactive para eventos y auditoría incorporado en R7. Resiliencia y recuperación verificadas en R8 con backends reales |
 | Transacción hexagonal reactiva | PostgreSQL real con BlockHound verifica commit, rollback por error/cancelación, suscripciones repetidas y reconexión SCRAM; integración global aprobada |
-| Catálogo schema 2 y herramientas | CLI e Initializr prueban el catálogo nuevo; upgrade acepta la decisión core/gateway y el renombre; quedan verificaciones de migración por completar |
+| Catálogo schema 2 y herramientas | CLI e Initializr prueban el catálogo nuevo; upgrade acepta la decisión core/gateway y el renombre; migración local comprobada; convivencia con Axiz 1.x excluida por §16 |
 | Recetas OpenRewrite | 26 pruebas y perfil quality aprobados; handlers Mono/Flux, seis estructuras/extensión, scopes y entidades JPA/R2DBC/repositorios DynamoDB compilados contra las APIs reales 2.0 |
-| Build/deploy y candidatas | Los cuatro workflows nuevos están implementados y validados localmente; 44 regresiones y round trip OCI real. El framework ya tiene ci/deploy independientes. Framework, tools, demo y plantillas usan contratos separados; los cuatro exports anteriores se retiraron. Faltan snapshots, automatización independiente y aceptación remota |
-| Demo y gateway independiente | Pendiente la migración de los nueve servicios y la comprobación de convivencia |
-| Documentación, compatibilidad y aceptación final | Japicmp contra 1.0.0 e inventario procesable comprobados; sitio de documentación reorganizado y build estricto aprobado. Faltan actualización completa de ejemplos, muestras y aceptación global |
+| Documentación, compatibilidad y aceptación final | Japicmp contra 1.0.0 e inventario procesable comprobados; sitio de documentación reorganizado y build estricto aprobado. P1b/P2b cerrados con evidencia R8; candidata, tag y publicación aún no ejecutados |
 
-Las evidencias se guardan fuera del repositorio en `/tmp/axiz2-implementation`.
+Las evidencias históricas se guardan en `/tmp/axiz2-implementation`; la revisión R6 y su cierre usan
+`/tmp/axiz-adr0012-observations-20261102`. El reporte permanece versionable en este archivo.
 `source-before.zip` y `before.patch` conservan el estado previo, incluidos cambios sin commit.
 La publicación remota se mantiene separada de la implementación y de las pruebas locales.
 
@@ -501,7 +501,12 @@ reportes de mutación del framework no presentan errores de proceso
 aprobaron (`native-pipelines-tools-docs-final1.log`). SpotBugs mantiene un aviso de ejecución de procesos en `ProcessRunner.Local`:
 se revisó el uso de argumentos separados, sin shell; no se añadió una exclusión global.
 
-## Evolución AsyncAPI y evaluación estricta de Kafka (continuación del 1 de noviembre)
+## Evolución AsyncAPI y evaluación de Kafka (continuación del 1 de noviembre)
+
+**Estado actual:** la exigencia de que los hilos internos del cliente Kafka sean estrictamente
+no bloqueantes queda descartada. La revisión de alternativas que sigue es evidencia histórica de
+aplicación no debe esperar sincrónicamente el ack ni bloquear el event loop; no se sustituirá el
+cliente para controlar cómo ejecuta internamente DNS, metadatos o conexiones.
 
 El motor ahora interpreta operaciones `send` y `receive` de AsyncAPI 3, sus referencias locales
 y los nombres de tipos CloudEvents terminados en `.vN`. Rechaza YAML con claves duplicadas,
@@ -531,15 +536,15 @@ sin fallos ni omisiones. Se corrigieron avisos estáticos de nulabilidad y patro
 incluidos los del renombrado de proyectos. Los gates finales de mutación y la aceptación nativa de
 esta ampliación siguen ejecutándose; se registrarán al terminar.
 
-de alternativas descartó [Vert.x](https://raw.githubusercontent.com/vert-x3/vertx-kafka-client/master/src/main/java/io/vertx/kafka/client/producer/impl/KafkaWriteStreamImpl.java)
+La revisión histórica de alternativas descartó [Vert.x](https://raw.githubusercontent.com/vert-x3/vertx-kafka-client/master/src/main/java/io/vertx/kafka/client/producer/impl/KafkaWriteStreamImpl.java)
 porque ejecuta `Producer.send` en un worker, y [SmallRye](https://smallrye.io/smallrye-reactive-messaging/smallrye-reactive-messaging/3.8/kafka/kafka.html)
 porque documenta un hilo de envío para evitar bloquear al llamador. Se inspeccionó
 [kafka-client-netty en un commit fijo](https://github.com/protocol-laboratory/kafka-client-netty/tree/8da8b7ecc85c61b6954d37fccd677a08494ac663):
 usa transporte Netty pero su cliente no demuestra límites/timeout y limpieza de solicitudes ante
 desconexión ni las garantías de un productor financiero completo. [finagle-kafka](https://github.com/okapies/finagle-kafka/tree/b7ad1422e303b5ff6e8454d56c1bb093fb549a5e)
 aún declara como trabajo futuro la actualización a Netty 4/5, compresión y pruebas de compatibilidad.
-No se adoptó ninguna de estas dependencias ni se relajaron las guardas. Esto no prueba que no
-exista otro cliente apto; Kafka sigue pendiente de implementación y aceptación real.
+No se adoptó ninguna de estas dependencias. Esa investigación queda cerrada sin reemplazar el
+cliente estándar; el flujo reactivo debe manejar de forma asíncrona el resultado y los errores de
 
 ## Aceptación de AsyncAPI y despliegue automático independiente
 
@@ -807,27 +812,21 @@ La evidencia está en `multimodule-acceptance/RESULTADOS-NATIVE.json` y
 aprobó MkDocs estricto (`multimodule-docs-build2.log`). Esta continuación valida el alcance
 afectado; no vuelve a presentar la ejecución global anterior como una nueva aceptación de todo
 
+## Estado actual y operaciones de release
 
-1. Completar las capacidades nativas asíncronas restantes, sus fachadas y cableado:
-   Kafka (eventos y auditoría). Auditoría SQS/R2DBC, CQRS y credenciales HTTP ya consumen puertos nativos. Validar arranque en
-   frío, refresco de credenciales, reconexión, fallo, timeout y cancelación con BlockHound. Completar
-   el precalentamiento de pools físicos al arrancar, además de los recursos ya inicializados.
-2. Completar los escenarios de migración y convivencia restantes y EDA cuando se complete Kafka
-   nativo. Los agregadores con un servicio hijo y biblioteca hermana ya tienen aceptación local.
-   La migración completa servlet
-   de tres estructuras, las dos combinaciones reactivas descritas, doctor de agregadores y
-   propuestas de pipelines ya están comprobados. AsyncAPI tiene evolución compatible,
-   records, handlers, binding AOT y comparación de suscripciones; falta la evidencia para autorizar
-   la retirada coordinada de tipos antiguos.
-3. Cerrar el soporte de snapshots y la aceptación remota de la automatización independiente. Los consumidores
-   de framework, tools, demo y plantillas ya están migrados y los exports anteriores se retiraron. Probar la promoción dev/qa/prod y el rollback remoto con las
-   credenciales y ambientes configurados. El contrato local se describe en
-   `axiz-workflows/docs/pipelines-v2.md`.
-4. Migrar los nombres de los nueve servicios de la demo y extraer el gateway independiente,
-   conservando las identidades persistentes y verificando replay/reinicio/convivencia.
-5. Completar ejemplos, documentación, muestras generadas y aceptación JVM/native. Repetir los
-   controles afectados por esas futuras modificaciones; los resultados actuales no aceptan
-   automáticamente capacidades todavía pendientes.
+Los bloqueantes locales P1a, P1b y P2b están implementados y validados en R8. El reactor final
+aprueba 159 módulos y 1.510 pruebas sin fallos ni omisiones, incluidas 77 integraciones reales.
+La demo aprueba 191 pruebas y el ciclo local de arranque y pago end-to-end.
+
+Los ensayos remotos de promoción/rollback quedan fuera del cierre por decisión del usuario.
+Se conservan las validaciones de firmas, digests, permisos, manifiestos y separación build/deploy.
+El precalentamiento físico de pools queda diferido por P1c. No se exige la matriz native
+exhaustiva ni convivencia con consumidores Axiz 1.x.
+
+Quedan operaciones de release, que no se han ejecutado: incorporar los cambios revisados a un
+commit, construir la candidata sobre esa revisión inmutable y publicar/promover 2.0.0 con los
+workflows autorizados. No se emiten tags ni se publica desde el árbol de trabajo sin commit.
+No quedan implementaciones locales bloqueantes abiertas en el alcance acordado de §16.
 
 El usuario incorporó los cambios anteriores en el commit `f589011`. Los 45 POMs antes pendientes
 ya forman parte del checkout. Se corrigió además el modo ejecutable de
@@ -902,7 +901,7 @@ Revisión del estado posterior al commit `f589011` más los cambios sin commit. 
 | Nombres 1.x residuales | Solo en las líneas base de japicmp (correcto) |
 | `axiz-demo`: `./mvnw clean verify` | **Falla**: el enforcer rechaza adaptadores en `compile` (`payments-experience`; los 8 servicios tienen el mismo problema) |
 
-### Observaciones abiertas
+### Observaciones encontradas en la revisión inicial (estado histórico)
 
 1. **Demo sin migrar (§11).** Los 8 servicios siguen con `schema: 1`, arquetipos 1.x (`crud`,
    `integration`, `process`, `experience`), adaptadores en `compile` y nombres anteriores; no
@@ -929,3 +928,215 @@ Revisión del estado posterior al commit `f589011` más los cambios sin commit. 
    (debería validar antes de cualquier I/O) y usa `java.math.BigDecimal` calificado; ~600 usos de
    nombres calificados `java.util.*` en el código (incluidas pruebas); 21 pruebas con `Thread.sleep`;
    `LockTemplate.renewLoop` no restaura la interrupción (inocuo porque es su propio hilo).
+
+
+## Correcciones de la revisión del 2 de noviembre (R6)
+
+como evidencia del problema original. Las validaciones siguientes se ejecutan en Fedora Remix
+42 sobre WSL2, JDK 25 y Docker; los logs de esta continuación están en
+`/tmp/axiz-adr0012-observations-20261102/`. Los cambios aún no están comprometidos.
+
+| Corrección | Implementación y evidencia actual |
+|---|---|
+| R6-02: demo | Nueve servicios schema 2, siete servlet/dos reactive, adaptadores runtime y clientes separados de core/gateway. `framework-full-final1.log` y `demo-full-final2.log` aprueban sus reactores completos; el segundo contiene 191 pruebas sin fallos ni omisiones |
+| R6-01: DoS de Money | `Money.MAX_TEXT_LENGTH=256`; se rechaza el texto crudo antes de `strip`, división o `BigDecimal`, tanto en factorías como en Jackson para importes citados y numéricos. `money-lexical-red1.log` reproduce el fallo; `money-tests3.log` y `money-quality1.log` aprueban. La sonda `money-million-digits-probe1.log`, con heap de 256 MiB, rechaza 1M y 5M dígitos en las cuatro entradas, incluso relajando los límites globales de Jackson. La pasada más lenta de esa ejecución fue inferior a 31 ms; es una prueba acotada, no un benchmark |
+| R6-03/04: fronteras del servicio | `GeneralRules` reúne las reglas comunes de adaptadores, kits y `*AutoConfiguration`; se retiran duplicaciones en `ArchetypeRules`. `HexagonalRules` usa los espacios genéricos y comprueba infraestructura oculta detrás de contratos propios. 40 pruebas y `framework-observations-quality1.log` aprobados |
+| R6-05/07: capas del framework | Reglas de estructuras renombradas, exclusión de dependencias entre APIs salvo CQRS→hexagonal, ciclos por módulo y entre capas. Regresiones compiladas con casos válidos e inválidos. `framework-architecture-quality-final1.log`: 55 pruebas y quality aprobados; `framework-layers1.log`: 159 módulos consistentes. Los contratos mantienen el parent más estricto `axiz-parent-api` |
+| R6-06/08/10 | Se retira el README obsoleto de frameworks y se conserva la guía hexagonal vigente. `PaymentsComposition` valida Money antes de consultar al beneficiario. El renovador de locks restaura la interrupción. `lock-coordination-quality1.log` aprueba pruebas y mutación |
+| R6-09: coordinación de pruebas | Latches, barreras, futuros comprobados, condiciones con plazo y drenado de workers sustituyen pausas arbitrarias en audit, caché, secretos, generador ZIP, inbox, outbox, idempotencia, mensajería, BFF y locks. `framework-spring-coordination2.log` aprueba el reactor afectado. Se mantienen retardos explícitos en pruebas de timeout del servidor SOAP, vencimiento real de leases y sondas negativas de BlockHound: allí el tiempo/bloqueo es el comportamiento probado |
+| R6-11/13: CLI | Los workflows v2 actualizan el nombre del servicio al migrar y conservan sus comentarios; se rechazan modificaciones ambiguas. `doctor` no confunde nombres de cabeceras ni modos SOAP con secretos, y sigue rechazando claves literales. `cli-observations-quality1.log`: 74 pruebas, análisis estático y mutación aprobados |
+| R6-12: carrera de caché descubierta | Un miss observado antes de publicarse otro valor podía obtener después el ownership del single-flight y volver a cargarlo. El propietario vuelve a comprobar la caché antes de cargar; si encuentra un valor lo devuelve sin renovar su TTL. `cache-stale-miss-red1.log` reproduce el fallo; `cache-stale-miss-green1.log` y quality aprueban |
+| R6-14: claves YAML | La mezcla conserva el árbol original y las claves literales, incluso al modificar valores dentro de una lista declarada con clave plana. Se reparan los manifests de Helm alterados por la migración previa. `codegen-yaml-literals1.log` y `codegen-yaml-quality1.log`: 125 pruebas y quality/mutación aprobados. La migración real del CLI nativo conserva las tres anotaciones IAM de Helm |
+| R6-15: métricas al arrancar | El listener estándar inicializaba con lock su `MeterRegistry` en la primera terminación de un repositorio. El listener para WebFlux recibe un `SingletonSupplier` ya inicializado en el arranque, mantiene tags/nombre/autotimer de Boot y respeta listeners definidos por la aplicación. `history-blockhound-cold1.log` detecta la regresión; `metrics-startup-quality2.log` y `history-blockhound-cold2.log` aprueban sin llamadas bloqueantes registradas |
+| R6-16: snapshots OpenAPI | Los schemas anteriores de beneficiaries/payments-ux decían String para `nextCursor`, y payment-process para `failedStep`, mientras los ejemplos y respuestas ya admitían null. Se conserva esa respuesta y se sincronizan explícitamente los snapshots de la migración mayor 2.0. Los logs `demo-*-contract-sync1.log` y `demo-contract-diffs-final1.json` conservan las diferencias; `demo-contract-diffs-final2.json` confirma su alineamiento. Se revisaron y descartaron las propuestas genéricas, conservando las implementaciones probadas. `demo-contract-tests-final1.log` aprueba formato y pruebas de contrato |
+
+La demo ya tiene nueve proyectos y manifiestos schema 2: beneficiaries, payment-orders,
+banking-core, payment-process, payments-history, payments-ux, notifications-processor,
+settlement-batch y payment-network-gateway. El gateway conserva los tipos de transferencia,
+códigos públicos, clave idempotente y referencia al secreto; banking-core mantiene REST bancario
+y SOAP. El proceso llama al puerto de transferencias mediante un cliente propio del gateway.
+Los adaptadores usan runtime; las identidades persistentes de los servicios renombrados se
+conservan en el ledger, incluyendo OAuth, source, grupos y rutas remotas de configuración.
+
+History usa únicamente políticas CQRS reactivas y es consumidor de Kafka. Su prueba publica
+los eventos de entrada desde el hilo JUnit como productor externo; no declara un destino de
+publicación reactiva en la aplicación. La demo no prueba publicación saliente desde History; esto
+no cambia la decisión arquitectónica de permitir `KafkaTemplate` para esa capacidad. El borde de
+poll sigue el permiso específico de §5.4. Ambas aplicaciones reactivas comprueban además que los reintentos no hayan ocultado
+llamadas bloqueantes registradas por BlockHound.
+
+Resultados auxiliares actuales: `gateway-integration1.log` aprueba 11 pruebas, incluidas
+401/403 y replay con Redis real y una sola ejecución del puerto; `demo-helm-render1.json`
+registra 27 renderizados (nueve charts por dev/qa/prod) y validación de anotaciones;
+`demo-workflow-security1.json` aprueba la política en el agregador y los nueve proyectos.
+El cierre de las observaciones R6 queda registrado en la tabla siguiente. Esto no acepta
+
+
+### Resultado final de R6
+
+Las dieciséis observaciones de §15 están corregidas y verificadas. Ningún resultado anterior se
+ha reutilizado para afirmar que el nuevo demo compila: sus nueve proyectos se probaron aquí
+con el SDK actualizado y Docker obligatorio.
+
+| Validación | Resultado | Evidencia en `/tmp/axiz-adr0012-observations-20261102/` |
+|---|---|---|
+| Framework completo, `./mvnw verify -Daxiz.it.requireDocker=true` | **159 módulos; 1.485 pruebas; 0 fallos, errores u omisiones**, 6:19 min | `framework-full-final1.log` |
+| Demo completo, `./mvnw verify -Daxiz.it.requireDocker=true` | **9 servicios + cobertura + agregador; 191 pruebas; 0 fallos, errores u omisiones**, 5:21 min | `demo-full-final2.log` |
+| Instalación local del SDK actual | 159 módulos aprobados; posterior a la suite completa | `framework-sdk-final-install1.log` |
+| CLI contra el SDK actual | 74 pruebas aprobadas; quality/mutación también aprobados | `cli-current-sdk-tests1.log`, `cli-observations-quality1.log` |
+| Recetas e Initializr contra el SDK actual | 53 pruebas y quality aprobados; junto al CLI son 127 pruebas de tools | `tools-generation-quality1.log` |
+| Generador, mutación | 1.574 mutantes: 1.172 eliminados, 1 timeout detectado, 328 supervivientes y 73 sin cobertura; cobertura de líneas 93%, fuerza 78%; gate aprobado | `codegen-yaml-quality1.log`, `mutation-summary1.json` |
+| CLI, mutación | 724 mutantes: 524 eliminados, 2 timeouts detectados, 159 supervivientes y 39 sin cobertura; gate aprobado | `cli-observations-quality1.log`, `mutation-summary1.json` |
+| Arquitectura y API | 55 pruebas globales aprobadas; 159 módulos consistentes; comparación completa con 1.0.0 coincide con las 185 rupturas ya revisadas, sin nuevas rupturas no autorizadas | `framework-architecture-quality-final1.log`, `framework-layers1.log`, `api-final-gate1.log`, `api-final-observed1.json` |
+| Contratos del demo | 7 OpenAPI/snapshot alineados; 2 comparaciones AsyncAPI preservan los tipos publicados anteriores; snapshots AsyncAPI exactos | `demo-contract-diffs-final2.json`, `demo-static-final2.json` |
+| Doctor y catálogo | Los 9 servicios tienen 0 errores y 0 warnings; 46 evidencias cubren las capacidades del catálogo | `demo-doctor1.json`, `demo-static-final2.json` |
+| Helm y pipelines | 27 renderizados Helm; política de seguridad y actionlint en 10 proyectos; 20 contratos de build/deploy independientes; 45 combinaciones de parámetros JVM/native/arquitectura válidas | `demo-helm-render1.json`, `demo-workflow-security1.json`, `demo-actionlint2.json`, `demo-pipeline-contracts2.json`, `demo-build-parameter-plans1.json` |
+| Regresiones de automatización | Scripts del framework 24, seguridad de workflows 24 y build-manifest 79, aprobados | `framework-script-tests1.log`, `workflow-policy-regressions1.log`, `build-manifest-tests3.log` |
+| CLI nativo real | GraalVM JDK 25, compilación aprobada. Migra una copia del Core legado con OpenRewrite real, conserva las anotaciones IAM dev/qa/prod, actualiza el binding v2 y aprueba doctor/Maven validate | `cli-native-build1.log`, `native-upgrade-results1.json`, `native-upgrade1.log` |
+
+El SHA-256 del CLI nativo probado es
+`310ccb02ba837b4361f423309d7e4a1ca2508e87f9ac6591cab636c92dc73e0f`.
+El inventario `test-sleep-inventory.json` registra once pausas deliberadas en siete clases;
+ninguna coordina pruebas mediante esperas arbitrarias. Los resúmenes de ejecución están en
+`validation-summary1.json` y `mutation-summary1.json`.
+
+La primera ejecución limpia del demo aprobó todos los servicios y falló al pedir el prefijo
+`spotless` al agregador, que no hereda ese plugin. Se comprobó después la ejecución conjunta
+normal `verify`; el formato de cada servicio se verificó por separado. No se cambia el parent
+independiente del agregador para ocultar ese error de invocación.
+
+Las comprobaciones del índice Git real aún señalan entradas antiguas y archivos nuevos sin
+incorporar: esta continuación no crea un commit. Se validó el estado candidato completo con
+índice y objetos temporales, **cero problemas**, y se comprobó que el índice real no cambió
+(`build-inputs-candidate-index1.log`, `build-inputs-index-integrity1.json`). Con
+`core.filemode=false`, usar `git -c core.filemode=true add --all` al incorporar los cambios
+preserva el modo ejecutable de wrappers/scripts; está documentado en CONTRIBUTING del demo.
+
+El estado R7 siguiente es histórico. R8 cierra la resiliencia y el replay con Docker disponible y
+excluye el ensayo remoto por decisión posterior. La aceptación final se detalla al final del documento.
+
+## Implementación de pendientes de aceptación: R7 (3 de noviembre de 2026)
+
+Entorno: Fedora Remix 42 WSL2, JDK 25. Evidencias en
+
+- **P1a implementado:** servlet conserva su publicador síncrono; reactive dispone de
+  `AsyncEventPublisherAdapter` y `AsyncAuditSink` Kafka. Ambos invocan `KafkaTemplate` desde
+  `BoundedAsyncDispatcher`, con admisión no bloqueante, concurrencia/cola acotadas, timeout,
+  cancelación de trabajo aún no iniciado, rechazo observable y cierre de recursos. Un timeout o
+  cancelación tras comenzar el envío no retracta el mensaje ni libera capacidad hasta que el
+  transporte termine. El estado externo ambiguo debe tratarse mediante ID estable e inbox.
+- Se comparten las codificaciones CloudEvents mediante `KafkaEventRecords` y `KafkaAuditRecords`,
+  sin cambiar las firmas de las clases reubicadas del inventario 2.0. Los productores usan ack
+  `all`, idempotencia, `max.block.ms` finito e identificadores distintos de los productores
+  imperativos. Los flags `axiz.messaging.enabled` y `axiz.audit.enabled` controlan estos recursos.
+- Se documentan `send-workers` y `send-queue-capacity` de ambos módulos, y las métricas
+  `axiz.transport.pending`, `.queued`, `.rejected` y `.latency`, con tag `transport`.
+- **P1b Kafka:** KRaft real embebido permite comprobar con BlockHound publicación en frío, formato
+  en el broker, buffer lleno, broker no disponible, timeout y reinicio/reconexión. Las pruebas
+  usan el cliente estándar; los trabajadores Kafka autorizados no se marcan como event loops.
+- **P2b:** se cierran y reabren bases H2 persistidas en archivos para verificar inbox procesado y
+  en curso, fencing del dueño anterior, redelivery y drenado único del outbox. Kafka verifica
+  offset comprometido al recrear un consumidor y replay conservando el ID. La regresión Valkey
+  recrea conexión/cliente, conserva fingerprint/owner en curso y compara status/cuerpo al completar
+  y volver a conectar; está compilada pero su ejecución espera Docker.
+- **P3a/P3b:** se elimina el pendiente de publicar Maven `-SNAPSHOT`, se mantienen baselines
+  OpenAPI/AsyncAPI y se prepara el ensayo dev → QA/rollback. Las 79 pruebas de pipelines pasan;
+  no se presenta esa simulación como despliegue remoto real.
+
+Los builds fallidos iniciales quedan conservados para diagnóstico: Docker ausente en la prueba
+LocalStack del test starter, imports rechazados por Checkstyle y un aviso de Error Prone sobre
+validación de duración. Las correcciones no rebajan los gates. Los resultados finales se registran
+abajo; las suites con contenedores no se cuentan como aprobadas por haber compilado.
+
+| Validación final R7 | Resultado | Evidencia |
+|---|---|---|
+| Módulos modificados | 128 pruebas JUnit, cero fallos/omisiones en las ejecuciones finales por módulo. Compilación limpia con Error Prone/NullAway, Checkstyle, SpotBugs y umbrales de cobertura aprobados | `final-quality1.log`: seis módulos aprobados; la preparación del caso de buffer se corrigió y mensajería aprobó en `kafka-final-quality2.log` |
+| Mutación del dispatcher | 33 mutaciones, 26 detectadas (79%); fuerza de prueba 87%; tres sin cobertura. Ejecución aprobada | `dispatcher-mutation2.log` |
+| Arquitectura final | 55 pruebas, sin fallos/omisiones, contra el SDK final instalado | `architecture-final1.log` |
+| Capas | 159 módulos y lista cerrada R2DBC consistentes | `layers-final2.log` |
+| API | Todas las comparaciones coinciden con el inventario aprobado; no se cambió el inventario para aceptar nuevas rupturas | `api-final-refresh1.log`, `api-final-gate1.log`, `api-final-observed1.json` |
+| Pipeline | 79 pruebas de manifiestos, contratos de build/deploy y compatibilidad aprobadas | `pipeline-contracts1.log` |
+| Integración Redis pendiente | Fuentes compiladas; no ejecutadas contra Valkey por Docker detenido | `integration-compile1.log` |
+| SDK final | Artefactos locales actualizados después de la corrección de API y las pruebas | `sdk-final-install1.log` |
+
+El error intermedio del caso de presión de buffer era de la preparación de la prueba: detener el
+broker también impedía obtener metadatos antes de llenar el buffer. La prueba final usa batching
+controlado para llenar memoria con el broker disponible; luego comprueba por separado su
+reinicio. El plazo para comprobar que se llena el buffer se mantiene en cinco segundos.
+
+Comando preparado para continuar la evidencia con Docker disponible:
+
+```bash
+./axiz-framework/mvnw -pl quality/axiz-store-integration-tests verify -Daxiz.it.requireDocker=true
+```
+
+La aceptación remota usa el procedimiento `axiz-workflows/docs/acceptance-2.0.md`, con builds A/B
+verificados y resultados firmados. No hay repositorio remoto configurado en este checkout ni se
+recibieron los identificadores de ambientes/builds durante esta ejecución. El ensayo remoto se excluye de la aceptación por decisión posterior registrada en R8.
+
+
+## Cierre de implementaciones y aceptación local: R8 (3 de noviembre de 2026)
+
+Entorno: Fedora Remix 42 WSL2, JDK 25.0.3, Docker 29.5.3. Evidencia conservada en
+
+### Implementaciones y correcciones
+
+- **P1b Redis:** `ValkeyReactiveStoresIT` ejercita caché/TTL/evicción por prefijo literal, locks,
+  idempotencia, rate limit y nonces con servidor real. Los cinco puertos prueban cancelación;
+  la pausa del servidor comprueba timeouts, propagación de fallos y políticas fail-open/fail-closed.
+  El reinicio del servidor comprueba reconexión. La prueba fija el binding del puerto del contenedor:
+  los puertos asignados automáticamente por Docker pueden cambiar al reiniciarlo, lo que invalidaba
+  la preparación inicial del caso de reconexión.
+- BlockHound vigila los prefijos de I/O NIO/epoll/kqueue y de callbacks de Lettuce. Las pruebas
+  negativas comprueban que bloqueos deliberados en esos hilos se detectan. No se añade una
+  excepción para callbacks ni se permite I/O síncrona en operadores de aplicación.
+- **P1b DynamoDB/AWS:** se añaden idempotencia asíncrona y fencing de locks sobre escrituras
+  condicionales reales. `LocalStackAsyncResilienceIT` prueba once puertos: idempotencia, inbox,
+  locks y secuencias DynamoDB; eventos SQS/SNS; auditoría SQS; claves KMS; Secrets Manager;
+  Parameter Store; y S3. Tras comprobar operación normal, pausa LocalStack, cancela solicitudes,
+  espera en paralelo los deadlines SDK reales de 60 segundos y restablece el servicio. Conserva
+  el transporte/configuración del framework y comprueba ausencia de bloqueos ocultos.
+- D9 queda documentada como cerrada: Netty configurado por `AsyncAwsClients`, con DNS asíncrono,
+  TLS preparado, región explícita, completado acotado y tiempos de espera. Se mantienen las
+  pruebas de TLS en frío, renovación de credenciales y reconexión de las suites existentes.
+- **P2b:** además de reabrir inbox/outbox persistentes y verificar offsets Kafka, se ejecuta la
+  regresión Valkey de recuperación de una petición en curso y de su respuesta. La suite reactiva
+  compara status, headers y cuerpo completos. `PostgresReplayIT` integra OutboxRelay,
+  EventDispatcher e InboxDeduplicator: se pierde una confirmación después del commit del receptor,
+  se recrean relay y consumidor y se redelivery con la misma identidad. Hay dos entregas y un único
+  efecto de negocio; la outbox termina vacía. Los datasources de emisor/receptor tienen identidades
+  diferentes para no unir accidentalmente sus transacciones durante la prueba.
+- **Deadlock OTLP corregido en el framework:** el arranque real del gateway encontró una espera
+  circular: el hilo principal esperaba `RedisClient.connect()`, y un callback de Lettuce intentaba
+  resolver el tracer mediante el BeanFactory para generar un exemplar OTLP. La pila está en
+  `gateway-startup-threads1.log`. `AxizOtlpExemplarsAutoConfiguration` aporta un proveedor que
+  retorna sin exemplar durante bootstrap y obtiene el tracer al finalizar la creación de
+  singletons. Después solo consulta la referencia publicada en memoria. Mantiene las políticas
+  `none`, `all`, `sampled-traces` y los proveedores del usuario; no deshabilita métricas ni trazas.
+  `OtlpExemplarStartupTest` cubre el callback durante creación de beans con BlockHound activo.
+- **Lanzadores locales corregidos:** `demo.sh` y el job de `scenarios.sh` incluyen el parámetro de
+  entropía que ya exigían el framework, Maven y las imágenes. Se mantiene el guard DRBG. El smoke
+  pasa con ocho servicios continuos; settlement-batch es el noveno proyecto y se ejecuta como job.
+  operativa opcional y no como condición de aceptación de 2.0.0.
+
+### Resultados finales
+
+| Comprobación | Resultado | Evidencia |
+|---|---|---|
+| Framework completo | 159 módulos; 1.510 pruebas, 0 fallos, 0 errores, 0 omisiones | `framework-full-final2.log` |
+| Integraciones reales | 77 pruebas incluidas en el reactor completo, con Docker obligatorio | `framework-full-final2.log` |
+| Vigilancia Lettuce | 17 pruebas del starter, quality y pruebas negativas de hilos aprobadas | `blockhound-quality1.log` |
+| Puertos Redis y DynamoDB | 29 pruebas, quality y backends reales aprobados | `reactive-ports-quality1.log` |
+| Timeout/cancelación AWS | Once puertos con transporte real, servidor detenido y deadlines de producción; prueba aprobada | `aws-resilience1.log` y reactor final |
+| Replay con confirmación perdida | Dos entregas, un efecto de negocio y outbox drenada sobre PostgreSQL | `postgres-replay1.log` y reactor final |
+| Métricas OTLP | 11 pruebas, Error Prone/NullAway, Checkstyle, SpotBugs y cobertura aprobados | `otlp-startup-quality6.log` |
+| Demo | Nueve servicios/proyectos y agregadores; 191 pruebas, sin fallos ni omisiones | `demo-full1.log` |
+| Arranque completo | 8/8 servicios sanos en 46 segundos con el SDK corregido | `demo-up3.log` |
+| Smoke end-to-end | Beneficiario, pago, saga y proyección de historial en COMPLETED | `demo-smoke3.log` |
+| API final | Coincide con el inventario aprobado, sin añadir rupturas | `api-final-refresh2.log`, `api-final-gate2.log` |
+| Capas | 159 módulos y lista cerrada R2DBC consistentes | `layers1.log` |
+
+Los logs anteriores fallidos se conservan para diagnóstico; no se cuentan como comprobaciones
+aprobadas. Los procesos Java de la demo se detuvieron al finalizar el smoke. La infraestructura
+Docker de la demo continúa disponible, sin borrar volúmenes. Esta aceptación local no constituye
+publicación de artefactos ni despliegue en un ambiente remoto.

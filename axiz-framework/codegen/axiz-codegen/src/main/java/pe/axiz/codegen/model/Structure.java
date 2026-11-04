@@ -3,7 +3,7 @@ package pe.axiz.codegen.model;
 import java.util.Locale;
 import java.util.Set;
 
-/** Architectural style (layer 3) and the stacks it supports in v1. */
+/** Application structure and the execution stacks it supports. */
 public enum Structure {
   LAYERED(true),
   HEXAGONAL(true),

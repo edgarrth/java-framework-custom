@@ -1,0 +1,20 @@
+originalName: payments-experience
+currentName: payments-ux
+files:
+  src/main/resources/application-local.yaml: {
+    }
+  src/main/resources/application-platform.yaml: {
+    }
+  src/main/resources/application.yaml:
+    axiz.messaging.source: urn:axiz:payments-experience
+    axiz.messaging.consumer.name: payments-experience
+    axiz.messaging.kafka.group-id: payments-experience
+    axiz.config.parameter-store.application: payments-experience
+  deploy/helm/payments-ux/values-prod.yaml: {
+    }
+  deploy/helm/payments-ux/values.yaml: {
+    }
+  deploy/helm/payments-ux/values-dev.yaml: {
+    }
+  deploy/helm/payments-ux/values-qa.yaml: {
+    }

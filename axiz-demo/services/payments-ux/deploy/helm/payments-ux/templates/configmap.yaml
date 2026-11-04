@@ -1,0 +1,14 @@
+# Environment configuration of the service, mounted in /etc/axiz/config/service (axiz-config)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "service.fullname" . }}
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+data:
+  application.yaml: |
+    {{- if .Values.config }}
+    {{- toYaml .Values.config | nindent 4 }}
+    {{- else }}
+    {}
+    {{- end }}

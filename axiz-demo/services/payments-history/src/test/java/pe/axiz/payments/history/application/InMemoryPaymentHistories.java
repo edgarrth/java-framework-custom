@@ -19,7 +19,7 @@ public final class InMemoryPaymentHistories implements PaymentHistories {
 
   @Override
   public Mono<PaymentHistory> apply(String paymentId, Change change) {
-    return Mono.fromSupplier(() -> entries.compute(paymentId, (k, v) -> change.apply(v)));
+    return Mono.fromSupplier(() -> entries.compute(paymentId, (_, v) -> change.apply(v)));
   }
 
   @Override

@@ -12,12 +12,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.domain.Pageable;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
+import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -25,6 +27,7 @@ import reactor.core.publisher.Mono;
  * The R2DBC adapter over an in-memory reactive repository: changes applied to the stored row (or a
  * new one), the creditor account kept as an encrypted column and pages with or without status.
  */
+@ExtendWith(BlockHoundExtension.class)
 class PaymentHistoryR2dbcAdapterTest {
 
   static final Duration T = Duration.ofSeconds(5);

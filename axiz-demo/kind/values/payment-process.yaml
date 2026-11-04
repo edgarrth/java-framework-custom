@@ -1,4 +1,3 @@
-# payment-process in the kind cluster of the demo (kind/up.sh). Local stand-ins only.
 environment: local
 image:
   repository: axiz/payment-process
@@ -38,15 +37,22 @@ config:
   spring.kafka.bootstrap-servers: kafka.axiz-demo.svc.cluster.local:9092
   axiz.messaging.kafka.iam: false
   axiz.http-client.clients:
-    payments-business:
-      base-url: http://payments-business.axiz-demo.svc.cluster.local
+    payment-orders:
+      base-url: http://payment-orders.axiz-demo.svc.cluster.local
       auth:
         type: CLIENT_CREDENTIALS
         token-uri: http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token
         client-id: payment-process
         client-secret-ref: payment-process-client-secret
-    core-integration:
-      base-url: http://core-integration.axiz-demo.svc.cluster.local
+    banking-core:
+      base-url: http://banking-core.axiz-demo.svc.cluster.local
+      auth:
+        type: CLIENT_CREDENTIALS
+        token-uri: http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token
+        client-id: payment-process
+        client-secret-ref: payment-process-client-secret
+    payment-network-gateway:
+      base-url: http://payment-network-gateway.axiz-demo.svc.cluster.local
       auth:
         type: CLIENT_CREDENTIALS
         token-uri: http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/token

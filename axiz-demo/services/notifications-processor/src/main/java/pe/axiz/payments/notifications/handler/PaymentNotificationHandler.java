@@ -8,17 +8,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.messaging.HandlesEvent;
+import pe.axiz.core.messaging.TypedEventHandler;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;
 import pe.axiz.core.notification.NotificationChannel;
 import pe.axiz.core.notification.NotificationRequest;
 import pe.axiz.core.notification.NotificationSender;
-import pe.axiz.core.messaging.HandlesEvent;
-import pe.axiz.core.messaging.TypedEventHandler;
-import pe.axiz.payments.notifications.contact.ContactDirectory;
-import pe.axiz.payments.notifications.contact.CustomerContact;
 import pe.axiz.payments.notifications.event.PaymentOrderStatusChanged;
+import pe.axiz.payments.notifications.repository.ContactDirectory;
+import pe.axiz.payments.notifications.repository.CustomerContact;
 
 /**
  * Tells the customer how a payment ended (completed or rejected) through the channel they chose.

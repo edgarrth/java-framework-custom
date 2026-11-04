@@ -1,0 +1,220 @@
+asyncapi: 3.0.0
+info:
+  title: Payment events
+  version: 1.1.0
+  description: 'Events of the payments demo (CloudEvents 1.0, JSON data). payments-business publishes order events
+    through its transactional outbox on the internal MSK topic `payments`; services publish their audit trail to
+    the SQS queue `axiz-demo-audit`; the notifications processor publishes notification requests to SNS. Fields
+    marked `x-sensitive` are masked in logs and audit records.
+
+    '
+defaultContentType: application/json
+servers:
+  msk:
+    host: '{bootstrap}'
+    protocol: kafka-secure
+    description: Amazon MSK with TLS and IAM authorization per consumer group
+    variables:
+      bootstrap:
+        default: b-1.payments.kafka.us-east-1.amazonaws.com:9098
+  aws:
+    host: sqs.us-east-1.amazonaws.com
+    protocol: sqs
+channels:
+  payments:
+    address: payments
+    servers:
+    - $ref: '#/servers/msk'
+    messages:
+      paymentOrderCreated:
+        $ref: '#/components/messages/paymentOrderCreated'
+      paymentOrderStatusChanged:
+        $ref: '#/components/messages/paymentOrderStatusChanged'
+  audit:
+    address: axiz-demo-audit
+    servers:
+    - $ref: '#/servers/aws'
+    description: SQS queue with the audit events of the services (archived to S3), DLQ after 5 receives
+    messages:
+      auditEvent:
+        $ref: '#/components/messages/auditEvent'
+  customerNotifications:
+    address: customer-notifications
+    description: SNS topic of the notifications platform
+    messages:
+      notificationRequested:
+        $ref: '#/components/messages/notificationRequested'
+operations:
+  publishPaymentOrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/payments'
+    summary: payments-business registered an order (outbox, key = order id)
+    messages:
+    - $ref: '#/channels/payments/messages/paymentOrderCreated'
+    x-axiz-retained-publication: true
+  publishPaymentOrderStatusChanged:
+    action: send
+    channel:
+      $ref: '#/channels/payments'
+    summary: payments-business moved an order to a new status
+    messages:
+    - $ref: '#/channels/payments/messages/paymentOrderStatusChanged'
+    x-axiz-retained-publication: true
+  requestNotification:
+    action: send
+    channel:
+      $ref: '#/channels/customerNotifications'
+    messages:
+    - $ref: '#/channels/customerNotifications/messages/notificationRequested'
+    x-axiz-retained-publication: true
+  recordCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/payments'
+    messages:
+    - $ref: '#/channels/payments/messages/paymentOrderCreated'
+  recordStatusChanged:
+    action: receive
+    channel:
+      $ref: '#/channels/payments'
+    messages:
+    - $ref: '#/channels/payments/messages/paymentOrderStatusChanged'
+components:
+  messages:
+    paymentOrderCreated:
+      name: pe.axiz.payments.payment-order.created.v1
+      contentType: application/json
+      payload:
+        type: object
+        required:
+        - orderId
+        - operationNumber
+        - customerId
+        - debtorAccount
+        - creditorCci
+        - amount
+        - currency
+        - processingDate
+        properties:
+          orderId:
+            type: string
+          operationNumber:
+            type: string
+          customerId:
+            type: string
+          debtorAccount:
+            type: string
+            x-sensitive: true
+          creditorCci:
+            type: string
+            x-sensitive: true
+          amount:
+            type: number
+          currency:
+            type: string
+          processingDate:
+            type: string
+            format: date
+      examples:
+      - payload:
+          orderId: 0190a1b2-0000-7000-8000-000000000001
+          operationNumber: OP20261011-00000001
+          customerId: C-1001
+          debtorAccount: '1910012345678'
+          creditorCci: 00219100123456789053
+          amount: 150.75
+          currency: PEN
+          processingDate: '2026-10-12'
+    paymentOrderStatusChanged:
+      name: pe.axiz.payments.payment-order.status-changed.v1
+      contentType: application/json
+      payload:
+        type: object
+        required:
+        - orderId
+        - customerId
+        - previous
+        - status
+        properties:
+          orderId:
+            type: string
+          customerId:
+            type: string
+          previous:
+            type: string
+            enum:
+            - RECEIVED
+            - PROCESSING
+            - COMPLETED
+            - REJECTED
+          status:
+            type: string
+            enum:
+            - RECEIVED
+            - PROCESSING
+            - COMPLETED
+            - REJECTED
+          reason:
+            type: string
+    auditEvent:
+      name: pe.axiz.audit.event.v1
+      contentType: application/json
+      payload:
+        type: object
+        required:
+        - id
+        - occurredAt
+        - service
+        - action
+        - resourceType
+        - outcome
+        properties:
+          id:
+            type: string
+          occurredAt:
+            type: string
+            format: date-time
+          service:
+            type: string
+          action:
+            type: string
+          resourceType:
+            type: string
+          resourceId:
+            type: string
+          outcome:
+            type: string
+            enum:
+            - SUCCESS
+            - FAILURE
+          errorCode:
+            type: string
+          details:
+            type: object
+            description: sanitized by sensitivity at the source
+    notificationRequested:
+      name: notification.requested.v1
+      contentType: application/json
+      payload:
+        type: object
+        properties:
+          id:
+            type: string
+          channel:
+            type: string
+            enum:
+            - EMAIL
+            - SMS
+            - PUSH
+          recipient:
+            type: string
+            x-sensitive: true
+          templateId:
+            type: string
+          locale:
+            type: string
+          parameters:
+            type: object
+            additionalProperties:
+              type: string

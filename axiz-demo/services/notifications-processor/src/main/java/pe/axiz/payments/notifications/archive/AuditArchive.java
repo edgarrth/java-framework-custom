@@ -58,9 +58,9 @@ public class AuditArchive {
     return PREFIX
         + day.getYear()
         + "/"
-        + String.format("%02d", day.getMonthValue())
+        + "%02d".formatted(day.getMonthValue())
         + "/"
-        + String.format("%02d", day.getDayOfMonth())
+        + "%02d".formatted(day.getDayOfMonth())
         + "/";
   }
 

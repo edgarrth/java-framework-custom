@@ -28,7 +28,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Archetype` | Role of a service in the ecosystem and the defaults it preselects. |
 | `Capability` | A capability that the initializr and `axiz add` can add to a service. |
 | `Catalog` | Archetypes and capabilities shipped with the framework (`axiz/archetypes/catalog.yaml` and `axiz/archetypes/capabilities.yaml`). |
-| `Structure` | Application structure: hexagonal, layered, DDD, EDA or BFF; platform projects use `NONE`. |
+| `Structure` | Application structure: hexagonal, layered, EDA, BFF or batch; platform projects use `NONE`. |
 | `Extension` | Optional architectural extension, such as CQRS, validated against the archetype and structure. |
 | `ProjectRequest` | What to generate. |
 | `Stack` | Web stack of a service. |

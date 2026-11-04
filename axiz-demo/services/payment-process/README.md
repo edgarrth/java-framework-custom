@@ -4,11 +4,12 @@ Payment saga.
 
 | | |
 |---|---|
-| Archetype | `process`: Orchestrates long-running processes across domains (sagas) |
-| Style | `hexagonal` |
+| Archetype | `business`: Business rules and ownership of domain data |
+| Structure | `hexagonal` |
+| Extensions | – |
 | Stack | `servlet` |
 | Persistence | `aurora` |
-| axiz | `1.0.0` |
+| axiz | `2.0.0` |
 | Base package | `pe.axiz.payments.process` |
 
 ## In the demo
@@ -16,8 +17,8 @@ Payment saga.
 Orchestrates each payment with a saga (hexagonal style, state on Aurora).
 
 1. `processing`: the order moves to PROCESSING (undo: REJECTED).
-2. `debit`: core-integration debits the customer (undo: reversal).
-3. `transfer`: core-integration sends the transfer (pivot: never undone).
+2. `debit`: banking-core debits the customer (undo: reversal).
+3. `transfer`: banking-core sends the transfer (pivot: never undone).
 4. `complete`: the order moves to COMPLETED (never fails the saga; settlement reconciles it).
 
 Processes start from `payment-order.created.v1` (Kafka). Every downstream call carries a key

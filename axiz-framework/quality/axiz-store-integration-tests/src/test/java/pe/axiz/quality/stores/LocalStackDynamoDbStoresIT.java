@@ -54,6 +54,7 @@ class LocalStackDynamoDbStoresIT {
     table("axiz-idempotency");
     table("axiz-inbox");
     table("axiz-sequence");
+    table("axiz-locks");
     inboxLifecycle = new NettyLifecycleProbe();
     inboxResources =
         new pe.axiz.adapter.observability.aws.AsyncAwsClients(
@@ -256,5 +257,115 @@ class LocalStackDynamoDbStoresIT {
     }
     org.junit.jupiter.api.Assertions.assertTrue(
         lifecycle.errors.isEmpty(), () -> "SDK lifecycle errors: " + lifecycle.errors);
+  }
+
+  @Test
+  void nativeIdempotencyPreservesOwnershipAndFullResponseInRealDynamo() {
+    var now = java.time.Instant.now();
+    var store =
+        new pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(
+            nativeDynamo, "axiz-idempotency", java.time.Clock.systemUTC());
+    var key = "native-" + java.util.UUID.randomUUID();
+    var record =
+        new pe.axiz.core.idempotency.IdempotencyRecord(
+            key,
+            "hash",
+            pe.axiz.core.idempotency.IdempotencyRecord.Status.IN_PROGRESS,
+            "owner",
+            null,
+            now.plusSeconds(60));
+    var response =
+        new pe.axiz.core.idempotency.StoredResponse(
+            201, java.util.Map.of("Location", "/payments/1"), new byte[] {0, 127});
+    reactor.test.StepVerifier.create(nativeCall(() -> store.tryStart(record)))
+        .expectNext(true)
+        .expectComplete()
+        .verify(java.time.Duration.ofSeconds(10));
+    reactor.test.StepVerifier.create(
+            nativeCall(() -> store.complete(key, "wrong", response, now.plusSeconds(60))))
+        .expectNext(false)
+        .expectComplete()
+        .verify(java.time.Duration.ofSeconds(10));
+    reactor.test.StepVerifier.create(
+            nativeCall(() -> store.complete(key, "owner", response, now.plusSeconds(60)))
+                .doOnNext(completed -> org.junit.jupiter.api.Assertions.assertTrue(completed))
+                .then(
+                    nativeCall(
+                        () ->
+                            new pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(
+                                    nativeDynamo, "axiz-idempotency", java.time.Clock.systemUTC())
+                                .find(key, now))))
+        .assertNext(
+            found ->
+                org.junit.jupiter.api.Assertions.assertEquals(
+                    response, found.orElseThrow().response()))
+        .expectComplete()
+        .verify(java.time.Duration.ofSeconds(10));
+    reactor.test.StepVerifier.create(nativeCall(() -> store.tryStart(record)))
+        .expectNext(false)
+        .expectComplete()
+        .verify(java.time.Duration.ofSeconds(10));
+  }
+
+  @Test
+  void nativeLocksFenceExpiredOwnersOnTheActualConditionalWrites() {
+    var clock =
+        new pe.axiz.test.support.MutableClock(java.time.Instant.now(), java.time.ZoneOffset.UTC);
+    var locks =
+        new pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock(
+            nativeDynamo, "axiz-locks", clock);
+    reactor.test.StepVerifier.create(
+            nativeCall(() -> locks.tryAcquire("reactive-account", java.time.Duration.ofSeconds(1)))
+                .flatMap(
+                    found -> {
+                      var old = found.orElseThrow();
+                      return nativeCall(() -> old.renew(java.time.Duration.ofSeconds(1)))
+                          .doOnNext(renewed -> org.junit.jupiter.api.Assertions.assertTrue(renewed))
+                          .then(
+                              nativeCall(
+                                  () ->
+                                      locks.tryAcquire(
+                                          "reactive-account", java.time.Duration.ofSeconds(1))))
+                          .doOnNext(
+                              busy -> org.junit.jupiter.api.Assertions.assertTrue(busy.isEmpty()))
+                          .then(
+                              reactor.core.publisher.Mono.defer(
+                                  () -> {
+                                    clock.advance(java.time.Duration.ofSeconds(2));
+                                    return nativeCall(
+                                        () ->
+                                            locks.tryAcquire(
+                                                "reactive-account",
+                                                java.time.Duration.ofSeconds(10)));
+                                  }))
+                          .flatMap(
+                              acquired -> {
+                                var current = acquired.orElseThrow();
+                                return nativeCall(() -> old.renew(java.time.Duration.ofSeconds(1)))
+                                    .doOnNext(
+                                        renewed ->
+                                            org.junit.jupiter.api.Assertions.assertFalse(renewed))
+                                    .then(nativeCall(old::release))
+                                    .then(
+                                        nativeCall(
+                                            () ->
+                                                locks.tryAcquire(
+                                                    "reactive-account",
+                                                    java.time.Duration.ofSeconds(1))))
+                                    .doOnNext(
+                                        busy ->
+                                            org.junit.jupiter.api.Assertions.assertTrue(
+                                                busy.isEmpty()))
+                                    .then(nativeCall(current::release));
+                              });
+                    }))
+        .expectComplete()
+        .verify(java.time.Duration.ofSeconds(10));
+  }
+
+  private static <T> reactor.core.publisher.Mono<T> nativeCall(
+      java.util.function.Supplier<java.util.concurrent.CompletionStage<T>> operation) {
+    return reactor.core.publisher.Mono.fromCompletionStage(operation)
+        .subscribeOn(reactor.core.scheduler.Schedulers.parallel());
   }
 }

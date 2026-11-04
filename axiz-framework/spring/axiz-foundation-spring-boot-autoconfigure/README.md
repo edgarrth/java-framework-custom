@@ -19,6 +19,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `ReactiveInfrastructureBootstrap` | Prepares DRBG and optional context SPI discovery before reactive subscriptions. |
+| `BoundedAsyncDispatcher` | Bounded transport admission, ack deadlines, cancellation and metrics for Kafka submission workers. |
 | `ReactiveStages` | Deferred native stages and streaming publishers with explicitly scoped subscriber context and native cancellation. |
 | `AxizFoundationAutoConfiguration` | Clock, business calendar, id generation, identifier registry and Money JSON support. |
 | `AxizFoundationProperties` | Foundation settings (`axiz.foundation.*`), normally in the `axiz-common` ConfigMap. |

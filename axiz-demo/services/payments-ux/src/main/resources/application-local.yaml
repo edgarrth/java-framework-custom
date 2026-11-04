@@ -1,0 +1,10 @@
+axiz:
+  logging:
+    json: false
+  config:
+    environment: local
+  security:
+    issuers:
+    - issuer: http://localhost:8180/realms/axiz
+      audiences:
+      - local-services

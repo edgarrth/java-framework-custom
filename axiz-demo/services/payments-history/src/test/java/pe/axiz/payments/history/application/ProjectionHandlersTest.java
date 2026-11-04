@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
@@ -21,7 +22,9 @@ import pe.axiz.payments.history.application.query.ListCustomerPaymentsHandler;
 import pe.axiz.payments.history.application.query.ListCustomerPaymentsQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
 import pe.axiz.payments.history.domain.PaymentStatus;
+import pe.axiz.spring.test.BlockHoundExtension;
 
+@ExtendWith(BlockHoundExtension.class)
 class ProjectionHandlersTest {
 
   private static final Duration T = Duration.ofSeconds(5);

@@ -1,6 +1,5 @@
 package pe.axiz.adapter.audit.kafka;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -11,7 +10,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
 import pe.axiz.core.audit.AuditPublisher;
-import pe.axiz.core.commons.json.JsonWriter;
 
 /**
  * Publishes audit events to an Amazon MSK (Kafka) topic. The record key is the resource so the
@@ -33,15 +31,7 @@ public final class KafkaAuditPublisher implements AuditPublisher {
 
   @Override
   public void publish(AuditEvent event) {
-    String key =
-        event.resourceType() + ":" + (event.resourceId() == null ? event.id() : event.resourceId());
-    ProducerRecord<String, String> record =
-        new ProducerRecord<>(topic, key, JsonWriter.write(event.toMap()));
-    // binary-mode CloudEvent: ce_* headers and the JSON data as value
-    record.headers().add("content-type", "application/json".getBytes(StandardCharsets.UTF_8));
-    event
-        .cloudEventAttributes()
-        .forEach((k, v) -> record.headers().add("ce_" + k, v.getBytes(StandardCharsets.UTF_8)));
+    ProducerRecord<String, String> record = KafkaAuditRecords.create(topic, event);
     try {
       producer.send(record).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {

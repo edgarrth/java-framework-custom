@@ -1,0 +1,148 @@
+openapi: 3.1.0
+info:
+  title: Frequent beneficiaries
+  version: 1.0.0
+  description: Frequent beneficiaries of each customer (DynamoDB, soft delete).
+tags:
+  - name: beneficiaries
+paths:
+  /v1/customers/{customerId}/beneficiaries:
+    parameters:
+      - {name: customerId, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: listBeneficiaries
+      tags: [beneficiaries]
+      summary: Beneficiaries of a customer (cursor pagination)
+      parameters:
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 100}}
+      responses:
+        '200':
+          description: Page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BeneficiaryPage'}
+              example: {items: [], nextCursor: null}
+        '400':
+          description: Invalid request
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+    post:
+      operationId: createBeneficiary
+      tags: [beneficiaries]
+      summary: Registers a beneficiary
+      parameters:
+        - {name: Idempotency-Key, in: header, required: true, schema: {type: string, maxLength: 64}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BeneficiaryRequest'}
+            example: {alias: Landlord, holderName: Ana Torres, cci: '00219100123456789053', currency: PEN}
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Beneficiary'}
+              example: {id: B-01, customerId: C-1001, alias: Landlord, holderName: Ana Torres, cci: '00219100123456789053', currency: PEN}
+        '422':
+          description: Invalid account
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+  /v1/customers/{customerId}/beneficiaries/{beneficiaryId}:
+    parameters:
+      - {name: customerId, in: path, required: true, schema: {type: string}}
+      - {name: beneficiaryId, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: getBeneficiary
+      tags: [beneficiaries]
+      summary: Gets a beneficiary
+      responses:
+        '200':
+          description: The beneficiary
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Beneficiary'}
+              example: {id: B-01, customerId: C-1001, alias: Landlord, holderName: Ana Torres, cci: '00219100123456789053', currency: PEN}
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+    put:
+      operationId: updateBeneficiary
+      tags: [beneficiaries]
+      summary: Updates the alias of a beneficiary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BeneficiaryUpdate'}
+            example: {alias: Home rent}
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Beneficiary'}
+              example: {id: B-01, customerId: C-1001, alias: Home rent, holderName: Ana Torres, cci: '00219100123456789053', currency: PEN}
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+    delete:
+      operationId: deleteBeneficiary
+      tags: [beneficiaries]
+      summary: Removes a beneficiary (soft delete)
+      responses:
+        '204':
+          description: Removed
+        '404':
+          description: Not found
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+components:
+  schemas:
+    BeneficiaryRequest:
+      type: object
+      required: [alias, holderName, cci, currency]
+      properties:
+        alias: {type: string, maxLength: 40}
+        holderName: {type: string, maxLength: 120}
+        cci: {type: string, pattern: '^[0-9]{20}$'}
+        currency: {type: string, pattern: '^(PEN|USD)$'}
+    BeneficiaryUpdate:
+      type: object
+      required: [alias]
+      properties:
+        alias: {type: string, maxLength: 40}
+    Beneficiary:
+      type: object
+      properties:
+        id: {type: string}
+        customerId: {type: string}
+        alias: {type: string}
+        holderName: {type: string}
+        cci: {type: string}
+        currency: {type: string}
+    BeneficiaryPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/Beneficiary'}
+        nextCursor: {type: [string, "null"]}
+    Problem:
+      type: object
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        code: {type: string}
+

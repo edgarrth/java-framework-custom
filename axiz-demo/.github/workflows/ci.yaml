@@ -92,7 +92,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [beneficiaries-crud, core-integration, notifications-processor, payment-process, payments-business, payments-experience, payments-history, settlement-batch]
+        service: [beneficiaries, banking-core, notifications-processor, payment-process, payment-network-gateway, payment-orders, payments-ux, payments-history, settlement-batch]
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.0.0

@@ -1,0 +1,22 @@
+package pe.axiz.adapter.messaging.kafka;
+
+import java.nio.charset.StandardCharsets;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import pe.axiz.core.messaging.CloudEventHeaders;
+import pe.axiz.core.messaging.EventEnvelope;
+
+/** Binary CloudEvents encoding shared by imperative and asynchronous Kafka publication. */
+public final class KafkaEventRecords {
+  private KafkaEventRecords() {}
+
+  /** Binary CloudEvent record shared by synchronous and asynchronous publication. */
+  public static ProducerRecord<String, byte[]> create(String destination, EventEnvelope event) {
+    String key = event.subject() != null ? event.subject() : event.id();
+    String topic = KafkaEventPublisher.topic(destination);
+    ProducerRecord<String, byte[]> record =
+        new ProducerRecord<>(topic, null, event.time().toEpochMilli(), key, event.data());
+    CloudEventHeaders.toHeaders(event)
+        .forEach((k, v) -> record.headers().add(k, v.getBytes(StandardCharsets.UTF_8)));
+    return record;
+  }
+}

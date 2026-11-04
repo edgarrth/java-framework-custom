@@ -1,7 +1,3 @@
-# Payments History: defaults shared by every environment.
-# Environment values come from the ConfigMaps axiz-common, payments-history and payments-history-errors
-# (mounted as files by the chart) and secrets from files mounted by the ExternalSecret. ${VAR:default}
-# placeholders only serve local runs and tests: never write environment values or secrets here.
 spring:
   application:
     name: payments-history
@@ -22,7 +18,6 @@ server:
 axiz:
   cqrs:
     authorization:
-      # every command and query must declare RequiresAuthority, an AccessPolicy or OpenAccess
       unprotected: fail
   aws:
     region: ${AWS_REGION:us-east-1}
@@ -33,6 +28,10 @@ axiz:
       topics:
       - payments
       group-id: payments-history
+    consumer:
+      subscriptions:
+      - pe.axiz.payments.payment-order.created.v1
+      - pe.axiz.payments.payment-order.status-changed.v1
   foundation:
     zone: America/Lima
   web:
@@ -51,11 +50,10 @@ axiz:
   sensitive:
     response: MEDIUM
   security:
-    # Keycloak always sends azp: a token without a client claim is rejected (401), never
-    # taken for an application that may read every customer's data
     claims:
       subject-as-client: false
-      machine: [axiz_token_kind=service]
+      machine:
+      - axiz_token_kind=service
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
@@ -72,8 +70,6 @@ axiz:
   secrets:
     directory: /var/run/secrets/axiz
   crypto:
-    # the service hashes no passwords and does not ship the Argon2id provider (spring-security-crypto
-    # and bcprov): the algorithm is stated instead of falling back to it with a WARN at startup
     password:
       algorithm: pbkdf2
     kms:
@@ -104,4 +100,3 @@ management:
     health:
       probes:
         enabled: true
-

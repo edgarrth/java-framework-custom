@@ -55,12 +55,9 @@ public final class YamlProperties {
         m.forEach((k, v) -> current.put(String.valueOf(k), v));
       }
     }
-    Map<String, Object> merged = flatten(current);
-    merged
-        .keySet()
-        .removeIf(k -> removePrefixes.stream().anyMatch(p -> k.equals(p) || k.startsWith(p + ".")));
-    merged.putAll(flat);
-    return dump(nest(merged), 0);
+    remove(current, "", removePrefixes);
+    flat.forEach((key, value) -> put(current, key.split("\\.", -1), 0, value));
+    return dump(current, 0);
   }
 
   /** Block-style YAML, each line indented by {@code indent} spaces. */
@@ -86,6 +83,31 @@ public final class YamlProperties {
 
   @SuppressWarnings("unchecked")
   private static void put(Map<String, Object> node, String[] parts, int i, @Nullable Object value) {
+    // Dots in an existing YAML key may be literal (Kubernetes annotations, headers, or
+    // flat Spring keys). Preserve that key instead of flattening and recreating the document.
+    for (int end = parts.length; end > i + 1; end--) {
+      String literal = String.join(".", java.util.Arrays.copyOfRange(parts, i, end));
+      if (!node.containsKey(literal)) {
+        Matcher indexed = INDEXED.matcher(literal);
+        if (indexed.matches() && node.containsKey(indexed.group(1))) {
+          String[] remaining = java.util.Arrays.copyOfRange(parts, end - 1, parts.length);
+          remaining[0] = literal;
+          put(node, remaining, 0, value);
+          return;
+        }
+        continue;
+      }
+      if (end == parts.length) {
+        node.put(literal, value == null ? "" : value);
+      } else {
+        Object existing = node.get(literal);
+        Map<String, Object> child =
+            existing instanceof Map<?, ?> map ? (Map<String, Object>) map : new LinkedHashMap<>();
+        node.put(literal, child);
+        put(child, parts, end, value);
+      }
+      return;
+    }
     String part = parts[i];
     boolean last = i == parts.length - 1;
     Matcher m = INDEXED.matcher(part);
@@ -120,6 +142,24 @@ public final class YamlProperties {
       node.put(part, child);
     }
     put((Map<String, Object>) child, parts, i + 1, value);
+  }
+
+  private static void remove(@Nullable Object node, String prefix, List<String> prefixes) {
+    if (node instanceof Map<?, ?> map) {
+      var entries = map.entrySet().iterator();
+      while (entries.hasNext()) {
+        var entry = entries.next();
+        String path =
+            prefix.isEmpty() ? String.valueOf(entry.getKey()) : prefix + "." + entry.getKey();
+        if (prefixes.stream().anyMatch(p -> path.equals(p) || path.startsWith(p + "."))) {
+          entries.remove();
+        } else {
+          remove(entry.getValue(), path, prefixes);
+        }
+      }
+    } else if (node instanceof List<?> list) {
+      for (int i = 0; i < list.size(); i++) remove(list.get(i), prefix + "[" + i + "]", prefixes);
+    }
   }
 
   private static void flatten(String prefix, @Nullable Object value, Map<String, Object> out) {

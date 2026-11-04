@@ -66,4 +66,42 @@ class YamlPropertiesTest {
     assertTrue(!merged.contains("example"), merged);
     assertTrue(merged.contains("other:") && merged.contains("core:"), merged);
   }
+
+  @Test
+  void mergingSpringKeysPreservesLiteralMetadataKeysAndFlatConfiguration() {
+    String source =
+        """
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/old
+        config:
+          axiz.security.issuers:
+            - issuer: https://idp
+              audiences: [old]
+          axiz.http-client.clients:
+            bank:
+              headers:
+                X.Correlation: stable
+        """;
+    String merged =
+        YamlProperties.merge(
+            source,
+            Map.of(
+                "config.axiz.security.issuers[0].audiences", List.of("old", "new"),
+                "config.axiz.http-client.clients.bank.base-url", "https://bank",
+                "migration.serviceAliases", List.of("old")));
+    Map<?, ?> document = new org.yaml.snakeyaml.Yaml().load(merged);
+    assertEquals(
+        Map.of(
+            "annotations",
+            Map.of("eks.amazonaws.com/role-arn", "arn:aws:iam::111111111111:role/old")),
+        document.get("serviceAccount"));
+    Map<?, ?> config = (Map<?, ?>) document.get("config");
+    assertTrue(config.containsKey("axiz.security.issuers"), merged);
+    Map<?, ?> issuer = (Map<?, ?>) ((List<?>) config.get("axiz.security.issuers")).getFirst();
+    assertEquals(List.of("old", "new"), issuer.get("audiences"));
+    Map<?, ?> bank = (Map<?, ?>) ((Map<?, ?>) config.get("axiz.http-client.clients")).get("bank");
+    assertEquals(Map.of("X.Correlation", "stable"), bank.get("headers"));
+    assertEquals("https://bank", bank.get("base-url"));
+  }
 }

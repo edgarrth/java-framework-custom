@@ -8,6 +8,10 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.of("pe.axiz.payments.notifications").archetype(pe.axiz.quality.archunit.Archetype.EVENT_PROCESSOR).stack(pe.axiz.quality.archunit.Stack.SERVLET).structure(pe.axiz.quality.archunit.Structure.EDA).verify();
+    AxizArchitecture.of("pe.axiz.payments.notifications")
+        .archetype(pe.axiz.quality.archunit.Archetype.EVENT_PROCESSOR)
+        .stack(pe.axiz.quality.archunit.Stack.SERVLET)
+        .structure(pe.axiz.quality.archunit.Structure.EDA)
+        .verify();
   }
 }

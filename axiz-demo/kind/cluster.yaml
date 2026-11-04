@@ -6,6 +6,6 @@ name: axiz-demo
 nodes:
   - role: control-plane
     extraPortMappings:
-      - {containerPort: 30080, hostPort: 9080}   # payments-experience
+      - {containerPort: 30080, hostPort: 9080}   # payments-ux
       - {containerPort: 30180, hostPort: 9180}   # keycloak (issuer http://localhost:9180)
       - {containerPort: 30300, hostPort: 9300}   # grafana

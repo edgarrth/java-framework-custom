@@ -18,8 +18,8 @@ import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.core.metrics.TagPolicy;
 import pe.axiz.core.notification.NotificationChannel;
 import pe.axiz.core.notification.NotificationRequest;
-import pe.axiz.payments.notifications.contact.CustomerContact;
 import pe.axiz.payments.notifications.event.PaymentOrderStatusChanged;
+import pe.axiz.payments.notifications.repository.CustomerContact;
 
 class PaymentNotificationHandlerTest {
 
@@ -59,7 +59,7 @@ class PaymentNotificationHandlerTest {
     handler.handle(changed("REJECTED"), envelope("ev-1"));
 
     assertThat(sent).hasSize(1);
-    NotificationRequest r = sent.get(0);
+    NotificationRequest r = sent.getFirst();
     assertThat(r.id()).isEqualTo("ev-1");
     assertThat(r.channel()).isEqualTo(NotificationChannel.SMS);
     assertThat(r.templateId()).isEqualTo("payment-rejected");
@@ -84,7 +84,7 @@ class PaymentNotificationHandlerTest {
 
     handler.handle(changed("COMPLETED"), envelope("ev-4"));
 
-    assertThat(sent.get(0).locale().toLanguageTag()).isEqualTo("es-PE");
-    assertThat(sent.get(0).templateId()).isEqualTo("payment-completed");
+    assertThat(sent.getFirst().locale().toLanguageTag()).isEqualTo("es-PE");
+    assertThat(sent.getFirst().templateId()).isEqualTo("payment-completed");
   }
 }

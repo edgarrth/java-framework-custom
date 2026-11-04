@@ -17,6 +17,37 @@ import pe.axiz.codegen.project.ProjectRename;
 import pe.axiz.codegen.render.TemplateSet;
 
 class WorkflowMigrationTest {
+  @Test
+  void renameKeepsCurrentBuildDeployBindingsAndSecurityCommentsConsistent(@TempDir Path root)
+      throws Exception {
+    Path project = CliHarness.service(root);
+    ProjectManifest before = ProjectManifest.read(project);
+    ProjectManifest after = before.withName("payment-orders");
+    assertFalse(WorkflowMigration.required(project));
+    assertTrue(WorkflowMigration.migrate(project, before, after));
+    String ci = Files.readString(project.resolve(".github/workflows/ci.yaml"));
+    String deploy = Files.readString(project.resolve(".github/workflows/deploy.yaml"));
+    assertTrue(ci.contains("service: payment-orders"));
+    assertTrue(deploy.contains("service: payment-orders"));
+    assertTrue(ci.contains("chart: deploy/helm/orders"));
+    assertTrue(ci.contains("# nosemgrep:"));
+    assertTrue(deploy.contains("# nosemgrep:"));
+  }
+
+  @Test
+  void renameCannotChangeUnrelatedSameNameWorkflowParameters(@TempDir Path root) throws Exception {
+    Path project = CliHarness.service(root);
+    Path ci = project.resolve(".github/workflows/ci.yaml");
+    Files.writeString(
+        ci,
+        Files.readString(ci)
+            + "\n  custom:\n    uses: vendor/workflow@abc\n    with:\n      service: orders\n");
+    String source = Files.readString(ci);
+    ProjectManifest before = ProjectManifest.read(project);
+    assertFalse(WorkflowMigration.migrate(project, before, before.withName("payment-orders")));
+    assertEquals(source, Files.readString(ci));
+  }
+
   static ProjectManifest legacy(Path project) throws IOException {
     ProjectManifest manifest = ProjectManifest.read(project).withAxizVersion("1.0.0");
     TemplateSet set = TemplateSet.load(manifest.isService() ? "service" : "library");

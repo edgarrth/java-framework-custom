@@ -171,6 +171,17 @@
             "id.token.claim": "false",
             "userinfo.token.claim": "false"
           }
+        },
+        {
+          "name": "payment-network-gateway-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "payment-network-gateway",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
         }
       ]
     },

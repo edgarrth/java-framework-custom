@@ -29,11 +29,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
-    <!-- annotations used by the models generated from the OpenAPI contract -->
-    <dependency>
-      <groupId>jakarta.annotation</groupId>
-      <artifactId>jakarta.annotation-api</artifactId>
-    </dependency>
     <!-- axiz capabilities -->
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -106,6 +101,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-messaging-kafka</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -137,6 +133,7 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-adapter-secrets-aws</artifactId>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

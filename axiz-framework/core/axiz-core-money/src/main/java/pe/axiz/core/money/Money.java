@@ -30,6 +30,9 @@ public final class Money implements Comparable<Money> {
   /** Most decimals accepted in a value before it is rounded to the currency scale. */
   public static final int MAX_SCALE = 100;
 
+  /** Maximum external text length, checked before normalization or decimal parsing. */
+  public static final int MAX_TEXT_LENGTH = 256;
+
   private final BigDecimal amount;
   private final Currency currency;
 
@@ -140,7 +143,8 @@ public final class Money implements Comparable<Money> {
    * @return the money
    */
   public static Money parse(String text) {
-    String[] parts = text == null ? new String[0] : text.strip().split("\\s+", -1);
+    String checked = requireBoundedText(text);
+    String[] parts = checked.strip().split("\\s+", -1);
     if (parts.length != 2) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "unparseable money");
     }
@@ -148,14 +152,19 @@ public final class Money implements Comparable<Money> {
   }
 
   private static BigDecimal parseAmount(@Nullable String amount) {
-    if (amount == null) {
-      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid amount");
-    }
+    String checked = requireBoundedText(amount);
     try {
-      return new BigDecimal(amount.strip());
+      return new BigDecimal(checked.strip());
     } catch (NumberFormatException e) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid amount");
     }
+  }
+
+  private static String requireBoundedText(@Nullable String text) {
+    if (text == null || text.length() > MAX_TEXT_LENGTH) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "invalid amount");
+    }
+    return text;
   }
 
   private static Currency currency(@Nullable String code) {

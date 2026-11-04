@@ -48,7 +48,7 @@ final class WorkflowMigration {
   /** Returns false when a proposed replacement would discard customized workflow behavior. */
   static boolean migrate(Path directory, ProjectManifest before, ProjectManifest after)
       throws IOException {
-    if (!required(directory)) return true;
+    if (!required(directory)) return renameCurrentBindings(directory, before, after);
     String set = before.isService() ? "service" : "library";
     TemplateSet templates = TemplateSet.load(set);
     String originalName = originalName(directory, before);
@@ -164,6 +164,57 @@ final class WorkflowMigration {
       return name;
     }
     return manifest.name();
+  }
+
+  private static boolean renameCurrentBindings(
+      Path directory, ProjectManifest before, ProjectManifest after) throws IOException {
+    if (!after.isService() || before.name().equals(after.name())) return true;
+    Path workflows = SafePaths.target(directory, ".github/workflows");
+    if (!Files.isDirectory(workflows)) return true;
+    Map<String, byte[]> edits = new LinkedHashMap<>();
+    Pattern binding =
+        Pattern.compile(
+            "(?m)^(\\h*service:\\h*)(['\"]?)"
+                + Pattern.quote(before.name())
+                + "\\2(?=\\h*(?:#.*)?$)");
+    try (Stream<Path> paths = Files.list(workflows)) {
+      for (Path path : paths.sorted().toList()) {
+        if (!(path.toString().endsWith(".yaml") || path.toString().endsWith(".yml"))) continue;
+        String relative = directory.relativize(path).toString();
+        SafePaths.target(directory, relative);
+        String source = Files.readString(path);
+        Object expected = yaml(source);
+        if (!renameBindings(expected, before.name(), after.name())) continue;
+        String proposed = binding.matcher(source).replaceAll("$1$2" + after.name() + "$2");
+        // Preserve comments and the custom graph. A flow-style or unrelated same-name field
+        // requires manual review rather than an unverified textual replacement.
+        if (!yaml(proposed).equals(expected)) return false;
+        edits.put(relative, proposed.getBytes(StandardCharsets.UTF_8));
+      }
+    }
+    for (var edit : edits.entrySet())
+      SafePaths.write(directory, edit.getKey(), edit.getValue(), true);
+    return true;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static boolean renameBindings(Object node, String before, String after) {
+    boolean changed = false;
+    if (node instanceof Map<?, ?> map) {
+      Object reference = map.get("uses");
+      if (reference instanceof String ref
+          && (ref.startsWith("axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.")
+              || ref.startsWith("axiz/axiz-workflows/actions/resolve-service-build@v2."))
+          && map.get("with") instanceof Map<?, ?> parameters
+          && before.equals(parameters.get("service"))) {
+        ((Map<Object, Object>) parameters).put("service", after);
+        changed = true;
+      }
+      for (Object value : map.values()) changed |= renameBindings(value, before, after);
+    } else if (node instanceof List<?> list) {
+      for (Object value : list) changed |= renameBindings(value, before, after);
+    }
+    return changed;
   }
 
   private static Map<String, Object> context(ProjectManifest manifest, String name) {

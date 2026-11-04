@@ -1,0 +1,114 @@
+package pe.axiz.payments.networkgateway;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.payments.networkgateway.application.port.out.PaymentNetwork;
+import pe.axiz.payments.networkgateway.domain.Transfer;
+import pe.axiz.payments.networkgateway.domain.TransferStatus;
+import pe.axiz.spring.test.LocalStackTestConfiguration;
+import pe.axiz.spring.test.RedisTestConfiguration;
+
+/**
+ * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
+ * configuration, migrations and health. Needs Docker.
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+@Import({RedisTestConfiguration.class, LocalStackTestConfiguration.class})
+class PaymentNetworkGatewayApplicationTest {
+  @MockitoBean PaymentNetwork network;
+
+  @Test
+  void aRetryReplaysTheFirstResponseAndNeverSendsTheTransferTwice(@Autowired MockMvc mvc)
+      throws Exception {
+    String key = "gateway-replay-1";
+    when(network.send(any(), eq(key)))
+        .thenReturn(new Transfer("NET-1", TransferStatus.SETTLED, "OP-1"));
+    String body =
+        """
+        {"creditorCci":"00219100123456789053","amount":10.00,"currency":"PEN","reference":"OP-1"}
+        """;
+    var first =
+        mvc.perform(
+                post("/v1/transfers")
+                    .with(
+                        jwt()
+                            .jwt(
+                                token ->
+                                    token
+                                        .subject("payment-process")
+                                        .claim("azp", "payment-process")
+                                        .claim("axiz_token_kind", "service"))
+                            .authorities(new SimpleGrantedAuthority("SCOPE_payments:process")))
+                    .header("Idempotency-Key", key)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    var retry =
+        mvc.perform(
+                post("/v1/transfers")
+                    .with(
+                        jwt()
+                            .jwt(
+                                token ->
+                                    token
+                                        .subject("payment-process")
+                                        .claim("azp", "payment-process")
+                                        .claim("axiz_token_kind", "service"))
+                            .authorities(new SimpleGrantedAuthority("SCOPE_payments:process")))
+                    .header("Idempotency-Key", key)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    assertThat(retry.getResponse().getContentAsString())
+        .isEqualTo(first.getResponse().getContentAsString());
+    verify(network, times(1)).send(any(), eq(key));
+  }
+
+  @Test
+  void anUnauthenticatedCallerCannotSendMoney(@Autowired MockMvc mvc) throws Exception {
+    mvc.perform(
+            post("/v1/transfers")
+                .header("Idempotency-Key", "unauthenticated")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void aCallerWithoutTheProcessScopeCannotSendMoney(@Autowired MockMvc mvc) throws Exception {
+    mvc.perform(
+            post("/v1/transfers")
+                .with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_payments:read")))
+                .header("Idempotency-Key", "forbidden")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"creditorCci\":\"00219100123456789053\",\"amount\":10,\"currency\":\"PEN\",\"reference\":\"OP-1\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void startsAndReportsHealth(@Autowired MockMvc mvc) throws Exception {
+    mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+  }
+}

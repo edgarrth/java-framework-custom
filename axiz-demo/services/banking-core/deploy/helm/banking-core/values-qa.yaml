@@ -1,0 +1,59 @@
+environment: qa
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/core-integration-qa
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+networkPolicy:
+  egress:
+    cidrs: []
+externalSecret:
+  remotePrefix: qa/core-integration
+config:
+  axiz:
+    config:
+      environment: qa
+    security:
+      issuers:
+      - issuer: https://sso.qa.axiz-demo.example/realms/axiz
+        audiences:
+        - core-integration
+        - banking-core
+    http-client:
+      clients:
+        core-banking:
+          base-url: https://core-gw.qa.bank.example
+          auth:
+            type: CLIENT_CREDENTIALS
+            token-uri: https://core-gw.qa.bank.example/oauth/token
+            client-id: core-integration
+            client-secret-ref: core-banking-client-secret
+            scopes:
+            - movements
+    soap:
+      clients:
+        core-credit:
+          endpoint: https://core-gw.qa.bank.example/soap/credit
+          username: core-integration
+          password-ref: core-soap-password
+    audit:
+      sqs:
+        queue-url: https://sqs.us-east-1.amazonaws.com/222222222222/axiz-demo-audit-qa
+  management:
+    tracing:
+      sampling:
+        probability: '1.0'
+  spring:
+    data:
+      redis:
+        url: rediss://payments-qa.cache.demo.use1.cache.amazonaws.com:6379
+errors: []

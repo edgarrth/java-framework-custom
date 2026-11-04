@@ -1,0 +1,67 @@
+nameOverride: ''
+environment: dev
+image:
+  repository: nexus-docker.axiz.internal/axiz/payment-network-gateway
+  tag: ''
+  digest: ''
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+serviceAccount:
+  create: true
+  name: ''
+  annotations: {}
+  automountToken: false
+sharedConfigMap: axiz-common
+javaOpts: -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom
+env: []
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 512Mi
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+replicaCount: 2
+terminationGracePeriodSeconds: 30
+service:
+  port: 80
+probes:
+  startupFailureThreshold: 30
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+pdb:
+  enabled: true
+  maxUnavailable: 1
+topologySpread:
+  whenUnsatisfiable: ScheduleAnyway
+networkPolicy:
+  enabled: true
+  ingressNamespaces: []
+  egress:
+    sameNamespace: true
+    namespaces: []
+    cidrs: []
+config: {}
+errors: []
+externalSecret:
+  enabled: true
+  storeName: aws-secrets-manager
+  refreshInterval: 1h
+  remotePrefix: dev/core-integration
+  keys:
+  - payment-network-api-key

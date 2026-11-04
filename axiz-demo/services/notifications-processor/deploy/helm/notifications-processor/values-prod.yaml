@@ -1,37 +1,25 @@
-# notifications-processor in prod
 environment: prod
-
 serviceAccount:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/notifications-processor-prod
-
 resources:
   requests:
     cpu: 500m
     memory: 1Gi
   limits:
     memory: 1Gi
-
 autoscaling:
   enabled: true
   minReplicas: 3
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
-
 topologySpread:
-  whenUnsatisfiable: DoNotSchedule   # replicas in different zones, always
-
+  whenUnsatisfiable: DoNotSchedule
 networkPolicy:
   egress:
-    # destinations outside the cluster this service reaches in prod (VPC endpoints of
-    # the AWS services it uses, databases, brokers, partners), with their ports
     cidrs: []
-
 externalSecret:
   remotePrefix: prod/notifications-processor
-
-# Environment values (no secrets: those come from the ExternalSecret). Business calendar
-# holidays are shared by every service in the axiz-common ConfigMap (deploy/platform).
 config:
   axiz.config.environment: prod
   management.tracing.sampling.probability: '0.1'
@@ -44,5 +32,4 @@ config:
   axiz.messaging.sqs.dead-letter-queues:
     https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod-dlq
   axiz.storage.bucket: axiz-demo-archive-prod
-
 errors: []

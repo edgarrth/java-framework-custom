@@ -60,7 +60,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
 
   private static final Pattern SECRET =
       Pattern.compile(
-          "(?i)^\\s*[\\w.-]*(password|secret|token|api-?key|private-key)[\\w.-]*\\s*:\\s*(.+)$");
+          "(?i)^\\s*([\\w.-]*(?:password|secret|token|api-?key|private-key)[\\w.-]*)\\s*:\\s*(.+)$");
   private static final List<AntiPattern> ANTI_PATTERNS =
       List.of(
           new AntiPattern(
@@ -374,8 +374,20 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       Matcher m = SECRET.matcher(lines.get(i));
       if (m.matches()) {
         String value = m.group(2).strip();
+        String key = m.group(1).toLowerCase(java.util.Locale.ROOT);
+        String scalar = value.replaceFirst("\\s+#.*$", "").strip();
+        if (scalar.length() >= 2
+            && ((scalar.startsWith("\"") && scalar.endsWith("\""))
+                || (scalar.startsWith("'") && scalar.endsWith("'"))))
+          scalar = scalar.substring(1, scalar.length() - 1);
+        boolean metadata =
+            (key.equals("api-key-header") || key.endsWith(".api-key-header"))
+                    && scalar.matches("[A-Za-z0-9!#$%&'*+.^_`|~-]+")
+                || (key.equals("password-mode") || key.endsWith(".password-mode"))
+                    && java.util.Set.of("TEXT", "LEGACY_SHA1_DIGEST").contains(scalar);
         boolean placeholder =
-            value.isEmpty()
+            metadata
+                || value.isEmpty()
                 || value.startsWith("${")
                 || value.startsWith("#")
                 || value.startsWith("|")

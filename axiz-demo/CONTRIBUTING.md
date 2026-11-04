@@ -20,6 +20,11 @@ Thank you for improving the axiz payments demo (reference services built with th
 - Commits are signed (GPG, SSH or S/MIME) and branches are protected: no direct pushes to `main`
   or `develop`, linear history, required checks green.
 
+When working on WSL with `core.filemode=false`, preserve the executable bits of new or renamed
+wrappers and shell entry points when adding them to Git. From this repository's root use
+`git -c core.filemode=true add --all`; changing only the files with `chmod` does not preserve
+those bits in the commit under that Git setting. The build-input check verifies the index.
+
 ## Pull requests
 
 - Every change comes with tests that would have failed without it. Quality gates enforce coverage

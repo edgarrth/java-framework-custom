@@ -112,4 +112,26 @@ class BlockHoundExtensionTest {
       assertInstanceOf(BlockingOperationError.class, failure.getCause());
     }
   }
+
+  @Test
+  void detectsBlockingOnLettuceIoAndCompletionWorkers() throws Exception {
+    for (String prefix :
+        java.util.List.of(
+            "lettuce-nioEventLoop-",
+            "lettuce-epollEventLoop-",
+            "lettuce-kqueueEventLoop-",
+            "lettuce-eventExecutorLoop-")) {
+      try (var executor =
+          Executors.newSingleThreadExecutor(Thread.ofPlatform().name(prefix + "probe").factory())) {
+        var task =
+            executor.submit(
+                () -> {
+                  Thread.sleep(5);
+                  return "must fail";
+                });
+        var failure = assertThrows(ExecutionException.class, () -> task.get(3, TimeUnit.SECONDS));
+        assertInstanceOf(BlockingOperationError.class, failure.getCause());
+      }
+    }
+  }
 }

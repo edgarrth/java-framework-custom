@@ -1,6 +1,5 @@
 package pe.axiz.adapter.messaging.kafka;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -9,7 +8,6 @@ import java.util.concurrent.TimeoutException;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import pe.axiz.core.messaging.CloudEventHeaders;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishException;
@@ -47,12 +45,8 @@ public final class KafkaEventPublisher implements EventPublisher {
 
   @Override
   public PublishResult publish(String destination, EventEnvelope event) {
-    String key = event.subject() != null ? event.subject() : event.id();
-    String topic = topic(destination);
-    ProducerRecord<String, byte[]> record =
-        new ProducerRecord<>(topic, null, event.time().toEpochMilli(), key, event.data());
-    CloudEventHeaders.toHeaders(event)
-        .forEach((k, v) -> record.headers().add(k, v.getBytes(StandardCharsets.UTF_8)));
+    ProducerRecord<String, byte[]> record = KafkaEventRecords.create(destination, event);
+    String topic = record.topic();
     try {
       RecordMetadata md = producer.send(record).get(timeout.toMillis(), TimeUnit.MILLISECONDS);
       return new PublishResult(event.id(), topic, md.partition() + "-" + md.offset());

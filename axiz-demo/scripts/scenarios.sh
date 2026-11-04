@@ -13,7 +13,7 @@
 #                  (the debit is reversed), account of another customer
 #   security       401 without token, other customer's data (404/403), status changes and money
 #                  movements reserved to payment-process, protected actuator
-#   integration    core-integration: SOAP credit, unknown movement, holder check
+#   integration    banking-core: SOAP credit, unknown movement, holder check
 #   events         outbox published, encrypted accounts, saga states, Kafka consumers and DLQ,
 #                  CloudEvents headers
 #   notifications  notification requests on SNS for completed and rejected payments
@@ -41,6 +41,7 @@ EXP=http://localhost:8080
 BUS=http://localhost:8081
 CRUD=http://localhost:8082
 CORE=http://localhost:8083
+GATEWAY=http://localhost:8087
 PROC=http://localhost:8084
 HIST=http://localhost:8086
 WM=http://localhost:8089
@@ -318,7 +319,7 @@ movement_of() {
 # groups
 
 g_beneficiaries() {
-  involved=(beneficiaries-crud payments-experience)
+  involved=(beneficiaries payments-ux)
   local id
   need_beneficiaries || return
   pass "beneficiaries of ana (Landlord, closed account, USD) and luis registered or reused"
@@ -373,7 +374,7 @@ g_beneficiaries() {
 }
 
 g_payment() {
-  involved=(payments-experience payments-business payment-process core-integration payments-history)
+  involved=(payments-ux payment-orders payment-process banking-core payment-network-gateway payments-history)
   need_beneficiaries || return
   PAY_KEY=$(key)
   PAY_AMOUNT=$(amount)
@@ -407,11 +408,11 @@ g_payment() {
     "any(.items[]; .paymentId == \"$PAY\")" '[.items[].lastChangeAt] as $t | $t == ($t | sort | reverse)'
 
   call GET "$BUS/v1/payment-orders/$PAY" -H "Authorization: Bearer $M2M"
-  expect "payments-business order readable by payments:process" 200 '.status == "COMPLETED"'
+  expect "payment-orders order readable by payments:process" 200 '.status == "COMPLETED"'
 }
 
 g_idempotency() {
-  involved=(payments-experience)
+  involved=(payments-ux)
   need_payment
   [ -n "${PAY:-}" ] || return
   pay "$ANA" "$BEN" "$ACCOUNT" "$PAY_AMOUNT" PEN "$PAY_KEY"
@@ -427,7 +428,7 @@ g_idempotency() {
 }
 
 g_rules() {
-  involved=(payments-experience payments-business)
+  involved=(payments-ux payment-orders)
   need_payment
   need_beneficiaries || return
   if [ -n "${PAY:-}" ]; then
@@ -460,7 +461,7 @@ rejected() {
 }
 
 g_saga() {
-  involved=(payment-process core-integration payments-business)
+  involved=(payment-process banking-core payment-network-gateway payment-orders)
   need_beneficiaries || return
   local r0 r1 before after op mv
   r0=$(reserved)
@@ -476,7 +477,7 @@ g_saga() {
     else
       bad "  ... history shows REJECTED with its reason" "history status: $(history_status "$NOFUNDS")"
     fi
-    involved=(payment-process core-integration payments-business)
+    involved=(payment-process banking-core payment-network-gateway payment-orders)
   fi
 
   rejected "blocked account (CB-62)" "$ANA" "$BEN" "$BLOCKED" debit
@@ -498,7 +499,7 @@ g_saga() {
 }
 
 g_security() {
-  involved=(payments-experience payments-business payments-history beneficiaries-crud core-integration)
+  involved=(payments-ux payment-orders payments-history beneficiaries banking-core)
   need_payment
   [ -n "${PAY:-}" ] || return
   call GET "$EXP/v1/payments/$PAY"
@@ -508,7 +509,7 @@ g_security() {
   call GET "$EXP/v1/payments/$PAY" -H "Authorization: Bearer $LUIS"
   expect "luis reads ana's payment in the channel: not found (404)" 404
   call GET "$BUS/v1/payment-orders/$PAY" -H "Authorization: Bearer $LUIS"
-  expect "  ... in payments-business: not found (404)" 404
+  expect "  ... in payment-orders: not found (404)" 404
   call GET "$HIST/v1/payments/$PAY" -H "Authorization: Bearer $LUIS"
   expect "  ... in payments-history: not found (404)" 404
   call GET "$CRUD/v1/customers/C-1001/beneficiaries" -H "Authorization: Bearer $LUIS"
@@ -533,7 +534,7 @@ g_security() {
 }
 
 g_integration() {
-  involved=(core-integration)
+  involved=(banking-core payment-network-gateway)
   call POST "$CORE/v1/debits" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"accountId\":\"$ACCOUNT\",\"amount\":10,\"currency\":\"PEN\",\"holderId\":\"C-1002\",\"reference\":\"X\"}"
   expect "debit of an account of another holder (422, checked by the core)" 422 '.code == "PAYMENTS-COREINTEGRATION-0004"'
@@ -542,19 +543,19 @@ g_integration() {
   expect "credit through the SOAP service of the core (WS-Security)" 201 '.movementId | length > 0'
   call POST "$CORE/v1/debits/MV-404/reversal" -H "Authorization: Bearer $M2M" -H "Idempotency-Key: $(key)"
   expect "reversal of an unknown movement (404)" 404
-  call POST "$CORE/v1/transfers" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
+  call POST "$GATEWAY/v1/transfers" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"creditorCci\":\"$CCI_CLOSED\",\"amount\":10,\"currency\":\"PEN\",\"reference\":\"SCN-$RANDOM\"}"
   expect "transfer to a closed account: rejected by the network (422)" 422 '.code == "PAYMENTS-COREINTEGRATION-0003"'
 }
 
 g_events() {
-  involved=(payments-business payment-process payments-history notifications-processor)
+  involved=(payment-orders payment-process payments-history notifications-processor)
   local ids g n bad_sagas
   need_payment
   sleep 3
   n=$(sql payments_business "SELECT count(*) FROM axiz_outbox WHERE status <> 'PUBLISHED'")
-  [ "$n" = 0 ] && pass "outbox of payments-business: every event PUBLISHED" \
-    || bad "outbox of payments-business: every event PUBLISHED" "not published: $n
+  [ "$n" = 0 ] && pass "outbox of payment-orders: every event PUBLISHED" \
+    || bad "outbox of payment-orders: every event PUBLISHED" "not published: $n
 $(sql payments_business "SELECT event_type, status, attempts, last_error FROM axiz_outbox WHERE status <> 'PUBLISHED' LIMIT 5")"
   if [ -n "${PAY:-}" ]; then
     n=$(sql payments_business "SELECT count(*) FROM payment_order WHERE id = '$PAY' AND debtor_account LIKE 'axz1:%' AND creditor_cci LIKE 'axz1:%'")
@@ -617,19 +618,19 @@ g_notifications() {
 audit_grew() { [ "$(audit_objects)" -gt "${AUDIT0:-0}" ]; }
 audit_topic_grew() { [ "$(topic_size audit)" -gt "${AUDIT_TOPIC0:-0}" ]; }
 g_audit() {
-  involved=(core-integration notifications-processor payments-business)
+  involved=(banking-core notifications-processor payment-orders)
   local n
   need_payment
   if poll 90 audit_grew; then
-    pass "audit of core-integration archived on S3 by notifications-processor (SQS -> S3): $(audit_objects) objects today"
+    pass "audit of banking-core archived on S3 by notifications-processor (SQS -> S3): $(audit_objects) objects today"
   else
-    bad "audit of core-integration archived on S3 (SQS -> S3)" "objects under audit/$(date -u +%Y/%m/%d)/: before $AUDIT0, now $(audit_objects)"
+    bad "audit of banking-core archived on S3 (SQS -> S3)" "objects under audit/$(date -u +%Y/%m/%d)/: before $AUDIT0, now $(audit_objects)"
   fi
   awsl s3 ls "s3://local-bucket/audit/$(date -u +%Y/%m/%d)/_manifest.json" | grep -q _manifest \
     && pass "  ... with the daily manifest (counts per service, DynamoDB lock)" \
     || bad "  ... with the daily manifest" "no audit/$(date -u +%Y/%m/%d)/_manifest.json"
-  poll 30 audit_topic_grew && pass "audit of payments-business on the Kafka topic audit (outbox)" \
-    || bad "audit of payments-business on the Kafka topic audit" "messages before $AUDIT_TOPIC0, now $(topic_size audit)"
+  poll 30 audit_topic_grew && pass "audit of payment-orders on the Kafka topic audit (outbox)" \
+    || bad "audit of payment-orders on the Kafka topic audit" "messages before $AUDIT_TOPIC0, now $(topic_size audit)"
   n=$(awsl sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/axiz-demo-audit-dlq \
     --attribute-names ApproximateNumberOfMessages --query Attributes.ApproximateNumberOfMessages --output text | tr -dc '0-9')
   [ "${n:-0}" = 0 ] && pass "audit DLQ empty" || bad "audit DLQ empty" "$n messages in axiz-demo-audit-dlq"
@@ -688,34 +689,34 @@ g_observability() {
   local q='sum({__name__=~"axiz_events(_total)?", event="payment.order.created"})'
   poll 120 prom_positive "$q" && pass "business metrics in Prometheus (axiz events: payment.order.created)" \
     || bad "business metrics in Prometheus" "$q = $(promql "$q")"
-  q='sum({__name__=~"http_server_request.*_count", job=~".*payments-experience.*"})'
-  poll 60 prom_positive "$q" && pass "HTTP server metrics of payments-experience (OTLP)" \
-    || bad "HTTP server metrics of payments-experience (OTLP)" "$q = $(promql "$q")"
+  q='sum({__name__=~"http_server_request.*_count", job=~".*payments-ux.*"})'
+  poll 60 prom_positive "$q" && pass "HTTP server metrics of payments-ux (OTLP)" \
+    || bad "HTTP server metrics of payments-ux (OTLP)" "$q = $(promql "$q")"
   # the trace IDs come from the logs ([traceId-spanId] on every line written inside a span), so a
   # failure says where the trace broke: no ID in the caller, another ID in the callee, or spans
   # missing in Tempo
   local t
-  t=$(log_trace payment-process 'client=core-integration ')
+  t=$(log_trace payment-process 'client=banking-core ')
   if [ -z "$t" ]; then
-    bad "payment-process calls core-integration inside a trace" \
-      "no 'client=core-integration' line with a trace ID in .run/payment-process.log"
-  elif ! grep -q "\[$t-" "$root/.run/core-integration.log"; then
-    bad "core-integration continues the trace of payment-process (HTTP traceparent)" \
-      "trace $t of payment-process is not in .run/core-integration.log; its last request line:
-$(grep -E 'axiz.http .*path=/v1/' "$root/.run/core-integration.log" | tail -1 | cut -c1-400)"
+    bad "payment-process calls banking-core inside a trace" \
+      "no 'client=banking-core' line with a trace ID in .run/payment-process.log"
+  elif ! grep -q "\[$t-" "$root/.run/banking-core.log"; then
+    bad "banking-core continues the trace of payment-process (HTTP traceparent)" \
+      "trace $t of payment-process is not in .run/banking-core.log; its last request line:
+$(grep -E 'axiz.http .*path=/v1/' "$root/.run/banking-core.log" | tail -1 | cut -c1-400)"
   else
-    pass "core-integration continues the trace of payment-process (trace $t in both logs)"
-    poll 60 trace_has "$t" payment-process core-integration \
+    pass "banking-core continues the trace of payment-process (trace $t in both logs)"
+    poll 60 trace_has "$t" payment-process banking-core payment-network-gateway \
       && pass "  ... and Tempo holds that trace with both services" \
       || bad "  ... and Tempo holds that trace with both services" "services in trace $t: $(trace_services "$t")"
   fi
   # the request that registers the payment and its saga are one trace: the outbox keeps the
   # context of the write, the relay continues it and Kafka carries it to the consumers
-  local want=(payments-experience payments-business payment-process core-integration)
-  t=$(log_trace payments-business 'path=/v1/payment-orders status=201')
+  local want=(payments-ux payment-orders payment-process banking-core payment-network-gateway)
+  t=$(log_trace payment-orders 'path=/v1/payment-orders status=201')
   if [ -z "$t" ]; then
     bad "one trace from the channel request to the saga" \
-      "no 'path=/v1/payment-orders status=201' line with a trace ID in .run/payments-business.log"
+      "no 'path=/v1/payment-orders status=201' line with a trace ID in .run/payment-orders.log"
   else
     poll 90 trace_has "$t" "${want[@]}" \
       && pass "one trace from the channel request to the saga: ${want[*]}" \
@@ -733,7 +734,7 @@ settle() {
     cd "$root/services/settlement-batch" || exit 1
     export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1
     # shellcheck disable=SC2086
-    timeout 300 java ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1} -jar "$jar" \
+    timeout 300 java -Djava.security.egd=file:/dev/./urandom --enable-native-access=ALL-UNNAMED ${AXIZ_JAVA_OPTS:--XX:TieredStopAtLevel=1} -jar "$jar" \
       --spring.profiles.active=local,platform --settlement.input-key="$key" > "$log" 2>&1
   )
 }
@@ -804,7 +805,7 @@ g_dlq() {
 }
 
 g_recovery() {
-  involved=(payment-process core-integration)
+  involved=(payment-process banking-core payment-network-gateway)
   need_beneficiaries || return
   local stub id s start
   stub=$(curl -s -X POST "$WM/__admin/mappings" "${JSON[@]}" -d "{
