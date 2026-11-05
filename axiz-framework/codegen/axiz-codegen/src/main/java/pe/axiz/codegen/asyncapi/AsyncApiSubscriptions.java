@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
@@ -46,8 +47,7 @@ public final class AsyncApiSubscriptions {
             else {
               var indexed =
                   values.stringPropertyNames().stream()
-                      .filter(
-                          key -> key.matches(java.util.regex.Pattern.quote(KEY) + "\\[[0-9]+\\]"))
+                      .filter(key -> key.matches(Pattern.quote(KEY) + "\\[[0-9]+\\]"))
                       .sorted()
                       .map(values::getProperty)
                       .toList();

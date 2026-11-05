@@ -25,6 +25,7 @@ import pe.axiz.core.observability.ArchitectureObservation;
 import pe.axiz.core.observability.AttributeSanitizer;
 import pe.axiz.spring.outbox.TransactionalEvents;
 import pe.axiz.structure.hexagonal.DomainEventSink;
+import pe.axiz.structure.hexagonal.ReactiveUseCase;
 import pe.axiz.structure.hexagonal.UseCaseRunner;
 import pe.axiz.structure.hexagonal.UseCaseTransaction;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
@@ -96,9 +97,7 @@ public class AxizHexagonalAutoConfiguration {
     DefaultPointcutAdvisor advisor =
         new DefaultPointcutAdvisor(
             new ComposablePointcut(useCaseMethods())
-                .intersection(
-                    type ->
-                        !pe.axiz.structure.hexagonal.ReactiveUseCase.class.isAssignableFrom(type)),
+                .intersection(type -> !ReactiveUseCase.class.isAssignableFrom(type)),
             new UseCaseInterceptor(
                 runner::getObject,
                 () ->

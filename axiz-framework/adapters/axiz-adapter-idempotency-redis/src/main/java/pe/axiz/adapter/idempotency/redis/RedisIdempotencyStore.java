@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
@@ -42,6 +43,15 @@ public final class RedisIdempotencyStore implements IdempotencyStore {
       return 1
       """;
 
+  static final String CAS_SCRIPT =
+      """
+      local value = redis.call('GET', KEYS[1])
+      if not value or value ~= ARGV[1] then return 0 end
+      if ARGV[2] == '' then redis.call('DEL', KEYS[1])
+      else redis.call('SET', KEYS[1], ARGV[2], 'PX', ARGV[3]) end
+      return 1
+      """;
+
   private final RedisCommands<String, String> redis;
   private final String prefix;
   private final Clock clock;
@@ -57,6 +67,22 @@ public final class RedisIdempotencyStore implements IdempotencyStore {
   }
 
   @Override
+  public boolean compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    if (replacement != null && !expected.key().equals(replacement.key()))
+      throw new IllegalArgumentException("different record key");
+    Long changed =
+        redis.eval(
+            CAS_SCRIPT,
+            ScriptOutputType.INTEGER,
+            new String[] {prefix + expected.key()},
+            StoredResponseCodec.write(expected),
+            replacement == null ? "" : StoredResponseCodec.write(replacement),
+            Long.toString(replacement == null ? 1 : ttlMillis(replacement.retainUntil())));
+    return changed != null && changed == 1L;
+  }
+
+  @Override
   public boolean tryStart(IdempotencyRecord record) {
     long ttl = ttlMillis(record.expiresAt());
     String result =
@@ -68,32 +94,19 @@ public final class RedisIdempotencyStore implements IdempotencyStore {
   @Override
   public Optional<IdempotencyRecord> find(String key, Instant now) {
     String value = redis.get(prefix + key);
-    return value == null ? Optional.empty() : Optional.of(StoredResponseCodec.read(key, value));
+    return value == null
+        ? Optional.empty()
+        : Optional.of(StoredResponseCodec.read(key, value)).filter(record -> record.liveAt(now));
   }
 
   @Override
   public boolean complete(String key, String owner, StoredResponse response, Instant expiresAt) {
-    Optional<IdempotencyRecord> current = find(key, clock.instant());
-    if (current.isEmpty() || !current.get().heldBy(owner)) {
-      return false;
+    for (int attempt = 0; attempt < 16; attempt++) {
+      Optional<IdempotencyRecord> current = find(key, clock.instant());
+      if (current.isEmpty() || !current.get().heldBy(owner)) return false;
+      if (compareAndSet(current.get(), current.get().completed(response, expiresAt))) return true;
     }
-    IdempotencyRecord done =
-        new IdempotencyRecord(
-            key,
-            current.get().fingerprint(),
-            IdempotencyRecord.Status.COMPLETED,
-            owner,
-            response,
-            expiresAt);
-    Long changed =
-        redis.eval(
-            COMPLETE_SCRIPT,
-            ScriptOutputType.INTEGER,
-            new String[] {prefix + key},
-            owner,
-            StoredResponseCodec.write(done),
-            Long.toString(ttlMillis(expiresAt)));
-    return changed != null && changed == 1L;
+    return false;
   }
 
   @Override

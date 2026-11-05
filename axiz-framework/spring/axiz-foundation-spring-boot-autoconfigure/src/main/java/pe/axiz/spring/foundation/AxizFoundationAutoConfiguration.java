@@ -1,12 +1,17 @@
 package pe.axiz.spring.foundation;
 
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.MonthDay;
 import java.util.EnumSet;
+import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,9 +47,7 @@ public class AxizFoundationAutoConfiguration {
     AxizFoundationProperties.Calendar c = properties.calendar();
     BusinessCalendar.Builder b = BusinessCalendar.builder(properties.zone());
     b.weekend(
-        c.weekend().isEmpty()
-            ? EnumSet.noneOf(java.time.DayOfWeek.class)
-            : EnumSet.copyOf(c.weekend()));
+        c.weekend().isEmpty() ? EnumSet.noneOf(DayOfWeek.class) : EnumSet.copyOf(c.weekend()));
     for (String md : c.recurringHolidays()) {
       b.recurringHoliday(MonthDay.parse("--" + md));
     }
@@ -60,9 +63,9 @@ public class AxizFoundationAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnProperty("axiz.foundation.cutoff")
+  @ConditionalOnProperty("axiz.foundation.cutoff")
   CutoffTime axizCutoffTime(AxizFoundationProperties properties, BusinessCalendar calendar) {
-    return new CutoffTime(java.util.Objects.requireNonNull(properties.cutoff()), calendar);
+    return new CutoffTime(Objects.requireNonNull(properties.cutoff()), calendar);
   }
 
   @Bean
@@ -83,14 +86,10 @@ public class AxizFoundationAutoConfiguration {
 
   /** Runs before bean initialization, so clients never seed on an event loop. */
   @Configuration(proxyBeanMethods = false)
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class ReactiveRandomConfiguration {
     @Bean
-    static org.springframework.beans.factory.config.BeanFactoryPostProcessor
-        axizReactiveRandomBootstrap() {
+    static BeanFactoryPostProcessor axizReactiveRandomBootstrap() {
       return beanFactory -> ReactiveInfrastructureBootstrap.initialize();
     }
   }

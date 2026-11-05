@@ -164,6 +164,20 @@ class SecurityDefaultsTest {
   }
 
   @Test
+  void enabledRateLimitRequiresAnExplicitFailurePolicyForEveryRule() {
+    servlet
+        .withPropertyValues(
+            "axiz.security.rate-limit.enabled=true",
+            "axiz.security.rate-limit.rules[0].name=payments")
+        .run(ctx -> assertThat(ctx).hasFailed());
+    reactive
+        .withPropertyValues(
+            "axiz.security.rate-limit.enabled=true",
+            "axiz.security.rate-limit.rules[0].name=payments")
+        .run(ctx -> assertThat(ctx).hasFailed());
+  }
+
+  @Test
   void theRateLimitFilterIsAddedOnlyWhenEnabled() {
     servlet
         .withPropertyValues(
@@ -176,8 +190,7 @@ class SecurityDefaultsTest {
               assertThat(ctx).hasSingleBean(RateLimiter.class);
               AxizSecurityProperties p = ctx.getBean(AxizSecurityProperties.class);
               AxizSecurityProperties.Rule rule = p.rateLimit().rules().get(0);
-              assertFalse(rule.failOpen(true), "the rule overrides the global policy");
-              assertTrue(p.rateLimit().failOpen());
+              assertFalse(rule.failurePolicy());
             });
     servlet.run(ctx -> assertThat(ctx).doesNotHaveBean(RateLimiter.class));
   }
@@ -306,7 +319,7 @@ class SecurityDefaultsTest {
     RateLimitWebFilter filter =
         new RateLimitWebFilter(
             new pe.axiz.core.security.InMemoryAsyncRateLimiter(Clock.systemUTC()),
-            oneRequestPerMinute(null),
+            oneRequestPerMinute(true),
             new SecurityProblems(null));
     AtomicInteger calls = new AtomicInteger();
     MockServerWebExchange first =
@@ -350,28 +363,50 @@ class SecurityDefaultsTest {
           @Override
           public Decision tryAcquire(String key, long limit, Duration window, boolean failOpen) {
             policy.set(failOpen);
-            return failOpen
-                ? new Decision(true, -1, Duration.ZERO)
-                : new Decision(false, 0, window);
+            if (failOpen) return new Decision(true, -1, Duration.ZERO);
+            throw new pe.axiz.core.security.RateLimitUnavailableException(
+                new IllegalStateException("store down"));
           }
         };
     SecurityContextHolder.getContext().setAuthentication(authentication());
     try {
       MockHttpServletResponse closed = new MockHttpServletResponse();
-      new RateLimitFilter(down, oneRequestPerMinute(false), new SecurityProblems(null), true)
+      new RateLimitFilter(down, oneRequestPerMinute(false), new SecurityProblems(null))
           .doFilter(
               new MockHttpServletRequest("GET", "/payments/1"), closed, new MockFilterChain());
       assertEquals(false, policy.get());
-      assertEquals(429, closed.getStatus());
+      assertEquals(503, closed.getStatus());
 
       MockHttpServletResponse open = new MockHttpServletResponse();
       MockFilterChain app = new MockFilterChain();
-      new RateLimitFilter(down, oneRequestPerMinute(null), new SecurityProblems(null), true)
+      new RateLimitFilter(down, oneRequestPerMinute(true), new SecurityProblems(null))
           .doFilter(new MockHttpServletRequest("GET", "/payments/1"), open, app);
-      assertEquals(true, policy.get(), "no rule policy: the global one");
+      assertEquals(true, policy.get(), "explicit fail-open");
       assertTrue(app.getRequest() != null);
     } finally {
       SecurityContextHolder.clearContext();
+    }
+  }
+
+  @Test
+  void reactiveUnavailableStoreAnswers503BeforeInvokingTheHandler() {
+    pe.axiz.core.security.AsyncRateLimiter down =
+        (key, limit, window, open) ->
+            open
+                ? java.util.concurrent.CompletableFuture.completedFuture(
+                    new RateLimiter.Decision(true, -1, Duration.ZERO))
+                : java.util.concurrent.CompletableFuture.failedFuture(
+                    new pe.axiz.core.security.RateLimitUnavailableException(
+                        new IllegalStateException("offline")));
+    for (boolean open : List.of(false, true)) {
+      var exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/payments/1"));
+      var calls = new AtomicInteger();
+      new RateLimitWebFilter(down, oneRequestPerMinute(open), new SecurityProblems(null))
+          .filter(exchange, e -> Mono.fromRunnable(calls::incrementAndGet))
+          .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication()))
+          .block(Duration.ofSeconds(5));
+      assertEquals(open ? 1 : 0, calls.get());
+      if (!open) assertEquals(503, exchange.getResponse().getStatusCode().value());
     }
   }
 

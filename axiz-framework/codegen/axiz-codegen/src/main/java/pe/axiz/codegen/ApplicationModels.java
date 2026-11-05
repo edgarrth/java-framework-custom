@@ -3,6 +3,7 @@ package pe.axiz.codegen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.lang.model.SourceVersion;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
@@ -31,8 +32,8 @@ final class ApplicationModels {
         if (values.stream()
             .anyMatch(
                 v ->
-                    (!javax.lang.model.SourceVersion.isIdentifier(v.toString())
-                        || javax.lang.model.SourceVersion.isKeyword(v.toString())))) {
+                    (!SourceVersion.isIdentifier(v.toString())
+                        || SourceVersion.isKeyword(v.toString())))) {
           throw new IllegalArgumentException(
               "Application enum values must be Java identifiers: " + name);
         }
@@ -55,8 +56,7 @@ final class ApplicationModels {
       List<String> copies = new ArrayList<>();
       for (var property : mapping(schema.get("properties")).entrySet()) {
         String propertyName = property.getKey().toString();
-        if (!javax.lang.model.SourceVersion.isIdentifier(propertyName)
-            || javax.lang.model.SourceVersion.isKeyword(propertyName)) {
+        if (!SourceVersion.isIdentifier(propertyName) || SourceVersion.isKeyword(propertyName)) {
           throw new IllegalArgumentException(
               "Application property requires an explicit mapping: " + propertyName);
         }

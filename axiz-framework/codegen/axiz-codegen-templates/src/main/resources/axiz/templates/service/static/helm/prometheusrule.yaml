@@ -1,0 +1,45 @@
+{{- if and .Values.monitoring.prometheusRules.enabled (or .Values.monitoring.prometheusRules.audit .Values.monitoring.prometheusRules.outbox) }}
+{{- $selector := default (printf "namespace=%q,service=%q" .Release.Namespace (include "service.fullname" .)) .Values.monitoring.prometheusRules.metricSelector }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "service.fullname" . }}-delivery
+  labels:
+    {{- include "service.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.prometheusRules.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: {{ include "service.fullname" . }}.delivery
+      rules:
+        {{- if .Values.monitoring.prometheusRules.audit }}
+        - alert: AxizAuditDurabilityDegraded
+          expr: increase(axiz_audit_persistence_not_confirmed_total{ {{ $selector }} }[5m]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Audit persistence degraded to the in-memory fallback; inspect NOT_CONFIRMED events"
+        - alert: AxizAuditAcknowledgementMissing
+          expr: increase(axiz_audit_persistence_unconfirmed_total{ {{ $selector }} }[5m]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Destination did not confirm synchronous audit delivery; inspect UNCONFIRMED events"
+        - alert: AxizAuditEvidenceLost
+          expr: increase(axiz_audit_lost_total{ {{ $selector }} }[5m]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Audit delivery and fallback both failed"
+        {{- end }}
+        {{- if .Values.monitoring.prometheusRules.outbox }}
+        - alert: AxizOutboxAggregateBlocked
+          expr: axiz_outbox_blocked_aggregates{ {{ $selector }} } > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "A FAILED outbox event blocks its aggregate; inspect and explicitly retry or skip with a reason"
+        {{- end }}
+{{- end }}

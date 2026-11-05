@@ -13,6 +13,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.r2dbc.ConnectionFactoryDecorator;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -78,6 +79,12 @@ public class AxizR2dbcAutoConfiguration {
         iam);
   }
 
+  @Bean
+  EncryptionContextValidator axizR2dbcEncryptionContexts(
+      ApplicationContext context, AxizR2dbcProperties properties) {
+    return new EncryptionContextValidator(context, properties.encryptionContext());
+  }
+
   /** axiz column types for Spring Data R2DBC entities. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "org.springframework.data.r2dbc.convert.R2dbcCustomConversions")
@@ -87,14 +94,19 @@ public class AxizR2dbcAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnSingleCandidate(DatabaseClient.class)
     R2dbcCustomConversions r2dbcCustomConversions(
-        DatabaseClient client, ObjectProvider<FieldEncryptor> encryptor) {
+        DatabaseClient client,
+        ObjectProvider<FieldEncryptor> encryptor,
+        AxizR2dbcProperties properties) {
       return R2dbcCustomConversions.of(
           DialectResolver.getDialect(client.getConnectionFactory()),
-          AxizR2dbcConverters.all(
-              () -> {
-                FieldEncryptor bean = encryptor.getIfAvailable();
-                return bean != null ? bean : EncryptionRegistry.encryptor();
-              }));
+          properties.encryptionContext() == null
+              ? AxizR2dbcConverters.money()
+              : AxizR2dbcConverters.all(
+                  () -> {
+                    FieldEncryptor bean = encryptor.getIfAvailable();
+                    return bean != null ? bean : EncryptionRegistry.encryptor();
+                  },
+                  properties.encryptionContext()));
     }
   }
 }

@@ -1,9 +1,12 @@
 package pe.axiz.spring.messaging;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.support.TransactionTemplate;
+import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
+import pe.axiz.spring.foundation.InboxCompletion;
 
 /**
  * Runs a handler in one transaction, so its writes and the events it enqueues in the outbox commit
@@ -11,14 +14,42 @@ import pe.axiz.core.messaging.EventHandler;
  *
  * @param <T> payload type
  */
-public final class TransactionalEventHandler<T> implements EventHandler<T> {
+public final class TransactionalEventHandler<T> implements CompletesInTransaction<T> {
 
   private final EventHandler<T> delegate;
   private final TransactionTemplate transaction;
+  private final @Nullable InboxCompletion completion;
 
   public TransactionalEventHandler(EventHandler<T> delegate, TransactionTemplate transaction) {
+    this(delegate, transaction, null);
+  }
+
+  public TransactionalEventHandler(
+      EventHandler<T> delegate,
+      TransactionTemplate transaction,
+      @Nullable InboxCompletion completion) {
     this.delegate = Objects.requireNonNull(delegate);
     this.transaction = Objects.requireNonNull(transaction);
+    this.completion = completion;
+  }
+
+  @Override
+  public boolean completesInTransaction() {
+    return completion != null;
+  }
+
+  @Override
+  public void handleClaimed(
+      T payload, EventEnvelope envelope, String consumer, String key, String owner)
+      throws Exception {
+    execute(
+        payload,
+        envelope,
+        () -> {
+          InboxCompletion current = completion;
+          if (current == null || !current.complete(consumer, key, owner))
+            throw new IllegalStateException("Inbox completion failed or the owner lost its lease");
+        });
   }
 
   @Override
@@ -33,11 +64,16 @@ public final class TransactionalEventHandler<T> implements EventHandler<T> {
 
   @Override
   public void handle(T payload, EventEnvelope envelope) throws Exception {
+    execute(payload, envelope, () -> {});
+  }
+
+  private void execute(T payload, EventEnvelope envelope, Runnable complete) throws Exception {
     try {
       transaction.executeWithoutResult(
           status -> {
             try {
               delegate.handle(payload, envelope);
+              complete.run();
             } catch (RuntimeException e) {
               throw e;
             } catch (Exception e) {

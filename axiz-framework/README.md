@@ -10,7 +10,7 @@ Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for the 
 | Platform | `platform/` | `axiz-parent-*`, `axiz-dependencies`, `axiz-bom` | Versions and build gates |
 | 1. Core | `core/` | `axiz-core-<capability>` | JDK, SLF4J, JSpecify, Micrometer; no technology or runtime dependencies |
 | 2. Adapters | `adapters/` | `axiz-adapter-<capability>-<technology>` | Implement core ports using native technology clients |
-| 2. Persistence kits | `kits/` | `axiz-kit-jpa`, `axiz-kit-r2dbc`, `axiz-kit-dynamodb` | Persistence types; used only by service repositories and persistence adapters |
+| 2. Persistence kits | `kits/` | `axiz-kit-jdbc`, `axiz-kit-jpa`, `axiz-kit-r2dbc`, `axiz-kit-dynamodb` | Persistence types; used only by service repositories and persistence adapters |
 | 3. Spring | `spring/` | `axiz-<capability>-spring-boot-autoconfigure` and `-starter` | Lifecycle, beans, transactions and facades; capabilities communicate through core ports |
 | 4. Structures | `structures/` | `axiz-structure-<structure>-api` and `-spring-boot-starter` | Exactly one structure per service |
 | 4. Extensions | `extensions/` | `axiz-extension-cqrs-api` and `-spring-boot-starter` | Optional CQRS on hexagonal business/event-processor services |

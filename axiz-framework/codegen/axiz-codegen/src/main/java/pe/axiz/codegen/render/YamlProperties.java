@@ -2,6 +2,7 @@ package pe.axiz.codegen.render;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,11 +87,11 @@ public final class YamlProperties {
     // Dots in an existing YAML key may be literal (Kubernetes annotations, headers, or
     // flat Spring keys). Preserve that key instead of flattening and recreating the document.
     for (int end = parts.length; end > i + 1; end--) {
-      String literal = String.join(".", java.util.Arrays.copyOfRange(parts, i, end));
+      String literal = String.join(".", Arrays.copyOfRange(parts, i, end));
       if (!node.containsKey(literal)) {
         Matcher indexed = INDEXED.matcher(literal);
         if (indexed.matches() && node.containsKey(indexed.group(1))) {
-          String[] remaining = java.util.Arrays.copyOfRange(parts, end - 1, parts.length);
+          String[] remaining = Arrays.copyOfRange(parts, end - 1, parts.length);
           remaining[0] = literal;
           put(node, remaining, 0, value);
           return;

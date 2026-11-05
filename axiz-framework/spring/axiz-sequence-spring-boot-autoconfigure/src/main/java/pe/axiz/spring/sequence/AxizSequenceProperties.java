@@ -1,6 +1,8 @@
 package pe.axiz.spring.sequence;
 
 import java.time.ZoneId;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -23,7 +25,7 @@ public record AxizSequenceProperties(
     @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
     @DefaultValue Map<String, Spec> sequences) {
   public AxizSequenceProperties {
-    sequences = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(sequences));
+    sequences = Collections.unmodifiableMap(new LinkedHashMap<>(sequences));
   }
 
   /**

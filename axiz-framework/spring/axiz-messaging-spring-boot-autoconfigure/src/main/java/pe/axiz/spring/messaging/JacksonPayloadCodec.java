@@ -4,6 +4,7 @@ import java.util.Objects;
 import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.messaging.PayloadException;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /** JSON payloads with the application's Jackson mapper (same modules as the HTTP API). */
@@ -15,9 +16,9 @@ public class JacksonPayloadCodec implements PayloadCodec {
     this.mapper =
         Objects.requireNonNull(mapper)
             .rebuild()
-            .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             // Nested schema objects use Map/List values; binary floating point would lose amounts.
-            .enable(tools.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
             .build();
   }
 

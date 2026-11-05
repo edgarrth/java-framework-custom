@@ -39,6 +39,11 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
  * sends (keys, consistency, conditions, limits, start keys, indexes) and how it pages.
  */
 class DynamoRepositoryTest {
+  private final CursorCodec cursors =
+      new CursorCodec(
+          new pe.axiz.core.crypto.StaticKeyProvider(
+              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
+          false);
 
   /** A beneficiary of a customer: partition = customer, sort = beneficiary, index by status. */
   public static final class Beneficiary {
@@ -185,7 +190,7 @@ class DynamoRepositoryTest {
   private final DynamoDbEnhancedClient enhanced =
       DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build();
   private final DynamoRepository<Beneficiary> repository =
-      new DynamoRepository<>(enhanced, "beneficiaries", SCHEMA);
+      new DynamoRepository<>(enhanced, "beneficiaries", SCHEMA, () -> cursors);
 
   @Test
   void readsAreConsistentAndByFullKey() {
@@ -284,7 +289,7 @@ class DynamoRepositoryTest {
   void limitsAndCursorsAreValidated() {
     assertThrows(IllegalArgumentException.class, () -> repository.query("C-1", 0, null));
     assertThrows(IllegalArgumentException.class, () -> repository.query("C-1", 501, null));
-    assertThrows(IllegalArgumentException.class, () -> repository.query("C-1", 10, "not-a-cursor"));
+    assertThrows(InvalidCursorException.class, () -> repository.query("C-1", 10, "not-a-cursor"));
     assertTrue(dynamo.requests.isEmpty(), "nothing is sent for an invalid request");
   }
 
@@ -305,20 +310,20 @@ class DynamoRepositoryTest {
   @Test
   void cursorsKeepNumberKeysAndRejectOtherTypes() {
     Map<String, AttributeValue> numeric = Map.of("seq", AttributeValue.fromN("7"));
-    assertEquals(numeric, CursorCodec.decode(CursorCodec.encode(numeric)));
-    assertNull(CursorCodec.encode(null));
-    assertNull(CursorCodec.decode(null));
+    assertEquals(numeric, cursors.decode(cursors.encode(numeric, "table/filter"), "table/filter"));
+    assertNull(cursors.encode(null, "table/filter"));
+    assertNull(cursors.decode(null, "table/filter"));
     String bool =
         java.util.Base64.getUrlEncoder()
             .withoutPadding()
             .encodeToString(
                 "{\"k\":{\"BOOL\":true}}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    assertThrows(IllegalArgumentException.class, () -> CursorCodec.decode(bool));
+    assertThrows(InvalidCursorException.class, () -> cursors.decode(bool, "table/filter"));
     String plain =
         java.util.Base64.getUrlEncoder()
             .withoutPadding()
             .encodeToString("{\"k\":\"v\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-    assertThrows(IllegalArgumentException.class, () -> CursorCodec.decode(plain));
+    assertThrows(InvalidCursorException.class, () -> cursors.decode(plain, "table/filter"));
   }
 
   @Test

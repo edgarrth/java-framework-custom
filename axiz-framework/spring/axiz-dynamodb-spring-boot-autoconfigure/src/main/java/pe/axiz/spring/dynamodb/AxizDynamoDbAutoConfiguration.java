@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.kit.dynamodb.CursorCodec;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -28,7 +30,7 @@ public class AxizDynamoDbAutoConfiguration {
 
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   DynamoDbClient axizDynamoDbClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
     return AwsClients.build(
         DynamoDbClient.builder(),
@@ -39,16 +41,18 @@ public class AxizDynamoDbAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   DynamoDbEnhancedClient axizDynamoDbEnhancedClient(DynamoDbClient client) {
     return DynamoDbEnhancedClient.builder().dynamoDbClient(client).build();
   }
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
-  DynamoRepositories axizDynamoRepositories(DynamoDbEnhancedClient client, Environment env) {
-    return new DynamoRepositories(client, env.getProperty("axiz.dynamodb.table-prefix", ""));
+  @ConditionalOnImperativeApplication
+  DynamoRepositories axizDynamoRepositories(
+      DynamoDbEnhancedClient client, Environment env, ObjectProvider<CursorCodec> cursors) {
+    return new DynamoRepositories(
+        client, env.getProperty("axiz.dynamodb.table-prefix", ""), cursors::getObject);
   }
 
   @Configuration(proxyBeanMethods = false)
@@ -77,9 +81,9 @@ public class AxizDynamoDbAutoConfiguration {
 
     @Bean
     ReactiveDynamoRepositories axizReactiveDynamoRepositories(
-        DynamoDbAsyncClient client, Environment env) {
+        DynamoDbAsyncClient client, Environment env, ObjectProvider<CursorCodec> cursors) {
       return new ReactiveDynamoRepositories(
-          client, env.getProperty("axiz.dynamodb.table-prefix", ""));
+          client, env.getProperty("axiz.dynamodb.table-prefix", ""), cursors::getObject);
     }
   }
 }

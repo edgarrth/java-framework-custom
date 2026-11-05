@@ -1,6 +1,8 @@
 package pe.axiz.codegen.openapi;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -35,7 +37,8 @@ public record ApiOperation(
     @Nullable String requestExample,
     List<QueryParam> queryParams,
     List<String> pagingParams,
-    List<QueryParam> headerParams) {
+    List<QueryParam> headerParams,
+    List<String> scopes) {
 
   /**
    * A query or header parameter.
@@ -50,6 +53,50 @@ public record ApiOperation(
     queryParams = List.copyOf(queryParams);
     pagingParams = List.copyOf(pagingParams);
     headerParams = List.copyOf(headerParams);
+    scopes = List.copyOf(new LinkedHashSet<>(scopes));
+    for (String scope : scopes) {
+      if (!scope.matches("[A-Za-z0-9:_./-]{1,128}"))
+        throw new IllegalArgumentException("Unsupported security scope");
+    }
+  }
+
+  public ApiOperation(
+      String operationId,
+      String method,
+      String path,
+      String tag,
+      String summary,
+      @Nullable String requestSchema,
+      @Nullable String responseSchema,
+      int successStatus,
+      List<String> pathParams,
+      boolean paged,
+      @Nullable String requestExample,
+      List<QueryParam> queryParams,
+      List<String> pagingParams,
+      List<QueryParam> headerParams) {
+    this(
+        operationId,
+        method,
+        path,
+        tag,
+        summary,
+        requestSchema,
+        responseSchema,
+        successStatus,
+        pathParams,
+        paged,
+        requestExample,
+        queryParams,
+        pagingParams,
+        headerParams,
+        List.of());
+  }
+
+  public String authorizationExpression() {
+    return scopes.stream()
+        .map(scope -> "hasAuthority('SCOPE_" + scope + "')")
+        .collect(Collectors.joining(" and "));
   }
 
   public boolean readOnly() {

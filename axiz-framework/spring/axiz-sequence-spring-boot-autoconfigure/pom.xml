@@ -19,6 +19,7 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-jdbc</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>

@@ -4,7 +4,9 @@ import java.time.Duration;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.util.unit.DataSize;
 import pe.axiz.core.commons.HeaderDefinition;
 
 /**
@@ -34,10 +36,16 @@ public record AxizWebProperties(
     @DefaultValue Pagination pagination,
     @DefaultValue ApiVersion apiVersion,
     @DefaultValue Cors cors,
-    @DefaultValue Json json) {
+    @DefaultValue Json json,
+    @DefaultValue("1MB") DataSize maxRequestBody,
+    @DefaultValue List<BodyLimit> bodyLimits) {
+  @ConstructorBinding
   public AxizWebProperties {
     excludedPaths = List.copyOf(excludedPaths);
     headers = List.copyOf(headers);
+    bodyLimits = List.copyOf(bodyLimits);
+    if (maxRequestBody.toBytes() < 1)
+      throw new IllegalArgumentException("max-request-body must be positive");
   }
 
   /**
@@ -172,5 +180,49 @@ public record AxizWebProperties(
    *
    * @param includeNulls whether null properties are written
    */
-  public record Json(@DefaultValue("false") boolean includeNulls) {}
+  public record Json(
+      @DefaultValue("false") boolean includeNulls,
+      @DefaultValue("100") int maxNumberLength,
+      @DefaultValue("1048576") int maxStringLength,
+      @DefaultValue("64") int maxNestingDepth) {
+    @ConstructorBinding
+    public Json {
+      if (maxNumberLength < 1 || maxStringLength < 1 || maxNestingDepth < 1)
+        throw new IllegalArgumentException("JSON read constraints must be positive");
+    }
+
+    public Json(boolean includeNulls) {
+      this(includeNulls, 100, 1048576, 64);
+    }
+  }
+
+  /**
+   * First matching path overrides the default body size; streaming is counted without buffering.
+   */
+  public record BodyLimit(String path, DataSize maxSize) {
+    public BodyLimit {
+      if (path == null || path.isBlank() || maxSize.toBytes() < 1)
+        throw new IllegalArgumentException("body-limits require a path and positive max-size");
+    }
+  }
+
+  public AxizWebProperties(
+      List<Header> headers,
+      List<String> excludedPaths,
+      String channelHeader,
+      Pagination pagination,
+      ApiVersion apiVersion,
+      Cors cors,
+      Json json) {
+    this(
+        headers,
+        excludedPaths,
+        channelHeader,
+        pagination,
+        apiVersion,
+        cors,
+        json,
+        DataSize.ofMegabytes(1),
+        List.of());
+  }
 }

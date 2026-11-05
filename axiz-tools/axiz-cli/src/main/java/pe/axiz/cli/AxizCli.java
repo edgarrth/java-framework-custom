@@ -1,9 +1,13 @@
 package pe.axiz.cli;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import pe.axiz.codegen.render.JavaFormatter;
 import picocli.CommandLine;
@@ -23,7 +27,7 @@ public final class AxizCli {
     cli.setCaseInsensitiveEnumValuesAllowed(true);
     cli.setExecutionExceptionHandler(
         (e, commandLine, parseResult) -> {
-          if (e instanceof IllegalArgumentException || e instanceof java.io.IOException) {
+          if (e instanceof IllegalArgumentException || e instanceof IOException) {
             commandLine
                 .getErr()
                 .println(commandLine.getColorScheme().errorText("error: " + e.getMessage()));
@@ -48,10 +52,10 @@ public final class AxizCli {
       ProcessRunner processes,
       BufferedReader input,
       Clock clock,
-      java.util.Map<String, String> env,
+      Map<String, String> env,
       BooleanSupplier javaFormatter) {
     public Environment {
-      env = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(env));
+      env = Collections.unmodifiableMap(new LinkedHashMap<>(env));
     }
 
     public static Environment system() {

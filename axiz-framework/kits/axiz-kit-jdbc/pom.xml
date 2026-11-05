@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+  <artifactId>axiz-kit-jdbc</artifactId>
+  <name>axiz :: kit :: jdbc</name>
+  <description>Transaction-aware JDBC connections, SQLSTATE helpers and local transactions</description>
+  <properties>
+    <axiz.module.name>pe.axiz.kit.jdbc</axiz.module.name>
+    <axiz.api.baseline.artifactId>axiz-core-commons</axiz.api.baseline.artifactId>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-commons</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <profiles>
+    <profile>
+      <id>api-compat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.siom79.japicmp</groupId>
+            <artifactId>japicmp-maven-plugin</artifactId>
+            <configuration>
+              <parameter>
+                <includes>
+                  <include>pe.axiz.core.commons.jdbc.ConnectionProvider</include>
+                  <include>pe.axiz.core.commons.jdbc.JdbcTransactions</include>
+                  <include>pe.axiz.core.commons.jdbc.SqlStates</include>
+                  <include>pe.axiz.kit.jdbc.*</include>
+                </includes>
+              </parameter>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

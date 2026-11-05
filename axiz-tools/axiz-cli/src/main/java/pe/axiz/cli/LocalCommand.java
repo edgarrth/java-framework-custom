@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 
 /**
  * {@code axiz local up|down}: the local dependencies of the service (Docker Compose + LocalStack).
@@ -18,7 +20,7 @@ import picocli.CommandLine.Option;
     subcommands = {LocalCommand.Up.class, LocalCommand.Down.class})
 class LocalCommand implements Runnable {
 
-  @picocli.CommandLine.Spec picocli.CommandLine.Model.CommandSpec spec;
+  @Spec CommandSpec spec;
 
   @Override
   public void run() {

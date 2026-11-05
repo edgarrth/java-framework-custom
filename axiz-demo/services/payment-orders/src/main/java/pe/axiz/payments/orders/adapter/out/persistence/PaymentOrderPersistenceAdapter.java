@@ -1,7 +1,9 @@
 package pe.axiz.payments.orders.adapter.out.persistence;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -147,7 +149,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
         Money.ofExact(e.getAmount(), e.getCurrency()),
         e.getDescription(),
         e.getProcessingDate(),
-        java.util.Objects.requireNonNullElse(e.getCreatedAt(), java.time.Instant.EPOCH),
+        Objects.requireNonNullElse(e.getCreatedAt(), Instant.EPOCH),
         PaymentStatus.valueOf(e.getStatus()),
         e.getStatusReason());
   }

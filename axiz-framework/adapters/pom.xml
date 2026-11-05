@@ -6,6 +6,10 @@
   <name>axiz :: adapters</name>
   <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
   <modules>
+    <module>axiz-adapter-sequence-jdbc</module>
+    <module>axiz-adapter-saga-jdbc</module>
+    <module>axiz-adapter-inbox-jdbc</module>
+    <module>axiz-adapter-outbox-jdbc</module>
     <module>axiz-adapter-audit-kafka</module>
     <module>axiz-adapter-audit-sqs</module>
     <module>axiz-adapter-cache-redis</module>

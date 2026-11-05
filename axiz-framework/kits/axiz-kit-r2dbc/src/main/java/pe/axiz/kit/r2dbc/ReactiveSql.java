@@ -1,5 +1,6 @@
 package pe.axiz.kit.r2dbc;
 
+import org.jspecify.annotations.Nullable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -10,6 +11,11 @@ import reactor.core.publisher.Mono;
  * R2dbcTransactionRunner}.
  */
 public interface ReactiveSql {
+
+  /** Identity of the transaction-aware connection factory; unknown integrations return null. */
+  default @Nullable Object transactionResource() {
+    return null;
+  }
 
   /** Runs an INSERT, UPDATE or DELETE and emits the number of affected rows. */
   Mono<Long> update(String sql, SqlParams params);

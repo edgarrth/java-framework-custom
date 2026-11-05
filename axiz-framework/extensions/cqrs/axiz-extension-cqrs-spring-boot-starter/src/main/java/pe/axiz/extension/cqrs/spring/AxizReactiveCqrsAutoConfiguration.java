@@ -16,8 +16,10 @@ import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.observability.ArchitectureObservation;
 import pe.axiz.extension.cqrs.AccessPolicies;
 import pe.axiz.extension.cqrs.AccessPolicy;
+import pe.axiz.extension.cqrs.AuditedCommand;
 import pe.axiz.extension.cqrs.Buses;
 import pe.axiz.extension.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.IdempotentCommand;
 import pe.axiz.extension.cqrs.QueryHandler;
 import pe.axiz.extension.cqrs.ReactiveAccessPolicy;
 import pe.axiz.extension.cqrs.ReactiveCommandHandler;
@@ -116,29 +118,24 @@ public class AxizReactiveCqrsAutoConfiguration {
         HandlerRegistrations.of(
             blockingCommands.orderedStream().toList(), blockingQueries.orderedStream().toList());
     HandlerRegistrations.requireSingleStyle(blocking, reactive);
-    if (reactive.stream()
-            .anyMatch(
-                r ->
-                    pe.axiz.extension.cqrs.IdempotentCommand.class.isAssignableFrom(
-                        r.requestType()))
+    if (reactive.stream().anyMatch(r -> IdempotentCommand.class.isAssignableFrom(r.requestType()))
         && nativeIdempotency.getIfAvailable() == null)
       throw new IllegalStateException(
           "Reactive idempotent commands require AsyncIdempotencyService");
-    if (reactive.stream()
-            .anyMatch(
-                r -> pe.axiz.extension.cqrs.AuditedCommand.class.isAssignableFrom(r.requestType()))
+    if (reactive.stream().anyMatch(r -> AuditedCommand.class.isAssignableFrom(r.requestType()))
         && nativeAudit.getIfAvailable() == null)
       throw new IllegalStateException("Reactive audited commands require ReactiveAuditTrail");
     if (!reactive.isEmpty() && policies.stream().findAny().isPresent())
       throw new IllegalStateException(
-          "Reactive CQRS requires ReactiveAccessPolicy; imperative access policies are not supported");
+          "Reactive CQRS requires ReactiveAccessPolicy; imperative access policies are not"
+              + " supported");
     AuthorizationCoverage.verify(
         reactive.stream()
             .<Class<?>>map(ReactiveBuses.Registration::requestType)
             .filter(t -> nonBlocking.stream().noneMatch(p -> p.requestType().isAssignableFrom(t)))
             .toList(),
         AccessPolicies.none(),
-        environment.getProperty(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY, "warn"));
+        environment.getProperty(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY, "fail"));
     return new ReactiveBuses(reactive, behaviors.orderedStream().toList());
   }
 

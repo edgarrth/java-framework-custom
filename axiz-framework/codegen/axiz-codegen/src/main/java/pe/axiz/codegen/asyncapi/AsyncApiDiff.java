@@ -2,6 +2,7 @@ package pe.axiz.codegen.asyncapi;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -101,7 +102,7 @@ public final class AsyncApiDiff {
   }
 
   private static Set<Object> union(Map<?, ?> previous, Map<?, ?> current) {
-    Set<Object> keys = new java.util.LinkedHashSet<>(previous.keySet());
+    Set<Object> keys = new LinkedHashSet<>(previous.keySet());
     keys.addAll(current.keySet());
     return keys;
   }

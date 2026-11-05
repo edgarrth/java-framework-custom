@@ -67,6 +67,44 @@ displayName: Migrate to axiz 2.0
 description: Migrates architecture contract coordinates, packages, event contracts, configuration and architecture tests. Run axiz upgrade first to migrate the project manifest.
 recipeList:
   - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.TransactionRunner"
+      newFullyQualifiedTypeName: "pe.axiz.core.commons.tx.TransactionRunner"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.ConnectionProvider"
+      newFullyQualifiedTypeName: "pe.axiz.kit.jdbc.ConnectionProvider"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.JdbcTransactions"
+      newFullyQualifiedTypeName: "pe.axiz.kit.jdbc.JdbcTransactions"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.SqlStates"
+      newFullyQualifiedTypeName: "pe.axiz.kit.jdbc.SqlStates"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.outbox.JdbcOutboxStore"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.outbox.JdbcOutboxPreflight"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.outbox.Dialect"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.outbox.jdbc.Dialect"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.inbox.JdbcInboxStore"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.inbox.jdbc.JdbcInboxStore"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.saga.JdbcSagaStateStore"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.core.sequence.JdbcSequenceStore"
+      newFullyQualifiedTypeName: "pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore"
+  - org.openrewrite.java.spring.DeleteSpringProperty:
+      propertyKey: axiz.security.rate-limit.fail-open
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.framework.cqrs.spring.ReactiveAccessPolicy"
+      newFullyQualifiedTypeName: "pe.axiz.extension.cqrs.ReactiveAccessPolicy"
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: "pe.axiz.extension.cqrs.spring.ReactiveAccessPolicy"
+      newFullyQualifiedTypeName: "pe.axiz.extension.cqrs.ReactiveAccessPolicy"
+  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: "pe.axiz.framework.eda.TypedEventHandler"
       newFullyQualifiedTypeName: "pe.axiz.core.messaging.TypedEventHandler"
   - org.openrewrite.java.ChangeType:

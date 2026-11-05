@@ -5,7 +5,9 @@ import java.util.List;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.ResolvableType;
 import pe.axiz.extension.cqrs.Buses;
+import pe.axiz.extension.cqrs.Command;
 import pe.axiz.extension.cqrs.CommandHandler;
+import pe.axiz.extension.cqrs.Query;
 import pe.axiz.extension.cqrs.QueryHandler;
 import pe.axiz.extension.cqrs.ReactiveCommandHandler;
 import pe.axiz.extension.cqrs.ReactiveQueryHandler;
@@ -29,16 +31,14 @@ final class HandlerRegistrations {
           new Buses.Registration(
               resolve(t, 0, handler),
               resolve(t, 1, handler),
-              req -> handler.handle((pe.axiz.extension.cqrs.Command) req)));
+              req -> handler.handle((Command) req)));
     }
     for (QueryHandler handler : queries) {
       ResolvableType t =
           ResolvableType.forClass(AopUtils.getTargetClass(handler)).as(QueryHandler.class);
       out.add(
           new Buses.Registration(
-              resolve(t, 0, handler),
-              resolve(t, 1, handler),
-              req -> handler.handle((pe.axiz.extension.cqrs.Query) req)));
+              resolve(t, 0, handler), resolve(t, 1, handler), req -> handler.handle((Query) req)));
     }
     return out;
   }
@@ -55,16 +55,14 @@ final class HandlerRegistrations {
           new ReactiveBuses.Registration(
               resolve(t, 0, handler),
               resolve(t, 1, handler),
-              req -> handler.handle((pe.axiz.extension.cqrs.Command) req)));
+              req -> handler.handle((Command) req)));
     }
     for (ReactiveQueryHandler handler : queries) {
       ResolvableType t =
           ResolvableType.forClass(AopUtils.getTargetClass(handler)).as(ReactiveQueryHandler.class);
       out.add(
           new ReactiveBuses.Registration(
-              resolve(t, 0, handler),
-              resolve(t, 1, handler),
-              req -> handler.handle((pe.axiz.extension.cqrs.Query) req)));
+              resolve(t, 0, handler), resolve(t, 1, handler), req -> handler.handle((Query) req)));
     }
     return out;
   }

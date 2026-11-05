@@ -59,7 +59,11 @@ public final class InMemoryDistributedLock implements DistributedLock {
       Owner renewed =
           owners.computeIfPresent(
               resource,
-              (k, o) -> o.token.equals(token) ? new Owner(token, clock.instant().plus(lease)) : o);
+              (k, o) -> {
+                if (!o.token.equals(token)) return o;
+                Instant now = clock.instant();
+                return now.isBefore(o.expiresAt) ? new Owner(token, now.plus(lease)) : null;
+              });
       return renewed != null && renewed.token.equals(token);
     }
 

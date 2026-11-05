@@ -66,7 +66,9 @@ class ReaderAndAuditingTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class));
+          .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
+          .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
+          .withPropertyValues("axiz.r2dbc.encryption-context=account.number");
 
   private static ConnectionFactoryOptions behindThePool() {
     assertEquals(1, RecordingDriver.CREATED.size(), "the pool created one driver factory");
@@ -161,6 +163,7 @@ class ReaderAndAuditingTest {
   @Test
   void theWriterUsesIamTokensAndFlywayGetsOneForTheMigration() {
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizR2dbcIamAutoConfiguration.class, AxizR2dbcFlywayIamAutoConfiguration.class))
@@ -218,6 +221,7 @@ class ReaderAndAuditingTest {
   void rowsAreStampedWithTheCallerAndTheServiceClock() {
     Clock fixed = Clock.fixed(Instant.parse("2026-10-23T10:15:30Z"), ZoneOffset.UTC);
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(
             "r2dbcMappingContext", R2dbcMappingContext.class, ReaderAndAuditingTest::mappingContext)
@@ -242,6 +246,7 @@ class ReaderAndAuditingTest {
               assertEquals(row.getCreatedAt(), row.getUpdatedAt());
             });
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(
             "r2dbcMappingContext", R2dbcMappingContext.class, ReaderAndAuditingTest::mappingContext)

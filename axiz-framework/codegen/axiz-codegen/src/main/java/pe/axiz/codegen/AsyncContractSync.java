@@ -6,10 +6,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import pe.axiz.codegen.asyncapi.AsyncApiDiff;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
+import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.openapi.ContractDiff;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.ProjectLayout;
@@ -47,15 +51,15 @@ public final class AsyncContractSync {
     if (!manifest.isService())
       throw new IllegalArgumentException("AsyncAPI synchronization applies to services only");
     if (!current.consumed().isEmpty()
-        && pe.axiz.codegen.model.Catalog.load()
+        && Catalog.load()
             .resolve(
-                manifest.capabilities(),
-                pe.axiz.codegen.model.Catalog.store(manifest.persistence(), manifest.stack()))
+                manifest.capabilities(), Catalog.store(manifest.persistence(), manifest.stack()))
             .stream()
             .noneMatch(
                 capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
       throw new IllegalArgumentException(
-          "Consuming AsyncAPI events requires a messaging capability: axiz add messaging-sqs (or messaging-kafka)");
+          "Consuming AsyncAPI events requires a messaging capability: axiz add messaging-sqs (or"
+              + " messaging-kafka)");
     Path snapshot = SafePaths.target(directory, SNAPSHOT);
     List<ContractDiff.Change> changes =
         Files.exists(snapshot)
@@ -72,12 +76,12 @@ public final class AsyncContractSync {
             manifest.structure(),
             manifest.stack(),
             current);
-    Map<String, byte[]> generated = new java.util.LinkedHashMap<>();
+    Map<String, byte[]> generated = new LinkedHashMap<>();
     for (var entry : payloads.entrySet())
       generated.put(layout.relative(entry.getKey()), entry.getValue());
     for (var entry : adapters.entrySet())
       generated.put(layout.relative(entry.getKey()), entry.getValue());
-    java.util.Set<String> payloadPaths = new java.util.LinkedHashSet<>();
+    Set<String> payloadPaths = new LinkedHashSet<>();
     for (String path : payloads.keySet()) payloadPaths.add(layout.relative(path));
     List<String> created = new ArrayList<>();
     List<String> proposed = new ArrayList<>();

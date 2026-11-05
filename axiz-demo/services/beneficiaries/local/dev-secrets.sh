@@ -5,7 +5,7 @@
 set -euo pipefail
 dir="$(cd "$(dirname "$0")" && pwd)/secrets"
 mkdir -p "$dir" && chmod 700 "$dir"
-names=("$@")
+names=("cursor-key-v1" "$@")
 for name in "${names[@]}"; do
   [ -z "$name" ] && continue
   if [ ! -f "$dir/$name" ]; then

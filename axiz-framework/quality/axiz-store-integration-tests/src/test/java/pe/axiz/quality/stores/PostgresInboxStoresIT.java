@@ -16,9 +16,9 @@ import org.junit.jupiter.api.TestFactory;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore;
-import pe.axiz.core.commons.jdbc.JdbcTransactions;
-import pe.axiz.core.inbox.JdbcInboxStore;
+import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.test.contracts.InboxStoreContract;
 

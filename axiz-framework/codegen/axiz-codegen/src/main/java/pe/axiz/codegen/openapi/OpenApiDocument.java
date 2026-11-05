@@ -2,11 +2,13 @@ package pe.axiz.codegen.openapi;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.model.Snapshots;
 
 /**
  * Minimal, safe reader of OpenAPI 3.x documents (YAML or JSON): operations, tags, schemas and
@@ -21,7 +23,7 @@ public final class OpenApiDocument {
   private final List<ApiOperation> operations;
 
   private OpenApiDocument(Map<String, Object> root, List<ApiOperation> operations) {
-    this.root = pe.axiz.codegen.model.Snapshots.properties(root);
+    this.root = Snapshots.properties(root);
     this.operations = List.copyOf(operations);
   }
 
@@ -92,7 +94,7 @@ public final class OpenApiDocument {
   }
 
   public Map<String, Object> raw() {
-    return pe.axiz.codegen.model.Snapshots.properties(root);
+    return Snapshots.properties(root);
   }
 
   /**
@@ -191,7 +193,26 @@ public final class OpenApiDocument {
         requestExample,
         queryParams,
         pagingParams,
-        headerParams);
+        headerParams,
+        scopes(op.containsKey("security") ? op.get("security") : root.get("security")));
+  }
+
+  /** Multiple security objects are OR alternatives and require an explicit application policy. */
+  private static List<String> scopes(@Nullable Object security) {
+    if (!(security instanceof List<?> alternatives) || alternatives.size() != 1) return List.of();
+    var requirement = map(alternatives.getFirst());
+    if (requirement.size() != 1) return List.of();
+    var required = new LinkedHashSet<String>();
+    for (Object values : requirement.values()) {
+      if (!(values instanceof List<?> scopes))
+        throw new IllegalArgumentException("Security scopes must be a list");
+      for (Object item : scopes) {
+        if (!(item instanceof String scope) || !scope.matches("[A-Za-z0-9:_./-]{1,128}"))
+          throw new IllegalArgumentException("Unsupported security scope");
+        required.add(scope);
+      }
+    }
+    return List.copyOf(required);
   }
 
   private static @Nullable String example(Map<String, Object> mediaType) {

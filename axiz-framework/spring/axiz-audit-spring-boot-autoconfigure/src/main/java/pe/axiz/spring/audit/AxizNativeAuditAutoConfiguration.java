@@ -1,5 +1,7 @@
 package pe.axiz.spring.audit;
 
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.binder.MeterBinder;
 import java.time.Clock;
 import java.util.List;
 import org.springframework.aop.Advisor;
@@ -8,6 +10,7 @@ import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -15,14 +18,20 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.CompositeAsyncAuditPublisher;
+import pe.axiz.core.audit.ConfirmedAsyncAuditPublisher;
 import pe.axiz.core.audit.LoggingAsyncAuditPublisher;
+import pe.axiz.core.audit.LoggingAuditPublisher;
+import pe.axiz.core.audit.QueuedAsyncAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
 
 /** Native audit wiring for reactive applications; never adapts an imperative sink. */
 @AutoConfiguration(
@@ -37,6 +46,11 @@ import pe.axiz.core.sensitive.ObjectMasker;
 @EnableConfigurationProperties(AxizAuditProperties.class)
 public class AxizNativeAuditAutoConfiguration {
   @Bean
+  ReactiveDispatchBoundary axizReactiveAuditDispatchBoundary() {
+    return ReactivePendingAuditFailures::boundary;
+  }
+
+  @Bean
   @ConditionalOnMissingBean
   AsyncAuditEventPublisher axizAsyncAuditEventPublisher(
       ObjectProvider<AsyncAuditSink> sinks,
@@ -48,12 +62,22 @@ public class AxizNativeAuditAutoConfiguration {
     if (properties.kafka().topic() != null
         && sinks.stream().noneMatch(sink -> sink.name().equals("kafka")))
       throw new IllegalStateException(
-          "Reactive Kafka audit requires a native producer configuration; imperative Kafka audit is not supported");
+          "Reactive Kafka audit requires a native producer configuration; imperative Kafka audit is"
+              + " not supported");
     List<AsyncAuditEventPublisher> targets =
         sinks.orderedStream().map(AsyncAuditSink::publisher).toList();
-    return targets.isEmpty()
-        ? new LoggingAsyncAuditPublisher()
-        : targets.size() == 1 ? targets.getFirst() : new CompositeAsyncAuditPublisher(targets);
+    AsyncAuditEventPublisher target =
+        targets.isEmpty()
+            ? new LoggingAsyncAuditPublisher()
+            : targets.size() == 1 ? targets.getFirst() : new CompositeAsyncAuditPublisher(targets);
+    return properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
+        ? new ConfirmedAsyncAuditPublisher(target)
+        : new QueuedAsyncAuditPublisher(
+            target,
+            new LoggingAuditPublisher(),
+            properties.async().capacity(),
+            properties.async().deliveryTimeout(),
+            AuditDeliveryContext.PROVIDER);
   }
 
   @Bean
@@ -61,9 +85,36 @@ public class AxizNativeAuditAutoConfiguration {
   ReactiveAuditPublisher axizReactiveAuditPublisher(
       AsyncAuditEventPublisher publisher, AxizAuditProperties properties, BeanFactory beans) {
     ReactiveAuditPublisher fallback = ReactiveAuditPublisher.from(publisher);
-    return properties.durable().enabled()
+    return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
         ? ReactiveDurableAudit.wrap(beans, properties.durable(), fallback)
         : fallback;
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
+  static class MetricsConfiguration {
+    @Bean
+    MeterBinder axizNativeAuditMetrics(
+        AsyncAuditEventPublisher delivery, ReactiveAuditPublisher publisher) {
+      return registry -> {
+        if (delivery instanceof QueuedAsyncAuditPublisher queued)
+          AxizAuditAutoConfiguration.MetricsConfiguration.bindQueue(registry, queued.queue());
+        if (delivery instanceof ConfirmedAsyncAuditPublisher sync)
+          FunctionCounter.builder(
+                  "axiz.audit.persistence.unconfirmed",
+                  sync,
+                  ConfirmedAsyncAuditPublisher::unconfirmedCount)
+              .description("Destination acknowledgements that failed after business completion")
+              .register(registry);
+        if (publisher instanceof ReactiveTransactionalAuditPublisher durable)
+          FunctionCounter.builder(
+                  "axiz.audit.persistence.not.confirmed",
+                  durable,
+                  ReactiveTransactionalAuditPublisher::notConfirmedCount)
+              .description("Durable audit writes degraded to the asynchronous fallback")
+              .register(registry);
+      };
+    }
   }
 
   @Bean
@@ -84,6 +135,28 @@ public class AxizNativeAuditAutoConfiguration {
 
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  @ConditionalOnClass(
+      name = "org.springframework.transaction.reactive.TransactionSynchronizationManager")
+  static Advisor axizReactiveAuditSuccessAdvisor(ObjectProvider<AxizAuditProperties> properties) {
+    var advisor =
+        new DefaultPointcutAdvisor(
+            new AnnotationMatchingPointcut(null, Auditable.class, true),
+            new ReactiveTransactionalAuditSuccessInterceptor(
+                () -> properties.getObject().effectiveMode() == AxizAuditProperties.Mode.DURABLE));
+    advisor.setOrder(Ordered.LOWEST_PRECEDENCE);
+    return advisor;
+  }
+
+  @Bean
+  @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  @ConditionalOnClass(name = "org.springframework.transaction.interceptor.TransactionInterceptor")
+  static AuditAdvisorOrderValidator axizReactiveAuditAdvisorOrder(
+      ConfigurableListableBeanFactory beans) {
+    return new AuditAdvisorOrderValidator(beans);
+  }
+
+  @Bean
+  @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
   static Advisor axizReactiveAuditableAdvisor(
       ObjectProvider<ReactiveAuditTrail> trail, ObjectProvider<AuditContextResolver> context) {
     var advisor =
@@ -92,8 +165,7 @@ public class AxizNativeAuditAutoConfiguration {
             new ReactiveAuditableInterceptor(
                 trail::getObject,
                 () -> context.getIfAvailable(AuditContextResolver::fromRequestContext)));
-    // Hexagonal use-case transaction advisor is 50; audit must execute inside that transaction.
-    advisor.setOrder(60);
+    advisor.setOrder(20);
     return advisor;
   }
 }

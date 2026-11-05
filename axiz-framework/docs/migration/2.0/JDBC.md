@@ -1,0 +1,36 @@
+# JDBC extraction
+
+The core retains business ports and orchestration and has no dependency on `java.sql` or
+`javax.sql`. A whole-module ArchUnit rule verifies this boundary.
+
+| Old type | 2.0 type / artifact |
+|---|---|
+| `pe.axiz.core.commons.jdbc.TransactionRunner` | `pe.axiz.core.commons.tx.TransactionRunner` / `axiz-core-commons` |
+| `pe.axiz.core.commons.jdbc.ConnectionProvider`, `JdbcTransactions`, `SqlStates` | `pe.axiz.kit.jdbc.*` / `axiz-kit-jdbc` |
+| `pe.axiz.core.outbox.JdbcOutboxStore`, `Dialect` | `pe.axiz.adapter.outbox.jdbc.*` / `axiz-adapter-outbox-jdbc` |
+| `pe.axiz.core.inbox.JdbcInboxStore` | `pe.axiz.adapter.inbox.jdbc.JdbcInboxStore` / `axiz-adapter-inbox-jdbc` |
+| `pe.axiz.core.saga.JdbcSagaStateStore` | `pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore` / `axiz-adapter-saga-jdbc` |
+| `pe.axiz.core.sequence.JdbcSequenceStore` | `pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore` / `axiz-adapter-sequence-jdbc` |
+
+`JdbcOutboxPreflight` is in the outbox JDBC adapter as well. SQL resource names remain
+`axiz/sql/<capability>-<database>.sql`; their owning JAR is the corresponding JDBC adapter.
+Services provide versioned Flyway migrations. The ordered-outbox upgrade is still a maintenance
+operation that preserves FAILED rows and prints a preflight report, never an automatic skip.
+
+The BOM manages all five extracted technology modules. Spring wiring uses optional adapter
+dependencies; the capability catalog adds each required JDBC adapter as a runtime dependency to
+the consumer. `MigrateToAxiz2` rewrites moved types individually. It does not rename a dependency
+on `axiz-core-commons` wholesale: consumers still need its pure contracts.
+
+Run `axiz upgrade` to align the project manifest, dependency scopes and generated files, then
+review recipe changes and compile. A service should import business ports and inject their beans;
+code that constructs a JDBC store belongs in its infrastructure/composition adapter.
+
+These are **partial extractions** with real 1.x predecessors, recorded separately in
+`renames.json.extractions`. Each extracted module compares the moved public types against its
+actual original core artifact. The existing core artifact is also compared; neither API gate is
+skipped. The reviewed replacement hashes in `api-changes.md` must match the final public surface.
+
+Database tests moved with their implementations. Pure core tests use controlled ports and assert
+orchestration decisions independently; real JDBC and native R2DBC integration suites verify
+transaction sharing, owner fencing, concurrent delivery and recovery against actual databases.

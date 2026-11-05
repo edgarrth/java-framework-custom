@@ -3,7 +3,10 @@ package pe.axiz.test.contracts;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyStore;
@@ -26,10 +29,15 @@ public final class AsyncIdempotencyProbe implements IdempotencyStore {
     } catch (InterruptedException interrupted) {
       Thread.currentThread().interrupt();
       throw new AssertionError("Interrupted async contract", interrupted);
-    } catch (java.util.concurrent.ExecutionException
-        | java.util.concurrent.TimeoutException failure) {
+    } catch (ExecutionException | TimeoutException failure) {
       throw new AssertionError("Asynchronous store contract failed", failure);
     }
+  }
+
+  @Override
+  public boolean compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    return await(store.compareAndSet(expected, replacement));
   }
 
   @Override

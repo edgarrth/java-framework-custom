@@ -2,6 +2,7 @@ package pe.axiz.codegen.render;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -59,8 +60,8 @@ public final class JavaFormatter {
             out.put(
                 path,
                 path.endsWith(".java")
-                    ? format(new String(content, java.nio.charset.StandardCharsets.UTF_8))
-                        .getBytes(java.nio.charset.StandardCharsets.UTF_8)
+                    ? format(new String(content, StandardCharsets.UTF_8))
+                        .getBytes(StandardCharsets.UTF_8)
                     : content));
     return out;
   }

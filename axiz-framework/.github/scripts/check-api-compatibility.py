@@ -43,7 +43,7 @@ def load_inventory(path):
 def collect(root, baseline, report_name="api-compat"):
     errors, changes, classes, published = [], [], {}, {}
     renames = json.loads((root / "docs/migration/2.0/renames.json").read_text())
-    predecessors = {item["newArtifact"]: item["oldArtifact"] for item in renames["modules"]}
+    predecessors = {item["newArtifact"]: item["oldArtifact"] for item in [*renames["modules"], *renames.get("extractions", [])]}
     new_modules = {line.strip() for line in (root / "docs/migration/2.0/new-modules.txt").read_text().splitlines()
                    if line.strip() and not line.startswith("#")}
     seen = set()

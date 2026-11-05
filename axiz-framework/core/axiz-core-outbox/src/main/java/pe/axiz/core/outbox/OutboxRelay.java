@@ -5,10 +5,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.jdbc.TransactionRunner;
-import pe.axiz.core.messaging.CloudEventJson;
+import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
@@ -28,6 +29,7 @@ public final class OutboxRelay {
   private final int batchSize;
   private final int maxAttempts;
   private final Backoff backoff;
+  private final Duration lease;
 
   public OutboxRelay(
       OutboxStore store,
@@ -37,6 +39,26 @@ public final class OutboxRelay {
       int batchSize,
       int maxAttempts,
       Backoff backoff) {
+    this(
+        store,
+        publisher,
+        transactions,
+        clock,
+        batchSize,
+        maxAttempts,
+        backoff,
+        Duration.ofMinutes(3));
+  }
+
+  public OutboxRelay(
+      OutboxStore store,
+      EventPublisher publisher,
+      TransactionRunner transactions,
+      Clock clock,
+      int batchSize,
+      int maxAttempts,
+      Backoff backoff,
+      Duration lease) {
     this.store = Objects.requireNonNull(store);
     this.publisher = Objects.requireNonNull(publisher);
     this.transactions = Objects.requireNonNull(transactions);
@@ -47,6 +69,8 @@ public final class OutboxRelay {
     this.batchSize = batchSize;
     this.maxAttempts = maxAttempts;
     this.backoff = Objects.requireNonNull(backoff);
+    this.lease = Objects.requireNonNull(lease);
+    if (!lease.isPositive()) throw new IllegalArgumentException("lease must be positive");
   }
 
   /** Result of one relay run. */
@@ -56,32 +80,51 @@ public final class OutboxRelay {
     }
   }
 
-  public RunResult relayOnce() {
+  private <T> T transaction(Callable<T> work) {
     try {
-      return transactions.inTransaction(this::relayBatch);
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new OutboxException("Outbox relay failed", e);
+      return transactions.inTransaction(work);
+    } catch (RuntimeException failure) {
+      throw failure;
+    } catch (Exception failure) {
+      throw new OutboxException("Outbox transaction failed", failure);
     }
   }
 
-  private RunResult relayBatch() {
+  public RunResult relayOnce() {
+    int published = 0;
+    int retried = 0;
+    int failed = 0;
+    RunResult result;
+    do {
+      result = relayClaim(batchSize - published - retried - failed);
+      published += result.published();
+      retried += result.retried();
+      failed += result.failed();
+    } while (published + retried + failed < batchSize && result.published() > 0);
+    return new RunResult(published, retried, failed);
+  }
+
+  private RunResult relayClaim(int limit) {
     Instant now = clock.instant();
-    List<OutboxRecord> batch = store.lockDue(batchSize, now);
+    String owner = UUID.randomUUID().toString();
+    List<OutboxRecord> batch = transaction(() -> store.claimDue(limit, now, lease, owner));
     int published = 0;
     int retried = 0;
     int failed = 0;
     for (OutboxRecord r : batch) {
+      if (r.leaseUntil() == null || !r.leaseUntil().isAfter(clock.instant())) continue;
       try {
-        publisher.publish(r.destination(), CloudEventJson.read(r.envelopeJson()));
-        store.markPublished(r.id(), clock.instant());
-        published++;
+        publisher.publish(r.destination(), r.event());
+        if (transaction(() -> store.markPublished(r.id(), owner, clock.instant()))) published++;
       } catch (RuntimeException e) {
         int attempts = r.attempts() + 1;
         boolean giveUp = attempts >= maxAttempts;
         Duration delay = backoff.delay(attempts);
-        store.markFailed(r.id(), attempts, now.plus(delay), e.toString(), giveUp);
+        if (!transaction(
+            () ->
+                store.markFailed(
+                    r.id(), owner, attempts, clock.instant().plus(delay), e.toString(), giveUp)))
+          continue;
         if (giveUp) {
           failed++;
           LOG.error(
@@ -111,7 +154,7 @@ public final class OutboxRelay {
     do {
       r = relayOnce();
       total += r.published();
-    } while (r.total() == batchSize);
+    } while (r.published() > 0);
     return total;
   }
 }

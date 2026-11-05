@@ -10,6 +10,15 @@ server:
   port: 8080
   shutdown: graceful
 axiz:
+  dynamodb:
+    table-prefix: ${AXIZ_DYNAMODB_TABLE_PREFIX:local-}
+    cursor:
+      current-key-id: v1
+      key-ids: [v1]
+      secret-prefix: cursor-key-
+      encrypt: false
+  secrets:
+    directory: /var/run/secrets/axiz
   aws:
     region: ${AWS_REGION:us-east-1}
   foundation:
@@ -41,8 +50,6 @@ axiz:
       audiences:
       - beneficiaries-crud
       - beneficiaries
-  dynamodb:
-    table-prefix: ${AXIZ_DYNAMODB_TABLE_PREFIX:local-}
   cache:
     default-ttl: 10m
     redis: false

@@ -14,6 +14,7 @@ public enum ErrorCategory {
   METHOD_NOT_ALLOWED(405, ErrorType.VALIDATION, false),
   CONFLICT(409, ErrorType.BUSINESS, false),
   PRECONDITION_FAILED(412, ErrorType.BUSINESS, false),
+  PAYLOAD_TOO_LARGE(413, ErrorType.VALIDATION, false),
   UNSUPPORTED_MEDIA_TYPE(415, ErrorType.VALIDATION, false),
   UNPROCESSABLE(422, ErrorType.BUSINESS, false),
   TOO_MANY_REQUESTS(429, ErrorType.SECURITY, true),

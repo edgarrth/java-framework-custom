@@ -43,3 +43,4 @@ DynamoRepository<Item> items = repositories.create("items", Item.class);
 ## Módulos
 
 - [`axiz-dynamodb-spring-boot-autoconfigure`](../referencia/spring/axiz-dynamodb-spring-boot-autoconfigure.md)
+- [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)

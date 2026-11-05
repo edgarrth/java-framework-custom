@@ -1,1 +1,2 @@
 pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration
+pe.axiz.spring.dynamodb.AxizDynamoCursorAutoConfiguration

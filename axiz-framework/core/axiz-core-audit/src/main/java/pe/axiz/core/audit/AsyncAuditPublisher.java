@@ -7,8 +7,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.commons.Stages;
 
 /**
  * Real asynchronous publication: a bounded queue drained by a virtual thread. When the queue is
@@ -26,7 +29,11 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
 
   private final AuditPublisher delegate;
   private final AuditPublisher fallback;
-  private final BlockingQueue<AuditEvent> queue;
+
+  private record Pending(AuditEvent event, Supplier<RequestContext.Scope> context) {}
+
+  private final BlockingQueue<Pending> queue;
+  private final Stages.ContextProvider context;
   private final Duration offerTimeout;
   private final Duration closeTimeout;
   private final Thread worker;
@@ -56,11 +63,23 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       int capacity,
       Duration offerTimeout,
       Duration closeTimeout) {
+    this(delegate, fallback, capacity, offerTimeout, closeTimeout, () -> () -> () -> {});
+  }
+
+  /** Captures only the metadata selected by the integration, never an execution or transaction. */
+  public AsyncAuditPublisher(
+      AuditPublisher delegate,
+      AuditPublisher fallback,
+      int capacity,
+      Duration offerTimeout,
+      Duration closeTimeout,
+      Stages.ContextProvider context) {
     this.delegate = Objects.requireNonNull(delegate);
     this.fallback = Objects.requireNonNull(fallback);
     this.queue = new ArrayBlockingQueue<>(capacity);
     this.offerTimeout = Objects.requireNonNull(offerTimeout);
     this.closeTimeout = Objects.requireNonNull(closeTimeout);
+    this.context = Objects.requireNonNull(context);
     this.worker = Thread.ofVirtual().name("axiz-audit-publisher").start(this::drain);
   }
 
@@ -71,7 +90,8 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       return;
     }
     try {
-      if (!queue.offer(event, offerTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
+      if (!queue.offer(
+          new Pending(event, context.capture()), offerTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
         toFallback(event);
       }
     } catch (InterruptedException e) {
@@ -80,9 +100,14 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
     }
   }
 
+  /** Native facade acceptance: immediate offer, with the same observable fallback policy. */
+  public void publishWithoutWait(AuditEvent event) {
+    if (!running.get() || !queue.offer(new Pending(event, context.capture()))) toFallback(event);
+  }
+
   private void drain() {
     while (running.get() || !queue.isEmpty()) {
-      AuditEvent event;
+      Pending event;
       try {
         event = queue.poll(200, TimeUnit.MILLISECONDS);
       } catch (InterruptedException e) {
@@ -95,8 +120,9 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
     }
   }
 
-  private void deliver(AuditEvent event) {
-    try {
+  private void deliver(Pending pending) {
+    AuditEvent event = pending.event();
+    try (var scope = pending.context().get()) {
       delegate.publish(event);
       delivered.incrementAndGet();
     } catch (RuntimeException e) {
@@ -164,9 +190,9 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       worker.interrupt();
     }
     int flushed = 0;
-    AuditEvent remaining;
+    Pending remaining;
     while ((remaining = queue.poll()) != null) {
-      toFallback(remaining);
+      toFallback(remaining.event());
       flushed++;
     }
     if (!drained || flushed > 0 || lost.get() > 0) {

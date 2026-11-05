@@ -196,6 +196,8 @@ jobs:
           nexus-url: ${{ secrets.NEXUS_URL }}
       - name: Install the framework and generate the samples
         run: .github/scripts/samples.sh
+      - name: Generated MVC and WebFlux authorization denies missing scopes before application code
+        run: bash .github/scripts/authorization-samples.sh
       - name: Release versions and POM updates of actual generated projects
         run: |
           npm ci --prefix .github/scripts/release-version --no-audit --no-fund --ignore-scripts

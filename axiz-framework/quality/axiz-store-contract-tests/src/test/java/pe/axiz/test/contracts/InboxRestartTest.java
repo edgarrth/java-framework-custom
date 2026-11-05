@@ -11,9 +11,9 @@ import java.time.Instant;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import pe.axiz.core.commons.jdbc.JdbcTransactions;
+import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition.Status;
-import pe.axiz.core.inbox.JdbcInboxStore;
+import pe.axiz.kit.jdbc.JdbcTransactions;
 
 class InboxRestartTest {
   @TempDir Path directory;

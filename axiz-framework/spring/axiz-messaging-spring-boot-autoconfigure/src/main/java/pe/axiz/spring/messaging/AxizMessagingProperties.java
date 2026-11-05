@@ -1,6 +1,8 @@
 package pe.axiz.spring.messaging;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -28,8 +30,7 @@ public record AxizMessagingProperties(
     @DefaultValue Sqs sqs,
     @DefaultValue Routes routes) {
   public AxizMessagingProperties {
-    destinations =
-        java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(destinations));
+    destinations = Collections.unmodifiableMap(new LinkedHashMap<>(destinations));
   }
 
   /**
@@ -121,8 +122,7 @@ public record AxizMessagingProperties(
       @DefaultValue("10") int batchSize,
       @DefaultValue("60s") Duration visibilityTimeout) {
     public Sqs {
-      deadLetterQueues =
-          java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(deadLetterQueues));
+      deadLetterQueues = Collections.unmodifiableMap(new LinkedHashMap<>(deadLetterQueues));
       queues = List.copyOf(queues);
     }
   }

@@ -1140,3 +1140,45 @@ Los logs anteriores fallidos se conservan para diagnóstico; no se cuentan como 
 aprobadas. Los procesos Java de la demo se detuvieron al finalizar el smoke. La infraestructura
 Docker de la demo continúa disponible, sin borrar volúmenes. Esta aceptación local no constituye
 publicación de artefactos ni despliegue en un ambiente remoto.
+
+
+## Plan de correcciones del 2026-11-04 — cierre local del 2026-11-05
+
+históricos anteriores corresponden al estado previo y no sustituyen estas evidencias.
+
+| ID | Resultado | Evidencia |
+|---|---|---|
+| A2/A3 | Corregido: Reserva/retención, UNKNOWN, CAS, renovación y resolución sync/native | idempotency-red.log; contratos concurrentes reales PostgreSQL/Valkey/DynamoDB; lease y fingerprint |
+| A1/M1 | Corregido: Secuencia persistente, claim/lease, fencing, recuperación auditada y preflight SELECT-only | outbox-red.log; siete casos PostgreSQL; H2; Doctor con permisos SELECT |
+| A4/B4 | Corregido: Gramática numérica acotada y rechazo de claves duplicadas, incluso tras null | phase1-red.log; JsonSafetyTest y regresiones de codecs |
+| M2 | Corregido: Efecto e inbox en la misma transacción con identidad de recurso comprobada | inbox-red.log; cinco casos PostgreSQL/BlockHound; selección del recurso |
+| A5 | Corregido: Guard previo efectivo, scopes AND y pruebas negativas generadas | authorization-coverage-red.log; scope-codegen-red.log; diez casos MVC/WebFlux |
+| A6 | Corregido: Modalidades, dos ejes, fallos exteriores, timeout/degradación y contexto de cola | audit-boundary-red.log; seis casos PostgreSQL/BlockHound; dos sin Spring Transaction |
+| M4 | Corregido: fail-open obligatorio por regla; indisponibilidad cerrada devuelve 503 | rate-limit-red.log; Valkey pausado; receta de migración |
+| M5 | Corregido: Límites efectivos de cuerpo declarado/chunked, Reader y Jackson | body-limits-red.log; pruebas MVC/WebFlux y límites de JsonMapper |
+| M6 | Corregido: AAD explícito, converters autoApply, legado de lectura y reencriptación | crypto-cursor-red.log; jpa-auto-converter-red.log; migración local con respaldo |
+| M7 | Corregido: Cursor HMAC/binding/kid/rotación y cifrado opcional; claves desde secrets | crypto-cursor-red.log; tres casos LocalStack/BlockHound; rechazo de alteración y otra consulta |
+| B6 | Corregido: Contrato API canónico, puente retirado y receta | Fixture 1.x migrado compila contra API 2.0 real; gate API sin omisiones |
+| M8/M9 | Corregido: JDBC en kit y cuatro adaptadores; TransactionRunner puro en core | Arquitectura y grafo de 164 módulos; upgrade de nueve proyectos; 144 comparaciones API |
+| M10 | Corregido: Invariantes/concurrencia/recuperación; supervivientes revisados; mínimos elevados | Pruebas rojas de lease; CSV de 156 mutantes; PIT y cobertura con nuevos mínimos |
+| B3 | Corregido: Warning de nombres calificados e imports simplificados al tocar módulos | Error Prone/NullAway; sin avisos de nombres calificados en los módulos intervenidos |
+
+- Fedora WSL 42/JDK 25/Docker 29.5.3; evidencia: `/tmp/axiz-plan-2.0-20261104/`.
+- Respaldo previo: `~/Workspace/Java/java-development-framework-backup-20261104-062604-pre-plan-2.0.zip`.
+  SHA-256: `4882586759d1b1fe2f8a35464532c84606713f28d9f651e0f477986e533e22d3`.
+- **164 módulos y 1690 pruebas** aprobados en la consolidación global, sin fallos, errores
+  ni omisiones. PIT se conserva en dos tramos aprobados y los ocho mínimos críticos se elevaron.
+- 90 contratos/integraciones reales PostgreSQL/Valkey/LocalStack; siete casos propios de outbox y
+  seis de auditoría nativa; diez pruebas negativas generadas MVC/WebFlux.
+- Herramientas completas con calidad y PIT: 132 pruebas, incluidas recetas, CLI/Doctor e Initializr.
+- API: 144 comparaciones reales contra 1.0.0; inventario de 213 clases incompatibles previstas,
+  sin omisiones. Receta actualizada y fixture migrado compilado contra API 2.0 real.
+- Demo: nueve proyectos actualizados, 191 pruebas; 8/8 servicios, smoke y 41 comprobaciones
+  funcionales aprobadas. Datos migrados con respaldo; procesos Java detenidos al terminar.
+- Políticas, arquitectura, dependencias, cobertura agregada, wrapper, contratos, checkout de
+  fuentes y documentación estricta aprobados.
+
+Los logs rojos y fallidos se conservan como diagnóstico. El reporte distingue la interrupción de
+la primera ejecución global, su continuación con PIT y la consolidación de los 164 módulos juntos.
+No se bajaron mínimos ni se excluyeron mutantes para obtener el cierre. No se publicaron artefactos
+ni se realizaron despliegues o ensayos remotos. No se borraron datos ni volúmenes de la demo.

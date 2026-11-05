@@ -15,6 +15,9 @@
   <description>Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once</description>
 
   <properties>
+    <!-- M10: measured locally; floor of branch 32/38 and detected mutations 54/62. -->
+    <axiz.coverage.branch>0.84</axiz.coverage.branch>
+    <axiz.mutation.threshold>87</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.outbox</axiz.module.name>
   </properties>
 
@@ -37,11 +40,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>

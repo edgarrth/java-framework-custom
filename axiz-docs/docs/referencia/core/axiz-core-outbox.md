@@ -18,8 +18,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 | Type | Purpose |
 |---|---|
-| `Dialect` | SQL differences between the supported databases. |
-| `JdbcOutboxStore` | JDBC outbox store (Aurora PostgreSQL in production; schema in `axiz/sql/outbox.sql`). |
 | `OutboxException` | Outbox persistence failure. |
 | `OutboxRecord` | A pending (or processed) outbox entry. |
 | `OutboxRelay` | Moves outbox entries to the broker (at-least-once). |
@@ -30,3 +28,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-outbox verify`.
+
+## JDBC extraction in 2.0
+
+The JDBC implementation and SQL resources now live in `axiz-adapter-outbox-jdbc`; this module contains
+framework-neutral contracts and orchestration. `TransactionRunner` remains in
+`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
+`runtime` scope in a service. See [JDBC migration](../../migracion/jdbc-2.md).

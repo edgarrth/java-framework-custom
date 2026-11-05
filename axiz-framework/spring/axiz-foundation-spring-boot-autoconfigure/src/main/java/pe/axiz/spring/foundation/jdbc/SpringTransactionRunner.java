@@ -3,8 +3,9 @@ package pe.axiz.spring.foundation.jdbc;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
-import pe.axiz.core.commons.jdbc.TransactionRunner;
+import pe.axiz.core.commons.tx.TransactionRunner;
 
 /** Runs work in a new or joined Spring transaction; checked exceptions roll back too. */
 public final class SpringTransactionRunner implements TransactionRunner {
@@ -12,7 +13,7 @@ public final class SpringTransactionRunner implements TransactionRunner {
   private final TransactionTemplate template;
 
   public SpringTransactionRunner(PlatformTransactionManager transactions) {
-    this(transactions, org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRED);
+    this(transactions, TransactionDefinition.PROPAGATION_REQUIRED);
   }
 
   /** Explicit propagation for independent durable operations such as sequence reservations. */

@@ -114,7 +114,7 @@ public class AxizCqrsAutoConfiguration {
     AuthorizationCoverage.verify(
         registrations.stream().<Class<?>>map(Buses.Registration::requestType).toList(),
         new AccessPolicies(policies.orderedStream().toList()),
-        environment.getProperty(UNPROTECTED_PROPERTY, "warn"));
+        environment.getProperty(UNPROTECTED_PROPERTY, "fail"));
     return new Buses(registrations, behaviors.orderedStream().toList());
   }
 

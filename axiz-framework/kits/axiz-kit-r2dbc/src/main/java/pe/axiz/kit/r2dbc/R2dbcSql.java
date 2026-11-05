@@ -34,6 +34,11 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   @Override
+  public Object transactionResource() {
+    return connections;
+  }
+
+  @Override
   public Mono<Long> update(String sql, SqlParams params) {
     NamedSql named = NamedSql.parse(sql);
     return withConnection(
@@ -71,6 +76,16 @@ public final class R2dbcSql implements ReactiveSql {
         c -> Mono.from(c.close()),
         (c, error) -> rollbackAndClose(c, error),
         c -> rollbackAndClose(c, null));
+  }
+
+  /**
+   * Carries the transaction of an imperative worker through the entire reactive composition. Call
+   * only at the blocking boundary, on the thread owned by R2dbcTransactionRunner. Capturing each
+   * statement separately loses the binding when flatMap resumes on a driver thread.
+   */
+  public <T> Mono<T> withCallingTransaction(Mono<T> work) {
+    Connection connection = BoundConnection.current(connections);
+    return connection == null ? work : work.contextWrite(context -> bind(context, connection));
   }
 
   static Mono<Void> rollbackAndClose(Connection c, @Nullable Throwable error) {

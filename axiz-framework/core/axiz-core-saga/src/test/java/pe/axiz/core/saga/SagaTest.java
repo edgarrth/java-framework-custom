@@ -4,23 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import pe.axiz.core.commons.jdbc.JdbcTransactions;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.core.resilience.RetryPolicy;
 
@@ -98,27 +91,12 @@ class SagaTest {
         Clock.systemUTC());
   }
 
-  private static SagaStateStore jdbcStore() throws Exception {
-    JdbcDataSource ds = new JdbcDataSource();
-    ds.setURL("jdbc:h2:mem:saga-" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-    try (Connection c = ds.getConnection();
-        Statement s = c.createStatement();
-        InputStream in = SagaTest.class.getResourceAsStream("/axiz/sql/saga-h2.sql")) {
-      for (String sql : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";")) {
-        if (!sql.replaceAll("--.*", "").isBlank()) {
-          s.execute(sql);
-        }
-      }
-    }
-    return new JdbcSagaStateStore(new JdbcTransactions(ds), "axiz_saga");
-  }
-
   private static SagaStateStore store(String kind) throws Exception {
-    return kind.equals("jdbc") ? jdbcStore() : new InMemorySagaStateStore();
+    return new InMemorySagaStateStore();
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"memory", "jdbc"})
+  @ValueSource(strings = {"memory"})
   void completesAllStepsWithTransientRetries(String kind) throws Exception {
     List<String> log = new ArrayList<>();
     Step reserve = new Step("reserve", log);
@@ -139,7 +117,7 @@ class SagaTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"memory", "jdbc"})
+  @ValueSource(strings = {"memory"})
   void compensatesInReverseOrder(String kind) throws Exception {
     List<String> log = new ArrayList<>();
     Step a = new Step("reserve", log);
@@ -195,7 +173,7 @@ class SagaTest {
     List<String> log = new ArrayList<>();
     Step a = new Step("reserve", log);
     Step b = new Step("send", log);
-    SagaStateStore store = jdbcStore();
+    SagaStateStore store = new InMemorySagaStateStore();
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
     // simulate a crash after step 1 was persisted
     store.create(
@@ -424,20 +402,6 @@ class SagaTest {
     assertEquals(SagaStatus.IN_DOUBT, stored.status());
     assertEquals(1, stored.stepIndex());
     assertTrue(!stored.status().terminal(), "recovery will ask again");
-  }
-
-  @Test
-  void inDoubtSagasAreStaleForRecoveryInJdbc() throws Exception {
-    SagaStateStore store = jdbcStore();
-    List<String> log = new ArrayList<>();
-    noRetry(store)
-        .start(
-            new SagaDefinition<>("payment", List.of(new LostResponseStep("debit", log))),
-            new Codec(),
-            "s-15",
-            new ArrayList<>());
-    assertEquals(SagaStatus.IN_DOUBT, store.find("s-15").orElseThrow().status());
-    assertEquals(1, store.findStale(Instant.now().plusSeconds(1), 10).size());
   }
 
   @Test

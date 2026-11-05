@@ -36,9 +36,14 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 class DynamoAsyncRepositoryTest {
+  private final CursorCodec cursors =
+      new CursorCodec(
+          new pe.axiz.core.crypto.StaticKeyProvider(
+              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
+          false);
   private final Scripted client = new Scripted();
   private final DynamoAsyncRepository<Beneficiary> repository =
-      new DynamoAsyncRepository<>(client, "beneficiaries", SCHEMA);
+      new DynamoAsyncRepository<>(client, "beneficiaries", SCHEMA, () -> cursors);
 
   @Test
   void consistentReadsMapAbsenceAndFullKeys() {
@@ -131,7 +136,7 @@ class DynamoAsyncRepositoryTest {
 
   @Test
   void queryFetchesOnlyOnePageAndRoundTripsCursorAndIndex() {
-    var first = repository.query("C-1", 2, null).toCompletableFuture();
+    var first = repository.queryBeginsWith("C-1", "B-", 2, null).toCompletableFuture();
     assertEquals(2, client.last(QueryRequest.class).limit());
     var last = Map.of("customer", AttributeValue.fromS("C-1"), "id", AttributeValue.fromS("B-1"));
     client.complete(
@@ -162,7 +167,7 @@ class DynamoAsyncRepositoryTest {
     }
     var invalid = repository.query("C-1", 1, "invalid").toCompletableFuture();
     assertInstanceOf(
-        IllegalArgumentException.class,
+        InvalidCursorException.class,
         assertThrows(CompletionException.class, invalid::join).getCause());
     assertTrue(client.requests.isEmpty());
     var broken =

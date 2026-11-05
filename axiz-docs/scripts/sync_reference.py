@@ -189,6 +189,10 @@ def adrs(framework, out):
         with open(implementation, encoding='utf-8') as source:
             write(os.path.join(out, 'migracion', 'implementacion-2.md'),
                   source.read().replace('../../adr/', '../adr/'))
+    jdbc = os.path.join(framework, 'docs', 'migration', '2.0', 'JDBC.md')
+    if os.path.isfile(jdbc):
+        with open(jdbc, encoding='utf-8') as source:
+            write(os.path.join(out, 'migracion', 'jdbc-2.md'), source.read())
     write(os.path.join(dst, 'index.md'),
           '# Decisiones de arquitectura (architecture contract)\n\nDecisiones del framework, sincronizadas desde '
           '`axiz-framework/docs`. Cada servicio registra las suyas en su propio `docs`.\n\n'
@@ -212,7 +216,8 @@ def reference(modules, out):
         for name, text in sorted(mods.items()):
             first = next((l for l in text.splitlines()[1:] if l.strip() and not l.startswith('#')), '')
             rows.append([f'[`{name}`]({layer}/{name}.md)', first.strip()])
-            write(os.path.join(dst, layer, name + '.md'), text)
+            write(os.path.join(dst, layer, name + '.md'),
+                  text.replace('../../docs/migration/2.0/JDBC.md', '../../migracion/jdbc-2.md'))
         parts.append(table(rows, ['Módulo', 'Descripción']) + '\n')
     write(os.path.join(dst, 'index.md'), '\n'.join(parts))
 

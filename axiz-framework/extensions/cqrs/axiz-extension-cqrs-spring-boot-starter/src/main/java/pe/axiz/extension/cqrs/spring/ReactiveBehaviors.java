@@ -14,9 +14,11 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
@@ -126,7 +128,8 @@ public final class ReactiveBehaviors {
         AccessPolicies policies, List<? extends ReactiveAccessPolicy<?>> reactivePolicies) {
       if (!Objects.requireNonNull(policies).isEmpty())
         throw new IllegalArgumentException(
-            "Reactive CQRS requires ReactiveAccessPolicy; imperative access policies are not supported");
+            "Reactive CQRS requires ReactiveAccessPolicy; imperative access policies are not"
+                + " supported");
       this.reactivePolicies = List.copyOf(reactivePolicies);
     }
 
@@ -223,15 +226,14 @@ public final class ReactiveBehaviors {
                 IdempotencyService.Proceed execution = (IdempotencyService.Proceed) decision;
                 return Mono.defer(
                     () -> {
+                      var lease = service.startLease(execution);
                       Mono<R> tracked =
                           Mono.defer(next::proceed)
                               .materialize()
                               .flatMap(
                                   signal -> {
                                     Throwable original = signal.getThrowable();
-                                    if (original != null)
-                                      return release(execution, original)
-                                          .then(Mono.error(original));
+                                    if (original != null) return Mono.error(original);
                                     @Nullable R value = signal.get();
                                     Mono<Void> delivery =
                                         complete(
@@ -244,17 +246,22 @@ public final class ReactiveBehaviors {
                                         : delivery.thenReturn(value);
                                   });
                       return Mono.usingWhen(
-                          Mono.just(execution),
-                          ignored -> tracked,
-                          ignored -> Mono.empty(),
-                          (ignored, error) -> Mono.empty(),
-                          ignored -> release(execution, new CancellationException("cancelled")));
+                              Mono.just(execution),
+                              ignored -> tracked,
+                              ignored -> Mono.empty(),
+                              (ignored, error) -> release(execution, error),
+                              ignored -> release(execution, new CancellationException("cancelled")))
+                          .doFinally(signal -> lease.close());
                     });
               });
     }
 
     private Mono<Void> release(IdempotencyService.Proceed execution, Throwable original) {
-      return ReactiveStages.from(() -> service.fail(execution))
+      return ReactiveStages.from(
+              () ->
+                  original instanceof NoEffect
+                      ? service.releaseWithoutEffect(execution)
+                      : service.fail(execution))
           .then()
           .onErrorResume(
               failure -> {
@@ -338,8 +345,7 @@ public final class ReactiveBehaviors {
                 metadata == null
                     ? AuditTrail.Context.system()
                     : new AuditTrail.Context(
-                        new pe.axiz.core.audit.AuditEvent.Actor(
-                            metadata.subject(), metadata.clientId(), null),
+                        new AuditEvent.Actor(metadata.subject(), metadata.clientId(), null),
                         metadata.correlationId(),
                         metadata.channel(),
                         metadata.tenantId());

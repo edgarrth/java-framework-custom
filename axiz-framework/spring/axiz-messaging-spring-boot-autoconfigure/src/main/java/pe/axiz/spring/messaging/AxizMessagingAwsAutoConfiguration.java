@@ -3,6 +3,7 @@ package pe.axiz.spring.messaging;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -21,9 +22,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  * come from the SDK default chain (IRSA or EKS Pod Identity).
  */
 @AutoConfiguration
-@org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty(
-    name = "axiz.messaging.enabled",
-    matchIfMissing = true)
+@ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)
 public class AxizMessagingAwsAutoConfiguration {
 

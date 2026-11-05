@@ -131,6 +131,7 @@ nav:
   - Migración:
       - migracion/index.md
       - Migrar a Axiz 2.0: migracion/axiz-2.md
+      - Extracción de JDBC: migracion/jdbc-2.md
       - Estado de implementación: migracion/implementacion-2.md
   - architecture contract: adr/index.md
   - Demo: demo.md

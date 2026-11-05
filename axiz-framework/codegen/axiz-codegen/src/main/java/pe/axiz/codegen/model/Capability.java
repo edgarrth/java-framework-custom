@@ -1,5 +1,8 @@
 package pe.axiz.codegen.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,7 +74,7 @@ public record Capability(
     localProperties = Catalog.ordered(localProperties);
     configMapKeys = List.copyOf(configMapKeys);
     secrets = List.copyOf(secrets);
-    persistence = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(persistence));
+    persistence = Collections.unmodifiableMap(new LinkedHashMap<>(persistence));
   }
 
   public boolean supports(Stack stack) {
@@ -90,7 +93,7 @@ public record Capability(
 
   /** Required capabilities including the store-specific ones. */
   public List<String> requires(String store) {
-    List<String> out = new java.util.ArrayList<>(requires);
+    List<String> out = new ArrayList<>(requires);
     Store s = persistence.get(store);
     if (s != null) {
       out.addAll(s.requires());
@@ -100,7 +103,7 @@ public record Capability(
 
   /** Properties including the store-specific ones. */
   public Map<String, Object> properties(String persistenceOption) {
-    Map<String, Object> out = new java.util.LinkedHashMap<>(properties);
+    Map<String, Object> out = new LinkedHashMap<>(properties);
     Store store = persistence.get(persistenceOption);
     if (store != null) {
       out.putAll(store.properties());
@@ -110,7 +113,7 @@ public record Capability(
 
   /** Dependencies including the store-specific ones. */
   public List<String> dependencies(String persistenceOption) {
-    List<String> out = new java.util.ArrayList<>(dependencies);
+    List<String> out = new ArrayList<>(dependencies);
     Store store = persistence.get(persistenceOption);
     if (store != null) {
       out.addAll(store.dependencies());

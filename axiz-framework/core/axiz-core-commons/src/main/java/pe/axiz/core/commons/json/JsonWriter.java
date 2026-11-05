@@ -1,6 +1,7 @@
 package pe.axiz.core.commons.json;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -61,7 +62,7 @@ public final class JsonWriter {
       }
       sb.append(']');
     } else if (value instanceof Object[] array) {
-      append(sb, java.util.Arrays.asList(array), depth);
+      append(sb, Arrays.asList(array), depth);
     } else {
       // text, enums, UUIDs, java.time values, characters and anything else: their text form
       string(sb, value.toString());

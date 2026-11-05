@@ -72,7 +72,7 @@ class IdempotencyTest {
   void failureReleasesTheKey() {
     String fp = IdempotencyService.fingerprint("POST", "/v1/payments", body);
     IdempotencyService.Proceed p = (IdempotencyService.Proceed) service.begin("s", key, fp);
-    service.fail(p);
+    service.releaseWithoutEffect(p);
     assertInstanceOf(IdempotencyService.Proceed.class, service.begin("s", key, fp));
   }
 
@@ -126,7 +126,7 @@ class IdempotencyTest {
     String fp = IdempotencyService.fingerprint("POST", "/v1/payments", body);
     IdempotencyService.Proceed a =
         assertInstanceOf(IdempotencyService.Proceed.class, svc.begin("s", key, fp));
-    clock.now = clock.now.plusSeconds(31);
+    clock.now = clock.now.plus(Duration.ofHours(2));
     IdempotencyService.Proceed b =
         assertInstanceOf(IdempotencyService.Proceed.class, svc.begin("s", key, fp));
     assertNotEquals(a.owner(), b.owner());
@@ -157,7 +157,7 @@ class IdempotencyTest {
             clock);
     String fp = IdempotencyService.fingerprint("POST", "/p", body);
     svc.begin("s", key, fp);
-    clock.now = clock.now.plusSeconds(31);
+    clock.now = clock.now.plus(Duration.ofHours(2));
     assertInstanceOf(IdempotencyService.Proceed.class, svc.begin("s", key, fp));
   }
 

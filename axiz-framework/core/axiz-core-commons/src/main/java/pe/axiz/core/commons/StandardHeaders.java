@@ -1,5 +1,6 @@
 package pe.axiz.core.commons;
 
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -26,6 +27,6 @@ public final class StandardHeaders {
   private StandardHeaders() {}
 
   public static boolean isNeverLogged(String headerName) {
-    return NEVER_LOG.contains(headerName.toLowerCase(java.util.Locale.ROOT));
+    return NEVER_LOG.contains(headerName.toLowerCase(Locale.ROOT));
   }
 }

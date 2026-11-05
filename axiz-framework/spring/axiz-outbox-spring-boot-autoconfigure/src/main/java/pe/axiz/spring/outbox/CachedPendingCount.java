@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.ToLongFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.outbox.OutboxStore;
@@ -23,6 +24,7 @@ public final class CachedPendingCount {
   private record Sample(double value, Instant at) {}
 
   private final OutboxStore store;
+  private final ToLongFunction<OutboxStore> query;
   private final Duration maxAge;
   private final Clock clock;
   private final AtomicReference<Sample> last =
@@ -30,6 +32,12 @@ public final class CachedPendingCount {
   private final AtomicBoolean refreshing = new AtomicBoolean();
 
   public CachedPendingCount(OutboxStore store, Duration maxAge, Clock clock) {
+    this(store, maxAge, clock, OutboxStore::countPending);
+  }
+
+  public CachedPendingCount(
+      OutboxStore store, Duration maxAge, Clock clock, ToLongFunction<OutboxStore> query) {
+    this.query = Objects.requireNonNull(query);
     this.store = Objects.requireNonNull(store);
     this.maxAge = Objects.requireNonNull(maxAge);
     this.clock = Objects.requireNonNull(clock);
@@ -53,7 +61,7 @@ public final class CachedPendingCount {
   /** Queries the store now (blocking). */
   void refresh() {
     try {
-      last.set(new Sample(store.countPending(), clock.instant()));
+      last.set(new Sample(query.applyAsLong(store), clock.instant()));
     } catch (RuntimeException e) {
       LOG.debug("Outbox pending count failed: {}", e.toString());
       last.set(new Sample(Double.NaN, clock.instant()));

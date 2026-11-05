@@ -1,6 +1,8 @@
 package pe.axiz.cli;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,10 +19,12 @@ import pe.axiz.codegen.Names;
 import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.RequestValidator;
 import pe.axiz.codegen.model.Archetype;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.LintFinding;
+import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.output.GeneratedProject;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -197,7 +201,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
             openApiText,
             asyncText,
             axizVersion == null ? Version.axiz() : axizVersion,
-            extensions.stream().map(pe.axiz.codegen.model.Extension::of).toList());
+            extensions.stream().map(Extension::of).toList());
     Path target = output.toAbsolutePath().normalize().resolve(projectName);
     if (Files.exists(target) && !force) {
       try (var entries = Files.list(target)) {
@@ -250,9 +254,8 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
   }
 
   private static String read(Path file) throws IOException {
-    if (Files.size(file) > pe.axiz.codegen.openapi.OpenApiDocument.MAX_SIZE) {
-      throw new IllegalArgumentException(
-          file + " exceeds " + pe.axiz.codegen.openapi.OpenApiDocument.MAX_SIZE + " bytes");
+    if (Files.size(file) > OpenApiDocument.MAX_SIZE) {
+      throw new IllegalArgumentException(file + " exceeds " + OpenApiDocument.MAX_SIZE + " bytes");
     }
     return Files.readString(file, StandardCharsets.UTF_8);
   }
@@ -265,7 +268,7 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
     m.put("description", r.description());
     m.put("archetype", r.archetype());
     m.put("structure", r.structure().id());
-    m.put("extensions", r.extensions().stream().map(pe.axiz.codegen.model.Extension::id).toList());
+    m.put("extensions", r.extensions().stream().map(Extension::id).toList());
     m.put("stack", r.stack().id());
     m.put("persistence", r.persistence());
     m.put("capabilities", r.capabilities());
@@ -277,11 +280,11 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
 
   /** Reads answers in interactive mode; otherwise uses the given value or the default. */
   static final class Prompter {
-    private final java.io.BufferedReader in;
-    private final java.io.PrintWriter out;
+    private final BufferedReader in;
+    private final PrintWriter out;
     private final boolean interactive;
 
-    Prompter(java.io.BufferedReader in, java.io.PrintWriter out, boolean interactive) {
+    Prompter(BufferedReader in, PrintWriter out, boolean interactive) {
       this.in = in;
       this.out = out;
       this.interactive = interactive;

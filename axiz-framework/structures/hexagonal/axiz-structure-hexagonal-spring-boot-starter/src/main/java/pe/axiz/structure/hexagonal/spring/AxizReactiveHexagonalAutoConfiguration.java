@@ -1,9 +1,12 @@
 package pe.axiz.structure.hexagonal.spring;
 
 import io.micrometer.observation.ObservationRegistry;
+import java.lang.reflect.Method;
+import org.reactivestreams.Publisher;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -49,11 +52,10 @@ public class AxizReactiveHexagonalAutoConfiguration {
         new ComposablePointcut(AxizHexagonalAutoConfiguration.useCaseMethods())
             .intersection(type -> ReactiveUseCase.class.isAssignableFrom(type))
             .intersection(
-                new org.springframework.aop.support.StaticMethodMatcher() {
+                new StaticMethodMatcher() {
                   @Override
-                  public boolean matches(java.lang.reflect.Method method, Class<?> targetClass) {
-                    return org.reactivestreams.Publisher.class.isAssignableFrom(
-                        method.getReturnType());
+                  public boolean matches(Method method, Class<?> targetClass) {
+                    return Publisher.class.isAssignableFrom(method.getReturnType());
                   }
                 });
     var advisor =

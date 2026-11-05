@@ -42,6 +42,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 /** Native repository wire contract, with cold operations and callbacks checked by BlockHound. */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoRepositoryIT {
+  private static final javax.crypto.SecretKey CURSOR_KEY = pe.axiz.core.crypto.AesGcm.newKey();
   private static final LocalStackContainer LOCALSTACK =
       new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
   private static AsyncAwsClients resources;
@@ -153,7 +154,14 @@ class LocalStackDynamoRepositoryIT {
             "dynamodb");
     nativeRepository =
         new DynamoAsyncRepository<>(
-            client, "axiz-native-repository", TableSchema.fromBean(Item.class));
+            client,
+            "axiz-native-repository",
+            TableSchema.fromBean(Item.class),
+            () ->
+                new pe.axiz.kit.dynamodb.CursorCodec(
+                    new pe.axiz.core.crypto.StaticKeyProvider(
+                        "test", java.util.Map.of("test", CURSOR_KEY)),
+                    false));
     repository = new ReactiveDynamoRepository<>(nativeRepository);
   }
 
@@ -213,7 +221,7 @@ class LocalStackDynamoRepositoryIT {
     var flow =
         Flux.range(0, 6)
             .flatMap(n -> repository.save(new Item(pk, "B-" + n, pk)), 3)
-            .then(repository.query(pk, 2, null))
+            .then(repository.queryBeginsWith(pk, "B-", 2, null))
             .flatMap(
                 first -> {
                   assertEquals(2, first.content().size());

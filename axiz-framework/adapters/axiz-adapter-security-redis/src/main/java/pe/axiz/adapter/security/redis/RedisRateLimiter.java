@@ -6,6 +6,7 @@ import io.lettuce.core.api.sync.RedisCommands;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
 /**
@@ -16,11 +17,9 @@ import pe.axiz.core.security.RateLimiter;
 public final class RedisRateLimiter implements RateLimiter {
 
   static final String SCRIPT =
-      "local c = redis.call('INCR', KEYS[1]) "
-          + "if c == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end "
-          + "local ttl = redis.call('PTTL', KEYS[1]) "
-          + "if ttl < 0 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) ttl = tonumber(ARGV[1]) end "
-          + "return {c, ttl}";
+      "local c = redis.call('INCR', KEYS[1]) if c == 1 then redis.call('PEXPIRE', KEYS[1], "
+          + "ARGV[1]) end local ttl = redis.call('PTTL', KEYS[1]) if ttl < 0 then "
+          + "redis.call('PEXPIRE', KEYS[1], ARGV[1]) ttl = tonumber(ARGV[1]) end return {c, ttl}";
 
   private final RedisCommands<String, String> redis;
   private final String prefix;
@@ -53,7 +52,8 @@ public final class RedisRateLimiter implements RateLimiter {
       }
       return new Decision(false, 0, Duration.ofMillis(Math.max(ttl, 1)));
     } catch (RedisException e) {
-      return failOpen ? new Decision(true, -1, Duration.ZERO) : new Decision(false, 0, window);
+      if (failOpen) return new Decision(true, -1, Duration.ZERO);
+      throw new RateLimitUnavailableException(e);
     }
   }
 }

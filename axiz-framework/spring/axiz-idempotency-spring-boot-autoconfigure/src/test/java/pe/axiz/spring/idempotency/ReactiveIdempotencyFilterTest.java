@@ -51,6 +51,15 @@ class ReactiveIdempotencyFilterTest {
     }
   }
 
+  @org.springframework.web.bind.annotation.RestControllerAdvice
+  static class Errors {
+    @org.springframework.web.bind.annotation.ExceptionHandler(
+        pe.axiz.core.errors.BusinessException.class)
+    ResponseEntity<Void> problem(pe.axiz.core.errors.BusinessException failure) {
+      return ResponseEntity.status(failure.category().httpStatus()).build();
+    }
+  }
+
   private final AsyncIdempotencyService service =
       new AsyncIdempotencyService(
           new InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
@@ -69,7 +78,7 @@ class ReactiveIdempotencyFilterTest {
             },
             () -> service));
     return WebTestClient.bindToController(factory.getProxy())
-        .controllerAdvice(new IdempotencyReplayHandler())
+        .controllerAdvice(new IdempotencyReplayHandler(), new Errors())
         .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize))
         .build();
   }
@@ -113,16 +122,13 @@ class ReactiveIdempotencyFilterTest {
   }
 
   @Test
-  void aServerErrorReleasesTheKey() throws Exception {
+  void aServerErrorPreservesTheUncertainOperation() throws Exception {
     WebTestClient client = client(Integer.MAX_VALUE);
     api.status = HttpStatus.SERVICE_UNAVAILABLE;
     post(client, "idempotency-key-00000101", "{}").expectStatus().isEqualTo(503);
     api.status = HttpStatus.CREATED;
-    EntityExchangeResult<String> again = retry(client, "idempotency-key-00000101", "{}");
-    assertEquals(201, again.getStatus().value());
-    assertEquals(
-        null, again.getResponseHeaders().getFirst(IdempotencyReplayHandler.REPLAYED_HEADER));
-    assertEquals(2, api.executions.get(), "the retry ran again: the 503 was not stored");
+    post(client, "idempotency-key-00000101", "{}").expectStatus().isEqualTo(409);
+    assertEquals(1, api.executions.get(), "an uncertain 503 must not authorize another effect");
   }
 
   @Test

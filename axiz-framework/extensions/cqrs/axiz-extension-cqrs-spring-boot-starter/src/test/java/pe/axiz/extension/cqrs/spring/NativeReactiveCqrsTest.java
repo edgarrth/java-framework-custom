@@ -135,7 +135,7 @@ class NativeReactiveCqrsTest {
   }
 
   @Test
-  void cancellationCancelsNativeCompletionAndReleasesTheFencedLease() throws Exception {
+  void cancellationCancelsNativeCompletionAndRetainsAnUncertainOutcome() throws Exception {
     Store store = new Store();
     var behavior = new ReactiveBehaviors.Idempotency(service(store), JsonMapper.builder().build());
     var invocation =
@@ -154,14 +154,19 @@ class NativeReactiveCqrsTest {
         .verify(T);
     assertTrue(store.pending.isCancelled());
     assertTrue(store.released.await(5, TimeUnit.SECONDS));
-    // The owner fence was released; a subsequent attempt can acquire immediately.
+    // Cancellation cannot prove absence of an effect; the same command remains reserved.
     store.holdCompletion = false;
     StepVerifier.create(
             behavior
                 .handle(invocation, () -> Mono.just("retry"))
                 .subscribeOn(Schedulers.parallel()))
-        .expectNext("retry")
-        .expectComplete()
+        .expectErrorSatisfies(
+            error -> {
+              assertTrue(error instanceof pe.axiz.core.errors.BusinessException);
+              assertEquals(
+                  pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(),
+                  ((pe.axiz.core.errors.BusinessException) error).code());
+            })
         .verify(T);
   }
 
@@ -236,6 +241,21 @@ class NativeReactiveCqrsTest {
   }
 
   private static final class Store implements AsyncIdempotencyStore {
+    public CompletionStage<Boolean> compareAndSet(
+        IdempotencyRecord expected,
+        @org.jspecify.annotations.Nullable IdempotencyRecord replacement) {
+      return records
+          .compareAndSet(expected, replacement)
+          .thenApply(
+              changed -> {
+                if (changed
+                    && replacement != null
+                    && replacement.status() == IdempotencyRecord.Status.UNKNOWN)
+                  released.countDown();
+                return changed;
+              });
+    }
+
     final InMemoryAsyncIdempotencyStore records =
         new InMemoryAsyncIdempotencyStore(Clock.systemUTC());
     final CompletableFuture<Boolean> pending = new CompletableFuture<>();

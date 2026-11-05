@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Locale;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.reactive.HandlerMapping;
@@ -57,7 +58,7 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
   public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
     String method = exchange.getRequest().getMethod().name();
     if (!rules.audited(method, exchange.getRequest().getPath().pathWithinApplication().value())) {
-      return chain.filter(exchange);
+      return ReactivePendingAuditFailures.boundary(chain.filter(exchange));
     }
     if (nativeTrail != null) return nativeFilter(nativeTrail, exchange, chain, method);
     AuditTrail imperative = Objects.requireNonNull(trail);
@@ -89,7 +90,7 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
                   record.success();
                 }
               } catch (RuntimeException e) {
-                org.slf4j.LoggerFactory.getLogger(HttpAuditWebFilter.class)
+                LoggerFactory.getLogger(HttpAuditWebFilter.class)
                     .warn("Audit event could not be recorded", e);
               }
             });
@@ -110,10 +111,11 @@ public class HttpAuditWebFilter implements WebFilter, Ordered {
                   remote != null && remote.getAddress() != null
                       ? remote.getAddress().getHostAddress()
                       : null);
-          return ReactiveAudit.around(
-              Mono.defer(() -> chain.filter(exchange)),
-              ignored -> nativeRecord(nativeAudit, exchange, method, actor, null),
-              error -> nativeRecord(nativeAudit, exchange, method, actor, error));
+          return ReactivePendingAuditFailures.boundary(
+              ReactiveAudit.around(
+                  Mono.defer(() -> chain.filter(exchange)),
+                  ignored -> nativeRecord(nativeAudit, exchange, method, actor, null),
+                  error -> nativeRecord(nativeAudit, exchange, method, actor, error)));
         });
   }
 

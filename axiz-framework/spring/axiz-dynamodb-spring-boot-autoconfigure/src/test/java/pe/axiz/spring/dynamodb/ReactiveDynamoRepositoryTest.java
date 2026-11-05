@@ -39,7 +39,16 @@ class ReactiveDynamoRepositoryTest {
   @Test
   void facadesSubmitColdWritesAndPagesAndPreserveSubmissionErrors() {
     var raw = new CrudClient();
-    var repository = new ReactiveDynamoRepositories(raw, "").create("items", Item.class);
+    var repository =
+        new ReactiveDynamoRepositories(
+                raw,
+                "",
+                () ->
+                    new pe.axiz.kit.dynamodb.CursorCodec(
+                        new pe.axiz.core.crypto.StaticKeyProvider(
+                            "test", java.util.Map.of("test", pe.axiz.core.crypto.AesGcm.newKey())),
+                        false))
+            .create("items", Item.class);
     var item = new Item();
     item.setId("C-1");
     var work =

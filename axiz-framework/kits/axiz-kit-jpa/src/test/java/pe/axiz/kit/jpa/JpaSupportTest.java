@@ -105,13 +105,18 @@ class JpaSupportTest {
     assertNull(converter.convertToDatabaseColumn(null));
     assertThrows(
         RuntimeException.class,
-        () -> new EncryptedConverter(encryptor).convertToEntityAttribute(column));
+        () ->
+            new EncryptedConverter(encryptor) {
+              protected String context() {
+                return "other.document";
+              }
+            }.convertToEntityAttribute(column));
     assertEquals(
         EncryptionRegistry.blindIndex("12345678", "customer.document"),
         EncryptionRegistry.blindIndex("1234-5678", "customer.document"));
     EncryptionRegistry.reset();
     assertThrows(
-        IllegalStateException.class, () -> new EncryptedConverter().convertToDatabaseColumn("x"));
+        IllegalStateException.class, () -> new DocumentConverter().convertToDatabaseColumn("x"));
     assertThrows(IllegalStateException.class, () -> EncryptionRegistry.blindIndex("x", "c"));
   }
 }

@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
@@ -36,6 +37,22 @@ public final class RedisAsyncIdempotencyStore implements AsyncIdempotencyStore {
   }
 
   @Override
+  public CompletionStage<Boolean> compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    if (replacement != null && !expected.key().equals(replacement.key()))
+      throw new IllegalArgumentException("different record key");
+    CompletionStage<Long> changed =
+        redis.eval(
+            RedisIdempotencyStore.CAS_SCRIPT,
+            ScriptOutputType.INTEGER,
+            new String[] {prefix + expected.key()},
+            StoredResponseCodec.write(expected),
+            replacement == null ? "" : StoredResponseCodec.write(replacement),
+            Long.toString(replacement == null ? 1 : ttl(replacement.retainUntil())));
+    return Stages.map(changed, value -> value != null && value == 1L);
+  }
+
+  @Override
   public CompletionStage<Boolean> tryStart(IdempotencyRecord record) {
     return Stages.map(
         redis.set(
@@ -50,34 +67,32 @@ public final class RedisAsyncIdempotencyStore implements AsyncIdempotencyStore {
     return Stages.map(
         redis.get(prefix + key),
         value ->
-            value == null ? Optional.empty() : Optional.of(StoredResponseCodec.read(key, value)));
+            value == null
+                ? Optional.empty()
+                : Optional.of(StoredResponseCodec.read(key, value))
+                    .filter(record -> record.liveAt(now)));
   }
 
   @Override
   public CompletionStage<Boolean> complete(
       String key, String owner, StoredResponse response, Instant expiresAt) {
+    return completeAttempt(key, owner, response, expiresAt, 0);
+  }
+
+  private CompletionStage<Boolean> completeAttempt(
+      String key, String owner, StoredResponse response, Instant expiresAt, int attempt) {
+    if (attempt >= 16) return CompletableFuture.completedFuture(false);
     return Stages.compose(
         find(key, clock.instant()),
         current -> {
           if (current.isEmpty() || !current.get().heldBy(owner))
             return CompletableFuture.completedFuture(false);
-          IdempotencyRecord done =
-              new IdempotencyRecord(
-                  key,
-                  current.get().fingerprint(),
-                  IdempotencyRecord.Status.COMPLETED,
-                  owner,
-                  response,
-                  expiresAt);
-          CompletionStage<Long> changed =
-              redis.eval(
-                  RedisIdempotencyStore.COMPLETE_SCRIPT,
-                  ScriptOutputType.INTEGER,
-                  new String[] {prefix + key},
-                  owner,
-                  StoredResponseCodec.write(done),
-                  Long.toString(ttl(expiresAt)));
-          return Stages.map(changed, value -> value != null && value == 1L);
+          return Stages.compose(
+              compareAndSet(current.get(), current.get().completed(response, expiresAt)),
+              changed ->
+                  changed
+                      ? CompletableFuture.completedFuture(true)
+                      : completeAttempt(key, owner, response, expiresAt, attempt + 1));
         });
   }
 

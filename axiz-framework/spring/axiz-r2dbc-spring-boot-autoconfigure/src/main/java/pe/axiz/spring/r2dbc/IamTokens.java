@@ -60,7 +60,8 @@ final class IamTokens {
     if (region == null || region.isBlank()) region = System.getenv("AWS_REGION");
     if (region == null || region.isBlank())
       throw new IllegalStateException(
-          "R2DBC IAM requires an explicit region: axiz.r2dbc.iam.region, axiz.aws.region or AWS_REGION");
+          "R2DBC IAM requires an explicit region: axiz.r2dbc.iam.region, axiz.aws.region or"
+              + " AWS_REGION");
     return Region.of(region);
   }
 

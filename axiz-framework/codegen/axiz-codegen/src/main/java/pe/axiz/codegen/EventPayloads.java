@@ -1,8 +1,13 @@
 package pe.axiz.codegen;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
+import javax.lang.model.SourceVersion;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.render.JavaFormatter;
@@ -26,7 +31,8 @@ public final class EventPayloads {
       String content =
           "package "
               + namespace
-              + ";\n\n/** Generated from AsyncAPI. Review .axiz-new proposals after contract sync. */\n"
+              + ";\n\n"
+              + "/** Generated from AsyncAPI. Review .axiz-new proposals after contract sync. */\n"
               + record.get("declaration")
               + "\n";
       result.put(
@@ -38,7 +44,7 @@ public final class EventPayloads {
 
   static Map<String, AsyncApiDocument.Event> events(String groupId, AsyncApiDocument contract) {
     Map<String, AsyncApiDocument.Event> events = new LinkedHashMap<>();
-    java.util.stream.Stream.concat(contract.published().stream(), contract.consumed().stream())
+    Stream.concat(contract.published().stream(), contract.consumed().stream())
         .forEach(
             event -> {
               String local =
@@ -46,24 +52,24 @@ public final class EventPayloads {
                       ? event.type().substring(groupId.length() + 1)
                       : event.type();
               String name = Names.pascal(local);
-              if (!javax.lang.model.SourceVersion.isIdentifier(name)
-                  || javax.lang.model.SourceVersion.isKeyword(name))
+              if (!SourceVersion.isIdentifier(name) || SourceVersion.isKeyword(name))
                 throw new IllegalArgumentException(
                     "Event type cannot form a Java class name: " + event.type());
               var prior = events.putIfAbsent(name, event);
               if (prior != null && !prior.equals(event))
                 throw new IllegalArgumentException("Event payload class collision: " + name);
             });
-    return java.util.Collections.unmodifiableMap(events);
+    return Collections.unmodifiableMap(events);
   }
 
   private static void validateSchema(Map<?, ?> schema) {
-    if (java.util.Set.of("allOf", "oneOf", "anyOf", "not").stream().anyMatch(schema::containsKey))
+    if (Set.of("allOf", "oneOf", "anyOf", "not").stream().anyMatch(schema::containsKey))
       throw new IllegalArgumentException(
-          "Event payload records require explicit JSON schemas; flatten compositions before generation");
+          "Event payload records require explicit JSON schemas; flatten compositions before"
+              + " generation");
     Object declared = schema.get("type");
     String kind;
-    if (declared instanceof java.util.List<?> types) {
+    if (declared instanceof List<?> types) {
       var nonNull = types.stream().filter(type -> !"null".equals(type)).toList();
       if (nonNull.size() != 1)
         throw new IllegalArgumentException(
@@ -74,8 +80,7 @@ public final class EventPayloads {
           declared == null && schema.containsKey("properties")
               ? "object"
               : String.valueOf(declared);
-    if (!java.util.Set.of("object", "array", "string", "integer", "number", "boolean")
-        .contains(kind))
+    if (!Set.of("object", "array", "string", "integer", "number", "boolean").contains(kind))
       throw new IllegalArgumentException(
           "Event field requires an explicit supported JSON type: " + kind);
     if (schema.get("properties") instanceof Map<?, ?> properties) {

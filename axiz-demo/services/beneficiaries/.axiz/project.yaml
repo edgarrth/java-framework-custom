@@ -26,6 +26,8 @@ capabilities:
   - sensitive
   - security
   - dynamodb
+  - secrets
+  - dynamodb-cursor
   - cache
   - idempotency
   - idempotency-dynamodb

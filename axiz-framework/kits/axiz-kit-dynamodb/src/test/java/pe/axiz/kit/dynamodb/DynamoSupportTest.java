@@ -15,10 +15,26 @@ import pe.axiz.core.money.Money;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoSupportTest {
+  private final CursorCodec cursors =
+      new CursorCodec(
+          new pe.axiz.core.crypto.StaticKeyProvider(
+              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
+          false);
 
   @AfterEach
   void reset() {
     EncryptionRegistry.reset();
+  }
+
+  @Test
+  void unsignedCursorsMustBeRejected() {
+    String unsigned =
+        java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(
+                "{\"pk\":{\"S\":\"other-tenant\"}}"
+                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    assertThrows(InvalidCursorException.class, () -> cursors.decode(unsigned, "table/filter"));
   }
 
   @Test
@@ -29,11 +45,12 @@ class DynamoSupportTest {
             AttributeValue.builder().s("customer#1").build(),
             "seq",
             AttributeValue.builder().n("42").build());
-    String cursor = CursorCodec.encode(key);
-    assertEquals(key, CursorCodec.decode(cursor));
-    assertNull(CursorCodec.encode(Map.of()));
-    assertNull(CursorCodec.decode(" "));
-    assertThrows(IllegalArgumentException.class, () -> CursorCodec.decode("not-base64-json"));
+    String cursor = cursors.encode(key, "table/filter");
+    assertEquals(key, cursors.decode(cursor, "table/filter"));
+    assertNull(cursors.encode(Map.of(), "table/filter"));
+    assertThrows(InvalidCursorException.class, () -> cursors.decode(" ", "table/filter"));
+    assertThrows(
+        InvalidCursorException.class, () -> cursors.decode("not-base64-json", "table/filter"));
   }
 
   @Test

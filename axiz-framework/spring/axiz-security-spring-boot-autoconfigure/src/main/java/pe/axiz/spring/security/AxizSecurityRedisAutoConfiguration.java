@@ -6,11 +6,15 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
 import pe.axiz.adapter.security.redis.RedisRateLimiter;
+import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.RateLimiter;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
  * Cluster-wide rate limits on ElastiCache (Redis/Valkey), using the connection settings of Boot's
@@ -39,22 +43,17 @@ public class AxizSecurityRedisAutoConfiguration {
   }
 
   @Bean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   RateLimiter axizRedisRateLimiter(
       StatefulRedisConnection<String, String> axizRateLimitRedisConnection,
       AxizSecurityProperties p) {
-    return new RedisRateLimiter(
-        axizRateLimitRedisConnection.sync(), "axiz:", p.rateLimit().failOpen());
+    return new RedisRateLimiter(axizRateLimitRedisConnection.sync(), "axiz:", false);
   }
 
   @Bean
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
-  pe.axiz.core.security.AsyncRateLimiter axizRedisAsyncRateLimiter(
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  AsyncRateLimiter axizRedisAsyncRateLimiter(
       StatefulRedisConnection<String, String> axizRateLimitRedisConnection) {
-    return new pe.axiz.adapter.security.redis.RedisAsyncRateLimiter(
-        axizRateLimitRedisConnection.async(), "axiz:");
+    return new RedisAsyncRateLimiter(axizRateLimitRedisConnection.async(), "axiz:");
   }
 }

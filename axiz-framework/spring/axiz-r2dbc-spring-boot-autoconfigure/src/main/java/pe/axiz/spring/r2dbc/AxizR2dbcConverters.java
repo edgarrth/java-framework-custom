@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
+import pe.axiz.core.crypto.EncryptionContext;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.money.Money;
@@ -13,28 +14,30 @@ import pe.axiz.kit.r2dbc.EncryptedText;
 
 /**
  * Column converters of axiz types for Spring Data R2DBC: {@link EncryptedText} is stored as
- * AES-256-GCM ciphertext (context {@code axiz.field}, the same as the JPA converter, so both stacks
- * read each other's columns) and {@link Money} as its text form ({@code PEN 150.00}). A service
- * that declares its own {@code R2dbcCustomConversions} includes {@link #all()} in it.
+ * AES-256-GCM ciphertext with an explicit field or shared purpose context and {@link Money} as its
+ * text form ({@code PEN 150.00}). A service that declares its own {@code R2dbcCustomConversions}
+ * includes {@link #all(String)} in it.
  */
 public final class AxizR2dbcConverters {
-
-  /** Encryption context bound as AAD. */
-  public static final String CONTEXT = "axiz.field";
 
   private AxizR2dbcConverters() {}
 
   /** Converters using the field encryptor registered by the crypto starter. */
-  public static List<Object> all() {
-    return all(EncryptionRegistry::encryptor);
+  public static List<Object> all(String context) {
+    return all(EncryptionRegistry::encryptor, context);
   }
 
-  public static List<Object> all(Supplier<FieldEncryptor> encryptor) {
+  public static List<Object> all(Supplier<FieldEncryptor> encryptor, String context) {
+    EncryptionContext.require(context);
     return List.of(
-        new EncryptedTextWriter(encryptor),
-        new EncryptedTextReader(encryptor),
+        new EncryptedTextWriter(encryptor, context),
+        new EncryptedTextReader(encryptor, context),
         new MoneyWriter(),
         new MoneyReader());
+  }
+
+  public static List<Object> money() {
+    return List.of(new MoneyWriter(), new MoneyReader());
   }
 
   /** Encrypts on write. */
@@ -42,14 +45,16 @@ public final class AxizR2dbcConverters {
   public static final class EncryptedTextWriter implements Converter<EncryptedText, String> {
 
     private final Supplier<FieldEncryptor> encryptor;
+    private final String context;
 
-    EncryptedTextWriter(Supplier<FieldEncryptor> encryptor) {
+    EncryptedTextWriter(Supplier<FieldEncryptor> encryptor, String context) {
       this.encryptor = Objects.requireNonNull(encryptor);
+      this.context = EncryptionContext.require(context);
     }
 
     @Override
     public String convert(EncryptedText source) {
-      return Objects.requireNonNull(encryptor.get().encrypt(source.value(), CONTEXT));
+      return Objects.requireNonNull(encryptor.get().encrypt(source.value(), context));
     }
   }
 
@@ -58,14 +63,16 @@ public final class AxizR2dbcConverters {
   public static final class EncryptedTextReader implements Converter<String, EncryptedText> {
 
     private final Supplier<FieldEncryptor> encryptor;
+    private final String context;
 
-    EncryptedTextReader(Supplier<FieldEncryptor> encryptor) {
+    EncryptedTextReader(Supplier<FieldEncryptor> encryptor, String context) {
       this.encryptor = Objects.requireNonNull(encryptor);
+      this.context = EncryptionContext.require(context);
     }
 
     @Override
     public EncryptedText convert(String source) {
-      return EncryptedText.of(Objects.requireNonNull(encryptor.get().decrypt(source, CONTEXT)));
+      return EncryptedText.of(Objects.requireNonNull(encryptor.get().decrypt(source, context)));
     }
   }
 

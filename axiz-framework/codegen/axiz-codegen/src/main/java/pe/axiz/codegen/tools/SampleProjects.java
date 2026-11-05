@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.model.Archetype;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
@@ -111,7 +112,7 @@ public final class SampleProjects {
                     archetype.rest() ? openApi : null,
                     null,
                     version,
-                    cqrs ? List.of(pe.axiz.codegen.model.Extension.CQRS) : List.of()));
+                    cqrs ? List.of(Extension.CQRS) : List.of()));
           }
         }
       }

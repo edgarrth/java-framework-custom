@@ -5,18 +5,26 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.AsyncContractSync;
 import pe.axiz.codegen.ContractSync;
 import pe.axiz.codegen.ProjectGenerator;
+import pe.axiz.codegen.asyncapi.AsyncApiDiff;
+import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.openapi.ContractDiff;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
+import pe.axiz.codegen.openapi.SafeYaml;
+import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.ProjectManifest;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Spec;
 
 /** {@code axiz contract sync|lint|diff}. */
 @Command(
@@ -30,7 +38,7 @@ import picocli.CommandLine.Parameters;
     })
 class ContractCommand implements Runnable {
 
-  @picocli.CommandLine.Spec picocli.CommandLine.Model.CommandSpec spec;
+  @Spec CommandSpec spec;
 
   @Override
   public void run() {
@@ -93,7 +101,7 @@ class ContractCommand implements Runnable {
         if (allowBreaking)
           throw new IllegalArgumentException(
               "AsyncAPI requires a new .vN type; --allow-breaking cannot replace a published type");
-        var result = new pe.axiz.codegen.AsyncContractSync().sync(project());
+        var result = new AsyncContractSync().sync(project());
         print(this, result.changes(), false);
         if (!result.applied()) {
           fail("Preserve the published .vN type and introduce .vN+1 in parallel");
@@ -154,17 +162,16 @@ class ContractCommand implements Runnable {
               "The project has no "
                   + (type == Type.asyncapi ? "AsyncAPI" : "OpenAPI")
                   + " contract");
-        contract = pe.axiz.codegen.output.SafePaths.target(project(), path);
+        contract = SafePaths.target(project(), path);
       }
       String text = Files.readString(contract, StandardCharsets.UTF_8);
       boolean isAsync =
           type == Type.asyncapi
               || (type == null
-                  && pe.axiz.codegen.openapi.SafeYaml.create(2 * 1024 * 1024).load(text)
-                      instanceof java.util.Map<?, ?> root
+                  && SafeYaml.create(2 * 1024 * 1024).load(text) instanceof Map<?, ?> root
                   && root.containsKey("asyncapi"));
       if (isAsync) {
-        var document = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(text);
+        var document = AsyncApiDocument.parse(text);
         ok(
             "AsyncAPI structure: "
                 + document.published().size()
@@ -203,9 +210,9 @@ class ContractCommand implements Runnable {
     public Integer call() throws IOException {
       List<ContractDiff.Change> changes =
           type == Type.asyncapi
-              ? pe.axiz.codegen.asyncapi.AsyncApiDiff.compare(
-                  pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(previous)),
-                  pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(current)))
+              ? AsyncApiDiff.compare(
+                  AsyncApiDocument.parse(Files.readString(previous)),
+                  AsyncApiDocument.parse(Files.readString(current)))
               : ContractDiff.compare(
                   OpenApiDocument.parse(Files.readString(previous, StandardCharsets.UTF_8)),
                   OpenApiDocument.parse(Files.readString(current, StandardCharsets.UTF_8)));

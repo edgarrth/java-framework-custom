@@ -1,7 +1,7 @@
 # Inventario de rupturas de API de 2.0
 
-Estado: **inventario comprobado contra los reportes reales de 1.0.0**, 31 de octubre de 2026.
-Se registran 185 clases incompatibles. Las 161 reubicaciones que conservan el contrato
+Estado: **inventario revisado contra 144 reportes reales de 1.0.0**, 5 de noviembre de 2026.
+Se registran 213 clases incompatibles, incluidas las extracciones parciales del plan 2.0. Las 161 reubicaciones que conservan el contrato
 se compararon miembro por miembro con `javap -protected`, sin pérdidas de firmas tras aplicar
 se documentan en cada entrada. No se ha cambiado la línea base a 2.0.
 
@@ -83,7 +83,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-idempotency-dynamodb",
         "class": "pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore",
-        "sha256": "802e73940fd0c7ae474d0f51a109804e796c1248b468e41698a15a516c12bbcd"
+        "sha256": "b79c7c1c53b135e2a082afd4879398f818bb347f8f0a266d09c9b352fec87c29"
       }
     },
     {
@@ -93,7 +93,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-idempotency-redis",
         "class": "pe.axiz.adapter.idempotency.redis.RedisIdempotencyStore",
-        "sha256": "cdf884f862b6131deddafb8a4fa855df38bd772bd7da1cd6dd9802f47b2c68cb"
+        "sha256": "05e671c2d3587a0bbf2a6b7f19a5e6f86d130dd7ea53e07280dd2e83c916bb0d"
       }
     },
     {
@@ -104,6 +104,17 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-adapter-inbox-dynamodb",
         "class": "pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore",
         "sha256": "2eaef030864913b7e13307a58d1b93db85a11c940003ebc063108c65c6f900ba"
+      }
+    },
+    {
+      "artifact": "axiz-adapter-inbox-jdbc",
+      "class": "pe.axiz.core.inbox.JdbcInboxStore",
+      "sha256": "d6f78d19cb3a1ac670131cf991a6863878ac5e408b10c5f391c3a0f885d1e434",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-inbox-jdbc",
+        "class": "pe.axiz.adapter.inbox.jdbc.JdbcInboxStore",
+        "sha256": "6b0e523f921307e1caf5a9fde24f25d9d5d1116f5eb46fc6672217513c785dff"
       }
     },
     {
@@ -217,13 +228,35 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       }
     },
     {
+      "artifact": "axiz-adapter-outbox-jdbc",
+      "class": "pe.axiz.core.outbox.Dialect",
+      "sha256": "4c26ddf9d40aafe249b5585302d6bfd6da148d2ed15909cfaa01d2f04184f4bf",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-outbox-jdbc",
+        "class": "pe.axiz.adapter.outbox.jdbc.Dialect",
+        "sha256": "b70190cbdefe8d74de7cba7489c32f00af3aec9ea18b277c51c52cd93398aded"
+      }
+    },
+    {
+      "artifact": "axiz-adapter-outbox-jdbc",
+      "class": "pe.axiz.core.outbox.JdbcOutboxStore",
+      "sha256": "0cc7c79fb40865598ab90a20b3e491d8ad11fef2f4e49ce683e7e6d6c4cb64c2",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-outbox-jdbc",
+        "class": "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore",
+        "sha256": "899096b6469260f54982ae591b31effcf89344a2e89eb22683db5976ea56348f"
+      }
+    },
+    {
       "artifact": "axiz-adapter-outbox-r2dbc",
       "class": "pe.axiz.core.outbox.r2dbc.R2dbcOutboxStore",
       "sha256": "0f9bab0925a0de4a0202a071ccf2d53c6ef518de6607e6e38406c64c727b8b63",
       "replacement": {
         "artifact": "axiz-adapter-outbox-r2dbc",
         "class": "pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore",
-        "sha256": "b2d58c5785a013a548ea5404eba143a40a01644eda49e7acb7f77539d2b37911"
+        "sha256": "20c8db62ec6a8dbf1a79c4f354fd3f826a5b0c2e4e929bf9d0909f40231d24cf"
       }
     },
     {
@@ -234,6 +267,17 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-adapter-outbox-r2dbc",
         "class": "pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter",
         "sha256": "291361241a1e2fdc176253591233a8e69efa7b0013a1897503973ca981309dd0"
+      }
+    },
+    {
+      "artifact": "axiz-adapter-saga-jdbc",
+      "class": "pe.axiz.core.saga.JdbcSagaStateStore",
+      "sha256": "df3e68033f45eb16c84dc5f92d9a57ce1459b1deeda11ee481051b2e7d66fe11",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-saga-jdbc",
+        "class": "pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore",
+        "sha256": "699819eb84f9512d4a939f288ea6b9118afb1e12453d6f30f6a8d6185870c412"
       }
     },
     {
@@ -287,6 +331,17 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       }
     },
     {
+      "artifact": "axiz-adapter-sequence-jdbc",
+      "class": "pe.axiz.core.sequence.JdbcSequenceStore",
+      "sha256": "6f659c2a4a41f8d7ad6ecb7575f05bbd383a4a4a8ed7cb774078cc6e429ce8e5",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-sequence-jdbc",
+        "class": "pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore",
+        "sha256": "80abcd0db9cb30e583692ddb1ccadb4ff864d9011bc61d11eecfee4edab2d916"
+      }
+    },
+    {
       "artifact": "axiz-adapter-storage-s3",
       "class": "pe.axiz.core.storage.s3.S3ObjectStorage",
       "sha256": "ce0f6e998d6a5fd70a40b05340d64932ab88d16b7d909786d571a0f0380dbb12",
@@ -335,6 +390,123 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-codegen",
       "class": "pe.axiz.codegen.project.ProjectManifest",
       "sha256": "5e82e1e949c2a4fde5c45f6a3408dd412bea799eab1d18c3619d9dbd0d8348fc",
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.jdbc.ConnectionProvider",
+      "sha256": "3b078132894a223e8182ab6f7057255e9411e3cccf2196315c5ef9db5942ee12",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.ConnectionProvider",
+        "sha256": "41ec9a17bcdb23fbea75a4adcb1e24bc4664db7f67cff6459b8378fb5c9f3ee4"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.jdbc.JdbcTransactions",
+      "sha256": "721327a3f385e17f016cf7fd154bf946e3d3d14d713bab3a5200c682db81298b",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.JdbcTransactions",
+        "sha256": "47bfd09ce531aab7fdbee9f4d852fdb14d075ea266664b04647eabb0e9ad5beb"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.jdbc.SqlStates",
+      "sha256": "937feb5011c4d341f8f8ca30ab6b122f513ff660a38061442111efbe86f03e1b",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.SqlStates",
+        "sha256": "84674eb56c0e901f567eb6ba9306ddf8f2ca4aebab7cb3316e3d09d19b7942ba"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.jdbc.TransactionRunner",
+      "sha256": "dd80fafc151b05ab000a8a1a50f6db2fccbd686302dd1010750ec1b21e086e3a",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-core-commons",
+        "class": "pe.axiz.core.commons.tx.TransactionRunner",
+        "sha256": "a6f794103c5648ca7ac543279f5d0b4a01c29e8adf6d1f7a680d2aac1d0390bd"
+      }
+    },
+    {
+      "artifact": "axiz-core-idempotency",
+      "class": "pe.axiz.core.idempotency.IdempotencyStore",
+      "sha256": "bcf5b38f66d5155910d9224b85534aa9ccf477c1e0fae068d2997a8771c4e74a",
+      "reason": "A2/A3: compareAndSet(expected,replacement) es obligatorio para cercar dueño, generación y versión; un almacén propio debe implementar CAS atómico. renew/markUnknown/resolve se ofrecen como defaults que usan ese CAS. Contratos concurrentes en memoria, Valkey y DynamoDB."
+    },
+    {
+      "artifact": "axiz-core-inbox",
+      "class": "pe.axiz.core.inbox.JdbcInboxStore",
+      "sha256": "8f6b73abcce228befb1b14a7a2f301525f380fa1ea618fef7cadd522071c00ac",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-inbox-jdbc",
+        "class": "pe.axiz.adapter.inbox.jdbc.JdbcInboxStore",
+        "sha256": "6b0e523f921307e1caf5a9fde24f25d9d5d1116f5eb46fc6672217513c785dff"
+      }
+    },
+    {
+      "artifact": "axiz-core-outbox",
+      "class": "pe.axiz.core.outbox.Dialect",
+      "sha256": "4c26ddf9d40aafe249b5585302d6bfd6da148d2ed15909cfaa01d2f04184f4bf",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-outbox-jdbc",
+        "class": "pe.axiz.adapter.outbox.jdbc.Dialect",
+        "sha256": "b70190cbdefe8d74de7cba7489c32f00af3aec9ea18b277c51c52cd93398aded"
+      }
+    },
+    {
+      "artifact": "axiz-core-outbox",
+      "class": "pe.axiz.core.outbox.JdbcOutboxStore",
+      "sha256": "783d5cd48c3accc1d382b16cdbd93c9171007b6858b79954faa8457c26a15bc3",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-outbox-jdbc",
+        "class": "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore",
+        "sha256": "899096b6469260f54982ae591b31effcf89344a2e89eb22683db5976ea56348f"
+      }
+    },
+    {
+      "artifact": "axiz-core-outbox",
+      "class": "pe.axiz.core.outbox.OutboxRelay",
+      "sha256": "9b5efd69b4df035835088216c1fcafbaa4c6b5eaaeaf8302d8a44329a94ede0d",
+      "reason": "M8/M9 y A1: el constructor recibe TransactionRunner de core.commons.tx; añade overload con lease. La receta actualiza el tipo del puerto; claim y marca son transacciones breves y la publicación ocurre fuera de SQL."
+    },
+    {
+      "artifact": "axiz-core-outbox",
+      "class": "pe.axiz.core.outbox.OutboxStore",
+      "sha256": "74f2fc216f08ef20dfe04ad43e021c3caca926bfb32be4cf24c80792091f1f63",
+      "reason": "A1/M1: nuevos métodos obligatorios claimDue, marcas cercadas por owner, retry/skip explícitos, verifySchema y contadores persistidos. Almacenes propios deben implementar el protocolo; no se suministra un default inseguro que pierda fencing u orden."
+    },
+    {
+      "artifact": "axiz-core-saga",
+      "class": "pe.axiz.core.saga.JdbcSagaStateStore",
+      "sha256": "ec5383a9a6915f5d7b56244acdabe3ff2f2189f87e59138798303ce9d3b7b5a6",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-saga-jdbc",
+        "class": "pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore",
+        "sha256": "699819eb84f9512d4a939f288ea6b9118afb1e12453d6f30f6a8d6185870c412"
+      }
+    },
+    {
+      "artifact": "axiz-core-sequence",
+      "class": "pe.axiz.core.sequence.JdbcSequenceStore",
+      "sha256": "c7791adbfb6bf8f5f2398f520aee15fe4df08f053ecc169e82f577589f6e964b",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-adapter-sequence-jdbc",
+        "class": "pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore",
+        "sha256": "80abcd0db9cb30e583692ddb1ccadb4ff864d9011bc61d11eecfee4edab2d916"
+      }
     },
     {
       "artifact": "axiz-extension-cqrs-api",
@@ -650,10 +822,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-extension-cqrs-spring-boot-starter",
       "class": "pe.axiz.framework.cqrs.spring.ReactiveAccessPolicy",
       "sha256": "2823f95359c1eef0764ea80426bd5c96486fe165d343edf031f24b4cd97107ae",
+      "reason": "B6: elimina el puente spring y dirige a ReactiveAccessPolicy del módulo API, cuyo check retorna Publisher<Void>. Mono<Void> sigue siendo covariante; la receta migra ambos paquetes antiguos y la prueba compila el resultado contra la API 2.0 real.",
       "replacement": {
-        "artifact": "axiz-extension-cqrs-spring-boot-starter",
-        "class": "pe.axiz.extension.cqrs.spring.ReactiveAccessPolicy",
-        "sha256": "ea354ee15a40d9d7d6f6ec5d18eb54557805ccf69f3fb345b2c3166cc53c2d98"
+        "artifact": "axiz-extension-cqrs-api",
+        "class": "pe.axiz.extension.cqrs.ReactiveAccessPolicy",
+        "sha256": "4d0a0eb1fbc344291f4d97e334ebad9ff1c0419854ad03c5f7cc2369675404dd"
       }
     },
     {
@@ -823,7 +996,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-dynamodb",
         "class": "pe.axiz.kit.dynamodb.CursorCodec",
-        "sha256": "ad2ff177bb33c6aeea08f2da082b23b96e60fffb22f6625f223e126ca41a001c"
+        "sha256": "cc77122a7a52ecad505e076861af761001a7f94e5e8a640fe09994f4bdd92549"
       }
     },
     {
@@ -833,7 +1006,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-dynamodb",
         "class": "pe.axiz.kit.dynamodb.DynamoRepository",
-        "sha256": "ce35d429966211c1ac46ed1816e43cc7da95d4965208731d787be7946741b7a4"
+        "sha256": "cf617c4492c0625a16d882323d432cf00e9c70e134df7321b2113357e9144e50"
       }
     },
     {
@@ -854,6 +1027,39 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-kit-dynamodb",
         "class": "pe.axiz.kit.dynamodb.MoneyAttributeConverter",
         "sha256": "61bc191b70206835329d6745c9d0ad0313e2f60ae1ebaafcd69824162e8162aa"
+      }
+    },
+    {
+      "artifact": "axiz-kit-jdbc",
+      "class": "pe.axiz.core.commons.jdbc.ConnectionProvider",
+      "sha256": "3b078132894a223e8182ab6f7057255e9411e3cccf2196315c5ef9db5942ee12",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.ConnectionProvider",
+        "sha256": "41ec9a17bcdb23fbea75a4adcb1e24bc4664db7f67cff6459b8378fb5c9f3ee4"
+      }
+    },
+    {
+      "artifact": "axiz-kit-jdbc",
+      "class": "pe.axiz.core.commons.jdbc.JdbcTransactions",
+      "sha256": "4b0c144d02d44ffc51741716fb309080e31f0ec0a88e7c65b455a152769d6889",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.JdbcTransactions",
+        "sha256": "47bfd09ce531aab7fdbee9f4d852fdb14d075ea266664b04647eabb0e9ad5beb"
+      }
+    },
+    {
+      "artifact": "axiz-kit-jdbc",
+      "class": "pe.axiz.core.commons.jdbc.SqlStates",
+      "sha256": "937feb5011c4d341f8f8ca30ab6b122f513ff660a38061442111efbe86f03e1b",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "replacement": {
+        "artifact": "axiz-kit-jdbc",
+        "class": "pe.axiz.kit.jdbc.SqlStates",
+        "sha256": "84674eb56c0e901f567eb6ba9306ddf8f2ca4aebab7cb3316e3d09d19b7942ba"
       }
     },
     {
@@ -913,7 +1119,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-jpa",
         "class": "pe.axiz.kit.jpa.EncryptedConverter",
-        "sha256": "7cfbcbb5b1c29920e2e8f2e746745e01817fed473b39e1253a05ca97792371a3"
+        "sha256": "06520ba8262408fbb01255f4bac156786b994581817fd521dceebb60bf893c30"
       }
     },
     {
@@ -963,7 +1169,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-r2dbc",
         "class": "pe.axiz.kit.r2dbc.R2dbcSql",
-        "sha256": "75a036e7bcc74ff8918f374c43238b5a69d508a665a6a61a54edd45f684d45c2"
+        "sha256": "7434625bac26d35b1f9fe541033014c3ed7088e2f32934854a020f96a9e0c01f"
       }
     },
     {
@@ -973,7 +1179,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-r2dbc",
         "class": "pe.axiz.kit.r2dbc.R2dbcTransactionRunner",
-        "sha256": "c68a9e2ff57eb6bb58d80462385ae80f995d0cc4a01cefbb2d973ff7fe2c1e9c"
+        "sha256": "00404afb741bc8d657c6881c02dd1fb8824075bbe297e9e427292e3cec637ea7"
       }
     },
     {
@@ -1013,7 +1219,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-kit-r2dbc",
         "class": "pe.axiz.kit.r2dbc.ReactiveSql",
-        "sha256": "0404824848a47185772683057a5b8bca5eb1da67f6c9c56e8484714aa20f74a4"
+        "sha256": "6bbb6c85d432d298a91d46865f85ffd2bdf2db7e4517a44c1f0d22b2c7489b40"
       }
     },
     {
@@ -1199,12 +1405,36 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     {
       "artifact": "axiz-dynamodb-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.dynamodb.DynamoRepositories",
-      "sha256": "1a08f51e06c1e80233e7123ad545e7735cfd54bbba7093503ba3e457f4b7158f",
+      "sha256": "d76b3a76a4c8d2639105de053aed16ddef05e7e43e626497f3f6d14a224aadaf",
+    },
+    {
+      "artifact": "axiz-foundation-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.foundation.jdbc.SpringConnectionProvider",
+      "sha256": "80500e69448bdbe851bb6e12395f5f4a9874920144f755518fcc357bd382c3d5",
+      "reason": "M8/M9: implementa ConnectionProvider de axiz-kit-jdbc, en lugar del antiguo paquete JDBC de core. Su constructor DataSource y el comportamiento de conexión ligada a la transacción se conservan."
+    },
+    {
+      "artifact": "axiz-foundation-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.foundation.jdbc.SpringTransactionRunner",
+      "sha256": "48426151eef87c1b6a33671fac8bf3ffef0303bce56300e0fee6b917ec7d77c0",
+      "reason": "M8/M9: implementa TransactionRunner de core.commons.tx; conserva el constructor PlatformTransactionManager y la transacción Spring. La receta cambia el import del puerto."
+    },
+    {
+      "artifact": "axiz-idempotency-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.idempotency.AxizIdempotencyProperties",
+      "sha256": "e4b08f99ae79e3df8b01f785b10b62b1919f8f87bf69a68aadc68a840b78ad7c",
+      "reason": "A2/A3: el constructor canónico incorpora clientRetryWindow y valida retención >= ventana de reintento + lease. El binding anterior por nombre conserva defaults seguros; construcciones Java deben pasar la ventana."
     },
     {
       "artifact": "axiz-idempotency-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.idempotency.IdempotencyWebFilter",
       "sha256": "3422c3e1f6106ff6f04a9d8a90fd81132fcf8d36f72ca371ff7ac91e2d152160",
+    },
+    {
+      "artifact": "axiz-inbox-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.inbox.AxizInboxProperties",
+      "sha256": "8756f1775fd23e1a91c51f5af5b944322ab988d6b0eaec5f47913373eeab6fc9",
+      "reason": "M2: el constructor canónico incorpora transactional=auto/true/false. El binding por nombre usa auto por defecto; construcciones Java deben declarar el modo y compartir la identidad del recurso para atomicidad."
     },
     {
       "artifact": "axiz-jpa-spring-boot-autoconfigure",
@@ -1233,6 +1463,12 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     },
     {
       "artifact": "axiz-r2dbc-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.r2dbc.AxizR2dbcConverters",
+      "sha256": "bcdfbc65780fcef3421fcc4c35c56752d741a21f1407267dbbc605482f9117d9",
+      "reason": "M6: elimina CONTEXT genérico y los all() sin contexto; usar all(context) o all(supplier,context). axiz.field solo se lee mediante migración explícita; no se escribe implícitamente."
+    },
+    {
+      "artifact": "axiz-r2dbc-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.r2dbc.AxizR2dbcConverters$EncryptedTextReader",
       "sha256": "e00148d736611e1851625de112f2dd13b7fab777132d03fee959d92b734e7c78",
     },
@@ -1244,7 +1480,8 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     {
       "artifact": "axiz-r2dbc-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.r2dbc.DatabaseClientReactiveSql",
-      "sha256": "12c8c7dcf7f48df53480fdb8eaec47b90929e82ed382128b0fe86aea70a12e93",
+      "sha256": "3ded83417f37c8aee5238c654d8fe3d80b09b3fe74e514a965a366194cc10ada",
+      "reason": "M2/M8: las firmas SQL usan los tipos del kit y se añade transactionResource() con la ConnectionFactory real. El postprocesador compara identidad del recurso sin introspección privada."
     },
     {
       "artifact": "axiz-r2dbc-spring-boot-autoconfigure",
@@ -1258,8 +1495,26 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     },
     {
       "artifact": "axiz-security-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.security.AxizSecurityProperties$RateLimit",
+      "sha256": "9e5dfbf21111a2d7c3e504bc6bce6bb581bba7580a1c8f5c14c5eb7047dcb9e4",
+      "reason": "M4: elimina el failOpen global y su argumento del constructor; cada regla habilitada debe declarar su política. La receta elimina la propiedad global y conserva las políticas por regla."
+    },
+    {
+      "artifact": "axiz-security-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.security.AxizSecurityProperties$Rule",
+      "sha256": "7d6110e12dc707f75a0737e91befc2e88b2d9fbf120ed5ac3112474baa5ceece",
+      "reason": "M4: reemplaza failOpen(defaultGlobal) por failurePolicy(), que requiere una política explícita. El campo Boolean distingue falta de configuración de false."
+    },
+    {
+      "artifact": "axiz-security-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.security.RateLimitFilter",
+      "sha256": "269c99b61007cea43acd9463ccdef430b0627ac2d274c9e557ee4f6c6e9420f8",
+      "reason": "M4: elimina el argumento global failOpen del constructor; cada ruta usa su regla. Cuota agotada conserva 429 y almacenamiento indisponible con fail-closed devuelve 503."
+    },
+    {
+      "artifact": "axiz-security-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.security.RateLimitWebFilter",
-      "sha256": "c18078b1e40dea98bf26bc6f115f101351f23c19c6a1762175086b013af63382",
+      "sha256": "d07bcd1bfd69f5e1fc5fcd435e74dccec0f3389531c4c9108733fb85df306035",
     },
     {
       "artifact": "axiz-structure-batch-api",
@@ -1498,7 +1753,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-messaging-spring-boot-autoconfigure",
         "class": "pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor",
-        "sha256": "36073b35fd2464e7bc8a47215ec28d1284977f67a2e4b3b1ddbaea4a06e182e4"
+        "sha256": "6a6ff3744d3a2a45f81e2607e84fa3b1a215e0698f24759c79e0599a96543734"
       }
     },
     {
@@ -1518,7 +1773,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-messaging-spring-boot-autoconfigure",
         "class": "pe.axiz.spring.messaging.ReactiveTransactionalEventHandler",
-        "sha256": "084569ff7203fd9342b091e7a12fb98dfb475a2efb7b8daaee0a379f2dc6769e"
+        "sha256": "d20eb6bf07b51d714c45eac2b1449f6f89a61c4802d74f5408ba7a048f76a8ba"
       }
     },
     {
@@ -1528,7 +1783,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-messaging-spring-boot-autoconfigure",
         "class": "pe.axiz.spring.messaging.TransactionalEventHandler",
-        "sha256": "8e8f44ba0d733b73af6577e5f56ce20df6d82c5576683dc30d00fbb088f1c123"
+        "sha256": "37bb53675e675ff0ecf1df5994aec4b36a067d26ecda728e349498c1328e7379"
       }
     },
     {
@@ -1538,7 +1793,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-messaging-spring-boot-autoconfigure",
         "class": "pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor",
-        "sha256": "2b086ccaca0789c8df5dbe1b1cb44f2db9edde640f4481a86728a112451d115f"
+        "sha256": "d16730d70a19c1b6d5501113a8bbbde8c1282c34d226aca5562ccb5b909a9001"
       }
     },
     {

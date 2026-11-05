@@ -37,3 +37,35 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-security-spring-boot-autoconfigure verify`.
+
+## Effective authorization coverage
+
+At application-ready time each MVC/WebFlux business endpoint needs a prior authorization rule.
+The framework checks the mapped bean's own proxy and pointcut: an annotation or a global advisor
+that is not attached to that proxy does not count. `@PostAuthorize` alone does not count.
+`@PreAuthorize`, enabled `@Secured`/`@RolesAllowed`, and specific rules compiled from
+`axiz.security.authorization.rules` are supported. Required authorities within a rule are ANDed.
+Default `anyRequest().authenticated()` does not declare endpoint permission.
+
+A `@PublicEndpoint` additionally requires an effective matching permit-all path from
+`axiz.security.public-paths`. GET endpoints also need authorization of their implicit HEAD route.
+`axiz.security.authorization.unprotected=fail` is the default; `warn` is for development only.
+Spring Boot/springdoc infrastructure mappings are excluded from the business coverage scan and
+keep their own configured HTTP security policies.
+
+Custom filter chains may contain arbitrary authorization managers; the framework cannot certify
+their private DSL state from configuration declarations. With a custom chain, declare effective
+prior method authorization on business endpoints. Property-based HTTP coverage is trusted only
+when the actual installed chain is the framework chain. Tests should verify denials before any
+application invocation, in addition to startup coverage.
+
+CQRS `axiz.cqrs.authorization.unprotected` also defaults to `fail`. Bus coverage is a declaration
+check; permissions on a particular resource remain the service's responsibility.
+
+## Rate-limit outage policy
+
+Every rule must explicitly declare `axiz.security.rate-limit.rules[].fail-open` when rate limiting
+is enabled. The former global `axiz.security.rate-limit.fail-open` is removed; the migration recipe
+removes it, but cannot choose each rule's outage policy. A missing rule policy fails startup.
+`false` returns a 503 Problem if the store is unavailable; `true` allows the request. Exceeding a
+healthy store's quota still returns 429. The framework never interprets an outage as quota exhaustion.

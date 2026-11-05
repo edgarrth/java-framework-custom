@@ -1,5 +1,6 @@
 package pe.axiz.codegen;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -55,6 +56,6 @@ public final class ServiceRoles {
             "support",
             "processor",
             "batch");
-    return java.util.Arrays.stream(noun.split("-")).noneMatch(reserved::contains);
+    return Arrays.stream(noun.split("-")).noneMatch(reserved::contains);
   }
 }

@@ -36,8 +36,9 @@ class RedisIdempotencyStoreTest {
         Proxy.newProxyInstance(
             RedisCommands.class.getClassLoader(),
             new Class<?>[] {RedisCommands.class},
-            (proxy, method, args) ->
-                switch (method.getName()) {
+            (proxy, method, args) -> {
+              synchronized (data) {
+                return switch (method.getName()) {
                   case "set" -> {
                     String k = (String) args[0];
                     String options = args.length > 2 ? options((SetArgs) args[2]) : "";
@@ -65,6 +66,13 @@ class RedisIdempotencyStoreTest {
                     if (value == null) {
                       yield 0L;
                     }
+                    if (script.equals(RedisIdempotencyStore.CAS_SCRIPT)) {
+                      if (!value.equals(argv[0])) yield 0L;
+                      String replacement = String.valueOf(argv[1]);
+                      if (replacement.isEmpty()) data.remove(key);
+                      else data.put(key, replacement);
+                      yield 1L;
+                    }
                     IdempotencyRecord r = StoredResponseCodec.read(key, value);
                     if (r.status() != IdempotencyRecord.Status.IN_PROGRESS
                         || !argv[0].equals(r.owner())) {
@@ -80,7 +88,9 @@ class RedisIdempotencyStoreTest {
                     yield 1L;
                   }
                   default -> throw new UnsupportedOperationException(method.getName());
-                });
+                };
+              }
+            });
   }
 
   /** Options as sent to the server, for example {@code NX PX 60000}. */

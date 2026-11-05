@@ -6,6 +6,7 @@
   <name>axiz :: kits</name>
   <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
   <modules>
+    <module>axiz-kit-jdbc</module>
     <module>axiz-kit-dynamodb</module>
     <module>axiz-kit-jpa</module>
     <module>axiz-kit-r2dbc</module>

@@ -2,6 +2,8 @@ package pe.axiz.spring.audit;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import java.util.HashMap;
+import java.util.Objects;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -20,6 +22,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.adapter.audit.kafka.KafkaAuditPublisher;
+import pe.axiz.adapter.audit.kafka.KafkaAuditRecords;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
@@ -45,7 +48,7 @@ public class AxizAuditKafkaAutoConfiguration {
   @ConditionalOnImperativeApplication
   AuditSink axizKafkaAuditSink(ProducerFactory<?, ?> producers, AxizAuditProperties properties) {
     Producer<String, String> producer = (Producer<String, String>) producers.createProducer();
-    String topic = java.util.Objects.requireNonNull(properties.kafka().topic());
+    String topic = Objects.requireNonNull(properties.kafka().topic());
     return new AuditSink(
         "kafka", new KafkaAuditPublisher(producer, topic, properties.kafka().timeout()));
   }
@@ -76,8 +79,8 @@ public class AxizAuditKafkaAutoConfiguration {
                 () ->
                     template
                         .send(
-                            pe.axiz.adapter.audit.kafka.KafkaAuditRecords.create(
-                                java.util.Objects.requireNonNull(p.kafka().topic()), event))
+                            KafkaAuditRecords.create(
+                                Objects.requireNonNull(p.kafka().topic()), event))
                         .thenApply(sent -> (Void) null)));
   }
 
@@ -85,7 +88,7 @@ public class AxizAuditKafkaAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   KafkaTemplate<String, String> axizAsyncAuditKafkaTemplate(
       ProducerFactory<?, ?> producers, AxizAuditProperties p) {
-    var properties = new java.util.HashMap<String, Object>(producers.getConfigurationProperties());
+    var properties = new HashMap<String, Object>(producers.getConfigurationProperties());
     properties.put(
         ProducerConfig.CLIENT_ID_CONFIG,
         properties.getOrDefault("client.id", "axiz") + "-audit-reactive");

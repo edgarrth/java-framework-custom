@@ -1,5 +1,7 @@
 package pe.axiz.structure.hexagonal.spring;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -24,8 +26,7 @@ public record AxizHexagonalProperties(@DefaultValue Events events) {
       @DefaultValue Map<String, String> destinations,
       @DefaultValue(".v1") String typeSuffix) {
     public Events {
-      destinations =
-          java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(destinations));
+      destinations = Collections.unmodifiableMap(new LinkedHashMap<>(destinations));
     }
   }
 }

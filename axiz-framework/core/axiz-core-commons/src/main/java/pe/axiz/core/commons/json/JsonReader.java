@@ -16,6 +16,8 @@ public final class JsonReader {
 
   private static final int MAX_LENGTH = 1_000_000;
   private static final int MAX_DEPTH = 64;
+  private static final int MAX_NUMBER_LENGTH = 100;
+  private static final int MAX_EXPONENT = 9999;
 
   private final String s;
   private int pos;
@@ -86,6 +88,9 @@ public final class JsonReader {
         throw error("Expected a string key");
       }
       String key = string();
+      if (map.containsKey(key)) {
+        throw error("Duplicate object key");
+      }
       ws();
       expect(':');
       ws();
@@ -167,17 +172,52 @@ public final class JsonReader {
 
   private BigDecimal number() {
     int start = pos;
-    if (peek() == '-') {
-      pos++;
+    if (at('-')) advanceNumber(start);
+    if (at('0')) {
+      advanceNumber(start);
+      if (digit()) throw error("Leading zero in number");
+    } else {
+      requireDigit();
+      while (digit()) advanceNumber(start);
     }
-    while (pos < s.length() && "0123456789.eE+-".indexOf(s.charAt(pos)) >= 0) {
-      pos++;
+    if (at('.')) {
+      advanceNumber(start);
+      requireDigit();
+      while (digit()) advanceNumber(start);
+    }
+    if (at('e') || at('E')) {
+      advanceNumber(start);
+      if (at('+') || at('-')) advanceNumber(start);
+      requireDigit();
+      int exponent = 0;
+      while (digit()) {
+        exponent = exponent * 10 + s.charAt(pos) - '0';
+        if (exponent > MAX_EXPONENT) throw error("Number exponent too large");
+        advanceNumber(start);
+      }
     }
     try {
       return new BigDecimal(s.substring(start, pos));
     } catch (NumberFormatException e) {
       throw error("Invalid number");
     }
+  }
+
+  private boolean at(char c) {
+    return pos < s.length() && s.charAt(pos) == c;
+  }
+
+  private boolean digit() {
+    return pos < s.length() && s.charAt(pos) >= '0' && s.charAt(pos) <= '9';
+  }
+
+  private void requireDigit() {
+    if (!digit()) throw error("Expected number digit");
+  }
+
+  private void advanceNumber(int start) {
+    if (pos - start >= MAX_NUMBER_LENGTH) throw error("number too long");
+    pos++;
   }
 
   private @Nullable Object literal(String word, @Nullable Object value) {

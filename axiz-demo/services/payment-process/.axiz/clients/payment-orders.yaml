@@ -1,5 +1,6 @@
 openapi: 3.1.0
 info:
+  x-axiz-archetype: business
   title: Payment orders
   version: 1.0.0
   description: Owner of payment orders (fictitious payment processor of the axiz demo).

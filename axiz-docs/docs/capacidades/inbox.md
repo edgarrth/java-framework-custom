@@ -36,7 +36,7 @@ axiz.inbox.table: ${axiz.dynamodb.table-prefix}axiz-inbox
 
 ### Aurora en servlet (JDBC/JPA)
 
-Sin configuración adicional.
+- `pe.axiz:axiz-adapter-inbox-jdbc`
 
 ### Aurora en reactivo (R2DBC)
 

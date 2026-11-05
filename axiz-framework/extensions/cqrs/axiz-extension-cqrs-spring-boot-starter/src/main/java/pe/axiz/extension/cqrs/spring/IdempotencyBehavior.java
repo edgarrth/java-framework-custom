@@ -1,5 +1,6 @@
 package pe.axiz.extension.cqrs.spring;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -7,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.extension.cqrs.IdempotentCommand;
@@ -22,7 +24,7 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public class IdempotencyBehavior implements PipelineBehavior {
 
-  private static final byte[] JSON_NULL = "null".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+  private static final byte[] JSON_NULL = "null".getBytes(StandardCharsets.UTF_8);
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyBehavior.class);
 
@@ -57,21 +59,21 @@ public class IdempotencyBehavior implements PipelineBehavior {
       return (R) mapper.readValue(json, invocation.resultType());
     }
     IdempotencyService.Proceed execution = (IdempotencyService.Proceed) decision;
-    R result;
-    try {
-      result = next.proceed();
-    } catch (RuntimeException e) {
-      service.fail(execution);
-      throw e;
+    try (var lease = service.startLease(execution)) {
+      try {
+        R result = next.proceed();
+        byte[] out = result == null ? JSON_NULL : mapper.writeValueAsBytes(result);
+        if (!service.complete(
+            execution, new StoredResponse(200, Map.of("Content-Type", "application/json"), out))) {
+          LOG.warn("Idempotency completion could not be confirmed");
+        }
+        return result;
+      } catch (RuntimeException failure) {
+        if (failure instanceof NoEffect) service.releaseWithoutEffect(execution);
+        else service.fail(execution);
+        throw failure;
+      }
     }
-    byte[] out = result == null ? JSON_NULL : mapper.writeValueAsBytes(result);
-    if (!service.complete(
-        execution, new StoredResponse(200, Map.of("Content-Type", "application/json"), out))) {
-      LOG.warn(
-          "Idempotency key lost before completion (lock expired); result not stored: {}",
-          execution.key());
-    }
-    return result;
   }
 
   /**

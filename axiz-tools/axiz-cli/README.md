@@ -70,3 +70,17 @@ Reactive test plans opt in with `@ExtendWith(BlockHoundExtension.class)`. The fr
 listener installs detection before schedulers start; the unrelated JUnit extension autodetection
 flag is not required. `doctor` recognizes the actual annotation and excludes comments/literals
 when inspecting it.
+
+## Outbox upgrade preflight
+
+`axiz doctor --outbox-jdbc-url jdbc:postgresql://HOST:5432/DATABASE` opts into a read-only
+PostgreSQL report using `AXIZ_DOCTOR_DB_USER` and `AXIZ_DOCTOR_DB_PASSWORD` from the environment.
+Use a read-only database account; do not include credentials in the URL or shell history.
+`--outbox-table` overrides the validated table identifier. Normal `doctor` and `upgrade` checks
+do not connect to a database automatically.
+
+The canonical framework query works before and after the sequence upgrade. It lists every
+`FAILED` event, aggregate, destination, error, attempts and whether published/pending successors
+exist. It never changes statuses. Review each row before the maintenance window: `retry` preserves
+the event; `skip` requires an explicit audited decision and is terminal. Retrying cannot reconstruct
+the historical order of successors that were already published by an older relay.

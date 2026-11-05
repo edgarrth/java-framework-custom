@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Duration;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -16,6 +17,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
 import pe.axiz.core.messaging.EventFactory;
@@ -49,6 +51,15 @@ import pe.axiz.kit.r2dbc.ReactiveSql;
 public class AxizOutboxR2dbcAutoConfiguration {
 
   /** Store used by the relay: statements run on the connection bound by its transactions. */
+  @Bean
+  SmartInitializingSingleton axizOutboxSchemaCheck(
+      OutboxStore store, AxizOutboxProperties properties, Environment environment) {
+    return () -> {
+      OutboxLeaseValidation.validate(properties, environment);
+      store.verifySchema();
+    };
+  }
+
   @Bean
   @ConditionalOnMissingBean(OutboxStore.class)
   R2dbcOutboxStore axizOutboxStore(ConnectionFactory connectionFactory, AxizOutboxProperties p) {
@@ -97,7 +108,8 @@ public class AxizOutboxR2dbcAutoConfiguration {
           clock.getIfAvailable(Clock::systemUTC),
           r.batchSize(),
           r.maxAttempts(),
-          Backoff.exponential(r.initialDelay(), r.maxDelay()));
+          Backoff.exponential(r.initialDelay(), r.maxDelay()),
+          r.leaseDuration());
     }
 
     @Bean

@@ -2,6 +2,7 @@ package pe.axiz.codegen.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -48,8 +49,8 @@ public final class Snapshots {
       snapshot = Collections.unmodifiableSet(copy);
     } else if (source instanceof byte[] bytes) {
       snapshot = bytes.clone();
-    } else if (source instanceof java.util.Date date) {
-      snapshot = new java.util.Date(date.getTime());
+    } else if (source instanceof Date date) {
+      snapshot = new Date(date.getTime());
     } else {
       return source;
     }

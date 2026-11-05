@@ -6,6 +6,7 @@ import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -14,11 +15,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.PlatformTransactionManager;
+import pe.axiz.adapter.outbox.jdbc.Dialect;
+import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
-import pe.axiz.core.outbox.Dialect;
-import pe.axiz.core.outbox.JdbcOutboxStore;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
@@ -45,6 +47,15 @@ import pe.axiz.spring.foundation.jdbc.SqlDialects;
 public class AxizOutboxAutoConfiguration {
 
   @Bean
+  SmartInitializingSingleton axizOutboxSchemaCheck(
+      OutboxStore store, AxizOutboxProperties properties, Environment environment) {
+    return () -> {
+      OutboxLeaseValidation.validate(properties, environment);
+      store.verifySchema();
+    };
+  }
+
+  @Bean
   SchemaInitializer axizOutboxSchema(DataSource dataSource, AxizOutboxProperties p) {
     return new SchemaInitializer(dataSource, "outbox", p.initializeSchema());
   }
@@ -54,7 +65,9 @@ public class AxizOutboxAutoConfiguration {
   OutboxStore axizOutboxStore(
       DataSource dataSource, AxizOutboxProperties p, SchemaInitializer axizOutboxSchema) {
     Dialect dialect = SqlDialects.isH2(dataSource) ? Dialect.H2 : Dialect.POSTGRESQL;
-    return new JdbcOutboxStore(new SpringConnectionProvider(dataSource), p.table(), dialect);
+    OutboxStore store =
+        new JdbcOutboxStore(new SpringConnectionProvider(dataSource), p.table(), dialect);
+    return store;
   }
 
   @Bean
@@ -98,7 +111,8 @@ public class AxizOutboxAutoConfiguration {
           clock.getIfAvailable(Clock::systemUTC),
           r.batchSize(),
           r.maxAttempts(),
-          Backoff.exponential(r.initialDelay(), r.maxDelay()));
+          Backoff.exponential(r.initialDelay(), r.maxDelay()),
+          r.leaseDuration());
     }
 
     @Bean

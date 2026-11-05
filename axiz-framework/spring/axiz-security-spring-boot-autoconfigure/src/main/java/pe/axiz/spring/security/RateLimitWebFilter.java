@@ -9,6 +9,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import pe.axiz.core.security.AsyncRateLimiter;
+import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
@@ -19,24 +20,12 @@ public class RateLimitWebFilter implements WebFilter {
   private final AsyncRateLimiter limiter;
   private final RateLimitRules rules;
   private final SecurityProblems problems;
-  private final boolean failOpen;
 
   public RateLimitWebFilter(
       AsyncRateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
-    this(limiter, rules, problems, true);
-  }
-
-  /**
-   * Creates the filter.
-   *
-   * @param failOpen policy when the limiter store is unavailable, for rules without their own
-   */
-  public RateLimitWebFilter(
-      AsyncRateLimiter limiter, RateLimitRules rules, SecurityProblems problems, boolean failOpen) {
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);
     this.problems = Objects.requireNonNull(problems);
-    this.failOpen = failOpen;
   }
 
   @Override
@@ -60,7 +49,17 @@ public class RateLimitWebFilter implements WebFilter {
                     : ReactiveStages.from(
                             () ->
                                 limiter.tryAcquire(
-                                    key.get(), r.limit(), r.window(), r.failOpen(failOpen)))
+                                    key.get(), r.limit(), r.window(), r.failurePolicy()))
+                        .onErrorResume(
+                            RateLimitUnavailableException.class,
+                            failure ->
+                                ReactiveProblemHandlers.write(
+                                        exchange,
+                                        HttpStatus.SERVICE_UNAVAILABLE,
+                                        problems.unavailable(
+                                            ReactiveProblemHandlers.locale(exchange),
+                                            exchange.getRequest().getPath().value()))
+                                    .then(Mono.empty()))
                         .flatMap(d -> decide(exchange, chain, d)));
   }
 

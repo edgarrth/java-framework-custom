@@ -2,15 +2,18 @@ package pe.axiz.spring.messaging;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletionStage;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -39,6 +42,7 @@ import org.springframework.kafka.support.ExponentialBackOffWithMaxRetries;
 import org.springframework.util.backoff.FixedBackOff;
 import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
 import pe.axiz.adapter.messaging.kafka.KafkaEventPublisher;
+import pe.axiz.adapter.messaging.kafka.KafkaEventRecords;
 import pe.axiz.adapter.messaging.kafka.MskIam;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventDispatcher;
@@ -122,14 +126,11 @@ public class AxizMessagingKafkaAutoConfiguration {
           }
 
           @Override
-          public java.util.concurrent.CompletionStage<PublishResult> publish(
-              String destination, EventEnvelope event) {
+          public CompletionStage<PublishResult> publish(String destination, EventEnvelope event) {
             return sends.submit(
                 () ->
                     template
-                        .send(
-                            pe.axiz.adapter.messaging.kafka.KafkaEventRecords.create(
-                                destination, event))
+                        .send(KafkaEventRecords.create(destination, event))
                         .thenApply(
                             sent ->
                                 new PublishResult(
@@ -227,10 +228,8 @@ public class AxizMessagingKafkaAutoConfiguration {
     }
 
     static void handle(ObservedDispatcher dispatcher, ConsumerRecord<String, byte[]> record) {
-      org.apache.kafka.common.header.Header h =
-          record.headers().lastHeader("kafka_deliveryAttempt");
-      int attempt =
-          h != null && h.value().length == 4 ? java.nio.ByteBuffer.wrap(h.value()).getInt() : 1;
+      Header h = record.headers().lastHeader("kafka_deliveryAttempt");
+      int attempt = h != null && h.value().length == 4 ? ByteBuffer.wrap(h.value()).getInt() : 1;
       EventDispatcher.Outcome outcome =
           dispatcher.dispatch(record.topic(), KafkaEnvelopes.from(record), attempt);
       String where = record.topic() + "@" + record.offset();

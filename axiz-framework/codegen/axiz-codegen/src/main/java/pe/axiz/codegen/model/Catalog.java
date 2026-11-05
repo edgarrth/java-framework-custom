@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +33,9 @@ public final class Catalog {
       Map<String, Archetype> archetypes,
       Map<String, Capability> capabilities,
       Map<Structure, Style> styles) {
-    this.archetypes = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(archetypes));
-    this.capabilities = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(capabilities));
-    this.styles = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(styles));
+    this.archetypes = Collections.unmodifiableMap(new LinkedHashMap<>(archetypes));
+    this.capabilities = Collections.unmodifiableMap(new LinkedHashMap<>(capabilities));
+    this.styles = Collections.unmodifiableMap(new LinkedHashMap<>(styles));
   }
 
   public static Catalog load() {

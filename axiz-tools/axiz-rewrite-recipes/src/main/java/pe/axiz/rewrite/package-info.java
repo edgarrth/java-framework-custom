@@ -1,3 +1,5 @@
 /** Automated migrations for axiz consumers. */
-@org.jspecify.annotations.NullMarked
+@NullMarked
 package pe.axiz.rewrite;
+
+import org.jspecify.annotations.NullMarked;

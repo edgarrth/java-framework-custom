@@ -11,9 +11,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.core.resilience.RetryPolicy;
-import pe.axiz.core.saga.JdbcSagaStateStore;
 import pe.axiz.core.saga.SagaListener;
 import pe.axiz.core.saga.SagaOrchestrator;
 import pe.axiz.core.saga.SagaRecovery;

@@ -1,7 +1,7 @@
 package pe.axiz.kit.r2dbc;
 
 import io.r2dbc.spi.ConnectionFactory;
-import pe.axiz.core.commons.jdbc.SqlStates;
+import pe.axiz.kit.jdbc.SqlStates;
 import reactor.core.publisher.Mono;
 
 /** Atomic PostgreSQL counter blocks, using an independent connection and transaction. */
@@ -26,8 +26,9 @@ public final class R2dbcSequenceStore implements ReactiveSequenceStore {
                       .query(
                           "INSERT INTO "
                               + table
-                              + " (seq_name, seq_period, seq_value) VALUES (:name, :period, :increment) "
-                              + "ON CONFLICT (seq_name, seq_period) DO UPDATE SET seq_value = "
+                              + " (seq_name, seq_period, seq_value) VALUES (:name, :period,"
+                              + " :increment) ON CONFLICT (seq_name, seq_period) DO UPDATE SET"
+                              + " seq_value = "
                               + table
                               + ".seq_value + EXCLUDED.seq_value RETURNING seq_value",
                           SqlParams.of()

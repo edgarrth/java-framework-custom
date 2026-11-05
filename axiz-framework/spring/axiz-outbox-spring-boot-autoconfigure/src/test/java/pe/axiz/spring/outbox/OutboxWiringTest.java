@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.r2dbc.core.DatabaseClient;
-import pe.axiz.core.commons.jdbc.TransactionRunner;
+import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
@@ -43,6 +43,44 @@ class OutboxWiringTest {
 
   /** A store with nothing due that counts purges and can be made to fail. */
   static final class CountingStore implements OutboxStore {
+
+    public java.util.List<OutboxRecord> claimDue(
+        int size, Instant now, java.time.Duration lease, String owner) {
+      return lockDue(size, now);
+    }
+
+    public boolean markPublished(String id, String owner, Instant at) {
+      return false;
+    }
+
+    public boolean markFailed(
+        String id,
+        String owner,
+        int attempts,
+        Instant next,
+        @org.jspecify.annotations.Nullable String error,
+        boolean giveUp) {
+      return false;
+    }
+
+    public boolean retry(String id) {
+      return false;
+    }
+
+    public boolean skip(String id, String reason) {
+      return false;
+    }
+
+    public long countSkipped() {
+      return 0;
+    }
+
+    public long countBlockedAggregates() {
+      return 0;
+    }
+
+    public void verifySchema() {}
+
     final AtomicInteger locks = new AtomicInteger();
     final AtomicInteger purges = new AtomicInteger();
     final AtomicBoolean failing = new AtomicBoolean();

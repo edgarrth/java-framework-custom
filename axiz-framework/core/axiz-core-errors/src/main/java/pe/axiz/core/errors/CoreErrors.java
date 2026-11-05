@@ -1,5 +1,7 @@
 package pe.axiz.core.errors;
 
+import java.util.List;
+
 /** Error definitions owned by the framework itself (prefix {@code AXZ}). */
 public final class CoreErrors {
 
@@ -17,6 +19,9 @@ public final class CoreErrors {
       ErrorDefinition.of("AXZ-CORE-0409", ErrorCategory.CONFLICT, "Conflict with current state");
   public static final ErrorDefinition PRECONDITION_FAILED =
       ErrorDefinition.of("AXZ-CORE-0412", ErrorCategory.PRECONDITION_FAILED, "Precondition failed");
+  public static final ErrorDefinition PAYLOAD_TOO_LARGE =
+      ErrorDefinition.of(
+          "AXZ-CORE-0413", ErrorCategory.PAYLOAD_TOO_LARGE, "Request body too large");
   public static final ErrorDefinition UNSUPPORTED_MEDIA_TYPE =
       ErrorDefinition.of(
           "AXZ-CORE-0415", ErrorCategory.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type");
@@ -41,8 +46,8 @@ public final class CoreErrors {
   private CoreErrors() {}
 
   /** All framework definitions, registered by default in every catalog. */
-  public static java.util.List<ErrorDefinition> all() {
-    return java.util.List.of(
+  public static List<ErrorDefinition> all() {
+    return List.of(
         VALIDATION_FAILED,
         MISSING_HEADER,
         MALFORMED_BODY,
@@ -50,6 +55,7 @@ public final class CoreErrors {
         METHOD_NOT_ALLOWED,
         CONFLICT,
         PRECONDITION_FAILED,
+        PAYLOAD_TOO_LARGE,
         UNSUPPORTED_MEDIA_TYPE,
         UNAUTHENTICATED,
         FORBIDDEN,
@@ -71,6 +77,7 @@ public final class CoreErrors {
       case METHOD_NOT_ALLOWED -> METHOD_NOT_ALLOWED;
       case CONFLICT, UNPROCESSABLE -> CONFLICT;
       case PRECONDITION_FAILED -> PRECONDITION_FAILED;
+      case PAYLOAD_TOO_LARGE -> PAYLOAD_TOO_LARGE;
       case UNSUPPORTED_MEDIA_TYPE -> UNSUPPORTED_MEDIA_TYPE;
       case TOO_MANY_REQUESTS -> TOO_MANY_REQUESTS;
       case INTERNAL -> UNEXPECTED;

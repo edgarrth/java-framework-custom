@@ -37,6 +37,15 @@ axiz:
   sensitive:
     response: MEDIUM
   security:
+    rate-limit:
+      enabled: true
+      rules:
+      - name: payment-submission
+        paths: [/v1/payments]
+        limit: 100
+        window: 1m
+        key: client
+        fail-open: false
     claims:
       subject-as-client: false
       machine:

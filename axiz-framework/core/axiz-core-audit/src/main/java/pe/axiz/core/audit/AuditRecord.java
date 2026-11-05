@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
@@ -22,6 +23,8 @@ public final class AuditRecord {
   private final String resourceType;
   private @Nullable String resourceId;
   private AuditTrail.Context context = AuditTrail.Context.system();
+  private TransactionOutcome local = TransactionOutcome.UNKNOWN;
+  private TransactionOutcome operation = TransactionOutcome.UNKNOWN;
   private final Map<String, @Nullable Object> details = new LinkedHashMap<>();
 
   public AuditRecord(
@@ -51,6 +54,11 @@ public final class AuditRecord {
     details.put(key, masker.describe(value, OutputChannel.AUDIT));
   }
 
+  public void outcomes(TransactionOutcome local, TransactionOutcome operation) {
+    this.local = Objects.requireNonNull(local);
+    this.operation = Objects.requireNonNull(operation);
+  }
+
   public AuditEvent event(AuditEvent.Outcome outcome, @Nullable String errorCode) {
     return new AuditEvent(
         ids.newId(),
@@ -65,6 +73,8 @@ public final class AuditRecord {
         context.correlationId(),
         context.channel(),
         context.tenant(),
-        details);
+        details,
+        local,
+        operation);
   }
 }

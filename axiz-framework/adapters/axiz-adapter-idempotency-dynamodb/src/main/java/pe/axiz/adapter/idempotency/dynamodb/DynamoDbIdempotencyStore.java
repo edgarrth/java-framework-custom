@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
@@ -42,6 +43,48 @@ public final class DynamoDbIdempotencyStore implements IdempotencyStore {
   }
 
   @Override
+  public boolean compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    if (replacement != null && !expected.key().equals(replacement.key()))
+      throw new IllegalArgumentException("different record key");
+    try {
+      if (replacement == null)
+        dynamo.deleteItem(
+            DeleteItemRequest.builder()
+                .tableName(table)
+                .key(Map.of("pk", s(expected.key())))
+                .conditionExpression(
+                    "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
+                .expressionAttributeNames(Map.of("#data", "data"))
+                .expressionAttributeValues(
+                    Map.of(
+                        ":expected",
+                        s(StoredResponseCodec.write(expected)),
+                        ":now",
+                        n(clock.millis())))
+                .build());
+      else
+        dynamo.putItem(
+            PutItemRequest.builder()
+                .tableName(table)
+                .item(item(replacement))
+                .conditionExpression(
+                    "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
+                .expressionAttributeNames(Map.of("#data", "data"))
+                .expressionAttributeValues(
+                    Map.of(
+                        ":expected",
+                        s(StoredResponseCodec.write(expected)),
+                        ":now",
+                        n(clock.millis())))
+                .build());
+      return true;
+    } catch (ConditionalCheckFailedException conflict) {
+      return false;
+    }
+  }
+
+  @Override
   public boolean tryStart(IdempotencyRecord record) {
     try {
       dynamo.putItem(
@@ -72,36 +115,17 @@ public final class DynamoDbIdempotencyStore implements IdempotencyStore {
       return Optional.empty();
     }
     IdempotencyRecord r = StoredResponseCodec.read(key, item.get("data").s());
-    return r.expiresAt().isBefore(now) ? Optional.empty() : Optional.of(r);
+    return !r.liveAt(now) ? Optional.empty() : Optional.of(r);
   }
 
   @Override
   public boolean complete(String key, String owner, StoredResponse response, Instant expiresAt) {
-    Optional<IdempotencyRecord> current = find(key, clock.instant());
-    if (current.isEmpty() || !current.get().heldBy(owner)) {
-      return false;
+    for (int attempt = 0; attempt < 16; attempt++) {
+      Optional<IdempotencyRecord> current = find(key, clock.instant());
+      if (current.isEmpty() || !current.get().heldBy(owner)) return false;
+      if (compareAndSet(current.get(), current.get().completed(response, expiresAt))) return true;
     }
-    IdempotencyRecord done =
-        new IdempotencyRecord(
-            key,
-            current.get().fingerprint(),
-            IdempotencyRecord.Status.COMPLETED,
-            owner,
-            response,
-            expiresAt);
-    try {
-      dynamo.putItem(
-          PutItemRequest.builder()
-              .tableName(table)
-              .item(item(done))
-              .conditionExpression(HELD_BY_OWNER)
-              .expressionAttributeNames(names())
-              .expressionAttributeValues(values(owner))
-              .build());
-      return true;
-    } catch (ConditionalCheckFailedException e) {
-      return false;
-    }
+    return false;
   }
 
   @Override

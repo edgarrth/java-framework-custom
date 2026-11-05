@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.RejectedExecutionException;
@@ -144,7 +145,7 @@ public final class AsyncLoadingCache<V> {
 
     private void start(Supplier<CompletionStage<V>> loader) {
       if (result.isCancelled()) {
-        finish(null, new java.util.concurrent.CancellationException());
+        finish(null, new CancellationException());
         return;
       }
       var active = Stages.call(loader).toCompletableFuture();

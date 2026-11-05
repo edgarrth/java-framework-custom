@@ -1,5 +1,6 @@
 package pe.axiz.codegen.model;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -70,7 +71,7 @@ public record ProjectRequest(
 
   public ProjectRequest {
     extensions = List.copyOf(extensions);
-    if (new java.util.HashSet<>(extensions).size() != extensions.size())
+    if (new HashSet<>(extensions).size() != extensions.size())
       throw new IllegalArgumentException("Duplicate service extension");
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(groupId, "groupId");

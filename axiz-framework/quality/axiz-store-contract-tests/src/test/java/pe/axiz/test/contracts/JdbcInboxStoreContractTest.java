@@ -9,9 +9,9 @@ import java.util.stream.Stream;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
-import pe.axiz.core.commons.jdbc.JdbcTransactions;
+import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.core.inbox.JdbcInboxStore;
+import pe.axiz.kit.jdbc.JdbcTransactions;
 
 /** The JDBC inbox lives in the API module, so its contract runs here (on H2). */
 class JdbcInboxStoreContractTest {

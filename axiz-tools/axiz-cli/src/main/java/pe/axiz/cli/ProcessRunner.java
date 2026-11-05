@@ -1,6 +1,8 @@
 package pe.axiz.cli;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -30,16 +32,16 @@ public interface ProcessRunner {
 
     @Override
     public boolean available(String executable) {
-      String path = java.lang.System.getenv("PATH");
+      String path = System.getenv("PATH");
       if (path == null) {
         return false;
       }
-      for (String dir : path.split(java.io.File.pathSeparator, -1)) {
+      for (String dir : path.split(File.pathSeparator, -1)) {
         if (dir.isEmpty()) {
           continue; // an empty entry means the current directory: never trusted
         }
         for (String name : List.of(executable, executable + ".exe", executable + ".cmd")) {
-          if (java.nio.file.Files.isExecutable(Path.of(dir, name))) {
+          if (Files.isExecutable(Path.of(dir, name))) {
             return true;
           }
         }

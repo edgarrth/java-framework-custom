@@ -7,8 +7,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.openapi.ApiOperation;
@@ -132,7 +134,7 @@ public final class ContractSync {
     List<String> created = new ArrayList<>();
     List<String> proposed = new ArrayList<>();
     Map<String, byte[]> selected = new LinkedHashMap<>();
-    java.util.Set<String> adapterPaths = new java.util.LinkedHashSet<>();
+    Set<String> adapterPaths = new LinkedHashSet<>();
     for (Map.Entry<String, byte[]> e : rendered.entrySet()) {
       String path = e.getKey();
       String file = path.substring(path.lastIndexOf('/') + 1);

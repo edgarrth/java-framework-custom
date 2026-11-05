@@ -1,12 +1,19 @@
 package pe.axiz.codegen;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
@@ -68,14 +75,14 @@ public final class ProjectGenerator {
               request.basePackage(),
               request.groupId(),
               request.structure(),
-              pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi)));
+              AsyncApiDocument.parse(asyncApi)));
       files.putAll(
           EventAdapters.generate(
               request.basePackage(),
               request.groupId(),
               request.structure(),
               request.stack(),
-              pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi)));
+              AsyncApiDocument.parse(asyncApi)));
     }
     return new GeneratedProject(request.name(), JavaFormatter.formatAll(files));
   }
@@ -136,7 +143,7 @@ public final class ProjectGenerator {
     archetype.put("cronjob", "cronjob".equals(a.deployment()));
     archetype.put("deployment", "deployment".equals(a.deployment()));
     archetype.put("process", r.capabilities().contains("saga"));
-    archetype.put("enum", a.name().replace("-", "_").toUpperCase(java.util.Locale.ROOT));
+    archetype.put("enum", a.name().replace("-", "_").toUpperCase(Locale.ROOT));
     archetype.put(a.name().replace("-", ""), true);
     c.put("archetype", archetype);
 
@@ -204,6 +211,11 @@ public final class ProjectGenerator {
       configMapKeys.addAll(cap.configMapKeys());
       secrets.addAll(cap.secrets());
     }
+    if (Catalog.AURORA.equals(store)) {
+      for (String table : catalog.style(r.structure()).jdbcTables())
+        if (Set.of("outbox", "inbox", "saga", "sequence").contains(table))
+          dependencyIds.add("pe.axiz:axiz-adapter-" + table + "-jdbc");
+    }
     List<Map<String, Object>> starters = new ArrayList<>();
     starterIds.forEach(id -> starters.add(Map.of("artifactId", id)));
     if (r.structure() != Structure.NONE) {
@@ -241,6 +253,14 @@ public final class ProjectGenerator {
     Map<String, List<Map<String, Object>>> byTag = new LinkedHashMap<>();
     if (contract != null) {
       for (ApiOperation op : contract.operations()) {
+        if (!op.scopes().isEmpty()
+            && Boolean.TRUE.equals(caps.get("security"))
+            && op.requestSchema() != null
+            && op.requestExample() == null)
+          throw new IllegalArgumentException(
+              "Secured operation "
+                  + op.operationId()
+                  + " requires a request example for its generated denial test");
         Map<String, Object> o = operation(op, r.basePackage());
         if (r.cqrs()) {
           o.put("modelPackage", r.basePackage() + ".application.model");
@@ -260,9 +280,15 @@ public final class ProjectGenerator {
           t.put("name", tag);
           t.put("className", Names.pascal(tag));
           t.put("operations", ops);
+          var secured =
+              ops.stream()
+                  .filter(op -> !String.valueOf(op.get("authorizationExpression")).isEmpty())
+                  .toList();
+          t.put("securedOperations", secured);
+          t.put("hasSecuredOperations", !secured.isEmpty());
           t.put("usesPaging", ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get("paged"))));
           t.put("usesModels", ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get("hasModel"))));
-          java.util.TreeSet<String> models = new java.util.TreeSet<>();
+          TreeSet<String> models = new TreeSet<>();
           for (Map<String, Object> o : ops) {
             if (o.get("models") instanceof List<?> used) {
               for (Object m : used) {
@@ -304,6 +330,8 @@ public final class ProjectGenerator {
                 Map.of(
                     "type",
                     fields.get(i)[0],
+                    "qualifiedType",
+                    controllerDependency(r, fw, fields.get(i)[0]),
                     "name",
                     fields.get(i)[1],
                     "last",
@@ -589,7 +617,7 @@ public final class ProjectGenerator {
               key ->
                   key.equals("axiz.messaging.consumer.subscriptions")
                       || key.startsWith("axiz.messaging.consumer.subscriptions["));
-      var consumed = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi).consumed();
+      var consumed = AsyncApiDocument.parse(asyncApi).consumed();
       for (int i = 0; i < consumed.size(); i++)
         app.put("axiz.messaging.consumer.subscriptions[" + i + "]", consumed.get(i).type());
     }
@@ -622,6 +650,21 @@ public final class ProjectGenerator {
     return config;
   }
 
+  private static String controllerDependency(
+      ProjectRequest request, Map<String, Object> framework, String type) {
+    return switch (request.structure()) {
+      case HEXAGONAL ->
+          request.cqrs()
+              ? "pe.axiz.extension.cqrs."
+                  + (Boolean.TRUE.equals(framework.get("reactiveHandlers")) ? "spring." : "")
+                  + type
+              : request.basePackage() + ".application.usecase." + type;
+      case LAYERED -> request.basePackage() + ".service." + type;
+      case BFF -> request.basePackage() + ".composition." + type;
+      default -> throw new IllegalArgumentException("No HTTP dependency for this structure");
+    };
+  }
+
   static Map<String, Object> operation(ApiOperation op, String basePackage) {
     Map<String, Object> o = new LinkedHashMap<>();
     String className = Names.pascal(op.operationId());
@@ -630,12 +673,24 @@ public final class ProjectGenerator {
     o.put("methodName", Names.camel(op.operationId()));
     o.put("kebab", Names.kebab(op.operationId()));
     o.put("httpMethod", op.method());
-    o.put("mapping", Names.pascal(op.method().toLowerCase(java.util.Locale.ROOT)) + "Mapping");
+    o.put("mapping", Names.pascal(op.method().toLowerCase(Locale.ROOT)) + "Mapping");
     o.put("path", op.path());
     o.put("tag", op.tag());
     o.put("summary", op.summary().replace("*/", "* /"));
     o.put("readOnly", op.readOnly());
     o.put("write", !op.readOnly());
+    o.put("authorizationExpression", op.authorizationExpression());
+    o.put(
+        "partialAuthority",
+        op.scopes().size() > 1 ? "SCOPE_" + op.scopes().getFirst() : "SCOPE_unrelated");
+    String uri = op.path().replaceAll("\\{[^}]+}", "test");
+    if (!op.queryParams().isEmpty())
+      uri +=
+          "?"
+              + op.queryParams().stream()
+                  .map(param -> URLEncoder.encode(param.name(), StandardCharsets.UTF_8) + "=test")
+                  .collect(Collectors.joining("&"));
+    o.put("testUri", uri.replace("\\", "\\\\").replace("\"", "\\\""));
     String request = javaType(op.requestSchema());
     String response = javaType(op.responseSchema());
     o.put("hasRequest", request != null);
@@ -643,8 +698,8 @@ public final class ProjectGenerator {
     o.put("hasResponse", response != null);
     o.put("responseType", response == null ? "Void" : response);
     o.put("hasModel", request != null || response != null);
-    java.util.TreeSet<String> models = new java.util.TreeSet<>();
-    for (String t : java.util.Arrays.asList(request, response)) {
+    TreeSet<String> models = new TreeSet<>();
+    for (String t : Arrays.asList(request, response)) {
       if (t != null) {
         models.add(t.startsWith("List<") ? t.substring(5, t.length() - 1) : t);
       }

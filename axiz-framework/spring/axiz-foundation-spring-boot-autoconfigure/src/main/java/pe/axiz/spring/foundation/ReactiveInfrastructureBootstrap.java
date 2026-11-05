@@ -1,5 +1,6 @@
 package pe.axiz.spring.foundation;
 
+import io.micrometer.context.ContextRegistry;
 import org.springframework.util.ClassUtils;
 
 /** Initializes optional context SPI discovery and entropy before request subscriptions. */
@@ -18,7 +19,7 @@ public final class ReactiveInfrastructureBootstrap {
 
   private static final class Micrometer {
     static void initialize() {
-      io.micrometer.context.ContextRegistry.getInstance();
+      ContextRegistry.getInstance();
     }
   }
 }

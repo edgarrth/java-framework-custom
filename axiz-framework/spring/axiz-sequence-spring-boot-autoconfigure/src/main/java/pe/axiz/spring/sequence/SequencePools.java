@@ -1,8 +1,15 @@
 package pe.axiz.spring.sequence;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.r2dbc.pool.ConnectionPool;
+import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.Wrapped;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Objects;
 import javax.sql.DataSource;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.bind.Binder;
@@ -23,9 +30,9 @@ final class SequencePools {
     static Policy from(Environment environment) {
       Binder binder = Binder.get(environment);
       return new Policy(
-          java.util.Objects.requireNonNull(
+          Objects.requireNonNull(
               binder.bind("axiz.sequence.pool.max-size", Integer.class).orElse(2)),
-          java.util.Objects.requireNonNull(
+          Objects.requireNonNull(
               binder
                   .bind("axiz.sequence.pool.acquire-timeout", Duration.class)
                   .orElse(Duration.ofSeconds(5))));
@@ -61,11 +68,9 @@ final class SequencePools {
 
   private static final class Hikari {
     private static Jdbc create(DataSource source, Policy policy) {
-      if (!(source instanceof com.zaxxer.hikari.HikariDataSource main))
-        return new Jdbc(source, null);
-      if (main.getDataSource() instanceof com.zaxxer.hikari.HikariDataSource nested)
-        return create(nested, policy);
-      var settings = new com.zaxxer.hikari.HikariConfig();
+      if (!(source instanceof HikariDataSource main)) return new Jdbc(source, null);
+      if (main.getDataSource() instanceof HikariDataSource nested) return create(nested, policy);
+      var settings = new HikariConfig();
       main.copyStateTo(settings);
       var credentials = main.getCredentialsProvider();
       if (credentials != null) {
@@ -79,7 +84,7 @@ final class SequencePools {
       settings.setMaximumPoolSize(policy.maximum());
       settings.setMinimumIdle(0);
       settings.setConnectionTimeout(policy.acquireTimeout().toMillis());
-      var owned = new com.zaxxer.hikari.HikariDataSource(settings);
+      var owned = new HikariDataSource(settings);
       return new Jdbc(owned, owned);
     }
   }
@@ -100,20 +105,18 @@ final class SequencePools {
     static Reactive create(
         ConnectionFactory source, @Nullable ConnectionFactory dedicated, Environment environment) {
       if (dedicated != null) return new Reactive(dedicated, null);
-      var seen =
-          java.util.Collections.newSetFromMap(
-              new java.util.IdentityHashMap<io.r2dbc.spi.ConnectionFactory, Boolean>());
-      while (source instanceof io.r2dbc.spi.Wrapped<?> wrapped) {
+      var seen = Collections.newSetFromMap(new IdentityHashMap<ConnectionFactory, Boolean>());
+      while (source instanceof Wrapped<?> wrapped) {
         if (!seen.add(source))
           throw new IllegalArgumentException("Cyclic reservation connection factory");
         Object target = wrapped.unwrap();
-        if (!(target instanceof io.r2dbc.spi.ConnectionFactory factory)) break;
+        if (!(target instanceof ConnectionFactory factory)) break;
         source = factory;
       }
       Policy policy = Policy.from(environment);
       var owned =
-          new io.r2dbc.pool.ConnectionPool(
-              io.r2dbc.pool.ConnectionPoolConfiguration.builder(source)
+          new ConnectionPool(
+              ConnectionPoolConfiguration.builder(source)
                   .name("axiz-sequence")
                   .initialSize(0)
                   .maxSize(policy.maximum())

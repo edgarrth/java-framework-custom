@@ -2,9 +2,11 @@ package pe.axiz.adapter.inbox.r2dbc;
 
 import java.time.Instant;
 import java.util.Objects;
-import pe.axiz.core.commons.jdbc.SqlStates;
+import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
+import pe.axiz.kit.jdbc.SqlStates;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
 import reactor.core.publisher.Mono;
@@ -20,6 +22,11 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
   }
 
   @Override
+  public @Nullable Object transactionResource() {
+    return sql.transactionResource();
+  }
+
+  @Override
   public Mono<Acquisition> tryAcquire(
       String consumer,
       String messageId,
@@ -32,9 +39,9 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
             sql.update(
                     "INSERT INTO "
                         + table
-                        + " (consumer, message_id, status, owner, received_at, lease_until, expires_at)"
-                        + " VALUES (:consumer, :messageId, 'IN_PROGRESS', :owner, :now, :leaseUntil, :expiresAt)"
-                        + " ON CONFLICT (consumer, message_id) DO NOTHING",
+                        + " (consumer, message_id, status, owner, received_at, lease_until,"
+                        + " expires_at) VALUES (:consumer, :messageId, 'IN_PROGRESS', :owner, :now,"
+                        + " :leaseUntil, :expiresAt) ON CONFLICT (consumer, message_id) DO NOTHING",
                     SqlParams.of()
                         .bind("consumer", consumer)
                         .bind("messageId", messageId)
@@ -48,9 +55,11 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                       return sql.update(
                               "UPDATE "
                                   + table
-                                  + " SET owner = :owner, lease_until = :leaseUntil, received_at = :now WHERE"
-                                  + " consumer = :consumer AND message_id = :messageId AND status = 'IN_PROGRESS'"
-                                  + " AND lease_until < :now",
+                                  + " SET owner = :owner, lease_until = :leaseUntil, received_at "
+                                  + "= :now WHERE consumer = "
+                                  + ":consumer AND message_id = :messageId AND status = "
+                                  + "'IN_PROGRESS' AND lease_until < "
+                                  + ":now",
                               SqlParams.of()
                                   .bind("owner", owner)
                                   .bind("leaseUntil", leaseUntil)
@@ -64,7 +73,8 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                                       : sql.queryOne(
                                               "SELECT status, lease_until FROM "
                                                   + table
-                                                  + " WHERE consumer = :consumer AND message_id = :messageId",
+                                                  + " WHERE consumer = :consumer AND message_id ="
+                                                  + " :messageId",
                                               SqlParams.of()
                                                   .bind("consumer", consumer)
                                                   .bind("messageId", messageId),
@@ -86,7 +96,8 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                     "UPDATE "
                         + table
                         + " SET status = 'PROCESSED', processed_at = :at WHERE consumer = :consumer"
-                        + " AND message_id = :messageId AND owner = :owner AND status = 'IN_PROGRESS'",
+                        + " AND message_id = :messageId AND owner = :owner AND status ="
+                        + " 'IN_PROGRESS'",
                     SqlParams.of()
                         .bind("at", at)
                         .bind("consumer", consumer)
@@ -102,8 +113,8 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
             sql.update(
                     "DELETE FROM "
                         + table
-                        + " WHERE consumer = :consumer AND message_id = :messageId"
-                        + " AND owner = :owner AND status = 'IN_PROGRESS'",
+                        + " WHERE consumer = :consumer AND message_id = :messageId AND owner ="
+                        + " :owner AND status = 'IN_PROGRESS'",
                     SqlParams.of()
                         .bind("consumer", consumer)
                         .bind("messageId", messageId)
@@ -137,12 +148,13 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                 new InboxException(
                     "Inbox table "
                         + table
-                        + " is missing or outdated (column owner since axiz 0.1): add a migration with"
-                        + " axiz/sql/inbox-postgresql-upgrade-owner.sql, never edit an applied one",
+                        + " is missing or outdated (column owner since axiz 0.1): add a migration"
+                        + " with axiz/sql/inbox-postgresql-upgrade-owner.sql, never edit an applied"
+                        + " one",
                     error));
   }
 
-  private static <T> Mono<T> statement(java.util.function.Supplier<Mono<T>> work) {
+  private static <T> Mono<T> statement(Supplier<Mono<T>> work) {
     return Mono.defer(work)
         .onErrorMap(
             error ->

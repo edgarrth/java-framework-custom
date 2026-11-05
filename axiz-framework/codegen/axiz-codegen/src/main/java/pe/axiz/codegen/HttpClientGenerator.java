@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.model.Snapshots;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.ApiOperation;
@@ -36,19 +37,19 @@ public final class HttpClientGenerator {
   public record Result(
       Map<String, byte[]> files, Map<String, Object> properties, List<String> notes) {
     public Result {
-      files = pe.axiz.codegen.model.Snapshots.files(files);
+      files = Snapshots.files(files);
       notes = List.copyOf(notes);
-      properties = pe.axiz.codegen.model.Snapshots.properties(properties);
+      properties = Snapshots.properties(properties);
     }
 
     @Override
     public Map<String, byte[]> files() {
-      return pe.axiz.codegen.model.Snapshots.files(files);
+      return Snapshots.files(files);
     }
 
     @Override
     public Map<String, Object> properties() {
-      return pe.axiz.codegen.model.Snapshots.properties(properties);
+      return Snapshots.properties(properties);
     }
   }
 

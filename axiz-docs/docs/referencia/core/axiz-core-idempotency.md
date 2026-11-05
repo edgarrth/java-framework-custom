@@ -30,3 +30,23 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-idempotency verify`.
+
+## Uncertain outcomes and retention
+
+A lease is a live execution reservation, not permission for another caller to repeat an uncertain
+operation. `leaseUntil` and `retainUntil` are separate. Expiring the lease makes a retained
+`IN_PROGRESS` record equivalent to `UNKNOWN`; it does not allow takeover. A crash, 5xx, integration
+timeout or cancellation keeps the key reserved and returns 409 `OUTCOME_UNKNOWN` until an explicit
+resolver can establish the result. Never work around that response by using another idempotency key
+for the same business operation. Consult the operation's status or reconciliation procedure.
+
+Synchronous `IdempotencyResolver` and native `AsyncIdempotencyResolver` are optional extension ports;
+no reconciliation implementation is guessed by default. Resolutions use a versioned CAS: concurrent
+resolutions have one winner. Completed responses are immutable and replayed. Only an explicitly
+certified no-effect outcome (`RejectedBeforeEffect`/`Resolution.withoutEffect()`) can release a key.
+
+Owned virtual workers renew leases every third of the configured TTL. A failed renewal makes the
+outcome uncertain. Spring validates `retention >= client-retry-window + in-progress-ttl`; defaults
+are 24 h, 23 h and 30 s. This guarantee is bounded by retention: a process pause/crash that prevents
+renewal beyond remaining retention can expire the record. Set the retry window for actual clients;
+expired retention does not provide indefinite deduplication.

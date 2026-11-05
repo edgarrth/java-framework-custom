@@ -7,12 +7,19 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
+import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB idempotency store with conditional writes and TTL. */
@@ -25,7 +32,7 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
   /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   DynamoDbClient axizDynamoDbClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
     return AwsClients.configured(
         DynamoDbClient.builder(),
@@ -36,32 +43,29 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   IdempotencyStore axizDynamoDbIdempotencyStore(
       DynamoDbClient dynamo, AxizIdempotencyProperties p, ObjectProvider<Clock> clock) {
     return new DynamoDbIdempotencyStore(dynamo, p.table(), clock.getIfAvailable(Clock::systemUTC));
   }
 
-  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
-    @ConditionalOnMissingBean(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.class)
-    pe.axiz.adapter.observability.aws.AsyncAwsClients axizIdempotencyAsyncAwsResources() {
-      return new pe.axiz.adapter.observability.aws.AsyncAwsClients();
+    @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
+    AsyncAwsClients axizIdempotencyAsyncAwsResources() {
+      return new AsyncAwsClients();
     }
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient axizIdempotencyDynamoDbAsyncClient(
-        pe.axiz.adapter.observability.aws.AsyncAwsClients axizIdempotencyAsyncAwsResources,
+    DynamoDbAsyncClient axizIdempotencyDynamoDbAsyncClient(
+        AsyncAwsClients axizIdempotencyAsyncAwsResources,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
       return axizIdempotencyAsyncAwsResources.configured(
-          software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.builder(),
+          DynamoDbAsyncClient.builder(),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "dynamodb");
@@ -69,11 +73,9 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    pe.axiz.core.idempotency.AsyncIdempotencyStore axizDynamoDbAsyncIdempotencyStore(
-        software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient client,
-        AxizIdempotencyProperties p,
-        ObjectProvider<Clock> clock) {
-      return new pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(
+    AsyncIdempotencyStore axizDynamoDbAsyncIdempotencyStore(
+        DynamoDbAsyncClient client, AxizIdempotencyProperties p, ObjectProvider<Clock> clock) {
+      return new DynamoDbAsyncIdempotencyStore(
           client, p.table(), clock.getIfAvailable(Clock::systemUTC));
     }
   }

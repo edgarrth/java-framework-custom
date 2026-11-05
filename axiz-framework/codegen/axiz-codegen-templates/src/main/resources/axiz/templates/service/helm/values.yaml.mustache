@@ -103,3 +103,12 @@ externalSecret:
 {{^config.hasSecrets}}
     []
 {{/config.hasSecrets}}
+
+# Requires Prometheus Operator and an existing scrape configuration for this service.
+monitoring:
+  prometheusRules:
+    enabled: false
+    labels: {} # labels selected by the cluster's Prometheus ruleSelector
+    metricSelector: "" # defaults to namespace + service; adapt to your scrape target labels
+    audit: {{#caps.audit}}true{{/caps.audit}}{{^caps.audit}}false{{/caps.audit}}
+    outbox: {{#caps.outbox}}true{{/caps.outbox}}{{^caps.outbox}}false{{/caps.outbox}}

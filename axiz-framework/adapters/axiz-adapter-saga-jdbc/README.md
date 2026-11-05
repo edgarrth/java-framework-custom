@@ -1,0 +1,8 @@
+# axiz-adapter-saga-jdbc
+
+Saga persistence and schema resources over JDBC.
+
+Java/JDBC technology belongs here; business ports remain in `axiz-core-saga`.
+Use through the matching Spring capability, or provide a transaction-aware `ConnectionProvider`.
+
+Run `./mvnw -pl adapters/axiz-adapter-saga-jdbc -am verify` from the framework root.

@@ -10,7 +10,7 @@ public interface LockHandle extends AutoCloseable {
   /** Unique token of this owner; only the owner can renew or release. */
   String token();
 
-  /** Extends the lease; returns false when the lock was lost (expired and taken). */
+  /** Extends a live lease; returns false when it expired or belongs to another owner. */
   boolean renew(Duration lease);
 
   void release();

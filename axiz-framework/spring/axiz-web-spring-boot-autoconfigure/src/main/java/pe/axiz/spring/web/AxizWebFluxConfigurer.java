@@ -1,6 +1,7 @@
 package pe.axiz.spring.web;
 
 import java.util.Objects;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.ApiVersionConfigurer;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -15,6 +16,21 @@ public class AxizWebFluxConfigurer implements WebFluxConfigurer {
   public AxizWebFluxConfigurer(AxizWebProperties properties, PageRequestParser parser) {
     this.properties = Objects.requireNonNull(properties);
     this.parser = Objects.requireNonNull(parser);
+  }
+
+  @Override
+  public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
+    long largest =
+        properties.bodyLimits().stream()
+            .mapToLong(rule -> rule.maxSize().toBytes())
+            .max()
+            .orElse(properties.maxRequestBody().toBytes());
+    configurer
+        .defaultCodecs()
+        .maxInMemorySize(
+            (int)
+                Math.min(
+                    Integer.MAX_VALUE, Math.max(largest, properties.maxRequestBody().toBytes())));
   }
 
   @Override

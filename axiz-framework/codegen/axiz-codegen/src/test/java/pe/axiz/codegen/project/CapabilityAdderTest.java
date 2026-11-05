@@ -122,4 +122,15 @@ class CapabilityAdderTest {
     assertTrue(jpa.getMessage().contains("does not support reactive"), jpa.getMessage());
     assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "sequence"));
   }
+
+  @Test
+  void addedAdaptersMustBeRuntimeDependencies(@TempDir Path tmp) throws Exception {
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    adder.add(dir, "outbox");
+    String pom = Files.readString(dir.resolve("pom.xml"));
+    assertTrue(
+        pom.contains(
+            "<artifactId>axiz-adapter-outbox-jdbc</artifactId>\n      <scope>runtime</scope>"),
+        pom);
+  }
 }

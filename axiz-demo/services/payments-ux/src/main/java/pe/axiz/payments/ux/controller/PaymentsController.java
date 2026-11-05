@@ -2,6 +2,7 @@ package pe.axiz.payments.ux.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Mono;
  * a repeated Idempotency-Key replay the first response (Redis store shared by replicas).
  */
 @RestController
+@PreAuthorize("hasAuthority('SCOPE_payments:channel')")
 public class PaymentsController {
 
   private final PaymentsComposition composition;

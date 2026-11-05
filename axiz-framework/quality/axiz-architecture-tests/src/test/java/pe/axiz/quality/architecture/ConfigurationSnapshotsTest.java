@@ -2,7 +2,6 @@ package pe.axiz.quality.architecture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -48,6 +47,16 @@ class ConfigurationSnapshotsTest {
     for (int i = 0; i < components.length; i++) {
       Class<?> parameter = components[i].getType();
       arguments[i] = emptyArgument(parameter);
+      if (type == pe.axiz.spring.security.AxizSecurityProperties.Authorization.class
+          && components[i].getName().equals("unprotected")) arguments[i] = "fail";
+      if (type == pe.axiz.spring.security.AxizSecurityProperties.RouteRule.class) {
+        if (components[i].getName().equals("paths"))
+          arguments[i] = new ArrayList<>(List.of("/snapshot"));
+        if (components[i].getName().equals("authorities"))
+          arguments[i] = new ArrayList<>(List.of("SCOPE_snapshot"));
+      }
+      if (parameter == org.springframework.util.unit.DataSize.class)
+        arguments[i] = org.springframework.util.unit.DataSize.ofMegabytes(1);
     }
     Object settings =
         type.getDeclaredConstructor(
@@ -59,14 +68,16 @@ class ConfigurationSnapshotsTest {
       }
       Object exposed = components[i].getAccessor().invoke(settings);
       if (arguments[i] instanceof Map<?, ?> map) {
-        ((Map<Object, Object>) map).put("changed", "value");
         Map<Object, Object> snapshot = (Map<Object, Object>) exposed;
-        assertTrue(snapshot.isEmpty(), components[i].getName());
+        Map<Object, Object> before = new LinkedHashMap<>(snapshot);
+        ((Map<Object, Object>) map).put("changed", "value");
+        assertEquals(before, snapshot, components[i].getName());
         assertThrows(UnsupportedOperationException.class, () -> snapshot.put("changed", "value"));
       } else {
-        ((Collection<Object>) arguments[i]).add("changed");
         Collection<Object> snapshot = (Collection<Object>) exposed;
-        assertTrue(snapshot.isEmpty(), components[i].getName());
+        List<Object> before = new ArrayList<>(snapshot);
+        ((Collection<Object>) arguments[i]).add("changed");
+        assertEquals(before, new ArrayList<>(snapshot), components[i].getName());
         assertThrows(UnsupportedOperationException.class, () -> snapshot.add("changed"));
       }
     }

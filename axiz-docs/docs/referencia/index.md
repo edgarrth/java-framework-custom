@@ -67,6 +67,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-idempotency-dynamodb`](adapters/axiz-adapter-idempotency-dynamodb.md) | Idempotency store on DynamoDB with TTL. |
 | [`axiz-adapter-idempotency-redis`](adapters/axiz-adapter-idempotency-redis.md) | Idempotency store on Redis (ElastiCache). |
 | [`axiz-adapter-inbox-dynamodb`](adapters/axiz-adapter-inbox-dynamodb.md) | Inbox store on DynamoDB with TTL. |
+| [`axiz-adapter-inbox-jdbc`](adapters/axiz-adapter-inbox-jdbc.md) | Inbox persistence and schema resources over JDBC. |
 | [`axiz-adapter-inbox-r2dbc`](adapters/axiz-adapter-inbox-r2dbc.md) | Inbox (idempotent consumer) on Aurora PostgreSQL over R2DBC. |
 | [`axiz-adapter-lock-dynamodb`](adapters/axiz-adapter-lock-dynamodb.md) | Distributed lock on DynamoDB conditional writes. |
 | [`axiz-adapter-lock-redis`](adapters/axiz-adapter-lock-redis.md) | Distributed lock on Redis. |
@@ -74,10 +75,13 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-messaging-sns`](adapters/axiz-adapter-messaging-sns.md) | Amazon SNS publisher adapter (standard and FIFO). |
 | [`axiz-adapter-messaging-sqs`](adapters/axiz-adapter-messaging-sqs.md) | Amazon SQS publisher and consumer adapter (standard and FIFO). |
 | [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | AWS SDK v2 execution interceptor producing Micrometer observations. |
+| [`axiz-adapter-outbox-jdbc`](adapters/axiz-adapter-outbox-jdbc.md) | Outbox persistence and schema resources over JDBC. |
 | [`axiz-adapter-outbox-r2dbc`](adapters/axiz-adapter-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
+| [`axiz-adapter-saga-jdbc`](adapters/axiz-adapter-saga-jdbc.md) | Saga persistence and schema resources over JDBC. |
 | [`axiz-adapter-secrets-aws`](adapters/axiz-adapter-secrets-aws.md) | Secret resolvers for AWS Secrets Manager and Parameter Store. |
 | [`axiz-adapter-security-redis`](adapters/axiz-adapter-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
 | [`axiz-adapter-sequence-dynamodb`](adapters/axiz-adapter-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
+| [`axiz-adapter-sequence-jdbc`](adapters/axiz-adapter-sequence-jdbc.md) | Sequence persistence and schema resources over JDBC. |
 | [`axiz-adapter-storage-s3`](adapters/axiz-adapter-storage-s3.md) | Amazon S3 object storage with SSE-KMS and presigned URLs. |
 
 ## Capa 2: kits de persistencia
@@ -85,6 +89,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | Módulo | Descripción |
 |---|---|
 | [`axiz-kit-dynamodb`](kits/axiz-kit-dynamodb.md) | Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters. |
+| [`axiz-kit-jdbc`](kits/axiz-kit-jdbc.md) | Transaction-aware JDBC connections, SQLSTATE helpers and local transactions. |
 | [`axiz-kit-jpa`](kits/axiz-kit-jpa.md) | JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters. |
 | [`axiz-kit-r2dbc`](kits/axiz-kit-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens. |
 | [`kits`](kits/kits.md) | Public technology APIs used by service persistence adapters. Kits have compile scope and are confined to persistence packages. They do not depend on Spring or higher layers. |

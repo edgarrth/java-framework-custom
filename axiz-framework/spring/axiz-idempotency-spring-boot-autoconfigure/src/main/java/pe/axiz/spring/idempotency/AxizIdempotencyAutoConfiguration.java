@@ -1,6 +1,7 @@
 package pe.axiz.spring.idempotency;
 
 import java.time.Clock;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.Pointcut;
@@ -22,10 +23,16 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
 import pe.axiz.core.commons.Environments;
+import pe.axiz.core.idempotency.AsyncIdempotencyResolver;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
+import pe.axiz.core.idempotency.AsyncIdempotencyStore;
+import pe.axiz.core.idempotency.IdempotencyResolver;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.Idempotent;
+import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
  * {@code @Idempotent} operations with the {@code Idempotency-Key} header: responses stored in
@@ -43,7 +50,7 @@ public class AxizIdempotencyAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   IdempotencyStore axizInMemoryIdempotencyStore(
       AxizIdempotencyProperties p, ObjectProvider<Clock> clock, Environment env) {
     if (!"memory".equals(p.store())) {
@@ -59,7 +66,7 @@ public class AxizIdempotencyAutoConfiguration {
         "keys kept per replica let a retry on another replica execute twice");
     // allowed only where one process runs (local, test): the check above fails anywhere else, so
     // this is information, not a warning
-    org.slf4j.LoggerFactory.getLogger(AxizIdempotencyAutoConfiguration.class)
+    LoggerFactory.getLogger(AxizIdempotencyAutoConfiguration.class)
         .info(
             "Idempotency keys are kept in memory (single process); replicas need redis or"
                 + " dynamodb");
@@ -68,11 +75,18 @@ public class AxizIdempotencyAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   IdempotencyService axizIdempotencyService(
-      IdempotencyStore store, AxizIdempotencyProperties p, ObjectProvider<Clock> clock) {
+      IdempotencyStore store,
+      AxizIdempotencyProperties p,
+      ObjectProvider<Clock> clock,
+      ObjectProvider<IdempotencyResolver> resolver) {
     return new IdempotencyService(
-        store, p.inProgressTtl(), p.retention(), clock.getIfAvailable(Clock::systemUTC));
+        store,
+        p.inProgressTtl(),
+        p.retention(),
+        clock.getIfAvailable(Clock::systemUTC),
+        resolver.getIfAvailable());
   }
 
   /**
@@ -84,7 +98,7 @@ public class AxizIdempotencyAutoConfiguration {
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
   static Advisor axizIdempotencyAdvisor(
       ObjectProvider<IdempotencyService> service,
-      ObjectProvider<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService) {
+      ObjectProvider<AsyncIdempotencyService> asyncService) {
     ClassFilter controllers = type -> AnnotatedElementUtils.hasAnnotation(type, Controller.class);
     Pointcut onClass =
         new ComposablePointcut(new AnnotationMatchingPointcut(Idempotent.class, true))
@@ -125,7 +139,7 @@ public class AxizIdempotencyAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    pe.axiz.core.idempotency.AsyncIdempotencyStore axizInMemoryAsyncIdempotencyStore(
+    AsyncIdempotencyStore axizInMemoryAsyncIdempotencyStore(
         AxizIdempotencyProperties p, ObjectProvider<Clock> clock, Environment env) {
       if (!"memory".equals(p.store()))
         throw new IllegalStateException("Async idempotency store unavailable: " + p.store());
@@ -134,23 +148,27 @@ public class AxizIdempotencyAutoConfiguration {
           "axiz.idempotency.store=memory",
           "redis or dynamodb",
           "replicas need a shared store");
-      return new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(
-          clock.getIfAvailable(Clock::systemUTC));
+      return new InMemoryAsyncIdempotencyStore(clock.getIfAvailable(Clock::systemUTC));
     }
 
     @Bean
     @ConditionalOnMissingBean
-    pe.axiz.core.idempotency.AsyncIdempotencyService axizAsyncIdempotencyService(
-        pe.axiz.core.idempotency.AsyncIdempotencyStore store,
+    AsyncIdempotencyService axizAsyncIdempotencyService(
+        AsyncIdempotencyStore store,
         AxizIdempotencyProperties p,
-        ObjectProvider<Clock> clock) {
-      return new pe.axiz.core.idempotency.AsyncIdempotencyService(
-          store, p.inProgressTtl(), p.retention(), clock.getIfAvailable(Clock::systemUTC));
+        ObjectProvider<Clock> clock,
+        ObjectProvider<AsyncIdempotencyResolver> resolver) {
+      return new AsyncIdempotencyService(
+          store,
+          p.inProgressTtl(),
+          p.retention(),
+          clock.getIfAvailable(Clock::systemUTC),
+          resolver.getIfAvailable());
     }
 
     @Bean
     IdempotencyWebFilter axizIdempotencyWebFilter(
-        pe.axiz.core.idempotency.AsyncIdempotencyService service, AxizIdempotencyProperties p) {
+        AsyncIdempotencyService service, AxizIdempotencyProperties p) {
       return new IdempotencyWebFilter(service, p.maxBodySize(), p.maxResponseSize());
     }
   }

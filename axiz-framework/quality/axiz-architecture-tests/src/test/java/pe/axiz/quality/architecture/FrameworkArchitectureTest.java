@@ -53,6 +53,8 @@ class FrameworkArchitectureTest {
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage(
+              "java.sql..",
+              "javax.sql..",
               "org.springframework..",
               "io.quarkus..",
               "pe.axiz.spring..",

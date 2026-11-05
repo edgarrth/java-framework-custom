@@ -1,19 +1,18 @@
 package pe.axiz.kit.jpa;
 
 import jakarta.persistence.AttributeConverter;
-import jakarta.persistence.Converter;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.crypto.EncryptionContext;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 
 /**
- * Encrypts a String attribute with AES-256-GCM: {@code @Convert(converter =
- * EncryptedConverter.class)}. Values are decrypted on read into the entity field; managed entities
- * are never mutated to decrypt. The context bound as AAD is the converter's purpose ({@code
- * axiz.field}); subclass it to bind a column-specific context.
+ * Base converter for an explicitly declared field or shared purpose. Each concrete converter
+ * overrides context() with entity.field or purpose:name. Values are decrypted into the attribute
+ * without mutating managed entities. A row-specific AAD belongs in the persistence adapter, since
+ * an AttributeConverter does not know the owning row.
  */
-@Converter
-public class EncryptedConverter implements AttributeConverter<String, String> {
+public abstract class EncryptedConverter implements AttributeConverter<String, String> {
 
   private final @Nullable FieldEncryptor injected;
 
@@ -27,8 +26,11 @@ public class EncryptedConverter implements AttributeConverter<String, String> {
     this.injected = encryptor;
   }
 
-  protected String context() {
-    return "axiz.field";
+  protected abstract String context();
+
+  /** Validated AAD; also used by the startup mapping validation. */
+  public final String encryptionContext() {
+    return EncryptionContext.require(context());
   }
 
   private FieldEncryptor encryptor() {
@@ -37,11 +39,11 @@ public class EncryptedConverter implements AttributeConverter<String, String> {
 
   @Override
   public @Nullable String convertToDatabaseColumn(@Nullable String attribute) {
-    return encryptor().encrypt(attribute, context());
+    return encryptor().encrypt(attribute, encryptionContext());
   }
 
   @Override
   public @Nullable String convertToEntityAttribute(@Nullable String dbData) {
-    return encryptor().decrypt(dbData, context());
+    return encryptor().decrypt(dbData, encryptionContext());
   }
 }

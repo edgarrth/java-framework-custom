@@ -1,5 +1,6 @@
 package pe.axiz.spring.foundation;
 
+import io.micrometer.context.ContextSnapshotFactory;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
@@ -44,8 +45,8 @@ public final class ReactiveStages {
   }
 
   private static final class Micrometer {
-    private static final io.micrometer.context.ContextSnapshotFactory FACTORY =
-        io.micrometer.context.ContextSnapshotFactory.builder().clearMissing(true).build();
+    private static final ContextSnapshotFactory FACTORY =
+        ContextSnapshotFactory.builder().clearMissing(true).build();
     private static final Stages.ContextProvider PROVIDER =
         () -> {
           var snapshot = FACTORY.captureAll();

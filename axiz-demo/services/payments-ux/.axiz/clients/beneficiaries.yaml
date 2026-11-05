@@ -1,5 +1,6 @@
 openapi: 3.1.0
 info:
+  x-axiz-archetype: business
   title: Frequent beneficiaries
   version: 1.0.0
   description: Frequent beneficiaries of each customer (DynamoDB, soft delete).

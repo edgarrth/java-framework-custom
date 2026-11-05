@@ -1,7 +1,10 @@
 package pe.axiz.cli;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -9,10 +12,12 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -40,10 +45,7 @@ final class WorkingProject implements AutoCloseable {
   private final Map<String, State> initial;
   private boolean preserve;
 
-  private record State(
-      String sha256,
-      boolean executable,
-      Set<java.nio.file.attribute.PosixFilePermission> permissions) {}
+  private record State(String sha256, boolean executable, Set<PosixFilePermission> permissions) {}
 
   private WorkingProject(Path source, Path temporary, Map<String, State> initial) {
     this.source = source;
@@ -94,7 +96,7 @@ final class WorkingProject implements AutoCloseable {
       if (!initial.containsKey(name)) {
         patch
             .append("new file mode ")
-            .append(mode(java.util.Objects.requireNonNull(updated.get(name))))
+            .append(mode(Objects.requireNonNull(updated.get(name))))
             .append('\n');
       } else if (!updated.containsKey(name)) {
         patch.append("deleted file mode ").append(mode(initial.get(name))).append('\n');
@@ -172,7 +174,7 @@ final class WorkingProject implements AutoCloseable {
   private Set<String> changed(Map<String, State> updated) {
     Set<String> names = new TreeSet<>(initial.keySet());
     names.addAll(updated.keySet());
-    names.removeIf(name -> java.util.Objects.equals(initial.get(name), updated.get(name)));
+    names.removeIf(name -> Objects.equals(initial.get(name), updated.get(name)));
     return names;
   }
 
@@ -202,7 +204,7 @@ final class WorkingProject implements AutoCloseable {
   }
 
   private static String patchPath(String name) {
-    String value = java.io.File.separatorChar == '\\' ? name.replace('\\', '/') : name;
+    String value = File.separatorChar == '\\' ? name.replace('\\', '/') : name;
     if (value.matches("[A-Za-z0-9._/-]+")) return value;
     return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
   }
@@ -296,9 +298,9 @@ final class WorkingProject implements AutoCloseable {
   private static boolean binary(byte[] bytes) {
     for (byte value : bytes) if (value == 0) return true;
     try {
-      StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(bytes));
+      StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes));
       return false;
-    } catch (java.nio.charset.CharacterCodingException error) {
+    } catch (CharacterCodingException error) {
       return true;
     }
   }

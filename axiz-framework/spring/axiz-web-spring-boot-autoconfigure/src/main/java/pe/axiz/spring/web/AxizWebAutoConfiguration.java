@@ -11,12 +11,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.jackson.autoconfigure.JsonFactoryBuilderCustomizer;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pe.axiz.core.commons.HeaderCatalog;
 import pe.axiz.core.commons.HeaderDefinition;
 import pe.axiz.core.errors.ProblemFactory;
+import tools.jackson.core.StreamReadConstraints;
 
 /**
  * Web conventions for servlet and reactive applications: request context, header catalog, paging,
@@ -68,6 +70,18 @@ public class AxizWebAutoConfiguration {
   static class JacksonConfiguration {
 
     @Bean
+    JsonFactoryBuilderCustomizer axizJsonReadConstraints(AxizWebProperties properties) {
+      AxizWebProperties.Json json = properties.json();
+      return builder ->
+          builder.streamReadConstraints(
+              StreamReadConstraints.builder()
+                  .maxNumberLength(json.maxNumberLength())
+                  .maxStringLength(json.maxStringLength())
+                  .maxNestingDepth(json.maxNestingDepth())
+                  .build());
+    }
+
+    @Bean
     JsonMapperBuilderCustomizer axizJsonCustomizer(AxizWebProperties properties) {
       return builder -> {
         if (!properties.json().includeNulls()) {
@@ -91,6 +105,11 @@ public class AxizWebAutoConfiguration {
     }
 
     @Bean
+    RequestBodyLimitFilter axizRequestBodyLimitFilter(AxizWebProperties properties) {
+      return new RequestBodyLimitFilter(new RequestBodyLimits(properties));
+    }
+
+    @Bean
     AxizWebMvcConfigurer axizWebMvcConfigurer(
         AxizWebProperties properties, PageRequestParser parser) {
       return new AxizWebMvcConfigurer(properties, parser);
@@ -107,6 +126,11 @@ public class AxizWebAutoConfiguration {
     RequestMetadataWebFilter axizRequestMetadataWebFilter(
         RequestMetadataResolver resolver, ObjectProvider<ProblemFactory> problems) {
       return new RequestMetadataWebFilter(resolver, problems.getIfAvailable());
+    }
+
+    @Bean
+    RequestBodyLimitWebFilter axizRequestBodyLimitWebFilter(AxizWebProperties properties) {
+      return new RequestBodyLimitWebFilter(new RequestBodyLimits(properties));
     }
 
     @Bean

@@ -1,6 +1,8 @@
 package pe.axiz.spring.dynamodb;
 
 import java.util.Objects;
+import java.util.function.Supplier;
+import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoAsyncRepository;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -9,20 +11,38 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 public final class ReactiveDynamoRepositories {
   private final DynamoDbAsyncClient client;
   private final String tablePrefix;
+  private final Supplier<CursorCodec> cursors;
 
   public ReactiveDynamoRepositories(DynamoDbAsyncClient client, String tablePrefix) {
+    this(
+        client,
+        tablePrefix,
+        () -> {
+          throw new IllegalStateException(
+              "Configure axiz.dynamodb.cursor.current-key-id and shared keys from secrets before"
+                  + " using pagination");
+        });
+  }
+
+  public ReactiveDynamoRepositories(
+      DynamoDbAsyncClient client, String tablePrefix, Supplier<CursorCodec> cursors) {
+    this.cursors = Objects.requireNonNull(cursors);
     this.client = Objects.requireNonNull(client);
     this.tablePrefix = Objects.requireNonNull(tablePrefix);
   }
 
   public <T> ReactiveDynamoRepository<T> create(String table, TableSchema<T> schema) {
     return new ReactiveDynamoRepository<>(
-        new DynamoAsyncRepository<>(client, tableName(table), schema));
+        new DynamoAsyncRepository<>(client, tableName(table), schema, cursors));
   }
 
   public <T> ReactiveDynamoRepository<T> create(String table, Class<T> type) {
     return create(
         table, type.isRecord() ? TableSchema.fromImmutableClass(type) : TableSchema.fromBean(type));
+  }
+
+  public CursorCodec cursors() {
+    return cursors.get();
   }
 
   public String tableName(String table) {

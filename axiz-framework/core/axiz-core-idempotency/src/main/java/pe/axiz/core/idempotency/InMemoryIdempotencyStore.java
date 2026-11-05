@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jspecify.annotations.Nullable;
 
 /** In-memory store for tests and single-instance local runs. */
 public final class InMemoryIdempotencyStore implements IdempotencyStore {
@@ -29,7 +30,7 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
     records.compute(
         record.key(),
         (k, v) -> {
-          if (v == null || v.expiresAt().isBefore(now)) {
+          if (v == null || !v.liveAt(now)) {
             started.set(true);
             return record;
           }
@@ -41,7 +42,23 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
   @Override
   public Optional<IdempotencyRecord> find(String key, Instant now) {
     IdempotencyRecord r = records.get(key);
-    return r == null || r.expiresAt().isBefore(now) ? Optional.empty() : Optional.of(r);
+    return r == null || !r.liveAt(now) ? Optional.empty() : Optional.of(r);
+  }
+
+  @Override
+  public boolean compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    if (replacement != null && !expected.key().equals(replacement.key()))
+      throw new IllegalArgumentException("different record key");
+    AtomicBoolean changed = new AtomicBoolean();
+    records.computeIfPresent(
+        expected.key(),
+        (key, current) -> {
+          if (!current.liveAt(clock.instant()) || !current.equals(expected)) return current;
+          changed.set(true);
+          return replacement;
+        });
+    return changed.get();
   }
 
   @Override
@@ -50,12 +67,11 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
     records.computeIfPresent(
         key,
         (k, v) -> {
-          if (!v.heldBy(owner)) {
+          if (!v.liveAt(clock.instant()) || !v.heldBy(owner)) {
             return v;
           }
           done.set(true);
-          return new IdempotencyRecord(
-              k, v.fingerprint(), IdempotencyRecord.Status.COMPLETED, owner, response, expiresAt);
+          return v.completed(response, expiresAt);
         });
     return done.get();
   }
@@ -66,7 +82,7 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
     records.computeIfPresent(
         key,
         (k, v) -> {
-          if (!v.heldBy(owner)) {
+          if (!v.liveAt(clock.instant()) || !v.heldBy(owner)) {
             return v;
           }
           released.set(true);

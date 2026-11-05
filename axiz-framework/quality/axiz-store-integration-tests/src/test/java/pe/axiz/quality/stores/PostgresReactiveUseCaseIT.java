@@ -78,7 +78,7 @@ class PostgresReactiveUseCaseIT {
         .block(T);
     try (var in =
         java.util.Objects.requireNonNull(
-            pe.axiz.core.outbox.JdbcOutboxStore.class.getResourceAsStream(
+            pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore.class.getResourceAsStream(
                 "/axiz/sql/outbox-postgresql.sql"))) {
       for (String statement : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";")) {
         if (!statement.replaceAll("--.*", "").isBlank())
@@ -367,7 +367,9 @@ class PostgresReactiveUseCaseIT {
                               "axizReactiveAuditableAdvisor",
                               org.springframework.aop.Advisor.class),
                           ctx.getBean(
-                              "axizReactiveUseCaseAdvisor",
+                              "axizReactiveUseCaseAdvisor", org.springframework.aop.Advisor.class),
+                          ctx.getBean(
+                              "axizReactiveAuditSuccessAdvisor",
                               org.springframework.aop.Advisor.class)));
               org.springframework.core.annotation.AnnotationAwareOrderComparator.sort(advisors);
               advisors.forEach(factory::addAdvisor);

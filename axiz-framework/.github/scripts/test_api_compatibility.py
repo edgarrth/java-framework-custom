@@ -54,6 +54,14 @@ class ApiCompatibilityTest(unittest.TestCase):
     def check(self):
         return gate.check(self.root, "1.0.0")
 
+    def test_partial_extraction_uses_its_real_predecessor_without_renaming_the_original_module(self):
+        self.pom('<axiz.api.baseline.artifactId>axiz-core-legacy</axiz.api.baseline.artifactId>')
+        (self.root / "docs/migration/2.0/renames.json").write_text(json.dumps({
+            "modules": [], "extractions": [{"oldArtifact": "axiz-core-legacy", "newArtifact": "axiz-core-demo"}]}))
+        self.xml.set("oldJar", "axiz-core-legacy-1.0.0.jar")
+        self.save()
+        self.assertEqual([], self.check())
+
     def test_accepts_reviewed_break(self):
         self.assertEqual([], self.check())
 

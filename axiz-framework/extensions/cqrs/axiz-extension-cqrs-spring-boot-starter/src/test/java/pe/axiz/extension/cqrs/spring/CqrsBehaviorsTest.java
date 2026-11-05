@@ -509,14 +509,18 @@ class CqrsBehaviorsTest {
                     invocation(new Transfer("a-2", "idempotency-key-00000002"), String.class),
                     () -> Mono.error(new IllegalStateException("core down")))
                 .block(T));
+    var uncertain =
+        assertThrows(
+            pe.axiz.core.errors.BusinessException.class,
+            () ->
+                idempotency
+                    .handle(
+                        invocation(new Transfer("a-2", "idempotency-key-00000002"), String.class),
+                        () -> Mono.fromCallable(() -> "t-" + runs.incrementAndGet()))
+                    .block(T));
     assertEquals(
-        "t-2",
-        idempotency
-            .handle(
-                invocation(new Transfer("a-2", "idempotency-key-00000002"), String.class),
-                () -> Mono.fromCallable(() -> "t-" + runs.incrementAndGet()))
-            .block(T),
-        "a failed attempt releases the key");
+        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(1, runs.get(), "an uncertain effect is never executed twice");
 
     assertNull(
         idempotency

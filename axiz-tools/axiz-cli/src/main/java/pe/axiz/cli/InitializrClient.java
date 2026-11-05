@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -47,7 +48,7 @@ final class InitializrClient {
     try {
       HttpResponse<byte[]> response = http.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
       if (response.statusCode() != 200) {
-        String body = new String(response.body(), java.nio.charset.StandardCharsets.UTF_8);
+        String body = new String(response.body(), StandardCharsets.UTF_8);
         throw new IOException(
             "initializr answered "
                 + response.statusCode()

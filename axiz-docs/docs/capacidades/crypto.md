@@ -49,7 +49,11 @@ Llaves del Secret que sincroniza el ExternalSecret desde AWS Secrets Manager:
 ## Uso
 
 ```java
-@Convert(converter = EncryptedConverter.class) String accountNumber;
+@Converter
+final class AccountNumberConverter extends EncryptedConverter {
+  @Override protected String context() { return "account.number"; }
+}
+@Convert(converter = AccountNumberConverter.class) String accountNumber;
 ```
 
 ## Módulos

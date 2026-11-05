@@ -9,7 +9,6 @@ import java.time.LocalDate;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.kit.jpa.AuditableEntity;
-import pe.axiz.kit.jpa.EncryptedConverter;
 
 /**
  * Row of {@code payment_order}. Account numbers are encrypted (AES-GCM keys from the secret store,
@@ -26,11 +25,11 @@ public class PaymentOrderEntity extends AuditableEntity {
   @Column(name = "customer_id", nullable = false, updatable = false, length = 20)
   private String customerId = "";
 
-  @Convert(converter = EncryptedConverter.class)
+  @Convert(converter = DebtorAccountConverter.class)
   @Column(name = "debtor_account", nullable = false, updatable = false, length = 200)
   private String debtorAccount = "";
 
-  @Convert(converter = EncryptedConverter.class)
+  @Convert(converter = CreditorAccountConverter.class)
   @Column(name = "creditor_cci", nullable = false, updatable = false, length = 200)
   private String creditorCci = "";
 

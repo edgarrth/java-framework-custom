@@ -1,10 +1,12 @@
 package pe.axiz.core.audit;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.TransactionOutcome;
 
 /**
  * Immutable audit record of who did what, on which resource, when and with what result. Details are
@@ -37,7 +39,9 @@ public record AuditEvent(
     @Nullable String correlationId,
     @Nullable String channel,
     @Nullable String tenant,
-    Map<String, @Nullable Object> details) {
+    Map<String, @Nullable Object> details,
+    TransactionOutcome transactionOutcome,
+    TransactionOutcome operationOutcome) {
 
   // An explicit canonical constructor, not a compact one: javac does not write the @Nullable of a
   // type argument on the parameters of a compact constructor, so callers in other modules would
@@ -55,7 +59,11 @@ public record AuditEvent(
       @Nullable String correlationId,
       @Nullable String channel,
       @Nullable String tenant,
-      Map<String, @Nullable Object> details) {
+      Map<String, @Nullable Object> details,
+      TransactionOutcome transactionOutcome,
+      TransactionOutcome operationOutcome) {
+    this.transactionOutcome = Objects.requireNonNull(transactionOutcome);
+    this.operationOutcome = Objects.requireNonNull(operationOutcome);
     this.id = Objects.requireNonNull(id);
     this.occurredAt = Objects.requireNonNull(occurredAt);
     this.service = Objects.requireNonNull(service);
@@ -68,7 +76,80 @@ public record AuditEvent(
     this.correlationId = correlationId;
     this.channel = channel;
     this.tenant = tenant;
-    this.details = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(details));
+    this.details = Collections.unmodifiableMap(new LinkedHashMap<>(details));
+  }
+
+  /** Compatibility constructor; callers without transaction evidence use UNKNOWN on both axes. */
+  public AuditEvent(
+      String id,
+      Instant occurredAt,
+      String service,
+      String action,
+      String resourceType,
+      @Nullable String resourceId,
+      Actor actor,
+      Outcome outcome,
+      @Nullable String errorCode,
+      @Nullable String correlationId,
+      @Nullable String channel,
+      @Nullable String tenant,
+      Map<String, @Nullable Object> details) {
+    this(
+        id,
+        occurredAt,
+        service,
+        action,
+        resourceType,
+        resourceId,
+        actor,
+        outcome,
+        errorCode,
+        correlationId,
+        channel,
+        tenant,
+        details,
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
+  }
+
+  public AuditEvent withOutcomes(TransactionOutcome local, TransactionOutcome operation) {
+    return new AuditEvent(
+        id,
+        occurredAt,
+        service,
+        action,
+        resourceType,
+        resourceId,
+        actor,
+        outcome,
+        errorCode,
+        correlationId,
+        channel,
+        tenant,
+        details,
+        local,
+        operation);
+  }
+
+  public AuditEvent withPersistence(String status) {
+    Map<String, @Nullable Object> marked = new LinkedHashMap<>(details);
+    marked.put("audit.persistence", status);
+    return new AuditEvent(
+        id,
+        occurredAt,
+        service,
+        action,
+        resourceType,
+        resourceId,
+        actor,
+        outcome,
+        errorCode,
+        correlationId,
+        channel,
+        tenant,
+        marked,
+        transactionOutcome,
+        operationOutcome);
   }
 
   /** CloudEvents type of audit events on every transport (the action travels in the data). */
@@ -127,6 +208,8 @@ public record AuditEvent(
     a.put("ip", actor.ip());
     m.put("actor", a);
     m.put("outcome", outcome.name());
+    m.put("transactionOutcome", transactionOutcome.name());
+    m.put("operationOutcome", operationOutcome.name());
     m.put("errorCode", errorCode);
     m.put("correlationId", correlationId);
     m.put("channel", channel);

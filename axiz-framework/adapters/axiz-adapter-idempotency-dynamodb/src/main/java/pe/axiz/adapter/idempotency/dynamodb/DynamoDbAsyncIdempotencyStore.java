@@ -13,7 +13,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
@@ -42,8 +44,46 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
         Stages.map(write, ignored -> true),
         failure -> {
           if (failure instanceof ConditionalCheckFailedException) return false;
-          throw new java.util.concurrent.CompletionException(failure);
+          throw new CompletionException(failure);
         });
+  }
+
+  @Override
+  public CompletionStage<Boolean> compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    if (replacement != null && !expected.key().equals(replacement.key()))
+      throw new IllegalArgumentException("different record key");
+    if (replacement == null)
+      return conditional(
+          dynamo.deleteItem(
+              DeleteItemRequest.builder()
+                  .tableName(table)
+                  .key(Map.of("pk", s(expected.key())))
+                  .conditionExpression(
+                      "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
+                  .expressionAttributeNames(Map.of("#data", "data"))
+                  .expressionAttributeValues(
+                      Map.of(
+                          ":expected",
+                          s(StoredResponseCodec.write(expected)),
+                          ":now",
+                          n(clock.millis())))
+                  .build()));
+    return conditional(
+        dynamo.putItem(
+            PutItemRequest.builder()
+                .tableName(table)
+                .item(item(replacement))
+                .conditionExpression(
+                    "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
+                .expressionAttributeNames(Map.of("#data", "data"))
+                .expressionAttributeValues(
+                    Map.of(
+                        ":expected",
+                        s(StoredResponseCodec.write(expected)),
+                        ":now",
+                        n(clock.millis())))
+                .build()));
   }
 
   @Override
@@ -71,35 +111,30 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
           var item = answer.item();
           if (item == null || item.isEmpty() || !item.containsKey("data")) return Optional.empty();
           IdempotencyRecord record = StoredResponseCodec.read(key, item.get("data").s());
-          return record.expiresAt().isBefore(now) ? Optional.empty() : Optional.of(record);
+          return !record.liveAt(now) ? Optional.empty() : Optional.of(record);
         });
   }
 
   @Override
   public CompletionStage<Boolean> complete(
       String key, String owner, StoredResponse response, Instant expiresAt) {
+    return completeAttempt(key, owner, response, expiresAt, 0);
+  }
+
+  private CompletionStage<Boolean> completeAttempt(
+      String key, String owner, StoredResponse response, Instant expiresAt, int attempt) {
+    if (attempt >= 16) return CompletableFuture.completedFuture(false);
     return Stages.compose(
         find(key, clock.instant()),
         current -> {
           if (current.isEmpty() || !current.get().heldBy(owner))
             return CompletableFuture.completedFuture(false);
-          IdempotencyRecord done =
-              new IdempotencyRecord(
-                  key,
-                  current.get().fingerprint(),
-                  IdempotencyRecord.Status.COMPLETED,
-                  owner,
-                  response,
-                  expiresAt);
-          return conditional(
-              dynamo.putItem(
-                  PutItemRequest.builder()
-                      .tableName(table)
-                      .item(item(done))
-                      .conditionExpression(HELD_BY_OWNER)
-                      .expressionAttributeNames(names())
-                      .expressionAttributeValues(values(owner))
-                      .build()));
+          return Stages.compose(
+              compareAndSet(current.get(), current.get().completed(response, expiresAt)),
+              changed ->
+                  changed
+                      ? CompletableFuture.completedFuture(true)
+                      : completeAttempt(key, owner, response, expiresAt, attempt + 1));
         });
   }
 

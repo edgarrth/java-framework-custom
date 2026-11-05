@@ -40,11 +40,15 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Strings` | Small string helpers that the JDK lacks. |
 | `JsonReader` | Minimal, strict JSON parser (RFC 8259) producing `Map<String, Object>`, `List`, `String`, `BigDecimal`, `Boolean` and `null`. |
 | `JsonWriter` | Minimal JSON writer for maps, collections, strings, numbers, booleans, enums, dates and UUIDs. |
-| `ConnectionProvider` | Supplies the JDBC connection to use. |
-| `JdbcTransactions` | Plain JDBC transactions for layer 1 and tests: binds a connection to the current thread for the duration of `#inTransaction(Callable)` and hands it out through `#get()`. |
-| `SqlStates` | SQLSTATE helpers (portable across PostgreSQL and H2). |
 | `TransactionRunner` | Runs work inside a transaction (Spring: `TransactionTemplate`). |
 
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-commons verify`.
+
+## JDBC extraction in 2.0
+
+The JDBC implementation and SQL resources now live in `axiz-kit-jdbc`; this module contains
+framework-neutral contracts and orchestration. `TransactionRunner` remains in
+`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
+`runtime` scope in a service. See [JDBC migration](../../docs/migration/2.0/JDBC.md).

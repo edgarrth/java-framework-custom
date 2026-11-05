@@ -2,6 +2,7 @@ package pe.axiz.spring.outbox;
 
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
@@ -40,5 +41,33 @@ public record AxizOutboxProperties(
       @DefaultValue("1s") Duration initialDelay,
       @DefaultValue("10m") Duration maxDelay,
       @DefaultValue("7d") Duration retention,
-      @DefaultValue("1h") Duration purgeInterval) {}
+      @DefaultValue("1h") Duration purgeInterval,
+      @DefaultValue("3m") Duration leaseDuration) {
+    @ConstructorBinding
+    public Relay {
+      if (!leaseDuration.isPositive())
+        throw new IllegalArgumentException("outbox lease must be positive");
+    }
+
+    public Relay(
+        boolean enabled,
+        Duration pollInterval,
+        int batchSize,
+        int maxAttempts,
+        Duration initialDelay,
+        Duration maxDelay,
+        Duration retention,
+        Duration purgeInterval) {
+      this(
+          enabled,
+          pollInterval,
+          batchSize,
+          maxAttempts,
+          initialDelay,
+          maxDelay,
+          retention,
+          purgeInterval,
+          Duration.ofMinutes(3));
+    }
+  }
 }

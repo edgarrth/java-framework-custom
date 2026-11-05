@@ -97,6 +97,7 @@ class ReactiveCqrsTest {
                 AxizCqrsAutoConfiguration.class, AxizReactiveCqrsAutoConfiguration.class))
         .withBean(PayHandler.class, () -> pay)
         .withBean(StatusHandler.class, () -> new StatusHandler(db))
+        .withBean(OwnerOnly.class, OwnerOnly::new)
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(fake))
         .withBean(
             AsyncIdempotencyService.class,
@@ -134,7 +135,14 @@ class ReactiveCqrsTest {
               int connection = fake.last("UPDATE payments").connection();
               assertTrue(fake.events().contains("commit:" + connection));
 
-              assertEquals("PAID", queries.ask(new PaymentStatusQuery("p-1")).block(T));
+              assertEquals(
+                  "PAID",
+                  queries
+                      .ask(new PaymentStatusQuery("p-1"))
+                      .contextWrite(
+                          ReactiveSecurityContextHolder.withAuthentication(
+                              new TestingAuthenticationToken("owner", "p", "SCOPE_x")))
+                      .block(T));
               assertThrows(
                   HandlerNotFoundException.class, () -> queries.ask(new UnknownQuery()).block(T));
             });
@@ -220,7 +228,6 @@ class ReactiveCqrsTest {
             .withConfiguration(
                 AutoConfigurations.of(
                     AxizCqrsAutoConfiguration.class, AxizReactiveCqrsAutoConfiguration.class))
-            .withPropertyValues(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY + "=fail")
             .withBean(StatusHandler.class, () -> new StatusHandler(db));
     runner.run(ctx -> assertNotNull(ctx.getStartupFailure()));
     runner

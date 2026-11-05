@@ -229,8 +229,7 @@ class ValkeyReactiveStoresIT {
           .verify(T);
       StepVerifier.create(
               call(() -> limits.tryAcquire("timeout-closed", 1, Duration.ofSeconds(1), false)))
-          .assertNext(result -> assertFalse(result.allowed()))
-          .expectComplete()
+          .expectError(pe.axiz.core.security.RateLimitUnavailableException.class)
           .verify(T);
       StepVerifier.create(
               call(() -> limits.tryAcquire("timeout-open", 1, Duration.ofSeconds(1), true)))

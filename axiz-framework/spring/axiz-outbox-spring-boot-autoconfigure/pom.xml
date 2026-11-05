@@ -19,6 +19,7 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId>

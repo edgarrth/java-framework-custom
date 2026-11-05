@@ -5,6 +5,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import pe.axiz.kit.jpa.AuditorProvider;
 
@@ -17,6 +18,11 @@ import pe.axiz.kit.jpa.AuditorProvider;
     beforeName = "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration")
 @ConditionalOnClass(name = "jakarta.persistence.EntityManager")
 public class AxizJpaAutoConfiguration {
+
+  @Bean
+  EncryptionContextValidator axizJpaEncryptionContexts(ApplicationContext context) {
+    return new EncryptionContextValidator(context);
+  }
 
   @Bean
   @ConditionalOnMissingBean

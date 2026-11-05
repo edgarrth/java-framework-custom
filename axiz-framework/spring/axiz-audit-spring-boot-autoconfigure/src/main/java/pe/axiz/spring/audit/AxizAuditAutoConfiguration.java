@@ -2,16 +2,21 @@ package pe.axiz.spring.audit;
 
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -21,16 +26,20 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import pe.axiz.core.audit.AsyncAuditPublisher;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.CompositeAuditPublisher;
+import pe.axiz.core.audit.ConfirmedAuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
  * Audit: {@link Auditable} through an infrastructure advisor, sanitized immutable events, real
@@ -39,6 +48,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
  */
 @AutoConfiguration(
     afterName = {
+      "org.springframework.boot.transaction.autoconfigure.TransactionAutoConfiguration",
       "pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration",
       "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration",
       "pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration",
@@ -47,6 +57,31 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizAuditProperties.class)
 public class AxizAuditAutoConfiguration {
+
+  @Bean
+  @ConditionalOnImperativeApplication
+  DispatchBoundary axizAuditDispatchBoundary() {
+    return () -> {
+      var scope = PendingAuditFailures.open();
+      return scope::close;
+    };
+  }
+
+  @Bean
+  SmartInitializingSingleton axizAuditModeNotice(
+      Environment environment, AxizAuditProperties properties) {
+    return () -> {
+      boolean development =
+          environment.acceptsProfiles(Profiles.of("local", "test"))
+              || List.of("local", "test")
+                  .contains(environment.getProperty("axiz.config.environment", ""));
+      if (properties.effectiveMode() == AxizAuditProperties.Mode.ASYNC && !development)
+        LoggerFactory.getLogger(AxizAuditAutoConfiguration.class)
+            .warn(
+                "Audit mode async uses an in-memory queue and is not durable after a process"
+                    + " crash");
+    };
+  }
 
   @Bean
   @ConditionalOnMissingBean
@@ -60,13 +95,20 @@ public class AxizAuditAutoConfiguration {
             ? log
             : delegates.size() == 1 ? delegates.get(0) : new CompositeAuditPublisher(delegates);
     AuditPublisher delivery =
-        properties.async().enabled()
+        properties.effectiveMode() != AxizAuditProperties.Mode.SYNC
             ? new AsyncAuditPublisher(
-                target, log, properties.async().capacity(), properties.async().offerTimeout())
+                target,
+                log,
+                properties.async().capacity(),
+                properties.async().offerTimeout(),
+                Duration.ofSeconds(10),
+                AuditDeliveryContext.PROVIDER)
             : target;
-    return properties.durable().enabled()
+    return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
         ? DurableAudit.wrap(beans, properties.durable(), delivery)
-        : delivery;
+        : properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
+            ? new ConfirmedAuditPublisher(target)
+            : delivery;
   }
 
   /**
@@ -74,6 +116,29 @@ public class AxizAuditAutoConfiguration {
    * axiz.audit.lost} (alert when it grows), {@code axiz.audit.fallback}, {@code
    * axiz.audit.failures} and {@code axiz.audit.worker.alive} (1 or 0).
    */
+  @Bean
+  @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  @ConditionalOnImperativeApplication
+  @ConditionalOnClass(name = "org.springframework.transaction.interceptor.TransactionInterceptor")
+  static AuditAdvisorOrderValidator axizAuditAdvisorOrder(ConfigurableListableBeanFactory beans) {
+    return new AuditAdvisorOrderValidator(beans);
+  }
+
+  @Bean
+  @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+  @ConditionalOnImperativeApplication
+  @ConditionalOnClass(
+      name = "org.springframework.transaction.support.TransactionSynchronizationManager")
+  static Advisor axizDurableAuditSuccessAdvisor(ObjectProvider<AxizAuditProperties> properties) {
+    var advisor =
+        new DefaultPointcutAdvisor(
+            new AnnotationMatchingPointcut(null, Auditable.class, true),
+            new TransactionalAuditSuccessInterceptor(
+                () -> properties.getObject().effectiveMode() == AxizAuditProperties.Mode.DURABLE));
+    advisor.setOrder(Ordered.LOWEST_PRECEDENCE);
+    return advisor;
+  }
+
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")
   static class MetricsConfiguration {
@@ -81,26 +146,44 @@ public class AxizAuditAutoConfiguration {
     @Bean
     MeterBinder axizAuditMetrics(ObjectProvider<AuditPublisher> publisher) {
       return registry -> {
-        AsyncAuditPublisher async = asyncOf(publisher.getIfAvailable());
-        if (async == null) {
-          return;
-        }
-        Gauge.builder("axiz.audit.pending", async, AsyncAuditPublisher::pending)
-            .description("Audit events waiting in the queue")
-            .register(registry);
-        FunctionCounter.builder("axiz.audit.lost", async, AsyncAuditPublisher::lostCount)
-            .description("Audit events lost: delegate and fallback both failed")
-            .register(registry);
-        FunctionCounter.builder("axiz.audit.fallback", async, AsyncAuditPublisher::fallbackCount)
-            .description("Audit events written to the fallback publisher")
-            .register(registry);
-        FunctionCounter.builder("axiz.audit.failures", async, AsyncAuditPublisher::failureCount)
-            .description("Audit deliveries that failed")
-            .register(registry);
-        Gauge.builder("axiz.audit.worker.alive", async, a -> a.workerAlive() ? 1 : 0)
-            .description("1 while the audit worker is draining the queue")
-            .register(registry);
+        AuditPublisher actual = publisher.getIfAvailable();
+        if (actual instanceof TransactionalAuditPublisher durable)
+          FunctionCounter.builder(
+                  "axiz.audit.persistence.not.confirmed",
+                  durable,
+                  TransactionalAuditPublisher::notConfirmedCount)
+              .description("Durable audit writes degraded to the asynchronous fallback")
+              .register(registry);
+        if (actual instanceof ConfirmedAuditPublisher sync)
+          FunctionCounter.builder(
+                  "axiz.audit.persistence.unconfirmed",
+                  sync,
+                  ConfirmedAuditPublisher::unconfirmedCount)
+              .description("Destination acknowledgements that failed after business completion")
+              .register(registry);
+        bindQueue(registry, asyncOf(actual));
       };
+    }
+
+    static void bindQueue(MeterRegistry registry, @Nullable AsyncAuditPublisher async) {
+      if (async == null) {
+        return;
+      }
+      Gauge.builder("axiz.audit.pending", async, AsyncAuditPublisher::pending)
+          .description("Audit events waiting in the queue")
+          .register(registry);
+      FunctionCounter.builder("axiz.audit.lost", async, AsyncAuditPublisher::lostCount)
+          .description("Audit events lost: delegate and fallback both failed")
+          .register(registry);
+      FunctionCounter.builder("axiz.audit.fallback", async, AsyncAuditPublisher::fallbackCount)
+          .description("Audit events written to the fallback publisher")
+          .register(registry);
+      FunctionCounter.builder("axiz.audit.failures", async, AsyncAuditPublisher::failureCount)
+          .description("Audit deliveries that failed")
+          .register(registry);
+      Gauge.builder("axiz.audit.worker.alive", async, a -> a.workerAlive() ? 1 : 0)
+          .description("1 while the audit worker is draining the queue")
+          .register(registry);
     }
 
     static @Nullable AsyncAuditPublisher asyncOf(@Nullable AuditPublisher publisher) {

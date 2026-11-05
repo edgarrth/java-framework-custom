@@ -4,9 +4,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageMetadata;
+import pe.axiz.core.commons.json.JsonWriter;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -31,8 +34,24 @@ public class DynamoRepository<T> {
 
   private final DynamoDbEnhancedClient client;
   private final DynamoDbTable<T> table;
+  private final Supplier<CursorCodec> cursors;
 
   public DynamoRepository(DynamoDbEnhancedClient client, String tableName, TableSchema<T> schema) {
+    this(
+        client,
+        tableName,
+        schema,
+        () -> {
+          throw new IllegalStateException("Authenticated cursor keys are required for pagination");
+        });
+  }
+
+  public DynamoRepository(
+      DynamoDbEnhancedClient client,
+      String tableName,
+      TableSchema<T> schema,
+      Supplier<CursorCodec> cursors) {
+    this.cursors = Objects.requireNonNull(cursors);
     this.client = Objects.requireNonNull(client);
     this.table = client.table(tableName, schema);
   }
@@ -86,68 +105,79 @@ public class DynamoRepository<T> {
 
   /** Query by partition key with cursor pagination. */
   public Page<T> query(String partitionKey, int limit, @Nullable String cursor) {
+    String binding = binding("primary", "equal", partitionKey, "");
     QueryEnhancedRequest request =
         request(
             QueryConditional.keyEqualTo(Key.builder().partitionValue(partitionKey).build()),
             limit,
-            cursor);
-    return firstPage(table.query(request), limit);
+            cursor,
+            binding);
+    return firstPage(table.query(request), limit, binding);
   }
 
   /** Query by partition key and sort key prefix. */
   public Page<T> queryBeginsWith(
       String partitionKey, String sortKeyPrefix, int limit, @Nullable String cursor) {
+    String binding = binding("primary", "prefix", partitionKey, sortKeyPrefix);
     QueryEnhancedRequest request =
         request(
             QueryConditional.sortBeginsWith(
                 Key.builder().partitionValue(partitionKey).sortValue(sortKeyPrefix).build()),
             limit,
-            cursor);
-    return firstPage(table.query(request), limit);
+            cursor,
+            binding);
+    return firstPage(table.query(request), limit, binding);
   }
 
   /** Query a global or local secondary index. */
   public Page<T> queryIndex(
       String indexName, String partitionKey, int limit, @Nullable String cursor) {
+    String binding = binding(indexName, "equal", partitionKey, "");
     DynamoDbIndex<T> index = table.index(indexName);
     var pages =
         index.query(
             request(
                 QueryConditional.keyEqualTo(Key.builder().partitionValue(partitionKey).build()),
                 limit,
-                cursor));
+                cursor,
+                binding));
     var first = pages.iterator().next();
-    return toPage(first.items(), first.lastEvaluatedKey(), limit);
+    return toPage(first.items(), first.lastEvaluatedKey(), limit, binding);
   }
 
   /** Runs a transaction with the given builder customization. */
-  public void transact(
-      java.util.function.Consumer<TransactWriteItemsEnhancedRequest.Builder> builder) {
+  public void transact(Consumer<TransactWriteItemsEnhancedRequest.Builder> builder) {
     TransactWriteItemsEnhancedRequest.Builder b = TransactWriteItemsEnhancedRequest.builder();
     builder.accept(b);
     client.transactWriteItems(b.build());
   }
 
-  private static QueryEnhancedRequest request(
-      QueryConditional conditional, int limit, @Nullable String cursor) {
+  private String binding(String index, String operation, String partition, String prefix) {
+    return JsonWriter.write(List.of(table.tableName(), index, operation, partition, prefix));
+  }
+
+  private QueryEnhancedRequest request(
+      QueryConditional conditional, int limit, @Nullable String cursor, String binding) {
     if (limit < 1 || limit > 500) {
       throw new IllegalArgumentException("limit must be between 1 and 500");
     }
     QueryEnhancedRequest.Builder b =
         QueryEnhancedRequest.builder().queryConditional(conditional).limit(limit);
-    Map<String, AttributeValue> start = CursorCodec.decode(cursor);
+    Map<String, AttributeValue> start = cursors.get().decode(cursor, binding);
     if (start != null) {
       b.exclusiveStartKey(start);
     }
     return b.build();
   }
 
-  private Page<T> firstPage(PageIterable<T> pages, int limit) {
+  private Page<T> firstPage(PageIterable<T> pages, int limit, String binding) {
     var first = pages.iterator().next();
-    return toPage(first.items(), first.lastEvaluatedKey(), limit);
+    return toPage(first.items(), first.lastEvaluatedKey(), limit, binding);
   }
 
-  private Page<T> toPage(List<T> items, @Nullable Map<String, AttributeValue> last, int limit) {
-    return new Page<>(items, new PageMetadata(0, limit, -1, -1), CursorCodec.encode(last));
+  private Page<T> toPage(
+      List<T> items, @Nullable Map<String, AttributeValue> last, int limit, String binding) {
+    return new Page<>(
+        items, new PageMetadata(0, limit, -1, -1), cursors.get().encode(last, binding));
   }
 }

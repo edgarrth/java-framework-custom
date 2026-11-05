@@ -25,13 +25,20 @@ echo "distributionUrl=file://$REPO/apache-maven-9.9.9-bin.zip" > "$PROPS"
 run() { rm -rf "${T:?}/home"; cached "$@"; }
 cached() { (cd "$T/p" && MAVEN_USER_HOME="$T/home" "$@" ./mvnw -q >/dev/null 2>&1); }
 fail() { echo "FAIL: $*" >&2; exit 1; }
+tamper_checksum() {
+  # Always change the digest: a freshly built ZIP can already have a checksum starting with 0.
+  local checksum replacement
+  checksum=$(sed -n 's/^distributionSha512Sum=//p' "$PROPS")
+  case "$checksum" in 0*) replacement=1 ;; *) replacement=0 ;; esac
+  sed -i "s/^distributionSha512Sum=./distributionSha512Sum=$replacement/" "$PROPS"
+}
 
 run env MVNW_REQUIRE_PINNED_CHECKSUM=true && fail "strict mode accepted an unpinned distribution"
 run env || fail "published checksum not accepted"
 (cd "$T/p" && ./mvnw --pin-checksum >/dev/null 2>&1) || fail "pin failed"
 grep -q '^distributionSha512Sum=[0-9a-f]\{128\}$' "$PROPS" || fail "checksum not pinned"
 run env MVNW_REQUIRE_PINNED_CHECKSUM=true || fail "pinned checksum not accepted"
-sed -i 's/^distributionSha512Sum=./distributionSha512Sum=0/' "$PROPS"
+tamper_checksum
 run env && fail "tampered distribution accepted"
 [ ! -e "$T/home/wrapper/dists/apache-maven-9.9.9/apache-maven-9.9.9" ] || fail "tampered zip unpacked"
 # strict mode is not bypassed by a distribution already in the cache
@@ -41,7 +48,7 @@ cached env MVNW_REQUIRE_PINNED_CHECKSUM=true && fail "strict mode ran a cached, 
 # a cache verified against another checksum is verified again (and a tampered download rejected)
 (cd "$T/p" && ./mvnw --pin-checksum >/dev/null 2>&1) || fail "pin failed"
 cached env MVNW_REQUIRE_PINNED_CHECKSUM=true || fail "cache verified against the same checksum rejected"
-sed -i 's/^distributionSha512Sum=./distributionSha512Sum=0/' "$PROPS"
+tamper_checksum
 cached env && fail "cache reused although the pinned checksum changed"
 # a distribution put in the cache without verification (no marker) is not trusted
 (cd "$T/p" && ./mvnw --pin-checksum >/dev/null 2>&1) || fail "pin failed"

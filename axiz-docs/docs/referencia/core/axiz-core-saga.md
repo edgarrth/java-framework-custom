@@ -20,7 +20,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `ContextCodec` | Serializes saga contexts (JSON with the service mapper in the starter). |
 | `InMemorySagaStateStore` | In-memory saga store for tests and local runs. |
-| `JdbcSagaStateStore` | Saga state on Aurora PostgreSQL with optimistic locking (schema in `axiz/sql/saga-*.sql`). |
 | `SagaConcurrencyException` | Another instance updated the saga concurrently. |
 | `SagaDefinition` | Ordered steps of a saga. |
 | `SagaListener` | Observes saga progress (metrics, traces, alerts). |
@@ -38,3 +37,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-saga verify`.
+
+## JDBC extraction in 2.0
+
+The JDBC implementation and SQL resources now live in `axiz-adapter-saga-jdbc`; this module contains
+framework-neutral contracts and orchestration. `TransactionRunner` remains in
+`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
+`runtime` scope in a service. See [JDBC migration](../../migracion/jdbc-2.md).

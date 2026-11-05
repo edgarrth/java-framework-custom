@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Strings;
 import pe.axiz.core.errors.BusinessException;
@@ -32,16 +33,29 @@ public final class IdempotencyService {
   private final Duration inProgressTtl;
   private final Duration retention;
   private final Clock clock;
+  private final @Nullable IdempotencyResolver resolver;
 
   public IdempotencyService(
       IdempotencyStore store, Duration inProgressTtl, Duration retention, Clock clock) {
+    this(store, inProgressTtl, retention, clock, null);
+  }
+
+  public IdempotencyService(
+      IdempotencyStore store,
+      Duration inProgressTtl,
+      Duration retention,
+      Clock clock,
+      @Nullable IdempotencyResolver resolver) {
     this.store = Objects.requireNonNull(store);
     this.inProgressTtl = Objects.requireNonNull(inProgressTtl);
     this.retention = Objects.requireNonNull(retention);
     this.clock = Objects.requireNonNull(clock);
+    this.resolver = resolver;
     if (inProgressTtl.isNegative() || inProgressTtl.isZero()) {
       throw new IllegalArgumentException("inProgressTtl must be positive");
     }
+    if (retention.compareTo(inProgressTtl) <= 0)
+      throw new IllegalArgumentException("retention must exceed the execution lease");
   }
 
   /** Decision for an incoming request. */
@@ -86,13 +100,30 @@ public final class IdempotencyService {
     }
     Optional<IdempotencyRecord> existing = store.find(key, now);
     if (existing.isEmpty()) {
-      // expired between both calls: try once more
-      return tryStart(key, fingerprint, now)
-          .<Decision>map(p -> p)
-          .orElseThrow(
-              () -> new BusinessException(IdempotencyErrors.IN_PROGRESS, "concurrent request"));
+      throw new BusinessException(
+          IdempotencyErrors.OUTCOME_UNKNOWN, "operation changed during acquisition");
     }
-    return existingDecision(existing.get(), fingerprint);
+    IdempotencyRecord record = existing.get();
+    requireFingerprint(record, fingerprint);
+    IdempotencyResolver reconciliation = resolver;
+    if (uncertain(record, now) && reconciliation != null) {
+      Optional<Resolution> resolution = reconciliation.resolve(key, record);
+      if (resolution.isPresent()) {
+        boolean changed = store.resolve(record, resolution.get(), now, now.plus(retention));
+        if (changed && resolution.get().response() == null)
+          throw new BusinessException(
+              IdempotencyErrors.OUTCOME_UNKNOWN,
+              "operation reconciled without effect; repeat the request with the same key");
+        record =
+            store
+                .find(key, now)
+                .orElseThrow(
+                    () ->
+                        new BusinessException(
+                            IdempotencyErrors.OUTCOME_UNKNOWN, "concurrent reconciliation"));
+      }
+    }
+    return existingDecision(record, fingerprint, now);
   }
 
   static String scopedKey(String scope, @Nullable String idempotencyKey) {
@@ -103,15 +134,28 @@ public final class IdempotencyService {
     return scope + ":" + idempotencyKey;
   }
 
-  static Decision existingDecision(IdempotencyRecord r, String fingerprint) {
+  static void requireFingerprint(IdempotencyRecord r, String fingerprint) {
     if (!r.fingerprint().equals(fingerprint)) {
       throw new BusinessException(
           IdempotencyErrors.KEY_REUSED, "key reused with a different request");
     }
+  }
+
+  static boolean uncertain(IdempotencyRecord r, Instant now) {
+    return r.status() == IdempotencyRecord.Status.UNKNOWN
+        || (r.status() == IdempotencyRecord.Status.IN_PROGRESS && !r.leaseUntil().isAfter(now));
+  }
+
+  static Decision existingDecision(IdempotencyRecord r, String fingerprint, Instant now) {
+    requireFingerprint(r, fingerprint);
     StoredResponse response = r.response();
     if (r.status() == IdempotencyRecord.Status.COMPLETED && response != null) {
       return new Replay(response);
     }
+    if (uncertain(r, now))
+      throw new BusinessException(
+          IdempotencyErrors.OUTCOME_UNKNOWN,
+          "operation outcome uncertain; consult the operation status");
     throw new BusinessException(IdempotencyErrors.IN_PROGRESS, "request in progress", Map.of());
   }
 
@@ -125,15 +169,19 @@ public final class IdempotencyService {
                 IdempotencyRecord.Status.IN_PROGRESS,
                 owner,
                 null,
-                now.plus(inProgressTtl)));
+                now.plus(inProgressTtl),
+                now.plus(retention),
+                0,
+                null));
     return started ? Optional.of(new Proceed(key, owner)) : Optional.empty();
   }
 
   /**
    * Stores the response for replay.
    *
-   * @return {@code false} when this execution no longer holds the key (its lock expired and the key
-   *     was released or taken by another request); the response is then not stored
+   * @return {@code false} when this execution no longer holds the key (its retention expired and
+   *     the key was acquired by another request, or reconciliation changed its state); the response
+   *     is then not stored
    */
   public boolean complete(Proceed execution, StoredResponse response) {
     return store.complete(
@@ -146,7 +194,29 @@ public final class IdempotencyService {
    * @return {@code false} when this execution no longer holds the key
    */
   public boolean fail(Proceed execution) {
-    return store.release(execution.key(), execution.owner());
+    return markUnknown(execution, "execution-failed");
+  }
+
+  public boolean markUnknown(Proceed execution, String diagnostic) {
+    return store.markUnknown(execution.key(), execution.owner(), diagnostic, clock.instant());
+  }
+
+  public boolean releaseWithoutEffect(Proceed execution) {
+    return store.releaseWithoutEffect(execution.key(), execution.owner());
+  }
+
+  public boolean renew(Proceed execution) {
+    Instant now = clock.instant();
+    Instant leaseUntil = now.plus(inProgressTtl);
+    return store.renew(
+        execution.key(), execution.owner(), leaseUntil, leaseUntil.plus(retention), now);
+  }
+
+  public IdempotencyLease startLease(Proceed execution) {
+    return IdempotencyLease.start(
+        inProgressTtl.dividedBy(3),
+        () -> CompletableFuture.completedFuture(renew(execution)),
+        () -> CompletableFuture.completedFuture(markUnknown(execution, "lease-lost")));
   }
 
   /**

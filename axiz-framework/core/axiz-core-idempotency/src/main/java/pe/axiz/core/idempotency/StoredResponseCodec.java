@@ -2,6 +2,7 @@ package pe.axiz.core.idempotency;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,7 +22,10 @@ public final class StoredResponseCodec {
     if (r.owner() != null) {
       m.put("owner", r.owner());
     }
-    m.put("expiresAt", r.expiresAt().toString());
+    m.put("expiresAt", r.retainUntil().toString());
+    m.put("leaseUntil", r.leaseUntil().toString());
+    m.put("resolutionVersion", r.resolutionVersion());
+    if (r.failure() != null) m.put("failure", r.failure());
     StoredResponse resp = r.response();
     if (resp != null) {
       m.put("httpStatus", resp.status());
@@ -53,7 +57,10 @@ public final class StoredResponseCodec {
         IdempotencyRecord.Status.valueOf(String.valueOf(m.get("status"))),
         m.get("owner") == null ? null : String.valueOf(m.get("owner")),
         response,
-        java.time.Instant.parse(String.valueOf(m.get("expiresAt"))));
+        Instant.parse(String.valueOf(m.getOrDefault("leaseUntil", m.get("expiresAt")))),
+        Instant.parse(String.valueOf(m.get("expiresAt"))),
+        m.get("resolutionVersion") instanceof BigDecimal version ? version.longValueExact() : 0,
+        m.get("failure") == null ? null : String.valueOf(m.get("failure")));
   }
 
   static String utf8(byte[] b) {

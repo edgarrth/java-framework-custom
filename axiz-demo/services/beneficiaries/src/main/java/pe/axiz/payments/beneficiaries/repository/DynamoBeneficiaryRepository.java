@@ -11,6 +11,7 @@ import pe.axiz.core.commons.PageMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoRepository;
+import pe.axiz.kit.dynamodb.InvalidCursorException;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.model.BeneficiaryErrors;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
@@ -33,9 +34,13 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
       Expression.builder().expression("attribute_not_exists(deletedAt)").build();
 
   private final DynamoRepository<Beneficiary> items;
+  private final CursorCodec cursors;
+  private final String table;
 
   DynamoBeneficiaryRepository(DynamoRepositories repositories) {
     this.items = repositories.create(TABLE, Beneficiary.class);
+    this.cursors = repositories.cursors();
+    this.table = repositories.tableName(TABLE);
   }
 
   @Override
@@ -58,7 +63,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     return new Page<>(
         page.items(),
         new PageMetadata(0, size, -1, -1),
-        CursorCodec.encode(page.lastEvaluatedKey()));
+        cursors.encode(page.lastEvaluatedKey(), binding(customerId)));
   }
 
   @Override
@@ -90,13 +95,17 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     return QueryConditional.keyEqualTo(Key.builder().partitionValue(customerId).build());
   }
 
+  private String binding(String customerId) {
+    return table + "/primary/active/customer=" + customerId;
+  }
+
   /** Decodes the cursor and checks it belongs to the same customer (no cross-partition reads). */
-  private static @Nullable Map<String, AttributeValue> startKey(
+  private @Nullable Map<String, AttributeValue> startKey(
       String customerId, @Nullable String cursor) {
     Map<String, AttributeValue> start;
     try {
-      start = CursorCodec.decode(cursor);
-    } catch (IllegalArgumentException _) {
+      start = cursors.decode(cursor, binding(customerId));
+    } catch (InvalidCursorException _) {
       throw new BusinessException(BeneficiaryErrors.INVALID_CURSOR, "malformed cursor");
     }
     if (start == null) {

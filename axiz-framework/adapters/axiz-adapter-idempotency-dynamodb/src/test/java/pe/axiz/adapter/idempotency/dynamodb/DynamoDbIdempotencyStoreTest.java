@@ -42,7 +42,7 @@ class DynamoDbIdempotencyStoreTest {
     }
 
     @Override
-    public PutItemResponse putItem(PutItemRequest r) {
+    public synchronized PutItemResponse putItem(PutItemRequest r) {
       String pk = r.item().get("pk").s();
       Map<String, AttributeValue> existing = items.get(pk);
       String condition = r.conditionExpression();
@@ -52,6 +52,12 @@ class DynamoDbIdempotencyStoreTest {
                 >= Long.parseLong(r.expressionAttributeValues().get(":now").n())) {
           throw ConditionalCheckFailedException.builder().message("exists").build();
         }
+      } else if (condition != null && condition.contains("#data = :expected")) {
+        if (existing == null
+            || !existing.get("data").s().equals(r.expressionAttributeValues().get(":expected").s())
+            || Long.parseLong(existing.get("expiresAtMs").n())
+                <= Long.parseLong(r.expressionAttributeValues().get(":now").n()))
+          throw ConditionalCheckFailedException.builder().message("record changed").build();
       } else if (DynamoDbIdempotencyStore.HELD_BY_OWNER.equals(condition)) {
         if (!heldBy(existing, r.expressionAttributeValues())) {
           throw ConditionalCheckFailedException.builder().message("not owner").build();
@@ -64,7 +70,7 @@ class DynamoDbIdempotencyStoreTest {
     }
 
     @Override
-    public GetItemResponse getItem(GetItemRequest r) {
+    public synchronized GetItemResponse getItem(GetItemRequest r) {
       Map<String, AttributeValue> item = items.get(r.key().get("pk").s());
       return item == null
           ? GetItemResponse.builder().build()
@@ -72,8 +78,18 @@ class DynamoDbIdempotencyStoreTest {
     }
 
     @Override
-    public DeleteItemResponse deleteItem(DeleteItemRequest r) {
+    public synchronized DeleteItemResponse deleteItem(DeleteItemRequest r) {
       String pk = r.key().get("pk").s();
+      if (r.conditionExpression().contains("#data = :expected")) {
+        var existing = items.get(pk);
+        if (existing == null
+            || !existing.get("data").s().equals(r.expressionAttributeValues().get(":expected").s())
+            || Long.parseLong(existing.get("expiresAtMs").n())
+                <= Long.parseLong(r.expressionAttributeValues().get(":now").n()))
+          throw ConditionalCheckFailedException.builder().message("record changed").build();
+        items.remove(pk);
+        return DeleteItemResponse.builder().build();
+      }
       if (!DynamoDbIdempotencyStore.HELD_BY_OWNER.equals(r.conditionExpression())
           || !heldBy(items.get(pk), r.expressionAttributeValues())) {
         throw ConditionalCheckFailedException.builder().message("no").build();

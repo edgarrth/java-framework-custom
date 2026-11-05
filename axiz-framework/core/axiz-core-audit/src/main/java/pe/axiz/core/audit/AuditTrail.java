@@ -2,8 +2,10 @@ package pe.axiz.core.audit;
 
 import java.time.Clock;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -75,6 +77,11 @@ public final class AuditTrail {
       return this;
     }
 
+    public Builder outcomes(TransactionOutcome local, TransactionOutcome operation) {
+      record.outcomes(local, operation);
+      return this;
+    }
+
     public void success() {
       publish(AuditEvent.Outcome.SUCCESS, null);
     }
@@ -87,7 +94,7 @@ public final class AuditTrail {
     public <T> T around(
         AuditPolicy policy,
         Supplier<T> action,
-        java.util.function.Function<RuntimeException, @Nullable String> errorCode) {
+        Function<RuntimeException, @Nullable String> errorCode) {
       try {
         T result = action.get();
         if (policy.applies(AuditEvent.Outcome.SUCCESS)) {

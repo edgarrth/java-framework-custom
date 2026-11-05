@@ -1,6 +1,7 @@
 package pe.axiz.codegen.project;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -173,11 +174,7 @@ public final class ProjectRename {
     }
     if (!dryRun) {
       for (var edit : edits.entrySet()) {
-        SafePaths.write(
-            dir,
-            edit.getKey(),
-            edit.getValue().getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            true);
+        SafePaths.write(dir, edit.getKey(), edit.getValue().getBytes(StandardCharsets.UTF_8), true);
       }
     }
   }

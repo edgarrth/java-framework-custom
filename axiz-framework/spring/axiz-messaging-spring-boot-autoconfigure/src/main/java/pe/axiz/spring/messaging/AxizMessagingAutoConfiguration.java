@@ -3,7 +3,9 @@ package pe.axiz.spring.messaging;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -27,6 +29,10 @@ import pe.axiz.core.messaging.EventRoutes;
 import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.messaging.RoutingEventPublisher;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.spring.foundation.DispatchBoundary;
+import pe.axiz.spring.foundation.InboxCompletion;
+import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
+import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -50,8 +56,11 @@ public class AxizMessagingAutoConfiguration {
       name = "axiz.messaging.consumer.transactional",
       matchIfMissing = true)
   static TransactionalEventHandlerPostProcessor axizTransactionalEventHandlers(
-      ObjectProvider<PlatformTransactionManager> tx) {
-    return new TransactionalEventHandlerPostProcessor(tx);
+      ObjectProvider<PlatformTransactionManager> tx,
+      ObjectProvider<InboxCompletion> completion,
+      Environment environment) {
+    return new TransactionalEventHandlerPostProcessor(
+        tx, completion, environment.getProperty("axiz.inbox.transactional", "auto"));
   }
 
   /** Reactive handlers: transaction, context and timeout (reactive services). */
@@ -61,7 +70,10 @@ public class AxizMessagingAutoConfiguration {
 
     @Bean
     static ReactiveEventHandlerPostProcessor axizReactiveEventHandlers(
-        ObjectProvider<ReactiveTransactionManager> tx, Environment env) {
+        ObjectProvider<ReactiveTransactionManager> tx,
+        Environment env,
+        ObjectProvider<ReactiveInboxCompletion> completion,
+        ObjectProvider<ReactiveDispatchBoundary> boundaries) {
       // a static post-processor cannot take @ConfigurationProperties: bind the values with Spring
       // Boot's conversions ("100ms", "30s", relaxed names). Environment.getProperty(Duration) only
       // works when the environment carries Boot's conversion service, not in every context
@@ -71,7 +83,10 @@ public class AxizMessagingAutoConfiguration {
           binder.bind("axiz.messaging.consumer.transactional", Boolean.class).orElseGet(() -> true),
           binder
               .bind("axiz.messaging.consumer.handler-timeout", Duration.class)
-              .orElseGet(() -> Duration.ofSeconds(30)));
+              .orElseGet(() -> Duration.ofSeconds(30)),
+          completion,
+          env.getProperty("axiz.inbox.transactional", "auto"),
+          boundaries);
     }
   }
 
@@ -142,7 +157,7 @@ public class AxizMessagingAutoConfiguration {
     Deduplicator dedup =
         deduplicator.getIfAvailable(
             () -> {
-              org.slf4j.LoggerFactory.getLogger(AxizMessagingAutoConfiguration.class)
+              LoggerFactory.getLogger(AxizMessagingAutoConfiguration.class)
                   .info(
                       "No inbox configured: duplicate deliveries reach the handlers, which must be"
                           + " idempotent");
@@ -165,11 +180,39 @@ public class AxizMessagingAutoConfiguration {
   ObservedDispatcher axizObservedDispatcher(
       EventDispatcher dispatcher,
       ObjectProvider<ObservationRegistry> registry,
-      ObjectProvider<Clock> clock) {
+      ObjectProvider<Clock> clock,
+      ObjectProvider<DispatchBoundary> boundaries) {
     return new ObservedDispatcher(
         dispatcher,
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
-        clock.getIfAvailable(Clock::systemUTC));
+        clock.getIfAvailable(Clock::systemUTC),
+        () -> {
+          var scopes = new ArrayList<DispatchBoundary.Scope>();
+          try {
+            for (var boundary : boundaries.orderedStream().toList()) scopes.add(boundary.open());
+          } catch (RuntimeException failure) {
+            for (var scope : scopes.reversed()) {
+              try {
+                scope.close();
+              } catch (RuntimeException close) {
+                failure.addSuppressed(close);
+              }
+            }
+            throw failure;
+          }
+          return () -> {
+            RuntimeException failure = null;
+            for (var scope : scopes.reversed()) {
+              try {
+                scope.close();
+              } catch (RuntimeException close) {
+                if (failure == null) failure = close;
+                else failure.addSuppressed(close);
+              }
+            }
+            if (failure != null) throw failure;
+          };
+        });
   }
 
   /** Accepts every delivery; used only when no inbox is configured. */

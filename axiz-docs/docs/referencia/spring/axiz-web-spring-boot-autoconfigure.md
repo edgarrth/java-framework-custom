@@ -36,3 +36,21 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-web-spring-boot-autoconfigure verify`.
+
+## Request body and JSON limits
+
+`axiz.web.max-request-body` defaults to `1MB` (1 MiB). Ordered rules under
+`axiz.web.body-limits` set `path` and `max-size` for upload/streaming routes; the first matching
+rule wins. A declared Content-Length above the route limit is rejected early. Both stacks also
+count bytes while reading, including chunked requests, and respond with a 413 Problem.
+
+WebFlux releases rejected buffers and configures codec aggregation to the largest declared body
+limit; the route counter enforces the smaller per-route limits. Servlet does not buffer the whole
+request. Code that commits a streaming response before consuming an oversized request cannot
+replace that already-committed response with a Problem; consume/validate the request before
+committing a success response when that response contract matters.
+
+The effective Boot `JsonMapper` receives explicit `axiz.web.json` stream constraints:
+`max-number-length=100`, `max-string-length=1048576`, `max-nesting-depth=64`. All values must be
+positive. The mapper is customized through Boot's factory builder rather than replaced, preserving
+other framework and application modules.

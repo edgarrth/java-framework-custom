@@ -99,8 +99,8 @@ public final class CapabilityAdder {
       if (!c.supports(manifest.stack()))
         throw new IllegalArgumentException(
             "Capability " + c.name() + " does not support " + manifest.stack().id());
-      if (java.util.Set.of("ux", "core", "gateway").contains(manifest.archetype())
-          && java.util.Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
+      if (Set.of("ux", "core", "gateway").contains(manifest.archetype())
+          && Set.of("messaging", "inbox", "outbox", "notification").contains(c.name()))
         throw new IllegalArgumentException(
             "Archetype " + manifest.archetype() + " cannot use domain messaging");
       if (c.name().equals("jpa") && !"aurora".equals(persistence)) {
@@ -144,7 +144,9 @@ public final class CapabilityAdder {
       updated = PomEditor.addDependency(updated, "pe.axiz", c.starter(), null);
       for (String d : c.dependencies(store)) {
         String[] ga = d.split(":", -1);
-        updated = PomEditor.addDependency(updated, ga[0], ga[1], null);
+        updated =
+            PomEditor.addDependency(
+                updated, ga[0], ga[1], ga[1].startsWith("axiz-adapter-") ? "runtime" : null);
       }
     }
     if (!updated.equals(pomText)) {

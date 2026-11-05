@@ -25,4 +25,22 @@ public record AxizIdempotencyProperties(
     @DefaultValue("30s") Duration inProgressTtl,
     @DefaultValue("24h") Duration retention,
     @DefaultValue("1048576") int maxBodySize,
-    @DefaultValue("1048576") int maxResponseSize) {}
+    @DefaultValue("1048576") int maxResponseSize,
+    @DefaultValue("23h") Duration clientRetryWindow) {
+  public AxizIdempotencyProperties {
+    if (!inProgressTtl.isPositive()
+        || !retention.isPositive()
+        || clientRetryWindow.isNegative()
+        || retention.compareTo(clientRetryWindow.plus(inProgressTtl)) < 0) {
+      throw new IllegalArgumentException(
+          "axiz.idempotency.retention="
+              + retention
+              + " must be >= client-retry-window="
+              + clientRetryWindow
+              + " + in-progress-ttl="
+              + inProgressTtl);
+    }
+    if (maxBodySize <= 0 || maxResponseSize <= 0)
+      throw new IllegalArgumentException("idempotency body limits must be positive");
+  }
+}

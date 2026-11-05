@@ -3,7 +3,9 @@ package pe.axiz.codegen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
+import javax.lang.model.SourceVersion;
 
 /** Naming conventions for generated code. */
 public final class Names {
@@ -54,8 +56,8 @@ public final class Names {
     return s.isEmpty() || Character.isDigit(s.charAt(0)) ? "x" + s : s;
   }
 
-  private static final java.util.Set<String> KEYWORDS =
-      java.util.Set.of(
+  private static final Set<String> KEYWORDS =
+      Set.of(
           "abstract",
           "assert",
           "boolean",
@@ -155,9 +157,7 @@ public final class Names {
   }
 
   public static boolean isPackage(String text) {
-    return PACKAGE.matcher(text).matches()
-        && text.length() <= 120
-        && javax.lang.model.SourceVersion.isName(text);
+    return PACKAGE.matcher(text).matches() && text.length() <= 120 && SourceVersion.isName(text);
   }
 
   public static String packagePath(String pkg) {

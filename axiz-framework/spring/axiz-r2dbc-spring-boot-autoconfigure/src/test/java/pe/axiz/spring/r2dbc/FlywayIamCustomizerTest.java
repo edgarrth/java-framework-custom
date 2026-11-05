@@ -66,6 +66,7 @@ class FlywayIamCustomizerTest {
   void theCustomizerExistsOnlyWithIamAndATokenProvider() {
     ApplicationContextRunner runner =
         new ApplicationContextRunner()
+            .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
             .withConfiguration(AutoConfigurations.of(AxizR2dbcFlywayIamAutoConfiguration.class));
     runner
         .withBean(DatabasePasswordProvider.class, () -> () -> "token")

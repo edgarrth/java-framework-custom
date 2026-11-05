@@ -1,7 +1,6 @@
 package pe.axiz.spring.idempotency;
 
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +15,7 @@ import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.spring.foundation.ReactiveStages;
@@ -38,14 +38,12 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyWebFilter.class);
 
-  private final pe.axiz.core.idempotency.AsyncIdempotencyService service;
+  private final AsyncIdempotencyService service;
   private final int maxBodySize;
   private final int maxResponseSize;
 
   public IdempotencyWebFilter(
-      pe.axiz.core.idempotency.AsyncIdempotencyService service,
-      int maxBodySize,
-      int maxResponseSize) {
+      AsyncIdempotencyService service, int maxBodySize, int maxResponseSize) {
     this.service = Objects.requireNonNull(service);
     this.maxBodySize = maxBodySize;
     this.maxResponseSize = maxResponseSize;
@@ -93,7 +91,6 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
   private Mono<Void> proceed(
       ServerWebExchange exchange, WebFilterChain chain, IdempotencyExchange state, byte[] body) {
     BoundedCapture captured = new BoundedCapture(maxResponseSize);
-    AtomicBoolean written = new AtomicBoolean();
     ServerHttpRequestDecorator request =
         new ServerHttpRequestDecorator(exchange.getRequest()) {
           @Override
@@ -106,7 +103,6 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
         new ServerHttpResponseDecorator(exchange.getResponse()) {
           @Override
           public Mono<Void> writeWith(Publisher<? extends DataBuffer> data) {
-            written.set(true);
             return super.writeWith(
                     Flux.from(data)
                         .map(
@@ -128,7 +124,6 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
               Publisher<? extends Publisher<? extends DataBuffer>> body) {
             // streamed (flushed) responses are stored without body: replaying a stream is not
             // supported, its status and headers are
-            written.set(true);
             captured.markOverflowed();
             return super.writeAndFlushWith(body)
                 .doFinally(
@@ -139,7 +134,6 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
 
           @Override
           public Mono<Void> setComplete() {
-            written.set(true);
             return super.setComplete()
                 .doFinally(
                     signal -> {
@@ -155,15 +149,8 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
                 .filter(mutated)
                 .contextWrite(c -> c.put(ReactiveIdempotency.CONTEXT_KEY, resource)),
         resource -> finish(resource, response, captured),
-        (resource, error) ->
-            written.get() ? finish(resource, response, captured) : release(resource),
-        resource -> {
-          if (written.get()) {
-            captured.markOverflowed();
-            return finish(resource, response, captured);
-          }
-          return release(resource);
-        });
+        (resource, error) -> release(resource),
+        resource -> release(resource));
   }
 
   private Mono<Void> finish(
@@ -172,6 +159,9 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
     if (execution == null) {
       return Mono.empty(); // not idempotent, rejected before deciding, or a replay
     }
+    state.closeLease();
+    if (state.noEffect)
+      return ReactiveStages.from(() -> service.releaseWithoutEffect(execution)).then();
     HttpStatusCode status = response.getStatusCode();
     int code = status != null ? status.value() : HttpStatus.OK.value();
     if (code >= 500) {
@@ -198,9 +188,12 @@ public class IdempotencyWebFilter implements WebFilter, Ordered {
   }
 
   private Mono<Void> release(IdempotencyExchange state) {
+    state.closeLease();
     IdempotencyService.Proceed execution = state.execution();
     if (execution == null) return Mono.empty();
-    return ReactiveStages.from(() -> service.fail(execution))
+    return ReactiveStages.from(
+            () ->
+                state.noEffect ? service.releaseWithoutEffect(execution) : service.fail(execution))
         .doOnError(
             error ->
                 LOG.error(

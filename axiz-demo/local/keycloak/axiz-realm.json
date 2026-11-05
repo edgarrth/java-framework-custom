@@ -115,6 +115,15 @@
           }
         }
       ]
+    },
+    {
+      "name": "payments:channel",
+      "description": "Access to the payment channel endpoints; resource ownership remains enforced by each business service",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
     }
   ],
   "clients": [
@@ -138,7 +147,8 @@
         "basic",
         "audience",
         "profile",
-        "tenant"
+        "tenant",
+        "payments:channel"
       ]
     },
     {
@@ -198,7 +208,8 @@
         "basic",
         "audience",
         "profile",
-        "tenant"
+        "tenant",
+        "payments:channel"
       ],
       "implicitFlowEnabled": false,
       "protocolMappers": [

@@ -1,3 +1,5 @@
+# axiz project manifest: read by the axiz CLI (generate, add, contract sync, upgrade, doctor).
+# Keep it in version control; the CLI updates it when it changes the project.
 schema: 2
 kind: service
 name: payment-orders
@@ -5,8 +7,7 @@ groupId: pe.axiz.payments
 basePackage: pe.axiz.payments.orders
 archetype: business
 structure: hexagonal
-extensions:
-- cqrs
+extensions: [cqrs]
 stack: servlet
 persistence: aurora
 axizVersion: 2.0.0
@@ -14,26 +15,26 @@ contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: src/main/asyncapi/asyncapi.yaml
 capabilities:
-- foundation
-- web
-- errors
-- logging
-- observability
-- metrics
-- config
-- i18n
-- sensitive
-- security
-- audit
-- jpa
-- secrets
-- crypto
-- outbox
-- messaging-kafka
-- sequence
-- audit-kafka
+  - foundation
+  - web
+  - errors
+  - logging
+  - observability
+  - metrics
+  - config
+  - i18n
+  - sensitive
+  - security
+  - audit
+  - jpa
+  - secrets
+  - crypto
+  - outbox
+  - messaging-kafka
+  - sequence
+  - audit-kafka
 operations:
-- createPaymentOrder
-- listPaymentOrders
-- getPaymentOrder
-- changePaymentOrderStatus
+  - createPaymentOrder
+  - listPaymentOrders
+  - getPaymentOrder
+  - changePaymentOrderStatus

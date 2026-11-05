@@ -1,6 +1,7 @@
 package pe.axiz.spring.saga;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.Locale;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.saga.SagaListener;
@@ -42,7 +43,7 @@ public class MeteredSagaListener implements SagaListener {
             "saga",
             sagaName,
             "status",
-            status.name().toLowerCase(java.util.Locale.ROOT))
+            status.name().toLowerCase(Locale.ROOT))
         .increment();
   }
 }

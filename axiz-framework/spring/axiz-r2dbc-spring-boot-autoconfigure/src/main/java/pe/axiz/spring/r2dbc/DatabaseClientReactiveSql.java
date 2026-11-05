@@ -23,6 +23,11 @@ public final class DatabaseClientReactiveSql implements ReactiveSql {
   }
 
   @Override
+  public Object transactionResource() {
+    return client.getConnectionFactory();
+  }
+
+  @Override
   public Mono<Long> update(String sql, SqlParams params) {
     return bind(client.sql(sql), params).fetch().rowsUpdated();
   }

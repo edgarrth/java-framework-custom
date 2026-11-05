@@ -2,6 +2,7 @@ package pe.axiz.test.contracts;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +36,7 @@ public final class InboxStoreContract {
      * value works; DynamoDB TTL needs future expiry times, hence the current time by default.
      */
     default Instant start() {
-      return Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+      return Instant.now().truncatedTo(ChronoUnit.MILLIS);
     }
   }
 

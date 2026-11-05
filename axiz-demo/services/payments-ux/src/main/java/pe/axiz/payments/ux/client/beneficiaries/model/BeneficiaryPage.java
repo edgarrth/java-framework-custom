@@ -11,6 +11,6 @@ import org.jspecify.annotations.Nullable;
  */
 public record BeneficiaryPage(@Nullable List<Beneficiary> items, @Nullable String nextCursor) {
   public BeneficiaryPage {
-    items = items == null ? null : java.util.List.copyOf(items);
+    items = items == null ? null : List.copyOf(items);
   }
 }

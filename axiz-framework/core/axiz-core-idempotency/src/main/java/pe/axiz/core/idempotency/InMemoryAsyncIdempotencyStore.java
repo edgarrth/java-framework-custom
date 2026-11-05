@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Single-process CPU-only store. Shared environments must use a native remote asynchronous store.
@@ -14,6 +15,12 @@ public final class InMemoryAsyncIdempotencyStore implements AsyncIdempotencyStor
 
   public InMemoryAsyncIdempotencyStore(Clock clock) {
     records = new InMemoryIdempotencyStore(clock);
+  }
+
+  @Override
+  public CompletionStage<Boolean> compareAndSet(
+      IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
+    return CompletableFuture.completedFuture(records.compareAndSet(expected, replacement));
   }
 
   @Override

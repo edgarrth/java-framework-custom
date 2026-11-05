@@ -1,15 +1,22 @@
 package pe.axiz.codegen;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.model.Extension;
+import pe.axiz.codegen.model.Snapshots;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
@@ -41,7 +48,7 @@ public final class ArtifactGenerator {
     t.put("migration", Set.of());
     t.put("error-code", Set.of());
     t.put("test", Set.of());
-    TYPES = java.util.Collections.unmodifiableMap(t);
+    TYPES = Collections.unmodifiableMap(t);
   }
 
   /**
@@ -78,21 +85,21 @@ public final class ArtifactGenerator {
       List<String> dependencies,
       List<String> notes) {
     public Result {
-      appended = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(appended));
-      created = pe.axiz.codegen.model.Snapshots.files(created);
+      appended = Collections.unmodifiableMap(new LinkedHashMap<>(appended));
+      created = Snapshots.files(created);
       dependencies = List.copyOf(dependencies);
       notes = List.copyOf(notes);
-      updated = pe.axiz.codegen.model.Snapshots.files(updated);
+      updated = Snapshots.files(updated);
     }
 
     @Override
     public Map<String, byte[]> created() {
-      return pe.axiz.codegen.model.Snapshots.files(created);
+      return Snapshots.files(created);
     }
 
     @Override
     public Map<String, byte[]> updated() {
-      return pe.axiz.codegen.model.Snapshots.files(updated);
+      return Snapshots.files(updated);
     }
   }
 
@@ -182,7 +189,7 @@ public final class ArtifactGenerator {
     Map<String, byte[]> files = JavaFormatter.formatAll(set.render(scoped));
     List<String> dependencies =
         type.equals("mapper") ? List.of("org.mapstruct:mapstruct") : List.of();
-    List<String> notes = new java.util.ArrayList<>();
+    List<String> notes = new ArrayList<>();
     if (type.equals("handler") || type.equals("event-handler")) {
       notes.add(
           "Subscribe the service to the topic or queue (axiz.messaging.kafka.topics /"
@@ -218,11 +225,7 @@ public final class ArtifactGenerator {
     files
         .keySet()
         .forEach(
-            path ->
-                out.put(
-                    path,
-                    JavaFormatter.format(updated)
-                        .getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            path -> out.put(path, JavaFormatter.format(updated).getBytes(StandardCharsets.UTF_8)));
     return new Result(Map.of(), out, appended, List.of(), List.of());
   }
 
@@ -386,8 +389,7 @@ public final class ArtifactGenerator {
     if (existingErrors == null) {
       return 1;
     }
-    java.util.regex.Matcher m =
-        java.util.regex.Pattern.compile("-(\\d{4})\"").matcher(existingErrors);
+    Matcher m = Pattern.compile("-(\\d{4})\"").matcher(existingErrors);
     int max = 0;
     while (m.find()) {
       max = Math.max(max, Integer.parseInt(m.group(1)));
@@ -400,15 +402,14 @@ public final class ArtifactGenerator {
     return typesFor(structure, List.of());
   }
 
-  public static List<String> typesFor(
-      Structure structure, List<pe.axiz.codegen.model.Extension> extensions) {
+  public static List<String> typesFor(Structure structure, List<Extension> extensions) {
     return TYPES.entrySet().stream()
         .filter(e -> e.getValue().isEmpty() || e.getValue().contains(structure))
         .map(Map.Entry::getKey)
         .filter(
             type ->
                 (!type.equals("command") && !type.equals("query"))
-                    || extensions.contains(pe.axiz.codegen.model.Extension.CQRS))
+                    || extensions.contains(Extension.CQRS))
         .toList();
   }
 }

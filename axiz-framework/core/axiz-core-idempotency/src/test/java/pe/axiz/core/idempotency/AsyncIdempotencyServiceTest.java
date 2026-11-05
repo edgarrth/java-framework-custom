@@ -58,14 +58,14 @@ class AsyncIdempotencyServiceTest {
     var old =
         (IdempotencyService.Proceed)
             service.begin("tenant", KEY, "fp").toCompletableFuture().join();
-    clock.now = clock.now.plus(LEASE).plusMillis(1);
+    clock.now = clock.now.plus(Duration.ofDays(2));
     var current =
         (IdempotencyService.Proceed)
             service.begin("tenant", KEY, "fp").toCompletableFuture().join();
     assertNotEquals(old.owner(), current.owner());
     assertFalse(service.complete(old, RESPONSE).toCompletableFuture().join());
     assertFalse(service.fail(old).toCompletableFuture().join());
-    assertTrue(service.fail(current).toCompletableFuture().join());
+    assertTrue(service.releaseWithoutEffect(current).toCompletableFuture().join());
     var retry =
         (IdempotencyService.Proceed)
             service.begin("tenant", KEY, "fp").toCompletableFuture().join();
@@ -77,6 +77,13 @@ class AsyncIdempotencyServiceTest {
   }
 
   static class RaceStore implements AsyncIdempotencyStore {
+    @Override
+    public CompletionStage<Boolean> compareAndSet(
+        IdempotencyRecord expected,
+        @org.jspecify.annotations.Nullable IdempotencyRecord replacement) {
+      return CompletableFuture.completedFuture(false);
+    }
+
     final AtomicInteger attempts = new AtomicInteger();
     boolean acquireRetry = true;
     CompletableFuture<Boolean> first = CompletableFuture.completedFuture(false);
@@ -106,17 +113,11 @@ class AsyncIdempotencyServiceTest {
   }
 
   @Test
-  void expirationBetweenAcquireAndLookupRetriesExactlyOnce() {
+  void expirationBetweenAcquireAndLookupNeverAutomaticallyReexecutes() {
     var clock = new IdempotencyTest.TestClock();
     var race = new RaceStore();
-    assertInstanceOf(
-        IdempotencyService.Proceed.class,
-        service(race, clock).begin("s", KEY, "fp").toCompletableFuture().join());
-    assertEquals(2, race.attempts.get());
-    race = new RaceStore();
-    race.acquireRetry = false;
     assertEquals(409, failure(service(race, clock).begin("s", KEY, "fp")).category().httpStatus());
-    assertEquals(2, race.attempts.get());
+    assertEquals(1, race.attempts.get());
   }
 
   @Test

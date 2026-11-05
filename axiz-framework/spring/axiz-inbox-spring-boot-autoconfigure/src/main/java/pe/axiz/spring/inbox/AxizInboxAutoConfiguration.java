@@ -2,6 +2,7 @@ package pe.axiz.spring.inbox;
 
 import java.time.Clock;
 import javax.sql.DataSource;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -12,10 +13,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxDeduplicator;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.core.inbox.JdbcInboxStore;
 import pe.axiz.core.messaging.Deduplicator;
+import pe.axiz.spring.foundation.InboxCompletion;
 import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
 
@@ -48,6 +50,23 @@ public class AxizInboxAutoConfiguration {
     InboxStore axizInboxStore(
         DataSource dataSource, AxizInboxProperties p, SchemaInitializer axizInboxSchema) {
       return new JdbcInboxStore(new SpringConnectionProvider(dataSource), p.table());
+    }
+
+    @Bean
+    @Nullable InboxCompletion axizJdbcInboxCompletion(
+        InboxStore store, ObjectProvider<Clock> clocks) {
+      if (!(store instanceof JdbcInboxStore jdbc)
+          || !(jdbc.connectionProvider() instanceof SpringConnectionProvider provider)) return null;
+      Clock clock = clocks.getIfAvailable(Clock::systemUTC);
+      return new InboxCompletion() {
+        public Object transactionResource() {
+          return provider.dataSource();
+        }
+
+        public boolean complete(String consumer, String key, String owner) {
+          return store.markProcessed(consumer, key, owner, clock.instant());
+        }
+      };
     }
 
     @Bean

@@ -10,11 +10,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.redis.RedisIdempotencyStore;
+import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /** ElastiCache (Redis/Valkey) idempotency store on Boot's Lettuce connection settings. */
 @AutoConfiguration(
@@ -40,7 +44,7 @@ public class AxizIdempotencyRedisAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   IdempotencyStore axizRedisIdempotencyStore(
       @Qualifier("axizIdempotencyRedisConnection") StatefulRedisConnection<String, String> connection,
       AxizIdempotencyProperties p,
@@ -51,15 +55,12 @@ public class AxizIdempotencyRedisAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
-  pe.axiz.core.idempotency.AsyncIdempotencyStore axizRedisAsyncIdempotencyStore(
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  AsyncIdempotencyStore axizRedisAsyncIdempotencyStore(
       @Qualifier("axizIdempotencyRedisConnection") StatefulRedisConnection<String, String> connection,
       AxizIdempotencyProperties p,
       ObjectProvider<Clock> clock) {
-    return new pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore(
+    return new RedisAsyncIdempotencyStore(
         connection.async(), p.keyPrefix(), clock.getIfAvailable(Clock::systemUTC));
   }
 }

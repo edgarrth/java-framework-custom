@@ -4,6 +4,7 @@ import io.r2dbc.spi.Closeable;
 import io.r2dbc.spi.ConnectionFactory;
 import java.time.Duration;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.r2dbc.core.DatabaseClient;
 import pe.axiz.kit.r2dbc.ReactiveSql;
@@ -20,7 +21,7 @@ public final class ReaderDatabase implements DisposableBean {
   private static final Duration CLOSE_TIMEOUT = Duration.ofSeconds(10);
 
   private final ConnectionFactory connectionFactory;
-  private final @org.jspecify.annotations.Nullable AutoCloseable credentials;
+  private final @Nullable AutoCloseable credentials;
   private final DatabaseClient client;
   private final ReactiveSql sql;
 
@@ -29,9 +30,7 @@ public final class ReaderDatabase implements DisposableBean {
   }
 
   /** Owns reader-specific IAM resources as well as the connection pool. */
-  public ReaderDatabase(
-      ConnectionFactory connectionFactory,
-      @org.jspecify.annotations.Nullable AutoCloseable credentials) {
+  public ReaderDatabase(ConnectionFactory connectionFactory, @Nullable AutoCloseable credentials) {
     this.credentials = credentials;
     this.connectionFactory = Objects.requireNonNull(connectionFactory);
     this.client = DatabaseClient.create(connectionFactory);

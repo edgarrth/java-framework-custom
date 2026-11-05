@@ -3,6 +3,7 @@ package pe.axiz.payments.history.adapter.in.rest;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +26,7 @@ import reactor.core.publisher.Mono;
  * read goes from the event loop to Aurora over R2DBC and back.
  */
 @RestController
+@PreAuthorize("hasAnyAuthority('SCOPE_payments:channel', 'SCOPE_payments:read')")
 public class PaymentHistoryController {
 
   private final ReactiveQueryBus queryBus;

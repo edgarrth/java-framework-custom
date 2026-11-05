@@ -3,6 +3,7 @@ package pe.axiz.kit.dynamodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import pe.axiz.core.commons.Stages;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
@@ -40,7 +41,7 @@ final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDb
       mapped.whenComplete(
           (value, failure) -> {
             if (failure == null) call.complete(value);
-            else call.completeExceptionally(pe.axiz.core.commons.Stages.unwrap(failure));
+            else call.completeExceptionally(Stages.unwrap(failure));
           });
     } catch (RuntimeException | Error failure) {
       call.completeExceptionally(failure);

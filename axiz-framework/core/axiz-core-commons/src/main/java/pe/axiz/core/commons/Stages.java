@@ -2,6 +2,7 @@ package pe.axiz.core.commons;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -63,7 +64,7 @@ public final class Stages {
   }
 
   /** Invokes native asynchronous I/O, turning synchronous submission failures into the stage. */
-  public static <T> CompletionStage<T> call(java.util.function.Supplier<CompletionStage<T>> work) {
+  public static <T> CompletionStage<T> call(Supplier<CompletionStage<T>> work) {
     Objects.requireNonNull(work);
     try {
       return Objects.requireNonNull(work.get());
@@ -180,7 +181,7 @@ public final class Stages {
 
   /** Handles a best-effort side effect failure without inventing a non-null Void payload. */
   public static CompletionStage<Void> settle(
-      CompletionStage<Void> source, java.util.function.Consumer<Throwable> failure) {
+      CompletionStage<Void> source, Consumer<Throwable> failure) {
     CompletableFuture<Void> result =
         new CompletableFuture<>() {
           @Override
@@ -207,9 +208,7 @@ public final class Stages {
 
   public static Throwable unwrap(Throwable error) {
     Throwable cause = error.getCause();
-    return (error instanceof java.util.concurrent.CompletionException && cause != null)
-        ? cause
-        : error;
+    return (error instanceof CompletionException && cause != null) ? cause : error;
   }
 
   private static void fail(

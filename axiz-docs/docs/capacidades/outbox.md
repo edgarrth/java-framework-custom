@@ -27,6 +27,8 @@ axiz.outbox.relay.enabled: true
 
 Agrega también: [`jpa`](jpa.md)
 
+- `pe.axiz:axiz-adapter-outbox-jdbc`
+
 ### Aurora en reactivo (R2DBC)
 
 Agrega también: [`r2dbc`](r2dbc.md)

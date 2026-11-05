@@ -1,5 +1,7 @@
 package pe.axiz.spring.idempotency;
 
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.idempotency.IdempotencyLease;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.StoredResponse;
 
@@ -23,10 +26,14 @@ import pe.axiz.core.idempotency.StoredResponse;
  *
  * <p>The response streams to the client as usual; only a copy of up to {@code maxResponseSize}
  * bytes is kept for storage. Only a handler that returned normally with a status below 500 is
- * stored. An exception that escapes the chain, or a server error, releases the key so the client
- * can retry. Asynchronous handlers are stored when their last dispatch finishes.
+ * stored. An exception that escapes the chain, or a server error, retains the key as UNKNOWN until
+ * the service reconciles the operation. Asynchronous handlers are stored when their last dispatch
+ * finishes.
  */
 public class IdempotencyFilter extends OncePerRequestFilter {
+
+  static final String LEASE_ATTRIBUTE = IdempotencyFilter.class.getName() + ".lease";
+  static final String NO_EFFECT_ATTRIBUTE = IdempotencyFilter.class.getName() + ".noEffect";
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyFilter.class);
 
@@ -86,21 +93,71 @@ public class IdempotencyFilter extends OncePerRequestFilter {
       chain.doFilter(request, response);
       completedNormally = true;
     } finally {
-      if (!isAsyncStarted(request)) {
-        response.flushWriter();
-        finish(request, response, completedNormally);
+      if (isAsyncStarted(request)) {
+        registerAsyncCleanup(request, response);
+      } else {
+        boolean flushed = false;
+        try {
+          response.flushWriter();
+          flushed = true;
+        } finally {
+          finish(request, response, completedNormally && flushed);
+        }
       }
     }
   }
 
-  private void finish(HttpServletRequest request, CapturingResponse response, boolean normally) {
-    if (!(request.getAttribute(IdempotencySupport.KEY_ATTRIBUTE)
-        instanceof IdempotencyService.Proceed execution)) {
-      return; // not idempotent, rejected before deciding, or a replay
+  private void registerAsyncCleanup(HttpServletRequest request, CapturingResponse response) {
+    String listenerKey = IdempotencyFilter.class.getName() + ".asyncListener";
+    if (request.getAttribute(listenerKey) != null) return;
+    AsyncListener listener =
+        new AsyncListener() {
+          @Override
+          public void onComplete(AsyncEvent event) {
+            finish(request, response, true);
+          }
+
+          @Override
+          public void onTimeout(AsyncEvent event) {
+            finish(request, response, false);
+          }
+
+          @Override
+          public void onError(AsyncEvent event) {
+            finish(request, response, false);
+          }
+
+          @Override
+          public void onStartAsync(AsyncEvent event) {
+            event.getAsyncContext().addListener(this);
+          }
+        };
+    request.setAttribute(listenerKey, listener);
+    try {
+      request.getAsyncContext().addListener(listener);
+    } catch (IllegalStateException alreadyCompleted) {
+      finish(request, response, false);
     }
-    request.removeAttribute(IdempotencySupport.KEY_ATTRIBUTE);
+  }
+
+  private void finish(HttpServletRequest request, CapturingResponse response, boolean normally) {
+    IdempotencyService.Proceed execution;
+    synchronized (request) {
+      if (!(request.getAttribute(IdempotencySupport.KEY_ATTRIBUTE)
+          instanceof IdempotencyService.Proceed current)) return;
+      execution = current;
+      request.removeAttribute(IdempotencySupport.KEY_ATTRIBUTE);
+    }
+    if (request.getAttribute(LEASE_ATTRIBUTE) instanceof IdempotencyLease lease) {
+      lease.close();
+      request.removeAttribute(LEASE_ATTRIBUTE);
+    }
     try {
       int status = response.getStatus();
+      if (Boolean.TRUE.equals(request.getAttribute(NO_EFFECT_ATTRIBUTE))) {
+        service.releaseWithoutEffect(execution);
+        return;
+      }
       if (!normally || status >= 500) {
         service.fail(execution);
         return;
@@ -120,7 +177,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             execution.key());
       }
     } catch (RuntimeException e) {
-      // the original outcome must reach the client; the lock expires by itself
+      // the original outcome must reach the client; retention still prevents immediate reuse
       LOG.error("Idempotency store unavailable while finishing {}", execution.key(), e);
     }
   }

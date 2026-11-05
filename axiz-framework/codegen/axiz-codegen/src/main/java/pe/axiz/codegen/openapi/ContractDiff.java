@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -88,7 +89,7 @@ public final class ContractDiff {
                     params.addAll(own);
                   }
                   op.put("parameters", params);
-                  out.put(m.toUpperCase(java.util.Locale.ROOT) + " " + normalize(path), op);
+                  out.put(m.toUpperCase(Locale.ROOT) + " " + normalize(path), op);
                 }
               }
             });

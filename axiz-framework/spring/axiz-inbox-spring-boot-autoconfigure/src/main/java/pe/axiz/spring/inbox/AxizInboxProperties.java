@@ -1,6 +1,7 @@
 package pe.axiz.spring.inbox;
 
 import java.time.Duration;
+import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
@@ -25,4 +26,10 @@ public record AxizInboxProperties(
     @DefaultValue("14d") Duration retention,
     @DefaultValue("1h") Duration purgeInterval,
     @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
-    @DefaultValue("10s") Duration statementTimeout) {}
+    @DefaultValue("10s") Duration statementTimeout,
+    @DefaultValue("auto") String transactional) {
+  public AxizInboxProperties {
+    if (!Set.of("auto", "true", "false").contains(transactional))
+      throw new IllegalArgumentException("axiz.inbox.transactional must be auto, true or false");
+  }
+}

@@ -63,7 +63,7 @@ externalSecret:
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/beneficiaries-crud
-  keys: []
+  keys: [cursor-key-v1]
 migration:
   serviceAliases:
   - beneficiaries-crud

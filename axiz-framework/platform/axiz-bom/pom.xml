@@ -752,6 +752,12 @@
         <artifactId>axiz-web-spring-boot-starter</artifactId>
         <version>${revision}</version>
       </dependency>
+
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jdbc</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-inbox-jdbc</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-saga-jdbc</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-jdbc</artifactId><version>${revision}</version></dependency>
     </dependencies>
   </dependencyManagement>
 

@@ -10,6 +10,9 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 {{/item.usesNullable}}
 import org.springframework.http.ResponseEntity;
+{{#caps.security}}
+import org.springframework.security.access.prepost.PreAuthorize;
+{{/caps.security}}
 {{#item.usesDelete}}
 import org.springframework.web.bind.annotation.DeleteMapping;
 {{/item.usesDelete}}
@@ -111,6 +114,11 @@ public class {{item.className}}Controller {
 {{#item.operations}}
 
   /** {{summary}} ({{httpMethod}} {{path}}). */
+{{#caps.security}}
+{{#authorizationExpression}}
+  @PreAuthorize("{{{authorizationExpression}}}")
+{{/authorizationExpression}}
+{{/caps.security}}
   @{{mapping}}("{{path}}")
 {{#stack.servlet}}
   public ResponseEntity<{{responseType}}> {{methodName}}({{{controllerParams}}}) {

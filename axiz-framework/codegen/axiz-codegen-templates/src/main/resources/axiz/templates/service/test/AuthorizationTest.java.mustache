@@ -1,0 +1,83 @@
+package {{project.basePackage}}.{{fw.restPackage}};
+
+import static org.mockito.Mockito.verifyNoInteractions;
+{{#stack.servlet}}
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationContext;
+{{/stack.reactive}}
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+{{#stack.servlet}}
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.junit.jupiter.api.extension.ExtendWith;
+import pe.axiz.spring.test.BlockHoundExtension;
+{{/stack.reactive}}
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import pe.axiz.spring.security.AxizSecurityAutoConfiguration;
+import pe.axiz.spring.web.AxizWebAutoConfiguration;
+
+/** Denial must happen before a controller can invoke any application operation. */
+{{#stack.servlet}}@WebMvcTest{{/stack.servlet}}{{#stack.reactive}}@WebFluxTest{{/stack.reactive}}(controllers = {{item.className}}Controller.class, properties = {
+  "axiz.security.issuers[0].issuer=https://issuer.test",
+  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+  "axiz.security.issuers[0].audiences[0]=test"
+})
+@ImportAutoConfiguration({AxizSecurityAutoConfiguration.class, AxizWebAutoConfiguration.class})
+{{#stack.reactive}}
+@ExtendWith(BlockHoundExtension.class)
+{{/stack.reactive}}
+class {{item.className}}AuthorizationTest {
+{{#stack.servlet}}  @Autowired MockMvc client;{{/stack.servlet}}
+{{#stack.reactive}}
+  @Autowired ApplicationContext context;
+  WebTestClient client;
+
+  @BeforeEach
+  void configureSecurityTestSupport() {
+    client = WebTestClient.bindToApplicationContext(context)
+        .apply(springSecurity()).configureClient().build();
+  }
+{{/stack.reactive}}
+{{#item.fields}}
+  @MockitoBean {{qualifiedType}} {{name}};
+{{/item.fields}}
+{{#item.securedOperations}}
+
+  @Test
+  void {{methodName}}RejectsAMissingRequiredScopeBeforeInvocation() throws Exception {
+{{#stack.servlet}}
+    client.perform(request(HttpMethod.{{httpMethod}}, "{{{testUri}}}")
+        .with(jwt().authorities(new SimpleGrantedAuthority("{{partialAuthority}}")))
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).content("{{{example}}}")
+{{/hasRequest}}
+        ).andExpect(status().isForbidden());
+{{/stack.servlet}}
+{{#stack.reactive}}
+    client.mutateWith(mockJwt().authorities(new SimpleGrantedAuthority("{{partialAuthority}}")))
+        .method(HttpMethod.{{httpMethod}}).uri("{{{testUri}}}")
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).bodyValue("{{{example}}}")
+{{/hasRequest}}
+        .exchange().expectStatus().isForbidden();
+{{/stack.reactive}}
+    verifyNoInteractions({{#item.fields}}{{name}}{{^last}}, {{/last}}{{/item.fields}});
+  }
+{{/item.securedOperations}}
+}

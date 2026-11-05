@@ -2,12 +2,15 @@ package pe.axiz.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
@@ -79,8 +82,7 @@ public final class RequestValidator {
     String asyncApi = r.asyncApi();
     if (asyncApi != null && !asyncApi.isBlank()) {
       try {
-        consumesEvents =
-            !pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(asyncApi).consumed().isEmpty();
+        consumesEvents = !AsyncApiDocument.parse(asyncApi).consumed().isEmpty();
       } catch (IllegalArgumentException problem) {
         problems.add("Invalid AsyncAPI: " + problem.getMessage());
       }
@@ -98,7 +100,7 @@ public final class RequestValidator {
     if (a.isService() && !ServiceRoles.validName(a.name(), r.name()))
       problems.add("Service name does not follow the convention for " + a.name());
     if (!a.extensions().containsAll(r.extensions())
-        || (r.cqrs() && r.structure() != pe.axiz.codegen.model.Structure.HEXAGONAL)) {
+        || (r.cqrs() && r.structure() != Structure.HEXAGONAL)) {
       problems.add(
           "Extensions are incompatible with archetype or structure; "
               + "CQRS requires hexagonal business or event-processor");
@@ -149,7 +151,8 @@ public final class RequestValidator {
               .noneMatch(
                   capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
         problems.add(
-            "Consuming AsyncAPI events requires a messaging capability: messaging, messaging-sqs or messaging-kafka");
+            "Consuming AsyncAPI events requires a messaging capability: messaging, messaging-sqs or"
+                + " messaging-kafka");
       List<String> resolved = capabilities.stream().map(Capability::name).toList();
       if (resolved.contains("jpa") && !"aurora".equals(r.persistence())) {
         problems.add("Capabilities " + needing(r, "jpa") + " need Aurora: use persistence aurora");
@@ -162,9 +165,8 @@ public final class RequestValidator {
       for (Capability c : capabilities) {
         if (!c.supports(r.stack()))
           problems.add("Capability " + c.name() + " does not support stack " + r.stack().id());
-        if (java.util.Set.of("ux", "core", "gateway").contains(a.name())
-            && java.util.Set.of("messaging", "outbox", "inbox", "notification")
-                .contains(c.name())) {
+        if (Set.of("ux", "core", "gateway").contains(a.name())
+            && Set.of("messaging", "outbox", "inbox", "notification").contains(c.name())) {
           problems.add("Archetype " + a.name() + " cannot use domain messaging");
         }
         if (!c.supports(store)) {

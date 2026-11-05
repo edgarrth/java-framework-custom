@@ -2,6 +2,7 @@ package pe.axiz.spring.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,7 +38,6 @@ import pe.axiz.core.audit.AuditPolicy;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
-import pe.axiz.core.audit.CompositeAuditPublisher;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.outbox.OutboxStore;
@@ -138,7 +138,7 @@ class AuditBehaviourTest {
         .run(
             ctx -> {
               assertThat(ctx.getBean(AuditPublisher.class))
-                  .isInstanceOf(CompositeAuditPublisher.class);
+                  .isInstanceOf(pe.axiz.core.audit.ConfirmedAuditPublisher.class);
               ctx.getBean(AuditTrail.class).record("probe", "test").success();
             });
     assertEquals(1, events.size());
@@ -162,7 +162,8 @@ class AuditBehaviourTest {
             ctx -> {
               SimpleMeterRegistry registry = new SimpleMeterRegistry();
               ctx.getBean(MeterBinder.class).bindTo(registry);
-              assertTrue(registry.getMeters().isEmpty(), "no queue, no queue metrics");
+              assertNull(registry.find("axiz.audit.pending").gauge(), "no queue, no queue metrics");
+              assertNotNull(registry.find("axiz.audit.persistence.unconfirmed").functionCounter());
             });
   }
 
@@ -193,6 +194,11 @@ class AuditBehaviourTest {
             "axiz.audit.durable.destination=audit-events",
             "axiz.audit.durable.outside-transaction=fail")
         .withBean(OutboxWriter.class, () -> new OutboxWriter(outbox(), Clock.systemUTC()))
+        .withBean(
+            org.springframework.transaction.PlatformTransactionManager.class,
+            () ->
+                org.mockito.Mockito.mock(
+                    org.springframework.transaction.PlatformTransactionManager.class))
         .run(
             ctx -> {
               AuditPublisher publisher = ctx.getBean(AuditPublisher.class);

@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
@@ -15,7 +16,9 @@ import org.springframework.util.function.SingletonSupplier;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.NoEffect;
 
 /**
  * Applies {@link Auditable}: records who did what on which resource and with what result. Details
@@ -23,6 +26,24 @@ import pe.axiz.core.errors.AxizException;
  * a publishing failure.
  */
 public class AuditableInterceptor implements MethodInterceptor {
+
+  private static final ThreadLocal<@Nullable InvocationState> CURRENT = new ThreadLocal<>();
+
+  static @Nullable InvocationState current() {
+    return CURRENT.get();
+  }
+
+  static final class InvocationState {
+    final Auditable rule;
+    final AuditTrail.Builder record;
+    JdbcTransactionOutcome transaction = JdbcTransactionOutcome.capture();
+    boolean success;
+
+    InvocationState(Auditable rule, AuditTrail.Builder record) {
+      this.rule = rule;
+      this.record = record;
+    }
+  }
 
   private static final boolean REACTOR = ClassUtils.isPresent("reactor.core.publisher.Mono", null);
 
@@ -57,19 +78,43 @@ public class AuditableInterceptor implements MethodInterceptor {
     if (a.captureArguments()) {
       record.detail("arguments", captured);
     }
-    Object result;
-    try {
-      result = invocation.proceed();
-    } catch (Throwable t) {
-      finish(a, record, null, t);
-      throw t;
+    InvocationState previous = CURRENT.get();
+    InvocationState state = new InvocationState(a, record);
+    CURRENT.set(state);
+    try (var boundary = PendingAuditFailures.open()) {
+      Object result;
+      try {
+        result = invocation.proceed();
+      } catch (Throwable failure) {
+        record.outcomes(
+            state.transaction.local(failure),
+            failure instanceof NoEffect
+                ? TransactionOutcome.ROLLED_BACK
+                : TransactionOutcome.UNKNOWN);
+        finish(a, record, null, failure);
+        throw failure;
+      }
+      if (REACTOR && result != null && ReactiveAudit.isReactive(result)) {
+        return ReactiveAudit.decorate(
+            result,
+            value -> {
+              record.outcomes(state.transaction.local(null), TransactionOutcome.COMMITTED);
+              finish(a, record, value, null);
+            },
+            failure -> {
+              record.outcomes(state.transaction.local(failure), TransactionOutcome.UNKNOWN);
+              finish(a, record, null, failure);
+            });
+      }
+      if (!state.success) {
+        record.outcomes(state.transaction.local(null), TransactionOutcome.COMMITTED);
+        finish(a, record, result, null);
+      }
+      return result;
+    } finally {
+      if (previous == null) CURRENT.remove();
+      else CURRENT.set(previous);
     }
-    if (REACTOR && result != null && ReactiveAudit.isReactive(result)) {
-      return ReactiveAudit.decorate(
-          result, v -> finish(a, record, v, null), e -> finish(a, record, null, e));
-    }
-    finish(a, record, result, null);
-    return result;
   }
 
   /** Parameter names, or {@code argN} where the compiler did not keep them. */
@@ -100,7 +145,7 @@ public class AuditableInterceptor implements MethodInterceptor {
                 : error.getClass().getSimpleName());
       }
     } catch (RuntimeException publishFailure) {
-      org.slf4j.LoggerFactory.getLogger(AuditableInterceptor.class)
+      LoggerFactory.getLogger(AuditableInterceptor.class)
           .warn("Audit event could not be recorded", publishFailure);
     }
   }

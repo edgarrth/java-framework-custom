@@ -22,6 +22,7 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 | [`jpa`](jpa.md) | Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns | – |
 | [`r2dbc`](r2dbc.md) | Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, IAM tokens, auditing, encrypted and money columns, reader endpoint | – |
 | [`dynamodb`](dynamodb.md) | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking | – |
+| [`dynamodb-cursor`](dynamodb-cursor.md) | Authenticated DynamoDB cursors bound to the query, with shared rotating keys | – |
 | [`cache`](cache.md) | @AxizCacheable with Mono/Flux support, L1 Caffeine | ux |
 | [`cache-redis`](cache-redis.md) | L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages | – |
 | [`storage`](storage.md) | Synchronous and native asynchronous object storage ports and Spring facades | batch |

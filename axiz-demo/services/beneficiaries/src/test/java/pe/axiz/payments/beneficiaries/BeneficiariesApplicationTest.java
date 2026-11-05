@@ -8,7 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 
 /**
@@ -19,6 +22,11 @@ import pe.axiz.spring.test.LocalStackTestConfiguration;
 @AutoConfigureMockMvc
 @Import({LocalStackTestConfiguration.class})
 class BeneficiariesApplicationTest {
+
+  @DynamicPropertySource
+  static void secrets(DynamicPropertyRegistry registry) {
+    EphemeralSecrets.register(registry, "cursor-key-v1");
+  }
 
   @Test
   void startsAndReportsHealth(@Autowired MockMvc mvc) throws Exception {

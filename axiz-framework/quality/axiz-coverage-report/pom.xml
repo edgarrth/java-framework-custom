@@ -33,6 +33,37 @@
   <dependencies>
     <dependency>
       <groupId>pe.axiz</groupId>
+      <artifactId>axiz-kit-jdbc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-outbox-jdbc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-inbox-jdbc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-saga-jdbc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-sequence-jdbc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pe.axiz</groupId>
       <artifactId>axiz-archunit-rules</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

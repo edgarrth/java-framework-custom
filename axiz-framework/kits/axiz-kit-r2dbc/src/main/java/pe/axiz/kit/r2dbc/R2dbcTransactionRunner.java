@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.jdbc.TransactionRunner;
+import pe.axiz.core.commons.tx.TransactionRunner;
 import reactor.core.publisher.Mono;
 
 /**

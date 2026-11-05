@@ -1,7 +1,9 @@
 package pe.axiz.adapter.outbox.r2dbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -42,7 +44,10 @@ class R2dbcOutboxStoreTest {
 
   @Test
   void writerInsertsAPendingRecordInTheCallersTransaction() {
-    FakeR2dbc db = new FakeR2dbc().onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onQuery("RETURNING last_seq", b -> List.of(Map.of("last_seq", 1L)))
+            .onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
     R2dbcSql sql = new R2dbcSql(db);
     ReactiveOutboxWriter writer =
         new ReactiveOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", TIMEOUT), clock);
@@ -62,15 +67,16 @@ class R2dbcOutboxStoreTest {
   }
 
   @Test
-  void relayLocksPublishesAndMarksInOneTransaction() {
+  void relayClaimsAndMarksInShortTransactionsOutsidePublication() {
     List<Map<Integer, Object>> marked = new ArrayList<>();
     FakeR2dbc db =
         new FakeR2dbc()
             .onQuery(
-                "FROM axiz_outbox WHERE status = 'PENDING'.*FOR UPDATE SKIP LOCKED",
-                b -> List.of(row("e-1"), row("e-2")))
+                "FOR UPDATE SKIP LOCKED",
+                b -> marked.isEmpty() ? List.of(row("e-1"), row("e-2")) : List.of())
+            .onUpdate("SET status='IN_FLIGHT'", b -> 1L)
             .onUpdate(
-                "^UPDATE axiz_outbox SET status = 'PUBLISHED'",
+                "^UPDATE axiz_outbox SET status='PUBLISHED'",
                 b -> {
                   marked.add(new HashMap<>(b));
                   return 1L;
@@ -93,8 +99,10 @@ class R2dbcOutboxStoreTest {
     assertEquals(
         List.of("e-1", "e-2"), publisher.published().stream().map(p -> p.event().id()).toList());
     assertEquals(2, marked.size());
-    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), db.events());
-    assertTrue(db.executions().stream().allMatch(e -> e.connection() == 1), "one connection");
+    assertEquals(4, db.events().stream().filter(e -> e.startsWith("commit:")).count());
+    assertTrue(
+        db.executions().stream().map(FakeR2dbc.Execution::connection).distinct().count() >= 3,
+        "claim and each completion use separate transactions");
   }
 
   @Test
@@ -103,8 +111,9 @@ class R2dbcOutboxStoreTest {
     FakeR2dbc db =
         new FakeR2dbc()
             .onQuery("FOR UPDATE SKIP LOCKED", b -> List.of(row("e-1")))
+            .onUpdate("SET status='IN_FLIGHT'", b -> 1L)
             .onUpdate(
-                "SET status = \\$1",
+                "SET status\\s*=\\s*\\$1",
                 b -> {
                   failed.add(new HashMap<>(b));
                   return 1L;
@@ -136,7 +145,10 @@ class R2dbcOutboxStoreTest {
    */
   @Test
   void blockingAppendCompletesForAStatementWithoutValue() {
-    FakeR2dbc db = new FakeR2dbc().onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onQuery("RETURNING last_seq", b -> List.of(Map.of("last_seq", 1L)))
+            .onUpdate("^INSERT INTO axiz_outbox", b -> 1L);
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     store.append(
         new OutboxRecord(
@@ -165,6 +177,60 @@ class R2dbcOutboxStoreTest {
   }
 
   @Test
+  void recoveryAndOwnerFencingNeverReportAnUnconfirmedTransitionAsSuccessful() {
+    Instant now = clock.instant();
+    for (long affected : new long[] {0, 1}) {
+      var db = new FakeR2dbc().onUpdate("^UPDATE", binds -> affected);
+      var store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+      assertEquals(affected == 1, store.markPublished("event", "owner", now));
+      assertEquals(affected == 1, store.markFailed("event", "owner", 2, now, null, true));
+      assertEquals(affected == 1, store.retry("event"));
+      assertEquals(affected == 1, store.skip("event", "x".repeat(1000)));
+      assertThrows(IllegalArgumentException.class, () -> store.skip("event", " "));
+      assertThrows(IllegalArgumentException.class, () -> store.skip("event", "x".repeat(1001)));
+    }
+  }
+
+  @Test
+  void blockedAndSkippedMetricsReturnTheAuthoritativeCountAndHandleAnEmptyResult() {
+    var db =
+        new FakeR2dbc()
+            .onQuery("AS blocked", binds -> List.of(Map.of("blocked", 3L)))
+            .onQuery("AS skipped", binds -> List.of(Map.of("skipped", 4L)))
+            .onQuery("WHERE 1=0", binds -> List.of());
+    var store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    assertEquals(3, store.countBlockedAggregates());
+    assertEquals(4, store.countSkipped());
+    var empty =
+        new R2dbcOutboxStore(
+            new R2dbcSql(new FakeR2dbc().onQuery("COUNT", binds -> List.of())),
+            "axiz_outbox",
+            TIMEOUT);
+    assertEquals(0, empty.countBlockedAggregates());
+    assertEquals(0, empty.countSkipped());
+    store.verifySchema();
+    assertTrue(db.executions().stream().anyMatch(e -> e.sql().contains("_aggregate WHERE 1=0")));
+  }
+
+  @Test
+  void invalidClaimsFailBeforeDatabaseIoButTheMinimumBatchSizeIsValid() {
+    var db = new FakeR2dbc().onQuery("FOR UPDATE", binds -> List.of());
+    var store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    Instant now = clock.instant();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> store.claim(0, now, Duration.ofSeconds(1), "owner").block());
+    assertThrows(
+        IllegalArgumentException.class, () -> store.claim(1, now, Duration.ZERO, "owner").block());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> store.claim(1, now, Duration.ofSeconds(1), " ").block());
+    assertTrue(db.executions().isEmpty());
+    assertEquals(List.of(), store.claim(1, now, Duration.ofSeconds(1), "owner").block());
+    assertFalse(db.executions().isEmpty());
+  }
+
+  @Test
   void countsPendingRecords() {
     FakeR2dbc db = new FakeR2dbc().onQuery("COUNT", b -> List.of(Map.of("pending", 7L)));
     assertEquals(7L, new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT).countPending());
@@ -179,7 +245,8 @@ class R2dbcOutboxStoreTest {
     var records =
         new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT)
             .lockDue(5, Instant.parse("2026-10-11T12:00:00Z"));
-    assertNull(records.get(0).aggregateType());
+    assertEquals("axiz.event", records.get(0).aggregateType());
+    assertEquals("e-9", records.get(0).aggregateId());
     assertNull(records.get(0).lastError());
   }
 
@@ -189,7 +256,7 @@ class R2dbcOutboxStoreTest {
     FakeR2dbc db =
         new FakeR2dbc()
             .onUpdate(
-                "SET status = \\$1",
+                "SET status\\s*=\\s*\\$1",
                 b -> {
                   updates.add(new HashMap<>(b));
                   return 1L;
@@ -245,6 +312,7 @@ class R2dbcOutboxStoreTest {
     m.put("envelope", CloudEventJson.write(event(id)));
     m.put("status", "PENDING");
     m.put("attempts", 0);
+    m.put("aggregate_seq", 1L);
     m.put("created_at", Instant.parse("2026-10-11T11:59:00Z"));
     m.put("next_attempt_at", Instant.parse("2026-10-11T11:59:00Z"));
     m.put("last_error", "previous");

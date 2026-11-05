@@ -4,12 +4,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.ArtifactGenerator;
+import pe.axiz.codegen.EventAdapters;
+import pe.axiz.codegen.EventPayloads;
 import pe.axiz.codegen.HttpClientGenerator;
+import pe.axiz.codegen.Names;
+import pe.axiz.codegen.asyncapi.AsyncApiDocument;
+import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.CapabilityAdder;
 import pe.axiz.codegen.project.Migrations;
@@ -92,18 +98,16 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
     if (List.of("event", "handler", "event-handler").contains(type) && asyncPath != null) {
       if (!manifest.isService())
         throw new IllegalArgumentException("Event artifacts require a service");
-      var document =
-          pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(
-              Files.readString(SafePaths.target(dir, asyncPath)));
+      var document = AsyncApiDocument.parse(Files.readString(SafePaths.target(dir, asyncPath)));
       String localName =
           name.startsWith(manifest.groupId() + ".")
               ? name.substring(manifest.groupId().length() + 1)
               : name;
-      String requestedClass = pe.axiz.codegen.Names.pascal(localName);
+      String requestedClass = Names.pascal(localName);
       var payloads =
-          pe.axiz.codegen.EventPayloads.generate(
+          EventPayloads.generate(
               manifest.basePackage(), manifest.groupId(), manifest.structure(), document);
-      Map<String, byte[]> selected = new java.util.LinkedHashMap<>();
+      Map<String, byte[]> selected = new LinkedHashMap<>();
       payloads.forEach(
           (path, bytes) -> {
             String generated = SafePaths.fileName(Path.of(path)).replace(".java", "");
@@ -117,7 +121,7 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
       String generatedClass =
           SafePaths.fileName(Path.of(selected.keySet().iterator().next())).replace(".java", "");
       var adapters =
-          pe.axiz.codegen.EventAdapters.generate(
+          EventAdapters.generate(
               manifest.basePackage(),
               manifest.groupId(),
               manifest.structure(),
@@ -125,10 +129,9 @@ class GenerateCommand extends BaseCommand implements Callable<Integer> {
               document);
       boolean handlerRequested = !type.equals("event");
       if (handlerRequested
-          && pe.axiz.codegen.model.Catalog.load()
+          && Catalog.load()
               .resolve(
-                  manifest.capabilities(),
-                  pe.axiz.codegen.model.Catalog.store(manifest.persistence(), manifest.stack()))
+                  manifest.capabilities(), Catalog.store(manifest.persistence(), manifest.stack()))
               .stream()
               .noneMatch(
                   capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))

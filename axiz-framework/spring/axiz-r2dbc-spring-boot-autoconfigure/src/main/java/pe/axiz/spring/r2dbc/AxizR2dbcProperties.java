@@ -3,7 +3,9 @@ package pe.axiz.spring.r2dbc;
 import java.time.Duration;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import pe.axiz.core.crypto.EncryptionContext;
 
 /**
  * Aurora PostgreSQL over R2DBC ({@code axiz.r2dbc.*}). The connection itself is configured with the
@@ -21,7 +23,16 @@ public record AxizR2dbcProperties(
     @DefaultValue Iam iam,
     @DefaultValue Reader reader,
     @DefaultValue("true") boolean flywayFromR2dbc,
-    @DefaultValue Auditing auditing) {
+    @DefaultValue Auditing auditing,
+    @Nullable String encryptionContext) {
+  @ConstructorBinding
+  public AxizR2dbcProperties {
+    if (encryptionContext != null) EncryptionContext.require(encryptionContext);
+  }
+
+  public AxizR2dbcProperties(Iam iam, Reader reader, boolean flywayFromR2dbc, Auditing auditing) {
+    this(iam, reader, flywayFromR2dbc, auditing, null);
+  }
 
   /**
    * IAM authentication: each new connection gets a token signed with the pod's credentials (IRSA or

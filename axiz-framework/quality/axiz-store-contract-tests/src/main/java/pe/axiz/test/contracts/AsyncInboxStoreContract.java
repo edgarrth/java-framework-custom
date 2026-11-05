@@ -1,12 +1,15 @@
 package pe.axiz.test.contracts;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.inbox.AsyncInboxStore;
@@ -26,7 +29,7 @@ public final class AsyncInboxStoreContract {
     }
 
     default Instant start() {
-      return Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+      return Instant.now().truncatedTo(ChronoUnit.MILLIS);
     }
   }
 
@@ -91,8 +94,7 @@ public final class AsyncInboxStoreContract {
         request.cancel(true);
         Thread.currentThread().interrupt();
         throw new AssertionError("Async inbox contract interrupted", failure);
-      } catch (java.util.concurrent.ExecutionException
-          | java.util.concurrent.TimeoutException failure) {
+      } catch (ExecutionException | TimeoutException failure) {
         request.cancel(true);
         throw new AssertionError("Async inbox contract failed", failure);
       }

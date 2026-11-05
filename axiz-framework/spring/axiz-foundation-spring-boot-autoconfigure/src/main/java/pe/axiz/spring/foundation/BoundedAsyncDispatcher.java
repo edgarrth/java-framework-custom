@@ -1,7 +1,13 @@
 package pe.axiz.spring.foundation;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -12,6 +18,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import pe.axiz.core.commons.BoundedCallbackExecutor;
 
@@ -28,16 +35,16 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
   private final AtomicBoolean closed = new AtomicBoolean();
   private final long timeoutNanos;
   private final MeterRegistry registry;
-  private final java.util.List<io.micrometer.core.instrument.Meter> meters;
-  private final io.micrometer.core.instrument.Counter rejected;
-  private final io.micrometer.core.instrument.Timer latency;
+  private final List<Meter> meters;
+  private final Counter rejected;
+  private final Timer latency;
 
   public BoundedAsyncDispatcher(
       String name, int workers, int queued, Duration timeout, MeterRegistry registry) {
     if (workers < 1 || queued < 0 || timeout.isZero() || timeout.isNegative())
       throw new IllegalArgumentException("Positive workers/timeout and nonnegative queue required");
-    java.util.Objects.requireNonNull(name);
-    this.registry = java.util.Objects.requireNonNull(registry);
+    Objects.requireNonNull(name);
+    this.registry = Objects.requireNonNull(registry);
     this.timeoutNanos = timeout.toNanos();
     this.capacity = new Semaphore(Math.addExact(workers, queued));
     this.executor =
@@ -48,21 +55,20 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
             1, Thread.ofPlatform().daemon().name(name + "-deadline-", 0).factory());
     this.deadlines.setRemoveOnCancelPolicy(true);
     var pendingGauge =
-        io.micrometer.core.instrument.Gauge.builder("axiz.transport.pending", pending, Set::size)
+        Gauge.builder("axiz.transport.pending", pending, Set::size)
             .tag("transport", name)
             .register(registry);
     var queuedGauge =
-        io.micrometer.core.instrument.Gauge.builder(
-                "axiz.transport.queued", executor, e -> e.getQueue().size())
+        Gauge.builder("axiz.transport.queued", executor, e -> e.getQueue().size())
             .tag("transport", name)
             .register(registry);
     this.rejected = registry.counter("axiz.transport.rejected", "transport", name);
     this.latency = registry.timer("axiz.transport.latency", "transport", name);
-    this.meters = java.util.List.of(pendingGauge, queuedGauge, rejected, latency);
+    this.meters = List.of(pendingGauge, queuedGauge, rejected, latency);
   }
 
   public <T> CompletionStage<T> submit(Supplier<? extends CompletionStage<T>> operation) {
-    java.util.Objects.requireNonNull(operation);
+    Objects.requireNonNull(operation);
     if (closed.get() || !capacity.tryAcquire()) {
       rejected.increment();
       return CompletableFuture.failedFuture(
@@ -70,8 +76,7 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
     }
     CompletableFuture<T> result = new CompletableFuture<>();
     pending.add(result);
-    java.util.concurrent.atomic.AtomicInteger state =
-        new java.util.concurrent.atomic.AtomicInteger();
+    AtomicInteger state = new AtomicInteger();
     Runnable release =
         () -> {
           if (state.getAndSet(2) != 2) {

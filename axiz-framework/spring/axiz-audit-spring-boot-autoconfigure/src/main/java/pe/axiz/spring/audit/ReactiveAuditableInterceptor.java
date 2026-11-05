@@ -14,7 +14,9 @@ import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.NoEffect;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
@@ -25,6 +27,7 @@ import reactor.util.context.ContextView;
  * failure/cancellation delivery never replaces the original business outcome.
  */
 public final class ReactiveAuditableInterceptor implements MethodInterceptor {
+  static final Object STATE_KEY = ReactiveAuditableInterceptor.class;
   private final Supplier<ReactiveAuditTrail> trail;
   private final Supplier<AuditContextResolver> context;
 
@@ -47,22 +50,26 @@ public final class ReactiveAuditableInterceptor implements MethodInterceptor {
       return Flux.deferContextual(
           ctx -> {
             State state = state(invocation, rule, ctx);
-            return ReactiveAudit.around(
-                Flux.defer(() -> Flux.from(proceed(invocation))),
-                value -> success(state, rule),
-                error -> failure(state, rule, error));
+            return ReactivePendingAuditFailures.boundary(
+                ReactiveAudit.around(
+                    Flux.defer(() -> Flux.from(proceed(invocation)))
+                        .contextWrite(values -> values.put(STATE_KEY, state)),
+                    value -> success(state, rule),
+                    error -> failure(state, rule, error)));
           });
     }
     return Mono.deferContextual(
         ctx -> {
           State state = state(invocation, rule, ctx);
-          return ReactiveAudit.around(
-              Mono.defer(() -> Mono.from(proceed(invocation))),
-              value -> {
-                state.result = value;
-                return success(state, rule);
-              },
-              error -> failure(state, rule, error));
+          return ReactivePendingAuditFailures.boundary(
+              ReactiveAudit.around(
+                  Mono.defer(() -> Mono.from(proceed(invocation)))
+                      .contextWrite(values -> values.put(STATE_KEY, state)),
+                  value -> {
+                    state.result = value;
+                    return success(state, rule);
+                  },
+                  error -> failure(state, rule, error)));
         });
   }
 
@@ -85,13 +92,17 @@ public final class ReactiveAuditableInterceptor implements MethodInterceptor {
       captured.put(name, value);
     }
     if (rule.captureArguments()) record.detail("arguments", captured);
-    return new State(record);
+    return new State(record, rule);
   }
 
   private static Mono<Void> success(State state, Auditable rule) {
     return Mono.defer(
         () -> {
-          if (!rule.policy().applies(AuditEvent.Outcome.SUCCESS)) return Mono.empty();
+          if (state.success || !rule.policy().applies(AuditEvent.Outcome.SUCCESS))
+            return Mono.empty();
+          state.record.outcomes(
+              ReactiveTransactionOutcome.local(state.transaction, null),
+              TransactionOutcome.COMMITTED);
           if (rule.captureResult()) state.record.detail("result", state.result);
           return state.record.success();
         });
@@ -99,6 +110,9 @@ public final class ReactiveAuditableInterceptor implements MethodInterceptor {
 
   private static Mono<Void> failure(State state, Auditable rule, Throwable original) {
     if (!rule.policy().applies(AuditEvent.Outcome.FAILURE)) return Mono.empty();
+    state.record.outcomes(
+        ReactiveTransactionOutcome.local(state.transaction, original),
+        original instanceof NoEffect ? TransactionOutcome.ROLLED_BACK : TransactionOutcome.UNKNOWN);
     return state.record.failure(
         original instanceof AxizException ax
             ? ax.code().value()
@@ -106,7 +120,7 @@ public final class ReactiveAuditableInterceptor implements MethodInterceptor {
   }
 
   @SuppressWarnings("unchecked")
-  private static Publisher<Object> proceed(MethodInvocation invocation) {
+  static Publisher<Object> proceed(MethodInvocation invocation) {
     try {
       MethodInvocation call =
           invocation instanceof ProxyMethodInvocation proxy ? proxy.invocableClone() : invocation;
@@ -117,12 +131,16 @@ public final class ReactiveAuditableInterceptor implements MethodInterceptor {
     }
   }
 
-  private static final class State {
+  static final class State {
     final ReactiveAuditTrail.Builder record;
-    @Nullable Object result;
+    final Auditable rule;
+    volatile JdbcTransactionOutcome transaction = new JdbcTransactionOutcome();
+    volatile boolean success;
+    volatile @Nullable Object result;
 
-    State(ReactiveAuditTrail.Builder record) {
+    State(ReactiveAuditTrail.Builder record, Auditable rule) {
       this.record = record;
+      this.rule = rule;
     }
   }
 }

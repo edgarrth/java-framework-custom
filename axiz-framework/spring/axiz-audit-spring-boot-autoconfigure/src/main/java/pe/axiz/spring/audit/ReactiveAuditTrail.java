@@ -6,6 +6,8 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditRecord;
 import pe.axiz.core.audit.AuditTrail;
+import pe.axiz.core.commons.TransactionOutcome;
+import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 import reactor.core.publisher.Mono;
@@ -58,6 +60,11 @@ public final class ReactiveAuditTrail {
       return this;
     }
 
+    public Builder outcomes(TransactionOutcome local, TransactionOutcome operation) {
+      record.outcomes(local, operation);
+      return this;
+    }
+
     public Mono<Void> success() {
       return publish(AuditEvent.Outcome.SUCCESS, null);
     }
@@ -73,7 +80,7 @@ public final class ReactiveAuditTrail {
           ignored -> success(),
           error ->
               failure(
-                  error instanceof pe.axiz.core.errors.AxizException ax
+                  error instanceof AxizException ax
                       ? ax.code().value()
                       : error.getClass().getSimpleName()));
     }

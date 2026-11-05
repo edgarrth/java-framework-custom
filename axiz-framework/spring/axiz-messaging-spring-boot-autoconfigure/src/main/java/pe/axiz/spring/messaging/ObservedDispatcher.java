@@ -15,6 +15,7 @@ import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
+import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
  * Runs the dispatcher inside a CONSUMER observation continuing the producer's trace, with the
@@ -25,8 +26,18 @@ public class ObservedDispatcher {
   private final EventDispatcher dispatcher;
   private final ObservationRegistry registry;
   private final Clock clock;
+  private final DispatchBoundary boundary;
 
   public ObservedDispatcher(EventDispatcher dispatcher, ObservationRegistry registry, Clock clock) {
+    this(dispatcher, registry, clock, () -> () -> {});
+  }
+
+  public ObservedDispatcher(
+      EventDispatcher dispatcher,
+      ObservationRegistry registry,
+      Clock clock,
+      DispatchBoundary boundary) {
+    this.boundary = Objects.requireNonNull(boundary);
     this.dispatcher = Objects.requireNonNull(dispatcher);
     this.registry = Objects.requireNonNull(registry);
     this.clock = Objects.requireNonNull(clock);
@@ -47,7 +58,8 @@ public class ObservedDispatcher {
             .receivedAt(clock.instant())
             .build();
     MDC.put("correlationId", correlationId);
-    try (RequestContext.Scope ignored = RequestContext.open(metadata)) {
+    try (RequestContext.Scope ignored = RequestContext.open(metadata);
+        var completion = boundary.open()) {
       return Observation.createNotStarted(AxizObservations.EVENT_HANDLER, () -> context, registry)
           .contextualName("process " + envelope.type())
           .lowCardinalityKeyValue(KeyValue.of(AxizAttributes.EVENT_TYPE, envelope.type()))

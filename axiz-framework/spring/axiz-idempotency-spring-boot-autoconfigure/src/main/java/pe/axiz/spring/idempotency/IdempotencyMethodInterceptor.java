@@ -15,6 +15,8 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.StandardHeaders;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.NoEffect;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
@@ -47,7 +49,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
           IdempotencyMethodInterceptor.class.getClassLoader());
 
   private final Supplier<IdempotencyService> service;
-  private final Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService;
+  private final Supplier<AsyncIdempotencyService> asyncService;
 
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
     this(
@@ -58,8 +60,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
   }
 
   public IdempotencyMethodInterceptor(
-      Supplier<IdempotencyService> service,
-      Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> asyncService) {
+      Supplier<IdempotencyService> service, Supplier<AsyncIdempotencyService> asyncService) {
     this.service = Objects.requireNonNull(service);
     this.asyncService = Objects.requireNonNull(asyncService);
   }
@@ -108,7 +109,16 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       throw new IdempotentReplay(replay.response());
     }
     request.setAttribute(IdempotencySupport.KEY_ATTRIBUTE, decision);
-    return invocation.proceed();
+    request.setAttribute(
+        IdempotencyFilter.LEASE_ATTRIBUTE,
+        service.get().startLease((IdempotencyService.Proceed) decision));
+    try {
+      return invocation.proceed();
+    } catch (Throwable failure) {
+      if (failure instanceof NoEffect)
+        request.setAttribute(IdempotencyFilter.NO_EFFECT_ATTRIBUTE, Boolean.TRUE);
+      throw failure;
+    }
   }
 
   /** Current servlet request; only loaded when the servlet API is present. */

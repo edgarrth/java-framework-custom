@@ -166,7 +166,11 @@ class ReactiveUseCaseWiringTest {
   }
 
   private static FakeR2dbc database() {
+    var sequence = new java.util.concurrent.atomic.AtomicLong();
     return new FakeR2dbc()
+        .onQuery(
+            "INSERT INTO axiz_outbox_aggregate",
+            values -> java.util.List.of(java.util.Map.of("last_seq", sequence.incrementAndGet())))
         .onUpdate("UPDATE payments", values -> 1L)
         .onUpdate("INSERT INTO axiz_outbox", values -> 1L);
   }

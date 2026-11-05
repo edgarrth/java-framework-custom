@@ -2,10 +2,12 @@ package pe.axiz.codegen.output;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -41,7 +43,7 @@ public final class GeneratedProject {
   }
 
   /** Generated paths, sorted. */
-  public java.util.Set<String> paths() {
+  public Set<String> paths() {
     return files.keySet();
   }
 
@@ -50,7 +52,7 @@ public final class GeneratedProject {
     if (b == null) {
       throw new IllegalArgumentException("Not generated: " + path);
     }
-    return new String(b, java.nio.charset.StandardCharsets.UTF_8);
+    return new String(b, StandardCharsets.UTF_8);
   }
 
   /** Size in bytes of every generated file. */

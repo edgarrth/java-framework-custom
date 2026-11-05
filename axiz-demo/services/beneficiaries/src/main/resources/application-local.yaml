@@ -1,4 +1,6 @@
 axiz:
+  secrets:
+    directory: ./local/secrets
   logging:
     json: false
   config:

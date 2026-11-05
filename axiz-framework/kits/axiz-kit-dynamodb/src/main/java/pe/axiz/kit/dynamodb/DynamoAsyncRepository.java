@@ -8,10 +8,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageMetadata;
 import pe.axiz.core.commons.Stages;
+import pe.axiz.core.commons.json.JsonWriter;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
@@ -34,9 +38,25 @@ public final class DynamoAsyncRepository<T> {
   private final String tableName;
   private final TableSchema<T> schema;
   private final DynamoDbAsyncTable<T> table;
+  private final Supplier<CursorCodec> cursors;
 
   public DynamoAsyncRepository(
       DynamoDbAsyncClient client, String tableName, TableSchema<T> schema) {
+    this(
+        client,
+        tableName,
+        schema,
+        () -> {
+          throw new IllegalStateException("Authenticated cursor keys are required for pagination");
+        });
+  }
+
+  public DynamoAsyncRepository(
+      DynamoDbAsyncClient client,
+      String tableName,
+      TableSchema<T> schema,
+      Supplier<CursorCodec> cursors) {
+    this.cursors = Objects.requireNonNull(cursors);
     this.client = Objects.requireNonNull(client);
     this.tableName = Objects.requireNonNull(tableName);
     this.schema = Objects.requireNonNull(schema);
@@ -119,7 +139,8 @@ public final class DynamoAsyncRepository<T> {
         null,
         QueryConditional.keyEqualTo(Key.builder().partitionValue(partitionKey).build()),
         limit,
-        cursor);
+        cursor,
+        binding("primary", "equal", partitionKey, ""));
   }
 
   public CompletionStage<Page<T>> queryBeginsWith(
@@ -129,7 +150,8 @@ public final class DynamoAsyncRepository<T> {
         QueryConditional.sortBeginsWith(
             Key.builder().partitionValue(partitionKey).sortValue(sortKeyPrefix).build()),
         limit,
-        cursor);
+        cursor,
+        binding("primary", "prefix", partitionKey, sortKeyPrefix));
   }
 
   public CompletionStage<Page<T>> queryIndex(
@@ -138,31 +160,37 @@ public final class DynamoAsyncRepository<T> {
         indexName,
         QueryConditional.keyEqualTo(Key.builder().partitionValue(partitionKey).build()),
         limit,
-        cursor);
+        cursor,
+        binding(indexName, "equal", partitionKey, ""));
   }
 
   private CompletionStage<Page<T>> query(
       @Nullable String indexName,
       QueryConditional conditional,
       int limit,
-      @Nullable String cursor) {
+      @Nullable String cursor,
+      String binding) {
     return NativeDynamoCall.submit(
         client,
         enhanced -> {
           if (limit < 1 || limit > 500)
             throw new IllegalArgumentException("limit must be between 1 and 500");
           var builder = QueryEnhancedRequest.builder().queryConditional(conditional).limit(limit);
-          Map<String, AttributeValue> start = CursorCodec.decode(cursor);
+          Map<String, AttributeValue> start = cursors.get().decode(cursor, binding);
           if (start != null) builder.exclusiveStartKey(start);
           var currentTable = enhanced.table(tableName, schema);
           var publisher =
               indexName == null
                   ? currentTable.query(builder.build())
                   : currentTable.index(indexName).query(builder.build());
-          var first = new FirstPage<T>(limit);
+          var first = new FirstPage<T>(limit, cursors.get(), binding);
           publisher.subscribe(first);
           return first.result;
         });
+  }
+
+  private String binding(String index, String operation, String partition, String prefix) {
+    return JsonWriter.write(List.of(tableName, index, operation, partition, prefix));
   }
 
   public CompletionStage<Void> transact(
@@ -178,15 +206,17 @@ public final class DynamoAsyncRepository<T> {
 
   /** SDK interoperability is private; no Reactive Streams types in the repository's API. */
   private static final class FirstPage<T>
-      implements org.reactivestreams.Subscriber<
-          software.amazon.awssdk.enhanced.dynamodb.model.Page<T>> {
+      implements Subscriber<software.amazon.awssdk.enhanced.dynamodb.model.Page<T>> {
     private final int limit;
-    private final AtomicReference<org.reactivestreams.@Nullable Subscription> subscription =
-        new AtomicReference<>();
+    private final CursorCodec cursors;
+    private final String binding;
+    private final AtomicReference<@Nullable Subscription> subscription = new AtomicReference<>();
     private final CompletableFuture<Page<T>> result = new CompletableFuture<>();
 
-    private FirstPage(int limit) {
+    private FirstPage(int limit, CursorCodec cursors, String binding) {
       this.limit = limit;
+      this.cursors = cursors;
+      this.binding = binding;
       var _ =
           result.whenComplete(
               (value, failure) -> {
@@ -196,18 +226,22 @@ public final class DynamoAsyncRepository<T> {
     }
 
     @Override
-    public void onSubscribe(org.reactivestreams.Subscription current) {
+    public void onSubscribe(Subscription current) {
       if (!subscription.compareAndSet(null, current) || result.isDone()) current.cancel();
       else current.request(1);
     }
 
     @Override
     public void onNext(software.amazon.awssdk.enhanced.dynamodb.model.Page<T> page) {
-      result.complete(
-          new Page<>(
-              page.items(),
-              new PageMetadata(0, limit, -1, -1),
-              CursorCodec.encode(page.lastEvaluatedKey())));
+      try {
+        result.complete(
+            new Page<>(
+                page.items(),
+                new PageMetadata(0, limit, -1, -1),
+                cursors.encode(page.lastEvaluatedKey(), binding)));
+      } catch (RuntimeException failure) {
+        result.completeExceptionally(failure);
+      }
     }
 
     @Override

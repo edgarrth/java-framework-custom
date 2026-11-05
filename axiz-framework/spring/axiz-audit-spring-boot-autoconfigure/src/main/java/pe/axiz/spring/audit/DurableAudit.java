@@ -2,6 +2,7 @@ package pe.axiz.spring.audit;
 
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.transaction.PlatformTransactionManager;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.outbox.OutboxWriter;
 
@@ -20,6 +21,12 @@ final class DurableAudit {
           "axiz.audit.durable.enabled=true needs the outbox capability (axiz add outbox)", e);
     }
     return new TransactionalAuditPublisher(
-        writer, durable.destination(), fallback, durable.outsideTransaction());
+        writer,
+        durable.destination(),
+        fallback,
+        durable.outsideTransaction(),
+        beans.getBean(PlatformTransactionManager.class),
+        durable.failureTimeout(),
+        durable.failureConcurrency());
   }
 }

@@ -12,6 +12,7 @@ axiz add saga
 | Starter | `pe.axiz:axiz-saga-spring-boot-starter` |
 | Stacks del catálogo | servlet |
 | Agrega también | [`jpa`](jpa.md) |
+| Dependencias | `pe.axiz:axiz-adapter-saga-jdbc` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega

@@ -40,6 +40,11 @@ public final class FieldEncryptor {
     return new String(pt, StandardCharsets.UTF_8);
   }
 
+  /** Rebinds authenticated context even when the encryption key is still current. */
+  public @Nullable String reencrypt(@Nullable String value, String oldContext, String newContext) {
+    return encrypt(decrypt(value, oldContext), newContext);
+  }
+
   /** Whether the value was encrypted with an old key and should be re-encrypted. */
   public boolean needsRotation(String value) {
     return !parse(value).keyId.equals(keys.currentKeyId());

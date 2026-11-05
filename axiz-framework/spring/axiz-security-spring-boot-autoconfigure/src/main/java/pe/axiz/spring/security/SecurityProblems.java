@@ -31,6 +31,10 @@ public class SecurityProblems {
     return body(CoreErrors.TOO_MANY_REQUESTS, locale, path);
   }
 
+  public String unavailable(Locale locale, String path) {
+    return body(CoreErrors.UNAVAILABLE, locale, path);
+  }
+
   private String body(ErrorDefinition definition, Locale locale, String path) {
     RequestMetadata m = RequestContext.get();
     String correlationId = m != null ? m.correlationId() : null;

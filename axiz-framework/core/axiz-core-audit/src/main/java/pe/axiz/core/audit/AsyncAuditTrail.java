@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Stages;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -54,6 +55,11 @@ public final class AsyncAuditTrail {
 
     public Builder detail(String key, @Nullable Object value) {
       record.detail(key, value);
+      return this;
+    }
+
+    public Builder outcomes(TransactionOutcome local, TransactionOutcome operation) {
+      record.outcomes(local, operation);
       return this;
     }
 

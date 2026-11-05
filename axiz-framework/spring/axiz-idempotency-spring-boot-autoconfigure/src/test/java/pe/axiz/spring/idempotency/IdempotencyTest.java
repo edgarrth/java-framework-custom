@@ -201,7 +201,7 @@ class IdempotencyTest {
 
   /** Regression: an exception escaping the handler is not stored as a 200. */
   @Test
-  void anExceptionEscapingTheHandlerReleasesTheKeyInsteadOfStoringIt() throws Exception {
+  void anExceptionEscapingTheHandlerPreservesAnUncertainOperation() throws Exception {
     controller.handler =
         (res, n) -> {
           throw new IllegalStateException("downstream timeout");
@@ -212,10 +212,11 @@ class IdempotencyTest {
           res.setStatus(201);
           res.getWriter().write("ok-" + n);
         };
-    MockHttpServletResponse retry = call("idempotency-key-00000002", "{}");
-    assertEquals(2, controller.executions.get(), "the retry runs instead of replaying a 200");
-    assertEquals(201, retry.getStatus());
-    assertNull(retry.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
+    BusinessException uncertain =
+        assertThrows(BusinessException.class, () -> call("idempotency-key-00000002", "{}"));
+    assertEquals(
+        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(1, controller.executions.get());
   }
 
   /**
@@ -223,7 +224,7 @@ class IdempotencyTest {
    * is never stored: the key is released and a retry with the same key runs again.
    */
   @Test
-  void aServerErrorReleasesTheKeySoTheRetryRunsAgain() throws Exception {
+  void aServerErrorDoesNotPermitAnotherExecution() throws Exception {
     controller.handler =
         (res, n) -> {
           res.setStatus(503);
@@ -235,10 +236,11 @@ class IdempotencyTest {
           res.setStatus(201);
           res.getWriter().write("{\"id\":\"p-" + n + "\"}");
         };
-    MockHttpServletResponse retry = call("idempotency-key-00000050", "{}");
-    assertEquals(2, controller.executions.get(), "the retry runs: the 503 was not cached");
-    assertEquals(201, retry.getStatus());
-    assertNull(retry.getHeader(IdempotencyReplayHandler.REPLAYED_HEADER));
+    BusinessException uncertain =
+        assertThrows(BusinessException.class, () -> call("idempotency-key-00000050", "{}"));
+    assertEquals(
+        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(1, controller.executions.get());
   }
 
   /**

@@ -1,5 +1,6 @@
 package pe.axiz.cli;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.MavenReactor;
 import pe.axiz.codegen.project.PomEditor;
 import pe.axiz.codegen.project.ProjectLayout;
@@ -72,6 +74,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
         && target.equals(manifest.axizVersion())
         && rename == null
         && !WorkflowMigration.required(dir)
+        && !CapabilityAdapters.required(dir, manifest)
         && Files.readString(dir.resolve(ProjectManifest.PATH)).contains("schema: 2")) {
       ok("Already on axiz " + target);
       return dryRun ? ExitCodes.OK : validate(dir);
@@ -86,7 +89,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
       if (skipRewrite) {
         warn("Recipes skipped explicitly; migration validation is still required");
       } else {
-        Path wrapper = working.resolve(java.io.File.separatorChar == '\\' ? "mvnw.cmd" : "mvnw");
+        Path wrapper = working.resolve(File.separatorChar == '\\' ? "mvnw.cmd" : "mvnw");
         String maven = Files.isRegularFile(wrapper) ? wrapper.toString() : "mvn";
         if (maven.equals("mvn") && !environment.processes().available("mvn")) {
           warn(
@@ -106,12 +109,12 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
       }
       Path deploymentPom = ProjectLayout.read(working, manifest).pom();
       for (MavenReactor.Module module : MavenReactor.read(working)) {
-        if (module.axizParent() || rename != null && module.pom().equals(deploymentPom)) {
+        if (module.axizParent() || (rename != null && module.pom().equals(deploymentPom))) {
           String text = Files.readString(module.pom(), StandardCharsets.UTF_8);
           if (module.axizParent()) text = PomEditor.setParentVersion(text, target);
           if (rename != null && module.pom().equals(deploymentPom))
             text = PomEditor.setArtifactId(text, rename);
-          pe.axiz.codegen.output.SafePaths.write(
+          SafePaths.write(
               working,
               working.relativize(module.pom()).toString(),
               text.getBytes(StandardCharsets.UTF_8),
@@ -122,6 +125,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
         ProjectRename.apply(working, manifest, rename, false);
         manifest = manifest.withName(rename);
       }
+      CapabilityAdapters.apply(working, manifest);
       ProjectManifest upgraded = manifest.withAxizVersion(target);
       upgraded.write(working);
       boolean workflowsReady =

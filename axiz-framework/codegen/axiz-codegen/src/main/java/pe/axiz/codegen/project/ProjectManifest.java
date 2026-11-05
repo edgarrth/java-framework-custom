@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -84,7 +85,7 @@ public record ProjectManifest(
 
   public ProjectManifest {
     extensions = List.copyOf(extensions);
-    if (new java.util.HashSet<>(extensions).size() != extensions.size())
+    if (new HashSet<>(extensions).size() != extensions.size())
       throw new IllegalArgumentException("Duplicate service extension");
     Objects.requireNonNull(name, "name");
     capabilities = List.copyOf(capabilities);

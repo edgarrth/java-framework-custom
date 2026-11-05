@@ -2,6 +2,7 @@ package pe.axiz.payments.ux.controller;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
  * time.
  */
 @RestController
+@PreAuthorize("hasAuthority('SCOPE_payments:channel')")
 public class BeneficiariesController {
 
   private final BeneficiariesComposition composition;

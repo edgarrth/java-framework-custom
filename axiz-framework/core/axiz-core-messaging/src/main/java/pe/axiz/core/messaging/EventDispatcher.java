@@ -1,5 +1,6 @@
 package pe.axiz.core.messaging;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -73,9 +74,9 @@ public final class EventDispatcher {
    * @param decision what to do
    * @param retryAfter suggested delay (zero when not deferred)
    */
-  public record Outcome(DeliveryDecision decision, java.time.Duration retryAfter) {
+  public record Outcome(DeliveryDecision decision, Duration retryAfter) {
     static Outcome of(DeliveryDecision decision) {
-      return new Outcome(decision, java.time.Duration.ZERO);
+      return new Outcome(decision, Duration.ZERO);
     }
   }
 
@@ -120,7 +121,7 @@ public final class EventDispatcher {
       return early;
     }
     try {
-      invoke(handler, envelope);
+      invoke(handler, envelope, key, claim.token());
     } catch (Exception e) {
       release(envelope, key, claim);
       DeliveryDecision decision = retryPolicy.onFailure(e, attempt);
@@ -133,11 +134,13 @@ public final class EventDispatcher {
           decision);
       return Outcome.of(decision);
     }
+    if (handler instanceof CompletesInTransaction<?> atomic && atomic.completesInTransaction())
+      return Outcome.of(DeliveryDecision.ACK);
     try {
       if (!deduplicator.completed(consumer, key, claim.token())) {
         LOG.warn(
-            "Event {} processed after its inbox lease was taken over by another delivery of {};"
-                + " handlers must stay idempotent",
+            "Event {} processed after its inbox lease was taken over by another delivery of {}; "
+                + "handlers must stay idempotent",
             envelope.id(),
             consumer);
       }
@@ -157,13 +160,17 @@ public final class EventDispatcher {
     }
   }
 
-  private <T> void invoke(EventHandler<T> handler, EventEnvelope envelope) throws Exception {
+  @SuppressWarnings("unchecked")
+  private <T> void invoke(EventHandler<T> handler, EventEnvelope envelope, String key, String owner)
+      throws Exception {
     T payload;
     try {
       payload = codec.decode(envelope.data(), handler.payloadType());
     } catch (RuntimeException e) {
       throw new PayloadException("Cannot decode payload of " + envelope.type(), e);
     }
-    handler.handle(payload, envelope);
+    if (handler instanceof CompletesInTransaction<?> atomic && atomic.completesInTransaction())
+      ((CompletesInTransaction<T>) atomic).handleClaimed(payload, envelope, consumer, key, owner);
+    else handler.handle(payload, envelope);
   }
 }

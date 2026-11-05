@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.Map;
@@ -270,7 +271,7 @@ public final class Money implements Comparable<Money> {
       throw new IllegalArgumentException("parts must be positive");
     }
     int[] ratios = new int[parts];
-    java.util.Arrays.fill(ratios, 1);
+    Arrays.fill(ratios, 1);
     return allocate(ratios);
   }
 

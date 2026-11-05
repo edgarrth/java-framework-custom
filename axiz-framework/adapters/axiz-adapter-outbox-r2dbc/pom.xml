@@ -15,6 +15,7 @@
   <description>Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store</description>
 
   <properties>
+    <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
     <axiz.api.baseline.artifactId>axiz-core-outbox-r2dbc</axiz.api.baseline.artifactId>
 
@@ -22,6 +23,13 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>r2dbc-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jdbc</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-outbox</artifactId>
@@ -39,4 +47,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

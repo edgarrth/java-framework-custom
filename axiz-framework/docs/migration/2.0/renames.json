@@ -306,5 +306,32 @@
       "oldPackage": "pe.axiz.framework.cqrs",
       "newPackage": "pe.axiz.extension.cqrs"
     }
+  ],
+  "extractions": [
+    {
+      "oldArtifact": "axiz-core-commons",
+      "newArtifact": "axiz-kit-jdbc",
+      "newPath": "kits/axiz-kit-jdbc"
+    },
+    {
+      "oldArtifact": "axiz-core-outbox",
+      "newArtifact": "axiz-adapter-outbox-jdbc",
+      "newPath": "adapters/axiz-adapter-outbox-jdbc"
+    },
+    {
+      "oldArtifact": "axiz-core-inbox",
+      "newArtifact": "axiz-adapter-inbox-jdbc",
+      "newPath": "adapters/axiz-adapter-inbox-jdbc"
+    },
+    {
+      "oldArtifact": "axiz-core-saga",
+      "newArtifact": "axiz-adapter-saga-jdbc",
+      "newPath": "adapters/axiz-adapter-saga-jdbc"
+    },
+    {
+      "oldArtifact": "axiz-core-sequence",
+      "newArtifact": "axiz-adapter-sequence-jdbc",
+      "newPath": "adapters/axiz-adapter-sequence-jdbc"
+    }
   ]
 }

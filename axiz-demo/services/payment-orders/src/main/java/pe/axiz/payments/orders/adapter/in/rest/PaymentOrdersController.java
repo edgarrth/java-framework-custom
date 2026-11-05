@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.net.URI;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +31,8 @@ import pe.axiz.spring.web.Paging;
  * in, commands and queries to the buses, domain out through {@link PaymentOrderApiMapper}.
  */
 @RestController
+@PreAuthorize(
+    "hasAnyAuthority('SCOPE_payments:channel', 'SCOPE_payments:read', 'SCOPE_payments:process')")
 public class PaymentOrdersController {
 
   private final CommandBus commandBus;

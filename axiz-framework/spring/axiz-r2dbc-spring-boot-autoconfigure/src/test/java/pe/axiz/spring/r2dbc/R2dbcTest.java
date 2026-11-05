@@ -93,6 +93,7 @@ class R2dbcTest {
   void iamTokenIsResolvedPerConnection() {
     DatabasePasswordProvider tokens = () -> "token-1";
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
         .withBean(DatabasePasswordProvider.class, () -> tokens)
         .withPropertyValues("axiz.r2dbc.iam.enabled=true")
@@ -108,6 +109,7 @@ class R2dbcTest {
                   Mono.from((org.reactivestreams.Publisher<?>) password).block(T).toString());
             });
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
         .run(ctx -> assertFalse(ctx.containsBean("axizR2dbcIamPassword")));
   }
@@ -129,8 +131,7 @@ class R2dbcTest {
               String status =
                   tx.transactional(
                           sql.update(
-                                  "UPDATE payments SET status = :status, error = :error WHERE id"
-                                      + " = :id",
+                                  "UPDATE payments SET status = :status, error = :error WHERE id = :id",
                                   SqlParams.of()
                                       .bind("status", "PAID")
                                       .bind("error", null, String.class)
@@ -175,13 +176,13 @@ class R2dbcTest {
   void encryptedTextIsStoredAsCiphertext() {
     FieldEncryptor enc =
         new FieldEncryptor(new StaticKeyProvider("k1", Map.of("k1", AesGcm.newKey())));
-    List<Object> converters = AxizR2dbcConverters.all(() -> enc);
+    List<Object> converters = AxizR2dbcConverters.all(() -> enc, "account.number");
     Converter<EncryptedText, String> write = (Converter<EncryptedText, String>) converters.get(0);
     Converter<String, EncryptedText> read = (Converter<String, EncryptedText>) converters.get(1);
     String stored = write.convert(EncryptedText.of("1910012345678"));
     assertNotEquals("1910012345678", stored);
     assertEquals("1910012345678", read.convert(stored).value());
-    assertEquals("1910012345678", enc.decrypt(stored, "axiz.field"));
+    assertEquals("1910012345678", enc.decrypt(stored, "account.number"));
     Converter<Money, String> money = (Converter<Money, String>) converters.get(2);
     Converter<String, Money> parse = (Converter<String, Money>) converters.get(3);
     Money m = Money.of(new BigDecimal("150.00"), "PEN");
@@ -218,7 +219,9 @@ class R2dbcTest {
 
   private static ApplicationContextRunner context(FakeR2dbc db) {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
+        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withBean(ConnectionFactory.class, () -> db)
         .withBean(DatabaseClient.class, () -> DatabaseClient.create(db))
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(db));

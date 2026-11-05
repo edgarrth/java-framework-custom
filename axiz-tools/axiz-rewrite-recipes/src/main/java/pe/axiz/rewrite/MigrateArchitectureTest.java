@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.ScanningRecipe;
 import org.openrewrite.SourceFile;
@@ -88,7 +90,7 @@ public final class MigrateArchitectureTest extends ScanningRecipe<Map<Path, Stri
                             .toList())
                     + ")";
           }
-          Path parent = java.util.Objects.requireNonNull(source.getSourcePath().getParent());
+          Path parent = Objects.requireNonNull(source.getSourcePath().getParent());
           Path grandparent = parent.getParent();
           Path root = grandparent == null ? Path.of("") : grandparent;
           projects.put(root, chain);
@@ -155,8 +157,7 @@ public final class MigrateArchitectureTest extends ScanningRecipe<Map<Path, Stri
     };
   }
 
-  private static String constant(
-      @org.jspecify.annotations.Nullable Object value, List<String> allowed) {
+  private static String constant(@Nullable Object value, List<String> allowed) {
     String text = String.valueOf(value);
     if (!allowed.contains(text))
       throw new IllegalArgumentException("Invalid schema 2 architecture selector: " + text);
@@ -164,7 +165,8 @@ public final class MigrateArchitectureTest extends ScanningRecipe<Map<Path, Stri
   }
 
   private static final String[] STUBS = {
-    "package pe.axiz.quality.archunit; public enum Archetype { BUSINESS, CORE, GATEWAY, UX, SUPPORT, EVENT_PROCESSOR, BATCH }",
+    "package pe.axiz.quality.archunit; public enum Archetype { BUSINESS, CORE, GATEWAY, UX, "
+        + "SUPPORT, EVENT_PROCESSOR, BATCH }",
     "package pe.axiz.quality.archunit; public enum Stack { SERVLET, REACTIVE }",
     "package pe.axiz.quality.archunit; public enum Structure { HEXAGONAL, LAYERED, EDA, BFF, BATCH }",
     "package pe.axiz.quality.archunit; public enum Extension { CQRS }",

@@ -62,6 +62,7 @@ axiz:
     async:
       enabled: true
   r2dbc:
+    encryption-context: payment_history.creditor_cci
     iam:
       enabled: ${AXIZ_R2DBC_IAM:false}
   inbox:

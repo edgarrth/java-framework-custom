@@ -2,6 +2,7 @@ package pe.axiz.adapter.security.redis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.lettuce.core.RedisException;
@@ -12,6 +13,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.security.RateLimitUnavailableException;
 
 class RedisRateLimiterTest {
 
@@ -51,19 +53,20 @@ class RedisRateLimiterTest {
         new RedisRateLimiter(fake(new AtomicLong(), true), "rl:test:", true)
             .tryAcquire("k", 1, Duration.ofSeconds(1))
             .allowed());
-    assertFalse(
-        new RedisRateLimiter(fake(new AtomicLong(), true), "rl:test:", false)
-            .tryAcquire("k", 1, Duration.ofSeconds(1))
-            .allowed());
+    assertThrows(
+        RateLimitUnavailableException.class,
+        () ->
+            new RedisRateLimiter(fake(new AtomicLong(), true), "rl:test:", false)
+                .tryAcquire("k", 1, Duration.ofSeconds(1)));
   }
 
   @Test
   void aRouteGroupCanChooseItsOwnFailurePolicy() {
     RedisRateLimiter openByDefault =
         new RedisRateLimiter(fake(new AtomicLong(), true), "rl:", true);
-    assertFalse(
-        openByDefault.tryAcquire("k", 1, Duration.ofSeconds(1), false).allowed(),
-        "a money-movement rule fails closed even if the default is open");
+    assertThrows(
+        RateLimitUnavailableException.class,
+        () -> openByDefault.tryAcquire("k", 1, Duration.ofSeconds(1), false));
     RedisRateLimiter closedByDefault =
         new RedisRateLimiter(fake(new AtomicLong(), true), "rl:", false);
     assertTrue(closedByDefault.tryAcquire("k", 1, Duration.ofSeconds(1), true).allowed());
@@ -102,10 +105,8 @@ class RedisRateLimiterTest {
             .toCompletableFuture()
             .join()
             .allowed());
-    assertFalse(
-        down.tryAcquire("k", 1, Duration.ofSeconds(1), false)
-            .toCompletableFuture()
-            .join()
-            .allowed());
+    assertThrows(
+        java.util.concurrent.CompletionException.class,
+        () -> down.tryAcquire("k", 1, Duration.ofSeconds(1), false).toCompletableFuture().join());
   }
 }

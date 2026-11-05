@@ -348,7 +348,15 @@ class NativeAuditTest {
           }
 
           public <T> Flux<T> query(String statement, SqlParams params, RowMapper<T> mapper) {
-            return Flux.empty();
+            return Flux.defer(
+                () ->
+                    Flux.just(
+                        mapper.map(
+                            new pe.axiz.kit.r2dbc.SqlRow() {
+                              public <V> V get(String column, Class<V> type) {
+                                return type.cast(1L);
+                              }
+                            })));
           }
         };
     var publisher =

@@ -25,6 +25,27 @@ Owner of payment orders (CQRS on Aurora).
 - payment-process moves orders through `PROCESSING → COMPLETED | REJECTED`; every change publishes
   `payment-order.status-changed.v1`. The audit trail goes to MSK.
 
+## Existing encrypted local data
+
+The explicit AAD contexts are now `payment_order.debtor_account` and
+`payment_order.creditor_cci`. Ciphertext previously written with `axiz.field` cannot be read
+with these contexts. Flyway V5 migrates the outbox structure; it does **not** rewrite encrypted
+account data or change already-applied Flyway scripts.
+
+For a disposable local demo, back up anything needed and use the documented root
+`scripts/demo.sh down` followed by `scripts/demo.sh up` to recreate the demo environment.
+`down` removes local volumes and all demo data; do not use it on a database to preserve.
+`payments-history` also now uses `payment_history.creditor_cci` and must be rebuilt from events
+or migrated together with the orders database. Keep the development keys until migration ends.
+
+To preserve data, use an offline adapter migration with the same configured `FieldEncryptor`:
+`reencrypt(ciphertext, "axiz.field", "payment_order.creditor_cci")` (and the debtor context
+for its column). Read rows in bounded batches, update each row with an optimistic check on its
+old ciphertext, and commit a batch only when all transformations succeed. Back up and verify
+round-trip reads with the new converter before resuming traffic. This transformation is required
+even with an unchanged encryption key; `needsRotation` does not detect an AAD change. The
+framework's `LegacyEncryptedConverter` is read-only migration support, not a new-write option.
+
 ## Requirements
 
 - JDK 25 (Maven comes with the wrapper `./mvnw`)

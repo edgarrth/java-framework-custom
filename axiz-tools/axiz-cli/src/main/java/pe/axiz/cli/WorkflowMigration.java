@@ -5,11 +5,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.MavenReactor;
@@ -198,7 +200,7 @@ final class WorkflowMigration {
   }
 
   @SuppressWarnings("unchecked")
-  private static boolean renameBindings(Object node, String before, String after) {
+  private static boolean renameBindings(@Nullable Object node, String before, String after) {
     boolean changed = false;
     if (node instanceof Map<?, ?> map) {
       Object reference = map.get("uses");
@@ -263,7 +265,7 @@ final class WorkflowMigration {
     if (!manifest.isService()) changed.put("draft", true);
     changed.put("force-tag-creation", true);
     Object extras = changed.get("extra-files");
-    List<Object> files = new java.util.ArrayList<>();
+    List<Object> files = new ArrayList<>();
     if (extras instanceof List<?> list) files.addAll(list);
     else if (extras != null) throw new IOException("release-please extra-files must be a list");
     List<Path> poms =
@@ -278,8 +280,8 @@ final class WorkflowMigration {
               .anyMatch(
                   file ->
                       relative.equals(file)
-                          || file instanceof Map<?, ?> settings
-                              && relative.equals(settings.get("path")));
+                          || (file instanceof Map<?, ?> settings
+                              && relative.equals(settings.get("path"))));
       if (!configured)
         files.add(
             Map.of(

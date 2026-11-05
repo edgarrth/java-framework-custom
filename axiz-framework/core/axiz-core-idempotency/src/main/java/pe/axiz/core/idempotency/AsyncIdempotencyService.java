@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Stages;
@@ -17,15 +18,28 @@ public final class AsyncIdempotencyService {
   private final Duration inProgressTtl;
   private final Duration retention;
   private final Clock clock;
+  private final @Nullable AsyncIdempotencyResolver resolver;
 
   public AsyncIdempotencyService(
       AsyncIdempotencyStore store, Duration inProgressTtl, Duration retention, Clock clock) {
+    this(store, inProgressTtl, retention, clock, null);
+  }
+
+  public AsyncIdempotencyService(
+      AsyncIdempotencyStore store,
+      Duration inProgressTtl,
+      Duration retention,
+      Clock clock,
+      @Nullable AsyncIdempotencyResolver resolver) {
     this.store = Objects.requireNonNull(store);
     this.inProgressTtl = Objects.requireNonNull(inProgressTtl);
     this.retention = Objects.requireNonNull(retention);
     this.clock = Objects.requireNonNull(clock);
+    this.resolver = resolver;
     if (!inProgressTtl.isPositive())
       throw new IllegalArgumentException("inProgressTtl must be positive");
+    if (retention.compareTo(inProgressTtl) <= 0)
+      throw new IllegalArgumentException("retention must exceed the execution lease");
   }
 
   public CompletionStage<IdempotencyService.Decision> begin(
@@ -35,23 +49,49 @@ public final class AsyncIdempotencyService {
     return Stages.compose(
         tryStart(key, fingerprint, now),
         started -> {
-          if (started.isPresent())
-            return java.util.concurrent.CompletableFuture.completedFuture(started.get());
+          if (started.isPresent()) return CompletableFuture.completedFuture(started.get());
           return Stages.compose(
               store.find(key, now),
               existing -> {
-                if (existing.isPresent())
-                  return java.util.concurrent.CompletableFuture.completedFuture(
-                      IdempotencyService.existingDecision(existing.get(), fingerprint));
-                return Stages.map(
-                    tryStart(key, fingerprint, now),
-                    retry ->
-                        retry
-                            .<IdempotencyService.Decision>map(value -> value)
-                            .orElseThrow(
-                                () ->
-                                    new BusinessException(
-                                        IdempotencyErrors.IN_PROGRESS, "concurrent request")));
+                IdempotencyRecord record =
+                    existing.orElseThrow(
+                        () ->
+                            new BusinessException(
+                                IdempotencyErrors.OUTCOME_UNKNOWN,
+                                "operation changed during acquisition"));
+                IdempotencyService.requireFingerprint(record, fingerprint);
+                AsyncIdempotencyResolver reconciliation = resolver;
+                if (IdempotencyService.uncertain(record, now) && reconciliation != null) {
+                  return Stages.compose(
+                      reconciliation.resolve(key, record),
+                      resolution -> {
+                        if (resolution.isEmpty())
+                          return CompletableFuture.completedFuture(
+                              IdempotencyService.existingDecision(record, fingerprint, now));
+                        return Stages.compose(
+                            store.resolve(record, resolution.get(), now, now.plus(retention)),
+                            changed -> {
+                              if (changed && resolution.get().response() == null)
+                                throw new BusinessException(
+                                    IdempotencyErrors.OUTCOME_UNKNOWN,
+                                    "operation reconciled without effect; repeat the request with"
+                                        + " the same key");
+                              return Stages.map(
+                                  store.find(key, now),
+                                  current ->
+                                      IdempotencyService.existingDecision(
+                                          current.orElseThrow(
+                                              () ->
+                                                  new BusinessException(
+                                                      IdempotencyErrors.OUTCOME_UNKNOWN,
+                                                      "concurrent reconciliation")),
+                                          fingerprint,
+                                          now));
+                            });
+                      });
+                }
+                return CompletableFuture.completedFuture(
+                    IdempotencyService.existingDecision(record, fingerprint, now));
               });
         });
   }
@@ -67,7 +107,10 @@ public final class AsyncIdempotencyService {
                 IdempotencyRecord.Status.IN_PROGRESS,
                 owner,
                 null,
-                now.plus(inProgressTtl))),
+                now.plus(inProgressTtl),
+                now.plus(retention),
+                0,
+                null)),
         started ->
             started ? Optional.of(new IdempotencyService.Proceed(key, owner)) : Optional.empty());
   }
@@ -79,6 +122,29 @@ public final class AsyncIdempotencyService {
   }
 
   public CompletionStage<Boolean> fail(IdempotencyService.Proceed execution) {
-    return store.release(execution.key(), execution.owner());
+    return markUnknown(execution, "execution-failed");
+  }
+
+  public CompletionStage<Boolean> markUnknown(
+      IdempotencyService.Proceed execution, String diagnostic) {
+    return store.markUnknown(execution.key(), execution.owner(), diagnostic, clock.instant());
+  }
+
+  public CompletionStage<Boolean> releaseWithoutEffect(IdempotencyService.Proceed execution) {
+    return store.releaseWithoutEffect(execution.key(), execution.owner());
+  }
+
+  public CompletionStage<Boolean> renew(IdempotencyService.Proceed execution) {
+    Instant now = clock.instant();
+    Instant leaseUntil = now.plus(inProgressTtl);
+    return store.renew(
+        execution.key(), execution.owner(), leaseUntil, leaseUntil.plus(retention), now);
+  }
+
+  public IdempotencyLease startLease(IdempotencyService.Proceed execution) {
+    return IdempotencyLease.start(
+        inProgressTtl.dividedBy(3),
+        () -> renew(execution),
+        () -> markUnknown(execution, "lease-lost"));
   }
 }

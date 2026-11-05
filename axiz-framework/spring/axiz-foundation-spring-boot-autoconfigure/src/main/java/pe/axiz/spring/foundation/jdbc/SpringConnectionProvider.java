@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.Objects;
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DataSourceUtils;
-import pe.axiz.core.commons.jdbc.ConnectionProvider;
+import pe.axiz.kit.jdbc.ConnectionProvider;
 
 /**
  * Connection provider bound to Spring transactions: inside a transaction the transaction's
@@ -16,6 +16,10 @@ public final class SpringConnectionProvider implements ConnectionProvider {
 
   public SpringConnectionProvider(DataSource dataSource) {
     this.dataSource = Objects.requireNonNull(dataSource);
+  }
+
+  public DataSource dataSource() {
+    return dataSource;
   }
 
   @Override

@@ -17,5 +17,11 @@ public final class IdempotencyErrors {
           ErrorCategory.UNPROCESSABLE,
           "Idempotency-Key reused with another request");
 
+  public static final ErrorDefinition OUTCOME_UNKNOWN =
+      ErrorDefinition.of(
+          "AXZ-IDEM-1409",
+          ErrorCategory.CONFLICT,
+          "Operation outcome uncertain; consult the operation status");
+
   private IdempotencyErrors() {}
 }

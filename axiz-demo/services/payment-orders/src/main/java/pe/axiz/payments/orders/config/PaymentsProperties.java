@@ -2,6 +2,8 @@ package pe.axiz.payments.orders.config;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -16,6 +18,6 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record PaymentsProperties(
     @DefaultValue("18:00") LocalTime cutoff, @DefaultValue Map<String, BigDecimal> dailyLimits) {
   public PaymentsProperties {
-    dailyLimits = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(dailyLimits));
+    dailyLimits = Collections.unmodifiableMap(new LinkedHashMap<>(dailyLimits));
   }
 }

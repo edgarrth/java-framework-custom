@@ -1,7 +1,11 @@
 package pe.axiz.spring.audit;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -24,11 +28,11 @@ final class ReactiveAudit {
 
   static <T> Mono<T> around(
       Mono<T> work,
-      java.util.function.Function<@Nullable T, Mono<Void>> success,
-      java.util.function.Function<Throwable, Mono<Void>> failure) {
+      Function<@Nullable T, Mono<Void>> success,
+      Function<Throwable, Mono<Void>> failure) {
     return Mono.defer(
         () -> {
-          var terminal = new java.util.concurrent.atomic.AtomicBoolean();
+          var terminal = new AtomicBoolean();
           Mono<T> tracked =
               work.materialize()
                   .flatMap(
@@ -49,18 +53,18 @@ final class ReactiveAudit {
               (ignored, error) -> Mono.empty(),
               state ->
                   state.compareAndSet(false, true)
-                      ? failed(failure, new java.util.concurrent.CancellationException("cancelled"))
+                      ? failed(failure, new CancellationException("cancelled"))
                       : Mono.empty());
         });
   }
 
   static <T> Flux<T> around(
       Flux<T> work,
-      java.util.function.Function<@Nullable T, Mono<Void>> success,
-      java.util.function.Function<Throwable, Mono<Void>> failure) {
+      Function<@Nullable T, Mono<Void>> success,
+      Function<Throwable, Mono<Void>> failure) {
     return Flux.defer(
         () -> {
-          var terminal = new java.util.concurrent.atomic.AtomicBoolean();
+          var terminal = new AtomicBoolean();
           Flux<T> tracked =
               work.onErrorResume(
                       error -> {
@@ -81,18 +85,17 @@ final class ReactiveAudit {
               (ignored, error) -> Mono.empty(),
               state ->
                   state.compareAndSet(false, true)
-                      ? failed(failure, new java.util.concurrent.CancellationException("cancelled"))
+                      ? failed(failure, new CancellationException("cancelled"))
                       : Mono.empty());
         });
   }
 
-  private static Mono<Void> failed(
-      java.util.function.Function<Throwable, Mono<Void>> failure, Throwable original) {
+  private static Mono<Void> failed(Function<Throwable, Mono<Void>> failure, Throwable original) {
     return Mono.defer(() -> failure.apply(original))
         .onErrorResume(
             delivery -> {
               if (delivery != original) original.addSuppressed(delivery);
-              org.slf4j.LoggerFactory.getLogger(ReactiveAudit.class)
+              LoggerFactory.getLogger(ReactiveAudit.class)
                   .warn("Audit failure delivery was rejected", delivery);
               return Mono.empty();
             });

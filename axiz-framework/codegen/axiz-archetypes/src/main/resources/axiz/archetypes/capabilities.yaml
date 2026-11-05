@@ -217,6 +217,22 @@ capabilities:
     example: |
       DynamoRepository<Item> items = repositories.create("items", Item.class);
 
+  - name: dynamodb-cursor
+    starter: axiz-dynamodb-spring-boot-starter
+    stacks: [servlet, reactive]
+    requires: [dynamodb, secrets]
+    description: Authenticated DynamoDB cursors bound to the query, with shared rotating keys
+    properties:
+      axiz.dynamodb.cursor.current-key-id: v1
+      axiz.dynamodb.cursor.key-ids: [v1]
+      axiz.dynamodb.cursor.secret-prefix: cursor-key-
+      axiz.dynamodb.cursor.encrypt: false
+    configMapKeys: [axiz.dynamodb.cursor.current-key-id, axiz.dynamodb.cursor.key-ids, axiz.dynamodb.cursor.encrypt]
+    secrets: [cursor-key-v1]
+    example: |
+      CursorCodec cursors = repositories.cursors();
+      String next = cursors.encode(lastKey, "table/index/filter/tenant");
+
   - name: cache
     stacks: [servlet, reactive]
     starter: axiz-cache-spring-boot-starter
@@ -273,7 +289,8 @@ capabilities:
     properties:
       axiz.sequence.sequences.operation.prefix: OP
     persistence:
-      aurora: {}
+      aurora:
+        dependencies: [pe.axiz:axiz-adapter-sequence-jdbc]
       dynamodb:
         properties: {axiz.sequence.store: dynamodb, axiz.sequence.table: '${axiz.dynamodb.table-prefix}axiz-sequence'}
         dependencies: [pe.axiz:axiz-adapter-sequence-dynamodb]
@@ -327,6 +344,7 @@ capabilities:
     persistence:
       aurora:
         requires: [jpa]
+        dependencies: [pe.axiz:axiz-adapter-outbox-jdbc]
       r2dbc:
         requires: [r2dbc]
         dependencies: [pe.axiz:axiz-adapter-outbox-r2dbc]
@@ -346,7 +364,8 @@ capabilities:
         properties: {axiz.inbox.store: dynamodb, axiz.inbox.table: '${axiz.dynamodb.table-prefix}axiz-inbox'}
         dependencies: [pe.axiz:axiz-adapter-inbox-dynamodb]
         requires: [dynamodb]
-      aurora: {}
+      aurora:
+        dependencies: [pe.axiz:axiz-adapter-inbox-jdbc]
       r2dbc:
         properties: {axiz.inbox.store: r2dbc}
         dependencies: [pe.axiz:axiz-adapter-inbox-r2dbc]
@@ -396,6 +415,7 @@ capabilities:
     starter: axiz-saga-spring-boot-starter
     description: Orchestrated sagas with persisted state, step retries and compensations
     requires: [jpa]
+    dependencies: [pe.axiz:axiz-adapter-saga-jdbc]
     properties:
       axiz.saga.step-attempts: 3
     example: |
@@ -510,7 +530,11 @@ capabilities:
     local:
       axiz.aws.endpoint: http://localhost:4566
     example: |
-      @Convert(converter = EncryptedConverter.class) String accountNumber;
+      @Converter
+      final class AccountNumberConverter extends EncryptedConverter {
+        @Override protected String context() { return "account.number"; }
+      }
+      @Convert(converter = AccountNumberConverter.class) String accountNumber;
 
   - name: tenancy
     stacks: [servlet, reactive]

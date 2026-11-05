@@ -6,9 +6,11 @@ import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.security.AsyncRateLimiter;
+import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
 /** Native asynchronous fixed-window rate limits, with explicit per-route store failure policy. */
@@ -25,11 +27,13 @@ public final class RedisAsyncRateLimiter implements AsyncRateLimiter {
   public CompletionStage<RateLimiter.Decision> tryAcquire(
       String key, long limit, Duration window, boolean failOpen) {
     CompletionStage<List<Long>> reply =
-        redis.eval(
-            RedisRateLimiter.SCRIPT,
-            ScriptOutputType.MULTI,
-            new String[] {prefix + key},
-            Long.toString(window.toMillis()));
+        Stages.call(
+            () ->
+                redis.eval(
+                    RedisRateLimiter.SCRIPT,
+                    ScriptOutputType.MULTI,
+                    new String[] {prefix + key},
+                    Long.toString(window.toMillis())));
     return Stages.recover(
         Stages.map(
             reply,
@@ -41,11 +45,9 @@ public final class RedisAsyncRateLimiter implements AsyncRateLimiter {
                   : new RateLimiter.Decision(false, 0, Duration.ofMillis(Math.max(ttl, 1)));
             }),
         failure -> {
-          if (!(failure instanceof RedisException))
-            throw new java.util.concurrent.CompletionException(failure);
-          return failOpen
-              ? new RateLimiter.Decision(true, -1, Duration.ZERO)
-              : new RateLimiter.Decision(false, 0, window);
+          if (!(failure instanceof RedisException)) throw new CompletionException(failure);
+          if (failOpen) return new RateLimiter.Decision(true, -1, Duration.ZERO);
+          throw new RateLimitUnavailableException(failure);
         });
   }
 }

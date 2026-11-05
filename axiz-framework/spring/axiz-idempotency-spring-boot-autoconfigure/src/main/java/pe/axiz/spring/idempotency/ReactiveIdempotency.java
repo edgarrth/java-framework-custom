@@ -8,7 +8,10 @@ import org.reactivestreams.Publisher;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.NoEffect;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyErrors;
+import pe.axiz.core.idempotency.IdempotencyLease;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 import pe.axiz.spring.foundation.ReactiveStages;
@@ -32,7 +35,7 @@ final class ReactiveIdempotency {
       MethodInvocation invocation,
       Idempotent rule,
       String operation,
-      Supplier<pe.axiz.core.idempotency.AsyncIdempotencyService> service) {
+      Supplier<AsyncIdempotencyService> service) {
     Mono<Void> gate =
         Mono.deferContextual(
             ctx -> {
@@ -58,13 +61,26 @@ final class ReactiveIdempotency {
                           return Mono.<Void>error(new IdempotentReplay(replay.response()));
                         }
                         exchange.execution((IdempotencyService.Proceed) decision);
+                        exchange.lease =
+                            service.get().startLease((IdempotencyService.Proceed) decision);
                         return Mono.<Void>empty();
                       });
             });
     if (Flux.class.isAssignableFrom(invocation.getMethod().getReturnType())) {
-      return gate.thenMany(Flux.defer(() -> Flux.from(proceed(invocation))));
+      return gate.thenMany(Flux.defer(() -> Flux.from(proceed(invocation))))
+          .onErrorResume(ReactiveIdempotency::recordFailure);
     }
-    return gate.then(Mono.defer(() -> Mono.from(proceed(invocation))));
+    return gate.then(Mono.defer(() -> Mono.from(proceed(invocation))))
+        .onErrorResume(ReactiveIdempotency::recordFailure);
+  }
+
+  private static <T> Mono<T> recordFailure(Throwable failure) {
+    return Mono.deferContextual(
+        context -> {
+          IdempotencyExchange state = context.getOrDefault(CONTEXT_KEY, null);
+          if (state != null && failure instanceof NoEffect) state.noEffect = true;
+          return Mono.error(failure);
+        });
   }
 
   @SuppressWarnings("unchecked")
@@ -85,6 +101,13 @@ final class ReactiveIdempotency {
     private final @Nullable String key;
     private final @Nullable String fingerprint;
     private volatile IdempotencyService.@Nullable Proceed execution;
+    private volatile @Nullable IdempotencyLease lease;
+    volatile boolean noEffect;
+
+    void closeLease() {
+      IdempotencyLease current = lease;
+      if (current != null) current.close();
+    }
 
     IdempotencyExchange(@Nullable String key, @Nullable String fingerprint) {
       this.key = key;

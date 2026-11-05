@@ -1,9 +1,11 @@
 package pe.axiz.spring.security;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.security.ClaimMapping;
 
@@ -33,11 +35,71 @@ public record AxizSecurityProperties(
     @DefaultValue("false") boolean publicApiDocs,
     @DefaultValue("false") boolean publicInfo,
     @DefaultValue("SCOPE_actuator") String actuatorAuthority,
-    @DefaultValue RateLimit rateLimit) {
+    @DefaultValue RateLimit rateLimit,
+    @DefaultValue Authorization authorization) {
+  @ConstructorBinding
   public AxizSecurityProperties {
     algorithms = List.copyOf(algorithms);
     issuers = List.copyOf(issuers);
     publicPaths = List.copyOf(publicPaths);
+  }
+
+  public AxizSecurityProperties(
+      List<Issuer> issuers,
+      List<String> algorithms,
+      Duration clockSkew,
+      Claims claims,
+      List<String> publicPaths,
+      boolean publicApiDocs,
+      boolean publicInfo,
+      String actuatorAuthority,
+      RateLimit rateLimit) {
+    this(
+        issuers,
+        algorithms,
+        clockSkew,
+        claims,
+        publicPaths,
+        publicApiDocs,
+        publicInfo,
+        actuatorAuthority,
+        rateLimit,
+        new Authorization("fail", List.of()));
+  }
+
+  /** Prior authorization coverage; warn is intended only for development. */
+  public record Authorization(
+      @DefaultValue("fail") String unprotected, @DefaultValue List<RouteRule> rules) {
+    public Authorization {
+      if (!List.of("fail", "warn").contains(unprotected))
+        throw new IllegalArgumentException("authorization.unprotected must be fail or warn");
+      rules = List.copyOf(rules);
+    }
+  }
+
+  /**
+   * A specific HTTP rule applied by the framework's effective security chain; authorities are AND.
+   */
+  public record RouteRule(
+      @DefaultValue List<String> paths,
+      @DefaultValue List<String> methods,
+      @DefaultValue List<String> authorities) {
+    public RouteRule {
+      paths = List.copyOf(paths);
+      methods = List.copyOf(methods);
+      authorities = List.copyOf(authorities);
+      if (paths.isEmpty() || authorities.isEmpty() || authorities.contains("ROLE_ANONYMOUS"))
+        throw new IllegalArgumentException(
+            "Specific authorization rules require paths and authorities");
+      for (String path : paths)
+        if (!path.matches("/[A-Za-z0-9_.-]+(?:/.*)?"))
+          throw new IllegalArgumentException(
+              "An authorization rule must have a literal route prefix");
+      for (String method : methods)
+        if (!List.of("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE")
+            .contains(method))
+          throw new IllegalArgumentException("Unsupported authorization HTTP method");
+    }
   }
 
   /** Paths of the OpenAPI document and Swagger UI (springdoc defaults). */
@@ -46,7 +108,7 @@ public record AxizSecurityProperties(
 
   /** Every path reachable without a token, besides the health probes. */
   public List<String> anonymousPaths(String actuatorBase) {
-    List<String> out = new java.util.ArrayList<>(publicPaths);
+    List<String> out = new ArrayList<>(publicPaths);
     if (publicApiDocs) {
       out.addAll(API_DOCS);
     }
@@ -115,16 +177,14 @@ public record AxizSecurityProperties(
    *
    * @param enabled whether limits are enforced
    * @param rules limits by route group
-   * @param failOpen whether requests pass when the limiter store is unavailable, for rules that do
-   *     not decide it themselves: true keeps reads available during a store outage; sensitive route
-   *     groups (money movement, callbacks) set {@code fail-open: false} on their rule
    */
-  public record RateLimit(
-      @DefaultValue("false") boolean enabled,
-      @DefaultValue List<Rule> rules,
-      @DefaultValue("true") boolean failOpen) {
+  public record RateLimit(@DefaultValue("false") boolean enabled, @DefaultValue List<Rule> rules) {
     public RateLimit {
       rules = List.copyOf(rules);
+      if (enabled && rules.stream().anyMatch(rule -> rule.failOpen() == null)) {
+        throw new IllegalArgumentException(
+            "axiz.security.rate-limit: each rule must explicitly declare fail-open");
+      }
     }
   }
 
@@ -136,7 +196,7 @@ public record AxizSecurityProperties(
    * @param limit requests allowed per window
    * @param window window length
    * @param key {@code client} or {@code subject}
-   * @param failOpen policy of this group when the store is unavailable; empty uses the global one
+   * @param failOpen policy of this group when the store is unavailable; required when enabled
    */
   public record Rule(
       String name,
@@ -149,9 +209,13 @@ public record AxizSecurityProperties(
       paths = List.copyOf(paths);
     }
 
-    /** The policy of this rule, or the global one. */
-    public boolean failOpen(boolean global) {
-      return failOpen != null ? failOpen : global;
+    /**
+     * Explicit policy; direct programmatic construction also fails closed at configuration time.
+     */
+    public boolean failurePolicy() {
+      if (failOpen == null)
+        throw new IllegalStateException("rate-limit rule " + name + " must declare fail-open");
+      return failOpen;
     }
   }
 }

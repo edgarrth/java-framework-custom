@@ -4,28 +4,48 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
+import pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight;
+import pe.axiz.codegen.AsyncContractSync;
 import pe.axiz.codegen.ContractSync;
+import pe.axiz.codegen.HttpClientGenerator;
+import pe.axiz.codegen.RequestValidator;
+import pe.axiz.codegen.asyncapi.AsyncApiDocument;
+import pe.axiz.codegen.asyncapi.AsyncApiSubscriptions;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
+import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
+import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.MavenReactor;
 import pe.axiz.codegen.project.PomEditor;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
+import pe.axiz.codegen.project.ProjectRename;
+import pe.axiz.core.commons.json.JsonWriter;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 /**
  * {@code axiz doctor}: versions, project coherence, contract, configuration and anti-patterns. Exit
@@ -36,6 +56,18 @@ import picocli.CommandLine.Command;
     name = "doctor",
     description = "Checks tools, versions, contract, configuration and anti-patterns.")
 class DoctorCommand extends BaseCommand implements Callable<Integer> {
+  @Option(
+      names = "--outbox-jdbc-url",
+      description =
+          "Read-only outbox upgrade report (PostgreSQL); credentials from"
+              + " AXIZ_DOCTOR_DB_USER/PASSWORD.")
+  @Nullable String outboxJdbcUrl;
+
+  @Option(
+      names = "--outbox-table",
+      defaultValue = "axiz_outbox",
+      description = "Outbox table for the optional upgrade report.")
+  String outboxTable = "axiz_outbox";
 
   /** Result of one check. */
   enum Level {
@@ -106,9 +138,69 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
     }
     long errors = checks.stream().filter(c -> c.level() == Level.ERROR).count();
     long warnings = checks.stream().filter(c -> c.level() == Level.WARN).count();
+    if (outboxJdbcUrl != null) {
+      long failures = outboxPreflight(outboxJdbcUrl);
+      if (failures < 0) errors++;
+      else warnings += failures;
+    }
     out().println();
     out().println(errors + " errors, " + warnings + " warnings");
     return errors > 0 ? ExitCodes.PROBLEMS : ExitCodes.OK;
+  }
+
+  private long outboxPreflight(String url) {
+    if (!url.startsWith("jdbc:postgresql://")
+        || url.contains("@")
+        || Pattern.compile("(?i)(?:[?&])(?:user|password|sslpassword)=").matcher(url).find()) {
+      fail(
+          "Outbox report requires a PostgreSQL JDBC URL without credentials; use"
+              + " AXIZ_DOCTOR_DB_USER/PASSWORD");
+      return -1;
+    }
+    var properties = new Properties();
+    properties.setProperty("connectTimeout", "5");
+    properties.setProperty("socketTimeout", "15");
+    for (String key : List.of("user", "password")) {
+      String value =
+          environment.env().get("AXIZ_DOCTOR_DB_" + (key.equals("user") ? "USER" : "PASSWORD"));
+      if (value != null) properties.setProperty(key, value);
+    }
+    try (var connection = DriverManager.getConnection(url, properties)) {
+      connection.setReadOnly(true);
+      connection.setAutoCommit(false);
+      connection.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+      long count =
+          JdbcOutboxPreflight.report(
+              connection,
+              outboxTable,
+              failure -> {
+                Map<String, @Nullable Object> record = new LinkedHashMap<>();
+                record.put("id", failure.id());
+                record.put("aggregateType", failure.aggregateType());
+                record.put("aggregateId", failure.aggregateId());
+                record.put("destination", failure.destination());
+                record.put("attempts", failure.attempts());
+                record.put("lastError", failure.error());
+                record.put("publishedSuccessors", failure.publishedSuccessors());
+                record.put("pendingSuccessors", failure.pendingSuccessors());
+                warn("FAILED outbox: " + JsonWriter.write(record));
+              });
+      connection.commit();
+      if (count == 0) ok("Outbox preflight: no FAILED rows");
+      else
+        warn(
+            "Outbox preflight: "
+                + count
+                + " FAILED rows retained; review retry/skip before upgrading; "
+                + "no events were changed");
+      return count;
+    } catch (SQLException | IllegalArgumentException failure) {
+      fail(
+          "Outbox preflight failed ("
+              + failure.getClass().getSimpleName()
+              + "); verify connectivity, permissions and table name");
+      return -1;
+    }
   }
 
   List<Check> checks(Path dir) throws IOException {
@@ -146,8 +238,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                 + manifest.axizVersion()
                 + ")"));
 
-    pe.axiz.codegen.project.ProjectRename.problems(dir)
-        .forEach(problem -> out.add(new Check(Level.ERROR, problem)));
+    ProjectRename.problems(dir).forEach(problem -> out.add(new Check(Level.ERROR, problem)));
 
     List<MavenReactor.Module> modules;
     try {
@@ -201,9 +292,9 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
             ? null
             : Files.readString(SafePaths.target(dir, asyncPath));
     var validation =
-        new pe.axiz.codegen.RequestValidator(catalog)
+        new RequestValidator(catalog)
             .validate(
-                new pe.axiz.codegen.model.ProjectRequest(
+                new ProjectRequest(
                     manifest.name(),
                     manifest.groupId(),
                     manifest.basePackage(),
@@ -223,8 +314,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       try (Stream<Path> contracts = Files.list(clients)) {
         for (Path contract : contracts.filter(Files::isRegularFile).toList()) {
           try {
-            pe.axiz.codegen.HttpClientGenerator.generate(
-                manifest, "validation", Files.readString(contract));
+            HttpClientGenerator.generate(manifest, "validation", Files.readString(contract));
           } catch (IllegalArgumentException problem) {
             out.add(new Check(Level.ERROR, contract.getFileName() + ": " + problem.getMessage()));
           }
@@ -265,8 +355,7 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
                 : new Check(Level.OK, "Contract lint: " + findings.size() + " warnings"));
         List<String> ids = doc.operations().stream().map(ApiOperation::operationId).toList();
         if (!ids.equals(manifest.operations())
-            && !new java.util.HashSet<>(ids)
-                .equals(new java.util.HashSet<>(manifest.operations()))) {
+            && !new HashSet<>(ids).equals(new HashSet<>(manifest.operations()))) {
           out.add(new Check(Level.WARN, "Contract and code differ: axiz contract sync"));
         }
       }
@@ -275,20 +364,17 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
     if (manifest.asyncapi() != null) {
       try {
         Path contract = SafePaths.target(dir, manifest.asyncapi());
-        var document = pe.axiz.codegen.asyncapi.AsyncApiDocument.parse(Files.readString(contract));
+        var document = AsyncApiDocument.parse(Files.readString(contract));
         Path contractModule = layout.module();
-        var subscriptionProblems =
-            pe.axiz.codegen.asyncapi.AsyncApiSubscriptions.problems(contractModule, document);
+        var subscriptionProblems = AsyncApiSubscriptions.problems(contractModule, document);
         subscriptionProblems.forEach(problem -> out.add(new Check(Level.ERROR, problem)));
         if (subscriptionProblems.isEmpty())
           out.add(new Check(Level.OK, "AsyncAPI subscriptions match the consumed types"));
-        Path snapshot = SafePaths.target(dir, pe.axiz.codegen.AsyncContractSync.SNAPSHOT);
+        Path snapshot = SafePaths.target(dir, AsyncContractSync.SNAPSHOT);
         if (!Files.exists(snapshot)
-            || !pe.axiz.codegen.openapi.SafeYaml.create(2 * 1024 * 1024)
+            || !SafeYaml.create(2 * 1024 * 1024)
                 .load(Files.readString(snapshot))
-                .equals(
-                    pe.axiz.codegen.openapi.SafeYaml.create(2 * 1024 * 1024)
-                        .load(Files.readString(contract))))
+                .equals(SafeYaml.create(2 * 1024 * 1024).load(Files.readString(contract))))
           out.add(
               new Check(
                   Level.ERROR,
@@ -374,17 +460,17 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       Matcher m = SECRET.matcher(lines.get(i));
       if (m.matches()) {
         String value = m.group(2).strip();
-        String key = m.group(1).toLowerCase(java.util.Locale.ROOT);
+        String key = m.group(1).toLowerCase(Locale.ROOT);
         String scalar = value.replaceFirst("\\s+#.*$", "").strip();
         if (scalar.length() >= 2
             && ((scalar.startsWith("\"") && scalar.endsWith("\""))
                 || (scalar.startsWith("'") && scalar.endsWith("'"))))
           scalar = scalar.substring(1, scalar.length() - 1);
         boolean metadata =
-            (key.equals("api-key-header") || key.endsWith(".api-key-header"))
-                    && scalar.matches("[A-Za-z0-9!#$%&'*+.^_`|~-]+")
-                || (key.equals("password-mode") || key.endsWith(".password-mode"))
-                    && java.util.Set.of("TEXT", "LEGACY_SHA1_DIGEST").contains(scalar);
+            ((key.equals("api-key-header") || key.endsWith(".api-key-header"))
+                    && scalar.matches("[A-Za-z0-9!#$%&'*+.^_`|~-]+"))
+                || ((key.equals("password-mode") || key.endsWith(".password-mode"))
+                    && Set.of("TEXT", "LEGACY_SHA1_DIGEST").contains(scalar));
         boolean placeholder =
             metadata
                 || value.isEmpty()

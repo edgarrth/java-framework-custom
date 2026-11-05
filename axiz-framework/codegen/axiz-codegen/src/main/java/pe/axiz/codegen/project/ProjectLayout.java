@@ -63,7 +63,8 @@ public final class ProjectLayout {
     else if (candidates.isEmpty() && modules.size() == 1) application = root;
     else
       throw new IOException(
-          "Cannot select one Maven service module; point the manifest contracts at its application module");
+          "Cannot select one Maven service module; point the manifest contracts at its application"
+              + " module");
     List<Path> poms =
         reactor.stream()
             .map(MavenReactor.Module::pom)

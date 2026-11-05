@@ -15,6 +15,9 @@
   <description>Distributed lock port with lease, background renewal and lock template; in-memory implementation</description>
 
   <properties>
+    <!-- M10: measured locally; floor of branch 47/54 and detected mutations 71/85. -->
+    <axiz.coverage.branch>0.87</axiz.coverage.branch>
+    <axiz.mutation.threshold>83</axiz.mutation.threshold>
     <axiz.module.name>pe.axiz.core.lock</axiz.module.name>
   </properties>
 

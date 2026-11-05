@@ -92,3 +92,7 @@ storage:
   - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: ObjectStorage}
 messaging:
   - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/handler/PaymentNotificationHandler.java, contains: EventHandler}
+dynamodb-cursor:
+  - service: beneficiaries
+    file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java
+    contains: cursors

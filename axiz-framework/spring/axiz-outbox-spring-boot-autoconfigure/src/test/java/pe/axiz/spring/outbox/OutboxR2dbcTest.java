@@ -65,6 +65,8 @@ class OutboxR2dbcTest {
   void eventsJoinTheReactiveTransactionOfTheBusinessChange() {
     FakeR2dbc db =
         new FakeR2dbc()
+            .onQuery("WHERE 1=0", b -> List.of())
+            .onQuery("RETURNING last_seq", b -> List.of(java.util.Map.of("last_seq", 1L)))
             .onUpdate("UPDATE payments", b -> 1L)
             .onUpdate("INSERT INTO axiz_outbox", b -> 1L);
     new ApplicationContextRunner()
@@ -91,7 +93,7 @@ class OutboxR2dbcTest {
               Mono<EventEnvelope> outside =
                   events.enqueue("payments", "e-0", "x.v1", "payment", "p-0", "x");
               assertThrows(IllegalStateException.class, () -> outside.block(T));
-              assertTrue(db.executions().isEmpty());
+              assertTrue(db.executions().stream().allMatch(e -> e.sql().contains("WHERE 1=0")));
 
               TransactionalOperator tx =
                   TransactionalOperator.create(ctx.getBean(ReactiveTransactionManager.class));
@@ -122,6 +124,44 @@ class OutboxR2dbcTest {
     Thread caller = Thread.currentThread();
     OutboxStore store =
         new OutboxStore() {
+
+          public java.util.List<OutboxRecord> claimDue(
+              int size, Instant now, java.time.Duration lease, String owner) {
+            return lockDue(size, now);
+          }
+
+          public boolean markPublished(String id, String owner, Instant at) {
+            return false;
+          }
+
+          public boolean markFailed(
+              String id,
+              String owner,
+              int attempts,
+              Instant next,
+              @org.jspecify.annotations.Nullable String error,
+              boolean giveUp) {
+            return false;
+          }
+
+          public boolean retry(String id) {
+            return false;
+          }
+
+          public boolean skip(String id, String reason) {
+            return false;
+          }
+
+          public long countSkipped() {
+            return 0;
+          }
+
+          public long countBlockedAggregates() {
+            return 0;
+          }
+
+          public void verifySchema() {}
+
           @Override
           public void append(OutboxRecord record) {}
 

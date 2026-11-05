@@ -25,7 +25,7 @@ axiz.sequence.sequences.operation.prefix: OP
 
 ### Aurora en servlet (JDBC/JPA)
 
-Sin configuración adicional.
+- `pe.axiz:axiz-adapter-sequence-jdbc`
 
 ### DynamoDB
 
