@@ -13,6 +13,16 @@ public enum Dialect {
     this.lockClause = lockClause;
   }
 
+  public String nowExpression() {
+    return this == POSTGRESQL ? "statement_timestamp()" : "CURRENT_TIMESTAMP";
+  }
+
+  String leasedUntilExpression() {
+    return this == POSTGRESQL
+        ? "statement_timestamp() + make_interval(secs => ?)"
+        : "DATEADD(MILLISECOND, ?, CURRENT_TIMESTAMP)";
+  }
+
   public String lockClause() {
     return lockClause;
   }

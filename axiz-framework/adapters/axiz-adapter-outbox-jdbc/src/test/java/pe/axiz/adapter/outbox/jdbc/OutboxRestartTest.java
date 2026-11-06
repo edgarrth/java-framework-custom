@@ -64,7 +64,9 @@ class OutboxRestartTest {
             Clock.systemUTC(),
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(1)));
+            Backoff.fixed(Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     relay.relayOnce();
     relay.relayOnce();
     assertEquals(0, restarted.countPending());

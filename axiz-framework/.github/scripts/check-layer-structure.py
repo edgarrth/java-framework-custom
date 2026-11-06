@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
-NATIVE_REACTIVE = {"axiz-kit-r2dbc", "axiz-adapter-inbox-r2dbc", "axiz-adapter-outbox-r2dbc"}
+NATIVE_REACTIVE = {"axiz-kit-r2dbc", "axiz-adapter-inbox-r2dbc", "axiz-adapter-outbox-r2dbc", "axiz-adapter-sequence-r2dbc"}
 
 
 def value(element, path):

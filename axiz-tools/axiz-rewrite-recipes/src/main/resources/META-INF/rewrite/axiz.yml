@@ -66,6 +66,13 @@ name: pe.axiz.rewrite.MigrateToAxiz2
 displayName: Migrate to axiz 2.0
 description: Migrates architecture contract coordinates, packages, event contracts, configuration and architecture tests. Run axiz upgrade first to migrate the project manifest.
 recipeList:
+  - pe.axiz.rewrite.MigrateAuditModeSelector
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.kit.r2dbc.ReactiveSequenceStore
+      newFullyQualifiedTypeName: pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.kit.r2dbc.R2dbcSequenceStore
+      newFullyQualifiedTypeName: pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.TransactionRunner"
       newFullyQualifiedTypeName: "pe.axiz.core.commons.tx.TransactionRunner"
@@ -78,6 +85,18 @@ recipeList:
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: "pe.axiz.core.commons.jdbc.SqlStates"
       newFullyQualifiedTypeName: "pe.axiz.kit.jdbc.SqlStates"
+  - org.openrewrite.java.ChangeMethodTargetToStatic:
+      methodPattern: pe.axiz.kit.jdbc.SqlStates identifier(java.lang.String)
+      fullyQualifiedTargetTypeName: pe.axiz.core.commons.SqlIdentifiers
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: pe.axiz.core.commons.SqlIdentifiers identifier(java.lang.String)
+      newMethodName: require
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: pe.axiz.core.outbox.OutboxStore claimDue(int, java.time.Instant, java.time.Duration, java.lang.String)
+      argumentIndex: 1
+  - org.openrewrite.java.DeleteMethodArgument:
+      methodPattern: pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore claim(int, java.time.Instant, java.time.Duration, java.lang.String)
+      argumentIndex: 1
   - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: "pe.axiz.core.outbox.JdbcOutboxStore"
       newFullyQualifiedTypeName: "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore"

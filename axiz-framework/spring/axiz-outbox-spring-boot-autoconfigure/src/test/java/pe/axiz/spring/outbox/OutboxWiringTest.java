@@ -44,9 +44,8 @@ class OutboxWiringTest {
   /** A store with nothing due that counts purges and can be made to fail. */
   static final class CountingStore implements OutboxStore {
 
-    public java.util.List<OutboxRecord> claimDue(
-        int size, Instant now, java.time.Duration lease, String owner) {
-      return lockDue(size, now);
+    public java.util.List<OutboxRecord> claimDue(int size, java.time.Duration lease, String owner) {
+      return lockDue(size, Instant.EPOCH);
     }
 
     public boolean markPublished(String id, String owner, Instant at) {
@@ -190,7 +189,9 @@ class OutboxWiringTest {
             clock,
             10,
             3,
-            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)));
+            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     OutboxRelayRunner runner =
         new OutboxRelayRunner(relay, store, ObservationRegistry.NOOP, relay(10), clock);
     assertEquals(0, runner.runOnce(), "nothing due");
@@ -222,7 +223,9 @@ class OutboxWiringTest {
             Clock.systemUTC(),
             10,
             3,
-            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)));
+            Backoff.exponential(Duration.ofMillis(10), Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     // with a batch size of zero in the runner settings every run counts as full: no wait between
     // runs
     OutboxRelayRunner runner =
@@ -242,7 +245,7 @@ class OutboxWiringTest {
     List<String> sent = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizOutboxR2dbcAutoConfiguration.class))
-        .withPropertyValues("axiz.outbox.relay.poll-interval=20ms")
+        .withPropertyValues("axiz.outbox.relay.poll-interval=20ms", "axiz.outbox.relay.publish-budget=1ms")
         .withBean(ConnectionFactory.class, () -> db)
         .withBean(ReactiveSql.class, () -> new OutboxR2dbcTest.TxSql(DatabaseClient.create(db)))
         .withBean(OutboxStore.class, () -> store)

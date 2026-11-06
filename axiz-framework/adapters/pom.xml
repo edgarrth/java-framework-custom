@@ -7,6 +7,7 @@
   <properties><maven.deploy.skip>true</maven.deploy.skip><maven.install.skip>true</maven.install.skip></properties>
   <modules>
     <module>axiz-adapter-sequence-jdbc</module>
+    <module>axiz-adapter-sequence-r2dbc</module>
     <module>axiz-adapter-saga-jdbc</module>
     <module>axiz-adapter-inbox-jdbc</module>
     <module>axiz-adapter-outbox-jdbc</module>

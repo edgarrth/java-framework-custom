@@ -9,8 +9,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
@@ -20,11 +22,16 @@ import pe.axiz.core.observability.AxizObservations;
  * the CloudEvents distributed-tracing extensions ({@code traceparent}, {@code tracestate}), so it
  * travels the same way on MSK, SQS and SNS.
  */
-public class ObservedEventPublisher implements EventPublisher {
+public class ObservedEventPublisher implements EventPublisher, BoundedPublisher {
 
   private final EventPublisher delegate;
   private final ObservationRegistry registry;
   private final AxizMessagingProperties properties;
+
+  @Override
+  public PublishBound publishBound() {
+    return BoundedPublisher.of(delegate);
+  }
 
   public ObservedEventPublisher(
       EventPublisher delegate, ObservationRegistry registry, AxizMessagingProperties properties) {

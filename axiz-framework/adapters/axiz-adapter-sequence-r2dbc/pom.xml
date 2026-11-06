@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-adapter-sequence-r2dbc</artifactId>
+  <name>axiz :: adapter :: sequence-r2dbc</name>
+  <description>Native PostgreSQL sequence reservations, committed independently of business transactions</description>
+  <properties>
+    <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
+    <axiz.module.name>pe.axiz.adapter.sequence.r2dbc</axiz.module.name>
+    <!-- No 1.x coordinate exists. The API gate checks the approved new-module inventory instead. -->
+    <axiz.api.skip>true</axiz.api.skip>
+    <axiz.api.new-module>true</axiz.api.new-module>
+  </properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-r2dbc</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>r2dbc-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
+  </dependencies>
+</project>

@@ -19,6 +19,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -90,6 +91,7 @@ import reactor.core.publisher.Mono;
 @ConditionalOnWebApplication
 @ConditionalOnBooleanProperty(name = "axiz.security.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizSecurityProperties.class)
+@Import(AuthenticatedAccessConfiguration.class)
 public class AxizSecurityAutoConfiguration {
 
   static final String CSP = "default-src 'none'; frame-ancestors 'none'";

@@ -126,8 +126,8 @@ class OutboxR2dbcTest {
         new OutboxStore() {
 
           public java.util.List<OutboxRecord> claimDue(
-              int size, Instant now, java.time.Duration lease, String owner) {
-            return lockDue(size, now);
+              int size, java.time.Duration lease, String owner) {
+            return lockDue(size, Instant.EPOCH);
           }
 
           public boolean markPublished(String id, String owner, Instant at) {

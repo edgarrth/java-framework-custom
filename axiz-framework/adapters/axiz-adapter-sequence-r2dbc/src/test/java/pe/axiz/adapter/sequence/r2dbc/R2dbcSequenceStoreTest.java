@@ -1,4 +1,4 @@
-package pe.axiz.kit.r2dbc;
+package pe.axiz.adapter.sequence.r2dbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 

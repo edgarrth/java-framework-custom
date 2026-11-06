@@ -23,5 +23,11 @@ public final class IdempotencyErrors {
           ErrorCategory.CONFLICT,
           "Operation outcome uncertain; consult the operation status");
 
+  public static final ErrorDefinition RESOLVED_WITHOUT_EFFECT =
+      ErrorDefinition.of(
+          "AXZ-IDEM-2409",
+          ErrorCategory.CONFLICT,
+          "Operation resolved without effect; repeat the request with the same Idempotency-Key");
+
   private IdempotencyErrors() {}
 }

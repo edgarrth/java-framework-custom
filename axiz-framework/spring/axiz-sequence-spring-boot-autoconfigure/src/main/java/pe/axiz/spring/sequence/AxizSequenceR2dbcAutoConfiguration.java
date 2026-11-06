@@ -18,10 +18,10 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
+import pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.sequence.AsyncSequenceStore;
-import pe.axiz.kit.r2dbc.R2dbcSequenceStore;
-import pe.axiz.kit.r2dbc.ReactiveSequenceStore;
 
 /** PostgreSQL sequence reservations remain durable when a business transaction rolls back. */
 @AutoConfiguration(

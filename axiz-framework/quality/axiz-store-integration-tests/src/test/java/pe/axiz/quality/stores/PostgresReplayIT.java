@@ -98,7 +98,9 @@ class PostgresReplayIT {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(1)));
+            Backoff.fixed(Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     assertEquals(1, before.relayOnce().retried());
     assertEquals(1, store.countPending());
     assertEquals(1, effects());
@@ -114,7 +116,9 @@ class PostgresReplayIT {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(1)));
+            Backoff.fixed(Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     clock.advance(Duration.ofSeconds(1));
     assertEquals(1, restarted.relayOnce().published());
     assertEquals(0, restarted.relayOnce().total());

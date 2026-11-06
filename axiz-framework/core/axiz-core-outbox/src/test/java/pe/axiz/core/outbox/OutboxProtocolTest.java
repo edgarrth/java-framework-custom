@@ -76,11 +76,10 @@ class OutboxProtocolTest {
     }
 
     @Override
-    public List<OutboxRecord> claimDue(int size, Instant now, Duration lease, String owner) {
+    public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
       assertTrue(tx.active);
       assertTrue(size > 0);
       assertTrue(lease.isPositive());
-      assertEquals(NOW, now);
       if (claimed) return List.of();
       claimed = true;
       claimOwner = owner;
@@ -177,7 +176,15 @@ class OutboxProtocolTest {
 
   private OutboxRelay relay(Store store, EventPublisher publisher, int maxAttempts) {
     return new OutboxRelay(
-        store, publisher, store.tx, CLOCK, 10, maxAttempts, Backoff.fixed(Duration.ofSeconds(3)));
+        store,
+        publisher,
+        store.tx,
+        CLOCK,
+        10,
+        maxAttempts,
+        Backoff.fixed(Duration.ofSeconds(3)),
+        Duration.ofMinutes(3),
+        Duration.ofMillis(1));
   }
 
   @Test
@@ -203,16 +210,14 @@ class OutboxProtocolTest {
   }
 
   @Test
-  void expiredOrUnconfirmedClaimsDoNotCountAsPublished() {
+  void wallClockExpiryIsInformationalAndUnconfirmedClaimsDoNotCountAsPublished() {
     var expired = new Store(new Transactions());
     expired.expired = true;
     assertEquals(
-        0,
+        1,
         relay(
                 expired,
-                (destination, event) -> {
-                  throw new AssertionError("expired claim published");
-                },
+                (destination, event) -> new PublishResult(event.id(), destination, null),
                 2)
             .relayOnce()
             .published());
@@ -273,11 +278,11 @@ class OutboxProtocolTest {
           int claims;
 
           @Override
-          public List<OutboxRecord> claimDue(int size, Instant now, Duration lease, String owner) {
+          public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
             limits.add(size);
             if (claims++ == 3) return List.of();
             claimed = false;
-            return super.claimDue(size, now, lease, owner);
+            return super.claimDue(size, lease, owner);
           }
         };
     var result =

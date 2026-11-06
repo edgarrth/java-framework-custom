@@ -5,10 +5,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxStore;
-import pe.axiz.kit.jdbc.SqlStates;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
@@ -36,7 +36,7 @@ public final class R2dbcOutboxStore implements OutboxStore {
 
   public R2dbcOutboxStore(ReactiveSql sql, String table, Duration timeout) {
     this.sql = Objects.requireNonNull(sql);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
     this.timeout = Objects.requireNonNull(timeout);
   }
 
@@ -91,7 +91,7 @@ public final class R2dbcOutboxStore implements OutboxStore {
         + "p.aggregate_seq<h.aggregate_seq AND p.status NOT IN ('PUBLISHED','SKIPPED'))";
   }
 
-  public Mono<List<OutboxRecord>> claim(int size, Instant now, Duration lease, String owner) {
+  public Mono<List<OutboxRecord>> claim(int size, Duration lease, String owner) {
     if (size < 1 || !lease.isPositive() || owner.isBlank())
       return Mono.error(new IllegalArgumentException("invalid claim"));
     return sql.query(
@@ -99,49 +99,52 @@ public final class R2dbcOutboxStore implements OutboxStore {
                 + COLUMNS
                 + " FROM "
                 + table
-                + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<=:now) OR"
-                + " (h.status='IN_FLIGHT' AND h.lease_until<=:now)) AND "
+                + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<=statement_timestamp()) OR"
+                + " (h.status='IN_FLIGHT' AND h.lease_until<=statement_timestamp())) AND "
                 + heads()
                 + " ORDER BY h.created_at,h.id FETCH FIRST "
                 + size
                 + " ROWS ONLY FOR UPDATE SKIP LOCKED",
-            SqlParams.of().bind("now", now),
+            SqlParams.of(),
             R2dbcOutboxStore::record)
         .collectList()
         .flatMapMany(Flux::fromIterable)
         .concatMap(
             r ->
-                sql.update(
+                sql.query(
                         "UPDATE "
                             + table
-                            + " SET status='IN_FLIGHT',lease_owner=:owner,lease_until=:until WHERE"
-                            + " id=:id",
+                            + " SET status='IN_FLIGHT',lease_owner=:owner,lease_until=statement_timestamp()"
+                            + " + make_interval(secs => :seconds) WHERE id=:id RETURNING lease_until",
                         SqlParams.of()
                             .bind("owner", owner)
-                            .bind("until", now.plus(lease))
-                            .bind("id", r.id()))
-                    .thenReturn(
-                        new OutboxRecord(
-                            r.id(),
-                            r.destination(),
-                            r.aggregateType(),
-                            r.aggregateId(),
-                            r.eventType(),
-                            r.envelopeJson(),
-                            OutboxRecord.Status.IN_FLIGHT,
-                            r.attempts(),
-                            r.createdAt(),
-                            r.nextAttemptAt(),
-                            r.lastError(),
-                            r.aggregateSequence(),
-                            owner,
-                            now.plus(lease))))
+                            .bind("seconds", lease.toNanos() / 1_000_000_000.0)
+                            .bind("id", r.id()),
+                        row -> row.require("lease_until", Instant.class))
+                    .single()
+                    .map(
+                        until ->
+                            new OutboxRecord(
+                                r.id(),
+                                r.destination(),
+                                r.aggregateType(),
+                                r.aggregateId(),
+                                r.eventType(),
+                                r.envelopeJson(),
+                                OutboxRecord.Status.IN_FLIGHT,
+                                r.attempts(),
+                                r.createdAt(),
+                                r.nextAttemptAt(),
+                                r.lastError(),
+                                r.aggregateSequence(),
+                                owner,
+                                until)))
         .collectList();
   }
 
   @Override
-  public List<OutboxRecord> claimDue(int size, Instant now, Duration lease, String owner) {
-    return await(claim(size, now, lease, owner));
+  public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
+    return await(claim(size, lease, owner));
   }
 
   @Override

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
@@ -26,7 +27,7 @@ public final class JdbcSequenceStore implements SequenceStore {
       ConnectionProvider connections, TransactionRunner transactions, String table) {
     this.connections = Objects.requireNonNull(connections);
     this.transactions = Objects.requireNonNull(transactions);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
   }
 
   @Override

@@ -18,7 +18,7 @@ final class DurableAudit {
       writer = beans.getBean(OutboxWriter.class);
     } catch (NoSuchBeanDefinitionException e) {
       throw new IllegalStateException(
-          "axiz.audit.durable.enabled=true needs the outbox capability (axiz add outbox)", e);
+          "axiz.audit.mode=DURABLE needs the outbox capability (axiz add outbox)", e);
     }
     return new TransactionalAuditPublisher(
         writer,

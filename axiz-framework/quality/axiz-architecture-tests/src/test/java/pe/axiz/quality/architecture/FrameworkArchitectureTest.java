@@ -25,6 +25,29 @@ import java.util.TreeSet;
 @AnalyzeClasses(packages = "pe.axiz", importOptions = ImportOption.DoNotIncludeTests.class)
 class FrameworkArchitectureTest {
 
+  @ArchTest
+  static final ArchRule TECHNOLOGY_USES_ONLY_ITS_OWN_KIT =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..")
+          .should(
+              new ArchCondition<>("only depend on their own technology kit") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  String technology = TechnologyBoundaries.technology(item.getPackageName());
+                  String module = TechnologyBoundaries.module(item.getPackageName());
+                  for (var dependency : item.getDirectDependenciesFromSelf()) {
+                    String target =
+                        dependency.getTargetClass().getBaseComponentType().getPackageName();
+                    if (target.startsWith("pe.axiz.kit.")
+                        && !TechnologyBoundaries.allowed(
+                            module, technology, TechnologyBoundaries.technology(target)))
+                      events.add(
+                          SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+                  }
+                }
+              });
+
   /** Request/event code cannot disguise blocking I/O with a worker scheduler. */
   @ArchTest
   static final ArchRule FRAMEWORK_DOES_NOT_OFFLOAD_BLOCKING_IO =
@@ -298,7 +321,7 @@ class FrameworkArchitectureTest {
 
   private static boolean r2dbc(JavaClass type) {
     return type.getPackageName()
-        .matches("pe\\.axiz\\.(kit\\.r2dbc|adapter\\.(inbox|outbox)\\.r2dbc)(\\..*)?");
+        .matches("pe\\.axiz\\.(kit\\.r2dbc|adapter\\.(inbox|outbox|sequence)\\.r2dbc)(\\..*)?");
   }
 
   static DescribedPredicate<JavaClass> apiPackages() {

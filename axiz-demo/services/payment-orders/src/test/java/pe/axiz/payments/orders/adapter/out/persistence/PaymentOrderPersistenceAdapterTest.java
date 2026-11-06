@@ -18,6 +18,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.postgresql.util.PSQLException;
+import org.postgresql.util.ServerErrorMessage;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -131,7 +133,7 @@ class PaymentOrderPersistenceAdapterTest {
   static DataIntegrityViolationException violation(String constraint) {
     return new DataIntegrityViolationException(
         "could not execute statement",
-        new SQLException("duplicate key value violates unique constraint \"" + constraint + "\""));
+        new PSQLException(new ServerErrorMessage("C23505\u0000Mclave duplicada\u0000n" + constraint + "\u0000")));
   }
 
   @Test
@@ -160,7 +162,7 @@ class PaymentOrderPersistenceAdapterTest {
   }
 
   @Test
-  void savingUpdatesTheStatusOfTheStoredRowOrInsertsIt() {
+  void savingUpdatesOnlyAnExistingRowAndNeverInserts() {
     UUID id = UUID.randomUUID();
     PaymentOrder order = order(id, "C-1");
     adapter.create(order, null);
@@ -171,8 +173,11 @@ class PaymentOrderPersistenceAdapterTest {
     assertThat(rows.rows.get(id).getStatusReason()).isEqualTo("insufficient funds");
 
     UUID other = UUID.randomUUID();
-    adapter.save(order(other, "C-2"));
-    assertThat(rows.rows).containsKey(other);
+    int savedBefore = java.util.Collections.frequency(rows.calls, "save");
+    assertThatThrownBy(() -> adapter.save(order(other, "C-2")))
+        .isInstanceOf(org.springframework.dao.DataRetrievalFailureException.class);
+    assertThat(rows.rows).doesNotContainKey(other);
+    assertThat(java.util.Collections.frequency(rows.calls, "save")).isEqualTo(savedBefore);
   }
 
   @Test
@@ -193,6 +198,30 @@ class PaymentOrderPersistenceAdapterTest {
     rows.nextSaveFailure = withoutKey;
     assertThatThrownBy(() -> adapter.create(order(UUID.randomUUID(), "C-1"), null))
         .isSameAs(withoutKey);
+  }
+
+  @Test
+  void messageTextAndOtherSqlStatesDoNotImpersonateTheRequestKeyConstraint() {
+    for (SQLException cause : List.of(
+        new SQLException("duplicate " + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT, "23505"),
+        new PSQLException(new ServerErrorMessage("C23503\u0000Mreferencia inválida\u0000n"
+            + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT + "\u0000")),
+        new PSQLException(new ServerErrorMessage("C23505\u0000Mclave duplicada sin nombre\u0000")))) {
+      var failure = new DataIntegrityViolationException("insert", cause);
+      rows.nextSaveFailure = failure;
+      assertThatThrownBy(() -> adapter.create(order(UUID.randomUUID(), "C-1"), "req"))
+          .isSameAs(failure);
+    }
+  }
+
+  @Test
+  void structuredConstraintCanBeNestedInTheSqlExceptionChain() {
+    var batch = new SQLException("batch failed");
+    batch.setNextException((SQLException) violation(PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT).getCause());
+    rows.nextSaveFailure = new DataIntegrityViolationException("insert", batch);
+    assertThatThrownBy(() -> adapter.create(order(UUID.randomUUID(), "C-1"), "req"))
+        .isInstanceOfSatisfying(BusinessException.class,
+            e -> assertThat(e.definition()).isEqualTo(PaymentErrors.CONCURRENT_REQUEST));
   }
 
   @Test

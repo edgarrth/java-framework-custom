@@ -71,6 +71,12 @@ public class AxizAuditAutoConfiguration {
   SmartInitializingSingleton axizAuditModeNotice(
       Environment environment, AxizAuditProperties properties) {
     return () -> {
+      for (String selector : List.of("axiz.audit.durable.enabled", "axiz.audit.async.enabled"))
+        if (environment.containsProperty(selector))
+          LoggerFactory.getLogger(AxizAuditAutoConfiguration.class)
+              .warn(
+                  "{} is deprecated as an audit mode selector; migrate to axiz.audit.mode before 3.0",
+                  selector);
       boolean development =
           environment.acceptsProfiles(Profiles.of("local", "test"))
               || List.of("local", "test")

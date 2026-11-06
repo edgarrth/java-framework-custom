@@ -11,6 +11,19 @@ formato XML. Cada entrada debe documentar su motivo. Para tipos trasladados se r
 el módulo, nombre y hash de la API de reemplazo; así una reubicación no oculta miembros perdidos.
 Los cambios del inventario requieren revisión; `--observed` solo escribe hallazgos aparte.
 
+## Observaciones de revisión 2.0 (implementación en curso)
+
+- P1 añade la anotación neutral `pe.axiz.core.security.AuthenticatedAccess` y sus interceptores
+  previos servlet/reactive. La cobertura de `@PreAuthorize` usa una gramática estructural cerrada,
+  sin evaluar expresiones al arrancar. Endpoints de solo autenticación deben declararlo explícitamente;
+  políticas dinámicas necesitan pruebas negativas propias. No se considera cobertura una expresión
+  trivial o una exclusión de autoridad. Se conservan las reglas HTTP efectivas y los contratos
+  públicos válidos como alternativas. El advice MVC conserva 401 para una denegación de método a un
+  anónimo dentro de la cadena de seguridad, en lugar de convertirla en 403.
+
+El inventario JSON inferior conserva su baseline real 1.0.0. Las nuevas huellas se revisarán con los
+reportes de compatibilidad de la implementación completa; esta nota no aprueba huellas sin comprobar.
+
 
 Revisión de las adiciones nativas de CQRS (1 de noviembre): `javap -protected` contra 1.0.0
 comprueba que no se eliminan miembros públicos/protegidos. `AccessPolicies` añade `isEmpty()`;

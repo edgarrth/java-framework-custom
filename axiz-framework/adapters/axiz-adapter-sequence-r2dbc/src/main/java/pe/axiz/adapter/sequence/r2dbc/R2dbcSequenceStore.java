@@ -1,7 +1,9 @@
-package pe.axiz.kit.r2dbc;
+package pe.axiz.adapter.sequence.r2dbc;
 
 import io.r2dbc.spi.ConnectionFactory;
-import pe.axiz.kit.jdbc.SqlStates;
+import pe.axiz.core.commons.SqlIdentifiers;
+import pe.axiz.kit.r2dbc.R2dbcSql;
+import pe.axiz.kit.r2dbc.SqlParams;
 import reactor.core.publisher.Mono;
 
 /** Atomic PostgreSQL counter blocks, using an independent connection and transaction. */
@@ -11,7 +13,7 @@ public final class R2dbcSequenceStore implements ReactiveSequenceStore {
 
   public R2dbcSequenceStore(ConnectionFactory connections, String table) {
     this.sql = new R2dbcSql(connections);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
   }
 
   @Override

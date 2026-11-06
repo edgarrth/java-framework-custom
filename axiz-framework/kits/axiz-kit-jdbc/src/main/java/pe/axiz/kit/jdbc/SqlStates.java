@@ -53,12 +53,4 @@ public final class SqlStates {
       throw e;
     }
   }
-
-  /** Validates an SQL identifier that comes from configuration (table or sequence name). */
-  public static String identifier(String name) {
-    if (!name.matches("^[a-z_][a-z0-9_]{0,62}$")) {
-      throw new IllegalArgumentException("Invalid SQL identifier: " + name);
-    }
-    return name;
-  }
 }

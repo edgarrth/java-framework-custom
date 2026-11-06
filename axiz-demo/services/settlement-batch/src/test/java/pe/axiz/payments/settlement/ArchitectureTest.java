@@ -2,6 +2,9 @@ package pe.axiz.payments.settlement;
 
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.AxizArchitecture;
+import pe.axiz.quality.archunit.Archetype;
+import pe.axiz.quality.archunit.Stack;
+import pe.axiz.quality.archunit.Structure;
 
 /** Rules of the batch style plus the general axiz rules; breaking one fails the build. */
 class ArchitectureTest {
@@ -9,9 +12,9 @@ class ArchitectureTest {
   @Test
   void followsTheArchitecture() {
     AxizArchitecture.of("pe.axiz.payments.settlement")
-        .archetype(pe.axiz.quality.archunit.Archetype.BATCH)
-        .stack(pe.axiz.quality.archunit.Stack.SERVLET)
-        .structure(pe.axiz.quality.archunit.Structure.BATCH)
+        .archetype(Archetype.BATCH)
+        .stack(Stack.SERVLET)
+        .structure(Structure.BATCH)
         .verify();
   }
 }

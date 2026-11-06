@@ -93,6 +93,7 @@
     <axiz.coverage.line>0.80</axiz.coverage.line>
     <axiz.coverage.branch>0.70</axiz.coverage.branch>
     <axiz.mutation.threshold>60</axiz.mutation.threshold>
+    <axiz.errorprone.fqn.severity>WARN</axiz.errorprone.fqn.severity>
     <!-- empty default so @{argLine} resolves when JaCoCo is not active -->
     <argLine />
     <!-- extra JVM options of test runs (axiz-parent-service sets the ones BlockHound needs) -->
@@ -489,7 +490,7 @@
                 <compilerArgs combine.children="append">
                   <arg>-XDcompilePolicy=simple</arg>
                   <arg>--should-stop=ifError=FLOW</arg>
-                  <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-(test-)?sources/.*|.*/src/test/java/.* -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract -XepOpt:NullAway:ExcludedFieldAnnotations=picocli.CommandLine.Spec -Xep:MissingSummary:OFF -Xep:UnnecessarilyFullyQualified:WARN</arg>
+                  <arg>-Xplugin:ErrorProne -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/target/generated-(test-)?sources/.*|.*/src/test/java/.* -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract -XepOpt:NullAway:ExcludedFieldAnnotations=picocli.CommandLine.Spec -Xep:MissingSummary:OFF -Xep:UnnecessarilyFullyQualified:${axiz.errorprone.fqn.severity}</arg>
                 </compilerArgs>
                 <annotationProcessorPaths combine.children="append">
                   <path>

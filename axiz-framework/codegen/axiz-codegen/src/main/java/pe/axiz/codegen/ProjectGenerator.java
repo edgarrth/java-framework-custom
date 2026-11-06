@@ -171,6 +171,7 @@ public final class ProjectGenerator {
     c.put(
         "extensions",
         r.extensions().stream().map(e -> Map.of("id", e.id(), "enum", e.name())).toList());
+    c.put("hasExtensions", !r.extensions().isEmpty());
     fw.put("hasApplicationModels", r.structure() == Structure.HEXAGONAL);
     fw.put("usecases", r.structure() == Structure.HEXAGONAL && !r.cqrs());
     fw.put("handlers", r.cqrs());

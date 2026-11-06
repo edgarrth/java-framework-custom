@@ -24,13 +24,18 @@ public class ProblemControllerAdvice {
 
   @ExceptionHandler(Throwable.class)
   ResponseEntity<String> handle(Throwable failure, HttpServletRequest request) {
+    Throwable effectiveFailure = SpringExceptionMappers.servletSecurityFailure(failure);
     Problem problem =
         responder.problem(
-            failure,
+            effectiveFailure,
             LocaleContextHolder.getLocale(),
             request.getRequestURI(),
             request.getHeader(StandardHeaders.CORRELATION_ID));
     return ResponseEntity.status(problem.status())
+        .headers(
+            headers -> {
+              if (effectiveFailure != failure) headers.set("WWW-Authenticate", "Bearer");
+            })
         .contentType(MediaType.parseMediaType(ProblemResponder.MEDIA_TYPE))
         .body(responder.json(problem));
   }

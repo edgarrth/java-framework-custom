@@ -4,7 +4,6 @@ import io.micrometer.observation.ObservationRegistry;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.concurrent.ThreadPoolExecutor;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
@@ -21,7 +20,8 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
  */
 public final class AsyncAwsClients implements SdkAutoCloseable {
   private final WarmedAwsCredentials credentials;
-  private final ThreadPoolExecutor completions;
+  private final BoundedCompletionExecutor completions;
+  private final Runnable removeMeters;
 
   public AsyncAwsClients() {
     this(
@@ -35,8 +35,37 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
       Clock clock,
       Duration refreshInterval) {
+    this(source, clock, refreshInterval, 2, 256, null);
+  }
+
+  /** Configured framework-owned pool; name is a stable capability/bean name for metrics. */
+  public AsyncAwsClients(String poolName, int workers, int queueCapacity) {
+    this(DefaultCredentialsProvider.builder().asyncCredentialUpdateEnabled(true).build(),
+        Clock.systemUTC(), Duration.ofSeconds(15), workers, queueCapacity, poolName);
+  }
+
+  /** Explicit bounds for applications with their own warmed credential source. */
+  public AsyncAwsClients(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      Clock clock, Duration refreshInterval, int workers, int queueCapacity) {
+    this(source, clock, refreshInterval, workers, queueCapacity, "aws-completion");
+  }
+
+  private AsyncAwsClients(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      Clock clock, Duration refreshInterval, int workers, int queueCapacity, @Nullable String poolName) {
+    BoundedCompletionExecutor.validWorkers(workers, queueCapacity);
+    if (poolName != null && poolName.isBlank()) throw new IllegalArgumentException("poolName must not be blank");
     credentials = new WarmedAwsCredentials(source, clock, refreshInterval);
-    completions = new BoundedCompletionExecutor();
+    try { completions = new BoundedCompletionExecutor(workers, queueCapacity); }
+    catch (RuntimeException | Error failure) { credentials.close(); throw failure; }
+    try { removeMeters = completionMetrics(poolName, completions); }
+    catch (RuntimeException | Error failure) { completions.shutdownNow(); credentials.close(); throw failure; }
+  }
+
+  private static Runnable completionMetrics(@Nullable String name, BoundedCompletionExecutor executor) {
+    if (name == null) return () -> {};
+    try { Class.forName("io.micrometer.core.instrument.MeterRegistry", false, AsyncAwsClients.class.getClassLoader()); }
+    catch (ClassNotFoundException unavailable) { return () -> {}; }
+    return AwsCompletionMetrics.bind(name, executor);
   }
 
   /** Snapshot-only, non-owning credentials for auxiliary signers; this owner controls refresh. */
@@ -50,6 +79,17 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       ObservationRegistry observations,
       java.util.function.Function<String, @Nullable String> properties,
       String service) {
+    return configured(builder, observations, properties, service, null);
+  }
+
+  public <B extends AwsClientBuilder<B, C> & AwsAsyncClientBuilder<B, C>, C> C configured(
+      B builder,
+      ObservationRegistry observations,
+      java.util.function.Function<String, @Nullable String> properties,
+      String service,
+      @Nullable Duration apiCallTimeout) {
+    if (apiCallTimeout != null && !apiCallTimeout.isPositive())
+      throw new IllegalArgumentException("apiCallTimeout must be positive");
     // The SDK creates per-thread XML parsers on network workers. Discover the provider and
     // load the JDK XML policy files now, while configuring the client on the startup thread.
     javax.xml.stream.XMLInputFactory.newFactory();
@@ -92,6 +132,13 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
             .apiCallAttemptTimeout(Duration.ofSeconds(30))
             .apiCallTimeout(Duration.ofSeconds(60))
             .addExecutionInterceptor(new ObservationExecutionInterceptor(observations));
+    if (apiCallTimeout != null)
+      overrides
+          .apiCallTimeout(apiCallTimeout)
+          .apiCallAttemptTimeout(
+              apiCallTimeout.compareTo(Duration.ofSeconds(30)) < 0
+                  ? apiCallTimeout
+                  : Duration.ofSeconds(30));
     if (java.util.Set.of("dynamodb", "kms", "secretsmanager", "ssm", "sqs", "sns")
         .contains(service)) {
       // These services marshal finite in-memory payloads. The SDK's standard SigV4 signer uses
@@ -151,6 +198,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   @Override
   public void close() {
     completions.shutdown();
-    credentials.close();
+    try { credentials.close(); }
+    finally { removeMeters.run(); }
   }
 }

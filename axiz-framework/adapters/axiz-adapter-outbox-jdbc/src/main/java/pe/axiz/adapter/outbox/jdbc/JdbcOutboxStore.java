@@ -11,11 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
-import pe.axiz.kit.jdbc.SqlStates;
 
 /** Transaction-aware JDBC outbox with persistent aggregate counters and fenced short claims. */
 public final class JdbcOutboxStore implements OutboxStore {
@@ -29,8 +29,8 @@ public final class JdbcOutboxStore implements OutboxStore {
 
   public JdbcOutboxStore(ConnectionProvider connections, String table, Dialect dialect) {
     this.connections = Objects.requireNonNull(connections);
-    this.table = SqlStates.identifier(table);
-    this.counters = SqlStates.identifier(table + "_aggregate");
+    this.table = SqlIdentifiers.require(table);
+    this.counters = SqlIdentifiers.require(table + "_aggregate");
     this.dialect = Objects.requireNonNull(dialect);
   }
 
@@ -109,7 +109,7 @@ public final class JdbcOutboxStore implements OutboxStore {
   }
 
   @Override
-  public List<OutboxRecord> claimDue(int size, Instant now, Duration lease, String owner) {
+  public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
     if (size < 1 || !lease.isPositive() || owner.isBlank())
       throw new IllegalArgumentException("invalid claim");
     return transaction(
@@ -119,8 +119,12 @@ public final class JdbcOutboxStore implements OutboxStore {
                   + COLUMNS
                   + " FROM "
                   + table
-                  + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<=?) OR"
-                  + " (h.status='IN_FLIGHT' AND h.lease_until<=?)) AND "
+                  + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<="
+                  + dialect.nowExpression()
+                  + ") OR"
+                  + " (h.status='IN_FLIGHT' AND h.lease_until<="
+                  + dialect.nowExpression()
+                  + ")) AND "
                   + headPredicate()
                   + " ORDER BY h.created_at,h.id FETCH FIRST "
                   + size
@@ -128,23 +132,33 @@ public final class JdbcOutboxStore implements OutboxStore {
                   + dialect.lockClause();
           List<OutboxRecord> selected = new ArrayList<>();
           try (PreparedStatement ps = c.prepareStatement(select)) {
-            ps.setTimestamp(1, Timestamp.from(now));
-            ps.setTimestamp(2, Timestamp.from(now));
             try (ResultSet rs = ps.executeQuery()) {
               while (rs.next()) selected.add(record(rs));
             }
           }
           List<OutboxRecord> claimed = new ArrayList<>();
           for (OutboxRecord r : selected) {
+            Instant leaseUntil;
             try (PreparedStatement ps =
                 c.prepareStatement(
                     "UPDATE "
                         + table
-                        + " SET status='IN_FLIGHT',lease_owner=?,lease_until=? WHERE id=?")) {
+                        + " SET status='IN_FLIGHT',lease_owner=?,lease_until="
+                        + dialect.leasedUntilExpression()
+                        + " WHERE id=?")) {
               ps.setString(1, owner);
-              ps.setTimestamp(2, Timestamp.from(now.plus(lease)));
+              if (dialect == Dialect.POSTGRESQL) ps.setDouble(2, lease.toNanos() / 1_000_000_000.0);
+              else ps.setLong(2, lease.toMillis());
               ps.setString(3, r.id());
               ps.executeUpdate();
+            }
+            try (PreparedStatement ps =
+                c.prepareStatement("SELECT lease_until FROM " + table + " WHERE id=?")) {
+              ps.setString(1, r.id());
+              try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
+                leaseUntil = rs.getTimestamp(1).toInstant();
+              }
             }
             claimed.add(
                 new OutboxRecord(
@@ -161,7 +175,7 @@ public final class JdbcOutboxStore implements OutboxStore {
                     r.lastError(),
                     r.aggregateSequence(),
                     owner,
-                    now.plus(lease)));
+                    leaseUntil));
           }
           return List.copyOf(claimed);
         });

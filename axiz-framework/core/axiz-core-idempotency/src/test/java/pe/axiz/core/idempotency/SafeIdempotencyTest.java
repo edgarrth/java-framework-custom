@@ -103,7 +103,9 @@ class SafeIdempotencyTest {
             (key, record) -> Optional.of(Resolution.withoutEffect()));
     var owner = (IdempotencyService.Proceed) svc.begin("payment", KEY, "fp");
     svc.fail(owner);
-    assertThrows(BusinessException.class, () -> svc.begin("payment", KEY, "fp"));
+    assertEquals(
+        IdempotencyErrors.RESOLVED_WITHOUT_EFFECT.code(),
+        assertThrows(BusinessException.class, () -> svc.begin("payment", KEY, "fp")).code());
     assertInstanceOf(IdempotencyService.Proceed.class, svc.begin("payment", KEY, "fp"));
     assertFalse(svc.complete(owner, new StoredResponse(201, Map.of(), new byte[0])));
   }
@@ -242,9 +244,13 @@ class SafeIdempotencyTest {
             clock,
             (key, record) ->
                 CompletableFuture.completedFuture(Optional.of(Resolution.withoutEffect())));
-    assertThrows(
-        java.util.concurrent.CompletionException.class,
-        () -> reconciler.begin("payment", KEY, "fp").toCompletableFuture().join());
+    var resolved =
+        assertThrows(
+            java.util.concurrent.CompletionException.class,
+            () -> reconciler.begin("payment", KEY, "fp").toCompletableFuture().join());
+    assertEquals(
+        IdempotencyErrors.RESOLVED_WITHOUT_EFFECT.code(),
+        ((BusinessException) resolved.getCause()).code());
     var next =
         (IdempotencyService.Proceed)
             reconciler.begin("payment", KEY, "fp").toCompletableFuture().join();

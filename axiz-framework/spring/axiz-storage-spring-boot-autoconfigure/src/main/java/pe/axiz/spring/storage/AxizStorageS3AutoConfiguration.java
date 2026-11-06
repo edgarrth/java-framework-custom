@@ -1,5 +1,7 @@
 package pe.axiz.spring.storage;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,7 +29,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
       "software.amazon.awssdk.services.s3.S3Client"
     })
 @ConditionalOnProperty(name = "axiz.storage.type", havingValue = "s3", matchIfMissing = true)
-@EnableConfigurationProperties(AxizStorageProperties.class)
+@EnableConfigurationProperties({AxizStorageProperties.class, AxizAwsCompletionProperties.class})
 public class AxizStorageS3AutoConfiguration {
 
   @Bean(destroyMethod = "close")
@@ -85,8 +87,8 @@ public class AxizStorageS3AutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @org.springframework.context.annotation.Conditional(DefaultResourcesNeeded.class)
-    AsyncAwsClients axizStorageAsyncAwsResources() {
-      return new AsyncAwsClients();
+    AsyncAwsClients axizStorageAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizStorageAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

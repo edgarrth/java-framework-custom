@@ -74,7 +74,7 @@ class R2dbcOutboxStoreTest {
             .onQuery(
                 "FOR UPDATE SKIP LOCKED",
                 b -> marked.isEmpty() ? List.of(row("e-1"), row("e-2")) : List.of())
-            .onUpdate("SET status='IN_FLIGHT'", b -> 1L)
+            .onQuery("SET status='IN_FLIGHT'", b -> List.of(Map.of("lease_until", clock.instant().plusSeconds(180))))
             .onUpdate(
                 "^UPDATE axiz_outbox SET status='PUBLISHED'",
                 b -> {
@@ -91,7 +91,9 @@ class R2dbcOutboxStoreTest {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(5)));
+            Backoff.fixed(Duration.ofSeconds(5)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
 
     OutboxRelay.RunResult result = relay.relayOnce();
 
@@ -111,7 +113,7 @@ class R2dbcOutboxStoreTest {
     FakeR2dbc db =
         new FakeR2dbc()
             .onQuery("FOR UPDATE SKIP LOCKED", b -> List.of(row("e-1")))
-            .onUpdate("SET status='IN_FLIGHT'", b -> 1L)
+            .onQuery("SET status='IN_FLIGHT'", b -> List.of(Map.of("lease_until", clock.instant().plusSeconds(180))))
             .onUpdate(
                 "SET status\\s*=\\s*\\$1",
                 b -> {
@@ -128,7 +130,9 @@ class R2dbcOutboxStoreTest {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(30)));
+            Backoff.fixed(Duration.ofSeconds(30)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
 
     assertEquals(1, relay.relayOnce().retried());
     Map<Integer, Object> b = failed.get(0);
@@ -219,14 +223,13 @@ class R2dbcOutboxStoreTest {
     Instant now = clock.instant();
     assertThrows(
         IllegalArgumentException.class,
-        () -> store.claim(0, now, Duration.ofSeconds(1), "owner").block());
+        () -> store.claim(0, Duration.ofSeconds(1), "owner").block());
     assertThrows(
-        IllegalArgumentException.class, () -> store.claim(1, now, Duration.ZERO, "owner").block());
+        IllegalArgumentException.class, () -> store.claim(1, Duration.ZERO, "owner").block());
     assertThrows(
-        IllegalArgumentException.class,
-        () -> store.claim(1, now, Duration.ofSeconds(1), " ").block());
+        IllegalArgumentException.class, () -> store.claim(1, Duration.ofSeconds(1), " ").block());
     assertTrue(db.executions().isEmpty());
-    assertEquals(List.of(), store.claim(1, now, Duration.ofSeconds(1), "owner").block());
+    assertEquals(List.of(), store.claim(1, Duration.ofSeconds(1), "owner").block());
     assertFalse(db.executions().isEmpty());
   }
 

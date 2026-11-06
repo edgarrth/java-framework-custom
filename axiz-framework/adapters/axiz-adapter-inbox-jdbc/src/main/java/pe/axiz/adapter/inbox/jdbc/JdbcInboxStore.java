@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
@@ -29,7 +30,7 @@ public final class JdbcInboxStore implements InboxStore {
 
   public JdbcInboxStore(ConnectionProvider connections, String table) {
     this.connections = Objects.requireNonNull(connections);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
   }
 
   @Override

@@ -1,5 +1,7 @@
 package pe.axiz.spring.idempotency;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,7 +28,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore")
 @ConditionalOnProperty(name = "axiz.idempotency.store", havingValue = "dynamodb")
-@EnableConfigurationProperties(AxizIdempotencyProperties.class)
+@EnableConfigurationProperties({AxizIdempotencyProperties.class, AxizAwsCompletionProperties.class})
 public class AxizIdempotencyDynamoDbAutoConfiguration {
 
   /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
@@ -54,8 +56,8 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-    AsyncAwsClients axizIdempotencyAsyncAwsResources() {
-      return new AsyncAwsClients();
+    AsyncAwsClients axizIdempotencyAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizIdempotencyAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

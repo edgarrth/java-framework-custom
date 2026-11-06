@@ -4,8 +4,11 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Hexagonal style: {@code domain} at the center, {@code application} (use cases and ports) around
@@ -45,19 +48,39 @@ public final class HexagonalRules {
             .that()
             .resideInAPackage(domain)
             .should()
-            .onlyDependOnClassesThat()
-            .resideInAnyPackage(
-                "java..",
-                "org.jspecify.annotations..",
-                domain,
-                "pe.axiz.core.commons..",
-                "pe.axiz.core.domain..",
-                "pe.axiz.core.money..",
-                "pe.axiz.core.errors..",
-                "pe.axiz.core.id..",
-                "pe.axiz.core.identifiers..",
-                "pe.axiz.core.sensitive..",
-                "pe.axiz.core.time.."),
+            .onlyDependOnClassesThat(
+                JavaClass.Predicates.resideInAnyPackage(
+                        "java..",
+                        "org.jspecify.annotations..",
+                        domain,
+                        "pe.axiz.core.domain..",
+                        "pe.axiz.core.money..",
+                        "pe.axiz.core.errors..",
+                        "pe.axiz.core.id..",
+                        "pe.axiz.core.identifiers..",
+                        "pe.axiz.core.sensitive..",
+                        "pe.axiz.core.time..")
+                    .or(neutralDomainCommons())),
+        noClasses()
+            .that()
+            .resideInAPackage(application)
+            .should()
+            .dependOnClassesThat(
+                new DescribedPredicate<JavaClass>("transport response or header contracts") {
+                  @Override
+                  public boolean test(JavaClass type) {
+                    String name = type.getBaseComponentType().getName();
+                    return Set.of(
+                            "ApiResponse",
+                            "PageResponse",
+                            "HeaderCatalog",
+                            "HeaderDefinition",
+                            "StandardHeaders")
+                        .stream()
+                        .map(n -> "pe.axiz.core.commons." + n)
+                        .anyMatch(n -> name.equals(n) || name.startsWith(n + "$"));
+                  }
+                }),
         classes()
             .that()
             .resideInAPackage(application)
@@ -147,6 +170,18 @@ public final class HexagonalRules {
             .should()
             .resideInAPackage(basePackage + ".adapter.in.."),
         classes().that().haveSimpleNameEndingWith("Adapter").should().resideInAPackage(adapters));
+  }
+
+  private static DescribedPredicate<JavaClass> neutralDomainCommons() {
+    return new DescribedPredicate<>("neutral commons value helpers") {
+      @Override
+      public boolean test(JavaClass type) {
+        return Set.of("Checks", "Strings", "Dates", "Result", "Result$Ok", "Result$Err").stream()
+            .anyMatch(
+                name ->
+                    type.getBaseComponentType().getName().equals("pe.axiz.core.commons." + name));
+      }
+    };
   }
 
   private static com.tngtech.archunit.lang.ArchCondition<com.tngtech.archunit.core.domain.JavaClass>

@@ -1,4 +1,4 @@
-package pe.axiz.kit.r2dbc;
+package pe.axiz.adapter.sequence.r2dbc;
 
 import reactor.core.publisher.Mono;
 

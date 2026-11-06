@@ -130,6 +130,8 @@ public class SqsEventConsumer implements SmartLifecycle {
             .queueUrl(queue)
             .maxNumberOfMessages(Math.min(10, Math.max(1, settings.batchSize())))
             .waitTimeSeconds((int) Math.min(20, settings.waitTime().toSeconds()))
+            // Receive long-polling has a different bound from short publisher API calls.
+            .overrideConfiguration(c -> c.apiCallTimeout(settings.waitTime().plusSeconds(10)))
             .visibilityTimeout((int) settings.visibilityTimeout().toSeconds())
             .messageSystemAttributeNames(MessageSystemAttributeName.APPROXIMATE_RECEIVE_COUNT)
             .build();

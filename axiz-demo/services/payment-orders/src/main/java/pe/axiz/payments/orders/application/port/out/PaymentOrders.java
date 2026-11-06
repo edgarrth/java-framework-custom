@@ -11,7 +11,10 @@ import pe.axiz.payments.orders.domain.PaymentOrder;
 /** Storage of payment orders. */
 public interface PaymentOrders {
 
-  /** Stores changes of an existing order. */
+  /**
+   * Stores changes of an existing order; never inserts a missing order. The use case loads and
+   * saves within the same transaction. A missing persisted order is an infrastructure failure.
+   */
   void save(PaymentOrder order);
 
   /**

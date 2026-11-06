@@ -2,6 +2,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -92,6 +93,35 @@ class ApiCompatibilityTest(unittest.TestCase):
 
     def test_rejects_a_skipped_published_module(self):
         self.pom('<axiz.api.skip>true</axiz.api.skip>')
+        self.assertTrue(any("may not be skipped" in e for e in self.check()))
+
+    def new_module(self):
+        self.pom('<axiz.api.skip>true</axiz.api.skip><axiz.api.new-module>true</axiz.api.new-module>')
+        (self.root / "docs/migration/2.0/new-modules.txt").write_text("axiz-core-demo\n")
+        self.changes = []
+        self.inventory()
+        reference = self.root / "docs/migration/2.0/new-api/axiz-core-demo.txt"
+        reference.parent.mkdir()
+        reference.write_text("reviewed signatures\n")
+        return reference
+
+    def test_new_module_checks_its_actual_api_without_a_fake_historical_report(self):
+        self.new_module()
+        self.report.unlink()
+        with patch.object(gate, "public_api", return_value="reviewed signatures\n"):
+            self.assertEqual([], self.check())
+        with patch.object(gate, "public_api", return_value="changed signatures\n"):
+            self.assertTrue(any("differs from its reviewed signatures" in error for error in self.check()))
+
+    def test_new_module_cannot_hide_a_missing_jar_or_missing_review(self):
+        reference = self.new_module()
+        reference.unlink()
+        self.assertTrue(any("missing reviewed public API" in e for e in self.check()))
+        (self.module / "target/axiz-core-demo-2.0.0.jar").unlink()
+        self.assertTrue(any("missing current JAR" in e for e in self.check()))
+
+    def test_new_module_opt_out_requires_the_approved_inventory(self):
+        self.pom('<axiz.api.skip>true</axiz.api.skip><axiz.api.new-module>true</axiz.api.new-module>')
         self.assertTrue(any("may not be skipped" in e for e in self.check()))
 
     def test_requires_approved_predecessor_coordinate(self):

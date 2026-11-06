@@ -4,9 +4,9 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
-import pe.axiz.kit.jdbc.SqlStates;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
 import reactor.core.publisher.Mono;
@@ -18,7 +18,7 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
 
   public R2dbcReactiveInboxStore(ReactiveSql sql, String table) {
     this.sql = Objects.requireNonNull(sql);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
   }
 
   @Override

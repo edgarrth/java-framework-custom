@@ -1,6 +1,7 @@
 package pe.axiz.spring.outbox;
 
 import java.time.Duration;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -42,11 +43,43 @@ public record AxizOutboxProperties(
       @DefaultValue("10m") Duration maxDelay,
       @DefaultValue("7d") Duration retention,
       @DefaultValue("1h") Duration purgeInterval,
-      @DefaultValue("3m") Duration leaseDuration) {
+      @DefaultValue("3m") Duration leaseDuration,
+      @DefaultValue("2s") Duration claimAllowance,
+      @Nullable Duration publishBudget) {
     @ConstructorBinding
     public Relay {
       if (!leaseDuration.isPositive())
         throw new IllegalArgumentException("outbox lease must be positive");
+      if (!claimAllowance.isPositive() || (publishBudget != null && !publishBudget.isPositive()))
+        throw new IllegalArgumentException(
+            "outbox claim-allowance and publish-budget must be positive");
+      leaseDuration.toNanos();
+      claimAllowance.toNanos();
+      if (publishBudget != null) publishBudget.toNanos();
+    }
+
+    public Relay(
+        boolean enabled,
+        Duration pollInterval,
+        int batchSize,
+        int maxAttempts,
+        Duration initialDelay,
+        Duration maxDelay,
+        Duration retention,
+        Duration purgeInterval,
+        Duration leaseDuration) {
+      this(
+          enabled,
+          pollInterval,
+          batchSize,
+          maxAttempts,
+          initialDelay,
+          maxDelay,
+          retention,
+          purgeInterval,
+          leaseDuration,
+          Duration.ofSeconds(2),
+          null);
     }
 
     public Relay(

@@ -15,13 +15,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Import;
 import org.springframework.transaction.PlatformTransactionManager;
 import pe.axiz.adapter.outbox.jdbc.Dialect;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.outbox.OutboxRelay;
+import pe.axiz.core.outbox.OutboxRelayListener;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
@@ -44,15 +45,12 @@ import pe.axiz.spring.foundation.jdbc.SqlDialects;
 @ConditionalOnBean(DataSource.class)
 @ConditionalOnBooleanProperty(name = "axiz.outbox.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizOutboxProperties.class)
+@Import(OutboxRelayMetricsConfiguration.class)
 public class AxizOutboxAutoConfiguration {
 
   @Bean
-  SmartInitializingSingleton axizOutboxSchemaCheck(
-      OutboxStore store, AxizOutboxProperties properties, Environment environment) {
-    return () -> {
-      OutboxLeaseValidation.validate(properties, environment);
-      store.verifySchema();
-    };
+  SmartInitializingSingleton axizOutboxSchemaCheck(OutboxStore store) {
+    return store::verifySchema;
   }
 
   @Bean
@@ -102,7 +100,8 @@ public class AxizOutboxAutoConfiguration {
         EventPublisher publisher,
         PlatformTransactionManager tx,
         AxizOutboxProperties p,
-        ObjectProvider<Clock> clock) {
+        ObjectProvider<Clock> clock,
+        ObjectProvider<OutboxRelayListener> listeners) {
       AxizOutboxProperties.Relay r = p.relay();
       return new OutboxRelay(
           store,
@@ -112,7 +111,9 @@ public class AxizOutboxAutoConfiguration {
           r.batchSize(),
           r.maxAttempts(),
           Backoff.exponential(r.initialDelay(), r.maxDelay()),
-          r.leaseDuration());
+          r.leaseDuration(),
+          OutboxLeaseValidation.budget(publisher, r),
+          listeners.getIfAvailable(() -> OutboxRelayListener.NOOP));
     }
 
     @Bean

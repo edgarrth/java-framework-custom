@@ -1,5 +1,7 @@
 package pe.axiz.spring.secrets;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -30,7 +32,7 @@ import software.amazon.awssdk.services.ssm.SsmClient;
     afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.secrets.aws.SecretsManagerResolver")
 @ConditionalOnBooleanProperty(name = "axiz.secrets.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(AxizSecretsProperties.class)
+@EnableConfigurationProperties({AxizSecretsProperties.class, AxizAwsCompletionProperties.class})
 public class AxizSecretsAwsAutoConfiguration {
 
   /**
@@ -42,8 +44,8 @@ public class AxizSecretsAwsAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnMissingBean(AsyncSecretResolver.class)
   @Conditional(AxizSecretsNativeAwsAutoConfiguration.OwnerNeeded.class)
-  AsyncAwsClients axizSecretsAsyncAwsResources() {
-    return new AsyncAwsClients();
+  AsyncAwsClients axizSecretsAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizSecretsAsyncAwsResources", completion.workers(), completion.queueCapacity());
   }
 
   @Configuration(proxyBeanMethods = false)

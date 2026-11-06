@@ -2,6 +2,9 @@ package pe.axiz.payments.notifications;
 
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.AxizArchitecture;
+import pe.axiz.quality.archunit.Archetype;
+import pe.axiz.quality.archunit.Stack;
+import pe.axiz.quality.archunit.Structure;
 
 /** Rules of the eda style plus the general axiz rules; breaking one fails the build. */
 class ArchitectureTest {
@@ -9,9 +12,9 @@ class ArchitectureTest {
   @Test
   void followsTheArchitecture() {
     AxizArchitecture.of("pe.axiz.payments.notifications")
-        .archetype(pe.axiz.quality.archunit.Archetype.EVENT_PROCESSOR)
-        .stack(pe.axiz.quality.archunit.Stack.SERVLET)
-        .structure(pe.axiz.quality.archunit.Structure.EDA)
+        .archetype(Archetype.EVENT_PROCESSOR)
+        .stack(Stack.SERVLET)
+        .structure(Structure.EDA)
         .verify();
   }
 }

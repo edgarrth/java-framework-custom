@@ -2,9 +2,11 @@ package pe.axiz.adapter.messaging.sqs;
 
 import java.util.Map;
 import java.util.Objects;
+import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -16,12 +18,27 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
  * Publishes CloudEvents (structured JSON) to Amazon SQS. FIFO queues use the subject as message
  * group and the event id as deduplication id. Destinations are queue URLs.
  */
-public final class SqsEventPublisher implements EventPublisher {
+public final class SqsEventPublisher implements EventPublisher, BoundedPublisher {
 
   private final SqsClient sqs;
 
   public SqsEventPublisher(SqsClient sqs) {
     this.sqs = Objects.requireNonNull(sqs);
+  }
+
+  @Override
+  public PublishBound publishBound() {
+    try {
+      var configuration = sqs.serviceClientConfiguration();
+      if (configuration == null) return PublishBound.unbounded();
+      return configuration
+          .overrideConfiguration()
+          .apiCallTimeout()
+          .map(PublishBound::of)
+          .orElseGet(PublishBound::unbounded);
+    } catch (UnsupportedOperationException unavailable) {
+      return PublishBound.unbounded();
+    }
   }
 
   @Override

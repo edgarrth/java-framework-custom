@@ -1,5 +1,7 @@
 package pe.axiz.spring.audit;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
@@ -36,7 +38,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
     })
 @ConditionalOnProperty("axiz.audit.sqs.queue-url")
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(AxizAuditProperties.class)
+@EnableConfigurationProperties({AxizAuditProperties.class, AxizAwsCompletionProperties.class})
 public class AxizAuditSqsAutoConfiguration {
 
   @Bean(destroyMethod = "close")
@@ -64,8 +66,8 @@ public class AxizAuditSqsAutoConfiguration {
     @ConditionalOnMissingBean(SqsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizAuditAsyncAwsResources() {
-        return new AsyncAwsClients();
+      AsyncAwsClients axizAuditAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizAuditAsyncAwsResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")

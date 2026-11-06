@@ -1,5 +1,7 @@
 package pe.axiz.spring.inbox;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,7 +32,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @ConditionalOnClass(name = "pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore")
 @ConditionalOnProperty(name = "axiz.inbox.store", havingValue = "dynamodb")
 @ConditionalOnBooleanProperty(name = "axiz.inbox.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(AxizInboxProperties.class)
+@EnableConfigurationProperties({AxizInboxProperties.class, AxizAwsCompletionProperties.class})
 public class AxizInboxDynamoDbAutoConfiguration {
 
   /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
@@ -59,8 +61,8 @@ public class AxizInboxDynamoDbAutoConfiguration {
     static class NativeStoreConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-      AsyncAwsClients axizInboxAsyncAwsResources() {
-        return new AsyncAwsClients();
+      AsyncAwsClients axizInboxAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizInboxAsyncAwsResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")

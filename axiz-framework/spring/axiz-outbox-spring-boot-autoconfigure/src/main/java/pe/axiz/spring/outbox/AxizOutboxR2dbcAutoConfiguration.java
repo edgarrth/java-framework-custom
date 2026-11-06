@@ -17,12 +17,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Import;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.outbox.OutboxRelay;
+import pe.axiz.core.outbox.OutboxRelayListener;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.r2dbc.R2dbcSql;
@@ -48,16 +49,13 @@ import pe.axiz.kit.r2dbc.ReactiveSql;
 @ConditionalOnMissingBean(DataSource.class)
 @ConditionalOnBooleanProperty(name = "axiz.outbox.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizOutboxProperties.class)
+@Import(OutboxRelayMetricsConfiguration.class)
 public class AxizOutboxR2dbcAutoConfiguration {
 
   /** Store used by the relay: statements run on the connection bound by its transactions. */
   @Bean
-  SmartInitializingSingleton axizOutboxSchemaCheck(
-      OutboxStore store, AxizOutboxProperties properties, Environment environment) {
-    return () -> {
-      OutboxLeaseValidation.validate(properties, environment);
-      store.verifySchema();
-    };
+  SmartInitializingSingleton axizOutboxSchemaCheck(OutboxStore store) {
+    return store::verifySchema;
   }
 
   @Bean
@@ -99,7 +97,8 @@ public class AxizOutboxR2dbcAutoConfiguration {
         EventPublisher publisher,
         ConnectionFactory connectionFactory,
         AxizOutboxProperties p,
-        ObjectProvider<Clock> clock) {
+        ObjectProvider<Clock> clock,
+        ObjectProvider<OutboxRelayListener> listeners) {
       AxizOutboxProperties.Relay r = p.relay();
       return new OutboxRelay(
           store,
@@ -109,7 +108,9 @@ public class AxizOutboxR2dbcAutoConfiguration {
           r.batchSize(),
           r.maxAttempts(),
           Backoff.exponential(r.initialDelay(), r.maxDelay()),
-          r.leaseDuration());
+          r.leaseDuration(),
+          OutboxLeaseValidation.budget(publisher, r),
+          listeners.getIfAvailable(() -> OutboxRelayListener.NOOP));
     }
 
     @Bean

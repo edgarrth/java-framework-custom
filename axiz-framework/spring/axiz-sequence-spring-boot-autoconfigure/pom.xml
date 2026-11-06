@@ -32,7 +32,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-kit-r2dbc</artifactId>
+      <artifactId>axiz-adapter-sequence-r2dbc</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>

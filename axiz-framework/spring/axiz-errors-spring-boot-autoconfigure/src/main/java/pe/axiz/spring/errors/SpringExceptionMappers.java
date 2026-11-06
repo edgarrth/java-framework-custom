@@ -33,6 +33,20 @@ final class SpringExceptionMappers {
 
   private SpringExceptionMappers() {}
 
+  /** MVC advice must not turn an anonymous method-security denial into an authenticated 403. */
+  static Throwable servletSecurityFailure(Throwable failure) {
+    if (SECURITY && failure instanceof org.springframework.security.access.AccessDeniedException) {
+      var authentication =
+          org.springframework.security.core.context.SecurityContextHolder.getContext()
+              .getAuthentication();
+      if (authentication != null
+          && !new org.springframework.security.authentication.AuthenticationTrustResolverImpl()
+              .isAuthenticated(authentication))
+        return AccessException.unauthenticated("authentication required");
+    }
+    return failure;
+  }
+
   static ExceptionMapper springExceptions() {
     return failure -> {
       Optional<AxizException> mapped = bindingErrors(failure);

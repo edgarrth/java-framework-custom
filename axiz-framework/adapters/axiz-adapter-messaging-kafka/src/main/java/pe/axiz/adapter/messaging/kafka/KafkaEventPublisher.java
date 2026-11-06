@@ -8,8 +8,10 @@ import java.util.concurrent.TimeoutException;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 
@@ -19,17 +21,35 @@ import pe.axiz.core.messaging.PublishResult;
  * are {@code kafka:<topic>} (the documented form of {@code axiz.messaging.destinations}) or a bare
  * topic name (anything that is not an SQS URL or an SNS ARN).
  */
-public final class KafkaEventPublisher implements EventPublisher {
+public final class KafkaEventPublisher implements EventPublisher, BoundedPublisher {
 
   /** Scheme of Kafka destinations: {@code kafka:payments} is the topic {@code payments}. */
   public static final String SCHEME = "kafka:";
 
   private final Producer<String, byte[]> producer;
   private final Duration timeout;
+  private final PublishBound bound;
 
   public KafkaEventPublisher(Producer<String, byte[]> producer, Duration timeout) {
     this.producer = Objects.requireNonNull(producer);
     this.timeout = Objects.requireNonNull(timeout);
+    if (!timeout.isPositive()) throw new IllegalArgumentException("send timeout must be positive");
+    this.bound = PublishBound.unbounded();
+  }
+
+  /** Uses the effective max.block.ms of the same producer, plus the acknowledgement wait. */
+  public KafkaEventPublisher(
+      Producer<String, byte[]> producer, Duration maxBlock, Duration timeout) {
+    this.producer = Objects.requireNonNull(producer);
+    this.timeout = Objects.requireNonNull(timeout);
+    if (maxBlock.isNegative() || !timeout.isPositive())
+      throw new IllegalArgumentException("maxBlock must be non-negative and timeout positive");
+    this.bound = PublishBound.of(maxBlock.plus(timeout));
+  }
+
+  @Override
+  public PublishBound publishBound() {
+    return bound;
   }
 
   @Override

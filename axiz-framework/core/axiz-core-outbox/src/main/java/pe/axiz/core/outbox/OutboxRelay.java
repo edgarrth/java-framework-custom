@@ -2,14 +2,17 @@ package pe.axiz.core.outbox;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.function.LongSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.commons.tx.TransactionRunner;
+import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
@@ -30,6 +33,9 @@ public final class OutboxRelay {
   private final int maxAttempts;
   private final Backoff backoff;
   private final Duration lease;
+  private final Duration publishBudget;
+  private final LongSupplier nanoTime;
+  private final OutboxRelayListener listener;
 
   public OutboxRelay(
       OutboxStore store,
@@ -59,6 +65,78 @@ public final class OutboxRelay {
       int maxAttempts,
       Backoff backoff,
       Duration lease) {
+    this(
+        store,
+        publisher,
+        transactions,
+        clock,
+        batchSize,
+        maxAttempts,
+        backoff,
+        lease,
+        BoundedPublisher.of(publisher).budget(Optional.empty()));
+  }
+
+  public OutboxRelay(
+      OutboxStore store,
+      EventPublisher publisher,
+      TransactionRunner transactions,
+      Clock clock,
+      int batchSize,
+      int maxAttempts,
+      Backoff backoff,
+      Duration lease,
+      Duration publishBudget) {
+    this(
+        store,
+        publisher,
+        transactions,
+        clock,
+        batchSize,
+        maxAttempts,
+        backoff,
+        lease,
+        publishBudget,
+        OutboxRelayListener.NOOP);
+  }
+
+  public OutboxRelay(
+      OutboxStore store,
+      EventPublisher publisher,
+      TransactionRunner transactions,
+      Clock clock,
+      int batchSize,
+      int maxAttempts,
+      Backoff backoff,
+      Duration lease,
+      Duration publishBudget,
+      OutboxRelayListener listener) {
+    this(
+        store,
+        publisher,
+        transactions,
+        clock,
+        batchSize,
+        maxAttempts,
+        backoff,
+        lease,
+        publishBudget,
+        listener,
+        System::nanoTime);
+  }
+
+  OutboxRelay(
+      OutboxStore store,
+      EventPublisher publisher,
+      TransactionRunner transactions,
+      Clock clock,
+      int batchSize,
+      int maxAttempts,
+      Backoff backoff,
+      Duration lease,
+      Duration publishBudget,
+      OutboxRelayListener listener,
+      LongSupplier nanoTime) {
     this.store = Objects.requireNonNull(store);
     this.publisher = Objects.requireNonNull(publisher);
     this.transactions = Objects.requireNonNull(transactions);
@@ -71,6 +149,13 @@ public final class OutboxRelay {
     this.backoff = Objects.requireNonNull(backoff);
     this.lease = Objects.requireNonNull(lease);
     if (!lease.isPositive()) throw new IllegalArgumentException("lease must be positive");
+    this.publishBudget = Objects.requireNonNull(publishBudget);
+    if (!publishBudget.isPositive()
+        || lease.minus(LeaseTiming.margin(lease)).compareTo(publishBudget) < 0)
+      throw new IllegalArgumentException(
+          "lease must cover the positive publication budget and margin");
+    this.nanoTime = Objects.requireNonNull(nanoTime);
+    this.listener = Objects.requireNonNull(listener);
   }
 
   /** Result of one relay run. */
@@ -105,14 +190,21 @@ public final class OutboxRelay {
   }
 
   private RunResult relayClaim(int limit) {
-    Instant now = clock.instant();
+    long t0 = nanoTime.getAsLong();
     String owner = UUID.randomUUID().toString();
-    List<OutboxRecord> batch = transaction(() -> store.claimDue(limit, now, lease, owner));
+    List<OutboxRecord> batch = transaction(() -> store.claimDue(limit, lease, owner));
+    long deadline = LeaseTiming.validUntil(t0, lease);
+    listener.onClaim(Duration.ofNanos(nanoTime.getAsLong() - t0), batch.size());
     int published = 0;
     int retried = 0;
     int failed = 0;
+    int remaining = batch.size();
     for (OutboxRecord r : batch) {
-      if (r.leaseUntil() == null || !r.leaseUntil().isAfter(clock.instant())) continue;
+      if (deadline - nanoTime.getAsLong() < publishBudget.toNanos()) {
+        listener.onBudgetExhausted(remaining);
+        break;
+      }
+      remaining--;
       try {
         publisher.publish(r.destination(), r.event());
         if (transaction(() -> store.markPublished(r.id(), owner, clock.instant()))) published++;

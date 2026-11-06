@@ -112,7 +112,7 @@ public final class IdempotencyService {
         boolean changed = store.resolve(record, resolution.get(), now, now.plus(retention));
         if (changed && resolution.get().response() == null)
           throw new BusinessException(
-              IdempotencyErrors.OUTCOME_UNKNOWN,
+              IdempotencyErrors.RESOLVED_WITHOUT_EFFECT,
               "operation reconciled without effect; repeat the request with the same key");
         record =
             store

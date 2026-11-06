@@ -92,7 +92,16 @@ class OutboxTest {
           published.add(envelope.id());
           return new PublishResult(envelope.id(), destination, null);
         };
-    new OutboxRelay(store, failsFirst, tx, clock, 10, 3, Backoff.fixed(Duration.ofSeconds(1)))
+    new OutboxRelay(
+            store,
+            failsFirst,
+            tx,
+            clock,
+            10,
+            3,
+            Backoff.fixed(Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
         .relayOnce();
     assertTrue(published.isEmpty(), "the successor must wait for its failed predecessor");
   }
@@ -113,7 +122,15 @@ class OutboxTest {
           return new PublishResult(envelope.id(), destination, null);
         };
     new OutboxRelay(
-            store, checksTransaction, tx, clock, 10, 3, Backoff.fixed(Duration.ofSeconds(1)))
+            store,
+            checksTransaction,
+            tx,
+            clock,
+            10,
+            3,
+            Backoff.fixed(Duration.ofSeconds(1)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
         .relayOnce();
   }
 
@@ -143,7 +160,16 @@ class OutboxTest {
         (destination, event, write) ->
             write.accept(event.withExtension(EventEnvelope.OUTBOX_TRACEPARENT, parent));
     new OutboxWriter(store, clock, tracing).write("t", event("e-1"), "order");
-    new OutboxRelay(store, publisher, tx, clock, 10, 3, Backoff.fixed(Duration.ofSeconds(10)))
+    new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            3,
+            Backoff.fixed(Duration.ofSeconds(10)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
         .relayOnce();
     // the relay hands it to the (observed) publisher, which continues that trace
     assertEquals(
@@ -157,7 +183,16 @@ class OutboxTest {
     clock.now = clock.now.plusMillis(1);
     writer.write("t", event("e-2"), "order");
     OutboxRelay relay =
-        new OutboxRelay(store, publisher, tx, clock, 10, 3, Backoff.fixed(Duration.ofSeconds(10)));
+        new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            3,
+            Backoff.fixed(Duration.ofSeconds(10)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     OutboxRelay.RunResult r = relay.relayOnce();
     assertEquals(2, r.published());
     assertEquals(List.of("t:e-1", "t:e-2"), published);
@@ -169,13 +204,26 @@ class OutboxTest {
 
   @Test
   void failuresAreRetriedWithBackoffThenMarkedFailed() throws Exception {
+    clock.now = Instant.now();
     new OutboxWriter(store, clock).write("t", event("e-1"), null);
     OutboxRelay relay =
-        new OutboxRelay(store, publisher, tx, clock, 10, 2, Backoff.fixed(Duration.ofSeconds(30)));
+        new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            2,
+            Backoff.fixed(Duration.ofSeconds(30)),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
     brokerDown = true;
     assertEquals(1, relay.relayOnce().retried());
     assertEquals(0, relay.relayOnce().total(), "not due before the backoff");
     clock.now = clock.now.plusSeconds(31);
+    try (Connection c = tx.get(); Statement statement = c.createStatement()) {
+      statement.executeUpdate("UPDATE axiz_outbox SET next_attempt_at=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
+    }
     assertEquals(1, relay.relayOnce().failed());
     assertEquals(0, store.countPending());
     try (Connection c = tx.get();
@@ -196,10 +244,30 @@ class OutboxTest {
     }
     assertEquals(
         25,
-        new OutboxRelay(store, publisher, tx, clock, 10, 3, Backoff.fixed(Duration.ZERO)).drain());
+        new OutboxRelay(
+                store,
+                publisher,
+                tx,
+                clock,
+                10,
+                3,
+                Backoff.fixed(Duration.ZERO),
+                Duration.ofMinutes(3),
+                Duration.ofMillis(1))
+            .drain());
     assertThrows(
         IllegalArgumentException.class,
-        () -> new OutboxRelay(store, publisher, tx, clock, 0, 3, Backoff.fixed(Duration.ZERO)));
+        () ->
+            new OutboxRelay(
+                store,
+                publisher,
+                tx,
+                clock,
+                0,
+                3,
+                Backoff.fixed(Duration.ZERO),
+                Duration.ofMinutes(3),
+                Duration.ofMillis(1)));
     assertThrows(
         IllegalArgumentException.class,
         () -> new JdbcOutboxStore(tx, "bad name", Dialect.POSTGRESQL));
@@ -217,7 +285,17 @@ class OutboxTest {
     writer.write("t", event("failed"), "order");
     writer.write("t", event("successor"), "order");
     brokerDown = true;
-    new OutboxRelay(store, publisher, tx, clock, 10, 1, Backoff.fixed(Duration.ZERO)).relayOnce();
+    new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            1,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
+        .relayOnce();
     assertEquals(1, store.countBlockedAggregates());
     OutboxAdmin unavailableAudit =
         new OutboxAdmin(
@@ -240,7 +318,17 @@ class OutboxTest {
     assertThrows(IllegalArgumentException.class, () -> admin.skip("failed", " "));
     assertTrue(admin.retry("failed"));
     assertEquals(1, audit.size());
-    new OutboxRelay(store, publisher, tx, clock, 10, 1, Backoff.fixed(Duration.ZERO)).relayOnce();
+    new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            1,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
+        .relayOnce();
     assertTrue(admin.skip("failed", "cancelled by business owner"));
     assertEquals(0, store.countBlockedAggregates());
     assertEquals(1, store.countSkipped());
@@ -249,7 +337,16 @@ class OutboxTest {
     brokerDown = false;
     assertEquals(
         1,
-        new OutboxRelay(store, publisher, tx, clock, 10, 1, Backoff.fixed(Duration.ZERO))
+        new OutboxRelay(
+                store,
+                publisher,
+                tx,
+                clock,
+                10,
+                1,
+                Backoff.fixed(Duration.ZERO),
+                Duration.ofMinutes(3),
+                Duration.ofMillis(1))
             .relayOnce()
             .published());
     assertEquals(false, admin.retry("successor"));
@@ -260,12 +357,13 @@ class OutboxTest {
   void expiredOwnerCannotCompleteAReclaimedEvent() throws Exception {
     new OutboxWriter(store, clock).write("t", event("leased"), "order");
     assertEquals(
-        1,
-        tx.inTransaction(() -> store.claimDue(10, clock.now, Duration.ofSeconds(1), "old")).size());
+        1, tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(1), "old")).size());
     clock.now = clock.now.plusSeconds(2);
+    try (Connection c = tx.get(); Statement statement = c.createStatement()) {
+      statement.executeUpdate("UPDATE axiz_outbox SET lease_until=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
+    }
     assertEquals(
-        1,
-        tx.inTransaction(() -> store.claimDue(10, clock.now, Duration.ofSeconds(1), "new")).size());
+        1, tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(1), "new")).size());
     assertEquals(false, store.markPublished("leased", "old", clock.now));
     assertTrue(store.markPublished("leased", "new", clock.now));
     assertEquals(false, store.markFailed("leased", "new", 1, clock.now, "late", true));
@@ -283,11 +381,31 @@ class OutboxTest {
                   throw new IllegalStateException("rollback");
                 }));
     writer.write("t", event("first"), "order");
-    new OutboxRelay(store, publisher, tx, clock, 10, 1, Backoff.fixed(Duration.ZERO)).relayOnce();
+    new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            1,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
+        .relayOnce();
     assertEquals("1", relayed.getFirst().extension("axizseq").orElseThrow());
     assertEquals(1, store.purgePublished(clock.now.plusSeconds(1)));
     writer.write("t", event("next"), "order");
-    new OutboxRelay(store, publisher, tx, clock, 10, 1, Backoff.fixed(Duration.ZERO)).relayOnce();
+    new OutboxRelay(
+            store,
+            publisher,
+            tx,
+            clock,
+            10,
+            1,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1))
+        .relayOnce();
     assertEquals("2", relayed.getLast().extension("axizseq").orElseThrow());
   }
 

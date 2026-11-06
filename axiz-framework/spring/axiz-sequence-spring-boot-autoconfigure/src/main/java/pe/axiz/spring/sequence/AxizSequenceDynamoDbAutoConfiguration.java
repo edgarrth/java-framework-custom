@@ -1,5 +1,7 @@
 package pe.axiz.spring.sequence;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -26,7 +28,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @AutoConfiguration(afterName = "pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration")
 @ConditionalOnClass(name = "pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore")
 @ConditionalOnProperty(name = "axiz.sequence.store", havingValue = "dynamodb")
-@EnableConfigurationProperties(AxizSequenceProperties.class)
+@EnableConfigurationProperties({AxizSequenceProperties.class, AxizAwsCompletionProperties.class})
 public class AxizSequenceDynamoDbAutoConfiguration {
 
   /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
@@ -53,8 +55,8 @@ public class AxizSequenceDynamoDbAutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-    AsyncAwsClients axizSequenceAsyncAwsResources() {
-      return new AsyncAwsClients();
+    AsyncAwsClients axizSequenceAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizSequenceAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

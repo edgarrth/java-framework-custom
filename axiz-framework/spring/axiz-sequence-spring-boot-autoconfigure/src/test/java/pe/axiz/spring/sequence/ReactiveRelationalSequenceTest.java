@@ -9,10 +9,10 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
+import pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore;
 import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
-import pe.axiz.kit.r2dbc.R2dbcSequenceStore;
-import pe.axiz.kit.r2dbc.ReactiveSequenceStore;
 
 class ReactiveRelationalSequenceTest {
   private static ConnectionFactory connections() {

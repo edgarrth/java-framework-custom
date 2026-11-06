@@ -25,6 +25,38 @@ class ProjectGeneratorTest {
   private static final Pattern PACKAGE = Pattern.compile("^package ([\\w.]+);", Pattern.MULTILINE);
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
 
+  @Test
+  void architectureImportsAreCompleteWithoutDependingOnTheJvmFormatter() {
+    for (boolean cqrs : List.of(false, true)) {
+      var request =
+          Fixtures.request(
+              "business",
+              Structure.HEXAGONAL,
+              Stack.SERVLET,
+              "aurora",
+              List.of(),
+              cqrs
+                  ? new pe.axiz.codegen.model.Extension[] {pe.axiz.codegen.model.Extension.CQRS}
+                  : new pe.axiz.codegen.model.Extension[0]);
+      var validation = generator.validate(request);
+      var files =
+          pe.axiz.codegen.render.TemplateSet.load("service")
+              .render(generator.context(request, validation.archetype(), validation.contract()));
+      var source =
+          files.entrySet().stream()
+              .filter(e -> e.getKey().endsWith("/ArchitectureTest.java"))
+              .findFirst()
+              .orElseThrow();
+      String text = new String(source.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+      for (String type : List.of("Archetype", "Stack", "Structure")) {
+        assertTrue(text.contains("import pe.axiz.quality.archunit." + type + ";"), text);
+        assertFalse(text.contains("(" + "pe.axiz.quality.archunit." + type + "."), text);
+      }
+      assertEquals(cqrs, text.contains("import pe.axiz.quality.archunit.Extension;"));
+      assertEquals(cqrs, text.contains(".extensions(Extension.CQRS)"));
+    }
+  }
+
   /** Every valid archetype x structure x stack x persistence combination. */
   private List<ProjectRequest> combinations() {
     List<ProjectRequest> out = new ArrayList<>();

@@ -7,8 +7,8 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
-import pe.axiz.kit.jdbc.SqlStates;
 
 /** Read-only upgrade diagnosis; works before and after the aggregate-sequence migration. */
 public final class JdbcOutboxPreflight {
@@ -28,7 +28,7 @@ public final class JdbcOutboxPreflight {
   /** Streams the canonical SQL report without changing statuses or retaining all rows in memory. */
   public static long report(Connection connection, String table, Consumer<Failure> result)
       throws SQLException {
-    String identifier = SqlStates.identifier(table);
+    String identifier = SqlIdentifiers.require(table);
     Objects.requireNonNull(result);
     String sql;
     try (var input =

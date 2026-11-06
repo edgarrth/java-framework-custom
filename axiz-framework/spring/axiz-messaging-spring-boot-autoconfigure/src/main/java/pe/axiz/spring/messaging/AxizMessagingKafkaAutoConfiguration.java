@@ -82,21 +82,34 @@ public class AxizMessagingKafkaAutoConfiguration {
     return props;
   }
 
-  @Bean(destroyMethod = "close")
-  KafkaProducer<String, byte[]> axizKafkaProducer(AxizMessagingProperties p, Environment env) {
+  @Bean
+  Map<String, Object> axizKafkaProducerProperties(AxizMessagingProperties p, Environment env) {
     Map<String, Object> props = common(p, env);
     props.putAll(MskIam.reliableProducer());
     props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
-    return new KafkaProducer<>(props);
+    return Map.copyOf(props);
+  }
+
+  @Bean(destroyMethod = "close")
+  KafkaProducer<String, byte[]> axizKafkaProducer(
+      @Qualifier("axizKafkaProducerProperties") Map<String, Object> properties) {
+    return new KafkaProducer<>(properties);
   }
 
   @Bean
   EventPublisherAdapter axizKafkaPublisherAdapter(
-      KafkaProducer<String, byte[]> producer, AxizMessagingProperties p) {
+      KafkaProducer<String, byte[]> producer,
+      AxizMessagingProperties p,
+      @Qualifier("axizKafkaProducerProperties") Map<String, Object> properties) {
     return new EventPublisherAdapter(
-        "kafka", new KafkaEventPublisher(producer, p.kafka().sendTimeout()));
+        "kafka",
+        new KafkaEventPublisher(
+            producer,
+            Duration.ofMillis(
+                ((Number) properties.get(ProducerConfig.MAX_BLOCK_MS_CONFIG)).longValue()),
+            p.kafka().sendTimeout()));
   }
 
   @Bean(destroyMethod = "close")

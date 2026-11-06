@@ -1,6 +1,15 @@
 <!-- generated -->
 # axiz-outbox-spring-boot-autoconfigure
 
+Relay startup validates the actual `EventPublisher` budget, including routing and observation
+wrappers, against the lease. Set `axiz.outbox.relay.publish-budget` for unknown/custom publishers;
+it cannot reduce a known route's bound. `axiz.outbox.relay.claim-allowance` defaults to 2 s and is
+only startup sizing, not a hard limit on claim latency. Outbox writers with no local relay do not
+require a publisher budget; schema checks remain active.
+
+Optional relay metrics are `axiz.outbox.relay.claim.duration` and
+`axiz.outbox.relay.budget.exhausted`. A slow claim alone does not increment the exhaustion counter.
+
 Transactional outbox on Aurora PostgreSQL (JDBC or R2DBC) with background relay (auto-configuration).
 
 ## Dependency

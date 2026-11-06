@@ -1,7 +1,13 @@
 package {{project.basePackage}};
 
 import org.junit.jupiter.api.Test;
+import pe.axiz.quality.archunit.Archetype;
 import pe.axiz.quality.archunit.AxizArchitecture;
+{{#hasExtensions}}
+import pe.axiz.quality.archunit.Extension;
+{{/hasExtensions}}
+import pe.axiz.quality.archunit.Stack;
+import pe.axiz.quality.archunit.Structure;
 
 /** Rules of the {{fw.id}} style plus the general axiz rules; breaking one fails the build. */
 class ArchitectureTest {
@@ -9,10 +15,10 @@ class ArchitectureTest {
   @Test
   void followsTheArchitecture() {
     AxizArchitecture.of("{{project.basePackage}}")
-        .archetype(pe.axiz.quality.archunit.Archetype.{{archetype.enum}})
-        .stack(pe.axiz.quality.archunit.Stack.{{#stack.reactive}}REACTIVE{{/stack.reactive}}{{#stack.servlet}}SERVLET{{/stack.servlet}})
-        .structure(pe.axiz.quality.archunit.Structure.{{fw.enum}})
-        {{#extensions}}.extensions(pe.axiz.quality.archunit.Extension.{{enum}}){{/extensions}}
+        .archetype(Archetype.{{archetype.enum}})
+        .stack(Stack.{{#stack.reactive}}REACTIVE{{/stack.reactive}}{{#stack.servlet}}SERVLET{{/stack.servlet}})
+        .structure(Structure.{{fw.enum}})
+        {{#extensions}}.extensions(Extension.{{enum}}){{/extensions}}
         .verify();
   }
 }

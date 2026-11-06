@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  */
 @AutoConfiguration
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(AxizMessagingProperties.class)
+@EnableConfigurationProperties({AxizMessagingProperties.class, AxizMessagingAwsProperties.class})
 public class AxizMessagingAwsAutoConfiguration {
 
   @Configuration(proxyBeanMethods = false)
@@ -37,12 +37,16 @@ public class AxizMessagingAwsAutoConfiguration {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    SqsClient axizSqsClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
+    SqsClient axizSqsClient(
+        Environment env,
+        ObjectProvider<ObservationRegistry> registry,
+        AxizMessagingAwsProperties aws) {
       return AwsClients.build(
           SqsClient.builder(),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
           env.getProperty("axiz.aws.region"),
-          env.getProperty("axiz.aws.sqs.endpoint", env.getProperty("axiz.aws.endpoint", "")));
+          env.getProperty("axiz.aws.sqs.endpoint", env.getProperty("axiz.aws.endpoint", "")),
+          aws.apiCallTimeout());
     }
 
     @Bean
@@ -71,12 +75,16 @@ public class AxizMessagingAwsAutoConfiguration {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    SnsClient axizSnsClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
+    SnsClient axizSnsClient(
+        Environment env,
+        ObjectProvider<ObservationRegistry> registry,
+        AxizMessagingAwsProperties aws) {
       return AwsClients.build(
           SnsClient.builder(),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
           env.getProperty("axiz.aws.region"),
-          env.getProperty("axiz.aws.sns.endpoint", env.getProperty("axiz.aws.endpoint", "")));
+          env.getProperty("axiz.aws.sns.endpoint", env.getProperty("axiz.aws.endpoint", "")),
+          aws.apiCallTimeout());
     }
 
     @Bean

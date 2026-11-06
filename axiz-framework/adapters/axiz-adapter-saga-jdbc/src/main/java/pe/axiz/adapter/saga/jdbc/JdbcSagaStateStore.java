@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.saga.SagaConcurrencyException;
 import pe.axiz.core.saga.SagaState;
 import pe.axiz.core.saga.SagaStateStore;
 import pe.axiz.core.saga.SagaStatus;
 import pe.axiz.kit.jdbc.ConnectionProvider;
-import pe.axiz.kit.jdbc.SqlStates;
 
 /**
  * Saga state on Aurora PostgreSQL with optimistic locking (schema in {@code axiz/sql/saga-*.sql}).
@@ -27,7 +27,7 @@ public final class JdbcSagaStateStore implements SagaStateStore {
 
   public JdbcSagaStateStore(ConnectionProvider connections, String table) {
     this.connections = Objects.requireNonNull(connections);
-    this.table = SqlStates.identifier(table);
+    this.table = SqlIdentifiers.require(table);
   }
 
   @Override

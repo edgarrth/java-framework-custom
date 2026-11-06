@@ -1,5 +1,7 @@
 package pe.axiz.spring.messaging;
 
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -13,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
@@ -36,6 +39,7 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @ConditionalOnMissingBean(AsyncEventPublisher.class)
+@EnableConfigurationProperties({AxizMessagingAwsProperties.class, AxizAwsCompletionProperties.class})
 public class AxizNativeMessagingAwsAutoConfiguration {
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
@@ -49,20 +53,22 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     @ConditionalOnMissingBean(SqsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizMessagingSqsAsyncResources() {
-        return new AsyncAwsClients();
+      AsyncAwsClients axizMessagingSqsAsyncResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizMessagingSqsAsyncResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")
       SqsAsyncClient axizMessagingSqsAsyncClient(
           @Qualifier("axizMessagingSqsAsyncResources") AsyncAwsClients clients,
           Environment env,
-          ObjectProvider<ObservationRegistry> observations) {
+          ObjectProvider<ObservationRegistry> observations,
+          AxizMessagingAwsProperties aws) {
         return clients.configured(
             SqsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,
-            "sqs");
+            "sqs",
+            aws.apiCallTimeout());
       }
     }
 
@@ -84,20 +90,22 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     @ConditionalOnMissingBean(SnsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizMessagingSnsAsyncResources() {
-        return new AsyncAwsClients();
+      AsyncAwsClients axizMessagingSnsAsyncResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizMessagingSnsAsyncResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")
       SnsAsyncClient axizMessagingSnsAsyncClient(
           @Qualifier("axizMessagingSnsAsyncResources") AsyncAwsClients clients,
           Environment env,
-          ObjectProvider<ObservationRegistry> observations) {
+          ObjectProvider<ObservationRegistry> observations,
+          AxizMessagingAwsProperties aws) {
         return clients.configured(
             SnsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,
-            "sns");
+            "sns",
+            aws.apiCallTimeout());
       }
     }
 

@@ -132,7 +132,43 @@ class PostgresOutboxOrderingIT {
 
   private OutboxRelay relay(Backend b, EventPublisher publisher) {
     return new OutboxRelay(
-        b.store(), publisher, b.tx(), CLOCK, 100, 2, Backoff.fixed(Duration.ZERO));
+        b.store(),
+        publisher,
+        b.tx(),
+        CLOCK,
+        100,
+        2,
+        Backoff.fixed(Duration.ZERO),
+        Duration.ofMinutes(3),
+        Duration.ofMillis(1));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void databaseLeaseIsIndependentOfTheApplicationClockInBothDirections(boolean reactive) throws Exception {
+    Backend b = backend(reactive);
+    for (long hours : new long[] {-1, 1}) {
+      String id = "skew-" + hours;
+      new OutboxWriter(b.store(), CLOCK).write("t", event(id, id), "order");
+      var claimed = b.tx().inTransaction(() -> b.store().claimDue(1, Duration.ofMinutes(1), "owner"));
+      assertEquals(1, claimed.size());
+      try (var c = source.getConnection(); var statement = c.createStatement();
+          var rows = statement.executeQuery("SELECT lease_until > statement_timestamp() AND "
+              + "lease_until <= statement_timestamp() + interval '61 seconds' FROM axiz_outbox WHERE id='" + id + "'")) {
+        assertTrue(rows.next()); assertTrue(rows.getBoolean(1));
+      }
+      var sent = new ArrayList<String>();
+      var relay = new OutboxRelay(b.store(), (destination, e) -> {
+        sent.add(e.id()); return new PublishResult(e.id(), destination, null);
+      }, b.tx(), Clock.offset(CLOCK, Duration.ofHours(hours)), 10, 2,
+          Backoff.fixed(Duration.ZERO), Duration.ofMinutes(3), Duration.ofMillis(1));
+      assertEquals(0, relay.relayOnce().published(), "app clock cannot steal an unexpired database lease");
+      try (var c = source.getConnection(); var statement = c.createStatement()) {
+        statement.executeUpdate("UPDATE axiz_outbox SET lease_until=statement_timestamp()-interval '1 second' WHERE id='" + id + "'");
+      }
+      assertEquals(1, relay.relayOnce().published());
+      assertEquals(List.of(id), sent);
+    }
   }
 
   @ParameterizedTest
@@ -270,11 +306,7 @@ class PostgresOutboxOrderingIT {
               return null;
             });
     assertTrue(
-        b
-            .tx()
-            .inTransaction(
-                () -> b.store().claimDue(10, CLOCK.instant(), Duration.ofMinutes(1), "relay"))
-            .stream()
+        b.tx().inTransaction(() -> b.store().claimDue(10, Duration.ofMinutes(1), "relay")).stream()
             .noneMatch(r -> r.id().equals("new")));
   }
 
@@ -289,7 +321,7 @@ class PostgresOutboxOrderingIT {
         1,
         backend
             .tx()
-            .inTransaction(() -> backend.store().claimDue(10, now, Duration.ofMinutes(1), "owner"))
+            .inTransaction(() -> backend.store().claimDue(10, Duration.ofMinutes(1), "owner"))
             .size());
     assertTrue(!backend.store().markPublished("first", "old-owner", now));
     assertTrue(!backend.store().markFailed("first", "old-owner", 1, now, "stale", true));
@@ -314,7 +346,7 @@ class PostgresOutboxOrderingIT {
         1,
         backend
             .tx()
-            .inTransaction(() -> backend.store().claimDue(10, now, Duration.ofMinutes(1), "next"))
+            .inTransaction(() -> backend.store().claimDue(10, Duration.ofMinutes(1), "next"))
             .size());
     assertTrue(backend.store().markFailed("first", "next", 2, now, null, true));
     assertTrue(backend.store().skip("first", "approved"));
@@ -335,12 +367,10 @@ class PostgresOutboxOrderingIT {
     var store = new R2dbcOutboxStore(sql, "axiz_outbox", Duration.ofSeconds(5));
     assertThrows(
         IllegalArgumentException.class,
-        () -> store.claim(0, CLOCK.instant(), Duration.ofSeconds(1), "owner").block());
+        () -> store.claim(0, Duration.ofSeconds(1), "owner").block());
     assertThrows(
-        IllegalArgumentException.class,
-        () -> store.claim(1, CLOCK.instant(), Duration.ZERO, "owner").block());
+        IllegalArgumentException.class, () -> store.claim(1, Duration.ZERO, "owner").block());
     assertThrows(
-        IllegalArgumentException.class,
-        () -> store.claim(1, CLOCK.instant(), Duration.ofSeconds(1), " ").block());
+        IllegalArgumentException.class, () -> store.claim(1, Duration.ofSeconds(1), " ").block());
   }
 }

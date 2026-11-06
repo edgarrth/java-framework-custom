@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.SqlIdentifiers;
 
 class SqlStatesTest {
 
@@ -22,9 +23,9 @@ class SqlStatesTest {
 
   @Test
   void validatesIdentifiers() {
-    assertEquals("axiz_outbox", SqlStates.identifier("axiz_outbox"));
-    assertThrows(IllegalArgumentException.class, () -> SqlStates.identifier("x; drop table y"));
-    assertThrows(IllegalArgumentException.class, () -> SqlStates.identifier("Upper"));
+    assertEquals("axiz_outbox", SqlIdentifiers.require("axiz_outbox"));
+    assertThrows(IllegalArgumentException.class, () -> SqlIdentifiers.require("x; drop table y"));
+    assertThrows(IllegalArgumentException.class, () -> SqlIdentifiers.require("Upper"));
   }
 
   @Test

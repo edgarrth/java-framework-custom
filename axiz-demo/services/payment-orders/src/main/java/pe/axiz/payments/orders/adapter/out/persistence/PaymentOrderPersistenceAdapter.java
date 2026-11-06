@@ -2,12 +2,18 @@ package pe.axiz.payments.orders.adapter.out.persistence;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.sql.SQLException;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataRetrievalFailureException;
+import org.postgresql.util.PSQLException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.commons.Page;
@@ -48,8 +54,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
     } catch (DataIntegrityViolationException e) {
       // the transaction is aborted now: classify by constraint, the client retries and gets
       // the order the other request stored
-      String cause = String.valueOf(e.getMostSpecificCause().getMessage());
-      if (requestKey == null || !cause.contains(REQUEST_KEY_CONSTRAINT)) {
+      if (requestKey == null || !duplicateRequestKey(e)) {
         throw e;
       }
       throw new BusinessException(
@@ -69,9 +74,32 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
   @Override
   public void save(PaymentOrder order) {
     UUID id = UUID.fromString(order.id());
-    PaymentOrderEntity entity = repository.findById(id).orElseGet(() -> newEntity(order));
+    PaymentOrderEntity entity = repository.findById(id).orElseThrow(
+        () -> new DataRetrievalFailureException("Cannot update missing payment order " + id));
     entity.status(order.status().name(), order.statusReason());
     repository.save(entity);
+  }
+
+  private static boolean duplicateRequestKey(Throwable failure) {
+    var pending = new ArrayDeque<Throwable>();
+    var visited = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+    pending.add(failure);
+    while (!pending.isEmpty()) {
+      Throwable current = pending.remove();
+      if (!visited.add(current)) continue;
+      if (current instanceof PSQLException postgres
+          && "23505".equals(postgres.getSQLState())) {
+        var server = postgres.getServerErrorMessage();
+        if (server != null && REQUEST_KEY_CONSTRAINT.equals(server.getConstraint())) return true;
+      }
+      Throwable cause = current.getCause();
+      if (cause != null) pending.add(cause);
+      if (current instanceof SQLException sql) {
+        SQLException next = sql.getNextException();
+        if (next != null) pending.add(next);
+      }
+    }
+    return false;
   }
 
   private PaymentOrderEntity newEntity(PaymentOrder order) {

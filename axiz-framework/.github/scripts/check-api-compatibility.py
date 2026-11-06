@@ -5,6 +5,8 @@ import hashlib
 import json
 import re
 import sys
+import subprocess
+import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -28,6 +30,23 @@ def shape(element):
 
 def fingerprint(element):
     return hashlib.sha256(json.dumps(shape(element), separators=(",", ":")).encode()).hexdigest()
+
+
+def public_api(jar):
+    """Canonical public/protected signatures of an approved module with no historical JAR."""
+    with zipfile.ZipFile(jar) as archive:
+        names = sorted(name[:-6].replace("/", ".") for name in archive.namelist()
+                       if name.endswith(".class") and not name.endswith(("package-info.class", "module-info.class"))
+                       and not name.startswith("META-INF/"))
+    signatures = []
+    for name in names:
+        result = subprocess.run(["javap", "-protected", "-constants", "-classpath", str(jar), name],
+                                check=True, capture_output=True, text=True, timeout=30)
+        lines = [line.strip() for line in result.stdout.splitlines()
+                 if line.strip() and not line.startswith('Compiled from')]
+        if lines and lines[0].startswith(("public ", "protected ")):
+            signatures.append("\n".join([lines[0], *sorted(lines[1:-1]), lines[-1]]))
+    return "\n\n".join(signatures) + "\n"
 
 
 def load_inventory(path):
@@ -61,7 +80,11 @@ def collect(root, baseline, report_name="api-compat"):
                     path.name != "package-info.java" for path in (pom.parent / "src/main/java").rglob("*.java")):
                 errors.append(f"{artifact}: only unpublished test-only modules may skip API comparison")
             continue
-        if skip:
+        is_new = artifact in new_modules
+        declared_new = text(project, "m:properties/m:axiz.api.new-module") == "true"
+        if declared_new != is_new:
+            errors.append(f"{artifact}: new-module declaration differs from the approved inventory")
+        if skip and not (is_new and declared_new):
             errors.append(f"{artifact}: a published API comparison may not be skipped")
         previous = text(project, "m:properties/m:axiz.api.baseline.artifactId", artifact)
         if previous != predecessors.get(artifact, artifact):
@@ -71,6 +94,19 @@ def collect(root, baseline, report_name="api-compat"):
         if artifact in new_modules:
             if artifact in predecessors:
                 errors.append(f"{artifact}: a renamed module has a predecessor and is not new")
+            if not skip:
+                errors.append(f"{artifact}: approved new module must avoid resolving a nonexistent historical JAR")
+            reference = root / "docs/migration/2.0/new-api" / f"{artifact}.txt"
+            if not jar.is_file():
+                errors.append(f"{artifact}: missing current JAR for new-module API validation")
+            elif not reference.is_file() or not reference.read_text().strip():
+                errors.append(f"{artifact}: missing reviewed public API for new module")
+            else:
+                try:
+                    if public_api(jar) != reference.read_text():
+                        errors.append(f"{artifact}: new public API differs from its reviewed signatures")
+                except (subprocess.SubprocessError, zipfile.BadZipFile, OSError) as failure:
+                    errors.append(f"{artifact}: cannot inspect new public API: {failure}")
             continue
         published[artifact] = report
         if not jar.is_file() or not report.is_file():

@@ -1,9 +1,10 @@
 package pe.axiz.spring.security;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
@@ -12,11 +13,17 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor;
 import org.springframework.security.authorization.method.AuthorizationManagerBeforeReactiveMethodInterceptor;
+import org.springframework.security.core.annotation.AnnotationTemplateExpressionDefaults;
+import org.springframework.security.core.annotation.SecurityAnnotationScanners;
 import org.springframework.web.method.HandlerMethod;
+import pe.axiz.core.security.AuthenticatedAccess;
 import pe.axiz.core.security.PublicEndpoint;
+import pe.axiz.spring.security.AuthorizationExpressionClassifier.Access;
 
 /** Coverage inspects each mapped bean's own proxy, after startup has completed. */
 final class HttpAuthorizationCoverage {
@@ -43,7 +50,19 @@ final class HttpAuthorizationCoverage {
       boolean publicEndpoint =
           AnnotatedElementUtils.hasAnnotation(handler.getMethod(), PublicEndpoint.class)
               || AnnotatedElementUtils.hasAnnotation(target, PublicEndpoint.class);
-      boolean methodGuard = priorAdvisor(bean, handler, reactive, context);
+      Set<Family> families = priorAdvisors(bean, handler, reactive, context);
+      boolean authenticated =
+          AnnotatedElementUtils.hasAnnotation(handler.getMethod(), AuthenticatedAccess.class)
+              || AnnotatedElementUtils.hasAnnotation(target, AuthenticatedAccess.class);
+      Access access = effectiveAccess(handler, target, families, context, authenticated);
+      boolean methodGuard =
+          families.contains(Family.AUTHENTICATED_ACCESS) || access.protectedAccess();
+      if (authenticated && publicEndpoint)
+        throw new IllegalStateException(
+            "AuthenticatedAccess conflicts with PublicEndpoint: " + handler);
+      if (authenticated && !families.contains(Family.AUTHENTICATED_ACCESS))
+        throw new IllegalStateException(
+            "AuthenticatedAccess has no effective interceptor: " + handler);
       Set<String> methods =
           endpoint.methods().isEmpty()
               ? Set.of("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE")
@@ -57,6 +76,9 @@ final class HttpAuthorizationCoverage {
         boolean permitted =
             effectiveFrameworkChain
                 && publicPaths.stream().anyMatch(pattern -> covers(pattern, path));
+        if (authenticated && publicPaths.stream().anyMatch(pattern -> covers(pattern, path)))
+          throw new IllegalStateException(
+              "AuthenticatedAccess conflicts with public-paths: " + path);
         if (publicEndpoint) {
           if (!permitted) missing.add(path + " (PublicEndpoint has no effective permitAll rule)");
           continue;
@@ -80,7 +102,10 @@ final class HttpAuthorizationCoverage {
                     + " -> "
                     + target.getName()
                     + "#"
-                    + handler.getMethod().getName());
+                    + handler.getMethod().getName()
+                    + " (method policy: "
+                    + access
+                    + ")");
         }
       }
     }
@@ -93,54 +118,122 @@ final class HttpAuthorizationCoverage {
         .warn("{} (development warn mode)", message);
   }
 
-  static boolean priorAdvisor(Object bean, HandlerMethod handler, boolean reactive) {
-    return priorAdvisor(bean, handler, reactive, null);
-  }
+  enum Family {
+    PRE_AUTHORIZE("preAuthorizeAuthorizationMethodInterceptor"),
+    SECURED("securedAuthorizationMethodInterceptor"),
+    JSR250("jsr250AuthorizationMethodInterceptor"),
+    AUTHENTICATED_ACCESS("axizAuthenticatedAccessInterceptor");
 
-  private static boolean priorAdvisor(
-      Object bean, HandlerMethod handler, boolean reactive, @Nullable ApplicationContext context) {
-    if (!(bean instanceof Advised advised)) return false;
-    Class<?> target = AopProxyUtils.ultimateTargetClass(bean);
-    var method = AopUtils.getMostSpecificMethod(handler.getMethod(), target);
-    for (var advisor : advised.getAdvisors()) {
-      if (!(advisor instanceof PointcutAdvisor pointcut)) continue;
-      Object advice = advisor.getAdvice();
-      boolean before =
-          reactive
-              ? advisor instanceof AuthorizationManagerBeforeReactiveMethodInterceptor
-                  || advice instanceof AuthorizationManagerBeforeReactiveMethodInterceptor
-              : advisor instanceof AuthorizationManagerBeforeMethodInterceptor
-                  || advice instanceof AuthorizationManagerBeforeMethodInterceptor;
-      before = before || deferredBefore(advice, reactive, context);
-      if (before
-          && !pointcut.getPointcut().getMethodMatcher().isRuntime()
-          && pointcut.getPointcut().getClassFilter().matches(target)
-          && pointcut.getPointcut().getMethodMatcher().matches(method, target)) return true;
+    final String beanName;
+
+    Family(String beanName) {
+      this.beanName = beanName;
     }
-    return false;
   }
 
-  /**
-   * Spring 7 wraps native interceptors lazily: match the exact advice instance, without reflection.
-   */
-  private static boolean deferredBefore(
-      Object advice, boolean reactive, @Nullable ApplicationContext context) {
-    if (context == null
-        || !advice
-            .getClass()
-            .getName()
-            .equals(
-                "org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor"))
-      return false;
-    List<String> names =
-        reactive
-            ? List.of("preAuthorizeAuthorizationMethodInterceptor")
-            : List.of(
-                "preAuthorizeAuthorizationMethodInterceptor",
-                "securedAuthorizationMethodInterceptor",
-                "jsr250AuthorizationMethodInterceptor");
-    return names.stream()
-        .anyMatch(name -> context.containsBean(name) && context.getBean(name) == advice);
+  static boolean priorAdvisor(Object bean, HandlerMethod handler, boolean reactive) {
+    return !priorAdvisors(bean, handler, reactive, null).isEmpty();
+  }
+
+  private static Set<Family> priorAdvisors(
+      Object bean, HandlerMethod handler, boolean reactive, @Nullable ApplicationContext context) {
+    var found = EnumSet.noneOf(Family.class);
+    if (!(bean instanceof Advised advised) || context == null) return found;
+    Class<?> target = AopProxyUtils.ultimateTargetClass(bean);
+    Method method = AopUtils.getMostSpecificMethod(handler.getMethod(), target);
+    for (var advisor : advised.getAdvisors()) {
+      if (!(advisor instanceof PointcutAdvisor pointcut)
+          || pointcut.getPointcut().getMethodMatcher().isRuntime()
+          || !pointcut.getPointcut().getClassFilter().matches(target)
+          || !pointcut.getPointcut().getMethodMatcher().matches(method, target)) continue;
+      Object advice = advisor.getAdvice();
+      for (Family family : Family.values()) {
+        if (reactive && (family == Family.SECURED || family == Family.JSR250)) continue;
+        if (!context.containsBean(family.beanName)) continue;
+        Object registered = context.getBean(family.beanName);
+        if (registered != advisor && registered != advice) continue;
+        boolean nativeInterceptor =
+            reactive
+                ? registered instanceof AuthorizationManagerBeforeReactiveMethodInterceptor
+                : registered instanceof AuthorizationManagerBeforeMethodInterceptor;
+        boolean deferred =
+            registered
+                .getClass()
+                .getName()
+                .equals(
+                    "org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor");
+        if (!nativeInterceptor && !deferred) continue;
+        if (family == Family.SECURED && !standardSecured(context, family.beanName))
+          throw new IllegalStateException(
+              "Unsupported custom @Secured interceptor: " + family.beanName);
+        found.add(family);
+      }
+    }
+    return found;
+  }
+
+  private static boolean standardSecured(ApplicationContext context, String name) {
+    if (!(context instanceof ConfigurableApplicationContext configurable)) return false;
+    var factory = configurable.getBeanFactory();
+    if (!factory.containsBeanDefinition(name)) return false;
+    var definition = factory.getBeanDefinition(name);
+    String owner = definition.getFactoryBeanName();
+    Class<?> ownerType = owner == null ? null : context.getType(owner);
+    String declaringType = ownerType == null ? definition.getBeanClassName() : ownerType.getName();
+    return declaringType != null
+        && declaringType.equals(
+            "org.springframework.security.config.annotation.method.configuration."
+                + "SecuredMethodSecurityConfiguration");
+  }
+
+  private static Access effectiveAccess(
+      HandlerMethod handler,
+      Class<?> target,
+      Set<Family> families,
+      ApplicationContext context,
+      boolean authenticated) {
+    Method method = AopUtils.getMostSpecificMethod(handler.getMethod(), target);
+    Access combined = Access.TRUE;
+    for (Family family : families) {
+      Access access =
+          switch (family) {
+            case AUTHENTICATED_ACCESS -> Access.OPEN;
+            case SECURED -> Access.RESTRICTED;
+            case JSR250 -> {
+              var denied =
+                  SecurityAnnotationScanners.requireUnique(
+                          jakarta.annotation.security.DenyAll.class)
+                      .scan(method, target);
+              var roles =
+                  SecurityAnnotationScanners.requireUnique(
+                          jakarta.annotation.security.RolesAllowed.class)
+                      .scan(method, target);
+              yield denied != null ? Access.FALSE : roles != null ? Access.RESTRICTED : Access.TRUE;
+            }
+            case PRE_AUTHORIZE -> {
+              var defaults =
+                  context
+                      .getBeanProvider(AnnotationTemplateExpressionDefaults.class)
+                      .getIfAvailable();
+              var scanner =
+                  defaults == null
+                      ? SecurityAnnotationScanners.requireUnique(PreAuthorize.class)
+                      : SecurityAnnotationScanners.requireUnique(PreAuthorize.class, defaults);
+              PreAuthorize annotation = scanner.scan(method, target);
+              if (annotation == null)
+                throw new IllegalStateException(
+                    "PreAuthorize advisor has no declaration: " + handler);
+              Access classified =
+                  new AuthorizationExpressionClassifier().classify(annotation.value());
+              if (authenticated && classified == Access.TRUE)
+                throw new IllegalStateException(
+                    "AuthenticatedAccess conflicts with TRUE expression: " + handler);
+              yield classified;
+            }
+          };
+      combined = combined.and(access);
+    }
+    return combined;
   }
 
   /** Conservative inclusion proof: equal patterns or a literal parent with a recursive wildcard. */

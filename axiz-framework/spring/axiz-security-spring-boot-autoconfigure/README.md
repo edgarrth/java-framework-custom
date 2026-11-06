@@ -40,6 +40,26 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 
 ## Effective authorization coverage
 
+Coverage classifies the effective `@PreAuthorize` expression structurally, using the same annotation
+scanner as Spring Security (including annotation templates). Startup never evaluates SpEL or calls
+application policy beans. Constants and authentication predicates alone do not establish a permission
+barrier. To declare an endpoint that requires only non-anonymous authentication, use
+`pe.axiz.core.security.AuthenticatedAccess`; Axiz installs a prior interceptor in both stacks.
+It accepts authenticated JWTs without authorities and remember-me authentication, and rejects anonymous
+access. It cannot be combined with `@PublicEndpoint`, a public path, or an always-true expression.
+
+The supported grammar includes boolean literals, `and`, `or`, `not`, `permitAll()`, `denyAll()`, the
+four authentication predicates, literal role/authority checks, `hasPermission(...)`, and
+`@bean.method(...)` policies with literal, principal, authentication or variable/property arguments.
+Comparisons, constructors, type references, indexing, assignments and arbitrary method chains fail
+startup even in development `warn` mode. Negative authority checks are exclusions and do not alone
+prove permission coverage. Dynamic policies remain the application's responsibility and require
+negative authorization tests. `@Secured` attributes are literal authorities, not legacy voter tokens.
+
+HTTP integration tests include the error handlers: unauthenticated method denials return 401 in
+both stacks; authenticated callers lacking the required permissions receive 403. An effective
+explicit HTTP rule or public declaration remains an independent coverage source.
+
 At application-ready time each MVC/WebFlux business endpoint needs a prior authorization rule.
 The framework checks the mapped bean's own proxy and pointcut: an annotation or a global advisor
 that is not attached to that proxy does not count. `@PostAuthorize` alone does not count.

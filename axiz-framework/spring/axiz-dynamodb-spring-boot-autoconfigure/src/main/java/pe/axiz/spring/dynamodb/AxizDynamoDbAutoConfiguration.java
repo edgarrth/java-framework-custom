@@ -1,5 +1,9 @@
 package pe.axiz.spring.dynamodb;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,6 +26,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
  * One DynamoDB client per application (observed, default credentials chain, optional region and
  * LocalStack endpoint from {@code axiz.aws.*}), the enhanced client and the repository factory.
  */
+@EnableConfigurationProperties(AxizAwsCompletionProperties.class)
 @AutoConfiguration(
     afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration",
     beforeName = "io.awspring.cloud.autoconfigure.dynamodb.DynamoDbAutoConfiguration")
@@ -62,8 +67,8 @@ public class AxizDynamoDbAutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-    AsyncAwsClients axizRepositoryAsyncAwsResources() {
-      return new AsyncAwsClients();
+    AsyncAwsClients axizRepositoryAsyncAwsResources(AxizAwsCompletionProperties completion) {
+      return new AsyncAwsClients("axizRepositoryAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

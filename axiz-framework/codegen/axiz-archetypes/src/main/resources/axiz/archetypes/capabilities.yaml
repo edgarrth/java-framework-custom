@@ -291,6 +291,8 @@ capabilities:
     persistence:
       aurora:
         dependencies: [pe.axiz:axiz-adapter-sequence-jdbc]
+      r2dbc:
+        dependencies: [pe.axiz:axiz-adapter-sequence-r2dbc]
       dynamodb:
         properties: {axiz.sequence.store: dynamodb, axiz.sequence.table: '${axiz.dynamodb.table-prefix}axiz-sequence'}
         dependencies: [pe.axiz:axiz-adapter-sequence-dynamodb]

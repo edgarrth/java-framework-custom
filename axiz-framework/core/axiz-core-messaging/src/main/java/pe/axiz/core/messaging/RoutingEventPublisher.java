@@ -3,12 +3,20 @@ package pe.axiz.core.messaging;
 import java.util.List;
 
 /** Delegates to the first publisher that supports the destination. */
-public final class RoutingEventPublisher implements EventPublisher {
+public final class RoutingEventPublisher implements EventPublisher, BoundedPublisher {
 
   private final List<EventPublisher> delegates;
 
   public RoutingEventPublisher(List<EventPublisher> delegates) {
     this.delegates = List.copyOf(delegates);
+  }
+
+  @Override
+  public PublishBound publishBound() {
+    return delegates.stream()
+        .map(BoundedPublisher::of)
+        .reduce(PublishBound::merge)
+        .orElseGet(PublishBound::unbounded);
   }
 
   @Override

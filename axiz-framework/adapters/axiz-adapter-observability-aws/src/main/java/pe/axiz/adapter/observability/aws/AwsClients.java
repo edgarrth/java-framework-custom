@@ -2,6 +2,7 @@ package pe.axiz.adapter.observability.aws;
 
 import io.micrometer.observation.ObservationRegistry;
 import java.net.URI;
+import java.time.Duration;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
@@ -20,9 +21,21 @@ public final class AwsClients {
 
   public static <B extends AwsClientBuilder<B, C>, C> C build(
       B builder, ObservationRegistry registry, @Nullable String region, @Nullable String endpoint) {
+    return build(builder, registry, region, endpoint, null);
+  }
+
+  public static <B extends AwsClientBuilder<B, C>, C> C build(
+      B builder,
+      ObservationRegistry registry,
+      @Nullable String region,
+      @Nullable String endpoint,
+      @Nullable Duration apiCallTimeout) {
+    if (apiCallTimeout != null && !apiCallTimeout.isPositive())
+      throw new IllegalArgumentException("apiCallTimeout must be positive");
     builder.overrideConfiguration(
         ClientOverrideConfiguration.builder()
             .addExecutionInterceptor(new ObservationExecutionInterceptor(registry))
+            .apiCallTimeout(apiCallTimeout)
             .build());
     if (region != null && !region.isBlank()) {
       builder.region(Region.of(region));

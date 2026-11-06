@@ -1,5 +1,8 @@
 # architecture contract: modules introduced in 2.0 without a predecessor.
-# These parents are POMs; japicmp compares published JARs only.
+# POM parents have no binary comparison. New JARs must match reviewed new-api signatures.
 axiz-parent-api
 axiz-parent-technology
 axiz-parent-test
+
+# Native sequence adapter introduced in 2.0; reviewed public API is checked separately.
+axiz-adapter-sequence-r2dbc

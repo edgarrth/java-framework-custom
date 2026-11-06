@@ -10,7 +10,7 @@ public interface OutboxStore {
 
   void append(OutboxRecord record);
 
-  List<OutboxRecord> claimDue(int size, Instant now, Duration lease, String owner);
+  List<OutboxRecord> claimDue(int size, Duration lease, String owner);
 
   boolean markPublished(String id, String owner, Instant at);
 

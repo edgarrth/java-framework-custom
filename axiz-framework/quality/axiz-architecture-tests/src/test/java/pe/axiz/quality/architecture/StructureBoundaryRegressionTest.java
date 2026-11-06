@@ -18,6 +18,55 @@ import org.junit.jupiter.api.io.TempDir;
 class StructureBoundaryRegressionTest {
   @TempDir Path directory;
 
+  @Test
+  void technologyBoundariesRejectForeignKitsAndAllowTheirOwnKit() throws Exception {
+    assertTrue(
+        FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
+            .evaluate(dependency("pe.axiz.adapter.outbox.r2dbc", "pe.axiz.kit.jdbc", false))
+            .hasViolation());
+    assertTrue(
+        FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
+            .evaluate(dependency("pe.axiz.kit.r2dbc", "pe.axiz.kit.jdbc", false))
+            .hasViolation());
+    assertFalse(
+        FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
+            .evaluate(dependency("pe.axiz.adapter.sequence.r2dbc", "pe.axiz.kit.r2dbc", false))
+            .hasViolation());
+  }
+
+  private boolean hexagonalViolation(String layer, String body) throws Exception {
+    var classes =
+        compile(
+            Map.of(
+                "example." + layer + ".Sample",
+                "package example." + layer + "; public class Sample { " + body + " }"));
+    return pe.axiz.quality.archunit.HexagonalRules.rules("example").stream()
+        .anyMatch(rule -> rule.allowEmptyShould(true).evaluate(classes).hasViolation());
+  }
+
+  @Test
+  void domainCommonsAreNeutralAndApplicationHasNoResponseOrHeaderContracts() throws Exception {
+    for (String type : List.of("ApiResponse", "RequestContext"))
+      assertTrue(hexagonalViolation("domain", "pe.axiz.core.commons." + type + " value;"));
+    assertFalse(
+        hexagonalViolation(
+            "domain", "void check() { pe.axiz.core.commons.Checks.notNull(this, \"sample\"); }"));
+    assertTrue(hexagonalViolation("application", "pe.axiz.core.commons.ApiResponse<?> value;"));
+    assertFalse(hexagonalViolation("application", "pe.axiz.core.commons.PageRequest value;"));
+    assertFalse(
+        hexagonalViolation(
+            "domain",
+            """
+        pe.axiz.core.commons.Result<String,String> result = new pe.axiz.core.commons.Result.Ok<>("ok");
+        String inspect(pe.axiz.core.commons.Result<String,String> value) {
+          return switch(value) {
+            case pe.axiz.core.commons.Result.Ok<String,String>(var ok) -> ok;
+            case pe.axiz.core.commons.Result.Err<String,String>(var error) -> error;
+          };
+        }
+        """));
+  }
+
   private JavaClasses compile(Map<String, String> sources) throws Exception {
     Path compilation = Files.createTempDirectory(directory, "classes-");
     var arguments = new ArrayList<>(List.of("-proc:none", "-d", compilation.toString()));
