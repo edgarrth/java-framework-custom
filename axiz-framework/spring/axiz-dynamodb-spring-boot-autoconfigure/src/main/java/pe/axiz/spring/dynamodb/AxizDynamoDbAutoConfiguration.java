@@ -1,9 +1,5 @@
 package pe.axiz.spring.dynamodb;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -11,12 +7,14 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.kit.dynamodb.CursorCodec;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -68,7 +66,8 @@ public class AxizDynamoDbAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
     AsyncAwsClients axizRepositoryAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizRepositoryAsyncAwsResources", completion.workers(), completion.queueCapacity());
+      return new AsyncAwsClients(
+          "axizRepositoryAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

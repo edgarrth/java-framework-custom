@@ -40,31 +40,62 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
 
   /** Configured framework-owned pool; name is a stable capability/bean name for metrics. */
   public AsyncAwsClients(String poolName, int workers, int queueCapacity) {
-    this(DefaultCredentialsProvider.builder().asyncCredentialUpdateEnabled(true).build(),
-        Clock.systemUTC(), Duration.ofSeconds(15), workers, queueCapacity, poolName);
+    this(
+        DefaultCredentialsProvider.builder().asyncCredentialUpdateEnabled(true).build(),
+        Clock.systemUTC(),
+        Duration.ofSeconds(15),
+        workers,
+        queueCapacity,
+        poolName);
   }
 
   /** Explicit bounds for applications with their own warmed credential source. */
-  public AsyncAwsClients(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
-      Clock clock, Duration refreshInterval, int workers, int queueCapacity) {
+  public AsyncAwsClients(
+      software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      Clock clock,
+      Duration refreshInterval,
+      int workers,
+      int queueCapacity) {
     this(source, clock, refreshInterval, workers, queueCapacity, "aws-completion");
   }
 
-  private AsyncAwsClients(software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
-      Clock clock, Duration refreshInterval, int workers, int queueCapacity, @Nullable String poolName) {
+  private AsyncAwsClients(
+      software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      Clock clock,
+      Duration refreshInterval,
+      int workers,
+      int queueCapacity,
+      @Nullable String poolName) {
     BoundedCompletionExecutor.validWorkers(workers, queueCapacity);
-    if (poolName != null && poolName.isBlank()) throw new IllegalArgumentException("poolName must not be blank");
+    if (poolName != null && poolName.isBlank())
+      throw new IllegalArgumentException("poolName must not be blank");
     credentials = new WarmedAwsCredentials(source, clock, refreshInterval);
-    try { completions = new BoundedCompletionExecutor(workers, queueCapacity); }
-    catch (RuntimeException | Error failure) { credentials.close(); throw failure; }
-    try { removeMeters = completionMetrics(poolName, completions); }
-    catch (RuntimeException | Error failure) { completions.shutdownNow(); credentials.close(); throw failure; }
+    try {
+      completions = new BoundedCompletionExecutor(workers, queueCapacity);
+    } catch (RuntimeException | Error failure) {
+      credentials.close();
+      throw failure;
+    }
+    try {
+      removeMeters = completionMetrics(poolName, completions);
+    } catch (RuntimeException | Error failure) {
+      completions.shutdownNow();
+      credentials.close();
+      throw failure;
+    }
   }
 
-  private static Runnable completionMetrics(@Nullable String name, BoundedCompletionExecutor executor) {
+  private static Runnable completionMetrics(
+      @Nullable String name, BoundedCompletionExecutor executor) {
     if (name == null) return () -> {};
-    try { Class.forName("io.micrometer.core.instrument.MeterRegistry", false, AsyncAwsClients.class.getClassLoader()); }
-    catch (ClassNotFoundException unavailable) { return () -> {}; }
+    try {
+      Class.forName(
+          "io.micrometer.core.instrument.MeterRegistry",
+          false,
+          AsyncAwsClients.class.getClassLoader());
+    } catch (ClassNotFoundException unavailable) {
+      return () -> {};
+    }
     return AwsCompletionMetrics.bind(name, executor);
   }
 
@@ -198,7 +229,10 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   @Override
   public void close() {
     completions.shutdown();
-    try { credentials.close(); }
-    finally { removeMeters.run(); }
+    try {
+      credentials.close();
+    } finally {
+      removeMeters.run();
+    }
   }
 }

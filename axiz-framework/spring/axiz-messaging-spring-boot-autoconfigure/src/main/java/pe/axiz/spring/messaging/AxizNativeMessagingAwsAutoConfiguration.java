@@ -1,7 +1,5 @@
 package pe.axiz.spring.messaging;
 
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -29,6 +27,7 @@ import pe.axiz.adapter.messaging.sqs.SqsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.core.messaging.AsyncEventPublisher;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
@@ -39,7 +38,10 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @ConditionalOnMissingBean(AsyncEventPublisher.class)
-@EnableConfigurationProperties({AxizMessagingAwsProperties.class, AxizAwsCompletionProperties.class})
+@EnableConfigurationProperties({
+  AxizMessagingAwsProperties.class,
+  AxizAwsCompletionProperties.class
+})
 public class AxizNativeMessagingAwsAutoConfiguration {
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
@@ -54,7 +56,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
       AsyncAwsClients axizMessagingSqsAsyncResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizMessagingSqsAsyncResources", completion.workers(), completion.queueCapacity());
+        return new AsyncAwsClients(
+            "axizMessagingSqsAsyncResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")
@@ -91,7 +94,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
       AsyncAwsClients axizMessagingSnsAsyncResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizMessagingSnsAsyncResources", completion.workers(), completion.queueCapacity());
+        return new AsyncAwsClients(
+            "axizMessagingSnsAsyncResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")

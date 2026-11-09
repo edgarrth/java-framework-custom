@@ -13,9 +13,8 @@ public record PublishBound(Optional<Duration> known, boolean hasUnbounded) {
           "A publisher must declare a positive bound or an unknown route");
     known.ifPresent(
         bound -> {
-          if (!bound.isPositive())
+          if (bound.toNanos() <= 0)
             throw new IllegalArgumentException("publish bound must be positive");
-          bound.toNanos();
         });
   }
 
@@ -45,9 +44,8 @@ public record PublishBound(Optional<Duration> known, boolean hasUnbounded) {
     Objects.requireNonNull(fallback);
     fallback.ifPresent(
         value -> {
-          if (!value.isPositive())
+          if (value.toNanos() <= 0)
             throw new IllegalArgumentException("publish-budget must be positive");
-          value.toNanos();
         });
     if (!hasUnbounded) return known.orElseThrow();
     Duration unknown =

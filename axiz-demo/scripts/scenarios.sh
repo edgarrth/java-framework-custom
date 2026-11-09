@@ -271,9 +271,12 @@ amount() {
   echo "$a"
 }
 
-# pay TOKEN BENEFICIARY ACCOUNT AMOUNT CURRENCY [IDEMPOTENCY-KEY]
+# pay TOKEN BENEFICIARY ACCOUNT AMOUNT CURRENCY [IDEMPOTENCY-KEY] [TRACEPARENT]
 pay() {
+  local trace=()
+  [ -z "${7:-}" ] || trace=(-H "traceparent: $7")
   call POST "$EXP/v1/payments" -H "Authorization: Bearer $1" "${JSON[@]}" -H "Idempotency-Key: ${6:-$(key)}" \
+    "${trace[@]}" \
     -d "{\"beneficiaryId\":\"$2\",\"debtorAccount\":\"$3\",\"amount\":$4,\"currency\":\"$5\",\"description\":\"scenario\"}"
   if [ "$code" = 201 ]; then
     paid=$(jq -r .paymentId <<<"$body")
@@ -378,7 +381,10 @@ g_payment() {
   need_beneficiaries || return
   PAY_KEY=$(key)
   PAY_AMOUNT=$(amount)
-  pay "$ANA" "$BEN" "$ACCOUNT" "$PAY_AMOUNT" PEN "$PAY_KEY"
+  # A known ingress trace identifies this successful fixture even after rejection scenarios run.
+  PAY_TRACE=$(key); PAY_TRACE=${PAY_TRACE//-/}
+  local parent; parent=$(key); parent=${parent//-/}
+  pay "$ANA" "$BEN" "$ACCOUNT" "$PAY_AMOUNT" PEN "$PAY_KEY" "00-$PAY_TRACE-${parent:0:16}-01"
   expect "pay through the channel (201, RECEIVED, masked CCI)" 201 '.status == "RECEIVED"' \
     '.operationNumber | test("^OP[0-9]{8}-[0-9]+$")' '.creditorCci == "****************9053"' \
     '.beneficiaryAlias == "Landlord"' || return
@@ -692,14 +698,13 @@ g_observability() {
   q='sum({__name__=~"http_server_request.*_count", job=~".*payments-ux.*"})'
   poll 60 prom_positive "$q" && pass "HTTP server metrics of payments-ux (OTLP)" \
     || bad "HTTP server metrics of payments-ux (OTLP)" "$q = $(promql "$q")"
-  # the trace IDs come from the logs ([traceId-spanId] on every line written inside a span), so a
-  # failure says where the trace broke: no ID in the caller, another ID in the callee, or spans
-  # missing in Tempo
+  # Follow the known successful payment. The latest request may be a rejection that correctly
+  # never reaches the payment network. Logs still prove that each service propagated the trace.
   local t
-  t=$(log_trace payment-process 'client=banking-core ')
+  t=$(log_trace payment-process "\\[$PAY_TRACE-.*client=banking-core ")
   if [ -z "$t" ]; then
     bad "payment-process calls banking-core inside a trace" \
-      "no 'client=banking-core' line with a trace ID in .run/payment-process.log"
+      "no 'client=banking-core' line with trace $PAY_TRACE of completed payment $PAY"
   elif ! grep -q "\[$t-" "$root/.run/banking-core.log"; then
     bad "banking-core continues the trace of payment-process (HTTP traceparent)" \
       "trace $t of payment-process is not in .run/banking-core.log; its last request line:
@@ -707,21 +712,21 @@ $(grep -E 'axiz.http .*path=/v1/' "$root/.run/banking-core.log" | tail -1 | cut 
   else
     pass "banking-core continues the trace of payment-process (trace $t in both logs)"
     poll 60 trace_has "$t" payment-process banking-core payment-network-gateway \
-      && pass "  ... and Tempo holds that trace with both services" \
-      || bad "  ... and Tempo holds that trace with both services" "services in trace $t: $(trace_services "$t")"
+      && pass "  ... and Tempo holds that trace with the process, core and gateway" \
+      || bad "  ... and Tempo holds that trace with the process, core and gateway" "services in trace $t: $(trace_services "$t")"
   fi
   # the request that registers the payment and its saga are one trace: the outbox keeps the
   # context of the write, the relay continues it and Kafka carries it to the consumers
   local want=(payments-ux payment-orders payment-process banking-core payment-network-gateway)
-  t=$(log_trace payment-orders 'path=/v1/payment-orders status=201')
+  t=$(log_trace payment-orders "\\[$PAY_TRACE-.*path=/v1/payment-orders status=201")
   if [ -z "$t" ]; then
     bad "one trace from the channel request to the saga" \
-      "no 'path=/v1/payment-orders status=201' line with a trace ID in .run/payment-orders.log"
+      "no 'path=/v1/payment-orders status=201' line with trace $PAY_TRACE of completed payment $PAY"
   else
     poll 90 trace_has "$t" "${want[@]}" \
       && pass "one trace from the channel request to the saga: ${want[*]}" \
       || bad "one trace from the channel request to the saga: ${want[*]}" \
-        "trace $t of the last order created has: $(trace_services "$t")"
+        "trace $t of completed payment $PAY has: $(trace_services "$t")"
   fi
   q='{name="outbox write payments"} && {name="outbox dispatch payments"}'
   poll 30 traceql "$q" && pass "  ... with the outbox write and its dispatch by the relay" \

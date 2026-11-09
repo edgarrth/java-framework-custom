@@ -1,7 +1,5 @@
 package pe.axiz.spring.crypto;
 
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.util.Objects;
@@ -24,6 +22,7 @@ import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 
@@ -83,7 +82,8 @@ public class AxizCryptoKmsAutoConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(KmsAsyncClient.class)
       AsyncAwsClients axizCryptoAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizCryptoAsyncAwsResources", completion.workers(), completion.queueCapacity());
+        return new AsyncAwsClients(
+            "axizCryptoAsyncAwsResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")

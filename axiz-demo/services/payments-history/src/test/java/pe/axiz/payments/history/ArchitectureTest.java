@@ -2,8 +2,8 @@ package pe.axiz.payments.history;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import pe.axiz.quality.archunit.AxizArchitecture;
 import pe.axiz.quality.archunit.Archetype;
+import pe.axiz.quality.archunit.AxizArchitecture;
 import pe.axiz.quality.archunit.Extension;
 import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;

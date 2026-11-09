@@ -27,6 +27,10 @@ axiz.sequence.sequences.operation.prefix: OP
 
 - `pe.axiz:axiz-adapter-sequence-jdbc`
 
+### Aurora en reactivo (R2DBC)
+
+- `pe.axiz:axiz-adapter-sequence-r2dbc`
+
 ### DynamoDB
 
 - `pe.axiz:axiz-adapter-sequence-dynamodb`

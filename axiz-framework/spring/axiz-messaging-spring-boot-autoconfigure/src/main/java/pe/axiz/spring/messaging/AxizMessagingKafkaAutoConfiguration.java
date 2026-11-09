@@ -108,7 +108,11 @@ public class AxizMessagingKafkaAutoConfiguration {
         new KafkaEventPublisher(
             producer,
             Duration.ofMillis(
-                ((Number) properties.get(ProducerConfig.MAX_BLOCK_MS_CONFIG)).longValue()),
+                ((Number)
+                        Objects.requireNonNull(
+                            properties.get(ProducerConfig.MAX_BLOCK_MS_CONFIG),
+                            "Producer max.block.ms is required"))
+                    .longValue()),
             p.kafka().sendTimeout()));
   }
 

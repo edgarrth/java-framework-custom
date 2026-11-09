@@ -8,8 +8,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 @ConfigurationProperties("axiz.messaging.aws")
 public record AxizMessagingAwsProperties(@DefaultValue("10s") Duration apiCallTimeout) {
   public AxizMessagingAwsProperties {
-    if (!apiCallTimeout.isPositive())
+    if (apiCallTimeout.toNanos() <= 0)
       throw new IllegalArgumentException("messaging AWS api-call-timeout must be positive");
-    apiCallTimeout.toNanos();
   }
 }

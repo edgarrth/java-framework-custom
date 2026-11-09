@@ -14,7 +14,7 @@ import org.w3c.dom.Element;
 class TechnologyDependenciesTest {
   @Test
   void productionPomDependenciesUseOnlyTheSameTechnologyKit() throws Exception {
-    Path root = Path.of(System.getProperty("maven.multiModuleProjectDirectory"));
+    Path root = frameworkRoot();
     var violations = new ArrayList<String>();
     var factory = DocumentBuilderFactory.newInstance();
     factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -52,6 +52,24 @@ class TechnologyDependenciesTest {
       }
     }
     assertTrue(violations.isEmpty(), () -> String.join("\n", violations));
+  }
+
+  private static Path frameworkRoot() throws Exception {
+    Path classes =
+        Path.of(
+            TechnologyDependenciesTest.class
+                .getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .toURI());
+    for (Path candidate = classes.toAbsolutePath();
+        candidate != null;
+        candidate = candidate.getParent()) {
+      if (Files.isRegularFile(candidate.resolve("platform/axiz-parent-core/pom.xml"))
+          && Files.isRegularFile(candidate.resolve("adapters/pom.xml"))
+          && Files.isRegularFile(candidate.resolve("kits/pom.xml"))) return candidate;
+    }
+    throw new IllegalStateException("Cannot locate the framework reactor root from " + classes);
   }
 
   private static String child(Element element, String name) {

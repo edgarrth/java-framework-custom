@@ -2,6 +2,8 @@ package pe.axiz.adapter.messaging.kafka;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,13 +11,17 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.PublishException;
 
 class KafkaMessagingTest {
@@ -74,6 +80,72 @@ class KafkaMessagingTest {
     assertThrows(
         PublishException.class,
         () -> new KafkaEventPublisher(producer, Duration.ofMillis(50)).publish("t", event()));
+  }
+
+  @Test
+  void declaredBudgetIncludesProducerAdmissionAndAcknowledgementWithoutInventingLegacyBounds() {
+    try (var producer =
+        new MockProducer<String, byte[]>(
+            true, null, new StringSerializer(), new ByteArraySerializer())) {
+      assertEquals(
+          PublishBound.of(Duration.ofSeconds(37)),
+          new KafkaEventPublisher(producer, Duration.ofSeconds(30), Duration.ofSeconds(7))
+              .publishBound());
+      assertEquals(
+          PublishBound.of(Duration.ofSeconds(7)),
+          new KafkaEventPublisher(producer, Duration.ZERO, Duration.ofSeconds(7)).publishBound());
+      assertEquals(
+          PublishBound.unbounded(),
+          new KafkaEventPublisher(producer, Duration.ofSeconds(7)).publishBound());
+      assertThrows(
+          IllegalArgumentException.class, () -> new KafkaEventPublisher(producer, Duration.ZERO));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new KafkaEventPublisher(producer, Duration.ofSeconds(-1), Duration.ofSeconds(7)));
+      for (var invalid : java.util.List.of(Duration.ZERO, Duration.ofSeconds(-1)))
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new KafkaEventPublisher(producer, Duration.ZERO, invalid));
+    }
+  }
+
+  @Test
+  void interruptedAcknowledgementRestoresTheCallersInterruptFlag() {
+    try (var producer =
+        new MockProducer<String, byte[]>(
+            false, null, new StringSerializer(), new ByteArraySerializer())) {
+      Thread.currentThread().interrupt();
+      try {
+        var failure =
+            assertThrows(
+                PublishException.class,
+                () ->
+                    new KafkaEventPublisher(producer, Duration.ofSeconds(1)).publish("t", event()));
+        assertInstanceOf(InterruptedException.class, failure.getCause());
+        assertTrue(Thread.currentThread().isInterrupted());
+      } finally {
+        Thread.interrupted();
+      }
+    }
+  }
+
+  @Test
+  void aRejectedAcknowledgementRetainsTheOriginalBrokerFailure() {
+    var rejected = new IllegalStateException("broker rejected the record");
+    try (var producer =
+        new MockProducer<String, byte[]>(
+            true, null, new StringSerializer(), new ByteArraySerializer()) {
+          @Override
+          public synchronized Future<RecordMetadata> send(ProducerRecord<String, byte[]> record) {
+            return CompletableFuture.failedFuture(rejected);
+          }
+        }) {
+      var failure =
+          assertThrows(
+              PublishException.class,
+              () -> new KafkaEventPublisher(producer, Duration.ofSeconds(1)).publish("t", event()));
+      assertSame(rejected, failure.getCause().getCause());
+    }
   }
 
   @Test

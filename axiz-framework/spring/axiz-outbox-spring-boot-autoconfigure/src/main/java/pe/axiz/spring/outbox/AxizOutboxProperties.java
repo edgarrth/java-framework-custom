@@ -48,14 +48,11 @@ public record AxizOutboxProperties(
       @Nullable Duration publishBudget) {
     @ConstructorBinding
     public Relay {
-      if (!leaseDuration.isPositive())
+      if (leaseDuration.toNanos() <= 0)
         throw new IllegalArgumentException("outbox lease must be positive");
-      if (!claimAllowance.isPositive() || (publishBudget != null && !publishBudget.isPositive()))
+      if (claimAllowance.toNanos() <= 0 || (publishBudget != null && publishBudget.toNanos() <= 0))
         throw new IllegalArgumentException(
             "outbox claim-allowance and publish-budget must be positive");
-      leaseDuration.toNanos();
-      claimAllowance.toNanos();
-      if (publishBudget != null) publishBudget.toNanos();
     }
 
     public Relay(

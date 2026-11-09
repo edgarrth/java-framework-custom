@@ -1,7 +1,5 @@
 package pe.axiz.spring.idempotency;
 
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
@@ -20,6 +18,7 @@ import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -57,7 +56,8 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
     AsyncAwsClients axizIdempotencyAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizIdempotencyAsyncAwsResources", completion.workers(), completion.queueCapacity());
+      return new AsyncAwsClients(
+          "axizIdempotencyAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

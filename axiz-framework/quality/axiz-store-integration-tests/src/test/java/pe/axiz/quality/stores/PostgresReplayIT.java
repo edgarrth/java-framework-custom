@@ -98,7 +98,7 @@ class PostgresReplayIT {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(1)),
+            Backoff.fixed(Duration.ofHours(1)),
             Duration.ofMinutes(3),
             Duration.ofMillis(1));
     assertEquals(1, before.relayOnce().retried());
@@ -116,10 +116,23 @@ class PostgresReplayIT {
             clock,
             10,
             3,
-            Backoff.fixed(Duration.ofSeconds(1)),
+            Backoff.fixed(Duration.ofHours(1)),
             Duration.ofMinutes(3),
             Duration.ofMillis(1));
-    clock.advance(Duration.ofSeconds(1));
+    clock.advance(Duration.ofHours(1));
+    assertEquals(
+        0,
+        restarted.relayOnce().published(),
+        "Advancing the application clock cannot make a database retry eligible");
+    // Establish database eligibility explicitly; do not wait for wall time in this regression.
+    try (var connection = source().getConnection();
+        var statement = connection.createStatement()) {
+      assertEquals(
+          1,
+          statement.executeUpdate(
+              "UPDATE axiz_outbox SET next_attempt_at=statement_timestamp()-interval '1 second' "
+                  + "WHERE id='payment-1' AND status='PENDING'"));
+    }
     assertEquals(1, restarted.relayOnce().published());
     assertEquals(0, restarted.relayOnce().total());
     assertEquals(0, restartedStore.countPending());

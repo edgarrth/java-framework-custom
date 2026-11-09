@@ -1,8 +1,10 @@
 # Inventario de rupturas de API de 2.0
 
-Estado: **inventario revisado contra 144 reportes reales de 1.0.0**, 5 de noviembre de 2026.
-Se registran 213 clases incompatibles, incluidas las extracciones parciales del plan 2.0. Las 161 reubicaciones que conservan el contrato
-se compararon miembro por miembro con `javap -protected`, sin pérdidas de firmas tras aplicar
+Estado: **inventario revisado contra 144 reportes reales de 1.0.0**, actualizado el 8 de noviembre de 2026.
+Se registran 213 clases incompatibles, incluidas las extracciones parciales del plan 2.0. La revisión
+inicial comparó 161 reubicaciones miembro por miembro con `javap -protected`, aplicando los mapeos
+intencional de `SqlStates.identifier`, sustituida por `SqlIdentifiers.require`; no se presenta esta
+última como una reubicación que conserva todos sus miembros. Las sustituciones de selectores, propiedades y fachadas asíncronas
 se documentan en cada entrada. No se ha cambiado la línea base a 2.0.
 
 El control compara la forma completa de cada clase incompatible, incluyendo firmas, genéricos,
@@ -11,7 +13,7 @@ formato XML. Cada entrada debe documentar su motivo. Para tipos trasladados se r
 el módulo, nombre y hash de la API de reemplazo; así una reubicación no oculta miembros perdidos.
 Los cambios del inventario requieren revisión; `--observed` solo escribe hallazgos aparte.
 
-## Observaciones de revisión 2.0 (implementación en curso)
+## Observaciones de revisión 2.0
 
 - P1 añade la anotación neutral `pe.axiz.core.security.AuthenticatedAccess` y sus interceptores
   previos servlet/reactive. La cobertura de `@PreAuthorize` usa una gramática estructural cerrada,
@@ -20,9 +22,42 @@ Los cambios del inventario requieren revisión; `--observed` solo escribe hallaz
   trivial o una exclusión de autoridad. Se conservan las reglas HTTP efectivas y los contratos
   públicos válidos como alternativas. El advice MVC conserva 401 para una denegación de método a un
   anónimo dentro de la cadena de seguridad, en lugar de convertirla en 403.
+- P4 retira el argumento `Instant now` de `OutboxStore.claimDue` y de
+  `R2dbcOutboxStore.claim`: el reloj de la base determina elegibilidad y expiración. Los almacenes
+  propios deben implementar esa semántica. El relay usa `LeaseTiming` y un presupuesto positivo
+  propagado mediante `BoundedPublisher`/`PublishBound`; los publicadores desconocidos necesitan
+  `axiz.outbox.relay.publish-budget` o el constructor explícito de core. No se inventa una cota en
+  la receta. Se conserva el uso de outbox sin relay, con comprobación de esquema.
+- R1 mueve solo la validación textual `SqlStates.identifier` a
+  `pe.axiz.core.commons.SqlIdentifiers.require`; las operaciones JDBC permanecen en su kit. La
+  receta cambia el destino y nombre del método sin trasladar los demás helpers SQLSTATE.
+- R2 mueve `ReactiveSequenceStore` y `R2dbcSequenceStore` al adaptador
+  `pe.axiz:axiz-adapter-sequence-r2dbc`, manteniendo `Mono<Long>`. El consumidor elige el adaptador
+  con scope `runtime`; el starter genérico no impone R2DBC. Es un JAR nuevo sin predecesor 1.x:
+  Maven omite exclusivamente la comparación histórica imposible y el verificador exige su JAR
+  y las firmas revisadas de `new-api/axiz-adapter-sequence-r2dbc.txt`.
+- R4/R5/R6 refuerzan el vocabulario y las fronteras: JDBC es opcional en foundation; los dominios
+  solo acceden a los helpers neutrales acordados de commons, incluidas las variantes de `Result`;
+  aplicación no usa respuestas ni catálogos de cabeceras de transporte.
+- P2 incorpora `AXZ-IDEM-2409` (`RESOLVED_WITHOUT_EFFECT`, 409). Se puede repetir la misma clave
+  después de una resolución autoritativa sin efecto; `OUTCOME_UNKNOWN` conserva su significado y
+  no se ejecuta ningún reintento automático dentro de `begin`.
+- P3 mantiene `axiz.audit.mode` como selector canónico y depreca los selectores booleanos hasta
+  3.0. `MigrateAuditModeSelector` conserva la precedencia durable y marca composiciones ambiguas
+  o conflictos para migración manual. Las opciones de cola y de entrega permanecen disponibles.
+- R8 conserva los constructores anteriores de `AsyncAwsClients` y permite configurar los workers
+  y la cola mediante `axiz.aws.completion.*`, con límites, métricas opcionales y cierre por su
+  dueño. `axiz.messaging.aws.api-call-timeout` acota los clientes de mensajería que crea Axiz;
+  clientes proporcionados por la aplicación conservan su configuración efectiva.
+- R9 permite elevar `axiz.errorprone.fqn.severity` por módulo, con `WARN` global. D3 genera imports
+  según uso también sin formateador JVM. D1/D2 son correcciones del adaptador del demo y no añaden
+  responsabilidades al framework. R3 y la optimización de UPDATE por lote siguen posteriores por
+  acuerdo; R7 permanece descartada.
 
-El inventario JSON inferior conserva su baseline real 1.0.0. Las nuevas huellas se revisarán con los
-reportes de compatibilidad de la implementación completa; esta nota no aprueba huellas sin comprobar.
+El inventario JSON inferior conserva su baseline real 1.0.0. Las trece huellas afectadas por P4/R1
+(dos clases incompatibles y once referencias de reemplazo, incluidas referencias duplicadas entre
+extracciones) se revisaron contra los reportes reales y sus firmas antes de actualizarlas. El
+adaptador nuevo R2DBC se valida aparte con su JAR y referencia pública; no recibe un baseline ficticio.
 
 
 Revisión de las adiciones nativas de CQRS (1 de noviembre): `javap -protected` contra 1.0.0
@@ -177,7 +212,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-messaging-kafka",
         "class": "pe.axiz.adapter.messaging.kafka.KafkaEventPublisher",
-        "sha256": "acfd20a5c1e6ac4370f6567efb82cd6606e4d8f2286e3e496a3cb175103bb7d4"
+        "sha256": "f4abeb6d015f7c42d1bfc0ad631fcfff9994d28a736451b9c24253ff568096d3"
       }
     },
     {
@@ -197,7 +232,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-messaging-sns",
         "class": "pe.axiz.adapter.messaging.sns.SnsEventPublisher",
-        "sha256": "3b3c8cae55900fff509855f0a97b3e217216b6bbdf7cdc2eaacd1bba8f631f1d"
+        "sha256": "5a04add0c760fea7d1913eb2ab113814241dd4d9ab9492caee98962f05618019"
       }
     },
     {
@@ -217,7 +252,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-messaging-sqs",
         "class": "pe.axiz.adapter.messaging.sqs.SqsEventPublisher",
-        "sha256": "af4b7c9cba8ead10580f3bb118ac3f43e4d5eb7325e339d545ef03fd338f5be6"
+        "sha256": "0016c2379c93c8a42061d2a6b2569035cd7152366151fcebad957112ffd55a4c"
       }
     },
     {
@@ -227,7 +262,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-observability-aws",
         "class": "pe.axiz.adapter.observability.aws.AwsClients",
-        "sha256": "4296cb45f212e201b7284e6e8c06a54b326de642df1839eea586e692930f93fc"
+        "sha256": "a3504e178084cc0cf2e0351384207b69ea52967506ee7323ea4dd0916a292290"
       }
     },
     {
@@ -244,22 +279,22 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-adapter-outbox-jdbc",
       "class": "pe.axiz.core.outbox.Dialect",
       "sha256": "4c26ddf9d40aafe249b5585302d6bfd6da148d2ed15909cfaa01d2f04184f4bf",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: P4: añade nowExpression para statement_timestamp en PostgreSQL y CURRENT_TIMESTAMP en la transacción corta H2; conserva lockClause y valores del enum.",
       "replacement": {
         "artifact": "axiz-adapter-outbox-jdbc",
         "class": "pe.axiz.adapter.outbox.jdbc.Dialect",
-        "sha256": "b70190cbdefe8d74de7cba7489c32f00af3aec9ea18b277c51c52cd93398aded"
+        "sha256": "a1bd3c85e6dee05f59a51e1a292ff2686f092301c82dc36c3623f00b26b936a5"
       }
     },
     {
       "artifact": "axiz-adapter-outbox-jdbc",
       "class": "pe.axiz.core.outbox.JdbcOutboxStore",
       "sha256": "0cc7c79fb40865598ab90a20b3e491d8ad11fef2f4e49ce683e7e6d6c4cb64c2",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: P4: claimDue(int, Duration, String) usa reloj de base; desaparece Instant now de la firma intermedia 2.0. Mantiene las operaciones históricas de escritura, lectura, actualización y purga.",
       "replacement": {
         "artifact": "axiz-adapter-outbox-jdbc",
         "class": "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore",
-        "sha256": "899096b6469260f54982ae591b31effcf89344a2e89eb22683db5976ea56348f"
+        "sha256": "179cd97be610f3f74bf6ece358d2f77fa296f74f0423e2d7fadef3e6c4b6e3b3"
       }
     },
     {
@@ -269,7 +304,7 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "replacement": {
         "artifact": "axiz-adapter-outbox-r2dbc",
         "class": "pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore",
-        "sha256": "20c8db62ec6a8dbf1a79c4f354fd3f826a5b0c2e4e929bf9d0909f40231d24cf"
+        "sha256": "9fc580744532ded98510b44af1f6528d9aa99b7dc6d3ed08b7ed5ab40363d76b"
       }
     },
     {
@@ -430,11 +465,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-core-commons",
       "class": "pe.axiz.core.commons.jdbc.SqlStates",
       "sha256": "937feb5011c4d341f8f8ca30ab6b122f513ff660a38061442111efbe86f03e1b",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: R1: se retira identifier(String) del reemplazo JDBC y se migra a pe.axiz.core.commons.SqlIdentifiers.require(String); insertIgnoringDuplicate e isDuplicateKey se conservan. Esta excepción deliberada reemplaza la afirmación anterior de conservación total de firmas de este helper.",
       "replacement": {
         "artifact": "axiz-kit-jdbc",
         "class": "pe.axiz.kit.jdbc.SqlStates",
-        "sha256": "84674eb56c0e901f567eb6ba9306ddf8f2ca4aebab7cb3316e3d09d19b7942ba"
+        "sha256": "6080edb5002d4fcc8c71c34d458512b10cc882932acff1205755dbb613546480"
       }
     },
     {
@@ -469,35 +504,35 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-core-outbox",
       "class": "pe.axiz.core.outbox.Dialect",
       "sha256": "4c26ddf9d40aafe249b5585302d6bfd6da148d2ed15909cfaa01d2f04184f4bf",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: P4: añade nowExpression para statement_timestamp en PostgreSQL y CURRENT_TIMESTAMP en la transacción corta H2; conserva lockClause y valores del enum.",
       "replacement": {
         "artifact": "axiz-adapter-outbox-jdbc",
         "class": "pe.axiz.adapter.outbox.jdbc.Dialect",
-        "sha256": "b70190cbdefe8d74de7cba7489c32f00af3aec9ea18b277c51c52cd93398aded"
+        "sha256": "a1bd3c85e6dee05f59a51e1a292ff2686f092301c82dc36c3623f00b26b936a5"
       }
     },
     {
       "artifact": "axiz-core-outbox",
       "class": "pe.axiz.core.outbox.JdbcOutboxStore",
       "sha256": "783d5cd48c3accc1d382b16cdbd93c9171007b6858b79954faa8457c26a15bc3",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: P4: claimDue(int, Duration, String) usa reloj de base; desaparece Instant now de la firma intermedia 2.0. Mantiene las operaciones históricas de escritura, lectura, actualización y purga.",
       "replacement": {
         "artifact": "axiz-adapter-outbox-jdbc",
         "class": "pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore",
-        "sha256": "899096b6469260f54982ae591b31effcf89344a2e89eb22683db5976ea56348f"
+        "sha256": "179cd97be610f3f74bf6ece358d2f77fa296f74f0423e2d7fadef3e6c4b6e3b3"
       }
     },
     {
       "artifact": "axiz-core-outbox",
       "class": "pe.axiz.core.outbox.OutboxRelay",
-      "sha256": "9b5efd69b4df035835088216c1fcafbaa4c6b5eaaeaf8302d8a44329a94ede0d",
-      "reason": "M8/M9 y A1: el constructor recibe TransactionRunner de core.commons.tx; añade overload con lease. La receta actualiza el tipo del puerto; claim y marca son transacciones breves y la publicación ocurre fuera de SQL."
+      "sha256": "c07ced8d51805c64cf5b0b2ee6a691365aae0e727d283c9b2fcede210cbce477",
+      "reason": "M8/M9 y A1: el constructor recibe TransactionRunner de core.commons.tx; añade overload con lease. La receta actualiza el tipo del puerto; claim y marca son transacciones breves y la publicación ocurre fuera de SQL. Revisión 2026-11-08: P4: añade constructores con lease/presupuesto explícitos y listener neutral. Los constructores previos de 2.0 infieren presupuesto solo de publicadores con cota conocida; la reubicación ya aprobada de TransactionRunner se mantiene."
     },
     {
       "artifact": "axiz-core-outbox",
       "class": "pe.axiz.core.outbox.OutboxStore",
-      "sha256": "74f2fc216f08ef20dfe04ad43e021c3caca926bfb32be4cf24c80792091f1f63",
-      "reason": "A1/M1: nuevos métodos obligatorios claimDue, marcas cercadas por owner, retry/skip explícitos, verifySchema y contadores persistidos. Almacenes propios deben implementar el protocolo; no se suministra un default inseguro que pierda fencing u orden."
+      "sha256": "2055cb92e1f50e4b99cea5d5c886edd11137ec19e531b75539cf36ea8877eb2a",
+      "reason": "A1/M1: nuevos métodos obligatorios claimDue, marcas cercadas por owner, retry/skip explícitos, verifySchema y contadores persistidos. Almacenes propios deben implementar el protocolo; no se suministra un default inseguro que pierda fencing u orden. Revisión 2026-11-08: P4: el nuevo contrato abstracto claimDue(int, Duration, String) exige elegibilidad y expiración por reloj de la base y fencing del dueño; una implementación propia debe migrar la firma intermedia con Instant now y su semántica. Los demás métodos históricos permanecen."
     },
     {
       "artifact": "axiz-core-saga",
@@ -1068,11 +1103,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-kit-jdbc",
       "class": "pe.axiz.core.commons.jdbc.SqlStates",
       "sha256": "937feb5011c4d341f8f8ca30ab6b122f513ff660a38061442111efbe86f03e1b",
-      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
+      "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000. Revisión 2026-11-08: R1: se retira identifier(String) del reemplazo JDBC y se migra a pe.axiz.core.commons.SqlIdentifiers.require(String); insertIgnoringDuplicate e isDuplicateKey se conservan. Esta excepción deliberada reemplaza la afirmación anterior de conservación total de firmas de este helper.",
       "replacement": {
         "artifact": "axiz-kit-jdbc",
         "class": "pe.axiz.kit.jdbc.SqlStates",
-        "sha256": "84674eb56c0e901f567eb6ba9306ddf8f2ca4aebab7cb3316e3d09d19b7942ba"
+        "sha256": "6080edb5002d4fcc8c71c34d458512b10cc882932acff1205755dbb613546480"
       }
     },
     {

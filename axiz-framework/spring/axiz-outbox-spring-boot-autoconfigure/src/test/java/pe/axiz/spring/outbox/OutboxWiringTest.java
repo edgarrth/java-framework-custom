@@ -245,7 +245,8 @@ class OutboxWiringTest {
     List<String> sent = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizOutboxR2dbcAutoConfiguration.class))
-        .withPropertyValues("axiz.outbox.relay.poll-interval=20ms", "axiz.outbox.relay.publish-budget=1ms")
+        .withPropertyValues(
+            "axiz.outbox.relay.poll-interval=20ms", "axiz.outbox.relay.publish-budget=1ms")
         .withBean(ConnectionFactory.class, () -> db)
         .withBean(ReactiveSql.class, () -> new OutboxR2dbcTest.TxSql(DatabaseClient.create(db)))
         .withBean(OutboxStore.class, () -> store)

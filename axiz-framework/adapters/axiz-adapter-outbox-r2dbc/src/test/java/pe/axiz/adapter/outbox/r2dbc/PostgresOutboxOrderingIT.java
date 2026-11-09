@@ -145,26 +145,49 @@ class PostgresOutboxOrderingIT {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
-  void databaseLeaseIsIndependentOfTheApplicationClockInBothDirections(boolean reactive) throws Exception {
+  void databaseLeaseIsIndependentOfTheApplicationClockInBothDirections(boolean reactive)
+      throws Exception {
     Backend b = backend(reactive);
     for (long hours : new long[] {-1, 1}) {
       String id = "skew-" + hours;
       new OutboxWriter(b.store(), CLOCK).write("t", event(id, id), "order");
-      var claimed = b.tx().inTransaction(() -> b.store().claimDue(1, Duration.ofMinutes(1), "owner"));
+      var claimed =
+          b.tx().inTransaction(() -> b.store().claimDue(1, Duration.ofMinutes(1), "owner"));
       assertEquals(1, claimed.size());
-      try (var c = source.getConnection(); var statement = c.createStatement();
-          var rows = statement.executeQuery("SELECT lease_until > statement_timestamp() AND "
-              + "lease_until <= statement_timestamp() + interval '61 seconds' FROM axiz_outbox WHERE id='" + id + "'")) {
-        assertTrue(rows.next()); assertTrue(rows.getBoolean(1));
+      try (var c = source.getConnection();
+          var statement = c.createStatement();
+          var rows =
+              statement.executeQuery(
+                  "SELECT lease_until > statement_timestamp() AND "
+                      + "lease_until <= statement_timestamp() + interval '61 seconds' FROM axiz_outbox WHERE id='"
+                      + id
+                      + "'")) {
+        assertTrue(rows.next());
+        assertTrue(rows.getBoolean(1));
       }
       var sent = new ArrayList<String>();
-      var relay = new OutboxRelay(b.store(), (destination, e) -> {
-        sent.add(e.id()); return new PublishResult(e.id(), destination, null);
-      }, b.tx(), Clock.offset(CLOCK, Duration.ofHours(hours)), 10, 2,
-          Backoff.fixed(Duration.ZERO), Duration.ofMinutes(3), Duration.ofMillis(1));
-      assertEquals(0, relay.relayOnce().published(), "app clock cannot steal an unexpired database lease");
-      try (var c = source.getConnection(); var statement = c.createStatement()) {
-        statement.executeUpdate("UPDATE axiz_outbox SET lease_until=statement_timestamp()-interval '1 second' WHERE id='" + id + "'");
+      var relay =
+          new OutboxRelay(
+              b.store(),
+              (destination, e) -> {
+                sent.add(e.id());
+                return new PublishResult(e.id(), destination, null);
+              },
+              b.tx(),
+              Clock.offset(CLOCK, Duration.ofHours(hours)),
+              10,
+              2,
+              Backoff.fixed(Duration.ZERO),
+              Duration.ofMinutes(3),
+              Duration.ofMillis(1));
+      assertEquals(
+          0, relay.relayOnce().published(), "app clock cannot steal an unexpired database lease");
+      try (var c = source.getConnection();
+          var statement = c.createStatement()) {
+        statement.executeUpdate(
+            "UPDATE axiz_outbox SET lease_until=statement_timestamp()-interval '1 second' WHERE id='"
+                + id
+                + "'");
       }
       assertEquals(1, relay.relayOnce().published());
       assertEquals(List.of(id), sent);

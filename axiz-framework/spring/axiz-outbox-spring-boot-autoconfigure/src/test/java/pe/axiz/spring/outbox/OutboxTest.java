@@ -64,7 +64,8 @@ class OutboxTest {
         };
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizOutboxAutoConfiguration.class))
-        .withPropertyValues("axiz.outbox.relay.poll-interval=50ms")
+        .withPropertyValues(
+            "axiz.outbox.relay.poll-interval=50ms", "axiz.outbox.relay.publish-budget=1s")
         .withBean(DataSource.class, () -> h2)
         .withBean(PlatformTransactionManager.class, () -> new DataSourceTransactionManager(h2))
         .withBean(EventPublisher.class, () -> publisher)

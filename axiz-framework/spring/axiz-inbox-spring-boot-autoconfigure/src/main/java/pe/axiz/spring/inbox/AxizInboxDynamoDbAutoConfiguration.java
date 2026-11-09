@@ -1,7 +1,5 @@
 package pe.axiz.spring.inbox;
 
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -22,6 +20,7 @@ import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -62,7 +61,8 @@ public class AxizInboxDynamoDbAutoConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
       AsyncAwsClients axizInboxAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizInboxAsyncAwsResources", completion.workers(), completion.queueCapacity());
+        return new AsyncAwsClients(
+            "axizInboxAsyncAwsResources", completion.workers(), completion.queueCapacity());
       }
 
       @Bean(destroyMethod = "close")

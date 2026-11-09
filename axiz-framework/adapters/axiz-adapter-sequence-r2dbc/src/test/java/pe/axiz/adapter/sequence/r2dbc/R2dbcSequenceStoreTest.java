@@ -4,14 +4,50 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryMetadata;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 class R2dbcSequenceStoreTest {
+  @Test
+  void theIndependentReservationPreservesTheCallersReactorContext() {
+    var request = new AtomicReference<String>();
+    var db = new FakeR2dbc().onQuery("^INSERT INTO", binds -> List.of(Map.of("seq_value", 1L)));
+    ConnectionFactory contextual =
+        new ConnectionFactory() {
+          @Override
+          public Publisher<? extends Connection> create() {
+            return Mono.deferContextual(
+                context -> {
+                  request.set(context.get("request-id"));
+                  return Mono.from(db.create());
+                });
+          }
+
+          @Override
+          public ConnectionFactoryMetadata getMetadata() {
+            return db.getMetadata();
+          }
+        };
+    assertEquals(
+        1L,
+        new R2dbcSequenceStore(contextual, "axiz_sequence")
+            .increment("operation", "", 1)
+            .contextWrite(Context.of("request-id", "request-42"))
+            .block());
+    assertEquals("request-42", request.get());
+    assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), db.events());
+  }
+
   @Test
   void reservesAnAtomicPostgresBlockOnlyWhenSubscribedAndCommitsBeforeReturning() {
     FakeR2dbc db =

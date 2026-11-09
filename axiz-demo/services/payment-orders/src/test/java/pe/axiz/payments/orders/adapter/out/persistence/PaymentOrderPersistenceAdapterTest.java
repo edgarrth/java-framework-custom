@@ -133,7 +133,8 @@ class PaymentOrderPersistenceAdapterTest {
   static DataIntegrityViolationException violation(String constraint) {
     return new DataIntegrityViolationException(
         "could not execute statement",
-        new PSQLException(new ServerErrorMessage("C23505\u0000Mclave duplicada\u0000n" + constraint + "\u0000")));
+        new PSQLException(
+            new ServerErrorMessage("C23505\u0000Mclave duplicada\u0000n" + constraint + "\u0000")));
   }
 
   @Test
@@ -202,11 +203,17 @@ class PaymentOrderPersistenceAdapterTest {
 
   @Test
   void messageTextAndOtherSqlStatesDoNotImpersonateTheRequestKeyConstraint() {
-    for (SQLException cause : List.of(
-        new SQLException("duplicate " + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT, "23505"),
-        new PSQLException(new ServerErrorMessage("C23503\u0000Mreferencia inválida\u0000n"
-            + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT + "\u0000")),
-        new PSQLException(new ServerErrorMessage("C23505\u0000Mclave duplicada sin nombre\u0000")))) {
+    for (SQLException cause :
+        List.of(
+            new SQLException(
+                "duplicate " + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT, "23505"),
+            new PSQLException(
+                new ServerErrorMessage(
+                    "C23503\u0000Mreferencia inválida\u0000n"
+                        + PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT
+                        + "\u0000")),
+            new PSQLException(
+                new ServerErrorMessage("C23505\u0000Mclave duplicada sin nombre\u0000")))) {
       var failure = new DataIntegrityViolationException("insert", cause);
       rows.nextSaveFailure = failure;
       assertThatThrownBy(() -> adapter.create(order(UUID.randomUUID(), "C-1"), "req"))
@@ -217,10 +224,12 @@ class PaymentOrderPersistenceAdapterTest {
   @Test
   void structuredConstraintCanBeNestedInTheSqlExceptionChain() {
     var batch = new SQLException("batch failed");
-    batch.setNextException((SQLException) violation(PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT).getCause());
+    batch.setNextException(
+        (SQLException) violation(PaymentOrderPersistenceAdapter.REQUEST_KEY_CONSTRAINT).getCause());
     rows.nextSaveFailure = new DataIntegrityViolationException("insert", batch);
     assertThatThrownBy(() -> adapter.create(order(UUID.randomUUID(), "C-1"), "req"))
-        .isInstanceOfSatisfying(BusinessException.class,
+        .isInstanceOfSatisfying(
+            BusinessException.class,
             e -> assertThat(e.definition()).isEqualTo(PaymentErrors.CONCURRENT_REQUEST));
   }
 

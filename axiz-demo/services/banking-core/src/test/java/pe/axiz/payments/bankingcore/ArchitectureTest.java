@@ -1,8 +1,8 @@
 package pe.axiz.payments.bankingcore;
 
 import org.junit.jupiter.api.Test;
-import pe.axiz.quality.archunit.AxizArchitecture;
 import pe.axiz.quality.archunit.Archetype;
+import pe.axiz.quality.archunit.AxizArchitecture;
 import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;
 

@@ -26,6 +26,7 @@ import pe.axiz.core.messaging.PublishException;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.outbox.OutboxAdmin;
 import pe.axiz.core.outbox.OutboxException;
+import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxWriteTracing;
 import pe.axiz.core.outbox.OutboxWriter;
@@ -78,6 +79,32 @@ class OutboxTest {
         "application/json",
         "{\"amount\":\"10.00\"}".getBytes(StandardCharsets.UTF_8),
         Map.of());
+  }
+
+  @Test
+  void legacyOperationsStillRespectHeadOrderingRetryEligibilityAndTerminalRecovery()
+      throws Exception {
+    var writer = new OutboxWriter(store, clock);
+    writer.write("t", event("head"), "order");
+    writer.write("t", event("successor"), "order");
+    assertEquals(
+        List.of("head"),
+        tx.inTransaction(() -> store.lockDue(10, clock.instant())).stream()
+            .map(OutboxRecord::id)
+            .toList());
+    store.markFailed("head", 1, clock.instant().plusSeconds(10), null, false);
+    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
+    store.markFailed("head", 2, clock.instant(), "permanent failure", true);
+    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
+    assertTrue(store.skip("head", "explicit recovery"));
+    assertEquals(
+        List.of("successor"),
+        tx.inTransaction(() -> store.lockDue(10, clock.instant())).stream()
+            .map(OutboxRecord::id)
+            .toList());
+    store.markPublished("successor", clock.instant());
+    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
+    assertEquals(0, store.countPending());
   }
 
   @Test
@@ -221,8 +248,10 @@ class OutboxTest {
     assertEquals(1, relay.relayOnce().retried());
     assertEquals(0, relay.relayOnce().total(), "not due before the backoff");
     clock.now = clock.now.plusSeconds(31);
-    try (Connection c = tx.get(); Statement statement = c.createStatement()) {
-      statement.executeUpdate("UPDATE axiz_outbox SET next_attempt_at=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
+    try (Connection c = tx.get();
+        Statement statement = c.createStatement()) {
+      statement.executeUpdate(
+          "UPDATE axiz_outbox SET next_attempt_at=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
     }
     assertEquals(1, relay.relayOnce().failed());
     assertEquals(0, store.countPending());
@@ -359,8 +388,10 @@ class OutboxTest {
     assertEquals(
         1, tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(1), "old")).size());
     clock.now = clock.now.plusSeconds(2);
-    try (Connection c = tx.get(); Statement statement = c.createStatement()) {
-      statement.executeUpdate("UPDATE axiz_outbox SET lease_until=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
+    try (Connection c = tx.get();
+        Statement statement = c.createStatement()) {
+      statement.executeUpdate(
+          "UPDATE axiz_outbox SET lease_until=DATEADD(SECOND,-1,CURRENT_TIMESTAMP)");
     }
     assertEquals(
         1, tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(1), "new")).size());

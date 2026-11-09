@@ -97,12 +97,18 @@ class DynamoBeneficiaryRepositoryTest {
     }
   }
 
-  final CursorCodec cursors=new CursorCodec(new pe.axiz.core.crypto.StaticKeyProvider("test",Map.of("test",pe.axiz.core.crypto.AesGcm.newKey())),false);
+  final CursorCodec cursors =
+      new CursorCodec(
+          new pe.axiz.core.crypto.StaticKeyProvider(
+              "test", Map.of("test", pe.axiz.core.crypto.AesGcm.newKey())),
+          false);
   final Scripted dynamo = new Scripted();
   final DynamoBeneficiaryRepository repository =
       new DynamoBeneficiaryRepository(
           new DynamoRepositories(
-              DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build(), "local-", () -> cursors));
+              DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build(),
+              "local-",
+              () -> cursors));
 
   static Map<String, AttributeValue> row(String customer, String id, boolean removed) {
     Map<String, AttributeValue> row = new HashMap<>();
@@ -166,7 +172,9 @@ class DynamoBeneficiaryRepositoryTest {
     assertThat(q.exclusiveStartKey()).isEmpty();
     assertThat(q.expressionAttributeValues()).containsValue(AttributeValue.fromS("C-1"));
     assertThat(first.content()).extracting(Beneficiary::getBeneficiaryId).containsExactly("B-1");
-    assertThat(cursors.decode(first.nextCursor(),"local-beneficiaries/primary/active/customer=C-1")).isEqualTo(key("C-1", "B-1"));
+    assertThat(
+            cursors.decode(first.nextCursor(), "local-beneficiaries/primary/active/customer=C-1"))
+        .isEqualTo(key("C-1", "B-1"));
 
     dynamo.pages.add(page(Map.of(), List.of(row("C-1", "B-2", false))));
     Page<Beneficiary> second = repository.listActive("C-1", 1, first.nextCursor());
@@ -178,9 +186,16 @@ class DynamoBeneficiaryRepositoryTest {
 
   @Test
   void aCursorOfAnotherCustomerOrMalformedIsRefusedBeforeReading() {
-    String foreign = cursors.encode(key("C-2", "B-9"),"local-beneficiaries/primary/active/customer=C-1");
-    String withoutSortKey = cursors.encode(Map.of("customerId", AttributeValue.fromS("C-1")),"local-beneficiaries/primary/active/customer=C-1");
-    String withoutOwner = cursors.encode(Map.of("beneficiaryId", AttributeValue.fromS("B-1")),"local-beneficiaries/primary/active/customer=C-1");
+    String foreign =
+        cursors.encode(key("C-2", "B-9"), "local-beneficiaries/primary/active/customer=C-1");
+    String withoutSortKey =
+        cursors.encode(
+            Map.of("customerId", AttributeValue.fromS("C-1")),
+            "local-beneficiaries/primary/active/customer=C-1");
+    String withoutOwner =
+        cursors.encode(
+            Map.of("beneficiaryId", AttributeValue.fromS("B-1")),
+            "local-beneficiaries/primary/active/customer=C-1");
 
     for (String cursor : new String[] {foreign, withoutSortKey, withoutOwner, "%%not-base64%%"}) {
       assertThatThrownBy(() -> repository.listActive("C-1", 10, cursor))

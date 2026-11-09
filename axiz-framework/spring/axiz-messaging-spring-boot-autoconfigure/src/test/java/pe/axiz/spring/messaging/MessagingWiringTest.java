@@ -165,10 +165,12 @@ class MessagingWiringTest {
   void theProducerIsReliableAndBackedByAnAdapter() {
     AxizMessagingProperties p = properties(kafka("localhost:9092", false), Duration.ofSeconds(10));
     AxizMessagingKafkaAutoConfiguration config = new AxizMessagingKafkaAutoConfiguration();
-    Map<String, Object> producerProperties = config.axizKafkaProducerProperties(p, new MockEnvironment());
+    Map<String, Object> producerProperties =
+        config.axizKafkaProducerProperties(p, new MockEnvironment());
     KafkaProducer<String, byte[]> producer = config.axizKafkaProducer(producerProperties);
     try {
-      EventPublisherAdapter adapter = config.axizKafkaPublisherAdapter(producer, p, producerProperties);
+      EventPublisherAdapter adapter =
+          config.axizKafkaPublisherAdapter(producer, p, producerProperties);
       assertEquals("kafka", adapter.name());
       assertTrue(adapter.publisher().supports("payments"));
     } finally {

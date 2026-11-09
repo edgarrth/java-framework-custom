@@ -31,7 +31,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-http`](core/axiz-core-http.md) | HTTP client model: per-client settings, outbound authentication, retry rules, error translation and header propagation. |
 | [`axiz-core-i18n`](core/axiz-core-i18n.md) | Message resolution from multiple bundles with locale fallback. |
 | [`axiz-core-id`](core/axiz-core-id.md) | Time-ordered UUIDv7, ULID, correlation and idempotency ids. |
-| [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | API idempotency: key and fingerprint, stored responses, conflict detection. |
+| [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | An authoritative resolver that confirms no effect releases the key and returns 409 |
 | [`axiz-core-identifiers`](core/axiz-core-identifiers.md) | Generic identifier SPI with validators (national documents, bank accounts, cards, contact data). |
 | [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer: processed-message registry with JDBC store. |
 | [`axiz-core-lock`](core/axiz-core-lock.md) | Distributed lock port with lease, background renewal and lock template; in-memory implementation. |
@@ -41,7 +41,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-money`](core/axiz-core-money.md) | Money value object with ISO 4217 currencies, rounding and safe arithmetic; exchange rate port. |
 | [`axiz-core-notification`](core/axiz-core-notification.md) | Notification requests (email, SMS, push) with templates, published as events. |
 | [`axiz-core-observability`](core/axiz-core-observability.md) | Observation conventions, standard attributes and helpers for framework spans and structured events. |
-| [`axiz-core-outbox`](core/axiz-core-outbox.md) | Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once. |
+| [`axiz-core-outbox`](core/axiz-core-outbox.md) | The relay uses a monotonic deadline captured before obtaining its claim connection. It starts a |
 | [`axiz-core-resilience`](core/axiz-core-resilience.md) | Retry policies with backoff and jitter, idempotency-aware retry decisions and timeouts. |
 | [`axiz-core-saga`](core/axiz-core-saga.md) | Orchestrated sagas with retries, compensation and persistent, resumable state. |
 | [`axiz-core-secrets`](core/axiz-core-secrets.md) | SecretResolver port with environment and file resolvers and TTL cache. |
@@ -74,7 +74,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-messaging-kafka`](adapters/axiz-adapter-messaging-kafka.md) | Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication. |
 | [`axiz-adapter-messaging-sns`](adapters/axiz-adapter-messaging-sns.md) | Amazon SNS publisher adapter (standard and FIFO). |
 | [`axiz-adapter-messaging-sqs`](adapters/axiz-adapter-messaging-sqs.md) | Amazon SQS publisher and consumer adapter (standard and FIFO). |
-| [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | AWS SDK v2 execution interceptor producing Micrometer observations. |
+| [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | AWS callback admission remains bounded and rejects saturation without caller-runs. Shared settings |
 | [`axiz-adapter-outbox-jdbc`](adapters/axiz-adapter-outbox-jdbc.md) | Outbox persistence and schema resources over JDBC. |
 | [`axiz-adapter-outbox-r2dbc`](adapters/axiz-adapter-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
 | [`axiz-adapter-saga-jdbc`](adapters/axiz-adapter-saga-jdbc.md) | Saga persistence and schema resources over JDBC. |
@@ -82,6 +82,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-security-redis`](adapters/axiz-adapter-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
 | [`axiz-adapter-sequence-dynamodb`](adapters/axiz-adapter-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
 | [`axiz-adapter-sequence-jdbc`](adapters/axiz-adapter-sequence-jdbc.md) | Sequence persistence and schema resources over JDBC. |
+| [`axiz-adapter-sequence-r2dbc`](adapters/axiz-adapter-sequence-r2dbc.md) | Native PostgreSQL counter reservations for reactive services. Implements `ReactiveSequenceStore` |
 | [`axiz-adapter-storage-s3`](adapters/axiz-adapter-storage-s3.md) | Amazon S3 object storage with SSE-KMS and presigned URLs. |
 
 ## Capa 2: kits de persistencia
@@ -98,7 +99,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 
 | Módulo | Descripción |
 |---|---|
-| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS) (auto-configuration). |
+| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode` is the canonical delivery selector. Legacy `durable.enabled` and `async.enabled` |
 | [`axiz-audit-spring-boot-starter`](spring/axiz-audit-spring-boot-starter.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS). |
 | [`axiz-cache-spring-boot-autoconfigure`](spring/axiz-cache-spring-boot-autoconfigure.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance (auto-configuration). |
 | [`axiz-cache-spring-boot-starter`](spring/axiz-cache-spring-boot-starter.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance. |
@@ -128,7 +129,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-lock-spring-boot-starter`](spring/axiz-lock-spring-boot-starter.md) | Distributed locks on Redis or DynamoDB with the lock template. |
 | [`axiz-logging-spring-boot-autoconfigure`](spring/axiz-logging-spring-boot-autoconfigure.md) | Structured JSON logging, operation logging with masking and HTTP request logs (auto-configuration). |
 | [`axiz-logging-spring-boot-starter`](spring/axiz-logging-spring-boot-starter.md) | Structured JSON logging, operation logging with masking and HTTP request logs. |
-| [`axiz-messaging-spring-boot-autoconfigure`](spring/axiz-messaging-spring-boot-autoconfigure.md) | CloudEvents publishers and consumers for MSK, SQS and SNS with retries, DLQ and inbox integration (auto-configuration). |
+| [`axiz-messaging-spring-boot-autoconfigure`](spring/axiz-messaging-spring-boot-autoconfigure.md) | Publishers expose their caller-visible budget through `BoundedPublisher`. Kafka uses the same |
 | [`axiz-messaging-spring-boot-starter`](spring/axiz-messaging-spring-boot-starter.md) | CloudEvents publishers and consumers for MSK, SQS and SNS with retries, DLQ and inbox integration. |
 | [`axiz-metrics-spring-boot-autoconfigure`](spring/axiz-metrics-spring-boot-autoconfigure.md) | Generic event metrics with @Metered, catalog, common tags and cardinality protection (auto-configuration). |
 | [`axiz-metrics-spring-boot-starter`](spring/axiz-metrics-spring-boot-starter.md) | Generic event metrics with @Metered, catalog, common tags and cardinality protection. |
@@ -136,7 +137,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-notification-spring-boot-starter`](spring/axiz-notification-spring-boot-starter.md) | Notification requests published as events to the delivering service. |
 | [`axiz-observability-spring-boot-autoconfigure`](spring/axiz-observability-spring-boot-autoconfigure.md) | OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing (auto-configuration). |
 | [`axiz-observability-spring-boot-starter`](spring/axiz-observability-spring-boot-starter.md) | OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing. |
-| [`axiz-outbox-spring-boot-autoconfigure`](spring/axiz-outbox-spring-boot-autoconfigure.md) | Transactional outbox on Aurora PostgreSQL (JDBC or R2DBC) with background relay (auto-configuration). |
+| [`axiz-outbox-spring-boot-autoconfigure`](spring/axiz-outbox-spring-boot-autoconfigure.md) | Relay startup validates the actual `EventPublisher` budget, including routing and observation |
 | [`axiz-outbox-spring-boot-starter`](spring/axiz-outbox-spring-boot-starter.md) | Transactional outbox on Aurora PostgreSQL with background relay. |
 | [`axiz-r2dbc-spring-boot-autoconfigure`](spring/axiz-r2dbc-spring-boot-autoconfigure.md) | Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, Flyway over JDBC, transactional ReactiveSql, auditing, encrypted and money columns, reader endpoint (auto-configuration). |
 | [`axiz-r2dbc-spring-boot-starter`](spring/axiz-r2dbc-spring-boot-starter.md) | Aurora PostgreSQL for reactive services over R2DBC. |

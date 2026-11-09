@@ -72,15 +72,11 @@ class RequestValidatorTest {
                     "business", Structure.HEXAGONAL, Stack.REACTIVE, "aurora", List.of("saga"))),
             "need JPA, which blocks"));
     assertTrue(
-        mentions(
-            problems(
+        generator
+            .validate(
                 Fixtures.request(
-                    "business",
-                    Structure.HEXAGONAL,
-                    Stack.REACTIVE,
-                    "aurora",
-                    List.of("sequence"))),
-            "not available on aurora (reactive stack, R2DBC)"));
+                    "business", Structure.HEXAGONAL, Stack.REACTIVE, "aurora", List.of("sequence")))
+            .valid());
     assertTrue(
         mentions(
             problems(

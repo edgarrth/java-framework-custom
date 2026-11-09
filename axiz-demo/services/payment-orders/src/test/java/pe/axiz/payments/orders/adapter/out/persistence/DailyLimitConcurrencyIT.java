@@ -3,9 +3,11 @@ package pe.axiz.payments.orders.adapter.out.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,17 +17,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
-import pe.axiz.core.money.Money;
 import pe.axiz.core.errors.BusinessException;
-import pe.axiz.payments.orders.domain.PaymentOrder;
-import pe.axiz.payments.orders.domain.PaymentErrors;
-import java.time.Instant;
-import java.util.UUID;
-import org.springframework.dao.DataIntegrityViolationException;
+import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
+import pe.axiz.payments.orders.domain.PaymentErrors;
+import pe.axiz.payments.orders.domain.PaymentOrder;
 import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
@@ -54,23 +54,42 @@ class DailyLimitConcurrencyIT {
 
   @Test
   void realPostgresConstraintFieldsDistinguishRequestKeysFromOtherDuplicates() {
-    String customer = "C-" + UUID.randomUUID();
+    String customer = "C-" + UUID.randomUUID().toString().substring(0, 18);
     String request = UUID.randomUUID().toString();
     PaymentOrder first = newOrder(customer);
     transactions.executeWithoutResult(_ -> orders.create(first, request));
-    assertThatThrownBy(() -> transactions.executeWithoutResult(
-        _ -> orders.create(newOrder(customer), request)))
-        .isInstanceOfSatisfying(BusinessException.class,
-            failure -> assertThat(failure.definition()).isEqualTo(PaymentErrors.CONCURRENT_REQUEST));
-    assertThatThrownBy(() -> transactions.executeWithoutResult(
-        _ -> orders.create(first, UUID.randomUUID().toString())))
+    assertThatThrownBy(
+            () ->
+                transactions.executeWithoutResult(_ -> orders.create(newOrder(customer), request)))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            failure ->
+                assertThat(failure.definition()).isEqualTo(PaymentErrors.CONCURRENT_REQUEST));
+    assertThatThrownBy(
+            () ->
+                transactions.executeWithoutResult(
+                    _ ->
+                        orders.create(
+                            newOrder(customer, first.operationNumber()),
+                            UUID.randomUUID().toString())))
         .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   private static PaymentOrder newOrder(String customer) {
-    return PaymentOrder.register(UUID.randomUUID().toString(), "OP-" + UUID.randomUUID(), customer,
-        "1910012345678", "00219100123456789053", Money.of("10", "PEN"), "Constraint test",
-        LocalDate.of(2026, 11, 5), Instant.parse("2026-11-05T00:00:00Z"));
+    return newOrder(customer, "OP-" + UUID.randomUUID());
+  }
+
+  private static PaymentOrder newOrder(String customer, String operationNumber) {
+    return PaymentOrder.register(
+        UUID.randomUUID().toString(),
+        operationNumber,
+        customer,
+        "1910012345678",
+        "00219100123456789053",
+        Money.of("10", "PEN"),
+        "Constraint test",
+        LocalDate.of(2026, 11, 5),
+        Instant.parse("2026-11-05T00:00:00Z"));
   }
 
   @Test

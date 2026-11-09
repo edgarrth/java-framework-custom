@@ -215,10 +215,7 @@ class OutboxProtocolTest {
     expired.expired = true;
     assertEquals(
         1,
-        relay(
-                expired,
-                (destination, event) -> new PublishResult(event.id(), destination, null),
-                2)
+        relay(expired, (destination, event) -> new PublishResult(event.id(), destination, null), 2)
             .relayOnce()
             .published());
     var lost = new Store(new Transactions());
@@ -292,6 +289,119 @@ class OutboxProtocolTest {
     assertEquals(List.of(10, 9, 8, 7), limits);
     assertEquals(3, result.total());
     assertEquals(10, new OutboxRelay.RunResult(2, 3, 5).total());
+  }
+
+  @Test
+  void retriesAndTerminalFailuresAlsoConsumeTheBatchLimit() {
+    var limits = new ArrayList<Integer>();
+    var sent = new ArrayList<String>();
+    var store =
+        new Store(new Transactions()) {
+          int claims;
+
+          @Override
+          public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
+            assertTrue(tx.active);
+            limits.add(size);
+            claimOwner = owner;
+            if (claims++ > 1) return List.of();
+            return (claims == 1 ? List.of("sent", "retry", "failed") : List.of("last"))
+                .stream()
+                    .limit(size)
+                    .map(
+                        id ->
+                            new OutboxRecord(
+                                id,
+                                "topic",
+                                "order",
+                                id,
+                                "changed.v1",
+                                CloudEventJson.write(
+                                    new EventEnvelope(
+                                        id,
+                                        "urn:service",
+                                        "changed.v1",
+                                        NOW,
+                                        id,
+                                        "application/json",
+                                        new byte[0],
+                                        Map.of())),
+                                OutboxRecord.Status.IN_FLIGHT,
+                                id.equals("failed") ? 1 : 0,
+                                NOW,
+                                NOW,
+                                null,
+                                1,
+                                owner,
+                                NOW.plus(lease)))
+                    .toList();
+          }
+
+          @Override
+          public boolean markPublished(String id, String owner, Instant at) {
+            assertTrue(tx.active);
+            assertEquals(claimOwner, owner);
+            return true;
+          }
+
+          @Override
+          public boolean markFailed(
+              String id, String owner, int attempts, Instant next, String error, boolean giveUp) {
+            assertTrue(tx.active);
+            assertEquals(claimOwner, owner);
+            assertEquals(id.equals("failed"), giveUp);
+            return true;
+          }
+        };
+    var relay =
+        new OutboxRelay(
+            store,
+            (destination, event) -> {
+              sent.add(event.id());
+              if (List.of("retry", "failed").contains(event.id()))
+                throw new IllegalStateException("broker rejected publication");
+              return new PublishResult(event.id(), destination, null);
+            },
+            store.tx,
+            CLOCK,
+            4,
+            2,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
+    assertEquals(new OutboxRelay.RunResult(2, 1, 1), relay.relayOnce());
+    assertEquals(List.of(4, 1), limits);
+    assertEquals(List.of("sent", "retry", "failed", "last"), sent);
+  }
+
+  @Test
+  void drainingMultipleSingleEntryBatchesContinuesUntilNoHeadCanBePublished() {
+    var limits = new ArrayList<Integer>();
+    var store =
+        new Store(new Transactions()) {
+          int claims;
+
+          @Override
+          public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
+            limits.add(size);
+            if (claims++ == 3) return List.of();
+            claimed = false;
+            return super.claimDue(size, lease, owner);
+          }
+        };
+    var relay =
+        new OutboxRelay(
+            store,
+            (destination, event) -> new PublishResult(event.id(), destination, null),
+            store.tx,
+            CLOCK,
+            1,
+            1,
+            Backoff.fixed(Duration.ZERO),
+            Duration.ofMinutes(3),
+            Duration.ofMillis(1));
+    assertEquals(3, relay.drain());
+    assertEquals(List.of(1, 1, 1, 1), limits);
   }
 
   @Test

@@ -1,8 +1,8 @@
 package pe.axiz.payments.orders.adapter.out.persistence;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.sql.SQLException;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -11,9 +11,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
-import org.postgresql.util.PSQLException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.commons.Page;
@@ -74,8 +74,12 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
   @Override
   public void save(PaymentOrder order) {
     UUID id = UUID.fromString(order.id());
-    PaymentOrderEntity entity = repository.findById(id).orElseThrow(
-        () -> new DataRetrievalFailureException("Cannot update missing payment order " + id));
+    PaymentOrderEntity entity =
+        repository
+            .findById(id)
+            .orElseThrow(
+                () ->
+                    new DataRetrievalFailureException("Cannot update missing payment order " + id));
     entity.status(order.status().name(), order.statusReason());
     repository.save(entity);
   }
@@ -87,8 +91,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
     while (!pending.isEmpty()) {
       Throwable current = pending.remove();
       if (!visited.add(current)) continue;
-      if (current instanceof PSQLException postgres
-          && "23505".equals(postgres.getSQLState())) {
+      if (current instanceof PSQLException postgres && "23505".equals(postgres.getSQLState())) {
         var server = postgres.getServerErrorMessage();
         if (server != null && REQUEST_KEY_CONSTRAINT.equals(server.getConstraint())) return true;
       }

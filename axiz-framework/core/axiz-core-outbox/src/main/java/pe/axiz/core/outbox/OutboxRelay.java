@@ -20,6 +20,12 @@ import pe.axiz.core.resilience.Backoff;
  * Moves outbox entries to the broker (at-least-once). Each run locks a batch, publishes in order
  * and marks every entry as published or schedules a retry with backoff; after {@code maxAttempts}
  * the entry is marked FAILED and reported. Concurrent relays on PostgreSQL skip locked rows.
+ *
+ * <p>A monotonic deadline, captured before obtaining the claim connection, prevents starting a
+ * publication without enough remaining lease for its declared budget. This is an admission
+ * guarantee: process pauses and broker operations continuing after a timeout can still exceed the
+ * lease. Owner fencing and idempotent consumers remain necessary for uncertain outcomes and
+ * physical duplicate deliveries.
  */
 public final class OutboxRelay {
 

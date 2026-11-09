@@ -120,7 +120,12 @@ class CapabilityAdderTest {
     IllegalArgumentException jpa =
         assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "saga"));
     assertTrue(jpa.getMessage().contains("does not support reactive"), jpa.getMessage());
-    assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "sequence"));
+    adder.add(dir, "sequence");
+    String withSequence = Files.readString(dir.resolve("pom.xml"));
+    assertTrue(
+        withSequence.contains(
+            "<artifactId>axiz-adapter-sequence-r2dbc</artifactId>\n      <scope>runtime</scope>"));
+    assertFalse(withSequence.contains("axiz-adapter-sequence-jdbc"));
   }
 
   @Test

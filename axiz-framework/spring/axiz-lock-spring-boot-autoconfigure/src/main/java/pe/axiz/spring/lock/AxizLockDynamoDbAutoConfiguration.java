@@ -1,7 +1,5 @@
 package pe.axiz.spring.lock;
 
-import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
-
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,6 +15,7 @@ import pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.core.lock.DistributedLock;
+import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** DynamoDB locks (conditional writes with lease expiry). */
@@ -54,7 +53,8 @@ public class AxizLockDynamoDbAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.class)
     AsyncAwsClients axizLockAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients("axizLockAsyncAwsResources", completion.workers(), completion.queueCapacity());
+      return new AsyncAwsClients(
+          "axizLockAsyncAwsResources", completion.workers(), completion.queueCapacity());
     }
 
     @Bean(destroyMethod = "close")

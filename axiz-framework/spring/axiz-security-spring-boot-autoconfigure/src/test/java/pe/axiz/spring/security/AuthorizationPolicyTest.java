@@ -95,6 +95,27 @@ class AuthorizationPolicyTest {
                     () -> AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext())));
   }
 
+  static class Policy {
+    public boolean check(Object id) {
+      return true;
+    }
+  }
+
+  @Test
+  void startupNeverInvokesARealApplicationPolicyEvenWhenOrTrueMakesItTrivial() {
+    Policy policy = org.mockito.Mockito.spy(new Policy());
+    mvc(DynamicTrue.class)
+        .withBean("policy", Policy.class, () -> policy)
+        .run(
+            ctx -> {
+              assertThrows(
+                  IllegalStateException.class,
+                  () -> AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext()));
+              org.mockito.Mockito.verify(policy, org.mockito.Mockito.never())
+                  .check(org.mockito.ArgumentMatchers.any());
+            });
+  }
+
   @Test
   void specificHttpRulesStillCoverPermissiveMethods() {
     mvc(Open.class)

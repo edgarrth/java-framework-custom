@@ -10,18 +10,25 @@ import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.BoundedPublisher;
-import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.messaging.PublishBound;
 import pe.axiz.core.messaging.RoutingEventPublisher;
 
 class PublisherBudgetPropagationTest {
-  @Test void observationAndRoutingKeepKnownBoundsAndUnknownRoutes() {
-    EventPublisher known = mock(EventPublisher.class, withSettings().extraInterfaces(BoundedPublisher.class));
-    when(((BoundedPublisher) known).publishBound()).thenReturn(PublishBound.of(Duration.ofSeconds(120)));
+  @Test
+  void observationAndRoutingKeepKnownBoundsAndUnknownRoutes() {
+    EventPublisher known =
+        mock(EventPublisher.class, withSettings().extraInterfaces(BoundedPublisher.class));
+    when(((BoundedPublisher) known).publishBound())
+        .thenReturn(PublishBound.of(Duration.ofSeconds(120)));
     EventPublisher unknown = mock(EventPublisher.class);
     var routing = new RoutingEventPublisher(List.of(known, unknown));
-    var observed = new ObservedEventPublisher(routing, ObservationRegistry.NOOP, mock(AxizMessagingProperties.class));
+    var observed =
+        new ObservedEventPublisher(
+            routing, ObservationRegistry.NOOP, mock(AxizMessagingProperties.class));
     assertEquals(routing.publishBound(), BoundedPublisher.of(observed));
-    assertEquals(PublishBound.of(Duration.ofSeconds(120)).merge(PublishBound.unbounded()), observed.publishBound());
+    assertEquals(
+        PublishBound.of(Duration.ofSeconds(120)).merge(PublishBound.unbounded()),
+        observed.publishBound());
   }
 }
