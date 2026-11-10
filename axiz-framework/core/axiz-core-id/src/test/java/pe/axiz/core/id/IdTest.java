@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -117,12 +118,12 @@ class IdTest {
     }
 
     @Override
-    public java.time.ZoneId getZone() {
+    public ZoneId getZone() {
       return ZoneOffset.UTC;
     }
 
     @Override
-    public Clock withZone(java.time.ZoneId zone) {
+    public Clock withZone(ZoneId zone) {
       return this;
     }
 

@@ -332,6 +332,11 @@
       "oldArtifact": "axiz-core-sequence",
       "newArtifact": "axiz-adapter-sequence-jdbc",
       "newPath": "adapters/axiz-adapter-sequence-jdbc"
+    },
+    {
+      "oldArtifact": "axiz-core-persistence-r2dbc",
+      "newArtifact": "axiz-adapter-database-auth-aws",
+      "newPath": "adapters/axiz-adapter-database-auth-aws"
     }
   ]
 }

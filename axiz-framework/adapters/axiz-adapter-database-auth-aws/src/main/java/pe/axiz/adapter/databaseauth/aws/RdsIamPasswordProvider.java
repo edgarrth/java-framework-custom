@@ -1,4 +1,4 @@
-package pe.axiz.kit.r2dbc;
+package pe.axiz.adapter.databaseauth.aws;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import software.amazon.awssdk.services.rds.RdsUtilities;
 
 /**

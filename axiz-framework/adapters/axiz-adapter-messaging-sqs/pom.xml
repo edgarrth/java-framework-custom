@@ -15,6 +15,8 @@
   <description>Amazon SQS publisher and consumer adapter (standard and FIFO)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-core-messaging-sqs</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.adapter.messaging.sqs</axiz.module.name>

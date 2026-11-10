@@ -8,9 +8,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
+import pe.axiz.core.commons.json.JsonReader;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
@@ -86,14 +88,12 @@ class SqsAuditPublisherTest {
   void bodyIsAStructuredCloudEvent() {
     FakeSqs sqs = new FakeSqs();
     new SqsAuditPublisher(sqs, "q").publish(event());
-    var body = pe.axiz.core.commons.json.JsonReader.parseObject(sqs.sent.get(0).messageBody());
+    var body = JsonReader.parseObject(sqs.sent.get(0).messageBody());
     assertEquals("1.0", body.get("specversion"));
     assertEquals("e-1", body.get("id"));
     assertEquals("pe.axiz.audit.event.v1", body.get("type"));
     assertEquals("application/json", body.get("datacontenttype"));
     assertEquals(
-        "order",
-        ((java.util.Map<?, ?>) java.util.Objects.requireNonNull(body.get("data")))
-            .get("resourceType"));
+        "order", ((Map<?, ?>) Objects.requireNonNull(body.get("data"))).get("resourceType"));
   }
 }

@@ -1,6 +1,7 @@
 package pe.axiz.spring.config;
 
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -30,5 +31,5 @@ public record AxizConfigProperties(
   public record ParameterStore(
       @DefaultValue("false") boolean enabled,
       @DefaultValue("/axiz") String prefix,
-      @org.jspecify.annotations.Nullable String application) {}
+      @Nullable String application) {}
 }

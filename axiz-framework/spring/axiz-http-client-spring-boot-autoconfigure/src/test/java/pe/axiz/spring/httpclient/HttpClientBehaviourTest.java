@@ -16,16 +16,21 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.boot.ssl.NoSuchSslBundleException;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -68,7 +73,7 @@ class HttpClientBehaviourTest {
           int n = calls.computeIfAbsent(path, p -> new AtomicInteger()).incrementAndGet();
           exchange
               .getRequestHeaders()
-              .forEach((k, v) -> lastHeaders.put(k.toLowerCase(java.util.Locale.ROOT), v.get(0)));
+              .forEach((k, v) -> lastHeaders.put(k.toLowerCase(Locale.ROOT), v.get(0)));
           int status;
           String body;
           String type = "application/json";
@@ -198,7 +203,7 @@ class HttpClientBehaviourTest {
   }
 
   private static ClientSettings settings(
-      String name, AuthSettings auth, @org.jspecify.annotations.Nullable String circuitBreaker) {
+      String name, AuthSettings auth, @Nullable String circuitBreaker) {
     return new ClientSettings(
         name,
         URI.create("https://bank.example.com"),
@@ -251,8 +256,8 @@ class HttpClientBehaviourTest {
         new OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER,
             "caller-token",
-            java.time.Instant.now(),
-            java.time.Instant.now().plusSeconds(300));
+            Instant.now(),
+            Instant.now().plusSeconds(300));
     SecurityContextHolder.getContext()
         .setAuthentication(
             new BearerTokenAuthentication(
@@ -408,9 +413,8 @@ class HttpClientBehaviourTest {
   @Test
   void anSslBundleMustExist() {
     AxizHttpClientProperties props =
-        new org.springframework.boot.context.properties.bind.Binder(
-                new org.springframework.boot.context.properties.source
-                    .MapConfigurationPropertySource(
+        new Binder(
+                new MapConfigurationPropertySource(
                     Map.of(
                         "axiz.http-client.clients.bank.base-url", "https://bank.example.com",
                         "axiz.http-client.clients.bank.ssl-bundle", "partner-mtls")))

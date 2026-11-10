@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.RowMapper;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.kit.r2dbc.SqlRow;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
@@ -133,9 +135,7 @@ class NativeAuditTest {
     assertEquals("a", events.getFirst().resourceId());
     assertEquals("a", events.getFirst().details().get("result"));
     assertEquals("user", events.getFirst().actor().subject());
-    assertThat(
-            org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalStateException.class, proxy::invalid))
+    assertThat(Assertions.assertThrows(IllegalStateException.class, proxy::invalid))
         .hasMessageContaining("requires Mono or Flux");
   }
 
@@ -352,7 +352,7 @@ class NativeAuditTest {
                 () ->
                     Flux.just(
                         mapper.map(
-                            new pe.axiz.kit.r2dbc.SqlRow() {
+                            new SqlRow() {
                               public <V> V get(String column, Class<V> type) {
                                 return type.cast(1L);
                               }

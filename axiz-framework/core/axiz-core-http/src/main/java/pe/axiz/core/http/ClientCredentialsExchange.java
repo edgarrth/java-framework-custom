@@ -6,14 +6,20 @@ import java.net.URLEncoder;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.core.errors.ExternalErrorDetail;
+import pe.axiz.core.errors.ExternalServiceException;
 
 /** Shared OAuth wire format and validation for synchronous and native transports. */
 final class ClientCredentialsExchange {
@@ -99,7 +105,7 @@ final class ClientCredentialsExchange {
       if (!expiryAt.isAfter(receivedAt))
         throw new IllegalStateException("Access token expired before its response was received");
       return new AccessToken(value, expiryAt);
-    } catch (ArithmeticException | ClassCastException | java.time.DateTimeException invalid) {
+    } catch (ArithmeticException | ClassCastException | DateTimeException invalid) {
       throw new IllegalStateException("Token response has an invalid expires_in");
     }
   }
@@ -109,13 +115,12 @@ final class ClientCredentialsExchange {
   }
 
   static RuntimeException transport(Throwable failure) {
-    if (failure instanceof pe.axiz.core.errors.AxizException axiz) return axiz;
-    if (failure instanceof java.util.concurrent.CancellationException cancelled) return cancelled;
+    if (failure instanceof AxizException axiz) return axiz;
+    if (failure instanceof CancellationException cancelled) return cancelled;
     if (failure instanceof Error fatal) throw fatal;
-    return new pe.axiz.core.errors.ExternalServiceException(
-        pe.axiz.core.errors.CoreErrors.EXTERNAL_ERROR,
-        new pe.axiz.core.errors.ExternalErrorDetail(
-            "oauth2-token", -1, null, failure.getClass().getSimpleName(), ""),
+    return new ExternalServiceException(
+        CoreErrors.EXTERNAL_ERROR,
+        new ExternalErrorDetail("oauth2-token", -1, null, failure.getClass().getSimpleName(), ""),
         failure);
   }
 }

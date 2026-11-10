@@ -9,7 +9,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
@@ -239,15 +241,7 @@ class MeteredBehaviourTest {
             .withProperty("axiz.config.environment", "qa");
     AxizMetricsProperties defaults =
         new AxizMetricsProperties(
-            200,
-            50,
-            java.util.Set.of("web"),
-            java.util.Map.of(),
-            java.util.Map.of(),
-            java.util.Map.of(),
-            true,
-            null,
-            null);
+            200, 50, Set.of("web"), Map.of(), Map.of(), Map.of(), true, null, null);
     Properties build = new Properties();
     build.setProperty("version", "1.4.2");
     Tags fromBuild =
@@ -261,15 +255,7 @@ class MeteredBehaviourTest {
 
     AxizMetricsProperties declared =
         new AxizMetricsProperties(
-            200,
-            50,
-            java.util.Set.of("web"),
-            java.util.Map.of(),
-            java.util.Map.of(),
-            java.util.Map.of(),
-            true,
-            "payments",
-            "2.0.0");
+            200, 50, Set.of("web"), Map.of(), Map.of(), Map.of(), true, "payments", "2.0.0");
     assertThat(
             AxizMetricsAutoConfiguration.commonTags(env, declared, new BuildProperties(build))
                 .stream()

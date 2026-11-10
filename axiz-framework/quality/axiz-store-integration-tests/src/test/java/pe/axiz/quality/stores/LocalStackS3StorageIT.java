@@ -4,11 +4,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.observation.ObservationRegistry;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,7 +28,9 @@ import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
+import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectMetadata;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.storage.ReactiveStorage;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
@@ -26,11 +39,13 @@ import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /** Native S3 streaming and lifecycle on a real HTTP backend, including watched SDK threads. */
@@ -43,7 +58,7 @@ class LocalStackS3StorageIT {
   private static AsyncAwsClients resources;
   private static S3AsyncClient client;
   private static S3Presigner signer;
-  private static java.net.http.HttpClient downloadClient;
+  private static HttpClient downloadClient;
   private static ReactiveStorage storage;
   private static NettyLifecycleProbe lifecycle;
   private static final AtomicInteger REFRESHES = new AtomicInteger();
@@ -52,9 +67,9 @@ class LocalStackS3StorageIT {
   static void start() {
     Docker.require();
     LOCALSTACK.start();
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
     lifecycle = new NettyLifecycleProbe();
-    downloadClient = java.net.http.HttpClient.newHttpClient();
+    downloadClient = HttpClient.newHttpClient();
     var credentials =
         StaticCredentialsProvider.create(
             AwsBasicCredentials.create(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()));
@@ -72,8 +87,7 @@ class LocalStackS3StorageIT {
         new AsyncAwsClients(
             () -> {
               REFRESHES.incrementAndGet();
-              java.util.concurrent.locks.LockSupport.parkNanos(
-                  java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2));
+              LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
               return credentials.resolveCredentials();
             },
             Clock.systemUTC(),
@@ -124,23 +138,20 @@ class LocalStackS3StorageIT {
   @Test
   void streamsUploadAndDownloadWithChecksumsAndBackpressureOnNonBlockingThreads() throws Exception {
     byte[] chunk = new byte[8192];
-    java.util.Arrays.fill(chunk, (byte) 7);
-    var expected = java.security.MessageDigest.getInstance("SHA-256");
+    Arrays.fill(chunk, (byte) 7);
+    var expected = MessageDigest.getInstance("SHA-256");
     for (int i = 0; i < 64; i++) expected.update(chunk);
     String checksum = Base64.getEncoder().encodeToString(expected.digest());
     var metadata =
         new ObjectMetadata(
-            "application/octet-stream",
-            64L * chunk.length,
-            checksum,
-            java.util.Map.of("origin", "test"));
+            "application/octet-stream", 64L * chunk.length, checksum, Map.of("origin", "test"));
     var upload =
         storage.put("stream/body", Flux.range(0, 64).map(i -> ByteBuffer.wrap(chunk)), metadata);
     StepVerifier.create(upload.subscribeOn(Schedulers.parallel())).verifyComplete();
     StepVerifier.create(storage.head("stream/body").subscribeOn(Schedulers.parallel()))
         .assertNext(head -> assertEquals(metadata.contentLength(), head.contentLength()))
         .verifyComplete();
-    var actual = java.security.MessageDigest.getInstance("SHA-256");
+    var actual = MessageDigest.getInstance("SHA-256");
     StepVerifier.create(
             storage
                 .content("stream/body")
@@ -158,7 +169,7 @@ class LocalStackS3StorageIT {
         .thenCancel()
         .verify(Duration.ofSeconds(10));
     StepVerifier.create(storage.get("stream/body").subscribeOn(Schedulers.parallel()))
-        .assertNext(pe.axiz.core.storage.AsyncStoredObject::close)
+        .assertNext(AsyncStoredObject::close)
         .verifyComplete();
     StepVerifier.create(
             storage
@@ -167,11 +178,8 @@ class LocalStackS3StorageIT {
                     url ->
                         Mono.fromCompletionStage(
                             downloadClient.sendAsync(
-                                java.net.http.HttpRequest.newBuilder(
-                                        java.net.URI.create(url.toString()))
-                                    .GET()
-                                    .build(),
-                                java.net.http.HttpResponse.BodyHandlers.discarding())))
+                                HttpRequest.newBuilder(URI.create(url.toString())).GET().build(),
+                                BodyHandlers.discarding())))
                 .subscribeOn(Schedulers.parallel()))
         .assertNext(response -> assertEquals(200, response.statusCode()))
         .verifyComplete();
@@ -181,7 +189,7 @@ class LocalStackS3StorageIT {
                 .presignUpload("upload/from-client", "text/plain", Duration.ofMinutes(1))
                 .flatMap(
                     instructions -> {
-                      var request = java.net.http.HttpRequest.newBuilder(instructions.url());
+                      var request = HttpRequest.newBuilder(instructions.url());
                       instructions
                           .headers()
                           .forEach(
@@ -190,11 +198,9 @@ class LocalStackS3StorageIT {
                       return Mono.fromCompletionStage(
                           downloadClient.sendAsync(
                               request
-                                  .PUT(
-                                      java.net.http.HttpRequest.BodyPublishers.ofByteArray(
-                                          new byte[] {1, 2, 3, 4}))
+                                  .PUT(BodyPublishers.ofByteArray(new byte[] {1, 2, 3, 4}))
                                   .build(),
-                              java.net.http.HttpResponse.BodyHandlers.discarding()));
+                              BodyHandlers.discarding()));
                     })
                 .subscribeOn(Schedulers.parallel()))
         .assertNext(response -> assertEquals(200, response.statusCode()))
@@ -213,13 +219,11 @@ class LocalStackS3StorageIT {
                         Mono.fromCompletionStage(
                             () ->
                                 client.putObject(
-                                    software.amazon.awssdk.services.s3.model.PutObjectRequest
-                                        .builder()
+                                    PutObjectRequest.builder()
                                         .bucket(BUCKET)
                                         .key("sdk/" + index)
                                         .build(),
-                                    software.amazon.awssdk.core.async.AsyncRequestBody.fromBytes(
-                                        new byte[] {1}))),
+                                    AsyncRequestBody.fromBytes(new byte[] {1}))),
                     8)
                 .subscribeOn(Schedulers.parallel()))
         .expectNextCount(32)
@@ -238,14 +242,13 @@ class LocalStackS3StorageIT {
                             ObjectMetadata.of("t", 1)))
                 .then(storage.list("list/", 2))
                 .subscribeOn(Schedulers.parallel()))
-        .assertNext(keys -> assertEquals(java.util.List.of("list/0", "list/1"), keys))
+        .assertNext(keys -> assertEquals(List.of("list/0", "list/1"), keys))
         .verifyComplete();
     StepVerifier.create(storage.head("absent").subscribeOn(Schedulers.parallel())).verifyComplete();
     StepVerifier.create(storage.content("absent").subscribeOn(Schedulers.parallel()))
         .verifyComplete();
     // Let the configured idle/TTL policy retire sockets, then exercise the native reconnect path.
-    java.util.concurrent.locks.LockSupport.parkNanos(
-        java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150));
+    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(150));
     StepVerifier.create(
             storage
                 .delete("list/0")

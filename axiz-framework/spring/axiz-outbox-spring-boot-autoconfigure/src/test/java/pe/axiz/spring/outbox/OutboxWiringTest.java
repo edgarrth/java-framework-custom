@@ -20,6 +20,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import org.awaitility.Awaitility;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -44,7 +46,7 @@ class OutboxWiringTest {
   /** A store with nothing due that counts purges and can be made to fail. */
   static final class CountingStore implements OutboxStore {
 
-    public java.util.List<OutboxRecord> claimDue(int size, java.time.Duration lease, String owner) {
+    public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
       return lockDue(size, Instant.EPOCH);
     }
 
@@ -57,7 +59,7 @@ class OutboxWiringTest {
         String owner,
         int attempts,
         Instant next,
-        @org.jspecify.annotations.Nullable String error,
+        @Nullable String error,
         boolean giveUp) {
       return false;
     }
@@ -169,8 +171,8 @@ class OutboxWiringTest {
         Duration.ofMinutes(30));
   }
 
-  private static void await(java.util.function.BooleanSupplier condition) throws Exception {
-    org.awaitility.Awaitility.await()
+  private static void await(BooleanSupplier condition) throws Exception {
+    Awaitility.await()
         .pollDelay(Duration.ZERO)
         .pollInterval(Duration.ofMillis(5))
         .atMost(Duration.ofSeconds(5))

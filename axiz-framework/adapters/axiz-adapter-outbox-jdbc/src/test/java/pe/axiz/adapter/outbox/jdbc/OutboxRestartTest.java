@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,6 @@ class OutboxRestartTest {
     relay.relayOnce();
     relay.relayOnce();
     assertEquals(0, restarted.countPending());
-    assertEquals(java.util.List.of(event), published);
+    assertEquals(List.of(event), published);
   }
 }

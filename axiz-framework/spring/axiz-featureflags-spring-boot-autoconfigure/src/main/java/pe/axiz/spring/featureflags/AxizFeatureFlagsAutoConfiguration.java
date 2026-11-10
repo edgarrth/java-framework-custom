@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import pe.axiz.core.featureflags.FeatureFlags;
+import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.FlagProvider;
 import pe.axiz.core.featureflags.MapFlagProvider;
 
@@ -17,7 +18,7 @@ public class AxizFeatureFlagsAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   FlagProvider axizFlagProvider(AxizFeatureFlagsProperties p) {
-    List<pe.axiz.core.featureflags.FlagDefinition> defs =
+    List<FlagDefinition> defs =
         p.flags().entrySet().stream().map(e -> e.getValue().toDefinition(e.getKey())).toList();
     return new MapFlagProvider(defs);
   }

@@ -15,10 +15,15 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.signer.Aws4Signer;
+import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -166,11 +171,8 @@ class AsyncAwsClientsTest {
         assertEquals(Duration.ofSeconds(60), settings.apiCallTimeout().orElseThrow());
         assertEquals(Duration.ofSeconds(30), settings.apiCallAttemptTimeout().orElseThrow());
         assertTrue(
-            settings
-                    .advancedOption(
-                        software.amazon.awssdk.core.client.config.SdkAdvancedClientOption.SIGNER)
-                    .orElseThrow()
-                instanceof software.amazon.awssdk.auth.signer.Aws4Signer,
+            settings.advancedOption(SdkAdvancedClientOption.SIGNER).orElseThrow()
+                instanceof Aws4Signer,
             "finite JSON requests must avoid the SDK's contended shared digest cache");
         assertFalse(settings.executionInterceptors().isEmpty());
       }
@@ -215,10 +217,7 @@ class AsyncAwsClientsTest {
     assertEquals(1, source.calls.get());
     assertEquals(1, source.closes);
     assertThrows(SdkClientException.class, warmed::resolveCredentials);
-    var basic =
-        software.amazon.awssdk.auth.credentials.StaticCredentialsProvider.create(
-            software.amazon.awssdk.auth.credentials.AwsBasicCredentials.create(
-                "fixture", "fixture"));
+    var basic = StaticCredentialsProvider.create(AwsBasicCredentials.create("fixture", "fixture"));
     try (var withoutExpiry = new WarmedAwsCredentials(basic, CLOCK, Duration.ofDays(1))) {
       assertEquals("fixture", withoutExpiry.resolveCredentials().accessKeyId());
     }
@@ -226,7 +225,7 @@ class AsyncAwsClientsTest {
 
   @Test
   void missingExplicitRegionFailsRatherThanStartingInstanceMetadataLookup() {
-    org.junit.jupiter.api.Assumptions.assumeTrue(System.getenv("AWS_REGION") == null);
+    Assumptions.assumeTrue(System.getenv("AWS_REGION") == null);
     try (var clients = new AsyncAwsClients(new Source(), CLOCK, Duration.ofDays(1))) {
       assertThrows(
           IllegalStateException.class,

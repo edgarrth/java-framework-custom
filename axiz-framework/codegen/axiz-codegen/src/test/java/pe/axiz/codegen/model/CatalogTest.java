@@ -6,9 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,7 +80,7 @@ class CatalogTest {
       c.properties()
           .forEach(
               (k, v) -> {
-                String key = k.toLowerCase(java.util.Locale.ROOT);
+                String key = k.toLowerCase(Locale.ROOT);
                 if (key.contains("password")
                     || key.contains("secret-key")
                     || key.endsWith("token")) {
@@ -128,7 +130,7 @@ class CatalogTest {
     try {
       return Files.walk(dir, 3);
     } catch (IOException e) {
-      throw new java.io.UncheckedIOException(e);
+      throw new UncheckedIOException(e);
     }
   }
 }

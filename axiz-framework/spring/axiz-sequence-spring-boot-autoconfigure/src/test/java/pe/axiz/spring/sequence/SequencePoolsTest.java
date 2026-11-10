@@ -7,15 +7,21 @@ import static org.mockito.Mockito.when;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.util.Credentials;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
+import javax.sql.DataSource;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import reactor.core.publisher.Mono;
 
 class SequencePoolsTest {
   @Test
@@ -28,9 +34,8 @@ class SequencePoolsTest {
       var transactions = new DataSourceTransactionManager(main);
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizSequenceAutoConfiguration.class))
-          .withBean(javax.sql.DataSource.class, () -> main)
-          .withBean(
-              org.springframework.transaction.PlatformTransactionManager.class, () -> transactions)
+          .withBean(DataSource.class, () -> main)
+          .withBean(PlatformTransactionManager.class, () -> transactions)
           .withPropertyValues("axiz.sequence.sequences.operation.block-size=1")
           .run(
               context -> {
@@ -53,7 +58,7 @@ class SequencePoolsTest {
   @Test
   void borrowedResourcesRemainOwnedByTheCallerAndPolicyIsValidated() throws Exception {
     var environment = new MockEnvironment();
-    var source = new org.h2.jdbcx.JdbcDataSource();
+    var source = new JdbcDataSource();
     try (var resources = SequencePools.Jdbc.create(source, source, environment)) {
       assertThat(resources.connections()).isSameAs(source);
     }
@@ -86,8 +91,7 @@ class SequencePoolsTest {
       var dedicated = (HikariDataSource) resources.connections();
       assertThat(dedicated.getCredentialsProvider().getCredentials())
           .isSameAs(main.getCredentials());
-      main.setCredentials(
-          com.zaxxer.hikari.util.Credentials.of("rotated-user", "rotated-password"));
+      main.setCredentials(Credentials.of("rotated-user", "rotated-password"));
       assertThat(dedicated.getCredentialsProvider().getCredentials())
           .isSameAs(main.getCredentials());
     }
@@ -96,8 +100,7 @@ class SequencePoolsTest {
   @Test
   void reactiveReservationsUseAnIndependentBoundedPoolAndCloseOnlyTheirOwnPool() {
     ConnectionFactory driver = mock(ConnectionFactory.class);
-    when(driver.create())
-        .thenAnswer(ignored -> reactor.core.publisher.Mono.<io.r2dbc.spi.Connection>never());
+    when(driver.create()).thenAnswer(ignored -> Mono.<Connection>never());
     when(driver.getMetadata()).thenReturn(() -> "test");
     var main =
         new ConnectionPool(

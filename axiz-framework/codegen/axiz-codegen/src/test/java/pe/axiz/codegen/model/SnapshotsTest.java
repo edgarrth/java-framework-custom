@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -56,7 +57,7 @@ class SnapshotsTest {
     input.clear();
     assertEquals(List.of("second", "first"), new ArrayList<>(copy.keySet()));
     Map<String, Object> copiedNested = (Map<String, Object>) copy.get("second");
-    assertEquals(java.util.Arrays.asList("first", null), copiedNested.get("list"));
+    assertEquals(Arrays.asList("first", null), copiedNested.get("list"));
     assertEquals(Set.of("PE"), copiedNested.get("set"));
     assertThrows(UnsupportedOperationException.class, () -> copiedNested.put("x", "y"));
     assertThrows(

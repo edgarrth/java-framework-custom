@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -16,10 +18,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class DynamoSupportTest {
   private final CursorCodec cursors =
-      new CursorCodec(
-          new pe.axiz.core.crypto.StaticKeyProvider(
-              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
-          false);
+      new CursorCodec(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())), false);
 
   @AfterEach
   void reset() {
@@ -29,11 +28,9 @@ class DynamoSupportTest {
   @Test
   void unsignedCursorsMustBeRejected() {
     String unsigned =
-        java.util.Base64.getUrlEncoder()
+        Base64.getUrlEncoder()
             .withoutPadding()
-            .encodeToString(
-                "{\"pk\":{\"S\":\"other-tenant\"}}"
-                    .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            .encodeToString("{\"pk\":{\"S\":\"other-tenant\"}}".getBytes(StandardCharsets.UTF_8));
     assertThrows(InvalidCursorException.class, () -> cursors.decode(unsigned, "table/filter"));
   }
 

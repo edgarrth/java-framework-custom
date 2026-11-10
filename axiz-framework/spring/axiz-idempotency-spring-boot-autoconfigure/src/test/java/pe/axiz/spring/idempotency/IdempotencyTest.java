@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -31,8 +32,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
+import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
+import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import reactor.core.publisher.Mono;
@@ -139,7 +143,7 @@ class IdempotencyTest {
   }
 
   private static void write(ResponseEntity<byte[]> entity, HttpServletResponse res)
-      throws java.io.IOException {
+      throws IOException {
     res.setStatus(entity.getStatusCode().value());
     entity.getHeaders().forEach((k, v) -> res.setHeader(k, v.get(0)));
     res.getOutputStream().write(entity.getBody() == null ? new byte[0] : entity.getBody());
@@ -214,8 +218,7 @@ class IdempotencyTest {
         };
     BusinessException uncertain =
         assertThrows(BusinessException.class, () -> call("idempotency-key-00000002", "{}"));
-    assertEquals(
-        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
     assertEquals(1, controller.executions.get());
   }
 
@@ -238,8 +241,7 @@ class IdempotencyTest {
         };
     BusinessException uncertain =
         assertThrows(BusinessException.class, () -> call("idempotency-key-00000050", "{}"));
-    assertEquals(
-        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
     assertEquals(1, controller.executions.get());
   }
 
@@ -333,8 +335,8 @@ class IdempotencyTest {
   @Test
   void reactiveReplaysAlsoPassAuthorizationFirst() {
     var asyncService =
-        new pe.axiz.core.idempotency.AsyncIdempotencyService(
-            new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
+        new AsyncIdempotencyService(
+            new InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
             Duration.ofSeconds(30),
             Duration.ofHours(1),
             Clock.systemUTC());

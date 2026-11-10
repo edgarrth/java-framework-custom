@@ -16,11 +16,15 @@ import io.micrometer.tracing.handler.DefaultTracingObservationHandler;
 import io.micrometer.tracing.handler.PropagatingReceiverTracingObservationHandler;
 import io.micrometer.tracing.handler.PropagatingSenderTracingObservationHandler;
 import io.micrometer.tracing.test.simple.SimpleTracer;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -42,6 +46,7 @@ import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.PublishResult;
+import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -207,8 +212,7 @@ class NativeMessagingTest {
     assertTrue(cancelled.await(5, TimeUnit.SECONDS));
     assertTrue(pending.isCancelled());
     assertEquals(1, stopped.size());
-    assertThat(stopped.getFirst().getError())
-        .isInstanceOf(java.util.concurrent.CancellationException.class);
+    assertThat(stopped.getFirst().getError()).isInstanceOf(CancellationException.class);
     IllegalStateException original = new IllegalStateException("rejected");
     var rejected =
         new ObservedAsyncEventPublisher(
@@ -293,7 +297,7 @@ class NativeMessagingTest {
                 started.incrementAndGet();
               }
             });
-    var empty = new pe.axiz.core.messaging.RoutingAsyncEventPublisher(List.of());
+    var empty = new RoutingAsyncEventPublisher(List.of());
     var publisher = new ObservedAsyncEventPublisher(empty, registry, properties());
     assertThat(
             assertThrows(
@@ -312,9 +316,9 @@ class NativeMessagingTest {
         .run(
             ctx -> {
               assertThat(ctx).hasFailed();
-              var stack = new java.io.StringWriter();
-              java.util.Objects.requireNonNull(ctx.getStartupFailure())
-                  .printStackTrace(new java.io.PrintWriter(stack));
+              var stack = new StringWriter();
+              Objects.requireNonNull(ctx.getStartupFailure())
+                  .printStackTrace(new PrintWriter(stack));
               assertThat(stack.toString()).doesNotContain("do-not-leak");
             });
   }

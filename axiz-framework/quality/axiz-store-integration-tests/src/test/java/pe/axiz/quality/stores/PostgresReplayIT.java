@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -182,8 +183,7 @@ class PostgresReplayIT {
       }
       if (loseAck)
         throw new PublishException(
-            "Acknowledgement lost after consumer commit",
-            new java.util.concurrent.TimeoutException());
+            "Acknowledgement lost after consumer commit", new TimeoutException());
       return new PublishResult(event.id(), destination, "ack");
     };
   }

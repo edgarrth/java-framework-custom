@@ -13,7 +13,11 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishException;
+import pe.axiz.test.support.AsyncPublisherProbe;
+import pe.axiz.test.support.ImmediateAsyncFakes;
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
@@ -59,14 +63,12 @@ class SqsMessagingTest {
 
   @Test
   void fifoPublishAndRoundTrip() {
-    for (boolean nativeAsync : java.util.List.of(false, true)) {
+    for (boolean nativeAsync : List.of(false, true)) {
       FakeSqs sqs = new FakeSqs();
-      pe.axiz.core.messaging.EventPublisher p =
+      EventPublisher p =
           nativeAsync
-              ? new pe.axiz.test.support.AsyncPublisherProbe(
-                  new SqsAsyncEventPublisher(
-                      pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                          software.amazon.awssdk.services.sqs.SqsAsyncClient.class, sqs)))
+              ? new AsyncPublisherProbe(
+                  new SqsAsyncEventPublisher(ImmediateAsyncFakes.adapt(SqsAsyncClient.class, sqs)))
               : new SqsEventPublisher(sqs);
       String url = "https://sqs.us-east-1.amazonaws.com/123/notifications.fifo";
       assertTrue(p.supports(url));

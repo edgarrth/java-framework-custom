@@ -2,6 +2,7 @@ package pe.axiz.adapter.storage.s3;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Flow;
@@ -11,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 
 /** SDK protocol bridges stay private to the technology boundary. */
 final class S3Streams {
@@ -22,8 +24,7 @@ final class S3Streams {
     return copy.asReadOnlyBuffer();
   }
 
-  static final class Upload
-      implements software.amazon.awssdk.core.async.AsyncRequestBody, AutoCloseable {
+  static final class Upload implements AsyncRequestBody, AutoCloseable {
     private final Flow.Publisher<ByteBuffer> content;
     private final long contentLength;
     private final Set<Flow.Subscription> subscriptions = ConcurrentHashMap.newKeySet();
@@ -35,8 +36,8 @@ final class S3Streams {
     }
 
     @Override
-    public java.util.Optional<Long> contentLength() {
-      return java.util.Optional.of(contentLength);
+    public Optional<Long> contentLength() {
+      return Optional.of(contentLength);
     }
 
     @Override

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -36,8 +37,7 @@ class AsyncRoutingTest {
             return false;
           }
 
-          public java.util.concurrent.CompletionStage<PublishResult> publish(
-              String destination, EventEnvelope event) {
+          public CompletionStage<PublishResult> publish(String destination, EventEnvelope event) {
             unsupportedCalls.incrementAndGet();
             throw new AssertionError();
           }

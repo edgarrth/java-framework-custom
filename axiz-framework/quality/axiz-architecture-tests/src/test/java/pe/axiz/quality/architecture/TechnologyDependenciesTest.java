@@ -1,5 +1,6 @@
 package pe.axiz.quality.architecture;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -29,11 +30,12 @@ class TechnologyDependenciesTest {
         var project = factory.newDocumentBuilder().parse(pom.toFile()).getDocumentElement();
         String artifact = child(project, "artifactId");
         if (!artifact.startsWith("axiz-kit-") && !artifact.startsWith("axiz-adapter-")) continue;
-        String module =
-            artifact.startsWith("axiz-kit-")
-                ? "kit." + artifact.substring(9)
-                : artifact.substring(13).replace('-', '.');
-        String technology = artifact.substring(artifact.lastIndexOf('-') + 1);
+        var names = project.getElementsByTagName("axiz.module.name");
+        assertTrue(names.getLength() == 1, "Expected one module namespace in " + pom);
+        String namespace = names.item(0).getTextContent().strip();
+        String module = TechnologyBoundaries.module(namespace);
+        String technology = TechnologyBoundaries.technology(namespace);
+        assertFalse(module.isEmpty(), "Unknown technology namespace in " + pom);
         var dependencies = project.getElementsByTagName("dependency");
         for (int i = 0; i < dependencies.getLength(); i++) {
           Element dependency = (Element) dependencies.item(i);

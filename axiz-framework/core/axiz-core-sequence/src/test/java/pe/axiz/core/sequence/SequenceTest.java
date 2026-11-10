@@ -7,6 +7,9 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class SequenceTest {
@@ -93,8 +96,7 @@ class SequenceTest {
 
   @Test
   void formattedValueUsesTheSamePeriodAsItsReservation() {
-    java.util.concurrent.atomic.AtomicInteger reads =
-        new java.util.concurrent.atomic.AtomicInteger();
+    AtomicInteger reads = new AtomicInteger();
     Clock clock =
         new Clock() {
           @Override
@@ -114,7 +116,7 @@ class SequenceTest {
                 : Instant.parse("2026-02-01T00:00:00Z");
           }
         };
-    java.util.List<String> periods = new java.util.ArrayList<>();
+    List<String> periods = new ArrayList<>();
     SequenceGenerator generator =
         new SequenceGenerator(
             "operation",
@@ -126,14 +128,13 @@ class SequenceTest {
             1,
             clock);
     assertEquals("OP-20260131-01", generator.next());
-    assertEquals(java.util.List.of("20260131"), periods);
+    assertEquals(List.of("20260131"), periods);
     assertEquals(1, reads.get());
   }
 
   @Test
   void exhaustedLongCounterNeverWrapsTheCachedRange() {
-    java.util.concurrent.atomic.AtomicInteger calls =
-        new java.util.concurrent.atomic.AtomicInteger();
+    AtomicInteger calls = new AtomicInteger();
     SequenceGenerator generator =
         new SequenceGenerator(
             "operation",

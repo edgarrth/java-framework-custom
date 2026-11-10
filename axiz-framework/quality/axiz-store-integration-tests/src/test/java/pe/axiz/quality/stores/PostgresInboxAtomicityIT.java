@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryMetadata;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -23,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.reactivestreams.Publisher;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
@@ -36,6 +39,7 @@ import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.inbox.AxizInboxAutoConfiguration;
 import pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
@@ -73,7 +77,7 @@ class PostgresInboxAtomicityIT {
                 .option(ConnectionFactoryOptions.USER, POSTGRES.getUsername())
                 .option(ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
                 .build());
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
   }
 
   @AfterAll
@@ -259,12 +263,12 @@ class PostgresInboxAtomicityIT {
     ConnectionFactory other =
         new ConnectionFactory() {
           @Override
-          public org.reactivestreams.Publisher<? extends io.r2dbc.spi.Connection> create() {
+          public Publisher<? extends Connection> create() {
             return factory.create();
           }
 
           @Override
-          public io.r2dbc.spi.ConnectionFactoryMetadata getMetadata() {
+          public ConnectionFactoryMetadata getMetadata() {
             return factory.getMetadata();
           }
         };

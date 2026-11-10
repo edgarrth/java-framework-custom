@@ -15,6 +15,8 @@
   <description>@Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS) (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.audit</axiz.module.name>
   </properties>
 

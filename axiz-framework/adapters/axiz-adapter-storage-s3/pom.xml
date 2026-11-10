@@ -15,6 +15,8 @@
   <description>Amazon S3 object storage with SSE-KMS and presigned URLs</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-core-storage-s3</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.adapter.storage.s3</axiz.module.name>

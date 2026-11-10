@@ -5,10 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import reactor.blockhound.BlockingOperationError;
@@ -54,8 +60,8 @@ class BlockHoundExtensionTest {
 
   @Test
   void idleCompletionWorkersSurviveButApplicationQueueWaitsStillFail() throws Exception {
-    var created = new java.util.concurrent.atomic.AtomicInteger();
-    var worker = new java.util.concurrent.atomic.AtomicReference<Thread>();
+    var created = new AtomicInteger();
+    var worker = new AtomicReference<Thread>();
     try (var executor =
         Executors.newSingleThreadExecutor(
             work -> {
@@ -66,13 +72,12 @@ class BlockHoundExtensionTest {
               return thread;
             })) {
       assertEquals("ready", executor.submit(() -> "ready").get(3, TimeUnit.SECONDS));
-      org.awaitility.Awaitility.await()
-          .atMost(java.time.Duration.ofSeconds(3))
+      Awaitility.await()
+          .atMost(Duration.ofSeconds(3))
           .until(() -> worker.get().getState() == Thread.State.WAITING);
       assertEquals(1, created.get());
       assertEquals("still alive", executor.submit(() -> "still alive").get(3, TimeUnit.SECONDS));
-      var blocked =
-          executor.submit(() -> new java.util.concurrent.LinkedTransferQueue<String>().take());
+      var blocked = executor.submit(() -> new LinkedTransferQueue<String>().take());
       ExecutionException failure =
           assertThrows(ExecutionException.class, () -> blocked.get(3, TimeUnit.SECONDS));
       assertInstanceOf(BlockingOperationError.class, failure.getCause());
@@ -116,7 +121,7 @@ class BlockHoundExtensionTest {
   @Test
   void detectsBlockingOnLettuceIoAndCompletionWorkers() throws Exception {
     for (String prefix :
-        java.util.List.of(
+        List.of(
             "lettuce-nioEventLoop-",
             "lettuce-epollEventLoop-",
             "lettuce-kqueueEventLoop-",

@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 
@@ -77,7 +78,7 @@ public final class ObjectMasker {
         || value instanceof Enum<?>
         || value instanceof TemporalAccessor
         || value instanceof Character
-        || value instanceof java.util.UUID) {
+        || value instanceof UUID) {
       String s = value.toString();
       return s.length() > MAX_STRING ? s.substring(0, MAX_STRING) + "...(truncated)" : s;
     }

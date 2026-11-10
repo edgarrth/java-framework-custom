@@ -1,5 +1,7 @@
 package pe.axiz.spring.observability;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -18,8 +20,7 @@ public record AxizObservabilityProperties(
     @DefaultValue({"/actuator"}) List<String> ignoredPaths,
     @DefaultValue("true") boolean contextAttributes) {
   public AxizObservabilityProperties {
-    deniedAttributes =
-        java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(deniedAttributes));
+    deniedAttributes = Collections.unmodifiableSet(new LinkedHashSet<>(deniedAttributes));
     ignoredPaths = List.copyOf(ignoredPaths);
   }
 }

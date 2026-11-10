@@ -16,7 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.dynamodb.DynamoRepositoryTest.Beneficiary;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -37,10 +41,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
 
 class DynamoAsyncRepositoryTest {
   private final CursorCodec cursors =
-      new CursorCodec(
-          new pe.axiz.core.crypto.StaticKeyProvider(
-              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
-          false);
+      new CursorCodec(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())), false);
   private final Scripted client = new Scripted();
   private final DynamoAsyncRepository<Beneficiary> repository =
       new DynamoAsyncRepository<>(client, "beneficiaries", SCHEMA, () -> cursors);
@@ -103,7 +104,7 @@ class DynamoAsyncRepositoryTest {
 
   @Test
   void cancellationReachesExactNativeRequestsWithoutAffectingOtherCalls() {
-    List<java.util.function.Supplier<java.util.concurrent.CompletionStage<?>>> operations =
+    List<Supplier<CompletionStage<?>>> operations =
         List.of(
             () -> repository.findById("C-1"),
             () -> repository.save(new Beneficiary("C-1", "B-1", "ACTIVE")),

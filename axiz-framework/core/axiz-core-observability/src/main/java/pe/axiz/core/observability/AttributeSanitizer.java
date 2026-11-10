@@ -1,5 +1,6 @@
 package pe.axiz.core.observability;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -33,7 +34,7 @@ public final class AttributeSanitizer {
   private final Set<String> denied;
 
   public AttributeSanitizer(Set<String> extraDeniedKeys) {
-    var all = new java.util.HashSet<>(DEFAULT_DENIED);
+    var all = new HashSet<>(DEFAULT_DENIED);
     extraDeniedKeys.forEach(k -> all.add(k.toLowerCase(Locale.ROOT)));
     this.denied = Set.copyOf(all);
   }

@@ -10,9 +10,13 @@ import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,9 +27,11 @@ import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditTrail.Context;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.audit.AxizAuditAutoConfiguration;
 import pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration;
 import pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration;
@@ -42,6 +48,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 /**
  * Real native audit delivery, FIFO coexistence and reconnect/credential refresh under BlockHound.
@@ -80,7 +87,7 @@ class LocalStackAuditIT {
             .createQueue(
                 b ->
                     b.queueName("native-audit.fifo")
-                        .attributesWithStrings(java.util.Map.of("FifoQueue", "true")))
+                        .attributesWithStrings(Map.of("FifoQueue", "true")))
             .queueUrl();
     OBSERVATIONS
         .observationConfig()
@@ -91,8 +98,7 @@ class LocalStackAuditIT {
               }
 
               public void onStart(Observation.Context context) {
-                if (pe.axiz.core.observability.AxizObservations.AWS_SDK.equals(context.getName()))
-                  CONTEXTS.add(context);
+                if (AxizObservations.AWS_SDK.equals(context.getName())) CONTEXTS.add(context);
               }
             });
     lifecycle = new NettyLifecycleProbe();
@@ -100,7 +106,7 @@ class LocalStackAuditIT {
         new AsyncAwsClients(
             () -> {
               REFRESHES.incrementAndGet();
-              java.util.concurrent.locks.LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
               return credentials.resolveCredentials();
             },
             Clock.systemUTC(),
@@ -148,7 +154,7 @@ class LocalStackAuditIT {
         .withPropertyValues("spring.application.name=accounts", "axiz.audit.sqs.queue-url=" + queue)
         .run(
             ctx -> {
-              org.assertj.core.api.Assertions.assertThat(ctx).hasNotFailed();
+              Assertions.assertThat(ctx).hasNotFailed();
               ReactiveAuditTrail trail = ctx.getBean(ReactiveAuditTrail.class);
               Mono<Void> delivery =
                   Flux.range(0, 12)
@@ -160,15 +166,14 @@ class LocalStackAuditIT {
                                           .record("create", "account")
                                           .resourceId("account-" + i)
                                           .context(
-                                              new pe.axiz.core.audit.AuditTrail.Context(
+                                              new Context(
                                                   new AuditEvent.Actor("user", "web", null),
                                                   "corr",
                                                   "web",
                                                   "tenant"))
                                           .detail(
                                               "request",
-                                              java.util.Map.of(
-                                                  "password", "do-not-leak", "amount", i))
+                                              Map.of("password", "do-not-leak", "amount", i))
                                           .success()),
                           4)
                       .then()
@@ -194,7 +199,7 @@ class LocalStackAuditIT {
     assertEquals(13, CONTEXTS.size());
     assertTrue(CONTEXTS.stream().allMatch(c -> c.getParentObservation() == parent));
     assertTrue(REFRESHES.get() > 1);
-    var received = new java.util.ArrayList<software.amazon.awssdk.services.sqs.model.Message>();
+    var received = new ArrayList<Message>();
     long deadline = System.nanoTime() + T.toNanos();
     while (received.size() < 13 && System.nanoTime() < deadline) {
       var batch =

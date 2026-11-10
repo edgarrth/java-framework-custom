@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
@@ -95,8 +96,7 @@ class ReactiveKafkaAuditBrokerTest {
                         new StringDeserializer())) {
                   consumer.subscribe(List.of("audit"));
                   var record =
-                      org.springframework.kafka.test.utils.KafkaTestUtils.getSingleRecord(
-                          consumer, "audit", Duration.ofSeconds(10));
+                      KafkaTestUtils.getSingleRecord(consumer, "audit", Duration.ofSeconds(10));
                   assertEquals("account:a-1", record.key());
                   assertTrue(record.value().contains("audit-1"));
                 }

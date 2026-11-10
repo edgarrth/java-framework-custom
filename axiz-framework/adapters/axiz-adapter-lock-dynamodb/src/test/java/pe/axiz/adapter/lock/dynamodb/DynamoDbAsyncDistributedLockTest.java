@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Proxy;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -120,7 +121,7 @@ class DynamoDbAsyncDistributedLockTest {
     var pending = new CompletableFuture<PutItemResponse>();
     var nativeClient =
         (DynamoDbAsyncClient)
-            java.lang.reflect.Proxy.newProxyInstance(
+            Proxy.newProxyInstance(
                 DynamoDbAsyncClient.class.getClassLoader(),
                 new Class<?>[] {DynamoDbAsyncClient.class},
                 (proxy, method, arguments) -> {

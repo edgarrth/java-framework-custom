@@ -16,10 +16,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
@@ -45,6 +47,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.exception.ApiCallAttemptTimeoutException;
 import software.amazon.awssdk.core.exception.ApiCallTimeoutException;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
@@ -60,7 +63,7 @@ import software.amazon.awssdk.services.ssm.model.ParameterType;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 /** Cancellation and real SDK deadlines through public ports, retaining the framework transport. */
-@org.junit.jupiter.api.extension.ExtendWith(BlockHoundExtension.class)
+@ExtendWith(BlockHoundExtension.class)
 class LocalStackAsyncResilienceIT {
   private static final Duration T = Duration.ofSeconds(80);
   private static final LocalStackContainer LOCALSTACK =
@@ -155,7 +158,7 @@ class LocalStackAsyncResilienceIT {
     var presigner =
         own(
             S3Presigner.builder()
-                .region(software.amazon.awssdk.regions.Region.of(LOCALSTACK.getRegion()))
+                .region(Region.of(LOCALSTACK.getRegion()))
                 .endpointOverride(LOCALSTACK.getEndpoint())
                 .credentialsProvider(resources.credentialsProvider())
                 .build());
@@ -317,9 +320,7 @@ class LocalStackAsyncResilienceIT {
             .toFuture();
     assertTrue(submitted.await(3, TimeUnit.SECONDS), operation.name());
     result.cancel(false);
-    org.awaitility.Awaitility.await()
-        .atMost(Duration.ofSeconds(3))
-        .until(() -> source.get().isCancelled());
+    Awaitility.await().atMost(Duration.ofSeconds(3)).until(() -> source.get().isCancelled());
   }
 
   private static boolean isDeadline(Throwable error) {

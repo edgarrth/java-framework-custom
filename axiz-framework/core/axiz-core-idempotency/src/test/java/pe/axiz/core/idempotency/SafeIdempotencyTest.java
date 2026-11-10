@@ -7,9 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -232,7 +234,7 @@ class SafeIdempotencyTest {
     assertTrue(svc.fail(execution).toCompletableFuture().join());
     var unknown =
         assertThrows(
-            java.util.concurrent.CompletionException.class,
+            CompletionException.class,
             () -> svc.begin("payment", KEY, "fp").toCompletableFuture().join());
     assertEquals(
         IdempotencyErrors.OUTCOME_UNKNOWN.code(), ((BusinessException) unknown.getCause()).code());
@@ -246,7 +248,7 @@ class SafeIdempotencyTest {
                 CompletableFuture.completedFuture(Optional.of(Resolution.withoutEffect())));
     var resolved =
         assertThrows(
-            java.util.concurrent.CompletionException.class,
+            CompletionException.class,
             () -> reconciler.begin("payment", KEY, "fp").toCompletableFuture().join());
     assertEquals(
         IdempotencyErrors.RESOLVED_WITHOUT_EFFECT.code(),
@@ -303,7 +305,7 @@ class SafeIdempotencyTest {
   @Test
   void replayBytesAndHeadersAreImmutableAndDifferentResponsesAreNeverEqual() {
     byte[] input = {1, 2};
-    var headers = new java.util.HashMap<>(Map.of("Location", "/payments/p1"));
+    var headers = new HashMap<>(Map.of("Location", "/payments/p1"));
     var response = new StoredResponse(201, headers, input);
     input[0] = 9;
     headers.put("Location", "/payments/other");

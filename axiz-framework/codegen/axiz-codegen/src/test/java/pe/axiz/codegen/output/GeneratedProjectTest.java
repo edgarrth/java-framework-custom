@@ -5,10 +5,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -57,7 +66,7 @@ class GeneratedProjectTest {
     p.files().get("f")[0] = 'z';
     assertEquals("a", p.text("f"));
     p.files().put("g", b("x"));
-    assertEquals(java.util.Set.of("f"), p.paths());
+    assertEquals(Set.of("f"), p.paths());
     assertEquals(1, p.totalBytes());
   }
 
@@ -68,14 +77,14 @@ class GeneratedProjectTest {
     Path project = Files.createDirectories(tmp.resolve("project"));
     Files.createSymbolicLink(project.resolve("src"), outside);
     GeneratedProject p = new GeneratedProject("p", Map.of("src/evil.txt", b("x")));
-    java.io.IOException e = assertThrows(java.io.IOException.class, () -> p.writeTo(project, true));
+    IOException e = assertThrows(IOException.class, () -> p.writeTo(project, true));
     assertTrue(e.getMessage().contains("symbolic link"), e.getMessage());
     assertFalse(Files.exists(outside.resolve("evil.txt")));
 
     Path victim = Files.writeString(tmp.resolve("victim.txt"), "original");
     Files.createSymbolicLink(project.resolve("README.md"), victim);
     GeneratedProject q = new GeneratedProject("p", Map.of("README.md", b("overwritten")));
-    assertThrows(java.io.IOException.class, () -> q.writeTo(project, true));
+    assertThrows(IOException.class, () -> q.writeTo(project, true));
     assertEquals("original", Files.readString(victim));
   }
 
@@ -83,19 +92,18 @@ class GeneratedProjectTest {
   void zipsAreReproducible() throws Exception {
     GeneratedProject p =
         new GeneratedProject("p", Map.of("b.txt", b("2"), "a/a.txt", b("1"), "mvnw", b("#!")));
-    java.io.ByteArrayOutputStream first = new java.io.ByteArrayOutputStream();
+    ByteArrayOutputStream first = new ByteArrayOutputStream();
     p.writeZip(first);
-    java.io.ByteArrayOutputStream second = new java.io.ByteArrayOutputStream();
+    ByteArrayOutputStream second = new ByteArrayOutputStream();
     p.writeZip(second);
-    org.junit.jupiter.api.Assertions.assertArrayEquals(first.toByteArray(), second.toByteArray());
-    try (java.util.zip.ZipInputStream in =
-        new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(first.toByteArray()))) {
-      java.util.List<String> names = new java.util.ArrayList<>();
-      for (java.util.zip.ZipEntry e; (e = in.getNextEntry()) != null; ) {
+    Assertions.assertArrayEquals(first.toByteArray(), second.toByteArray());
+    try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(first.toByteArray()))) {
+      List<String> names = new ArrayList<>();
+      for (ZipEntry e; (e = in.getNextEntry()) != null; ) {
         names.add(e.getName());
         assertEquals(GeneratedProject.ZIP_TIME, e.getTimeLocal());
       }
-      assertEquals(java.util.List.of("p/a/a.txt", "p/b.txt", "p/mvnw"), names);
+      assertEquals(List.of("p/a/a.txt", "p/b.txt", "p/mvnw"), names);
     }
   }
 }

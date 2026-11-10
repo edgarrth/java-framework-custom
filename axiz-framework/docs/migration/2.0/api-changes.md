@@ -1,7 +1,7 @@
 # Inventario de rupturas de API de 2.0
 
-Estado: **inventario revisado contra 144 reportes reales de 1.0.0**, actualizado el 8 de noviembre de 2026.
-Se registran 213 clases incompatibles, incluidas las extracciones parciales del plan 2.0. La revisión
+Estado: **inventario revisado contra 145 reportes reales de 1.0.0**, actualizado el 8 de noviembre de 2026.
+Se registran 214 clases incompatibles, incluidas las extracciones parciales del plan 2.0. La revisión
 inicial comparó 161 reubicaciones miembro por miembro con `javap -protected`, aplicando los mapeos
 intencional de `SqlStates.identifier`, sustituida por `SqlIdentifiers.require`; no se presenta esta
 última como una reubicación que conserva todos sus miembros. Las sustituciones de selectores, propiedades y fachadas asíncronas
@@ -122,6 +122,17 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-adapter-crypto-kms",
         "class": "pe.axiz.adapter.crypto.kms.KmsDataKeyProvider",
         "sha256": "17d5e11682e151dcac1eae2605791369b57e0f6a6dd85ed93b599d70dfe78ebb"
+      }
+    },
+    {
+      "artifact": "axiz-adapter-database-auth-aws",
+      "class": "pe.axiz.core.persistence.r2dbc.RdsIamPasswordProvider",
+      "sha256": "803c3be97f41e21e13b5e063a9aae2a1213d8d453d65265f0e5e10b40ca9667d",
+      "reason": "R3: el proveedor IAM se extrae al adaptador AWS; DatabasePasswordProvider permanece neutral en el kit. Comparación con su predecesor real axiz-core-persistence-r2dbc:1.0.0; se conservan los constructores y el ciclo de vida del proveedor.",
+      "replacement": {
+        "artifact": "axiz-adapter-database-auth-aws",
+        "class": "pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider",
+        "sha256": "a1bb720f5bf20c5fb0626570fe8e909f60247df557925fa56b21d701d6ed6733"
       }
     },
     {
@@ -400,6 +411,21 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       }
     },
     {
+      "artifact": "axiz-archunit-rules",
+      "class": "pe.axiz.quality.archunit.AxizArchitecture",
+      "sha256": "744535badf6d057e5af5d0f75177fa7b950204237a87e4e4aedd32b670547a9b",
+    },
+    {
+      "artifact": "axiz-archunit-rules",
+      "class": "pe.axiz.quality.archunit.AxizArchitecture$Style",
+      "sha256": "256a68307c574dbd4d509a7ef4509edd94dc4509ea0ddb279d17152351e5823b",
+      "replacement": {
+        "artifact": "axiz-archunit-rules",
+        "class": "pe.axiz.quality.archunit.Structure",
+        "sha256": "155a6f8019df704a5c6f0f8ef86845bfb4f76b3239e563e43cb20dd3573849e5"
+      }
+    },
+    {
       "artifact": "axiz-codegen",
       "class": "pe.axiz.codegen.ArtifactGenerator",
       "sha256": "74dd0a4667cb9362c2e6a60e50b51238b31694410d06a7d0dda1ba4916ba4c2c",
@@ -438,6 +464,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-codegen",
       "class": "pe.axiz.codegen.project.ProjectManifest",
       "sha256": "5e82e1e949c2a4fde5c45f6a3408dd412bea799eab1d18c3619d9dbd0d8348fc",
+    },
+    {
+      "artifact": "axiz-config-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.config.AxizConfigProperties$ParameterStore",
+      "sha256": "31d70580909fbb3709fcbf5a1dca0c941b177d6552cf7e966e092830cdb94064",
     },
     {
       "artifact": "axiz-core-commons",
@@ -555,6 +586,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "class": "pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore",
         "sha256": "80abcd0db9cb30e583692ddb1ccadb4ff864d9011bc61d11eecfee4edab2d916"
       }
+    },
+    {
+      "artifact": "axiz-dynamodb-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.dynamodb.DynamoRepositories",
+      "sha256": "d76b3a76a4c8d2639105de053aed16ddef05e7e43e626497f3f6d14a224aadaf",
     },
     {
       "artifact": "axiz-extension-cqrs-api",
@@ -1038,6 +1074,45 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       }
     },
     {
+      "artifact": "axiz-foundation-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.foundation.jdbc.SpringConnectionProvider",
+      "sha256": "80500e69448bdbe851bb6e12395f5f4a9874920144f755518fcc357bd382c3d5",
+      "reason": "M8/M9: implementa ConnectionProvider de axiz-kit-jdbc, en lugar del antiguo paquete JDBC de core. Su constructor DataSource y el comportamiento de conexión ligada a la transacción se conservan."
+    },
+    {
+      "artifact": "axiz-foundation-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.foundation.jdbc.SpringTransactionRunner",
+      "sha256": "48426151eef87c1b6a33671fac8bf3ffef0303bce56300e0fee6b917ec7d77c0",
+      "reason": "M8/M9: implementa TransactionRunner de core.commons.tx; conserva el constructor PlatformTransactionManager y la transacción Spring. La receta cambia el import del puerto."
+    },
+    {
+      "artifact": "axiz-idempotency-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.idempotency.AxizIdempotencyProperties",
+      "sha256": "e4b08f99ae79e3df8b01f785b10b62b1919f8f87bf69a68aadc68a840b78ad7c",
+      "reason": "A2/A3: el constructor canónico incorpora clientRetryWindow y valida retención >= ventana de reintento + lease. El binding anterior por nombre conserva defaults seguros; construcciones Java deben pasar la ventana."
+    },
+    {
+      "artifact": "axiz-idempotency-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.idempotency.IdempotencyWebFilter",
+      "sha256": "3422c3e1f6106ff6f04a9d8a90fd81132fcf8d36f72ca371ff7ac91e2d152160",
+    },
+    {
+      "artifact": "axiz-inbox-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.inbox.AxizInboxProperties",
+      "sha256": "8756f1775fd23e1a91c51f5af5b944322ab988d6b0eaec5f47913373eeab6fc9",
+      "reason": "M2: el constructor canónico incorpora transactional=auto/true/false. El binding por nombre usa auto por defecto; construcciones Java deben declarar el modo y compartir la identidad del recurso para atomicidad."
+    },
+    {
+      "artifact": "axiz-jpa-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.jpa.AuditingRegistrar",
+      "sha256": "3ecd7323e2a4c9dfff07fcf21f3d8a238813ed5b93ad4daf19d406bf29ba94e9",
+    },
+    {
+      "artifact": "axiz-jpa-spring-boot-autoconfigure",
+      "class": "pe.axiz.spring.jpa.RequestAuditorProvider",
+      "sha256": "583fea27e00f7872aad587b879b158cd05ceceb7a076f37379793269bfde45fb",
+    },
+    {
       "artifact": "axiz-kit-dynamodb",
       "class": "pe.axiz.core.persistence.dynamodb.CursorCodec",
       "sha256": "0cea253219e76f0b68978f5c7451a73bdc0a863eadd3eb37bfb398be4ed073d0",
@@ -1112,6 +1187,16 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     },
     {
       "artifact": "axiz-kit-jpa",
+      "class": "pe.axiz.core.persistence.jpa.AuditListener",
+      "sha256": "4575a19e78d2fca2c6ac954f241744c0aa7f34d7483cd1c47c7ad3d0d91454ee",
+      "replacement": {
+        "artifact": "axiz-kit-jpa",
+        "class": "pe.axiz.kit.jpa.AuditListener",
+        "sha256": "a4187604608c90a97cd1e2fea191e8dee0a50032380572a4d73a5fbcde5e33d1"
+      }
+    },
+    {
+      "artifact": "axiz-kit-jpa",
       "class": "pe.axiz.core.persistence.jpa.AuditableEntity",
       "sha256": "fa8838788f17a642cf0e3b663c31ea39110b8911b418e282f177c7efc00ce5ba",
       "replacement": {
@@ -1128,16 +1213,6 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-kit-jpa",
         "class": "pe.axiz.kit.jpa.AuditingRegistry",
         "sha256": "2b21c359a78fbfa9b03a5f9b6bbc5b03c83eb6fb91d790649ca609f39b9353c0"
-      }
-    },
-    {
-      "artifact": "axiz-kit-jpa",
-      "class": "pe.axiz.core.persistence.jpa.AuditListener",
-      "sha256": "4575a19e78d2fca2c6ac954f241744c0aa7f34d7483cd1c47c7ad3d0d91454ee",
-      "replacement": {
-        "artifact": "axiz-kit-jpa",
-        "class": "pe.axiz.kit.jpa.AuditListener",
-        "sha256": "a4187604608c90a97cd1e2fea191e8dee0a50032380572a4d73a5fbcde5e33d1"
       }
     },
     {
@@ -1254,10 +1329,11 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-kit-r2dbc",
       "class": "pe.axiz.core.persistence.r2dbc.RdsIamPasswordProvider",
       "sha256": "6f17634d0cd74820ae8ef9c4d48e2fa006f38666cfd06419e82e035d40089e79",
+      "reason": "R3: el proveedor IAM se extrae al adaptador AWS; DatabasePasswordProvider permanece neutral en el kit. Comparación con su predecesor real axiz-core-persistence-r2dbc:1.0.0; se conservan los constructores y el ciclo de vida del proveedor.",
       "replacement": {
-        "artifact": "axiz-kit-r2dbc",
-        "class": "pe.axiz.kit.r2dbc.RdsIamPasswordProvider",
-        "sha256": "ed7a54e03bc343b9e625b75b0cb4143f4a71a30a0b3701f45922106381878d42"
+        "artifact": "axiz-adapter-database-auth-aws",
+        "class": "pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider",
+        "sha256": "a1bb720f5bf20c5fb0626570fe8e909f60247df557925fa56b21d701d6ed6733"
       }
     },
     {
@@ -1309,190 +1385,6 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "class": "pe.axiz.kit.r2dbc.SqlRow",
         "sha256": "f5b3184e9522c37da821b028531d384d2f1dc7adc6b8895cb0edec00af3bee94"
       }
-    },
-    {
-      "artifact": "axiz-archunit-rules",
-      "class": "pe.axiz.quality.archunit.AxizArchitecture",
-      "sha256": "744535badf6d057e5af5d0f75177fa7b950204237a87e4e4aedd32b670547a9b",
-    },
-    {
-      "artifact": "axiz-archunit-rules",
-      "class": "pe.axiz.quality.archunit.AxizArchitecture$Style",
-      "sha256": "256a68307c574dbd4d509a7ef4509edd94dc4509ea0ddb279d17152351e5823b",
-      "replacement": {
-        "artifact": "axiz-archunit-rules",
-        "class": "pe.axiz.quality.archunit.Structure",
-        "sha256": "155a6f8019df704a5c6f0f8ef86845bfb4f76b3239e563e43cb20dd3573849e5"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.ContractCheck",
-      "sha256": "f45b6c6d6b4a02a0310064a75c425b377d9119a2ab65a9c1abb949e129af5475",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.ContractCheck",
-        "sha256": "0672042493d714438b6cd236c3f2ce4e4e8dec95d8c8fa8ea9877b6f88bd572a"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.ContractCheck$Body",
-      "sha256": "fe3286ab792f18db7d80b8c264d31deeb37acfd577afad8d3c4a9b5fab3ffc37",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.ContractCheck$Body",
-        "sha256": "11efe6088d4448038ef6b48160d88cc22b2917e70639283774a6f5d36711b4cd"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.IdempotencyStoreContract",
-      "sha256": "807474b5bd8d4a512046b11b2592bcc619e6aacc89813b0172194c18039d3d36",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.IdempotencyStoreContract",
-        "sha256": "cdae22f61abf59a142388b80ca115f34c1aff5d9ac0658b7d8d6bb0ef7f028ff"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.IdempotencyStoreContract$Backend",
-      "sha256": "c8df104a4d26a04678dbc39de720650dfa704f06144db1f0e8b131159a8dabea",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.IdempotencyStoreContract$Backend",
-        "sha256": "db71efa46ee4b58308caa1fe4bd780064bded656eec174a737c9b9a91dbf61ae"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.InboxStoreContract",
-      "sha256": "d5560104082ebf5a9a0f84290a9983705a97c79f42d5a80a498fb8bfa46091d7",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.InboxStoreContract",
-        "sha256": "c30520a4afdb0a2fae0cd7f760b56aa95a14752c2d8b28d66898a2c4c1612ab3"
-      }
-    },
-    {
-      "artifact": "axiz-store-contract-tests",
-      "class": "pe.axiz.core.contracts.InboxStoreContract$Backend",
-      "sha256": "15ba37c1269acd10254991401facf6cb5834b6cc93b76a1e2b27bc9004dd84e9",
-      "replacement": {
-        "artifact": "axiz-store-contract-tests",
-        "class": "pe.axiz.test.contracts.InboxStoreContract$Backend",
-        "sha256": "21e7425bd88203d6801f50ef19875fa1c045419a4f8de90c4ef22de77207b063"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.MetricAssertions",
-      "sha256": "554a40efa53a82e91160a7b3c6cce685b7c17bccbfca58272c8a2541251f7808",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.MetricAssertions",
-        "sha256": "ed9e76b0775a24c7157828ee17d31d919694c817d2d55d83665b05ffef67dd4d"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.MutableClock",
-      "sha256": "a56fe7a5444f4f690408729ff8f9c9a5a0ada068487b56ec6c68e62ee0b49a46",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.MutableClock",
-        "sha256": "5277477c689839d85c57c373300b9fef33981db412a93f7fd7d99c487ab295d4"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.r2dbc.FakeR2dbc",
-      "sha256": "18fd18ce42c827dc00c6672b223055736f4764916e77c3aac9ce41b777464496",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.r2dbc.FakeR2dbc",
-        "sha256": "1aad16eef0e739f8db3cabdc1afbc341f9f6c04a8259ae93f4c44e18a4a29f71"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.r2dbc.FakeR2dbc$Execution",
-      "sha256": "4f240d859189b01a231da7ee7f1af7e4488e29e2ef462ae3642b2e0441bd9f4d",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.r2dbc.FakeR2dbc$Execution",
-        "sha256": "68eb9822db737d8be1700f715869dfa6f9c1b041543f153a4e77ebcafa3fd4fe"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.RecordingEventPublisher",
-      "sha256": "61d961b2b5a2573a9158b331dacad9e9eeb609cb6b07dcee1e5a79fd7545e57a",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.RecordingEventPublisher",
-        "sha256": "81be2a8d92923a7f3c38dfae2dfab343027c2fa67bcc25fb414d66ca1f7ee30e"
-      }
-    },
-    {
-      "artifact": "axiz-test-support",
-      "class": "pe.axiz.core.test.RecordingEventPublisher$Published",
-      "sha256": "2daf64e335ef6d4968d44b170e9c2e883f629de524c4d1ac88a3f76929e6a574",
-      "replacement": {
-        "artifact": "axiz-test-support",
-        "class": "pe.axiz.test.support.RecordingEventPublisher$Published",
-        "sha256": "4905843ffbdc6d4ee635c74db48541cab3524f013adcc8f650322ccb3843974c"
-      }
-    },
-    {
-      "artifact": "axiz-config-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.config.AxizConfigProperties$ParameterStore",
-      "sha256": "31d70580909fbb3709fcbf5a1dca0c941b177d6552cf7e966e092830cdb94064",
-    },
-    {
-      "artifact": "axiz-dynamodb-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.dynamodb.DynamoRepositories",
-      "sha256": "d76b3a76a4c8d2639105de053aed16ddef05e7e43e626497f3f6d14a224aadaf",
-    },
-    {
-      "artifact": "axiz-foundation-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.foundation.jdbc.SpringConnectionProvider",
-      "sha256": "80500e69448bdbe851bb6e12395f5f4a9874920144f755518fcc357bd382c3d5",
-      "reason": "M8/M9: implementa ConnectionProvider de axiz-kit-jdbc, en lugar del antiguo paquete JDBC de core. Su constructor DataSource y el comportamiento de conexión ligada a la transacción se conservan."
-    },
-    {
-      "artifact": "axiz-foundation-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.foundation.jdbc.SpringTransactionRunner",
-      "sha256": "48426151eef87c1b6a33671fac8bf3ffef0303bce56300e0fee6b917ec7d77c0",
-      "reason": "M8/M9: implementa TransactionRunner de core.commons.tx; conserva el constructor PlatformTransactionManager y la transacción Spring. La receta cambia el import del puerto."
-    },
-    {
-      "artifact": "axiz-idempotency-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.idempotency.AxizIdempotencyProperties",
-      "sha256": "e4b08f99ae79e3df8b01f785b10b62b1919f8f87bf69a68aadc68a840b78ad7c",
-      "reason": "A2/A3: el constructor canónico incorpora clientRetryWindow y valida retención >= ventana de reintento + lease. El binding anterior por nombre conserva defaults seguros; construcciones Java deben pasar la ventana."
-    },
-    {
-      "artifact": "axiz-idempotency-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.idempotency.IdempotencyWebFilter",
-      "sha256": "3422c3e1f6106ff6f04a9d8a90fd81132fcf8d36f72ca371ff7ac91e2d152160",
-    },
-    {
-      "artifact": "axiz-inbox-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.inbox.AxizInboxProperties",
-      "sha256": "8756f1775fd23e1a91c51f5af5b944322ab988d6b0eaec5f47913373eeab6fc9",
-      "reason": "M2: el constructor canónico incorpora transactional=auto/true/false. El binding por nombre usa auto por defecto; construcciones Java deben declarar el modo y compartir la identidad del recurso para atomicidad."
-    },
-    {
-      "artifact": "axiz-jpa-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.jpa.AuditingRegistrar",
-      "sha256": "3ecd7323e2a4c9dfff07fcf21f3d8a238813ed5b93ad4daf19d406bf29ba94e9",
-    },
-    {
-      "artifact": "axiz-jpa-spring-boot-autoconfigure",
-      "class": "pe.axiz.spring.jpa.RequestAuditorProvider",
-      "sha256": "583fea27e00f7872aad587b879b158cd05ceceb7a076f37379793269bfde45fb",
     },
     {
       "artifact": "axiz-messaging-spring-boot-autoconfigure",
@@ -1563,6 +1455,66 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
       "artifact": "axiz-security-spring-boot-autoconfigure",
       "class": "pe.axiz.spring.security.RateLimitWebFilter",
       "sha256": "d07bcd1bfd69f5e1fc5fcd435e74dccec0f3389531c4c9108733fb85df306035",
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.ContractCheck",
+      "sha256": "f45b6c6d6b4a02a0310064a75c425b377d9119a2ab65a9c1abb949e129af5475",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.ContractCheck",
+        "sha256": "0672042493d714438b6cd236c3f2ce4e4e8dec95d8c8fa8ea9877b6f88bd572a"
+      }
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.ContractCheck$Body",
+      "sha256": "fe3286ab792f18db7d80b8c264d31deeb37acfd577afad8d3c4a9b5fab3ffc37",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.ContractCheck$Body",
+        "sha256": "11efe6088d4448038ef6b48160d88cc22b2917e70639283774a6f5d36711b4cd"
+      }
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.IdempotencyStoreContract",
+      "sha256": "807474b5bd8d4a512046b11b2592bcc619e6aacc89813b0172194c18039d3d36",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.IdempotencyStoreContract",
+        "sha256": "cdae22f61abf59a142388b80ca115f34c1aff5d9ac0658b7d8d6bb0ef7f028ff"
+      }
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.IdempotencyStoreContract$Backend",
+      "sha256": "c8df104a4d26a04678dbc39de720650dfa704f06144db1f0e8b131159a8dabea",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.IdempotencyStoreContract$Backend",
+        "sha256": "db71efa46ee4b58308caa1fe4bd780064bded656eec174a737c9b9a91dbf61ae"
+      }
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.InboxStoreContract",
+      "sha256": "d5560104082ebf5a9a0f84290a9983705a97c79f42d5a80a498fb8bfa46091d7",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.InboxStoreContract",
+        "sha256": "c30520a4afdb0a2fae0cd7f760b56aa95a14752c2d8b28d66898a2c4c1612ab3"
+      }
+    },
+    {
+      "artifact": "axiz-store-contract-tests",
+      "class": "pe.axiz.core.contracts.InboxStoreContract$Backend",
+      "sha256": "15ba37c1269acd10254991401facf6cb5834b6cc93b76a1e2b27bc9004dd84e9",
+      "replacement": {
+        "artifact": "axiz-store-contract-tests",
+        "class": "pe.axiz.test.contracts.InboxStoreContract$Backend",
+        "sha256": "21e7425bd88203d6801f50ef19875fa1c045419a4f8de90c4ef22de77207b063"
+      }
     },
     {
       "artifact": "axiz-structure-batch-api",
@@ -1856,6 +1808,56 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     },
     {
       "artifact": "axiz-structure-hexagonal-api",
+      "class": "pe.axiz.framework.hexagonal.DomainEventSink",
+      "sha256": "05db37fa27a31980410dc2d5100bcc19d43f595665230ecd18e0cd7afbd6f052",
+      "replacement": {
+        "artifact": "axiz-structure-hexagonal-api",
+        "class": "pe.axiz.structure.hexagonal.DomainEventSink",
+        "sha256": "e5548143c7e12dc0da0cb23add28e7846e4f027da2bd11e21f74c8720dba8666"
+      }
+    },
+    {
+      "artifact": "axiz-structure-hexagonal-api",
+      "class": "pe.axiz.framework.hexagonal.DomainEvents",
+      "sha256": "60ea173ec163d9b9fc279d1390aa788381ef4149d08633f3a3196270b9002da8",
+      "replacement": {
+        "artifact": "axiz-structure-hexagonal-api",
+        "class": "pe.axiz.structure.hexagonal.DomainEvents",
+        "sha256": "a53a427902abaa8562c28abcf83580c71b2e45e2df4ef177487e34298417bc1d"
+      }
+    },
+    {
+      "artifact": "axiz-structure-hexagonal-api",
+      "class": "pe.axiz.framework.hexagonal.UseCase",
+      "sha256": "5c0a4e8a01b39241c6869d0abd900143345a60a3d2a798aae112cce26bb07651",
+      "replacement": {
+        "artifact": "axiz-structure-hexagonal-api",
+        "class": "pe.axiz.structure.hexagonal.UseCase",
+        "sha256": "ad00389a9c5675f6cc9cf3abee48882f76ae49bf4efe239cbe563a5972a378df"
+      }
+    },
+    {
+      "artifact": "axiz-structure-hexagonal-api",
+      "class": "pe.axiz.framework.hexagonal.UseCaseRunner",
+      "sha256": "785533d7e56e7f0291905d2fd911db45204849a116e3bb7a0ebbdd04339f2cd2",
+      "replacement": {
+        "artifact": "axiz-structure-hexagonal-api",
+        "class": "pe.axiz.structure.hexagonal.UseCaseRunner",
+        "sha256": "9b058b5fbd71368365cccd928bc7034361eac49a85fb76d24b00bc415beab3d2"
+      }
+    },
+    {
+      "artifact": "axiz-structure-hexagonal-api",
+      "class": "pe.axiz.framework.hexagonal.UseCaseTransaction",
+      "sha256": "b65dd187b173b14c905ca17b80184ca29f92c1207ddf6c3d4b62f1c205786460",
+      "replacement": {
+        "artifact": "axiz-structure-hexagonal-api",
+        "class": "pe.axiz.structure.hexagonal.UseCaseTransaction",
+        "sha256": "9a3c19377c09bad9c596916642a9a0c4934efd9322150ae5be496ad95013023e"
+      }
+    },
+    {
+      "artifact": "axiz-structure-hexagonal-api",
       "class": "pe.axiz.framework.hexagonal.annotation.Adapter",
       "sha256": "a6901d1219b7891f9bb2e66138d8424f2d41d9df3339221919b559cc5daf3bd4",
       "replacement": {
@@ -1892,56 +1894,6 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-structure-hexagonal-api",
         "class": "pe.axiz.structure.hexagonal.annotation.UseCase",
         "sha256": "efde0dc6a8ac3a8cdaf5a39893144fdf4a63d0162c9259962bf9bd561e030495"
-      }
-    },
-    {
-      "artifact": "axiz-structure-hexagonal-api",
-      "class": "pe.axiz.framework.hexagonal.DomainEvents",
-      "sha256": "60ea173ec163d9b9fc279d1390aa788381ef4149d08633f3a3196270b9002da8",
-      "replacement": {
-        "artifact": "axiz-structure-hexagonal-api",
-        "class": "pe.axiz.structure.hexagonal.DomainEvents",
-        "sha256": "a53a427902abaa8562c28abcf83580c71b2e45e2df4ef177487e34298417bc1d"
-      }
-    },
-    {
-      "artifact": "axiz-structure-hexagonal-api",
-      "class": "pe.axiz.framework.hexagonal.DomainEventSink",
-      "sha256": "05db37fa27a31980410dc2d5100bcc19d43f595665230ecd18e0cd7afbd6f052",
-      "replacement": {
-        "artifact": "axiz-structure-hexagonal-api",
-        "class": "pe.axiz.structure.hexagonal.DomainEventSink",
-        "sha256": "e5548143c7e12dc0da0cb23add28e7846e4f027da2bd11e21f74c8720dba8666"
-      }
-    },
-    {
-      "artifact": "axiz-structure-hexagonal-api",
-      "class": "pe.axiz.framework.hexagonal.UseCase",
-      "sha256": "5c0a4e8a01b39241c6869d0abd900143345a60a3d2a798aae112cce26bb07651",
-      "replacement": {
-        "artifact": "axiz-structure-hexagonal-api",
-        "class": "pe.axiz.structure.hexagonal.UseCase",
-        "sha256": "ad00389a9c5675f6cc9cf3abee48882f76ae49bf4efe239cbe563a5972a378df"
-      }
-    },
-    {
-      "artifact": "axiz-structure-hexagonal-api",
-      "class": "pe.axiz.framework.hexagonal.UseCaseRunner",
-      "sha256": "785533d7e56e7f0291905d2fd911db45204849a116e3bb7a0ebbdd04339f2cd2",
-      "replacement": {
-        "artifact": "axiz-structure-hexagonal-api",
-        "class": "pe.axiz.structure.hexagonal.UseCaseRunner",
-        "sha256": "9b058b5fbd71368365cccd928bc7034361eac49a85fb76d24b00bc415beab3d2"
-      }
-    },
-    {
-      "artifact": "axiz-structure-hexagonal-api",
-      "class": "pe.axiz.framework.hexagonal.UseCaseTransaction",
-      "sha256": "b65dd187b173b14c905ca17b80184ca29f92c1207ddf6c3d4b62f1c205786460",
-      "replacement": {
-        "artifact": "axiz-structure-hexagonal-api",
-        "class": "pe.axiz.structure.hexagonal.UseCaseTransaction",
-        "sha256": "9a3c19377c09bad9c596916642a9a0c4934efd9322150ae5be496ad95013023e"
       }
     },
     {
@@ -2073,6 +2025,66 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "class": "pe.axiz.structure.layered.spring.JpaCrudService",
         "sha256": "1bff7467af6c055ec5f4c3be89f8abc7fc5b0b7367a10c881ada5ec932ac035f"
       }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.MetricAssertions",
+      "sha256": "554a40efa53a82e91160a7b3c6cce685b7c17bccbfca58272c8a2541251f7808",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.MetricAssertions",
+        "sha256": "ed9e76b0775a24c7157828ee17d31d919694c817d2d55d83665b05ffef67dd4d"
+      }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.MutableClock",
+      "sha256": "a56fe7a5444f4f690408729ff8f9c9a5a0ada068487b56ec6c68e62ee0b49a46",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.MutableClock",
+        "sha256": "5277477c689839d85c57c373300b9fef33981db412a93f7fd7d99c487ab295d4"
+      }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.RecordingEventPublisher",
+      "sha256": "61d961b2b5a2573a9158b331dacad9e9eeb609cb6b07dcee1e5a79fd7545e57a",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.RecordingEventPublisher",
+        "sha256": "81be2a8d92923a7f3c38dfae2dfab343027c2fa67bcc25fb414d66ca1f7ee30e"
+      }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.RecordingEventPublisher$Published",
+      "sha256": "2daf64e335ef6d4968d44b170e9c2e883f629de524c4d1ac88a3f76929e6a574",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.RecordingEventPublisher$Published",
+        "sha256": "4905843ffbdc6d4ee635c74db48541cab3524f013adcc8f650322ccb3843974c"
+      }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.r2dbc.FakeR2dbc",
+      "sha256": "18fd18ce42c827dc00c6672b223055736f4764916e77c3aac9ce41b777464496",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.r2dbc.FakeR2dbc",
+        "sha256": "1aad16eef0e739f8db3cabdc1afbc341f9f6c04a8259ae93f4c44e18a4a29f71"
+      }
+    },
+    {
+      "artifact": "axiz-test-support",
+      "class": "pe.axiz.core.test.r2dbc.FakeR2dbc$Execution",
+      "sha256": "4f240d859189b01a231da7ee7f1af7e4488e29e2ef462ae3642b2e0441bd9f4d",
+      "replacement": {
+        "artifact": "axiz-test-support",
+        "class": "pe.axiz.test.support.r2dbc.FakeR2dbc$Execution",
+        "sha256": "68eb9822db737d8be1700f715869dfa6f9c1b041543f153a4e77ebcafa3fd4fe"
+      }
     }
   ]
 }
@@ -2088,3 +2100,16 @@ python3 .github/scripts/check-api-compatibility.py --baseline 1.0.0
 El perfil normal `api-compat` sigue rechazando directamente cualquier ruptura. `api-migration`
 solo permite generar los reportes para 2.0.0 frente a 1.x y necesita el control posterior del
 inventario. Después de promover 2.0 se utiliza el perfil normal contra la nueva línea base.
+
+
+## Cierre R3 y R9 (8 de noviembre)
+
+R3 mueve `RdsIamPasswordProvider` a `pe.axiz.adapter.databaseauth.aws`, manteniendo las firmas
+públicas y la preparación, renovación y cierre de credenciales. El kit ya no depende del SDK RDS.
+El nuevo adaptador se compara con el JAR real 1.0.0 como extracción parcial. Los consumidores IAM
+declaran `axiz-adapter-database-auth-aws` en runtime; las bibliotecas que construyen el proveedor
+directamente lo declaran en compile. La capacidad R2DBC del catálogo selecciona el adaptador y la
+receta mueve el tipo desde ambos namespaces anteriores. Los cambios de R9 solo simplifican imports
+y calificadores sin alterar nombres públicos ni contratos. Las huellas de R3 se revisaron contra los
+reportes reales del kit y de la extracción; se conserva el constructor original de seis parámetros
+y el contrato de cierre incorporado durante la implementación anterior.

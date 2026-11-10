@@ -58,12 +58,12 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 
 | Módulo | Descripción |
 |---|---|
-| [`adapters`](adapters/adapters.md) | Technology adapters implement the synchronous and asynchronous ports from core. Services select them at runtime; their code imports ports and persistence kits instead of adapter implementations. |
 | [`axiz-adapter-audit-kafka`](adapters/axiz-adapter-audit-kafka.md) | Audit publisher for Amazon MSK (Kafka). |
 | [`axiz-adapter-audit-sqs`](adapters/axiz-adapter-audit-sqs.md) | Audit publisher for Amazon SQS. |
 | [`axiz-adapter-cache-redis`](adapters/axiz-adapter-cache-redis.md) | Redis (ElastiCache/Valkey) cache with SCAN-based eviction and failure tolerance. |
 | [`axiz-adapter-crypto-jose`](adapters/axiz-adapter-crypto-jose.md) | JWS and JWE utilities. |
 | [`axiz-adapter-crypto-kms`](adapters/axiz-adapter-crypto-kms.md) | AWS KMS key provider for envelope encryption with data key cache. |
+| [`axiz-adapter-database-auth-aws`](adapters/axiz-adapter-database-auth-aws.md) | AWS RDS/Aurora IAM password tokens implementing `DatabasePasswordProvider` from `axiz-kit-r2dbc`. |
 | [`axiz-adapter-idempotency-dynamodb`](adapters/axiz-adapter-idempotency-dynamodb.md) | Idempotency store on DynamoDB with TTL. |
 | [`axiz-adapter-idempotency-redis`](adapters/axiz-adapter-idempotency-redis.md) | Idempotency store on Redis (ElastiCache). |
 | [`axiz-adapter-inbox-dynamodb`](adapters/axiz-adapter-inbox-dynamodb.md) | Inbox store on DynamoDB with TTL. |
@@ -92,7 +92,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-kit-dynamodb`](kits/axiz-kit-dynamodb.md) | Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters. |
 | [`axiz-kit-jdbc`](kits/axiz-kit-jdbc.md) | Transaction-aware JDBC connections, SQLSTATE helpers and local transactions. |
 | [`axiz-kit-jpa`](kits/axiz-kit-jpa.md) | JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters. |
-| [`axiz-kit-r2dbc`](kits/axiz-kit-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens. |
+| [`axiz-kit-r2dbc`](kits/axiz-kit-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions and a neutral password-provider contract. |
 | [`kits`](kits/kits.md) | Public technology APIs used by service persistence adapters. Kits have compile scope and are confined to persistence packages. They do not depend on Spring or higher layers. |
 
 ## Capa 3: Spring Boot

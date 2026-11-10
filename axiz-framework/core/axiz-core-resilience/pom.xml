@@ -15,6 +15,8 @@
   <description>Retry policies with backoff and jitter, idempotency-aware retry decisions and timeouts</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.resilience</axiz.module.name>
   </properties>
 

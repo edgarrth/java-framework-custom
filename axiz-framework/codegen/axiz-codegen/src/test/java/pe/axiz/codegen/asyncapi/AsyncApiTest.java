@@ -5,13 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.openapi.ContractDiff;
+import pe.axiz.codegen.openapi.SafeYaml;
 
 class AsyncApiTest {
   static final String CONTRACT =
@@ -52,10 +55,10 @@ class AsyncApiTest {
 
   @Test
   void expansionBudgetCoversTheWholeDocumentRatherThanEachOperation() {
-    var yaml = pe.axiz.codegen.openapi.SafeYaml.create(AsyncApiDocument.MAX_SIZE);
+    var yaml = SafeYaml.create(AsyncApiDocument.MAX_SIZE);
     @SuppressWarnings("unchecked")
     Map<String, Object> root = yaml.load(CONTRACT);
-    Map<String, Object> operations = new java.util.LinkedHashMap<>();
+    Map<String, Object> operations = new LinkedHashMap<>();
     for (int i = 0; i < 10_000; i++)
       operations.put(
           "publish" + i,
@@ -63,7 +66,7 @@ class AsyncApiTest {
               "action",
               "send",
               "channel",
-              new java.util.LinkedHashMap<>(Map.of("$ref", "#/channels/orders"))));
+              new LinkedHashMap<>(Map.of("$ref", "#/channels/orders"))));
     root.put("operations", operations);
     String repeated = yaml.dump(root);
     assertTrue(repeated.length() < AsyncApiDocument.MAX_SIZE);
@@ -220,7 +223,7 @@ class AsyncApiTest {
             directory.resolve("outside.yaml"), "axiz.messaging.consumer.subscriptions: []\n");
     Files.createSymbolicLink(resources.resolve("application.yaml"), outside);
     assertThrows(
-        java.io.IOException.class,
+        IOException.class,
         () -> AsyncApiSubscriptions.problems(directory, AsyncApiDocument.parse(CONTRACT)));
   }
 }

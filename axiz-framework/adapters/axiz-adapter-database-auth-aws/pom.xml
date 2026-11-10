@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-adapter-database-auth-aws</artifactId>
+  <name>axiz :: adapter :: database-auth-aws</name>
+  <description>AWS RDS IAM password provider for reactive database connections</description>
+  <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
+    <axiz.module.name>pe.axiz.adapter.databaseauth.aws</axiz.module.name>
+    <axiz.api.baseline.artifactId>axiz-core-persistence-r2dbc</axiz.api.baseline.artifactId>
+  </properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-r2dbc</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>rds</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+  </dependencies>
+  <profiles>
+    <profile>
+      <id>api-compat</id>
+      <build><plugins><plugin>
+        <groupId>com.github.siom79.japicmp</groupId><artifactId>japicmp-maven-plugin</artifactId>
+        <configuration><parameter><includes>
+          <include>pe.axiz.core.persistence.r2dbc.RdsIamPasswordProvider</include>
+          <include>pe.axiz.adapter.databaseauth.aws.*</include>
+        </includes></parameter></configuration>
+      </plugin></plugins></build>
+    </profile>
+  </profiles>
+</project>

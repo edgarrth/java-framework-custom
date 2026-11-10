@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.SpringApplication;
@@ -25,9 +26,7 @@ class SecretsTest {
         .withPropertyValues("axiz.secrets.directory=" + dir, "axiz.secrets.environment=false")
         .withBean(
             SecretSource.class,
-            () ->
-                new SecretSource(
-                    "test", name -> java.util.Optional.of(SecretValue.of("from-source"))))
+            () -> new SecretSource("test", name -> Optional.of(SecretValue.of("from-source"))))
         .run(
             ctx -> {
               SecretResolver r = ctx.getBean(SecretResolver.class);

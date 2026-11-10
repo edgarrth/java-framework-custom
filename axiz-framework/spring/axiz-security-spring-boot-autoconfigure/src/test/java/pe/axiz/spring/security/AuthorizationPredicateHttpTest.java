@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -197,9 +198,7 @@ class AuthorizationPredicateHttpTest {
               AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext());
               var client =
                   WebTestClient.bindToApplicationContext(ctx)
-                      .apply(
-                          org.springframework.security.test.web.reactive.server
-                              .SecurityMockServerConfigurers.springSecurity())
+                      .apply(SecurityMockServerConfigurers.springSecurity())
                       .configureClient()
                       .build();
               client

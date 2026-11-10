@@ -1,6 +1,9 @@
 package pe.axiz.spring.metrics;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,11 +38,10 @@ public record AxizMetricsProperties(
     @Nullable String domain,
     @Nullable String version) {
   public AxizMetricsProperties {
-    channels = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(channels));
-    events = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(events));
-    standardTags =
-        java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(standardTags));
-    tags = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(tags));
+    channels = Collections.unmodifiableSet(new LinkedHashSet<>(channels));
+    events = Collections.unmodifiableMap(new LinkedHashMap<>(events));
+    standardTags = Collections.unmodifiableMap(new LinkedHashMap<>(standardTags));
+    tags = Collections.unmodifiableMap(new LinkedHashMap<>(tags));
   }
 
   /** Default channel list, kept in sync with the core settings. */
@@ -53,7 +55,7 @@ public record AxizMetricsProperties(
    */
   public record Tag(@DefaultValue Set<String> allowed, @DefaultValue("50") int max) {
     public Tag {
-      allowed = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(allowed));
+      allowed = Collections.unmodifiableSet(new LinkedHashSet<>(allowed));
     }
   }
 

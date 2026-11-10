@@ -6,16 +6,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
@@ -51,11 +55,10 @@ class ReactiveIdempotencyFilterTest {
     }
   }
 
-  @org.springframework.web.bind.annotation.RestControllerAdvice
+  @RestControllerAdvice
   static class Errors {
-    @org.springframework.web.bind.annotation.ExceptionHandler(
-        pe.axiz.core.errors.BusinessException.class)
-    ResponseEntity<Void> problem(pe.axiz.core.errors.BusinessException failure) {
+    @ExceptionHandler(BusinessException.class)
+    ResponseEntity<Void> problem(BusinessException failure) {
       return ResponseEntity.status(failure.category().httpStatus()).build();
     }
   }
@@ -94,7 +97,7 @@ class ReactiveIdempotencyFilterTest {
    */
   private EntityExchangeResult<String> retry(WebTestClient client, String key, String body)
       throws InterruptedException {
-    return org.awaitility.Awaitility.await()
+    return Awaitility.await()
         .pollDelay(Duration.ZERO)
         .pollInterval(Duration.ofMillis(25))
         .atMost(Duration.ofSeconds(5))

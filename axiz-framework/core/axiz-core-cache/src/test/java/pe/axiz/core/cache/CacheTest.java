@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,12 +28,12 @@ class CacheTest {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
 
     @Override
-    public java.time.ZoneId getZone() {
+    public ZoneId getZone() {
       return ZoneOffset.UTC;
     }
 
     @Override
-    public Clock withZone(java.time.ZoneId zone) {
+    public Clock withZone(ZoneId zone) {
       return this;
     }
 

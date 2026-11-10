@@ -34,3 +34,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-r2dbc-spring-boot-autoconfigure verify`.
+
+## Optional IAM adapter
+
+Services enabling `axiz.r2dbc.iam.enabled` declare `axiz-adapter-database-auth-aws` with `runtime`
+scope, or supply their own `DatabasePasswordProvider` for the primary pool. The generated R2DBC
+capability includes the AWS adapter. The generic starter and this auto-configuration do not force
+it onto minimal consumers.
+An enabled IAM configuration without its adapter or a custom provider fails with an actionable
+message. IAM reader pools use separate host-specific token providers and require the adapter.
+Ordinary password authentication, including password-based reader pools, works without it.

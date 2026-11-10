@@ -2,6 +2,8 @@ package pe.axiz.codegen.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.codegen.Fixtures;
@@ -52,17 +54,17 @@ class OpenApiLinterTest {
 
   @Test
   void ruleIdsMatchTheSpectralRuleset() throws Exception {
-    java.nio.file.Path ruleset =
-        java.nio.file.Path.of("")
+    Path ruleset =
+        Path.of("")
             .toAbsolutePath()
             .getParent()
             .getParent()
             .resolve(
                 "quality/axiz-code-standards/src/main/resources/axiz/spectral/axiz-openapi.yaml");
-    if (!java.nio.file.Files.exists(ruleset)) {
+    if (!Files.exists(ruleset)) {
       return; // outside the repository
     }
-    String spectral = java.nio.file.Files.readString(ruleset);
+    String spectral = Files.readString(ruleset);
     for (String rule :
         List.of(
             "axiz-operation-id-camel-case",

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.SQLException;
+import java.util.UUID;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.SqlIdentifiers;
 
@@ -36,8 +38,8 @@ class SqlStatesTest {
 
   @Test
   void ignoredDuplicatesUseSavepointsAndLeaveTheBusinessTransactionUsable() throws Exception {
-    var source = new org.h2.jdbcx.JdbcDataSource();
-    source.setURL("jdbc:h2:mem:sql-state-" + java.util.UUID.randomUUID());
+    var source = new JdbcDataSource();
+    source.setURL("jdbc:h2:mem:sql-state-" + UUID.randomUUID());
     try (var connection = source.getConnection();
         var statement = connection.createStatement()) {
       statement.execute("CREATE TABLE accounts(id INT PRIMARY KEY CHECK (id>0))");

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -18,6 +19,8 @@ import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.test.StepVerifier;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 class ReactiveInboxTest {
   private static final Instant NOW = Instant.parse("2026-10-31T12:00:00Z");
@@ -69,7 +72,7 @@ class ReactiveInboxTest {
     var pending = new CompletableFuture<Acquisition>();
     AsyncInboxStore store =
         new AsyncInboxStore() {
-          public java.util.concurrent.CompletionStage<Acquisition> tryAcquire(
+          public CompletionStage<Acquisition> tryAcquire(
               String consumer,
               String messageId,
               String owner,
@@ -80,17 +83,16 @@ class ReactiveInboxTest {
             return pending;
           }
 
-          public java.util.concurrent.CompletionStage<Boolean> markProcessed(
+          public CompletionStage<Boolean> markProcessed(
               String consumer, String messageId, String owner, Instant at) {
             return CompletableFuture.completedFuture(true);
           }
 
-          public java.util.concurrent.CompletionStage<Boolean> release(
-              String consumer, String messageId, String owner) {
+          public CompletionStage<Boolean> release(String consumer, String messageId, String owner) {
             return CompletableFuture.failedFuture(new IllegalStateException("offline"));
           }
 
-          public java.util.concurrent.CompletionStage<Integer> purgeExpired(Instant now) {
+          public CompletionStage<Integer> purgeExpired(Instant now) {
             return CompletableFuture.completedFuture(0);
           }
         };
@@ -123,10 +125,8 @@ class ReactiveInboxTest {
                       .hasNotFailed()
                       .doesNotHaveBean(ReactiveInbox.class)
                       .doesNotHaveBean(AsyncInboxStore.class)
-                      .doesNotHaveBean(
-                          software.amazon.awssdk.services.dynamodb.DynamoDbClient.class)
-                      .doesNotHaveBean(
-                          software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.class));
+                      .doesNotHaveBean(DynamoDbClient.class)
+                      .doesNotHaveBean(DynamoDbAsyncClient.class));
     }
   }
 }

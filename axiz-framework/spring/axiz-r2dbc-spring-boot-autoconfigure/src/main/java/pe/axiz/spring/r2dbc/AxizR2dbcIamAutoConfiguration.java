@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.r2dbc.autoconfigure.ConnectionFactoryOptionsBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /**
@@ -19,8 +20,7 @@ import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
  */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.r2dbc.autoconfigure.R2dbcAutoConfiguration")
-@ConditionalOnClass(
-    name = {"io.r2dbc.spi.ConnectionFactory", "software.amazon.awssdk.services.rds.RdsUtilities"})
+@ConditionalOnClass(name = "io.r2dbc.spi.ConnectionFactory")
 @ConditionalOnBooleanProperty("axiz.r2dbc.iam.enabled")
 @EnableConfigurationProperties(AxizR2dbcProperties.class)
 public class AxizR2dbcIamAutoConfiguration {
@@ -28,13 +28,17 @@ public class AxizR2dbcIamAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   DatabasePasswordProvider axizDatabasePasswordProvider(
-      Environment env, AxizR2dbcProperties p, ObjectProvider<Clock> clock) {
+      Environment env,
+      AxizR2dbcProperties p,
+      ObjectProvider<Clock> clock,
+      ResourceLoader resources) {
     return IamTokens.provider(
         env.getRequiredProperty("spring.r2dbc.url"),
         env.getRequiredProperty("spring.r2dbc.username"),
         p.iam(),
         env.getProperty("axiz.aws.region"),
-        clock.getIfAvailable(Clock::systemUTC));
+        clock.getIfAvailable(Clock::systemUTC),
+        resources.getClassLoader());
   }
 
   @Bean

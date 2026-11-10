@@ -10,16 +10,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.reflect.Method;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.Ordered;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -41,14 +46,12 @@ import tools.jackson.databind.json.JsonMapper;
 class WebConventionsTest {
 
   private static AxizWebProperties properties(String... pairs) {
-    return new org.springframework.boot.context.properties.bind.Binder(
-            new org.springframework.boot.context.properties.source.MapConfigurationPropertySource(
-                toMap(pairs)))
+    return new Binder(new MapConfigurationPropertySource(toMap(pairs)))
         .bindOrCreate("axiz.web", AxizWebProperties.class);
   }
 
   private static Map<String, String> toMap(String... pairs) {
-    Map<String, String> m = new java.util.LinkedHashMap<>();
+    Map<String, String> m = new LinkedHashMap<>();
     for (String p : pairs) {
       int i = p.indexOf('=');
       m.put(p.substring(0, i), p.substring(i + 1));
@@ -240,10 +243,10 @@ class WebConventionsTest {
     assertEquals("never", env.getProperty("server.error.include-stacktrace"));
     assertEquals("graceful", env.getProperty("server.shutdown"));
     assertEquals("always", env.getProperty("server.error.include-message"));
-    assertEquals(org.springframework.core.Ordered.LOWEST_PRECEDENCE, epp.getOrder());
+    assertEquals(Ordered.LOWEST_PRECEDENCE, epp.getOrder());
   }
 
-  record Body(String id, @org.jspecify.annotations.Nullable String note) {}
+  record Body(String id, @Nullable String note) {}
 
   @Test
   void jsonOmitsNullsUnlessConfigured() {

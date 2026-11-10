@@ -1,11 +1,15 @@
 package pe.axiz.spring.cache;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
+import org.reactivestreams.Publisher;
 import pe.axiz.core.cache.CacheScope;
 import pe.axiz.spring.foundation.ReactiveStages;
+import reactor.core.Exceptions;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.ContextView;
@@ -73,9 +77,8 @@ final class ReactiveCaching {
                     ? Flux.fromIterable((List<Object>) hit.get())
                     : source.transformDeferred(
                         values -> {
-                          List<Object> captured = new java.util.ArrayList<>();
-                          java.util.concurrent.atomic.AtomicBoolean overflowed =
-                              new java.util.concurrent.atomic.AtomicBoolean();
+                          List<Object> captured = new ArrayList<>();
+                          AtomicBoolean overflowed = new AtomicBoolean();
                           return values
                               .doOnNext(
                                   value -> {
@@ -96,12 +99,12 @@ final class ReactiveCaching {
   }
 
   @SuppressWarnings("unchecked")
-  private static org.reactivestreams.Publisher<Object> proceed(MethodInvocation invocation) {
+  private static Publisher<Object> proceed(MethodInvocation invocation) {
     try {
       Object result = invocation.proceed();
-      return result == null ? Mono.empty() : (org.reactivestreams.Publisher<Object>) result;
+      return result == null ? Mono.empty() : (Publisher<Object>) result;
     } catch (Throwable failure) {
-      throw reactor.core.Exceptions.propagate(failure);
+      throw Exceptions.propagate(failure);
     }
   }
 

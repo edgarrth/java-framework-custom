@@ -14,10 +14,12 @@ import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.time.Clock;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -30,6 +32,7 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.audit.AsyncAuditPublisher;
@@ -38,6 +41,7 @@ import pe.axiz.core.audit.AuditPolicy;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.audit.ConfirmedAuditPublisher;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.outbox.OutboxStore;
@@ -138,7 +142,7 @@ class AuditBehaviourTest {
         .run(
             ctx -> {
               assertThat(ctx.getBean(AuditPublisher.class))
-                  .isInstanceOf(pe.axiz.core.audit.ConfirmedAuditPublisher.class);
+                  .isInstanceOf(ConfirmedAuditPublisher.class);
               ctx.getBean(AuditTrail.class).record("probe", "test").success();
             });
     assertEquals(1, events.size());
@@ -195,10 +199,7 @@ class AuditBehaviourTest {
             "axiz.audit.durable.outside-transaction=fail")
         .withBean(OutboxWriter.class, () -> new OutboxWriter(outbox(), Clock.systemUTC()))
         .withBean(
-            org.springframework.transaction.PlatformTransactionManager.class,
-            () ->
-                org.mockito.Mockito.mock(
-                    org.springframework.transaction.PlatformTransactionManager.class))
+            PlatformTransactionManager.class, () -> Mockito.mock(PlatformTransactionManager.class))
         .run(
             ctx -> {
               AuditPublisher publisher = ctx.getBean(AuditPublisher.class);
@@ -315,7 +316,7 @@ class AuditBehaviourTest {
                     "memory",
                     event -> {
                       events.add(event);
-                      return java.util.concurrent.CompletableFuture.completedFuture(null);
+                      return CompletableFuture.completedFuture(null);
                     }))
         .run(
             ctx -> {

@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +28,7 @@ class CryptoTest {
     SecretKey key = AesGcm.newKey();
     byte[] a = AesGcm.encrypt(key, DATA, "ctx".getBytes(StandardCharsets.UTF_8));
     byte[] b = AesGcm.encrypt(key, DATA, "ctx".getBytes(StandardCharsets.UTF_8));
-    assertFalse(java.util.Arrays.equals(a, b), "IV must be random");
+    assertFalse(Arrays.equals(a, b), "IV must be random");
     assertArrayEquals(DATA, AesGcm.decrypt(key, a, "ctx".getBytes(StandardCharsets.UTF_8)));
     assertThrows(
         CryptoException.class,

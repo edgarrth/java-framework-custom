@@ -15,6 +15,8 @@
   <description>Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.crypto</axiz.module.name>
   </properties>
 

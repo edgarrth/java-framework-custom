@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -257,7 +258,7 @@ class ErrorsTest {
         };
     ExceptionMapper timeouts =
         failure ->
-            failure instanceof java.util.concurrent.TimeoutException
+            failure instanceof TimeoutException
                 ? Optional.<AxizException>of(new BusinessException(CoreErrors.CONFLICT, "late"))
                 : Optional.empty();
     IllegalStateException original = new IllegalStateException("boom");
@@ -268,7 +269,7 @@ class ErrorsTest {
     // the mappers after the broken one still run
     Problem t =
         defaultFactory(List.of(broken, timeouts))
-            .create(new java.util.concurrent.TimeoutException("slow"), Locale.ROOT, "/v1", "c");
+            .create(new TimeoutException("slow"), Locale.ROOT, "/v1", "c");
     assertEquals(409, t.status());
   }
 }

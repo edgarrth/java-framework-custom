@@ -11,11 +11,13 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
+import software.amazon.awssdk.core.ClientType;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttribute;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
 import software.amazon.awssdk.core.interceptor.SdkExecutionAttribute;
+import software.amazon.awssdk.http.SdkHttpRequest;
 
 /**
  * AWS SDK v2 interceptor that wraps every call (DynamoDB, SQS, SNS, S3, KMS, Secrets Manager...) in
@@ -61,8 +63,7 @@ public final class ObservationExecutionInterceptor implements ExecutionIntercept
     // The SDK identifies both client kinds, including clients configured outside Axiz factories.
     // Native clients complete on another thread; a scope must never span that thread boundary.
     boolean synchronous =
-        attributes.getAttribute(SdkExecutionAttribute.CLIENT_TYPE)
-            != software.amazon.awssdk.core.ClientType.ASYNC;
+        attributes.getAttribute(SdkExecutionAttribute.CLIENT_TYPE) != ClientType.ASYNC;
     attributes.putAttribute(
         ACTIVE,
         new Active(
@@ -71,7 +72,7 @@ public final class ObservationExecutionInterceptor implements ExecutionIntercept
 
   /** Adds tracing propagation before SigV4 signing, independently for each native request. */
   @Override
-  public software.amazon.awssdk.http.SdkHttpRequest modifyHttpRequest(
+  public SdkHttpRequest modifyHttpRequest(
       Context.ModifyHttpRequest context, ExecutionAttributes attributes) {
     Active active = attributes.getAttribute(ACTIVE);
     if (active == null || active.propagation().isEmpty()) return context.httpRequest();

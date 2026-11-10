@@ -1,5 +1,6 @@
 package pe.axiz.quality.archunit;
 
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -91,7 +92,7 @@ public final class AxizArchitecture {
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages(basePackage, "pe.axiz.core")
             .that(
-                com.tngtech.archunit.base.DescribedPredicate.describe(
+                DescribedPredicate.describe(
                     "service production classes",
                     type -> type.getName().startsWith(basePackage + "."))));
   }

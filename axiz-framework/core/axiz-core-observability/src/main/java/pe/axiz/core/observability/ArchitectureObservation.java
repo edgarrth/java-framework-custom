@@ -6,6 +6,7 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -109,8 +110,7 @@ public final class ArchitectureObservation {
   /** An observation started by {@link #start}. */
   public final class Started {
     private final Observation observation;
-    private final java.util.concurrent.atomic.AtomicBoolean done =
-        new java.util.concurrent.atomic.AtomicBoolean();
+    private final AtomicBoolean done = new AtomicBoolean();
 
     private Started(Observation observation) {
       this.observation = observation;

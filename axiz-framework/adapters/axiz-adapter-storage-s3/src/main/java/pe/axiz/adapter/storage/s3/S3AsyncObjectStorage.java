@@ -11,6 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.Stages;
@@ -18,6 +19,7 @@ import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectKey;
 import pe.axiz.core.storage.ObjectMetadata;
+import pe.axiz.core.storage.PresignedUpload;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -165,8 +167,7 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
         new AtomicReference<>();
     private final AtomicReference<@Nullable ListObjectsV2Response> received =
         new AtomicReference<>();
-    private final java.util.concurrent.atomic.AtomicInteger work =
-        new java.util.concurrent.atomic.AtomicInteger();
+    private final AtomicInteger work = new AtomicInteger();
     private boolean first = true;
     private @Nullable String continuation;
 
@@ -251,7 +252,7 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
   }
 
   @Override
-  public CompletionStage<pe.axiz.core.storage.PresignedUpload> presignUpload(
+  public CompletionStage<PresignedUpload> presignUpload(
       String key, String contentType, Duration ttl) {
     return Stages.call(
         () -> CompletableFuture.completedFuture(requests.presignUpload(key, contentType, ttl)));

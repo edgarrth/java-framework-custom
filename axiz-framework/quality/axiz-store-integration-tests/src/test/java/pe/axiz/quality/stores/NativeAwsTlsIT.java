@@ -8,18 +8,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import io.micrometer.observation.Observation.Context;
+import io.micrometer.observation.ObservationHandler;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.transport.Kind;
+import io.micrometer.observation.transport.SenderContext;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -46,7 +54,7 @@ class NativeAwsTlsIT {
   @ResourceLock(Resources.SYSTEM_PROPERTIES)
   void tlsUsesStartupTrustMaterialEvenWhenItsFileIsGoneAndRejectsUntrustedOrWrongHosts()
       throws Exception {
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
     Path store = temporary.resolve("server.p12");
     Path log = temporary.resolve("keytool.log");
     Process keytool =
@@ -98,25 +106,22 @@ class NativeAwsTlsIT {
             "changeit",
             "javax.net.ssl.trustStoreType",
             "PKCS12");
-    var previous = new java.util.HashMap<String, String>();
+    var previous = new HashMap<String, String>();
     properties.keySet().forEach(key -> previous.put(key, System.getProperty(key)));
     var lifecycle = new NettyLifecycleProbe();
-    var observedHeaders = new java.util.concurrent.ConcurrentLinkedQueue<Map<String, String>>();
+    var observedHeaders = new ConcurrentLinkedQueue<Map<String, String>>();
     String traceparent = "00-11111111111111111111111111111111-2222222222222222-01";
     var observations = ObservationRegistry.create();
     observations
         .observationConfig()
         .observationHandler(
-            new io.micrometer.observation.ObservationHandler<
-                io.micrometer.observation.transport.SenderContext<Map<String, String>>>() {
-              public boolean supportsContext(
-                  io.micrometer.observation.Observation.Context context) {
-                return context instanceof io.micrometer.observation.transport.SenderContext<?>;
+            new ObservationHandler<SenderContext<Map<String, String>>>() {
+              public boolean supportsContext(Context context) {
+                return context instanceof SenderContext<?>;
               }
 
-              public void onStart(
-                  io.micrometer.observation.transport.SenderContext<Map<String, String>> context) {
-                assertEquals(io.micrometer.observation.transport.Kind.CLIENT, context.getKind());
+              public void onStart(SenderContext<Map<String, String>> context) {
+                assertEquals(Kind.CLIENT, context.getKind());
                 context.getSetter().set(context.getCarrier(), "traceparent", traceparent);
               }
             });
@@ -222,7 +227,7 @@ class NativeAwsTlsIT {
   private static void assertHandshakeFailure(Throwable failure) {
     assertInstanceOf(SdkClientException.class, failure);
     for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-      if (cause instanceof javax.net.ssl.SSLHandshakeException) return;
+      if (cause instanceof SSLHandshakeException) return;
     }
     fail("Expected certificate/hostname rejection, got " + failure);
   }

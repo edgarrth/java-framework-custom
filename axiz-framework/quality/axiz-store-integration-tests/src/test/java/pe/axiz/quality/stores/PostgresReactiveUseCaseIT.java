@@ -10,32 +10,54 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.reactive.TransactionalOperator;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditEvent.Outcome;
+import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.domain.DomainEvent;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.PayloadCodec;
+import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.spring.audit.AuditOutsideTransaction;
+import pe.axiz.spring.audit.AxizAuditAutoConfiguration;
+import pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration;
+import pe.axiz.spring.audit.ReactiveAuditTrail;
+import pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.structure.hexagonal.ReactiveDomainEventSink;
 import pe.axiz.structure.hexagonal.ReactiveUseCase;
 import pe.axiz.structure.hexagonal.annotation.UseCase;
+import pe.axiz.structure.hexagonal.spring.AxizHexagonalAutoConfiguration;
+import pe.axiz.structure.hexagonal.spring.AxizReactiveHexagonalAutoConfiguration;
 import pe.axiz.structure.hexagonal.spring.ReactiveOutboxDomainEventSink;
 import pe.axiz.structure.hexagonal.spring.ReactiveUseCaseInterceptor;
 import reactor.core.publisher.Mono;
@@ -60,7 +82,7 @@ class PostgresReactiveUseCaseIT {
 
   @BeforeAll
   static void start() throws Exception {
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
     Docker.require();
     POSTGRES.start();
     connections =
@@ -77,9 +99,8 @@ class PostgresReactiveUseCaseIT {
     sql.update("CREATE TABLE business_changes (id VARCHAR(64) PRIMARY KEY)", SqlParams.of())
         .block(T);
     try (var in =
-        java.util.Objects.requireNonNull(
-            pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore.class.getResourceAsStream(
-                "/axiz/sql/outbox-postgresql.sql"))) {
+        Objects.requireNonNull(
+            JdbcOutboxStore.class.getResourceAsStream("/axiz/sql/outbox-postgresql.sql"))) {
       for (String statement : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";")) {
         if (!statement.replaceAll("--.*", "").isBlank())
           sql.update(statement, SqlParams.of()).block(T);
@@ -233,25 +254,23 @@ class PostgresReactiveUseCaseIT {
 
   @Test
   void durableAuditCommitsWithBusinessDataAndRollsBackDeliveryFailure() {
-    var fallback = new java.util.concurrent.CopyOnWriteArrayList<pe.axiz.core.audit.AuditEvent>();
+    var fallback = new CopyOnWriteArrayList<AuditEvent>();
     var publisher =
-        new pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(
+        new ReactiveTransactionalAuditPublisher(
             new ReactiveOutboxWriter(
                 new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()),
             "audit",
             event -> Mono.fromRunnable(() -> fallback.add(event)),
-            pe.axiz.spring.audit.AuditOutsideTransaction.FAIL);
+            AuditOutsideTransaction.FAIL);
     var ids = new AtomicInteger();
     var trail =
-        new pe.axiz.spring.audit.ReactiveAuditTrail(
+        new ReactiveAuditTrail(
             "accounts",
             publisher,
-            pe.axiz.core.sensitive.ObjectMasker.defaults(),
+            ObjectMasker.defaults(),
             () -> "audit-proof-" + ids.incrementAndGet(),
             Clock.systemUTC());
-    var transaction =
-        org.springframework.transaction.reactive.TransactionalOperator.create(
-            new R2dbcTransactionManager(connections));
+    var transaction = TransactionalOperator.create(new R2dbcTransactionManager(connections));
     Mono<String> committed =
         Mono.defer(
             () ->
@@ -278,8 +297,7 @@ class PostgresReactiveUseCaseIT {
                 row -> row.require("envelope", String.class))
             .single()
             .block(T);
-    org.junit.jupiter.api.Assertions.assertFalse(
-        java.util.Objects.requireNonNull(json).contains("hidden"));
+    org.junit.jupiter.api.Assertions.assertFalse(Objects.requireNonNull(json).contains("hidden"));
     Mono<String> aborted =
         Mono.defer(
             () ->
@@ -296,22 +314,18 @@ class PostgresReactiveUseCaseIT {
     assertEquals(0, count("business_changes", "audit-aborted"));
     assertEquals(0, count("axiz_outbox", "audit-proof-2"));
     assertEquals(1, fallback.size());
-    assertEquals(pe.axiz.core.audit.AuditEvent.Outcome.FAILURE, fallback.getFirst().outcome());
+    assertEquals(Outcome.FAILURE, fallback.getFirst().outcome());
 
     var rejected =
-        new pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(
+        new ReactiveTransactionalAuditPublisher(
             new ReactiveOutboxWriter(
                 new R2dbcOutboxStore(sql, "missing_audit_table", T), Clock.systemUTC()),
             "audit",
             event -> Mono.empty(),
-            pe.axiz.spring.audit.AuditOutsideTransaction.FAIL);
+            AuditOutsideTransaction.FAIL);
     var unavailable =
-        new pe.axiz.spring.audit.ReactiveAuditTrail(
-            "accounts",
-            rejected,
-            pe.axiz.core.sensitive.ObjectMasker.defaults(),
-            IdGenerator.uuidV7(),
-            Clock.systemUTC());
+        new ReactiveAuditTrail(
+            "accounts", rejected, ObjectMasker.defaults(), IdGenerator.uuidV7(), Clock.systemUTC());
     Mono<String> noEvidence =
         Mono.defer(
             () ->
@@ -330,7 +344,7 @@ class PostgresReactiveUseCaseIT {
 
   @UseCase("audited-change")
   public static class AuditedChange implements ReactiveUseCase<String, String> {
-    @pe.axiz.core.audit.Auditable(action = "account.change", resource = "account")
+    @Auditable(action = "account.change", resource = "account")
     public Mono<String> execute(String id) {
       return sql.update(
               "INSERT INTO business_changes (id) VALUES (:id)", SqlParams.of().bind("id", id))
@@ -342,17 +356,15 @@ class PostgresReactiveUseCaseIT {
   void nativeAuditAdviceIsInsideTheHexagonalUseCaseTransaction() {
     var writer =
         new ReactiveOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC());
-    new org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner()
+    new ReactiveWebApplicationContextRunner()
         .withConfiguration(
-            org.springframework.boot.autoconfigure.AutoConfigurations.of(
-                pe.axiz.spring.audit.AxizAuditAutoConfiguration.class,
-                pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration.class,
-                pe.axiz.structure.hexagonal.spring.AxizHexagonalAutoConfiguration.class,
-                pe.axiz.structure.hexagonal.spring.AxizReactiveHexagonalAutoConfiguration.class))
+            AutoConfigurations.of(
+                AxizAuditAutoConfiguration.class,
+                AxizNativeAuditAutoConfiguration.class,
+                AxizHexagonalAutoConfiguration.class,
+                AxizReactiveHexagonalAutoConfiguration.class))
         .withBean(ReactiveOutboxWriter.class, () -> writer)
-        .withBean(
-            org.springframework.transaction.ReactiveTransactionManager.class,
-            () -> new R2dbcTransactionManager(connections))
+        .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(connections))
         .withPropertyValues(
             "axiz.audit.durable.enabled=true", "axiz.audit.durable.outside-transaction=fail")
         .run(
@@ -361,17 +373,12 @@ class PostgresReactiveUseCaseIT {
               var factory = new ProxyFactory(new AuditedChange());
               factory.setProxyTargetClass(true);
               var advisors =
-                  new java.util.ArrayList<>(
+                  new ArrayList<>(
                       List.of(
-                          ctx.getBean(
-                              "axizReactiveAuditableAdvisor",
-                              org.springframework.aop.Advisor.class),
-                          ctx.getBean(
-                              "axizReactiveUseCaseAdvisor", org.springframework.aop.Advisor.class),
-                          ctx.getBean(
-                              "axizReactiveAuditSuccessAdvisor",
-                              org.springframework.aop.Advisor.class)));
-              org.springframework.core.annotation.AnnotationAwareOrderComparator.sort(advisors);
+                          ctx.getBean("axizReactiveAuditableAdvisor", Advisor.class),
+                          ctx.getBean("axizReactiveUseCaseAdvisor", Advisor.class),
+                          ctx.getBean("axizReactiveAuditSuccessAdvisor", Advisor.class)));
+              AnnotationAwareOrderComparator.sort(advisors);
               advisors.forEach(factory::addAdvisor);
               var useCase = (AuditedChange) factory.getProxy();
               StepVerifier.create(
@@ -392,7 +399,7 @@ class PostgresReactiveUseCaseIT {
   }
 
   private static long count(String table, String pattern) {
-    return java.util.Objects.requireNonNull(
+    return Objects.requireNonNull(
         sql.query(
                 "SELECT count(*) AS n FROM " + table + " WHERE id LIKE :id",
                 SqlParams.of().bind("id", pattern),

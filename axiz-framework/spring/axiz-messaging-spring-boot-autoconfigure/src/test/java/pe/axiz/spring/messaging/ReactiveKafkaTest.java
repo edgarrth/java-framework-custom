@@ -14,13 +14,18 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import pe.axiz.adapter.messaging.kafka.KafkaEventRecords;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -46,7 +51,7 @@ class ReactiveKafkaTest {
             "application/json",
             new byte[0],
             Map.of());
-    var record = pe.axiz.adapter.messaging.kafka.KafkaEventRecords.create("kafka:payments", event);
+    var record = KafkaEventRecords.create("kafka:payments", event);
     when(template.send(any(ProducerRecord.class)))
         .thenAnswer(
             invocation -> {
@@ -83,18 +88,16 @@ class ReactiveKafkaTest {
 
   @Test
   void disabledMessagingDoesNotCreateKafkaResources() {
-    new org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner()
-        .withConfiguration(
-            org.springframework.boot.autoconfigure.AutoConfigurations.of(
-                AxizMessagingKafkaAutoConfiguration.class))
+    new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizMessagingKafkaAutoConfiguration.class))
         .withPropertyValues(
             "axiz.messaging.enabled=false", "axiz.messaging.kafka.bootstrap-servers=127.0.0.1:1")
         .run(
             ctx ->
-                org.assertj.core.api.Assertions.assertThat(ctx)
+                Assertions.assertThat(ctx)
                     .hasNotFailed()
                     .doesNotHaveBean(BoundedAsyncDispatcher.class)
                     .doesNotHaveBean(AsyncEventPublisherAdapter.class)
-                    .doesNotHaveBean(org.apache.kafka.clients.producer.KafkaProducer.class));
+                    .doesNotHaveBean(KafkaProducer.class));
   }
 }

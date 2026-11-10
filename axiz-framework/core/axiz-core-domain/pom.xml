@@ -15,6 +15,8 @@
   <description>DDD building blocks: aggregate root, entity, value object, domain events, typed ids, common value objects</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.domain</axiz.module.name>
   </properties>
 

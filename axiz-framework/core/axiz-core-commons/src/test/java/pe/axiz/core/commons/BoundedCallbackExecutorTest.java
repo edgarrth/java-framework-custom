@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class BoundedCallbackExecutorTest {
@@ -34,8 +37,7 @@ class BoundedCallbackExecutorTest {
       assertThrows(RejectedExecutionException.class, () -> executor.execute(() -> {}));
       assertFalse(second.isDone());
       hold.countDown();
-      assertThrows(
-          java.util.concurrent.ExecutionException.class, () -> first.get(3, TimeUnit.SECONDS));
+      assertThrows(ExecutionException.class, () -> first.get(3, TimeUnit.SECONDS));
       assertTrue(second.get(3, TimeUnit.SECONDS).startsWith("callback-test-"));
       assertEquals("reused", executor.submit(() -> "reused").get(3, TimeUnit.SECONDS));
       executor.shutdown();
@@ -47,8 +49,8 @@ class BoundedCallbackExecutorTest {
 
   @Test
   void rejectsInvalidBoundsBeforeStartingAnyWorker() {
-    var started = new java.util.concurrent.atomic.AtomicInteger();
-    java.util.concurrent.ThreadFactory threads =
+    var started = new AtomicInteger();
+    ThreadFactory threads =
         work -> {
           started.incrementAndGet();
           return new Thread(work);

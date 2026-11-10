@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
@@ -24,7 +26,7 @@ class AsyncIdempotencyServiceTest {
   static final StoredResponse RESPONSE =
       new StoredResponse(201, Map.of("Location", "/orders/1"), new byte[] {1});
 
-  static AsyncIdempotencyService service(AsyncIdempotencyStore store, java.time.Clock clock) {
+  static AsyncIdempotencyService service(AsyncIdempotencyStore store, Clock clock) {
     return new AsyncIdempotencyService(store, LEASE, Duration.ofHours(24), clock);
   }
 
@@ -79,8 +81,7 @@ class AsyncIdempotencyServiceTest {
   static class RaceStore implements AsyncIdempotencyStore {
     @Override
     public CompletionStage<Boolean> compareAndSet(
-        IdempotencyRecord expected,
-        @org.jspecify.annotations.Nullable IdempotencyRecord replacement) {
+        IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
       return CompletableFuture.completedFuture(false);
     }
 

@@ -3,13 +3,17 @@ package pe.axiz.spring.sequence;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import pe.axiz.core.sequence.SequenceStore;
 
 class SequenceTest {
 
@@ -26,8 +30,7 @@ class SequenceTest {
         .run(
             context -> {
               Sequences firstReplica = context.getBean(Sequences.class);
-              org.springframework.transaction.support.TransactionTemplate business =
-                  new org.springframework.transaction.support.TransactionTemplate(transactions);
+              TransactionTemplate business = new TransactionTemplate(transactions);
               assertThrows(
                   IllegalStateException.class,
                   () ->
@@ -39,12 +42,10 @@ class SequenceTest {
               Sequences secondReplica =
                   new Sequences(
                       context.getBean(AxizSequenceProperties.class),
-                      context.getBean(pe.axiz.core.sequence.SequenceStore.class),
-                      java.time.Clock.systemUTC());
-              org.junit.jupiter.api.Assertions.assertEquals(
-                  "00000002", firstReplica.next("operation"));
-              org.junit.jupiter.api.Assertions.assertEquals(
-                  "00000011", secondReplica.next("operation"));
+                      context.getBean(SequenceStore.class),
+                      Clock.systemUTC());
+              Assertions.assertEquals("00000002", firstReplica.next("operation"));
+              Assertions.assertEquals("00000011", secondReplica.next("operation"));
             });
   }
 

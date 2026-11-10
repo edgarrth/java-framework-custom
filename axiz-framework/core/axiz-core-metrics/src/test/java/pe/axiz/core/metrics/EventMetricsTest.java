@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -216,8 +217,7 @@ class EventMetricsTest {
   @Test
   void cardinalityIsBounded() {
     MetricsSettings small =
-        new MetricsSettings(
-            2, 1, Set.of("web"), java.util.Map.of(), java.util.Map.of(), java.util.Map.of(), false);
+        new MetricsSettings(2, 1, Set.of("web"), Map.of(), Map.of(), Map.of(), false);
     EventMetrics m = new EventMetrics(registry, small);
     m.count("e1", t -> t.product("p1"));
     m.count("e2", t -> t.product("p2"));

@@ -1,5 +1,7 @@
 package pe.axiz.spring.sensitive;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -23,7 +25,7 @@ public record AxizSensitiveProperties(
     @DefaultValue("CRITICAL") SensitivityLevel fullMaskLevel,
     @DefaultValue Map<String, Key> keys) {
   public AxizSensitiveProperties {
-    keys = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(keys));
+    keys = Collections.unmodifiableMap(new LinkedHashMap<>(keys));
   }
 
   /**

@@ -15,6 +15,8 @@
   <description>HTTP client model: per-client settings, outbound authentication, retry rules, error translation and header propagation</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.http</axiz.module.name>
   </properties>
 

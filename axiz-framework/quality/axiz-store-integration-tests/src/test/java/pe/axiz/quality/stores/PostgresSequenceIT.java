@@ -3,6 +3,8 @@ package pe.axiz.quality.stores;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.r2dbc.pool.ConnectionPool;
+import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
@@ -11,25 +13,35 @@ import java.time.Duration;
 import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Map;
+import org.assertj.core.api.Assertions;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
+import pe.axiz.core.commons.Stages;
 import pe.axiz.core.sequence.ResetPolicy;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.jdbc.SchemaInitializer.Mode;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
+import pe.axiz.spring.sequence.AxizSequenceAutoConfiguration;
 import pe.axiz.spring.sequence.AxizSequenceProperties;
+import pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration;
 import pe.axiz.spring.sequence.ReactiveSequences;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
@@ -45,7 +57,7 @@ class PostgresSequenceIT {
 
   @BeforeAll
   static void start() {
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
     Docker.require();
     POSTGRES.start();
     connections =
@@ -79,7 +91,7 @@ class PostgresSequenceIT {
         new AxizSequenceProperties(
             "r2dbc",
             "axiz_sequence",
-            pe.axiz.spring.foundation.jdbc.SchemaInitializer.Mode.NEVER,
+            Mode.NEVER,
             Map.of(
                 name,
                 new AxizSequenceProperties.Spec(
@@ -87,8 +99,7 @@ class PostgresSequenceIT {
     return new ReactiveSequences(
         properties,
         (key, period, amount) ->
-            pe.axiz.core.commons.Stages.requireValue(
-                store.increment(key, period, amount).toFuture()),
+            Stages.requireValue(store.increment(key, period, amount).toFuture()),
         Clock.systemUTC());
   }
 
@@ -127,23 +138,22 @@ class PostgresSequenceIT {
   @Test
   void nativeCounterPoolCanAdvanceWhileTheBusinessPoolIsCompletelyOccupied() {
     var main =
-        new io.r2dbc.pool.ConnectionPool(
-            io.r2dbc.pool.ConnectionPoolConfiguration.builder(connections)
+        new ConnectionPool(
+            ConnectionPoolConfiguration.builder(connections)
                 .initialSize(0)
                 .maxSize(1)
                 .maxAcquireTime(Duration.ofMillis(300))
                 .build());
     try {
-      new org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner()
+      new ReactiveWebApplicationContextRunner()
           .withConfiguration(
-              org.springframework.boot.autoconfigure.AutoConfigurations.of(
-                  pe.axiz.spring.sequence.AxizSequenceAutoConfiguration.class,
-                  pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration.class))
+              AutoConfigurations.of(
+                  AxizSequenceAutoConfiguration.class, AxizSequenceR2dbcAutoConfiguration.class))
           .withBean(ConnectionFactory.class, () -> main)
           .withPropertyValues("axiz.sequence.sequences.saturated.block-size=1")
           .run(
               context -> {
-                org.assertj.core.api.Assertions.assertThat(context).hasNotFailed();
+                Assertions.assertThat(context).hasNotFailed();
                 var counter = context.getBean(ReactiveSequences.class);
                 var transaction = TransactionalOperator.create(new R2dbcTransactionManager(main));
                 var work =
@@ -183,7 +193,7 @@ class PostgresSequenceIT {
   @Test
   void cancellingBusinessAfterAReservationKeepsThatBlockDurable() {
     var first = sequences("cancelled-business", 5);
-    var reserved = reactor.core.publisher.Sinks.one();
+    var reserved = Sinks.one();
     var business = TransactionalOperator.create(new R2dbcTransactionManager(connections));
     var work =
         first
@@ -198,7 +208,7 @@ class PostgresSequenceIT {
     var running = business.transactional(work).subscribeOn(Schedulers.parallel()).subscribe();
     reserved.asMono().block(T);
     running.dispose();
-    org.awaitility.Awaitility.await()
+    Awaitility.await()
         .atMost(T)
         .until(
             () ->

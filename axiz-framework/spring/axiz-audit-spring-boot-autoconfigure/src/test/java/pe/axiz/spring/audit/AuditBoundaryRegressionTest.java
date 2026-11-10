@@ -8,8 +8,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -22,12 +27,22 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.adapter.outbox.jdbc.Dialect;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
+import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditEvent.Actor;
+import pe.axiz.core.audit.AuditEvent.Outcome;
+import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.outbox.OutboxWriter;
+import pe.axiz.spring.foundation.DispatchBoundary;
 import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
 
 /** Real commits and rollbacks with one connection expose publication at the wrong boundary. */
@@ -140,10 +155,8 @@ class AuditBoundaryRegressionTest {
           .run(
               ctx -> {
                 var transaction =
-                    new org.springframework.transaction.support.TransactionTemplate(
-                        ctx.getBean(PlatformTransactionManager.class));
-                try (var boundary =
-                    ctx.getBean(pe.axiz.spring.foundation.DispatchBoundary.class).open()) {
+                    new TransactionTemplate(ctx.getBean(PlatformTransactionManager.class));
+                try (var boundary = ctx.getBean(DispatchBoundary.class).open()) {
                   transaction.executeWithoutResult(
                       status -> {
                         assertThrows(
@@ -163,9 +176,7 @@ class AuditBoundaryRegressionTest {
                     1,
                     ctx.getBean(JdbcTemplate.class)
                         .queryForObject("SELECT COUNT(*) FROM axiz_outbox", Integer.class));
-                var publisher =
-                    (TransactionalAuditPublisher)
-                        ctx.getBean(pe.axiz.core.audit.AuditPublisher.class);
+                var publisher = (TransactionalAuditPublisher) ctx.getBean(AuditPublisher.class);
                 assertEquals(0, publisher.notConfirmedCount());
                 String envelope =
                     ctx.getBean(JdbcTemplate.class)
@@ -182,8 +193,7 @@ class AuditBoundaryRegressionTest {
       runner(source)
           .run(
               ctx -> {
-                var fallback =
-                    new java.util.concurrent.CopyOnWriteArrayList<pe.axiz.core.audit.AuditEvent>();
+                var fallback = new CopyOnWriteArrayList<AuditEvent>();
                 try (var publisher =
                     new TransactionalAuditPublisher(
                         ctx.getBean(OutboxWriter.class),
@@ -191,26 +201,26 @@ class AuditBoundaryRegressionTest {
                         fallback::add,
                         AuditOutsideTransaction.FAIL,
                         ctx.getBean(PlatformTransactionManager.class),
-                        java.time.Duration.ofMillis(30),
+                        Duration.ofMillis(30),
                         1)) {
                   var event =
-                      new pe.axiz.core.audit.AuditEvent(
+                      new AuditEvent(
                           "saturated",
-                          java.time.Instant.EPOCH,
+                          Instant.EPOCH,
                           "service",
                           "failure",
                           "test",
                           null,
-                          new pe.axiz.core.audit.AuditEvent.Actor(null, null, null),
-                          pe.axiz.core.audit.AuditEvent.Outcome.FAILURE,
+                          new Actor(null, null, null),
+                          Outcome.FAILURE,
                           "original",
                           null,
                           null,
                           null,
-                          java.util.Map.of());
+                          Map.of());
                   try (var held = source.getConnection()) {
                     assertTimeoutPreemptively(
-                        java.time.Duration.ofSeconds(2), () -> publisher.publish(event));
+                        Duration.ofSeconds(2), () -> publisher.publish(event));
                   }
                   assertEquals(1, publisher.notConfirmedCount());
                   assertEquals(1, fallback.size());
@@ -225,22 +235,16 @@ class AuditBoundaryRegressionTest {
   @Test
   void transactionEvidenceKeepsUncertainCommitSeparateFromConfirmedRollback() {
     var trace = new JdbcTransactionOutcome();
-    trace.complete(
-        org.springframework.transaction.support.TransactionSynchronization.STATUS_ROLLED_BACK);
+    trace.complete(TransactionSynchronization.STATUS_ROLLED_BACK);
     assertEquals(
-        pe.axiz.core.commons.TransactionOutcome.ROLLED_BACK,
+        TransactionOutcome.ROLLED_BACK,
         trace.local(new IllegalStateException("integration may have succeeded")));
     assertEquals(
-        pe.axiz.core.commons.TransactionOutcome.UNKNOWN,
-        trace.local(
-            new org.springframework.transaction.TransactionSystemException("commit unknown")));
+        TransactionOutcome.UNKNOWN, trace.local(new TransactionSystemException("commit unknown")));
     assertEquals(
-        pe.axiz.core.commons.TransactionOutcome.UNKNOWN,
-        trace.local(new java.sql.SQLException("connection lost", "08006")));
+        TransactionOutcome.UNKNOWN, trace.local(new SQLException("connection lost", "08006")));
     assertEquals(
-        pe.axiz.core.commons.TransactionOutcome.ROLLED_BACK,
-        new JdbcTransactionOutcome()
-            .local(
-                new org.springframework.transaction.UnexpectedRollbackException("rollback only")));
+        TransactionOutcome.ROLLED_BACK,
+        new JdbcTransactionOutcome().local(new UnexpectedRollbackException("rollback only")));
   }
 }

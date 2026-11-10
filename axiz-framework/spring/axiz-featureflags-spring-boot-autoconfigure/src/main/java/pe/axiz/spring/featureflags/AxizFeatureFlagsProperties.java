@@ -1,5 +1,8 @@
 package pe.axiz.spring.featureflags;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
@@ -16,7 +19,7 @@ import pe.axiz.core.featureflags.FlagDefinition;
 @ConfigurationProperties("axiz.feature-flags")
 public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) {
   public AxizFeatureFlagsProperties {
-    flags = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(flags));
+    flags = Collections.unmodifiableMap(new LinkedHashMap<>(flags));
   }
 
   /**
@@ -37,11 +40,11 @@ public record AxizFeatureFlagsProperties(@DefaultValue Map<String, Flag> flags) 
       @DefaultValue Map<String, Set<String>> rules,
       @Nullable String variant) {
     public Flag {
-      channels = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(channels));
-      java.util.Map<String, Set<String>> copiedRules = new java.util.LinkedHashMap<>();
+      channels = Collections.unmodifiableSet(new LinkedHashSet<>(channels));
+      Map<String, Set<String>> copiedRules = new LinkedHashMap<>();
       rules.forEach((key, values) -> copiedRules.put(key, Set.copyOf(values)));
-      rules = java.util.Collections.unmodifiableMap(copiedRules);
-      tenants = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(tenants));
+      rules = Collections.unmodifiableMap(copiedRules);
+      tenants = Collections.unmodifiableSet(new LinkedHashSet<>(tenants));
     }
 
     FlagDefinition toDefinition(String name) {

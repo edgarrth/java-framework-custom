@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.observation.ObservationRegistry;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -104,10 +106,10 @@ class MessagingTest {
                 "1",
                 "s",
                 "t",
-                java.time.Instant.EPOCH,
+                Instant.EPOCH,
                 null,
                 "application/json",
                 new byte[0],
-                java.util.Map.of("Bad-Name", "x")));
+                Map.of("Bad-Name", "x")));
   }
 }

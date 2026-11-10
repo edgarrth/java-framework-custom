@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.sql.DataSource;
+import org.awaitility.Awaitility;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -35,12 +37,12 @@ class OutboxTest {
 
         @Override
         public byte[] encode(Object payload) {
-          return payload.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+          return payload.toString().getBytes(StandardCharsets.UTF_8);
         }
 
         @Override
         public <T> T decode(byte[] data, Class<T> type) {
-          return type.cast(new String(data, java.nio.charset.StandardCharsets.UTF_8));
+          return type.cast(new String(data, StandardCharsets.UTF_8));
         }
       };
 
@@ -98,7 +100,7 @@ class OutboxTest {
                   });
               // Broker acknowledgement precedes the database mark and transaction commit.
               // Observe both outcomes before asserting that the asynchronous relay completed.
-              org.awaitility.Awaitility.await()
+              Awaitility.await()
                   .atMost(Duration.ofSeconds(5))
                   .untilAsserted(
                       () -> {

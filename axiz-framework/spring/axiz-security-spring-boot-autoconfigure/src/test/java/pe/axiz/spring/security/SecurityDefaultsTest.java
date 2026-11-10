@@ -8,15 +8,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
@@ -27,15 +31,22 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import org.springframework.security.web.server.WebFilterChainProxy;
+import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.ClaimMapping;
 import pe.axiz.core.security.ClaimsMapper;
+import pe.axiz.core.security.InMemoryAsyncRateLimiter;
+import pe.axiz.core.security.IssuerPolicy;
+import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 import reactor.core.publisher.Mono;
 
@@ -77,7 +88,7 @@ class SecurityDefaultsTest {
               var principal =
                   ctx.getBean(ClaimsMapper.class)
                       .map(
-                          java.util.Map.of(
+                          Map.of(
                               "iss",
                               ISSUER,
                               "sub",
@@ -199,8 +210,7 @@ class SecurityDefaultsTest {
   void theReactiveChainHasTheSameDefaults() {
     reactive.run(
         ctx -> {
-          org.springframework.web.server.WebFilter proxy =
-              ctx.getBean(org.springframework.security.web.server.WebFilterChainProxy.class);
+          WebFilter proxy = ctx.getBean(WebFilterChainProxy.class);
           assertEquals(0, exchange(proxy, "/actuator/health"));
           assertEquals(401, exchange(proxy, "/actuator/info"));
           assertEquals(401, exchange(proxy, "/swagger-ui/index.html"));
@@ -210,14 +220,13 @@ class SecurityDefaultsTest {
         .withPropertyValues("axiz.security.public-api-docs=true", "axiz.security.public-info=true")
         .run(
             ctx -> {
-              org.springframework.web.server.WebFilter proxy =
-                  ctx.getBean(org.springframework.security.web.server.WebFilterChainProxy.class);
+              WebFilter proxy = ctx.getBean(WebFilterChainProxy.class);
               assertEquals(0, exchange(proxy, "/v3/api-docs"));
               assertEquals(0, exchange(proxy, "/actuator/info"));
             });
   }
 
-  private static int exchange(org.springframework.web.server.WebFilter proxy, String path) {
+  private static int exchange(WebFilter proxy, String path) {
     MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get(path));
     AtomicInteger reached = new AtomicInteger();
     proxy.filter(exchange, e -> Mono.fromRunnable(reached::incrementAndGet)).block();
@@ -247,9 +256,8 @@ class SecurityDefaultsTest {
 
   @Test
   void aMissingOrEmptySecurityContextIsAnonymousNotAnError() {
-    for (Mono<org.springframework.security.core.context.SecurityContext> context :
-        List.<Mono<org.springframework.security.core.context.SecurityContext>>of(
-            Mono.empty(), Mono.just(new SecurityContextImpl()))) {
+    for (Mono<SecurityContext> context :
+        List.<Mono<SecurityContext>>of(Mono.empty(), Mono.just(new SecurityContextImpl()))) {
       MockServerWebExchange exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/"));
       AtomicInteger calls = new AtomicInteger();
       assertDoesNotThrow(
@@ -318,7 +326,7 @@ class SecurityDefaultsTest {
   void reactiveLimitsApplyToAxizCallersAndAnswer429() {
     RateLimitWebFilter filter =
         new RateLimitWebFilter(
-            new pe.axiz.core.security.InMemoryAsyncRateLimiter(Clock.systemUTC()),
+            new InMemoryAsyncRateLimiter(Clock.systemUTC()),
             oneRequestPerMinute(true),
             new SecurityProblems(null));
     AtomicInteger calls = new AtomicInteger();
@@ -364,8 +372,7 @@ class SecurityDefaultsTest {
           public Decision tryAcquire(String key, long limit, Duration window, boolean failOpen) {
             policy.set(failOpen);
             if (failOpen) return new Decision(true, -1, Duration.ZERO);
-            throw new pe.axiz.core.security.RateLimitUnavailableException(
-                new IllegalStateException("store down"));
+            throw new RateLimitUnavailableException(new IllegalStateException("store down"));
           }
         };
     SecurityContextHolder.getContext().setAuthentication(authentication());
@@ -390,14 +397,13 @@ class SecurityDefaultsTest {
 
   @Test
   void reactiveUnavailableStoreAnswers503BeforeInvokingTheHandler() {
-    pe.axiz.core.security.AsyncRateLimiter down =
+    AsyncRateLimiter down =
         (key, limit, window, open) ->
             open
-                ? java.util.concurrent.CompletableFuture.completedFuture(
+                ? CompletableFuture.completedFuture(
                     new RateLimiter.Decision(true, -1, Duration.ZERO))
-                : java.util.concurrent.CompletableFuture.failedFuture(
-                    new pe.axiz.core.security.RateLimitUnavailableException(
-                        new IllegalStateException("offline")));
+                : CompletableFuture.failedFuture(
+                    new RateLimitUnavailableException(new IllegalStateException("offline")));
     for (boolean open : List.of(false, true)) {
       var exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/payments/1"));
       var calls = new AtomicInteger();
@@ -445,7 +451,7 @@ class SecurityDefaultsTest {
 
   @Test
   void decodersExistOnlyForTrustedIssuersAndAreReused() {
-    pe.axiz.core.security.IssuerPolicy policy =
+    IssuerPolicy policy =
         AxizSecurityAutoConfiguration.issuerPolicy(
             List.of(
                 new AxizSecurityProperties.Issuer(
@@ -498,10 +504,10 @@ class SecurityDefaultsTest {
   void theServletFilterAddsTheCallerOnlyForAxizTokens() throws Exception {
     AtomicReference<RequestMetadata> seen = new AtomicReference<>();
     AtomicReference<String> mdc = new AtomicReference<>();
-    jakarta.servlet.FilterChain chain =
+    FilterChain chain =
         (req, res) -> {
           seen.set(RequestContext.get());
-          mdc.set(org.slf4j.MDC.get("clientId"));
+          mdc.set(MDC.get("clientId"));
         };
     try (RequestContext.Scope ignored =
         RequestContext.open(RequestMetadata.builder("c-1", "r-1").build())) {
@@ -509,11 +515,11 @@ class SecurityDefaultsTest {
       new CallerContextFilter()
           .doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse(), chain);
       assertEquals("user-1", seen.get().subject());
-      org.slf4j.MDC.put("probe", "x");
-      boolean mdcWorks = "x".equals(org.slf4j.MDC.get("probe"));
-      org.slf4j.MDC.remove("probe");
+      MDC.put("probe", "x");
+      boolean mdcWorks = "x".equals(MDC.get("probe"));
+      MDC.remove("probe");
       assertEquals(mdcWorks ? "mobile-app" : null, mdc.get());
-      assertEquals(null, org.slf4j.MDC.get("clientId"), "the MDC entry is removed afterwards");
+      assertEquals(null, MDC.get("clientId"), "the MDC entry is removed afterwards");
 
       SecurityContextHolder.getContext()
           .setAuthentication(new TestingAuthenticationToken("x", "y"));

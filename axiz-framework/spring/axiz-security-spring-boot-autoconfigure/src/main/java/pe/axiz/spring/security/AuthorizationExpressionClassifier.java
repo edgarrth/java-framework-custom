@@ -1,6 +1,7 @@
 package pe.axiz.spring.security;
 
 import java.util.Set;
+import org.springframework.expression.ParseException;
 import org.springframework.expression.spel.SpelNode;
 import org.springframework.expression.spel.ast.BeanReference;
 import org.springframework.expression.spel.ast.BooleanLiteral;
@@ -47,7 +48,7 @@ final class AuthorizationExpressionClassifier {
       return classify(new SpelExpressionParser().parseRaw(expression).getAST(), false);
     } catch (UnsupportedAuthorizationExpression failure) {
       throw failure;
-    } catch (org.springframework.expression.ParseException failure) {
+    } catch (ParseException failure) {
       throw new UnsupportedAuthorizationExpression(
           "Invalid authorization expression: " + expression);
     }

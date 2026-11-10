@@ -7,12 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.lettuce.core.RedisException;
 import io.lettuce.core.SetArgs;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import java.lang.reflect.Proxy;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
+import pe.axiz.test.support.ImmediateAsyncFakes;
 
 class RedisNonceStoreTest {
 
@@ -56,23 +59,17 @@ class RedisNonceStoreTest {
     Set<String> keys = new HashSet<>();
     var a =
         new RedisAsyncNonceStore(
-            pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                io.lettuce.core.api.async.RedisAsyncCommands.class, fake(keys, false)),
-            "sig:");
+            ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(keys, false)), "sig:");
     var b =
         new RedisAsyncNonceStore(
-            pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                io.lettuce.core.api.async.RedisAsyncCommands.class, fake(keys, false)),
-            "sig:");
+            ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(keys, false)), "sig:");
     assertTrue(a.markUsed("nonce", Duration.ofMinutes(1)).toCompletableFuture().join());
     assertFalse(b.markUsed("nonce", Duration.ofMinutes(1)).toCompletableFuture().join());
     var down =
         new RedisAsyncNonceStore(
-            pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                io.lettuce.core.api.async.RedisAsyncCommands.class, fake(keys, true)),
-            "sig:");
+            ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(keys, true)), "sig:");
     assertThrows(
-        java.util.concurrent.CompletionException.class,
+        CompletionException.class,
         () -> down.markUsed("nonce", Duration.ofMinutes(1)).toCompletableFuture().join());
   }
 }

@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
@@ -21,8 +23,7 @@ import pe.axiz.codegen.project.ProjectManifest;
 class AsyncContractSyncTest {
   static String contract() throws Exception {
     try (var in = AsyncContractSyncTest.class.getResourceAsStream("/events.yaml")) {
-      return new String(
-          java.util.Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
+      return new String(Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8);
     }
   }
 
@@ -168,7 +169,7 @@ class AsyncContractSyncTest {
             .replace("id: {type: string}", "id: {type: string}\n        note: {type: string}"));
     Files.createSymbolicLink(
         record.resolveSibling("OrderCreatedV1.java.axiz-new"), directory.resolve("outside"));
-    assertThrows(java.io.IOException.class, () -> new AsyncContractSync().sync(directory));
+    assertThrows(IOException.class, () -> new AsyncContractSync().sync(directory));
     assertFalse(Files.exists(directory.resolve("outside")));
     ProjectManifest m = ProjectManifest.read(directory);
     new ProjectManifest(

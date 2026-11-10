@@ -10,8 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +47,7 @@ class BoundedAsyncDispatcherTest {
               .toCompletableFuture();
       assertTrue(secondEntered.await(2, TimeUnit.SECONDS));
       assertThrows(
-          java.util.concurrent.CompletionException.class,
+          CompletionException.class,
           () ->
               dispatcher
                   .submit(() -> CompletableFuture.completedFuture("overflow"))
@@ -88,13 +91,10 @@ class BoundedAsyncDispatcherTest {
               .toCompletableFuture();
       assertTrue(entered.await(2, TimeUnit.SECONDS));
       assertInstanceOf(
-          java.util.concurrent.TimeoutException.class,
-          assertThrows(
-                  java.util.concurrent.ExecutionException.class,
-                  () -> result.get(2, TimeUnit.SECONDS))
-              .getCause());
+          TimeoutException.class,
+          assertThrows(ExecutionException.class, () -> result.get(2, TimeUnit.SECONDS)).getCause());
       assertThrows(
-          java.util.concurrent.CompletionException.class,
+          CompletionException.class,
           () ->
               dispatcher
                   .submit(() -> CompletableFuture.completedFuture("overflow"))
@@ -141,7 +141,7 @@ class BoundedAsyncDispatcherTest {
       assertTrue(first.isCompletedExceptionally());
       assertFalse(called.get());
       assertThrows(
-          java.util.concurrent.CompletionException.class,
+          CompletionException.class,
           () ->
               dispatcher
                   .submit(() -> CompletableFuture.completedFuture("closed"))
@@ -167,10 +167,7 @@ class BoundedAsyncDispatcherTest {
               .toCompletableFuture();
       assertSame(
           failure,
-          assertThrows(
-                  java.util.concurrent.ExecutionException.class,
-                  () -> result.get(2, TimeUnit.SECONDS))
-              .getCause());
+          assertThrows(ExecutionException.class, () -> result.get(2, TimeUnit.SECONDS)).getCause());
       assertEquals(0, registry.get("axiz.transport.pending").gauge().value());
     }
   }

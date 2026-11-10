@@ -33,12 +33,12 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.PostgresDialect;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.r2dbc.core.DatabaseClient;
+import pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.EncryptedText;
-import pe.axiz.kit.r2dbc.RdsIamPasswordProvider;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.regions.Region;
@@ -154,10 +154,10 @@ class ReaderAndAuditingTest {
 
   @Test
   void theRegionComesFromTheSettingOrTheSdkChain() {
-    assertEquals(Region.SA_EAST_1, IamTokens.region("sa-east-1"));
+    assertEquals(Region.SA_EAST_1, AwsIamTokens.region("sa-east-1"));
     System.setProperty("aws.region", "us-west-2");
-    assertEquals(Region.US_WEST_2, IamTokens.region(null));
-    assertEquals(Region.US_WEST_2, IamTokens.region(" "));
+    assertEquals(Region.US_WEST_2, AwsIamTokens.region(null));
+    assertEquals(Region.US_WEST_2, AwsIamTokens.region(" "));
   }
 
   @Test

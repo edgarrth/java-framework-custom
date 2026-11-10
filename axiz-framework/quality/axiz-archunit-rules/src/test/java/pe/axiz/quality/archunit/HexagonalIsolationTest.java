@@ -8,8 +8,10 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.tools.ToolProvider;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,7 +27,7 @@ class HexagonalIsolationTest {
   JavaClasses compile(Map<String, String> sources) throws Exception {
     Path compilation = Files.createTempDirectory(directory, "compilation-");
     var arguments = new ArrayList<String>();
-    arguments.addAll(java.util.List.of("-d", compilation.toString()));
+    arguments.addAll(List.of("-d", compilation.toString()));
     for (var entry : sources.entrySet()) {
       Path file = compilation.resolve(entry.getKey().replace('.', '/') + ".java");
       Files.createDirectories(file.getParent());
@@ -35,14 +37,14 @@ class HexagonalIsolationTest {
     int code =
         ToolProvider.getSystemJavaCompiler()
             .run(null, null, null, arguments.toArray(String[]::new));
-    org.junit.jupiter.api.Assertions.assertEquals(0, code);
+    Assertions.assertEquals(0, code);
     return new ClassFileImporter().importPath(compilation);
   }
 
   @Test
   void allAdapterAndKitNamespacesAreRejectedEvenBehindOwnedCoreContracts() throws Exception {
     for (String namespace :
-        java.util.List.of(
+        List.of(
             "adapter.audit.kafka",
             "adapter.security.jwt",
             "adapter.sequence.redis",
@@ -81,7 +83,7 @@ class HexagonalIsolationTest {
 
   @Test
   void kitsAreAllowedOnlyInOutboundAdaptersAndRepositories() throws Exception {
-    for (String pkg : java.util.List.of("sample.adapter.out.persistence", "sample.repository")) {
+    for (String pkg : List.of("sample.adapter.out.persistence", "sample.repository")) {
       var classes =
           compile(
               Map.of(

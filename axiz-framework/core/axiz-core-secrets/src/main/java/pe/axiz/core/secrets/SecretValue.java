@@ -1,5 +1,7 @@
 package pe.axiz.core.secrets;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -32,9 +34,9 @@ public final class SecretValue {
   @Override
   public boolean equals(@Nullable Object o) {
     return o instanceof SecretValue s
-        && java.security.MessageDigest.isEqual(
-            new String(value).getBytes(java.nio.charset.StandardCharsets.UTF_8),
-            new String(s.value).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        && MessageDigest.isEqual(
+            new String(value).getBytes(StandardCharsets.UTF_8),
+            new String(s.value).getBytes(StandardCharsets.UTF_8));
   }
 
   @Override

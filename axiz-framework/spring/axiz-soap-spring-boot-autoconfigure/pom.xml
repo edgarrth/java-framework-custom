@@ -15,6 +15,8 @@
   <description>SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.soap</axiz.module.name>
   </properties>
 

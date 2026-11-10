@@ -1,5 +1,7 @@
 package pe.axiz.adapter.messaging.sqs;
 
+import java.net.URI;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import pe.axiz.core.messaging.BoundedPublisher;
@@ -79,7 +81,7 @@ public final class SqsEventPublisher implements EventPublisher, BoundedPublisher
   /** Whether the address selects SQS, including HTTP emulator queue URLs. */
   public static boolean isDestination(String destination) {
     try {
-      java.net.URI uri = java.net.URI.create(destination);
+      URI uri = URI.create(destination);
       String scheme = uri.getScheme();
       String host = uri.getHost();
       if (!("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))
@@ -87,7 +89,7 @@ public final class SqsEventPublisher implements EventPublisher, BoundedPublisher
           || uri.getUserInfo() != null
           || uri.getRawQuery() != null
           || uri.getRawFragment() != null) return false;
-      return host.toLowerCase(java.util.Locale.ROOT).contains("sqs")
+      return host.toLowerCase(Locale.ROOT).contains("sqs")
           || uri.getPath().matches("/[0-9]{12}/[A-Za-z0-9_-]+(?:\\.fifo)?");
     } catch (IllegalArgumentException invalid) {
       return false;

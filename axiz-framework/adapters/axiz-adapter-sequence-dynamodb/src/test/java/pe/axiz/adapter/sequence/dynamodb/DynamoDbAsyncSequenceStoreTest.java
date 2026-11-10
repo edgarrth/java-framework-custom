@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Proxy;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -60,7 +62,7 @@ class DynamoDbAsyncSequenceStoreTest {
   @Test
   void missingAndNonNumericRepliesNeverBecomeAValidSequence() {
     for (Map<String, AttributeValue> attributes :
-        java.util.List.of(
+        List.of(
             Map.<String, AttributeValue>of(),
             Map.of("seqValue", AttributeValue.builder().s("7").build()),
             Map.of("seqValue", AttributeValue.builder().n("not-a-number").build()))) {
@@ -80,7 +82,7 @@ class DynamoDbAsyncSequenceStoreTest {
     var future = new CompletableFuture<UpdateItemResponse>();
     var nativeClient =
         (DynamoDbAsyncClient)
-            java.lang.reflect.Proxy.newProxyInstance(
+            Proxy.newProxyInstance(
                 DynamoDbAsyncClient.class.getClassLoader(),
                 new Class<?>[] {DynamoDbAsyncClient.class},
                 (proxy, method, arguments) -> future);
@@ -91,7 +93,7 @@ class DynamoDbAsyncSequenceStoreTest {
     var expected = new IllegalStateException("backend offline");
     var failed =
         (DynamoDbAsyncClient)
-            java.lang.reflect.Proxy.newProxyInstance(
+            Proxy.newProxyInstance(
                 DynamoDbAsyncClient.class.getClassLoader(),
                 new Class<?>[] {DynamoDbAsyncClient.class},
                 (proxy, method, arguments) -> CompletableFuture.failedFuture(expected));

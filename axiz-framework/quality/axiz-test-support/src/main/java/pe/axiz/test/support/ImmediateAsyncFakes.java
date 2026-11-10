@@ -3,7 +3,9 @@ package pe.axiz.test.support;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
 
@@ -41,8 +43,8 @@ public final class ImmediateAsyncFakes {
                       try {
                         future.join();
                         return null;
-                      } catch (java.util.concurrent.CompletionException failure) {
-                        return java.util.Objects.requireNonNull(failure.getCause()).toString();
+                      } catch (CompletionException failure) {
+                        return Objects.requireNonNull(failure.getCause()).toString();
                       }
                     }
                     // The protocol fake already finished before this future was returned.
@@ -50,7 +52,7 @@ public final class ImmediateAsyncFakes {
                     try {
                       return m.invoke(future, a);
                     } catch (InvocationTargetException error) {
-                      throw java.util.Objects.requireNonNull(error.getCause());
+                      throw Objects.requireNonNull(error.getCause());
                     }
                   });
             }));
@@ -58,7 +60,7 @@ public final class ImmediateAsyncFakes {
 
   private static Object objectMethod(Object proxy, Method method, Object @Nullable [] args) {
     return switch (method.getName()) {
-      case "equals" -> proxy == java.util.Objects.requireNonNull(args)[0];
+      case "equals" -> proxy == Objects.requireNonNull(args)[0];
       case "hashCode" -> System.identityHashCode(proxy);
       case "toString" ->
           "ImmediateAsyncFake@" + Integer.toHexString(System.identityHashCode(proxy));
@@ -74,7 +76,7 @@ public final class ImmediateAsyncFakes {
     try {
       return equivalent.invoke(target, arguments);
     } catch (InvocationTargetException failure) {
-      throw java.util.Objects.requireNonNull(failure.getCause());
+      throw Objects.requireNonNull(failure.getCause());
     }
   }
 }

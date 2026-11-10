@@ -7,11 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -44,8 +47,7 @@ class EdaTest {
     }
 
     @Override
-    protected void doBegin(
-        Object transaction, org.springframework.transaction.TransactionDefinition definition) {}
+    protected void doBegin(Object transaction, TransactionDefinition definition) {}
 
     @Override
     protected void doCommit(DefaultTransactionStatus status) {}
@@ -74,11 +76,11 @@ class EdaTest {
                       "e1",
                       "s",
                       "pe.axiz.cards.card-issued.v1",
-                      java.time.Instant.EPOCH,
+                      Instant.EPOCH,
                       null,
                       "application/json",
                       new byte[0],
-                      java.util.Map.of()));
+                      Map.of()));
               assertTrue(handler.inTx.get());
             });
   }
@@ -122,11 +124,11 @@ class EdaTest {
                         "e",
                         "urn:test",
                         "pe.axiz.cards.card-blocked.v1",
-                        java.time.Instant.EPOCH,
+                        Instant.EPOCH,
                         null,
                         "application/json",
                         new byte[0],
-                        java.util.Map.of())));
+                        Map.of())));
     assertEquals("statement store unreachable", io.getMessage());
     assertThrows(
         IllegalStateException.class,
@@ -137,10 +139,10 @@ class EdaTest {
                     "e",
                     "urn:test",
                     "pe.axiz.cards.card-blocked.v1",
-                    java.time.Instant.EPOCH,
+                    Instant.EPOCH,
                     null,
                     "application/json",
                     new byte[0],
-                    java.util.Map.of())));
+                    Map.of())));
   }
 }

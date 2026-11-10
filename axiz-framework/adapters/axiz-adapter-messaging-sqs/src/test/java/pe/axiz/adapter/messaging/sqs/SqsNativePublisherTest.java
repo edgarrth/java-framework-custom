@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -53,13 +54,13 @@ class SqsNativePublisherTest {
   @Test
   void destinationMatchingSupportsAwsAndEmulatorsAndRejectsMalformedAddresses() {
     for (String address :
-        java.util.List.of(
+        List.of(
             "https://sqs.us-east-1.amazonaws.com/123/q",
             "http://sqs.local/q",
             "http://127.0.0.1:4566/000000000000/queue.fifo",
             "HTTPS://SQS.local/q")) assertTrue(SqsEventPublisher.isDestination(address), address);
     for (String address :
-        java.util.List.of(
+        List.of(
             "kafka:q",
             "arn:aws:sns:x:1:q",
             "https://example.com/queue",

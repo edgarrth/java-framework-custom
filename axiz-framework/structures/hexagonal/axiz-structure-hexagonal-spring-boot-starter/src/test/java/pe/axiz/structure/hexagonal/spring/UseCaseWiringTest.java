@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -136,7 +137,7 @@ class UseCaseWiringTest {
           aggregateId,
           "text/plain",
           new byte[0],
-          java.util.Map.of());
+          Map.of());
     }
   }
 

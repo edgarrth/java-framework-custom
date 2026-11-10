@@ -1,23 +1,33 @@
 package pe.axiz.spring.storage;
 
 import io.micrometer.observation.ObservationRegistry;
+import java.net.URI;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.adapter.storage.s3.S3ObjectStorage;
+import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /** Amazon S3 storage: streaming upload/download, SSE-KMS, presigned URLs with bounded validity. */
@@ -33,7 +43,7 @@ public class AxizStorageS3AutoConfiguration {
 
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   S3Client axizS3Client(Environment env, ObjectProvider<ObservationRegistry> registry) {
     String endpoint =
         env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
@@ -46,7 +56,7 @@ public class AxizStorageS3AutoConfiguration {
 
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   S3Presigner axizS3Presigner(Environment env) {
     S3Presigner.Builder b = S3Presigner.builder();
     String region = env.getProperty("axiz.aws.region");
@@ -56,11 +66,8 @@ public class AxizStorageS3AutoConfiguration {
     String endpoint =
         env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
     if (!endpoint.isBlank()) {
-      b.endpointOverride(java.net.URI.create(endpoint));
-      b.serviceConfiguration(
-          software.amazon.awssdk.services.s3.S3Configuration.builder()
-              .pathStyleAccessEnabled(true)
-              .build());
+      b.endpointOverride(URI.create(endpoint));
+      b.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
     }
     return b.build();
   }
@@ -68,7 +75,7 @@ public class AxizStorageS3AutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnProperty("axiz.storage.bucket")
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   ObjectStorage axizS3ObjectStorage(S3Client s3, S3Presigner presigner, AxizStorageProperties p) {
     String configuredKey = p.kmsKeyId();
     String kms = configuredKey != null && !configuredKey.isBlank() ? configuredKey : null;
@@ -76,16 +83,13 @@ public class AxizStorageS3AutoConfiguration {
         s3, presigner, Objects.requireNonNull(p.bucket()), kms, p.maxPresignTtl());
   }
 
-  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
-  @ConditionalOnMissingBean(pe.axiz.core.storage.AsyncObjectStorage.class)
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  @ConditionalOnMissingBean(AsyncObjectStorage.class)
   @ConditionalOnProperty("axiz.storage.bucket")
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
-    @org.springframework.context.annotation.Conditional(DefaultResourcesNeeded.class)
+    @Conditional(DefaultResourcesNeeded.class)
     AsyncAwsClients axizStorageAsyncAwsResources(AxizAwsCompletionProperties completion) {
       return new AsyncAwsClients(
           "axizStorageAsyncAwsResources", completion.workers(), completion.queueCapacity());
@@ -93,15 +97,14 @@ public class AxizStorageS3AutoConfiguration {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    software.amazon.awssdk.services.s3.S3AsyncClient axizS3AsyncClient(
+    S3AsyncClient axizS3AsyncClient(
         @Qualifier("axizStorageAsyncAwsResources") AsyncAwsClients clients,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
       String endpoint =
           env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
       return clients.configured(
-          software.amazon.awssdk.services.s3.S3AsyncClient.builder()
-              .forcePathStyle(!endpoint.isBlank()),
+          S3AsyncClient.builder().forcePathStyle(!endpoint.isBlank()),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "s3");
@@ -123,21 +126,16 @@ public class AxizStorageS3AutoConfiguration {
           env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
       if (!endpoint.isBlank())
         builder
-            .endpointOverride(java.net.URI.create(endpoint))
-            .serviceConfiguration(
-                software.amazon.awssdk.services.s3.S3Configuration.builder()
-                    .pathStyleAccessEnabled(true)
-                    .build());
+            .endpointOverride(URI.create(endpoint))
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
       return builder.build();
     }
 
     @Bean
-    pe.axiz.core.storage.AsyncObjectStorage axizS3AsyncObjectStorage(
-        software.amazon.awssdk.services.s3.S3AsyncClient s3,
-        S3Presigner presigner,
-        AxizStorageProperties p) {
+    AsyncObjectStorage axizS3AsyncObjectStorage(
+        S3AsyncClient s3, S3Presigner presigner, AxizStorageProperties p) {
       String key = p.kmsKeyId();
-      return new pe.axiz.adapter.storage.s3.S3AsyncObjectStorage(
+      return new S3AsyncObjectStorage(
           s3,
           presigner,
           Objects.requireNonNull(p.bucket()),
@@ -146,13 +144,12 @@ public class AxizStorageS3AutoConfiguration {
     }
   }
 
-  static final class DefaultResourcesNeeded
-      extends org.springframework.boot.autoconfigure.condition.AnyNestedCondition {
+  static final class DefaultResourcesNeeded extends AnyNestedCondition {
     DefaultResourcesNeeded() {
       super(ConfigurationPhase.REGISTER_BEAN);
     }
 
-    @ConditionalOnMissingBean(software.amazon.awssdk.services.s3.S3AsyncClient.class)
+    @ConditionalOnMissingBean(S3AsyncClient.class)
     static class ClientMissing {}
 
     @ConditionalOnMissingBean(S3Presigner.class)

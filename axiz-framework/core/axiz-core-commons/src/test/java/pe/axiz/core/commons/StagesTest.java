@@ -9,16 +9,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 class StagesTest {
   @Test
   void requiredValuesRejectEmptyCompletionsAndPreserveFailuresAndCancellation() {
-    CompletableFuture<@org.jspecify.annotations.Nullable String> success =
-        CompletableFuture.completedFuture("value");
+    CompletableFuture<@Nullable String> success = CompletableFuture.completedFuture("value");
     assertEquals("value", Stages.requireValue(success).toCompletableFuture().join());
-    CompletableFuture<@org.jspecify.annotations.Nullable String> empty =
-        CompletableFuture.completedFuture(null);
+    CompletableFuture<@Nullable String> empty = CompletableFuture.completedFuture(null);
     assertTrue(
         assertThrows(
                     CompletionException.class,
@@ -26,7 +26,7 @@ class StagesTest {
                 .getCause()
             instanceof IllegalStateException);
     var failure = new IllegalArgumentException("native failure");
-    CompletableFuture<@org.jspecify.annotations.Nullable String> failed =
+    CompletableFuture<@Nullable String> failed =
         CompletableFuture.failedFuture(new CompletionException(failure));
     assertSame(
         failure,
@@ -34,8 +34,7 @@ class StagesTest {
                 CompletionException.class,
                 () -> Stages.requireValue(failed).toCompletableFuture().join())
             .getCause());
-    CompletableFuture<@org.jspecify.annotations.Nullable String> pending =
-        new CompletableFuture<>();
+    CompletableFuture<@Nullable String> pending = new CompletableFuture<>();
     assertTrue(Stages.requireValue(pending).toCompletableFuture().cancel(true));
     assertTrue(pending.isCancelled());
   }
@@ -66,7 +65,7 @@ class StagesTest {
     ignored.toCompletableFuture().cancel(true);
     assertTrue(nativeFuture.isCancelled());
     var failure = new IllegalStateException("write failed");
-    var observed = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+    var observed = new AtomicReference<Throwable>();
     Stages.settle(CompletableFuture.failedFuture(failure), observed::set)
         .toCompletableFuture()
         .join();

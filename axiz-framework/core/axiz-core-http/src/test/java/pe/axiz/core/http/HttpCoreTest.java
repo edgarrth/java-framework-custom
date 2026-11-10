@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.ExternalServiceException;
+import pe.axiz.core.sensitive.ObjectMasker;
+import pe.axiz.core.sensitive.OutputChannel;
 
 class HttpCoreTest {
 
@@ -70,8 +73,8 @@ class HttpCoreTest {
     var token = new AccessToken("private-token-material", Instant.now());
     var response =
         new AsyncHttpExchange.Response(200, "application/json", "private-response-material");
-    var masker = pe.axiz.core.sensitive.ObjectMasker.defaults();
-    for (var channel : pe.axiz.core.sensitive.OutputChannel.values()) {
+    var masker = ObjectMasker.defaults();
+    for (var channel : OutputChannel.values()) {
       assertFalse(
           String.valueOf(masker.describe(token, channel)).contains("private-token-material"));
       assertFalse(
@@ -196,12 +199,12 @@ class HttpCoreTest {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
 
     @Override
-    public java.time.ZoneId getZone() {
+    public ZoneId getZone() {
       return ZoneOffset.UTC;
     }
 
     @Override
-    public Clock withZone(java.time.ZoneId zone) {
+    public Clock withZone(ZoneId zone) {
       return this;
     }
 

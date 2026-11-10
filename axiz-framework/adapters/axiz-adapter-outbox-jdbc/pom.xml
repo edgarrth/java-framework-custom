@@ -11,6 +11,8 @@
   <name>axiz :: adapter :: outbox-jdbc</name>
   <description>Outbox persistence and schema resources over JDBC</description>
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.adapter.outbox.jdbc</axiz.module.name>
     <axiz.api.baseline.artifactId>axiz-core-outbox</axiz.api.baseline.artifactId>
   </properties>

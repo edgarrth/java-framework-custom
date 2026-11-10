@@ -4,6 +4,7 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,8 +66,7 @@ public class ProblemErrorController implements ErrorController {
         exception instanceof Throwable t
             ? t
             : new ResponseStatusException(
-                org.springframework.http.HttpStatusCode.valueOf(
-                    status instanceof Integer i ? i : 500));
+                HttpStatusCode.valueOf(status instanceof Integer i ? i : 500));
     Problem problem =
         responder.problem(
             failure,

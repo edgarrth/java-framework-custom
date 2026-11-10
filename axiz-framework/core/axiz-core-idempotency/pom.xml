@@ -15,6 +15,8 @@
   <description>API idempotency: key and fingerprint, stored responses, conflict detection</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <!-- M10: measured locally; floor of branch 161/204 and detected mutations 196/254. -->
     <axiz.coverage.branch>0.78</axiz.coverage.branch>
     <axiz.mutation.threshold>77</axiz.mutation.threshold>

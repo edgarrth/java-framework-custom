@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
@@ -61,12 +62,12 @@ class SecretsTest {
     Clock clock =
         new Clock() {
           @Override
-          public java.time.ZoneId getZone() {
+          public ZoneId getZone() {
             return ZoneOffset.UTC;
           }
 
           @Override
-          public Clock withZone(java.time.ZoneId zone) {
+          public Clock withZone(ZoneId zone) {
             return this;
           }
 

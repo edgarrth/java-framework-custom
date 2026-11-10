@@ -19,6 +19,7 @@ import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;
 import pe.axiz.core.lock.LockLostException;
 import pe.axiz.spring.test.BlockHoundExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -88,7 +89,7 @@ class ReactiveLocksTest {
                     Duration.ofSeconds(1),
                     Duration.ZERO,
                     () ->
-                        reactor.core.publisher.Flux.concat(
+                        Flux.concat(
                                 Mono.just("first"), Mono.error(new IllegalStateException("late")))
                             .doOnError(failure -> completed.set(true)))
                 .block(Duration.ofSeconds(2)));

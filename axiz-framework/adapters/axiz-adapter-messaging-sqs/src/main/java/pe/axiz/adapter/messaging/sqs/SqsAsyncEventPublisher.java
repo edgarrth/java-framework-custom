@@ -1,6 +1,7 @@
 package pe.axiz.adapter.messaging.sqs;
 
 import java.util.Objects;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.messaging.AsyncEventPublisher;
@@ -47,8 +48,7 @@ public final class SqsAsyncEventPublisher implements AsyncEventPublisher, Bounde
             Stages.call(() -> sqs.sendMessage(SqsEventPublisher.request(destination, event))),
             answer -> new PublishResult(event.id(), destination, answer.messageId())),
         failure -> {
-          if (failure instanceof java.util.concurrent.CancellationException cancelled)
-            throw cancelled;
+          if (failure instanceof CancellationException cancelled) throw cancelled;
           if (failure instanceof Error fatal) throw fatal;
           throw new PublishException(
               "Event " + event.id() + " not accepted by " + destination, failure);

@@ -4,6 +4,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import pe.axiz.core.cache.LocalByteCache;
 
 /** L1 on Caffeine when it is on the classpath (the starter brings it). */
 @AutoConfiguration
@@ -12,7 +13,7 @@ import org.springframework.context.annotation.Bean;
 public class AxizCacheCaffeineAutoConfiguration {
 
   @Bean
-  pe.axiz.core.cache.LocalByteCache axizL1Cache(AxizCacheProperties p) {
+  LocalByteCache axizL1Cache(AxizCacheProperties p) {
     return new CaffeineByteCache(p.l1().maxEntries());
   }
 }

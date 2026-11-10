@@ -1,45 +1,90 @@
 package pe.axiz.quality.stores;
 
+import io.micrometer.observation.ObservationRegistry;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
+import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
+import pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock;
+import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
+import pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore;
+import pe.axiz.core.idempotency.IdempotencyRecord;
+import pe.axiz.core.idempotency.IdempotencyRecord.Status;
+import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore;
+import pe.axiz.core.sequence.AsyncSequenceGenerator;
+import pe.axiz.core.sequence.ResetPolicy;
+import pe.axiz.core.sequence.SequenceFormat;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.test.BlockHoundExtension;
+import pe.axiz.test.contracts.AsyncInboxStoreContract;
+import pe.axiz.test.contracts.AsyncInboxStoreContract.Backend;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
 import pe.axiz.test.contracts.InboxStoreContract;
+import pe.axiz.test.support.MutableClock;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.test.StepVerifier;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 
 /** Idempotency and inbox contracts on DynamoDB (LocalStack): conditional writes and ALL_OLD. */
-@org.junit.jupiter.api.extension.ExtendWith(pe.axiz.spring.test.BlockHoundExtension.class)
+@ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoDbStoresIT {
 
   private static final LocalStackContainer LOCALSTACK =
       new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
 
   private static DynamoDbClient dynamo;
-  private static pe.axiz.adapter.observability.aws.AsyncAwsClients inboxResources;
-  private static software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient nativeDynamo;
+  private static AsyncAwsClients inboxResources;
+  private static DynamoDbAsyncClient nativeDynamo;
   private static NettyLifecycleProbe inboxLifecycle;
 
   @BeforeAll
   static void start() {
     Docker.require();
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
     LOCALSTACK.start();
     dynamo =
         DynamoDbClient.builder()
@@ -57,15 +102,15 @@ class LocalStackDynamoDbStoresIT {
     table("axiz-locks");
     inboxLifecycle = new NettyLifecycleProbe();
     inboxResources =
-        new pe.axiz.adapter.observability.aws.AsyncAwsClients(
+        new AsyncAwsClients(
             StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey())),
-            java.time.Clock.systemUTC(),
-            java.time.Duration.ofSeconds(1));
+            Clock.systemUTC(),
+            Duration.ofSeconds(1));
     nativeDynamo =
         inboxResources.configured(
-            software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.builder(),
-            io.micrometer.observation.ObservationRegistry.NOOP,
+            DynamoDbAsyncClient.builder(),
+            ObservationRegistry.NOOP,
             key ->
                 switch (key) {
                   case "axiz.aws.region" -> LOCALSTACK.getRegion();
@@ -85,12 +130,11 @@ class LocalStackDynamoDbStoresIT {
     LOCALSTACK.stop();
     if (inboxLifecycle != null) {
       inboxLifecycle.close();
-      org.junit.jupiter.api.Assertions.assertTrue(
-          inboxLifecycle.errors.isEmpty(), inboxLifecycle.errors.toString());
+      Assertions.assertTrue(inboxLifecycle.errors.isEmpty(), inboxLifecycle.errors.toString());
     }
-    org.junit.jupiter.api.Assertions.assertTrue(
-        pe.axiz.spring.test.BlockHoundExtension.detectedBlockingCalls().isEmpty(),
-        () -> pe.axiz.spring.test.BlockHoundExtension.detectedBlockingCalls().toString());
+    Assertions.assertTrue(
+        BlockHoundExtension.detectedBlockingCalls().isEmpty(),
+        () -> BlockHoundExtension.detectedBlockingCalls().toString());
   }
 
   private static void table(String name) {
@@ -137,48 +181,45 @@ class LocalStackDynamoDbStoresIT {
   @TestFactory
   Stream<DynamicTest> nativeInboxContract() {
     var backend =
-        new pe.axiz.test.contracts.AsyncInboxStoreContract.Backend() {
-          public pe.axiz.core.inbox.AsyncInboxStore create() {
-            return new pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore(
-                nativeDynamo, "axiz-inbox");
+        new Backend() {
+          public AsyncInboxStore create() {
+            return new DynamoDbAsyncInboxStore(nativeDynamo, "axiz-inbox");
           }
 
           public boolean purgesOnDemand() {
             return false;
           }
         };
-    return pe.axiz.test.contracts.AsyncInboxStoreContract.checks(
-            backend, command -> reactor.core.scheduler.Schedulers.parallel().schedule(command))
+    return AsyncInboxStoreContract.checks(
+            backend, command -> Schedulers.parallel().schedule(command))
         .stream()
         .map(check -> DynamicTest.dynamicTest("native: " + check.name(), check::run));
   }
 
   @Test
   void nativeSequencesReserveSharedRecordsWithoutBlockingDuringCredentialRefresh() {
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
-    var refreshes = new java.util.concurrent.atomic.AtomicInteger();
-    java.util.Set<String> providerThreads = java.util.concurrent.ConcurrentHashMap.newKeySet();
-    software.amazon.awssdk.auth.credentials.AwsCredentialsProvider credentials =
+    ReactiveInfrastructureBootstrap.initialize();
+    var refreshes = new AtomicInteger();
+    Set<String> providerThreads = ConcurrentHashMap.newKeySet();
+    AwsCredentialsProvider credentials =
         () -> {
           providerThreads.add(Thread.currentThread().getName());
           refreshes.incrementAndGet();
-          java.util.concurrent.locks.LockSupport.parkNanos(
-              java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(2));
-          return software.amazon.awssdk.auth.credentials.AwsSessionCredentials.builder()
+          LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
+          return AwsSessionCredentials.builder()
               .accessKeyId(LOCALSTACK.getAccessKey())
               .secretAccessKey(LOCALSTACK.getSecretKey())
               .sessionToken("test")
-              .expirationTime(java.time.Instant.now().plusSeconds(30))
+              .expirationTime(Instant.now().plusSeconds(30))
               .build();
         };
     var lifecycle = new NettyLifecycleProbe();
     try (var resources =
-            new pe.axiz.adapter.observability.aws.AsyncAwsClients(
-                credentials, java.time.Clock.systemUTC(), java.time.Duration.ofMillis(25));
+            new AsyncAwsClients(credentials, Clock.systemUTC(), Duration.ofMillis(25));
         var async =
             resources.configured(
-                software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.builder(),
-                io.micrometer.observation.ObservationRegistry.NOOP,
+                DynamoDbAsyncClient.builder(),
+                ObservationRegistry.NOOP,
                 key ->
                     switch (key) {
                       case "axiz.aws.region" -> LOCALSTACK.getRegion();
@@ -188,184 +229,140 @@ class LocalStackDynamoDbStoresIT {
                       default -> null;
                     },
                 "dynamodb")) {
-      var store =
-          new pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore(async, "axiz-sequence");
-      String name = "native-" + java.util.UUID.randomUUID();
-      var format =
-          new pe.axiz.core.sequence.SequenceFormat(
-              "", 8, pe.axiz.core.sequence.ResetPolicy.NEVER, "-", java.time.ZoneOffset.UTC);
-      var first =
-          new pe.axiz.core.sequence.AsyncSequenceGenerator(
-              name, format, store, 5, java.time.Clock.systemUTC());
-      var second =
-          new pe.axiz.core.sequence.AsyncSequenceGenerator(
-              name, format, store, 5, java.time.Clock.systemUTC());
+      var store = new DynamoDbAsyncSequenceStore(async, "axiz-sequence");
+      String name = "native-" + UUID.randomUUID();
+      var format = new SequenceFormat("", 8, ResetPolicy.NEVER, "-", ZoneOffset.UTC);
+      var first = new AsyncSequenceGenerator(name, format, store, 5, Clock.systemUTC());
+      var second = new AsyncSequenceGenerator(name, format, store, 5, Clock.systemUTC());
       var results =
-          reactor.core.publisher.Flux.range(0, 100)
+          Flux.range(0, 100)
               .flatMap(
                   index ->
-                      reactor.core.publisher.Mono.fromCompletionStage(
-                          () -> (index % 2 == 0 ? first : second).nextValue()),
+                      Mono.fromCompletionStage(() -> (index % 2 == 0 ? first : second).nextValue()),
                   16)
               .collectList()
-              .subscribeOn(reactor.core.scheduler.Schedulers.parallel());
-      var greatest = new java.util.concurrent.atomic.AtomicLong();
-      reactor.test.StepVerifier.create(results)
+              .subscribeOn(Schedulers.parallel());
+      var greatest = new AtomicLong();
+      StepVerifier.create(results)
           .assertNext(
               values -> {
-                org.junit.jupiter.api.Assertions.assertEquals(
-                    100, new java.util.HashSet<>(values).size());
-                org.junit.jupiter.api.Assertions.assertTrue(
-                    values.stream().allMatch(value -> value > 0));
+                Assertions.assertEquals(100, new HashSet<>(values).size());
+                Assertions.assertTrue(values.stream().allMatch(value -> value > 0));
                 greatest.set(values.stream().mapToLong(Long::longValue).max().orElseThrow());
               })
           .expectComplete()
-          .verify(java.time.Duration.ofSeconds(20));
-      long last =
-          new pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore(dynamo, "axiz-sequence")
-              .increment(name, "", 1);
-      org.junit.jupiter.api.Assertions.assertTrue(last > greatest.get());
+          .verify(Duration.ofSeconds(20));
+      long last = new DynamoDbSequenceStore(dynamo, "axiz-sequence").increment(name, "", 1);
+      Assertions.assertTrue(last > greatest.get());
       // Force expiry of the short-lived native pool before allocating again.
-      java.util.concurrent.locks.LockSupport.parkNanos(
-          java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(150));
-      reactor.test.StepVerifier.create(
-              reactor.core.publisher.Mono.fromCompletionStage(() -> store.increment(name, "", 1))
-                  .subscribeOn(reactor.core.scheduler.Schedulers.parallel()))
+      LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(150));
+      StepVerifier.create(
+              Mono.fromCompletionStage(() -> store.increment(name, "", 1))
+                  .subscribeOn(Schedulers.parallel()))
           .expectNext(last + 1)
           .verifyComplete();
-      org.awaitility.Awaitility.await()
-          .atMost(java.time.Duration.ofSeconds(3))
-          .until(() -> refreshes.get() > 1);
-      org.junit.jupiter.api.Assertions.assertTrue(
+      Awaitility.await().atMost(Duration.ofSeconds(3)).until(() -> refreshes.get() > 1);
+      Assertions.assertTrue(
           providerThreads.stream()
               .noneMatch(
                   thread ->
                       thread.startsWith("parallel-")
                           || thread.startsWith("axiz-aws-future-")
                           || thread.startsWith("aws-java-sdk-NettyEventLoop")));
-      var missing =
-          new pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore(
-              async, "nonexistent-" + java.util.UUID.randomUUID());
-      reactor.test.StepVerifier.create(
-              reactor.core.publisher.Mono.fromCompletionStage(() -> missing.increment(name, "", 1))
-                  .subscribeOn(reactor.core.scheduler.Schedulers.parallel()))
-          .expectError(
-              software.amazon.awssdk.services.dynamodb.model.ResourceNotFoundException.class)
-          .verify(java.time.Duration.ofSeconds(10));
+      var missing = new DynamoDbAsyncSequenceStore(async, "nonexistent-" + UUID.randomUUID());
+      StepVerifier.create(
+              Mono.fromCompletionStage(() -> missing.increment(name, "", 1))
+                  .subscribeOn(Schedulers.parallel()))
+          .expectError(ResourceNotFoundException.class)
+          .verify(Duration.ofSeconds(10));
     } finally {
       lifecycle.close();
     }
-    org.junit.jupiter.api.Assertions.assertTrue(
+    Assertions.assertTrue(
         lifecycle.errors.isEmpty(), () -> "SDK lifecycle errors: " + lifecycle.errors);
   }
 
   @Test
   void nativeIdempotencyPreservesOwnershipAndFullResponseInRealDynamo() {
-    var now = java.time.Instant.now();
+    var now = Instant.now();
     var store =
-        new pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(
-            nativeDynamo, "axiz-idempotency", java.time.Clock.systemUTC());
-    var key = "native-" + java.util.UUID.randomUUID();
+        new DynamoDbAsyncIdempotencyStore(nativeDynamo, "axiz-idempotency", Clock.systemUTC());
+    var key = "native-" + UUID.randomUUID();
     var record =
-        new pe.axiz.core.idempotency.IdempotencyRecord(
-            key,
-            "hash",
-            pe.axiz.core.idempotency.IdempotencyRecord.Status.IN_PROGRESS,
-            "owner",
-            null,
-            now.plusSeconds(60));
-    var response =
-        new pe.axiz.core.idempotency.StoredResponse(
-            201, java.util.Map.of("Location", "/payments/1"), new byte[] {0, 127});
-    reactor.test.StepVerifier.create(nativeCall(() -> store.tryStart(record)))
+        new IdempotencyRecord(key, "hash", Status.IN_PROGRESS, "owner", null, now.plusSeconds(60));
+    var response = new StoredResponse(201, Map.of("Location", "/payments/1"), new byte[] {0, 127});
+    StepVerifier.create(nativeCall(() -> store.tryStart(record)))
         .expectNext(true)
         .expectComplete()
-        .verify(java.time.Duration.ofSeconds(10));
-    reactor.test.StepVerifier.create(
+        .verify(Duration.ofSeconds(10));
+    StepVerifier.create(
             nativeCall(() -> store.complete(key, "wrong", response, now.plusSeconds(60))))
         .expectNext(false)
         .expectComplete()
-        .verify(java.time.Duration.ofSeconds(10));
-    reactor.test.StepVerifier.create(
+        .verify(Duration.ofSeconds(10));
+    StepVerifier.create(
             nativeCall(() -> store.complete(key, "owner", response, now.plusSeconds(60)))
-                .doOnNext(completed -> org.junit.jupiter.api.Assertions.assertTrue(completed))
+                .doOnNext(completed -> Assertions.assertTrue(completed))
                 .then(
                     nativeCall(
                         () ->
-                            new pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(
-                                    nativeDynamo, "axiz-idempotency", java.time.Clock.systemUTC())
+                            new DynamoDbAsyncIdempotencyStore(
+                                    nativeDynamo, "axiz-idempotency", Clock.systemUTC())
                                 .find(key, now))))
-        .assertNext(
-            found ->
-                org.junit.jupiter.api.Assertions.assertEquals(
-                    response, found.orElseThrow().response()))
+        .assertNext(found -> Assertions.assertEquals(response, found.orElseThrow().response()))
         .expectComplete()
-        .verify(java.time.Duration.ofSeconds(10));
-    reactor.test.StepVerifier.create(nativeCall(() -> store.tryStart(record)))
+        .verify(Duration.ofSeconds(10));
+    StepVerifier.create(nativeCall(() -> store.tryStart(record)))
         .expectNext(false)
         .expectComplete()
-        .verify(java.time.Duration.ofSeconds(10));
+        .verify(Duration.ofSeconds(10));
   }
 
   @Test
   void nativeLocksFenceExpiredOwnersOnTheActualConditionalWrites() {
-    var clock =
-        new pe.axiz.test.support.MutableClock(java.time.Instant.now(), java.time.ZoneOffset.UTC);
-    var locks =
-        new pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock(
-            nativeDynamo, "axiz-locks", clock);
-    reactor.test.StepVerifier.create(
-            nativeCall(() -> locks.tryAcquire("reactive-account", java.time.Duration.ofSeconds(1)))
+    var clock = new MutableClock(Instant.now(), ZoneOffset.UTC);
+    var locks = new DynamoDbAsyncDistributedLock(nativeDynamo, "axiz-locks", clock);
+    StepVerifier.create(
+            nativeCall(() -> locks.tryAcquire("reactive-account", Duration.ofSeconds(1)))
                 .flatMap(
                     found -> {
                       var old = found.orElseThrow();
-                      return nativeCall(() -> old.renew(java.time.Duration.ofSeconds(1)))
-                          .doOnNext(renewed -> org.junit.jupiter.api.Assertions.assertTrue(renewed))
+                      return nativeCall(() -> old.renew(Duration.ofSeconds(1)))
+                          .doOnNext(renewed -> Assertions.assertTrue(renewed))
                           .then(
                               nativeCall(
                                   () ->
-                                      locks.tryAcquire(
-                                          "reactive-account", java.time.Duration.ofSeconds(1))))
-                          .doOnNext(
-                              busy -> org.junit.jupiter.api.Assertions.assertTrue(busy.isEmpty()))
+                                      locks.tryAcquire("reactive-account", Duration.ofSeconds(1))))
+                          .doOnNext(busy -> Assertions.assertTrue(busy.isEmpty()))
                           .then(
-                              reactor.core.publisher.Mono.defer(
+                              Mono.defer(
                                   () -> {
-                                    clock.advance(java.time.Duration.ofSeconds(2));
+                                    clock.advance(Duration.ofSeconds(2));
                                     return nativeCall(
                                         () ->
                                             locks.tryAcquire(
-                                                "reactive-account",
-                                                java.time.Duration.ofSeconds(10)));
+                                                "reactive-account", Duration.ofSeconds(10)));
                                   }))
                           .flatMap(
                               acquired -> {
                                 var current = acquired.orElseThrow();
-                                return nativeCall(() -> old.renew(java.time.Duration.ofSeconds(1)))
-                                    .doOnNext(
-                                        renewed ->
-                                            org.junit.jupiter.api.Assertions.assertFalse(renewed))
+                                return nativeCall(() -> old.renew(Duration.ofSeconds(1)))
+                                    .doOnNext(renewed -> Assertions.assertFalse(renewed))
                                     .then(nativeCall(old::release))
                                     .then(
                                         nativeCall(
                                             () ->
                                                 locks.tryAcquire(
-                                                    "reactive-account",
-                                                    java.time.Duration.ofSeconds(1))))
-                                    .doOnNext(
-                                        busy ->
-                                            org.junit.jupiter.api.Assertions.assertTrue(
-                                                busy.isEmpty()))
+                                                    "reactive-account", Duration.ofSeconds(1))))
+                                    .doOnNext(busy -> Assertions.assertTrue(busy.isEmpty()))
                                     .then(nativeCall(current::release));
                               });
                     }))
         .expectComplete()
-        .verify(java.time.Duration.ofSeconds(10));
+        .verify(Duration.ofSeconds(10));
   }
 
-  private static <T> reactor.core.publisher.Mono<T> nativeCall(
-      java.util.function.Supplier<java.util.concurrent.CompletionStage<T>> operation) {
-    return reactor.core.publisher.Mono.fromCompletionStage(operation)
-        .subscribeOn(reactor.core.scheduler.Schedulers.parallel());
+  private static <T> Mono<T> nativeCall(Supplier<CompletionStage<T>> operation) {
+    return Mono.fromCompletionStage(operation).subscribeOn(Schedulers.parallel());
   }
 }

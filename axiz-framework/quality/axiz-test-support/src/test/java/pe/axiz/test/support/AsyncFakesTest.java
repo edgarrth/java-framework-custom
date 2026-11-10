@@ -7,6 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -14,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.PublishResult;
@@ -77,7 +81,7 @@ class AsyncFakesTest {
     RedisApi client = ImmediateAsyncFakes.adapt(RedisApi.class, new Protocol());
     RedisFuture success = client.get("one");
     assertTrue(success.await(1, TimeUnit.MILLISECONDS));
-    org.junit.jupiter.api.Assertions.assertNull(success.getError());
+    Assertions.assertNull(success.getError());
     assertEquals("value:one!", success.thenApply(v -> v + "!").toCompletableFuture().get());
     assertTrue(success.equals(success));
     assertEquals(System.identityHashCode(success), success.hashCode());
@@ -94,7 +98,7 @@ class AsyncFakesTest {
 
   @Test
   void inaccessibleFakeMethodsAreRejectedInsteadOfIgnoringTheProtocol() {
-    var client = ImmediateAsyncFakes.adapt(BooleanApi.class, java.util.Collections.emptyIterator());
+    var client = ImmediateAsyncFakes.adapt(BooleanApi.class, Collections.emptyIterator());
     assertThrows(IllegalArgumentException.class, client::hasNext);
   }
 
@@ -102,14 +106,7 @@ class AsyncFakesTest {
   void publisherProbePreservesAcknowledgementAndEveryKindOfFailure() {
     var event =
         new EventEnvelope(
-            "e",
-            "urn:test",
-            "type",
-            java.time.Instant.EPOCH,
-            null,
-            "text/plain",
-            new byte[0],
-            java.util.Map.of());
+            "e", "urn:test", "type", Instant.EPOCH, null, "text/plain", new byte[0], Map.of());
     var acknowledged = new PublishResult("e", "physical", "receipt");
     var success =
         new AsyncPublisherProbe(

@@ -15,6 +15,8 @@
   <description>Money value object with ISO 4217 currencies, rounding and safe arithmetic; exchange rate port</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <!-- M10: measured locally; floor of branch 60/66 and detected mutations 104/106. -->
     <axiz.coverage.branch>0.90</axiz.coverage.branch>
     <axiz.mutation.threshold>98</axiz.mutation.threshold>

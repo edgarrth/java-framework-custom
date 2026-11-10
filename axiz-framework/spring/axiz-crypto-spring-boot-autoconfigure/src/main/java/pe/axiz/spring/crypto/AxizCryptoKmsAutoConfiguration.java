@@ -23,6 +23,7 @@ import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 
@@ -43,7 +44,7 @@ public class AxizCryptoKmsAutoConfiguration {
    */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   KmsClient axizKmsClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
     return AwsClients.configured(
         KmsClient.builder(),
@@ -54,14 +55,14 @@ public class AxizCryptoKmsAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   DataKeyProvider axizKmsDataKeyProvider(KmsClient kms, AxizCryptoProperties p) {
     return new KmsDataKeyProvider(kms, Objects.requireNonNull(p.kms().keyId()));
   }
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   EnvelopeEncryptor axizEnvelopeEncryptor(
       DataKeyProvider keys, AxizCryptoProperties p, ObjectProvider<Clock> clock) {
     return new EnvelopeEncryptor(

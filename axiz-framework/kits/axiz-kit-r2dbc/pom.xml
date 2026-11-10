@@ -12,9 +12,11 @@
 
   <artifactId>axiz-kit-r2dbc</artifactId>
   <name>axiz :: kit :: r2dbc</name>
-  <description>Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions, IAM authentication tokens</description>
+  <description>Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions and a neutral password-provider contract</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
     <axiz.api.baseline.artifactId>axiz-core-persistence-r2dbc</axiz.api.baseline.artifactId>
 
@@ -34,12 +36,6 @@
     <dependency>
       <groupId>io.projectreactor</groupId>
       <artifactId>reactor-core</artifactId>
-    </dependency>
-    <!-- IAM authentication tokens for Aurora; only needed when axiz.r2dbc.iam.enabled -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>rds</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>

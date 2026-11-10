@@ -10,15 +10,30 @@ import io.micrometer.observation.ObservationHandler;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.observation.transport.Kind;
 import io.micrometer.observation.transport.SenderContext;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import pe.axiz.core.observability.AxizAttributes;
+import software.amazon.awssdk.core.ClientType;
 import software.amazon.awssdk.core.SdkRequest;
+import software.amazon.awssdk.core.SdkResponse;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.core.interceptor.Context;
 import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.interceptor.InterceptorContext;
 import software.amazon.awssdk.core.interceptor.SdkExecutionAttribute;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.http.SdkHttpMethod;
+import software.amazon.awssdk.http.SdkHttpRequest;
 import software.amazon.awssdk.http.SdkHttpResponse;
+import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 
 class ObservationExecutionInterceptorTest {
   @Test
@@ -27,11 +42,10 @@ class ObservationExecutionInterceptorTest {
     var registry = recording(stopped);
     var interceptor = new ObservationExecutionInterceptor(registry);
     var attributes = call("SecretsManager", "GetSecretValue");
-    attributes.putAttribute(
-        SdkExecutionAttribute.CLIENT_TYPE, software.amazon.awssdk.core.ClientType.ASYNC);
+    attributes.putAttribute(SdkExecutionAttribute.CLIENT_TYPE, ClientType.ASYNC);
     var parent = Observation.start("request", registry);
     try (var parentScope = parent.openScope();
-        var worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+        var worker = Executors.newSingleThreadExecutor()) {
       interceptor.beforeExecution(() -> (SdkRequest) null, attributes);
       assertSame(
           parent, registry.getCurrentObservation(), "SDK submission must restore its caller");
@@ -51,7 +65,7 @@ class ObservationExecutionInterceptorTest {
                 }
                 assertNull(registry.getCurrentObservation());
               })
-          .get(5, java.util.concurrent.TimeUnit.SECONDS);
+          .get(5, TimeUnit.SECONDS);
       assertSame(parent, registry.getCurrentObservation());
       assertSame(parent, stopped.getFirst().getParentObservation());
     } finally {
@@ -66,12 +80,12 @@ class ObservationExecutionInterceptorTest {
     registry
         .observationConfig()
         .observationHandler(
-            new ObservationHandler<SenderContext<java.util.Map<String, String>>>() {
+            new ObservationHandler<SenderContext<Map<String, String>>>() {
               public boolean supportsContext(Observation.Context context) {
                 return context instanceof SenderContext<?>;
               }
 
-              public void onStart(SenderContext<java.util.Map<String, String>> context) {
+              public void onStart(SenderContext<Map<String, String>> context) {
                 assertEquals(Kind.CLIENT, context.getKind());
                 assertEquals("S3", context.getRemoteServiceName());
                 context
@@ -85,22 +99,17 @@ class ObservationExecutionInterceptorTest {
     var interceptor = new ObservationExecutionInterceptor(registry);
     var first = call("S3", "GetObject");
     var second = call("S3", "PutObject");
-    first.putAttribute(
-        SdkExecutionAttribute.CLIENT_TYPE, software.amazon.awssdk.core.ClientType.ASYNC);
-    second.putAttribute(
-        SdkExecutionAttribute.CLIENT_TYPE, software.amazon.awssdk.core.ClientType.ASYNC);
+    first.putAttribute(SdkExecutionAttribute.CLIENT_TYPE, ClientType.ASYNC);
+    second.putAttribute(SdkExecutionAttribute.CLIENT_TYPE, ClientType.ASYNC);
     var http =
-        software.amazon.awssdk.http.SdkHttpRequest.builder()
+        SdkHttpRequest.builder()
             .protocol("https")
             .host("s3.example.test")
-            .method(software.amazon.awssdk.http.SdkHttpMethod.GET)
+            .method(SdkHttpMethod.GET)
             .build();
     var request =
-        software.amazon.awssdk.core.interceptor.InterceptorContext.builder()
-            .request(
-                software.amazon.awssdk.services.dynamodb.model.GetItemRequest.builder()
-                    .tableName("test")
-                    .build())
+        InterceptorContext.builder()
+            .request(GetItemRequest.builder().tableName("test").build())
             .httpRequest(http)
             .build();
     assertSame(http, interceptor.modifyHttpRequest(request, first));
@@ -159,7 +168,7 @@ class ObservationExecutionInterceptorTest {
       }
 
       @Override
-      public software.amazon.awssdk.core.SdkResponse response() {
+      public SdkResponse response() {
         return null;
       }
 
@@ -169,30 +178,28 @@ class ObservationExecutionInterceptorTest {
       }
 
       @Override
-      public software.amazon.awssdk.http.SdkHttpRequest httpRequest() {
+      public SdkHttpRequest httpRequest() {
         return null;
       }
 
       @Override
-      public java.util.Optional<org.reactivestreams.Publisher<java.nio.ByteBuffer>>
-          responsePublisher() {
-        return java.util.Optional.empty();
+      public Optional<Publisher<ByteBuffer>> responsePublisher() {
+        return Optional.empty();
       }
 
       @Override
-      public java.util.Optional<java.io.InputStream> responseBody() {
-        return java.util.Optional.empty();
+      public Optional<InputStream> responseBody() {
+        return Optional.empty();
       }
 
       @Override
-      public java.util.Optional<software.amazon.awssdk.core.sync.RequestBody> requestBody() {
-        return java.util.Optional.empty();
+      public Optional<RequestBody> requestBody() {
+        return Optional.empty();
       }
 
       @Override
-      public java.util.Optional<software.amazon.awssdk.core.async.AsyncRequestBody>
-          asyncRequestBody() {
-        return java.util.Optional.empty();
+      public Optional<AsyncRequestBody> asyncRequestBody() {
+        return Optional.empty();
       }
     };
   }
@@ -281,18 +288,18 @@ class ObservationExecutionInterceptorTest {
           }
 
           @Override
-          public java.util.Optional<software.amazon.awssdk.http.SdkHttpRequest> httpRequest() {
-            return java.util.Optional.empty();
+          public Optional<SdkHttpRequest> httpRequest() {
+            return Optional.empty();
           }
 
           @Override
-          public java.util.Optional<software.amazon.awssdk.http.SdkHttpResponse> httpResponse() {
-            return java.util.Optional.empty();
+          public Optional<SdkHttpResponse> httpResponse() {
+            return Optional.empty();
           }
 
           @Override
-          public java.util.Optional<software.amazon.awssdk.core.SdkResponse> response() {
-            return java.util.Optional.empty();
+          public Optional<SdkResponse> response() {
+            return Optional.empty();
           }
         },
         attributes);

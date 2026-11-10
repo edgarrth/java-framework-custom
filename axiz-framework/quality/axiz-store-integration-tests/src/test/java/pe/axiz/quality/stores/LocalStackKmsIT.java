@@ -12,10 +12,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -89,7 +91,7 @@ class LocalStackKmsIT {
             () -> {
               PROVIDER_THREADS.add(Thread.currentThread().getName());
               REFRESHES.incrementAndGet();
-              java.util.concurrent.locks.LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
               return credentials.resolveCredentials();
             },
             Clock.systemUTC(),
@@ -178,7 +180,7 @@ class LocalStackKmsIT {
   void concurrentUsesCoalesceAndRotateAtTheAgeBoundaryDuringRefreshAndReconnect() {
     var clock = new MovingClock();
     var encryption = facade(clock, 5);
-    String context = "rotation-" + java.util.UUID.randomUUID();
+    String context = "rotation-" + UUID.randomUUID();
     int generated = GENERATES.get();
     int decrypted = DECRYPTS.get();
     var flow =

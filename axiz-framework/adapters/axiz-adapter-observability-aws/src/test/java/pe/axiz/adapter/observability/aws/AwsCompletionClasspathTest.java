@@ -10,6 +10,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -24,7 +25,7 @@ class AwsCompletionClasspathTest {
     String classpath =
         System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"));
     String isolated =
-        Arrays.stream(classpath.split(java.util.regex.Pattern.quote(File.pathSeparator)))
+        Arrays.stream(classpath.split(Pattern.quote(File.pathSeparator)))
             .filter(
                 entry -> !Path.of(entry).getFileName().toString().startsWith("micrometer-core-"))
             .collect(Collectors.joining(File.pathSeparator));

@@ -5,6 +5,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.LongSupplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.Stages;
@@ -17,7 +18,7 @@ public final class AsyncTwoLevelCache implements AsyncByteCache {
   private final LocalByteCache l1;
   private final @Nullable AsyncByteCache l2;
   private final Duration maxTtl;
-  private final java.util.function.LongSupplier nanoTime;
+  private final LongSupplier nanoTime;
 
   public AsyncTwoLevelCache(LocalByteCache l1, @Nullable AsyncByteCache l2, Duration maxTtl) {
     this(l1, l2, maxTtl, System::nanoTime);
@@ -25,10 +26,7 @@ public final class AsyncTwoLevelCache implements AsyncByteCache {
 
   /** Controlled monotonic clock for contract tests; expiration also respects the L1 clock. */
   public AsyncTwoLevelCache(
-      LocalByteCache l1,
-      @Nullable AsyncByteCache l2,
-      Duration maxTtl,
-      java.util.function.LongSupplier nanoTime) {
+      LocalByteCache l1, @Nullable AsyncByteCache l2, Duration maxTtl, LongSupplier nanoTime) {
     this.nanoTime = Objects.requireNonNull(nanoTime);
     this.l1 = Objects.requireNonNull(l1);
     this.l2 = l2;

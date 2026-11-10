@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -23,7 +24,7 @@ public class AxizLoggingEnvironmentPostProcessor implements EnvironmentPostProce
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
     Map<String, Object> d = new LinkedHashMap<>();
-    if (application.getWebApplicationType() == org.springframework.boot.WebApplicationType.REACTIVE
+    if (application.getWebApplicationType() == WebApplicationType.REACTIVE
         || "reactive".equalsIgnoreCase(env.getProperty("spring.main.web-application-type"))) {
       d.put("logging.config", "classpath:pe/axiz/spring/logging/logback-reactive.xml");
     }

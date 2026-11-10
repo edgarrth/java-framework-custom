@@ -15,6 +15,8 @@
   <description>Generic event metrics with @Metered, catalog, common tags and cardinality protection (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.metrics</axiz.module.name>
   </properties>
 

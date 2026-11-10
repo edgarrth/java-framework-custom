@@ -9,15 +9,22 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import pe.axiz.core.cache.AsyncByteCache;
+import pe.axiz.core.cache.AsyncTwoLevelCache;
 import pe.axiz.core.cache.AxizCacheable;
 import pe.axiz.core.cache.ByteCache;
 import pe.axiz.core.cache.InMemoryByteCache;
+import pe.axiz.core.cache.LocalByteCache;
 import pe.axiz.core.cache.TwoLevelCache;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -35,14 +42,13 @@ public class AxizCacheAutoConfiguration {
 
   @Bean(name = "axizL1Cache")
   @ConditionalOnMissingBean(name = "axizL1Cache")
-  pe.axiz.core.cache.LocalByteCache axizDefaultL1Cache(
-      AxizCacheProperties p, ObjectProvider<Clock> clock) {
+  LocalByteCache axizDefaultL1Cache(AxizCacheProperties p, ObjectProvider<Clock> clock) {
     return new InMemoryByteCache(p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC));
   }
 
   @Bean
   @ConditionalOnMissingBean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   AxizCaches axizCaches(
       AxizCacheProperties p,
       Environment env,
@@ -89,31 +95,29 @@ public class AxizCacheAutoConfiguration {
     return advisor;
   }
 
-  @org.springframework.context.annotation.Configuration(proxyBeanMethods = false)
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnClass(
-      name = "reactor.core.publisher.Mono")
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "reactor.core.publisher.Mono")
   static class ReactiveConfiguration {
     @Bean
-    @org.springframework.context.annotation.Lazy
+    @Lazy
     @ConditionalOnMissingBean(AsyncCacheSettings.class)
     ReactiveCaches axizReactiveCaches(
         AxizCacheProperties p,
         Environment env,
-        @Qualifier("axizL1Cache") ObjectProvider<pe.axiz.core.cache.LocalByteCache> local,
-        @Qualifier("axizAsyncL2Cache") ObjectProvider<pe.axiz.core.cache.AsyncByteCache> remote,
+        @Qualifier("axizL1Cache") ObjectProvider<LocalByteCache> local,
+        @Qualifier("axizAsyncL2Cache") ObjectProvider<AsyncByteCache> remote,
         ObjectProvider<Clock> clock) {
-      pe.axiz.core.cache.LocalByteCache l1 =
+      LocalByteCache l1 =
           local.getIfAvailable(
               () ->
                   new InMemoryByteCache(
                       p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
-      pe.axiz.core.cache.AsyncByteCache l2 = p.redis() ? remote.getIfAvailable() : null;
+      AsyncByteCache l2 = p.redis() ? remote.getIfAvailable() : null;
       String prefix =
           p.prefix() != null
               ? p.prefix()
               : env.getProperty("spring.application.name", "application");
-      return new ReactiveCaches(
-          prefix, new pe.axiz.core.cache.AsyncTwoLevelCache(l1, l2, p.l1().maxTtl()), p);
+      return new ReactiveCaches(prefix, new AsyncTwoLevelCache(l1, l2, p.l1().maxTtl()), p);
     }
   }
 }

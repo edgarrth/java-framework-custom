@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -105,7 +106,7 @@ class SensitiveTest {
             "a", Map.of("b", Map.of("c", Map.of("d", Map.of("e", Map.of("f", Map.of("g", "x")))))));
     assertTrue(
         String.valueOf(ObjectMasker.defaults().describe(deep, OutputChannel.LOG)).contains("..."));
-    List<Integer> many = java.util.stream.IntStream.range(0, 80).boxed().toList();
+    List<Integer> many = IntStream.range(0, 80).boxed().toList();
     List<?> described = (List<?>) ObjectMasker.defaults().describe(many, OutputChannel.LOG);
     assertEquals(51, described.size());
     assertEquals("<3 bytes>", ObjectMasker.defaults().describe(new byte[3], OutputChannel.LOG));

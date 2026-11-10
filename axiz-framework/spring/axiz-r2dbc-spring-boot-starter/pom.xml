@@ -52,10 +52,5 @@
       <artifactId>postgresql</artifactId>
       <scope>runtime</scope>
     </dependency>
-    <!-- IAM authentication tokens (axiz.r2dbc.iam.enabled) -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>rds</artifactId>
-    </dependency>
   </dependencies>
 </project>

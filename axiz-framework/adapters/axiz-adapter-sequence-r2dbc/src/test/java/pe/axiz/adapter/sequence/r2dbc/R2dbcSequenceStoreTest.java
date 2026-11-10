@@ -9,6 +9,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Publisher;
@@ -104,8 +105,7 @@ class R2dbcSequenceStoreTest {
     var store = new R2dbcSequenceStore(db, "axiz_sequence");
     assertThrows(IllegalArgumentException.class, () -> store.increment("operation", "", 0).block());
     assertTrue(db.events().isEmpty());
-    assertThrows(
-        java.util.NoSuchElementException.class, () -> store.increment("operation", "", 1).block());
+    assertThrows(NoSuchElementException.class, () -> store.increment("operation", "", 1).block());
     assertEquals(List.of("open:1", "begin:1", "rollback:1", "close:1"), db.events());
   }
 }

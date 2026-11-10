@@ -3,6 +3,7 @@ package pe.axiz.spring.inbox;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
@@ -83,7 +84,7 @@ class ReactiveDynamoInboxWiringTest {
                                   ctx.getBean(DynamoDbAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(java.net.URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("http://localhost:4566"));
                         }));
   }
 

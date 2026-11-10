@@ -15,6 +15,8 @@
   <description>Secret resolvers for AWS Secrets Manager and Parameter Store</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-core-secrets-aws</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.adapter.secrets.aws</axiz.module.name>

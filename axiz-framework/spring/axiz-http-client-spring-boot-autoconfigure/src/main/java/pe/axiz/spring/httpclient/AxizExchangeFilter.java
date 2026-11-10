@@ -3,6 +3,8 @@ package pe.axiz.spring.httpclient;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,7 +111,7 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
               attempt[0]++;
               resilience.acquire();
               long start = System.nanoTime();
-              var released = new java.util.concurrent.atomic.AtomicBoolean();
+              var released = new AtomicBoolean();
               return Mono.defer(() -> next.exchange(req))
                   .switchIfEmpty(
                       Mono.error(
@@ -118,10 +120,7 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                   .doOnCancel(
                       () -> {
                         if (released.compareAndSet(false, true))
-                          resilience.release(
-                              start,
-                              new java.util.concurrent.CancellationException("cancelled"),
-                              -1);
+                          resilience.release(start, new CancellationException("cancelled"), -1);
                       })
                   .doOnError(
                       e -> {

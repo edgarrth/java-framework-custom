@@ -36,7 +36,7 @@ class RedisByteCacheTest {
                   // GET and PTTL of KEYS[1]; the fake keeps every key 1500 ms, "eternal" forever
                   String key = (String) ((Object[]) a[2])[0];
                   byte[] value = data.get(key);
-                  java.util.List<Object> reply = new ArrayList<>();
+                  List<Object> reply = new ArrayList<>();
                   reply.add(value);
                   reply.add(value == null ? -2L : key.startsWith("eternal") ? -1L : 1500L);
                   yield reply;

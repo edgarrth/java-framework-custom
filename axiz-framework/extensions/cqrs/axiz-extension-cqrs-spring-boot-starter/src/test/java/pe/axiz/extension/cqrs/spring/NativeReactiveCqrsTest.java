@@ -16,6 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -26,9 +27,11 @@ import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
+import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
@@ -43,6 +46,7 @@ import pe.axiz.extension.cqrs.IdempotentCommand;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.OpenAccess;
 import pe.axiz.extension.cqrs.ReactiveCommandHandler;
+import pe.axiz.spring.audit.ReactiveAuditPublisher;
 import pe.axiz.spring.audit.ReactiveAuditTrail;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -162,10 +166,9 @@ class NativeReactiveCqrsTest {
                 .subscribeOn(Schedulers.parallel()))
         .expectErrorSatisfies(
             error -> {
-              assertTrue(error instanceof pe.axiz.core.errors.BusinessException);
+              assertTrue(error instanceof BusinessException);
               assertEquals(
-                  pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(),
-                  ((pe.axiz.core.errors.BusinessException) error).code());
+                  IdempotencyErrors.OUTCOME_UNKNOWN.code(), ((BusinessException) error).code());
             })
         .verify(T);
   }
@@ -235,15 +238,14 @@ class NativeReactiveCqrsTest {
         store, Duration.ofSeconds(30), Duration.ofHours(1), Clock.systemUTC());
   }
 
-  private static ReactiveAuditTrail trail(pe.axiz.spring.audit.ReactiveAuditPublisher publisher) {
+  private static ReactiveAuditTrail trail(ReactiveAuditPublisher publisher) {
     return new ReactiveAuditTrail(
         "svc", publisher, ObjectMasker.defaults(), IdGenerator.uuidV7(), Clock.systemUTC());
   }
 
   private static final class Store implements AsyncIdempotencyStore {
     public CompletionStage<Boolean> compareAndSet(
-        IdempotencyRecord expected,
-        @org.jspecify.annotations.Nullable IdempotencyRecord replacement) {
+        IdempotencyRecord expected, @Nullable IdempotencyRecord replacement) {
       return records
           .compareAndSet(expected, replacement)
           .thenApply(

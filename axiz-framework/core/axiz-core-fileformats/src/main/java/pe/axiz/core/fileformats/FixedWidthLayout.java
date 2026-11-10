@@ -2,10 +2,12 @@ package pe.axiz.core.fileformats;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -78,7 +80,7 @@ public final class FixedWidthLayout {
 
   public String format(Map<String, ?> values) {
     char[] out = new char[recordLength];
-    java.util.Arrays.fill(out, ' ');
+    Arrays.fill(out, ' ');
     for (FixedField f : fields) {
       String text = formatValue(f, values.get(f.name()));
       text.getChars(0, text.length(), out, f.start() - 1);
@@ -95,7 +97,7 @@ public final class FixedWidthLayout {
               value == null
                   ? "0"
                   : new BigDecimal(value.toString())
-                      .setScale(f.scale(), java.math.RoundingMode.UNNECESSARY)
+                      .setScale(f.scale(), RoundingMode.UNNECESSARY)
                       .unscaledValue()
                       .toString();
           case DATE ->

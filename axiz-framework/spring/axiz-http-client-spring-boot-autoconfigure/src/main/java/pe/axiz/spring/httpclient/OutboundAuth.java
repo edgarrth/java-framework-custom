@@ -1,5 +1,6 @@
 package pe.axiz.spring.httpclient;
 
+import io.micrometer.observation.ObservationRegistry;
 import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Duration;
@@ -7,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.ssl.SslBundle;
@@ -17,6 +19,7 @@ import org.springframework.util.ClassUtils;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.http.AsyncAccessTokenProvider;
 import pe.axiz.core.http.AuthSettings;
+import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientCredentialsAsyncTokenProvider;
 import pe.axiz.core.http.ClientCredentialsTokenProvider;
 import pe.axiz.core.http.ClientSettings;
@@ -25,6 +28,7 @@ import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.ReactiveStages;
 
 /**
  * Adds the outbound credentials of a client: OAuth2 client credentials (cached, renewed early),
@@ -45,8 +49,7 @@ public final class OutboundAuth implements AutoCloseable {
   private final @Nullable AsyncSecretResolver asyncSecrets;
   private final @Nullable HttpClient ownedHttp;
   private final @Nullable NativeTokenHttpTransport nativeHttp;
-  private final java.util.concurrent.atomic.AtomicBoolean closed =
-      new java.util.concurrent.atomic.AtomicBoolean();
+  private final AtomicBoolean closed = new AtomicBoolean();
 
   private OutboundAuth(
       AuthSettings settings,
@@ -112,8 +115,7 @@ public final class OutboundAuth implements AutoCloseable {
       @Nullable AsyncSecretResolver secrets,
       Duration renewBefore,
       Clock clock) {
-    return createAsync(
-        client, secrets, renewBefore, clock, io.micrometer.observation.ObservationRegistry.NOOP);
+    return createAsync(client, secrets, renewBefore, clock, ObservationRegistry.NOOP);
   }
 
   public static OutboundAuth createAsync(
@@ -121,7 +123,7 @@ public final class OutboundAuth implements AutoCloseable {
       @Nullable AsyncSecretResolver secrets,
       Duration renewBefore,
       Clock clock,
-      io.micrometer.observation.ObservationRegistry observations) {
+      ObservationRegistry observations) {
     return createAsync(client, secrets, renewBefore, clock, observations, null);
   }
 
@@ -130,22 +132,21 @@ public final class OutboundAuth implements AutoCloseable {
       @Nullable AsyncSecretResolver secrets,
       Duration renewBefore,
       Clock clock,
-      io.micrometer.observation.ObservationRegistry observations,
+      ObservationRegistry observations,
       @Nullable SslBundle bundle) {
     if (ClassUtils.isPresent("reactor.core.publisher.Mono", OutboundAuth.class.getClassLoader())) {
-      pe.axiz.spring.foundation.ReactiveStages.initialize();
+      ReactiveStages.initialize();
     }
     AuthSettings a = client.auth();
     AsyncAccessTokenProvider tokens = null;
     NativeTokenHttpTransport nativeHttp = null;
-    if (a.type() == pe.axiz.core.http.AuthType.CLIENT_CREDENTIALS
-        || a.type() == pe.axiz.core.http.AuthType.API_KEY) {
+    if (a.type() == AuthType.CLIENT_CREDENTIALS || a.type() == AuthType.API_KEY) {
       if (secrets == null)
         throw new IllegalStateException(
             "Native HTTP client "
                 + client.name()
                 + " requires AsyncSecretResolver; configure native secrets or provide that core port");
-      if (a.type() == pe.axiz.core.http.AuthType.CLIENT_CREDENTIALS) {
+      if (a.type() == AuthType.CLIENT_CREDENTIALS) {
         ReactiveInfrastructureBootstrap.initialize();
         var source = secrets;
         var http = new NativeTokenHttpTransport(client, observations, bundle);
@@ -263,7 +264,7 @@ public final class OutboundAuth implements AutoCloseable {
   }
 
   public boolean relay() {
-    return settings.type() == pe.axiz.core.http.AuthType.TOKEN_RELAY;
+    return settings.type() == AuthType.TOKEN_RELAY;
   }
 
   /** Spring Security access, isolated so the dependency stays optional. */

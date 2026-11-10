@@ -1,13 +1,25 @@
 package pe.axiz.spring.httpclient;
 
+import io.micrometer.observation.ObservationRegistry;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslProvider;
 import java.net.http.HttpRequest;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManagerFactory;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.ssl.SslBundle;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpMethod;
@@ -15,6 +27,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.BodyExtractors;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import pe.axiz.core.commons.Stages;
 import pe.axiz.core.http.AsyncHttpExchange;
 import pe.axiz.core.http.ClientSettings;
 import reactor.adapter.JdkFlowAdapter;
@@ -34,9 +47,7 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
   private final AtomicBoolean closed = new AtomicBoolean();
 
   NativeTokenHttpTransport(
-      ClientSettings settings,
-      io.micrometer.observation.ObservationRegistry observations,
-      @Nullable SslBundle bundle) {
+      ClientSettings settings, ObservationRegistry observations, @Nullable SslBundle bundle) {
     this.timeout = settings.timeouts().read();
     connections =
         ConnectionProvider.builder("axiz-oauth-" + settings.name())
@@ -60,8 +71,7 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
               .resolver(spec -> spec.queryTimeout(settings.timeouts().connect()))
               .responseTimeout(timeout);
       if ("https"
-          .equalsIgnoreCase(
-              java.util.Objects.requireNonNull(settings.auth().tokenUri()).getScheme())) {
+          .equalsIgnoreCase(Objects.requireNonNull(settings.auth().tokenUri()).getScheme())) {
         var context = warmedTrust(bundle);
         transport = transport.secure(ssl -> ssl.sslContext(context));
       }
@@ -87,10 +97,9 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
   @Override
   public CompletionStage<Response> exchange(HttpRequest request, long maxResponseBytes) {
     if (closed.get())
-      return java.util.concurrent.CompletableFuture.failedFuture(
-          new IllegalStateException("Token transport is closed"));
+      return CompletableFuture.failedFuture(new IllegalStateException("Token transport is closed"));
     if (maxResponseBytes < 1 || maxResponseBytes > MAX_BYTES)
-      return java.util.concurrent.CompletableFuture.failedFuture(
+      return CompletableFuture.failedFuture(
           new IllegalArgumentException("Token response limit exceeds transport capacity"));
     var outgoing =
         client
@@ -103,8 +112,7 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
             .map(
                 body ->
                     JdkFlowAdapter.flowPublisherToFlux(body)
-                        .<org.springframework.core.io.buffer.DataBuffer>map(
-                            DefaultDataBufferFactory.sharedInstance::wrap));
+                        .<DataBuffer>map(DefaultDataBufferFactory.sharedInstance::wrap));
     request
         .bodyPublisher()
         .ifPresent(
@@ -115,7 +123,7 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
         payload.isPresent()
             ? outgoing.body(BodyInserters.fromDataBuffers(payload.get()))
             : outgoing;
-    return pe.axiz.core.commons.Stages.requireValue(
+    return Stages.requireValue(
         prepared
             .exchangeToMono(
                 response -> {
@@ -128,9 +136,7 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
                           buffer -> {
                             try {
                               return new Response(
-                                  status,
-                                  type,
-                                  buffer.toString(java.nio.charset.StandardCharsets.UTF_8));
+                                  status, type, buffer.toString(StandardCharsets.UTF_8));
                             } finally {
                               DataBufferUtils.release(buffer);
                             }
@@ -142,16 +148,14 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
             .toFuture());
   }
 
-  private static io.netty.handler.ssl.SslContext warmedTrust(@Nullable SslBundle bundle) {
+  private static SslContext warmedTrust(@Nullable SslBundle bundle) {
     try {
-      var factory =
-          javax.net.ssl.TrustManagerFactory.getInstance(
-              javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
-      factory.init((java.security.KeyStore) null);
+      var factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      factory.init((KeyStore) null);
       return Http11SslContextSpec.forClient()
           .configure(
               builder -> {
-                builder.sslProvider(io.netty.handler.ssl.SslProvider.JDK);
+                builder.sslProvider(SslProvider.JDK);
                 if (bundle == null) builder.trustManager(factory);
                 else {
                   var trust = bundle.getManagers().getTrustManagerFactory();
@@ -161,11 +165,11 @@ final class NativeTokenHttpTransport implements AsyncHttpExchange, AutoCloseable
                   var protocols = bundle.getOptions().getEnabledProtocols();
                   if (protocols != null) builder.protocols(protocols);
                   var ciphers = bundle.getOptions().getCiphers();
-                  if (ciphers != null) builder.ciphers(java.util.Arrays.asList(ciphers));
+                  if (ciphers != null) builder.ciphers(Arrays.asList(ciphers));
                 }
               })
           .sslContext();
-    } catch (java.security.GeneralSecurityException | javax.net.ssl.SSLException failure) {
+    } catch (GeneralSecurityException | SSLException failure) {
       throw new IllegalStateException("Cannot initialize OAuth TLS trust material", failure);
     }
   }

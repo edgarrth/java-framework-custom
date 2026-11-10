@@ -3,7 +3,20 @@ package pe.axiz.codegen;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.tools.ToolProvider;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 
 class ApplicationModelsTest {
@@ -87,8 +100,7 @@ class ApplicationModelsTest {
   }
 
   @Test
-  void nullableQualifiedTypesProduceCompilableJava(
-      @org.junit.jupiter.api.io.TempDir java.nio.file.Path directory) throws Exception {
+  void nullableQualifiedTypesProduceCompilableJava(@TempDir Path directory) throws Exception {
     var document =
         OpenApiDocument.parse(
             """
@@ -107,21 +119,16 @@ class ApplicationModelsTest {
         """);
     var model = ApplicationModels.records(document, "sample").getFirst();
     var source = directory.resolve("Item.java");
-    java.nio.file.Files.writeString(
+    Files.writeString(
         source,
         "package sample.application.model; import org.jspecify.annotations.Nullable; "
             + model.get("declaration"));
     String annotations =
-        java.nio.file.Path.of(
-                org.jspecify.annotations.Nullable.class
-                    .getProtectionDomain()
-                    .getCodeSource()
-                    .getLocation()
-                    .toURI())
+        Path.of(Nullable.class.getProtectionDomain().getCodeSource().getLocation().toURI())
             .toString();
-    org.junit.jupiter.api.Assertions.assertEquals(
+    Assertions.assertEquals(
         0,
-        javax.tools.ToolProvider.getSystemJavaCompiler()
+        ToolProvider.getSystemJavaCompiler()
             .run(
                 null,
                 null,
@@ -132,25 +139,20 @@ class ApplicationModelsTest {
                 directory.toString(),
                 source.toString()));
     try (var loader =
-        new java.net.URLClassLoader(
-            new java.net.URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
+        new URLClassLoader(new URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
       Class<?> type = loader.loadClass("sample.application.model.Item");
-      var constructor =
-          type.getConstructor(
-              java.math.BigDecimal.class, java.util.List.class, String.class, java.util.Map.class);
-      var items = new java.util.ArrayList<>();
-      var metadata = new java.util.HashMap<String, Object>();
+      var constructor = type.getConstructor(BigDecimal.class, List.class, String.class, Map.class);
+      var items = new ArrayList<>();
+      var metadata = new HashMap<String, Object>();
       metadata.put("status", "created");
       Object item = constructor.newInstance(null, items, null, metadata);
       items.add("changed");
       metadata.clear();
-      org.junit.jupiter.api.Assertions.assertEquals(
-          java.util.List.of(), type.getMethod("items").invoke(item));
-      org.junit.jupiter.api.Assertions.assertEquals(
-          java.util.Map.of("status", "created"), type.getMethod("metadata").invoke(item));
+      Assertions.assertEquals(List.of(), type.getMethod("items").invoke(item));
+      Assertions.assertEquals(Map.of("status", "created"), type.getMethod("metadata").invoke(item));
       Object absent = constructor.newInstance(null, null, null, null);
-      org.junit.jupiter.api.Assertions.assertNull(type.getMethod("items").invoke(absent));
-      org.junit.jupiter.api.Assertions.assertNull(type.getMethod("metadata").invoke(absent));
+      Assertions.assertNull(type.getMethod("items").invoke(absent));
+      Assertions.assertNull(type.getMethod("metadata").invoke(absent));
     }
   }
 }

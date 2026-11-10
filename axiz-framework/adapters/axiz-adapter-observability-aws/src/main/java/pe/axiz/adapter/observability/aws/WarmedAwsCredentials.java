@@ -5,7 +5,9 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
@@ -22,9 +24,8 @@ public final class WarmedAwsCredentials implements AwsCredentialsProvider, SdkAu
   private final Clock clock;
   private final AtomicReference<AwsCredentials> current;
   private final ScheduledExecutorService refresh;
-  private final java.util.concurrent.ScheduledFuture<?> refreshTask;
-  private final java.util.concurrent.atomic.AtomicBoolean closed =
-      new java.util.concurrent.atomic.AtomicBoolean();
+  private final ScheduledFuture<?> refreshTask;
+  private final AtomicBoolean closed = new AtomicBoolean();
 
   public WarmedAwsCredentials(AwsCredentialsProvider source, Clock clock, Duration interval) {
     this.source = Objects.requireNonNull(source);

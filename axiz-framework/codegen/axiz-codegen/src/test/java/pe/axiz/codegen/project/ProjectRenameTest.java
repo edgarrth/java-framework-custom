@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.model.Stack;
@@ -36,7 +38,7 @@ class ProjectRenameTest {
       Files.deleteIfExists(linked);
       Files.createSymbolicLink(linked, outside);
       assertThrows(
-          java.io.IOException.class,
+          IOException.class,
           () -> ProjectRename.apply(dir, manifest("original-orders"), "payment-orders", false),
           relative);
       assertEquals("name: untouched\n", Files.readString(outside));
@@ -103,7 +105,7 @@ class ProjectRenameTest {
     assertTrue(Files.readString(chart.resolve("values.yaml")).contains("payment-orders"));
     CapabilityAdder.mergeYaml(
         resources.resolve("application.yaml"),
-        java.util.Map.of("axiz.messaging.consumer.name", "accidental-new-consumer"));
+        Map.of("axiz.messaging.consumer.name", "accidental-new-consumer"));
     assertTrue(ProjectRename.problems(dir).stream().anyMatch(s -> s.contains("consumer.name")));
   }
 
@@ -124,7 +126,7 @@ class ProjectRenameTest {
         persistence: none
         axizVersion: 1.0.0
         """);
-    assertThrows(java.io.IOException.class, () -> ProjectManifest.read(dir));
+    assertThrows(IOException.class, () -> ProjectManifest.read(dir));
     ProjectManifest migrated = ProjectManifest.read(dir, "core").withName("banking-core");
     migrated.write(dir);
     assertEquals("core", ProjectManifest.read(dir).archetype());

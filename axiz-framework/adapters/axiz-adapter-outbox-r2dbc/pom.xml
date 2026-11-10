@@ -15,6 +15,8 @@
   <description>Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
     <axiz.api.baseline.artifactId>axiz-core-outbox-r2dbc</axiz.api.baseline.artifactId>

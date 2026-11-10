@@ -7,13 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.lettuce.core.RedisException;
 import io.lettuce.core.ScriptOutputType;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import java.lang.reflect.Proxy;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.security.RateLimitUnavailableException;
+import pe.axiz.test.support.ImmediateAsyncFakes;
 
 class RedisRateLimiterTest {
 
@@ -76,8 +79,7 @@ class RedisRateLimiterTest {
   @SuppressWarnings("unchecked")
   void nativeAsyncLimitsAndFailurePolicies() {
     var commands =
-        pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-            io.lettuce.core.api.async.RedisAsyncCommands.class, fake(new AtomicLong(), false));
+        ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(new AtomicLong(), false));
     var limiter = new RedisAsyncRateLimiter(commands, "rl:test:");
     assertTrue(
         limiter
@@ -97,8 +99,7 @@ class RedisRateLimiterTest {
     assertEquals(Duration.ofMillis(900), denied.retryAfter());
     var down =
         new RedisAsyncRateLimiter(
-            pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                io.lettuce.core.api.async.RedisAsyncCommands.class, fake(new AtomicLong(), true)),
+            ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(new AtomicLong(), true)),
             "rl:test:");
     assertTrue(
         down.tryAcquire("k", 1, Duration.ofSeconds(1), true)
@@ -106,7 +107,7 @@ class RedisRateLimiterTest {
             .join()
             .allowed());
     assertThrows(
-        java.util.concurrent.CompletionException.class,
+        CompletionException.class,
         () -> down.tryAcquire("k", 1, Duration.ofSeconds(1), false).toCompletableFuture().join());
   }
 }

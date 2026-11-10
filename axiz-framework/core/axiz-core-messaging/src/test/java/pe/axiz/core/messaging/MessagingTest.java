@@ -8,9 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -74,7 +76,7 @@ class MessagingTest {
 
   static final class MemoryDedup implements Deduplicator {
     final Set<String> done = new HashSet<>();
-    final java.util.Map<String, String> inProgress = new java.util.HashMap<>();
+    final Map<String, String> inProgress = new HashMap<>();
     RuntimeException unavailable;
 
     @Override
@@ -86,7 +88,7 @@ class MessagingTest {
         return Claim.alreadyProcessed();
       }
       if (inProgress.containsKey(eventId)) {
-        return Claim.busy(java.time.Duration.ofSeconds(30));
+        return Claim.busy(Duration.ofSeconds(30));
       }
       String token = Claim.newToken();
       inProgress.put(eventId, token);
@@ -156,7 +158,7 @@ class MessagingTest {
     assertThrows(
         PayloadException.class,
         () -> CloudEventHeaders.fromHeaders(Map.<String, String>of()::get, List.of(), new byte[0]));
-    Map<String, String> badTime = new java.util.HashMap<>(headers);
+    Map<String, String> badTime = new HashMap<>(headers);
     badTime.put("ce_time", "yesterday");
     assertThrows(
         PayloadException.class,
@@ -215,7 +217,7 @@ class MessagingTest {
     dedup.inProgress.put(MessageKeys.of(e), "token-of-a");
     EventDispatcher.Outcome outcome = dispatcher.dispatchWithDelay(e, 1);
     assertEquals(DeliveryDecision.DEFER, outcome.decision());
-    assertEquals(java.time.Duration.ofSeconds(30), outcome.retryAfter());
+    assertEquals(Duration.ofSeconds(30), outcome.retryAfter());
     assertTrue(handler.handled.isEmpty(), "the handler did not run");
     // once A's lease is over the redelivery processes it
     dedup.inProgress.clear();
@@ -265,7 +267,7 @@ class MessagingTest {
             base.time(),
             base.subject(),
             base.dataContentType(),
-            "from-a".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "from-a".getBytes(StandardCharsets.UTF_8),
             base.extensions());
     EventEnvelope fromB =
         new EventEnvelope(
@@ -275,7 +277,7 @@ class MessagingTest {
             base.time(),
             base.subject(),
             base.dataContentType(),
-            "from-b".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            "from-b".getBytes(StandardCharsets.UTF_8),
             base.extensions());
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromA, 1));
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromB, 1));

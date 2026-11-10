@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -171,8 +172,7 @@ public class AxizCacheableInterceptor implements MethodInterceptor {
     }
     JavaType javaType = mapper.obtain().getTypeFactory().constructType(valueType);
     if ("flux".equals(reactive)) {
-      javaType =
-          mapper.obtain().getTypeFactory().constructCollectionType(java.util.List.class, javaType);
+      javaType = mapper.obtain().getTypeFactory().constructCollectionType(List.class, javaType);
     }
     String name = a.keyName().isBlank() ? signature(method) : a.keyName();
     return new Plan(

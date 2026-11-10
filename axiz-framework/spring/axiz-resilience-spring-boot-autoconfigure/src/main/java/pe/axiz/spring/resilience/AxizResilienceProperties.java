@@ -1,6 +1,8 @@
 package pe.axiz.spring.resilience;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -17,7 +19,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 public record AxizResilienceProperties(
     @DefaultValue Policy defaults, @DefaultValue Map<String, Policy> instances) {
   public AxizResilienceProperties {
-    instances = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(instances));
+    instances = Collections.unmodifiableMap(new LinkedHashMap<>(instances));
   }
 
   public Policy policy(String name) {

@@ -15,6 +15,8 @@
   <description>Hexagonal style: use cases, ports and adapters, transaction per use case and domain events on commit</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-framework-hexagonal-spring-boot-starter</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.structure.hexagonal.spring</axiz.module.name>

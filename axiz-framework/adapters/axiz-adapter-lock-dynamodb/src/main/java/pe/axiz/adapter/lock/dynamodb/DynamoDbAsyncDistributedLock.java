@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.lock.AsyncDistributedLock;
@@ -39,7 +40,7 @@ public final class DynamoDbAsyncDistributedLock implements AsyncDistributedLock 
         Stages.map(write, ignored -> true),
         failure -> {
           if (failure instanceof ConditionalCheckFailedException) return false;
-          throw new java.util.concurrent.CompletionException(failure);
+          throw new CompletionException(failure);
         });
   }
 

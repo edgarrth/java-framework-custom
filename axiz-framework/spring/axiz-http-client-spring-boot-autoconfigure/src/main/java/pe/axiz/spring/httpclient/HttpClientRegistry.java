@@ -1,15 +1,18 @@
 package pe.axiz.spring.httpclient;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.http.client.HttpClientSettings;
 import org.springframework.boot.ssl.SslBundles;
+import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
@@ -22,8 +25,7 @@ public class HttpClientRegistry implements AutoCloseable {
   private final Map<String, ClientResilience> resilience = new ConcurrentHashMap<>();
   private final Map<String, OutboundAuth> auth = new ConcurrentHashMap<>();
   private final Map<String, OutboundAuth> nativeAuth = new LinkedHashMap<>();
-  private final java.util.concurrent.atomic.AtomicBoolean closed =
-      new java.util.concurrent.atomic.AtomicBoolean();
+  private final AtomicBoolean closed = new AtomicBoolean();
   private final CircuitBreakerRegistry circuitBreakers;
   private final @Nullable SecretResolver secrets;
   private final @Nullable SslBundles sslBundles;
@@ -46,7 +48,7 @@ public class HttpClientRegistry implements AutoCloseable {
         sslBundles,
         clock,
         tenantHeader,
-        io.micrometer.observation.ObservationRegistry.NOOP);
+        ObservationRegistry.NOOP);
   }
 
   public HttpClientRegistry(
@@ -65,7 +67,7 @@ public class HttpClientRegistry implements AutoCloseable {
         sslBundles,
         clock,
         tenantHeader,
-        io.micrometer.observation.ObservationRegistry.NOOP);
+        ObservationRegistry.NOOP);
   }
 
   public HttpClientRegistry(
@@ -76,7 +78,7 @@ public class HttpClientRegistry implements AutoCloseable {
       @Nullable SslBundles sslBundles,
       Clock clock,
       @Nullable String tenantHeader,
-      io.micrometer.observation.ObservationRegistry observations) {
+      ObservationRegistry observations) {
     this.properties = properties;
     this.raw = properties.clients();
     this.circuitBreakers = circuitBreakers;
@@ -90,8 +92,8 @@ public class HttpClientRegistry implements AutoCloseable {
       settings.forEach(
           (name, client) -> {
             boolean needsSecret =
-                client.auth().type() == pe.axiz.core.http.AuthType.CLIENT_CREDENTIALS
-                    || client.auth().type() == pe.axiz.core.http.AuthType.API_KEY;
+                client.auth().type() == AuthType.CLIENT_CREDENTIALS
+                    || client.auth().type() == AuthType.API_KEY;
             if (!needsSecret || asyncSecrets != null)
               nativeAuth.put(
                   name,
@@ -101,7 +103,7 @@ public class HttpClientRegistry implements AutoCloseable {
                       properties.tokenRenewBefore(),
                       clock,
                       observations,
-                      client.auth().type() == pe.axiz.core.http.AuthType.CLIENT_CREDENTIALS
+                      client.auth().type() == AuthType.CLIENT_CREDENTIALS
                           ? transport(client).sslBundle()
                           : null));
           });

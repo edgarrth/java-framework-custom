@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,6 +17,9 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.StaticKeyProvider;
+import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Item;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Movement;
 import reactor.test.StepVerifier;
@@ -44,10 +49,8 @@ class ReactiveDynamoRepositoryTest {
                 raw,
                 "",
                 () ->
-                    new pe.axiz.kit.dynamodb.CursorCodec(
-                        new pe.axiz.core.crypto.StaticKeyProvider(
-                            "test", java.util.Map.of("test", pe.axiz.core.crypto.AesGcm.newKey())),
-                        false))
+                    new CursorCodec(
+                        new StaticKeyProvider("test", Map.of("test", AesGcm.newKey())), false))
             .create("items", Item.class);
     var item = new Item();
     item.setId("C-1");
@@ -119,7 +122,7 @@ class ReactiveDynamoRepositoryTest {
     public CompletableFuture<QueryResponse> query(QueryRequest request) {
       return response(
           QueryResponse.builder()
-              .items(java.util.List.of(Map.of("id", AttributeValue.fromS("C-1"))))
+              .items(List.of(Map.of("id", AttributeValue.fromS("C-1"))))
               .build());
     }
 
@@ -197,7 +200,7 @@ class ReactiveDynamoRepositoryTest {
                                   ctx.getBean(DynamoDbAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(java.net.URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("http://localhost:4566"));
                         }));
   }
 

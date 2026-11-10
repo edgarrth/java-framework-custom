@@ -13,9 +13,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.resilience.Backoff;
@@ -179,8 +181,8 @@ class R2dbcOutboxStoreTest {
     FakeR2dbc db = new FakeR2dbc().failOn("close");
     db.onUpdate("^UPDATE", b -> 1L);
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
-    org.junit.jupiter.api.Assertions.assertThrows(
-        pe.axiz.core.outbox.OutboxException.class,
+    Assertions.assertThrows(
+        OutboxException.class,
         () -> store.markPublished("e-1", Instant.parse("2026-10-11T12:00:00Z")));
   }
 

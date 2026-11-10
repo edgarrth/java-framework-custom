@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.ArtifactGenerator;
@@ -22,7 +24,7 @@ import pe.axiz.codegen.project.ProjectManifest;
 class GeneratedDynamoRepositoryTest {
   @Test
   void generatedEntitiesAndRepositoriesCompile(@TempDir Path root) throws Exception {
-    var generator = new ArtifactGenerator(java.time.Clock.systemUTC());
+    var generator = new ArtifactGenerator(Clock.systemUTC());
     for (var structure : List.of(Structure.LAYERED, Structure.HEXAGONAL)) {
       for (var stack : Stack.values()) {
         Path output = Files.createDirectory(root.resolve(structure.name() + "-" + stack.name()));
@@ -66,8 +68,7 @@ class GeneratedDynamoRepositoryTest {
         }
         assertEquals(
             0,
-            javax.tools.ToolProvider.getSystemJavaCompiler()
-                .run(null, null, null, args.toArray(String[]::new)),
+            ToolProvider.getSystemJavaCompiler().run(null, null, null, args.toArray(String[]::new)),
             structure + " / " + stack);
       }
     }

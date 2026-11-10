@@ -7,9 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -19,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.http.client.MockClientHttpRequest;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.oauth2.core.DefaultOAuth2AuthenticatedPrincipal;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
@@ -27,6 +32,7 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
@@ -126,8 +132,8 @@ class HttpClientTest {
         new OAuth2AccessToken(
             OAuth2AccessToken.TokenType.BEARER,
             "inbound-token",
-            java.time.Instant.now(),
-            java.time.Instant.now().plusSeconds(300));
+            Instant.now(),
+            Instant.now().plusSeconds(300));
     BearerTokenAuthentication inbound =
         new BearerTokenAuthentication(
             new DefaultOAuth2AuthenticatedPrincipal(Map.of("sub", "C-1001"), List.of()),
@@ -152,16 +158,16 @@ class HttpClientTest {
             new ClientResilience(settings(0), CircuitBreakerRegistry.ofDefaults()),
             OutboundAuth.create(settings(0), null, Duration.ofSeconds(30), Clock.systemUTC()),
             null);
-    ExchangeFunction refused = req -> Mono.error(new java.net.ConnectException("refused"));
+    ExchangeFunction refused = req -> Mono.error(new ConnectException("refused"));
     ClientRequest request =
         ClientRequest.create(HttpMethod.POST, URI.create("https://bank.example.com/v1/x")).build();
-    pe.axiz.core.errors.ExternalServiceException e =
+    ExternalServiceException e =
         assertThrows(
-            pe.axiz.core.errors.ExternalServiceException.class,
+            ExternalServiceException.class,
             () -> filter.filter(request, refused).block(Duration.ofSeconds(5)));
     assertEquals(503, e.category().httpStatus());
     assertEquals("bank", e.detail().system());
-    assertTrue(e.getCause() instanceof java.net.ConnectException);
+    assertTrue(e.getCause() instanceof ConnectException);
   }
 
   @Test
@@ -171,23 +177,22 @@ class HttpClientTest {
             new ClientResilience(settings(0), CircuitBreakerRegistry.ofDefaults()),
             OutboundAuth.create(settings(0), null, Duration.ofSeconds(30), Clock.systemUTC()),
             null);
-    org.springframework.mock.http.client.MockClientHttpRequest request =
-        new org.springframework.mock.http.client.MockClientHttpRequest(
+    MockClientHttpRequest request =
+        new MockClientHttpRequest(
             HttpMethod.POST, URI.create("https://bank.example.com/v1/debits"));
-    java.io.IOException e =
+    IOException e =
         assertThrows(
-            java.io.IOException.class,
+            IOException.class,
             () ->
                 interceptor.intercept(
                     request,
                     new byte[0],
                     (req, body) -> {
-                      throw new java.net.SocketTimeoutException("Read timed out");
+                      throw new SocketTimeoutException("Read timed out");
                     }));
-    pe.axiz.core.errors.ExternalServiceException dependency =
-        (pe.axiz.core.errors.ExternalServiceException) e.getCause();
+    ExternalServiceException dependency = (ExternalServiceException) e.getCause();
     assertEquals(504, dependency.category().httpStatus());
     assertEquals("Call to bank got no response (SocketTimeoutException)", dependency.getMessage());
-    assertTrue(dependency.getCause() instanceof java.net.SocketTimeoutException);
+    assertTrue(dependency.getCause() instanceof SocketTimeoutException);
   }
 }

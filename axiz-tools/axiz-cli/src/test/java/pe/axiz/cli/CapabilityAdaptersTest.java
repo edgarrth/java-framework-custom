@@ -10,20 +10,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class CapabilityAdaptersTest {
-  @Test
+  @ParameterizedTest
+  @CsvSource({"servlet, axiz-adapter-outbox-jdbc", "reactive, axiz-adapter-database-auth-aws"})
   void currentVersionUpgradeAddsTheMissingRuntimeAdapterAndTheNextUpgradeIsANoop(
-      @TempDir Path directory) throws Exception {
+      String stack, String adapter, @TempDir Path directory) throws Exception {
     Path project =
-        CliHarness.service(directory, "--persistence", "aurora", "--capability", "outbox");
+        CliHarness.service(
+            directory, "--stack", stack, "--persistence", "aurora", "--capability", "outbox");
     Path file = project.resolve("pom.xml");
     String pom = Files.readString(file);
     String missing =
         pom.replaceAll(
             "(?s)\\s*<dependency>\\s*<groupId>pe.axiz</groupId>"
-                + "\\s*<artifactId>axiz-adapter-outbox-jdbc</artifactId>.*?</dependency>",
+                + "\\s*<artifactId>"
+                + adapter
+                + "</artifactId>.*?</dependency>",
             "");
     assertFalse(pom.equals(missing));
     Files.writeString(file, missing);
@@ -34,8 +40,7 @@ class CapabilityAdaptersTest {
         upgrade.output());
     String aligned = Files.readString(file);
     assertTrue(
-        aligned.contains(
-            "<artifactId>axiz-adapter-outbox-jdbc</artifactId>\n      <scope>runtime</scope>"),
+        aligned.contains("<artifactId>" + adapter + "</artifactId>\n      <scope>runtime</scope>"),
         aligned);
     var again = new CliHarness();
     assertEquals(

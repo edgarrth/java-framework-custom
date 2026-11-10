@@ -7,11 +7,15 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock;
 import pe.axiz.adapter.lock.redis.RedisDistributedLock;
+import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
+import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /** Redis locks (SET NX PX with owner token, atomic release and renewal). */
 @AutoConfiguration(
@@ -36,7 +40,7 @@ public class AxizLockRedisAutoConfiguration {
   }
 
   @Bean
-  @pe.axiz.spring.foundation.ConditionalOnImperativeApplication
+  @ConditionalOnImperativeApplication
   DistributedLock axizRedisLock(
       @Qualifier("axizLockRedisConnection") StatefulRedisConnection<String, String> c,
       AxizLockProperties p) {
@@ -44,14 +48,10 @@ public class AxizLockRedisAutoConfiguration {
   }
 
   @Bean
-  @org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication(
-      type =
-          org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type
-              .REACTIVE)
-  pe.axiz.core.lock.AsyncDistributedLock axizRedisAsyncLock(
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  AsyncDistributedLock axizRedisAsyncLock(
       @Qualifier("axizLockRedisConnection") StatefulRedisConnection<String, String> connection,
       AxizLockProperties p) {
-    return new pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock(
-        connection.async(), p.keyPrefix());
+    return new RedisAsyncDistributedLock(connection.async(), p.keyPrefix());
   }
 }

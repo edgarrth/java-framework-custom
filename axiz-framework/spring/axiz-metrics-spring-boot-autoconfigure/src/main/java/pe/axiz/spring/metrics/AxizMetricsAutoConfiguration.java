@@ -6,6 +6,7 @@ import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
@@ -138,9 +139,7 @@ public class AxizMetricsAutoConfiguration {
   }
 
   static Tags commonTags(
-      Environment env,
-      AxizMetricsProperties p,
-      @org.jspecify.annotations.Nullable BuildProperties build) {
+      Environment env, AxizMetricsProperties p, @Nullable BuildProperties build) {
     String version =
         p.version() != null
             ? p.version()

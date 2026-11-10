@@ -1,5 +1,6 @@
 package pe.axiz.core.sensitive;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +51,7 @@ public final class SensitiveKeys {
 
   /** Defaults plus service-specific keys (configuration). */
   public static SensitiveKeys withExtra(Map<String, SensitiveField> extra) {
-    var merged = new java.util.HashMap<>(DEFAULTS);
+    var merged = new HashMap<>(DEFAULTS);
     extra.forEach((k, v) -> merged.put(normalize(k), v));
     return new SensitiveKeys(merged);
   }

@@ -1,8 +1,13 @@
 package pe.axiz.spring.test;
 
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import reactor.blockhound.BlockHound;
+import reactor.blockhound.BlockingOperationError;
 
 /**
  * Fails reactive tests that block an event-loop thread. Mandatory for reactive services:
@@ -11,21 +16,18 @@ import reactor.blockhound.BlockHound;
 public class BlockHoundExtension implements BeforeAllCallback {
 
   private static boolean installed;
-  private static final java.util.Queue<BlockingCall> DETECTED =
-      new java.util.concurrent.ConcurrentLinkedQueue<>();
-  private static final java.util.concurrent.atomic.AtomicInteger RECORDED =
-      new java.util.concurrent.atomic.AtomicInteger();
+  private static final Queue<BlockingCall> DETECTED = new ConcurrentLinkedQueue<>();
+  private static final AtomicInteger RECORDED = new AtomicInteger();
 
   /** Bounded diagnostics preserve the original blocking site even when a driver masks the error. */
-  public record BlockingCall(
-      String thread, String method, java.util.List<StackTraceElement> stack) {
+  public record BlockingCall(String thread, String method, List<StackTraceElement> stack) {
     public BlockingCall {
-      stack = java.util.List.copyOf(stack);
+      stack = List.copyOf(stack);
     }
   }
 
-  public static java.util.List<BlockingCall> detectedBlockingCalls() {
-    return java.util.List.copyOf(DETECTED);
+  public static List<BlockingCall> detectedBlockingCalls() {
+    return List.copyOf(DETECTED);
   }
 
   @Override
@@ -58,13 +60,13 @@ public class BlockHoundExtension implements BeforeAllCallback {
           .allowBlockingCallsInside("io.netty.channel.pool.SimpleChannelPool", "close")
           .blockingMethodCallback(
               method -> {
-                var failure = new reactor.blockhound.BlockingOperationError(method);
+                var failure = new BlockingOperationError(method);
                 if (RECORDED.getAndUpdate(count -> count < 32 ? count + 1 : count) < 32)
                   DETECTED.add(
                       new BlockingCall(
                           Thread.currentThread().getName(),
                           method.toString(),
-                          java.util.List.of(failure.getStackTrace())));
+                          List.of(failure.getStackTrace())));
                 throw failure;
               })
           .install();

@@ -25,6 +25,11 @@ Thank you for improving the axiz framework (core libraries, Spring Boot starters
 - Every change comes with tests that would have failed without it. Quality gates enforce coverage
   (lines and branches), mutation testing on the core, architecture rules and static analysis.
 - Run locally before pushing: `./mvnw -B -ntp clean verify -Pquality`.
+- Import unambiguous types instead of qualifying them inline. Error Prone's
+  `UnnecessarilyFullyQualified` check defaults to `WARN`; cleaned modules set
+  `axiz.errorprone.fqn.severity` to `ERROR` to prevent regressions. Keep qualification when
+  names collide, and leave generated sources to their generator. Do not disable the check to
+  accommodate avoidable qualifiers.
 - Warnings are fixed, not suppressed. A suppression needs a comment that explains why the code is
   correct (for example `@SuppressWarnings("EqualsGetClass")` with its reason).
 - Update the module `README.md` and the documentation site when behavior or

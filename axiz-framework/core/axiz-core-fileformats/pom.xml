@@ -15,6 +15,8 @@
   <description>CSV and fixed-width records, EBCDIC conversion, checksums and control trailers</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.fileformats</axiz.module.name>
   </properties>
 

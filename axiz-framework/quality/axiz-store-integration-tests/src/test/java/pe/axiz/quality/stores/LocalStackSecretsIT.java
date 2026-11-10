@@ -16,7 +16,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.Function;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,6 +43,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import reactor.util.context.Context;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -61,8 +66,7 @@ class LocalStackSecretsIT {
   private static final AtomicInteger MANAGER_GETS = new AtomicInteger();
   private static final AtomicInteger PARAMETER_GETS = new AtomicInteger();
   private static final AtomicInteger REFRESHES = new AtomicInteger();
-  private static final java.util.Queue<Observation.Context> AWS_CONTEXTS =
-      new java.util.concurrent.ConcurrentLinkedQueue<>();
+  private static final Queue<Observation.Context> AWS_CONTEXTS = new ConcurrentLinkedQueue<>();
   private static SecretsManagerClient setupManager;
   private static SsmClient setupParameters;
   private static SecretsManagerAsyncClient manager;
@@ -137,12 +141,12 @@ class LocalStackSecretsIT {
               assertTrue(
                   !Thread.currentThread().getName().contains("Netty")
                       && !Thread.currentThread().getName().startsWith("parallel-"));
-              java.util.concurrent.locks.LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
               return credentials.resolveCredentials();
             },
             Clock.systemUTC(),
             Duration.ofMillis(25));
-    java.util.function.Function<String, String> properties =
+    Function<String, String> properties =
         key ->
             switch (key) {
               case "axiz.aws.region" -> LOCALSTACK.getRegion();
@@ -294,8 +298,7 @@ class LocalStackSecretsIT {
                                           assertSame(first, OBSERVATIONS.getCurrentObservation());
                                         })
                                     .contextWrite(
-                                        reactor.util.context.Context.of(
-                                            ObservationThreadLocalAccessor.KEY, first)),
+                                        Context.of(ObservationThreadLocalAccessor.KEY, first)),
                                 secrets
                                     .require("parameter-only")
                                     .doOnNext(
@@ -304,8 +307,7 @@ class LocalStackSecretsIT {
                                           assertSame(second, OBSERVATIONS.getCurrentObservation());
                                         })
                                     .contextWrite(
-                                        reactor.util.context.Context.of(
-                                            ObservationThreadLocalAccessor.KEY, second)))
+                                        Context.of(ObservationThreadLocalAccessor.KEY, second)))
                             .subscribeOn(Schedulers.parallel()))
                     .expectNextCount(2)
                     .expectComplete()

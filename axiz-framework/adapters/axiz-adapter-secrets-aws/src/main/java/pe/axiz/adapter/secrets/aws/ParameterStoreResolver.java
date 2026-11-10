@@ -2,6 +2,7 @@ package pe.axiz.adapter.secrets.aws;
 
 import java.util.Objects;
 import java.util.Optional;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 import software.amazon.awssdk.services.ssm.SsmClient;
@@ -43,7 +44,7 @@ public final class ParameterStoreResolver implements SecretResolver {
         .build();
   }
 
-  static Optional<SecretValue> value(@org.jspecify.annotations.Nullable String value) {
+  static Optional<SecretValue> value(@Nullable String value) {
     return value == null || value.isEmpty() ? Optional.empty() : Optional.of(SecretValue.of(value));
   }
 }

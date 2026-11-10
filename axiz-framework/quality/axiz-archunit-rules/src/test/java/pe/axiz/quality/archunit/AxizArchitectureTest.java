@@ -8,7 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchRule;
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class AxizArchitectureTest {
 
@@ -135,9 +142,9 @@ class AxizArchitectureTest {
     String report =
         ReactiveRules.rules().stream()
             .map(rule -> rule.evaluate(bad).getFailureReport().toString())
-            .collect(java.util.stream.Collectors.joining("\n"));
+            .collect(Collectors.joining("\n"));
     for (String violation :
-        java.util.List.of(
+        List.of(
             "Mono.block()",
             "Flux.blockLast()",
             "boundedElastic()",
@@ -157,8 +164,8 @@ class AxizArchitectureTest {
         .forEach(rule -> assertFalse(rule.evaluate(clean).hasViolation(), rule.getDescription()));
   }
 
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.CsvSource({
+  @ParameterizedTest
+  @CsvSource({
     "BUSINESS,SERVLET,HEXAGONAL,true,true", "BUSINESS,REACTIVE,LAYERED,false,true",
     "SUPPORT,SERVLET,HEXAGONAL,false,true", "SUPPORT,REACTIVE,LAYERED,false,true",
     "CORE,REACTIVE,HEXAGONAL,false,true", "GATEWAY,SERVLET,HEXAGONAL,false,true",
@@ -174,7 +181,7 @@ class AxizArchitectureTest {
     var architecture =
         AxizArchitecture.of("pe.axiz.example").archetype(role).stack(stack).structure(structure);
     if (cqrs) architecture.extensions(Extension.CQRS);
-    if (valid) org.junit.jupiter.api.Assertions.assertDoesNotThrow(architecture::rules);
+    if (valid) Assertions.assertDoesNotThrow(architecture::rules);
     else assertThrows(IllegalArgumentException.class, architecture::rules);
   }
 
@@ -195,9 +202,7 @@ class AxizArchitectureTest {
         BeanNames.defaultName(beans.get("pe.axiz.quality.archunit.sample.beans.PaymentsSupport")));
     ClassFileImporter importer = new ClassFileImporter();
     // two capitals keep the name as is; nested classes keep the outer name
-    assertEquals(
-        "URLDecoder", BeanNames.defaultName(importer.importClass(java.net.URLDecoder.class)));
-    assertEquals(
-        "map.Entry", BeanNames.defaultName(importer.importClass(java.util.Map.Entry.class)));
+    assertEquals("URLDecoder", BeanNames.defaultName(importer.importClass(URLDecoder.class)));
+    assertEquals("map.Entry", BeanNames.defaultName(importer.importClass(Entry.class)));
   }
 }

@@ -3,12 +3,15 @@ package pe.axiz.adapter.lock.redis;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import java.lang.reflect.Proxy;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import pe.axiz.test.support.ImmediateAsyncFakes;
 
 class RedisDistributedLockTest {
 
@@ -58,15 +61,13 @@ class RedisDistributedLockTest {
     Map<String, String> data = new HashMap<>();
     var lock =
         new RedisAsyncDistributedLock(
-            pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                io.lettuce.core.api.async.RedisAsyncCommands.class, fake(data)),
-            "lock:");
+            ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fake(data)), "lock:");
     var owner =
         lock.tryAcquire("account:1", Duration.ofSeconds(1))
             .toCompletableFuture()
             .join()
             .orElseThrow();
-    org.junit.jupiter.api.Assertions.assertEquals("account:1", owner.resource());
+    Assertions.assertEquals("account:1", owner.resource());
     assertFalse(owner.token().isBlank());
     assertTrue(
         lock.tryAcquire("account:1", Duration.ofSeconds(1)).toCompletableFuture().join().isEmpty());
@@ -83,9 +84,9 @@ class RedisDistributedLockTest {
             .orElseThrow();
     next.release().toCompletableFuture().join();
     assertTrue(data.isEmpty());
-    org.junit.jupiter.api.Assertions.assertThrows(
+    Assertions.assertThrows(
         IllegalArgumentException.class, () -> lock.tryAcquire("x", Duration.ZERO));
-    org.junit.jupiter.api.Assertions.assertThrows(
+    Assertions.assertThrows(
         IllegalArgumentException.class, () -> next.renew(Duration.ofSeconds(-1)));
   }
 }

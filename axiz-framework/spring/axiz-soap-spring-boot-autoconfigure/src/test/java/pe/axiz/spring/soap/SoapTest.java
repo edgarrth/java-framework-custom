@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -96,7 +97,7 @@ class SoapTest {
         .run(
             ctx -> {
               IllegalStateException e =
-                  org.junit.jupiter.api.Assertions.assertThrows(
+                  Assertions.assertThrows(
                       IllegalStateException.class,
                       () ->
                           ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
@@ -106,7 +107,7 @@ class SoapTest {
         .run(
             ctx -> {
               IllegalStateException e =
-                  org.junit.jupiter.api.Assertions.assertThrows(
+                  Assertions.assertThrows(
                       IllegalStateException.class,
                       () ->
                           ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
@@ -151,7 +152,7 @@ class SoapTest {
         .run(
             ctx -> {
               IllegalArgumentException e =
-                  org.junit.jupiter.api.Assertions.assertThrows(
+                  Assertions.assertThrows(
                       IllegalArgumentException.class,
                       () ->
                           ctx.getBean(SoapClients.class).call("nope", "a", "<A xmlns=\"urn:x\"/>"));
@@ -164,7 +165,7 @@ class SoapTest {
         .run(
             ctx -> {
               SecretNotFoundException e =
-                  org.junit.jupiter.api.Assertions.assertThrows(
+                  Assertions.assertThrows(
                       SecretNotFoundException.class,
                       () ->
                           ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
@@ -180,7 +181,7 @@ class SoapTest {
         .run(
             ctx -> {
               IllegalStateException e =
-                  org.junit.jupiter.api.Assertions.assertThrows(
+                  Assertions.assertThrows(
                       IllegalStateException.class,
                       () ->
                           ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));

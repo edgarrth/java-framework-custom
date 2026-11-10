@@ -11,17 +11,24 @@ import static org.mockito.Mockito.when;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import org.springframework.boot.test.util.TestPropertyValues;
+import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
+import pe.axiz.core.storage.InMemoryAsyncObjectStorage;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
+import reactor.adapter.JdkFlowAdapter;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -62,7 +69,7 @@ class ReactiveStorageTest {
                   .assertNext(meta -> assertEquals(1, meta.contentLength()))
                   .verifyComplete();
               StepVerifier.create(storage.list("", 1))
-                  .assertNext(keys -> assertEquals(java.util.List.of("x"), keys))
+                  .assertNext(keys -> assertEquals(List.of("x"), keys))
                   .verifyComplete();
               StepVerifier.create(storage.content("x"))
                   .assertNext(bytes -> assertEquals(7, bytes.get()))
@@ -79,8 +86,7 @@ class ReactiveStorageTest {
               StepVerifier.create(storage.presignUpload("x", "t", Duration.ofSeconds(1)))
                   .assertNext(
                       instructions ->
-                          assertEquals(
-                              java.util.List.of("t"), instructions.headers().get("Content-Type")))
+                          assertEquals(List.of("t"), instructions.headers().get("Content-Type")))
                   .verifyComplete();
               StepVerifier.create(storage.delete("x")).verifyComplete();
               StepVerifier.create(storage.content("x")).verifyComplete();
@@ -113,7 +119,7 @@ class ReactiveStorageTest {
                   .hasSingleBean(AsyncObjectStorage.class)
                   .doesNotHaveBean(ObjectStorage.class)
                   .doesNotHaveBean(S3Client.class)
-                  .doesNotHaveBean(pe.axiz.adapter.observability.aws.AsyncAwsClients.class);
+                  .doesNotHaveBean(AsyncAwsClients.class);
               assertInstanceOf(
                   S3AsyncObjectStorage.class, context.getBean(AsyncObjectStorage.class));
               assertSame(client, context.getBean(S3AsyncClient.class));
@@ -126,7 +132,7 @@ class ReactiveStorageTest {
 
   @Test
   void aSuppliedNativePortBacksOffAllDefaultS3Resources() {
-    var port = new pe.axiz.core.storage.InMemoryAsyncObjectStorage();
+    var port = new InMemoryAsyncObjectStorage();
     reactive()
         .withBean(AsyncObjectStorage.class, () -> port)
         .withPropertyValues("axiz.storage.bucket=files")
@@ -140,11 +146,9 @@ class ReactiveStorageTest {
   }
 
   @Test
-  @org.junit.jupiter.api.parallel.ResourceLock(
-      org.junit.jupiter.api.parallel.Resources.SYSTEM_PROPERTIES)
+  @ResourceLock(Resources.SYSTEM_PROPERTIES)
   void defaultNativeClientAndSignerShareOwnedWarmedResourcesAtStartup() {
-    org.springframework.boot.test.util.TestPropertyValues.of(
-            "aws.accessKeyId=test", "aws.secretAccessKey=test")
+    TestPropertyValues.of("aws.accessKeyId=test", "aws.secretAccessKey=test")
         .applyToSystemProperties(
             () -> {
               reactive()
@@ -158,7 +162,7 @@ class ReactiveStorageTest {
                         assertThat(context)
                             .hasNotFailed()
                             .hasSingleBean(S3AsyncClient.class)
-                            .hasSingleBean(pe.axiz.adapter.observability.aws.AsyncAwsClients.class)
+                            .hasSingleBean(AsyncAwsClients.class)
                             .hasSingleBean(S3Presigner.class)
                             .doesNotHaveBean(S3Client.class)
                             .doesNotHaveBean(ObjectStorage.class);
@@ -176,11 +180,9 @@ class ReactiveStorageTest {
   }
 
   @Test
-  @org.junit.jupiter.api.parallel.ResourceLock(
-      org.junit.jupiter.api.parallel.Resources.SYSTEM_PROPERTIES)
+  @ResourceLock(Resources.SYSTEM_PROPERTIES)
   void nativeDefaultsWorkWithoutAnEndpointAndMissingPresignRegionFailsAtStartup() {
-    org.springframework.boot.test.util.TestPropertyValues.of(
-            "aws.accessKeyId=test", "aws.secretAccessKey=test")
+    TestPropertyValues.of("aws.accessKeyId=test", "aws.secretAccessKey=test")
         .applyToSystemProperties(
             () -> {
               reactive()
@@ -220,7 +222,7 @@ class ReactiveStorageTest {
             new AsyncStoredObject(
                 "x",
                 ObjectMetadata.of("t", 0),
-                reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher(Flux.empty()),
+                JdkFlowAdapter.publisherToFlowPublisher(Flux.empty()),
                 closes::incrementAndGet)));
     assertEquals(1, closes.get());
   }
@@ -237,7 +239,7 @@ class ReactiveStorageTest {
                         new AsyncStoredObject(
                             "x",
                             ObjectMetadata.of("t", 1),
-                            reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher(
+                            JdkFlowAdapter.publisherToFlowPublisher(
                                 Flux.just(ByteBuffer.wrap(new byte[] {1}))),
                             closes::incrementAndGet))));
     var storage = new ReactiveStorage(port);
@@ -251,7 +253,7 @@ class ReactiveStorageTest {
                         new AsyncStoredObject(
                             "x",
                             ObjectMetadata.of("t", 1),
-                            reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher(
+                            JdkFlowAdapter.publisherToFlowPublisher(
                                 Flux.error(new IllegalStateException("body"))),
                             closes::incrementAndGet))));
     StepVerifier.create(storage.content("x")).verifyError(IllegalStateException.class);
@@ -264,7 +266,7 @@ class ReactiveStorageTest {
                         new AsyncStoredObject(
                             "x",
                             ObjectMetadata.of("t", 1),
-                            reactor.adapter.JdkFlowAdapter.publisherToFlowPublisher(
+                            JdkFlowAdapter.publisherToFlowPublisher(
                                 Flux.concat(Flux.just(ByteBuffer.allocate(1)), Flux.never())),
                             closes::incrementAndGet))));
     StepVerifier.create(storage.content("x")).expectNextCount(1).thenCancel().verify();

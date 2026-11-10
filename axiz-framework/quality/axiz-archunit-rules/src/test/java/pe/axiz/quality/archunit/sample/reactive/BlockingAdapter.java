@@ -1,15 +1,16 @@
 package pe.axiz.quality.archunit.sample.reactive;
 
+import java.util.concurrent.CompletableFuture;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /** Blocks reactive pipelines: what NO_BLOCK_IN_REACTIVE_CODE reports. */
 public class BlockingAdapter {
 
-  public java.util.concurrent.CompletableFuture<String> offload() {
-    return Mono.fromCallable(
-            () -> java.util.concurrent.CompletableFuture.completedFuture("bad").join())
-        .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+  public CompletableFuture<String> offload() {
+    return Mono.fromCallable(() -> CompletableFuture.completedFuture("bad").join())
+        .subscribeOn(Schedulers.boundedElastic())
         .toFuture();
   }
 

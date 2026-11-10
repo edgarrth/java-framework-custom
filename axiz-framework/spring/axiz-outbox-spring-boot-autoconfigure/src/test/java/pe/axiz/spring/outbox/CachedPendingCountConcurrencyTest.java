@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Proxy;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -55,7 +56,7 @@ class CachedPendingCountConcurrencyTest {
         };
     OutboxStore store =
         (OutboxStore)
-            java.lang.reflect.Proxy.newProxyInstance(
+            Proxy.newProxyInstance(
                 OutboxStore.class.getClassLoader(),
                 new Class<?>[] {OutboxStore.class},
                 (proxy, method, args) -> {

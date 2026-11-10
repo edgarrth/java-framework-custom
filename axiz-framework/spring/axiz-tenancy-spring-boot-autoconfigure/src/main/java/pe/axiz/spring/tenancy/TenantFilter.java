@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.MDC;
@@ -41,7 +42,7 @@ public class TenantFilter extends OncePerRequestFilter {
     if (tenant.isEmpty()) {
       if (support.required()) {
         throw new ValidationException(
-            java.util.List.of(FieldViolation.of("tenant", "Required", "tenant is required")));
+            List.of(FieldViolation.of("tenant", "Required", "tenant is required")));
       }
       chain.doFilter(request, response);
       return;

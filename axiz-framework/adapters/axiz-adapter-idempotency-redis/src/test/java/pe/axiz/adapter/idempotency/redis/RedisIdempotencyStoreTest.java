@@ -6,12 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.lettuce.core.SetArgs;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.codec.StringCodec;
 import io.lettuce.core.protocol.CommandArgs;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
@@ -21,7 +23,9 @@ import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.idempotency.StoredResponseCodec;
+import pe.axiz.test.contracts.AsyncIdempotencyProbe;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
+import pe.axiz.test.support.ImmediateAsyncFakes;
 import pe.axiz.test.support.MutableClock;
 
 class RedisIdempotencyStoreTest {
@@ -97,7 +101,7 @@ class RedisIdempotencyStoreTest {
   static String options(SetArgs setArgs) {
     CommandArgs<String, String> args = new CommandArgs<>(StringCodec.UTF8);
     setArgs.build(args);
-    return args.toCommandString().toUpperCase(java.util.Locale.ROOT);
+    return args.toCommandString().toUpperCase(Locale.ROOT);
   }
 
   private static IdempotencyRecord inProgress(String key, String owner, Instant exp) {
@@ -197,10 +201,9 @@ class RedisIdempotencyStoreTest {
           @Override
           public IdempotencyStore create(MutableClock clock) {
             data.clear();
-            return new pe.axiz.test.contracts.AsyncIdempotencyProbe(
+            return new AsyncIdempotencyProbe(
                 new RedisAsyncIdempotencyStore(
-                    pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                        io.lettuce.core.api.async.RedisAsyncCommands.class, fakeRedis(data)),
+                    ImmediateAsyncFakes.adapt(RedisAsyncCommands.class, fakeRedis(data)),
                     "async:",
                     clock));
           }

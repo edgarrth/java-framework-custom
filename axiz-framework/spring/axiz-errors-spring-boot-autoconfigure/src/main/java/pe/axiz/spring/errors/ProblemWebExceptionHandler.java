@@ -1,6 +1,7 @@
 package pe.axiz.spring.errors;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -31,7 +32,7 @@ public class ProblemWebExceptionHandler implements WebExceptionHandler {
             failure,
             exchange.getLocaleContext().getLocale() != null
                 ? exchange.getLocaleContext().getLocale()
-                : java.util.Locale.ROOT,
+                : Locale.ROOT,
             exchange.getRequest().getPath().value(),
             exchange.getRequest().getHeaders().getFirst(StandardHeaders.CORRELATION_ID));
     response.setStatusCode(HttpStatusCode.valueOf(problem.status()));

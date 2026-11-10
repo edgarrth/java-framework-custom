@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.ToDoubleFunction;
@@ -248,8 +249,7 @@ public final class EventMetrics {
     private final MetricEvent metric;
     private final boolean recordDuration;
     private final long start;
-    private final java.util.concurrent.atomic.AtomicBoolean done =
-        new java.util.concurrent.atomic.AtomicBoolean();
+    private final AtomicBoolean done = new AtomicBoolean();
 
     private Observed(MetricEvent metric, boolean recordDuration, long start) {
       this.metric = metric;

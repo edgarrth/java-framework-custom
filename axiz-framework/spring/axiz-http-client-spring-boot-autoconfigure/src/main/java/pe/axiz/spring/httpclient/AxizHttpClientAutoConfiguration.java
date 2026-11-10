@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -73,8 +74,7 @@ public class AxizHttpClientAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class NativeCredentialValidation {
     @Bean
-    org.springframework.beans.factory.SmartInitializingSingleton axizNativeHttpCredentialsReady(
-        HttpClientRegistry registry) {
+    SmartInitializingSingleton axizNativeHttpCredentialsReady(HttpClientRegistry registry) {
       return () -> registry.all().values().forEach(registry::asyncAuth);
     }
   }

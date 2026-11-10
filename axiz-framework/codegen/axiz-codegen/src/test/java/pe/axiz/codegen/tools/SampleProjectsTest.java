@@ -12,6 +12,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.ProjectGenerator;
+import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.project.ProjectManifest;
 
 class SampleProjectsTest {
 
@@ -48,9 +50,9 @@ class SampleProjectsTest {
             new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
     boolean cqrs = false;
     for (String name : names) {
-      var project = pe.axiz.codegen.project.ProjectManifest.read(tmp.resolve(name));
+      var project = ProjectManifest.read(tmp.resolve(name));
       if (project.cqrs()
-          && project.stack() == pe.axiz.codegen.model.Stack.REACTIVE
+          && project.stack() == Stack.REACTIVE
           && project.persistence().equals("dynamodb")) cqrs = true;
     }
     assertTrue(cqrs, "must cover CQRS + reactive + DynamoDB");

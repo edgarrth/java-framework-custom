@@ -11,6 +11,8 @@
   <name>axiz :: adapter :: inbox-jdbc</name>
   <description>Inbox persistence and schema resources over JDBC</description>
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.adapter.inbox.jdbc</axiz.module.name>
     <axiz.api.baseline.artifactId>axiz-core-inbox</axiz.api.baseline.artifactId>
   </properties>

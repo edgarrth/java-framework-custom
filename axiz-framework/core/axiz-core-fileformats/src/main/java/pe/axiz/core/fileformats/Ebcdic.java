@@ -2,6 +2,7 @@ package pe.axiz.core.fileformats;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.nio.charset.Charset;
 
 /**
@@ -51,7 +52,7 @@ public final class Ebcdic {
 
   /** Encodes a packed decimal of the given byte length. */
   public static byte[] pack(BigDecimal value, int scale, int byteLength) {
-    BigInteger unscaled = value.setScale(scale, java.math.RoundingMode.UNNECESSARY).unscaledValue();
+    BigInteger unscaled = value.setScale(scale, RoundingMode.UNNECESSARY).unscaledValue();
     String digits = unscaled.abs().toString();
     int maxDigits = byteLength * 2 - 1;
     if (digits.length() > maxDigits) {

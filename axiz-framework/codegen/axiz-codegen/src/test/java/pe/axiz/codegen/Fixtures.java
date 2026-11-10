@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
@@ -28,7 +29,7 @@ public final class Fixtures {
       Stack stack,
       String persistence,
       List<String> capabilities,
-      pe.axiz.codegen.model.Extension... extensions) {
+      Extension... extensions) {
     String name =
         switch (archetype) {
           case "business" -> "orders";

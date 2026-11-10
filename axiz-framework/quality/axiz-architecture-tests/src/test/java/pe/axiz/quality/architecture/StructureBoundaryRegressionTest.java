@@ -14,12 +14,21 @@ import java.util.Map;
 import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.quality.archunit.HexagonalRules;
 
 class StructureBoundaryRegressionTest {
   @TempDir Path directory;
 
   @Test
   void technologyBoundariesRejectForeignKitsAndAllowTheirOwnKit() throws Exception {
+    assertFalse(
+        FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
+            .evaluate(dependency("pe.axiz.adapter.databaseauth.aws", "pe.axiz.kit.r2dbc", false))
+            .hasViolation());
+    assertTrue(
+        FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
+            .evaluate(dependency("pe.axiz.adapter.observability.aws", "pe.axiz.kit.r2dbc", false))
+            .hasViolation());
     assertTrue(
         FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
             .evaluate(dependency("pe.axiz.adapter.outbox.r2dbc", "pe.axiz.kit.jdbc", false))
@@ -40,7 +49,7 @@ class StructureBoundaryRegressionTest {
             Map.of(
                 "example." + layer + ".Sample",
                 "package example." + layer + "; public class Sample { " + body + " }"));
-    return pe.axiz.quality.archunit.HexagonalRules.rules("example").stream()
+    return HexagonalRules.rules("example").stream()
         .anyMatch(rule -> rule.allowEmptyShould(true).evaluate(classes).hasViolation());
   }
 

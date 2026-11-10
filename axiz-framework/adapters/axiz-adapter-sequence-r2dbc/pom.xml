@@ -6,6 +6,8 @@
   <name>axiz :: adapter :: sequence-r2dbc</name>
   <description>Native PostgreSQL sequence reservations, committed independently of business transactions</description>
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
     <axiz.module.name>pe.axiz.adapter.sequence.r2dbc</axiz.module.name>
     <!-- No 1.x coordinate exists. The API gate checks the approved new-module inventory instead. -->

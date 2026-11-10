@@ -1,4 +1,6 @@
 # adapters
 
-Technology adapters implement the synchronous and asynchronous ports from core. Services select them at runtime; their code imports ports and persistence kits instead of adapter implementations.
+
+`axiz-adapter-database-auth-aws` implements the R2DBC kit's neutral `DatabasePasswordProvider`
+contract. Its documented dependency exception keeps the RDS SDK in the adapter, outside the kit.
 

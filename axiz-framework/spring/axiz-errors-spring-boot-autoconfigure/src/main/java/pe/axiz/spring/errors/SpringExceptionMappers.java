@@ -1,11 +1,26 @@
 package pe.axiz.spring.errors;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
+import org.springframework.core.codec.DecodingException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationTrustResolverImpl;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ClassUtils;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.server.MissingRequestValueException;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.BusinessException;
@@ -35,13 +50,10 @@ final class SpringExceptionMappers {
 
   /** MVC advice must not turn an anonymous method-security denial into an authenticated 403. */
   static Throwable servletSecurityFailure(Throwable failure) {
-    if (SECURITY && failure instanceof org.springframework.security.access.AccessDeniedException) {
-      var authentication =
-          org.springframework.security.core.context.SecurityContextHolder.getContext()
-              .getAuthentication();
+    if (SECURITY && failure instanceof AccessDeniedException) {
+      var authentication = SecurityContextHolder.getContext().getAuthentication();
       if (authentication != null
-          && !new org.springframework.security.authentication.AuthenticationTrustResolverImpl()
-              .isAuthenticated(authentication))
+          && !new AuthenticationTrustResolverImpl().isAuthenticated(authentication))
         return AccessException.unauthenticated("authentication required");
     }
     return failure;
@@ -53,7 +65,7 @@ final class SpringExceptionMappers {
       if (mapped.isPresent()) {
         return mapped;
       }
-      if (VALIDATION && failure instanceof jakarta.validation.ConstraintViolationException cve) {
+      if (VALIDATION && failure instanceof ConstraintViolationException cve) {
         List<FieldViolation> violations = new ArrayList<>();
         cve.getConstraintViolations()
             .forEach(
@@ -69,16 +81,16 @@ final class SpringExceptionMappers {
         return Optional.of(new ValidationException(violations));
       }
       if (SECURITY) {
-        if (failure instanceof org.springframework.security.access.AccessDeniedException) {
+        if (failure instanceof AccessDeniedException) {
           return Optional.of(AccessException.forbidden("access denied"));
         }
-        if (failure instanceof org.springframework.security.core.AuthenticationException) {
+        if (failure instanceof AuthenticationException) {
           return Optional.of(AccessException.unauthenticated("authentication failed"));
         }
       }
       if (DAO) {
-        if (failure instanceof org.springframework.dao.OptimisticLockingFailureException
-            || failure instanceof org.springframework.dao.DataIntegrityViolationException) {
+        if (failure instanceof OptimisticLockingFailureException
+            || failure instanceof DataIntegrityViolationException) {
           return Optional.of(
               new BusinessException(CoreErrors.CONFLICT, failure.getClass().getSimpleName()));
         }
@@ -91,17 +103,16 @@ final class SpringExceptionMappers {
   }
 
   private static Optional<AxizException> bindingErrors(Throwable failure) {
-    if (failure instanceof org.springframework.validation.BindingResult result) {
+    if (failure instanceof BindingResult result) {
       return Optional.of(new ValidationException(violations(result)));
     }
-    if (failure instanceof org.springframework.validation.BindException be) {
+    if (failure instanceof BindException be) {
       return Optional.of(new ValidationException(violations(be.getBindingResult())));
     }
     return Optional.empty();
   }
 
-  private static List<FieldViolation> violations(
-      org.springframework.validation.BindingResult result) {
+  private static List<FieldViolation> violations(BindingResult result) {
     List<FieldViolation> out = new ArrayList<>();
     result
         .getFieldErrors()
@@ -126,9 +137,7 @@ final class SpringExceptionMappers {
   }
 
   private static Optional<AxizException> webErrors(Throwable failure) {
-    if (failure
-        instanceof
-        org.springframework.web.method.annotation.HandlerMethodValidationException hmve) {
+    if (failure instanceof HandlerMethodValidationException hmve) {
       List<FieldViolation> out = new ArrayList<>();
       hmve.getParameterValidationResults()
           .forEach(
@@ -153,15 +162,14 @@ final class SpringExceptionMappers {
         return servlet;
       }
     }
-    if (failure instanceof org.springframework.web.server.MissingRequestValueException mv
-        && "header".equals(mv.getLabel())) {
+    if (failure instanceof MissingRequestValueException mv && "header".equals(mv.getLabel())) {
       return Optional.of(missingHeader(mv.getName()));
     }
-    if (failure instanceof org.springframework.http.converter.HttpMessageNotReadableException
-        || failure instanceof org.springframework.core.codec.DecodingException) {
+    if (failure instanceof HttpMessageNotReadableException
+        || failure instanceof DecodingException) {
       return Optional.of(new BusinessException(CoreErrors.MALFORMED_BODY, "unreadable body"));
     }
-    if (failure instanceof org.springframework.web.ErrorResponse er) {
+    if (failure instanceof ErrorResponse er) {
       int status = er.getStatusCode().value();
       ErrorCategory category = ErrorCategory.fromHttpStatus(status);
       return Optional.of(
@@ -184,7 +192,7 @@ final class SpringExceptionMappers {
     private ServletErrors() {}
 
     static Optional<AxizException> map(Throwable failure) {
-      if (failure instanceof org.springframework.web.bind.MissingRequestHeaderException mh) {
+      if (failure instanceof MissingRequestHeaderException mh) {
         return Optional.of(missingHeader(mh.getHeaderName()));
       }
       return Optional.empty();

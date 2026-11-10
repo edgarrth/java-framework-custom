@@ -15,6 +15,8 @@
   <description>Generation engine shared by axiz-initializr and axiz-cli: OpenAPI model and lint, compatibility rules, templates and safe output</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.codegen</axiz.module.name>
   </properties>
 

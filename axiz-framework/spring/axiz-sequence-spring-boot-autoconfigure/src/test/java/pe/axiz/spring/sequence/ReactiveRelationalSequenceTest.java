@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
@@ -13,12 +14,12 @@ import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
 import pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore;
 import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
+import reactor.core.publisher.Mono;
 
 class ReactiveRelationalSequenceTest {
   private static ConnectionFactory connections() {
     ConnectionFactory factory = mock(ConnectionFactory.class);
-    when(factory.create())
-        .thenAnswer(ignored -> reactor.core.publisher.Mono.<io.r2dbc.spi.Connection>never());
+    when(factory.create()).thenAnswer(ignored -> Mono.<Connection>never());
     when(factory.getMetadata()).thenReturn(() -> "test");
     return factory;
   }

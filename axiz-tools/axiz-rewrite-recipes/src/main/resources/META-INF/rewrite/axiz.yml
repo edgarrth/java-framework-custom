@@ -68,6 +68,12 @@ description: Migrates architecture contract coordinates, packages, event contrac
 recipeList:
   - pe.axiz.rewrite.MigrateAuditModeSelector
   - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.kit.r2dbc.RdsIamPasswordProvider
+      newFullyQualifiedTypeName: pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.persistence.r2dbc.RdsIamPasswordProvider
+      newFullyQualifiedTypeName: pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider
+  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: pe.axiz.kit.r2dbc.ReactiveSequenceStore
       newFullyQualifiedTypeName: pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore
   - org.openrewrite.java.ChangeType:

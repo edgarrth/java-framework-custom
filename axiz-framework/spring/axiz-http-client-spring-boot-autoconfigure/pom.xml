@@ -15,6 +15,8 @@
   <description>Declarative @HttpExchange clients with per-client settings, outbound auth, resilience, error translation and logs (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.httpclient</axiz.module.name>
   </properties>
 

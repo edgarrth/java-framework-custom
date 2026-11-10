@@ -14,9 +14,11 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.codec.RedisCodec;
 import io.lettuce.core.codec.StringCodec;
+import java.net.ServerSocket;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -24,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,7 @@ import pe.axiz.adapter.security.redis.RedisAsyncNonceStore;
 import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -64,8 +68,8 @@ class ValkeyReactiveStoresIT {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
     // Keep the endpoint stable across Docker restart: auto-assigned host ports may change.
-    try (var port = new java.net.ServerSocket(0)) {
-      VALKEY.setPortBindings(java.util.List.of(port.getLocalPort() + ":6379"));
+    try (var port = new ServerSocket(0)) {
+      VALKEY.setPortBindings(List.of(port.getLocalPort() + ":6379"));
     }
     VALKEY.start();
     client = RedisClient.create("redis://127.0.0.1:" + VALKEY.getMappedPort(6379));
@@ -229,7 +233,7 @@ class ValkeyReactiveStoresIT {
           .verify(T);
       StepVerifier.create(
               call(() -> limits.tryAcquire("timeout-closed", 1, Duration.ofSeconds(1), false)))
-          .expectError(pe.axiz.core.security.RateLimitUnavailableException.class)
+          .expectError(RateLimitUnavailableException.class)
           .verify(T);
       StepVerifier.create(
               call(() -> limits.tryAcquire("timeout-open", 1, Duration.ofSeconds(1), true)))
@@ -257,13 +261,13 @@ class ValkeyReactiveStoresIT {
             .toFuture();
     assertTrue(submitted.await(3, TimeUnit.SECONDS));
     result.cancel(false);
-    org.awaitility.Awaitility.await().atMost(T).until(() -> source.get().isCancelled());
+    Awaitility.await().atMost(T).until(() -> source.get().isCancelled());
   }
 
   @Test
   void reconnectsAfterServerRestartWithoutOffloadingStoreCalls() {
     VALKEY.getDockerClient().restartContainerCmd(VALKEY.getContainerId()).exec();
-    org.awaitility.Awaitility.await()
+    Awaitility.await()
         .atMost(Duration.ofSeconds(15))
         .untilAsserted(
             () ->

@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.StaticKeyProvider;
+import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 class CursorSecurityTest {
@@ -62,13 +64,9 @@ class CursorSecurityTest {
     String cursor = encrypted.encode(KEY, BINDING);
     byte[] payload = Base64.getUrlDecoder().decode(cursor.split("\\.")[2]);
     assertEquals(1, payload[0]);
-    assertFalse(new String(payload, java.nio.charset.StandardCharsets.UTF_8).contains("tenant-a"));
+    assertFalse(new String(payload, StandardCharsets.UTF_8).contains("tenant-a"));
     assertEquals(KEY, signed.decode(cursor, BINDING));
-    var binary =
-        Map.of(
-            "pk",
-            AttributeValue.fromB(
-                software.amazon.awssdk.core.SdkBytes.fromByteArray(new byte[] {1, 2, 3})));
+    var binary = Map.of("pk", AttributeValue.fromB(SdkBytes.fromByteArray(new byte[] {1, 2, 3})));
     assertEquals(binary, encrypted.decode(encrypted.encode(binary, BINDING), BINDING));
     assertThrows(IllegalArgumentException.class, () -> encrypted.encode(KEY, ""));
   }

@@ -15,6 +15,8 @@
   <description>CQRS on top of hexagonal: commands, queries, buses with an ordered pipeline and projections (contracts, plain Java)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-framework-cqrs-api</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.extension.cqrs</axiz.module.name>

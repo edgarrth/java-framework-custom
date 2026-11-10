@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.KafkaProducer;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -352,9 +353,7 @@ class MessagingWiringTest {
                   .containsExactlyInAnyOrder("sqs", "sns");
               SqsEventConsumer consumer = ctx.getBean(SqsEventConsumer.class);
               assertTrue(consumer.isRunning(), "started with the context");
-              org.awaitility.Awaitility.await()
-                  .atMost(Duration.ofSeconds(5))
-                  .until(() -> sqs.polls.get() > 0);
+              Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> sqs.polls.get() > 0);
               assertTrue(sqs.polls.get() > 0, "the queue is polled");
               assertEquals(0, consumer.inFlightCount());
               assertThat(ctx.getBean(EventPublisher.class)).isNotNull();
@@ -437,7 +436,7 @@ class MessagingWiringTest {
             Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     consumer.start();
     try {
-      org.awaitility.Awaitility.await()
+      Awaitility.await()
           .atMost(Duration.ofSeconds(15))
           .until(() -> sqs.receives.get() >= 3 && consumer.inFlightCount() == 0);
       assertTrue(sqs.receives.get() >= 3, "polling resumed after the failed receive");

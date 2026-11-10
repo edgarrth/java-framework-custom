@@ -10,6 +10,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.Deduplicator;
 
@@ -110,7 +111,7 @@ class InboxDeduplicatorTest {
   @Test
   void invalidLeaseAndMissingStatusAreRejected() {
     var store = new Probe();
-    for (var invalid : java.util.List.of(Duration.ZERO, Duration.ofSeconds(-1)))
+    for (var invalid : List.of(Duration.ZERO, Duration.ofSeconds(-1)))
       assertThrows(
           IllegalArgumentException.class,
           () -> new InboxDeduplicator(store, invalid, RETENTION, Clock.systemUTC()));

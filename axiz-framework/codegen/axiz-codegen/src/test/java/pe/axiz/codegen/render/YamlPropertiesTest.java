@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 class YamlPropertiesTest {
 
@@ -44,7 +45,7 @@ class YamlPropertiesTest {
     String merged = YamlProperties.merge("a:\n  b: 1\n  c: 2\n", Map.of("a.c", 3, "d.e", "x"));
     assertEquals(
         Map.of("a.b", 1, "a.c", 3, "d.e", "x"),
-        YamlProperties.flatten((Map<String, ?>) new org.yaml.snakeyaml.Yaml().load(merged)));
+        YamlProperties.flatten((Map<String, ?>) new Yaml().load(merged)));
   }
 
   @Test
@@ -90,7 +91,7 @@ class YamlPropertiesTest {
                 "config.axiz.security.issuers[0].audiences", List.of("old", "new"),
                 "config.axiz.http-client.clients.bank.base-url", "https://bank",
                 "migration.serviceAliases", List.of("old")));
-    Map<?, ?> document = new org.yaml.snakeyaml.Yaml().load(merged);
+    Map<?, ?> document = new Yaml().load(merged);
     assertEquals(
         Map.of(
             "annotations",

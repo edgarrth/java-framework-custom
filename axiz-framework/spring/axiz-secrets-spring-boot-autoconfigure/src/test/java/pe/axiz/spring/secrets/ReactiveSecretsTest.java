@@ -23,6 +23,7 @@ import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretValue;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 
 class ReactiveSecretsTest {
@@ -145,8 +146,7 @@ class ReactiveSecretsTest {
                     .doesNotHaveBean(AsyncAwsClients.class)
                     .doesNotHaveBean(AsyncSecretResolver.class)
                     .doesNotHaveBean(ReactiveSecrets.class)
-                    .doesNotHaveBean(
-                        software.amazon.awssdk.services.secretsmanager.SecretsManagerClient.class)
+                    .doesNotHaveBean(SecretsManagerClient.class)
                     .doesNotHaveBean(SecretsManagerAsyncClient.class)
                     .doesNotHaveBean(SsmAsyncClient.class));
   }

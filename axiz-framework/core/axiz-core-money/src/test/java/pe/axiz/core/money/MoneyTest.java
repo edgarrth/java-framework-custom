@@ -8,14 +8,17 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
@@ -194,7 +197,7 @@ class MoneyTest {
   /** Property: parts add up exactly and each is within one minor unit of its exact share. */
   @Test
   void allocationPropertiesHoldForRandomInputs() {
-    java.util.Random random = new java.util.Random(20261012L);
+    Random random = new Random(20261012L);
     for (int run = 0; run < 2_000; run++) {
       long minor = random.nextLong() % 1_000_000_000_000_000L;
       Money amount = Money.ofMinor(minor, "PEN");
@@ -210,24 +213,21 @@ class MoneyTest {
         total = 1;
       }
       List<Money> parts = amount.allocate(ratios);
-      java.math.BigInteger sum = java.math.BigInteger.ZERO;
+      BigInteger sum = BigInteger.ZERO;
       for (int i = 0; i < n; i++) {
-        java.math.BigInteger part = java.math.BigInteger.valueOf(parts.get(i).minorUnits());
+        BigInteger part = BigInteger.valueOf(parts.get(i).minorUnits());
         sum = sum.add(part);
-        java.math.BigDecimal exact =
-            new java.math.BigDecimal(
-                    java.math.BigInteger.valueOf(minor)
-                        .multiply(java.math.BigInteger.valueOf(ratios[i])))
-                .divide(java.math.BigDecimal.valueOf(total), 10, java.math.RoundingMode.HALF_EVEN);
+        BigDecimal exact =
+            new BigDecimal(BigInteger.valueOf(minor).multiply(BigInteger.valueOf(ratios[i])))
+                .divide(BigDecimal.valueOf(total), 10, RoundingMode.HALF_EVEN);
         assertTrue(
-            exact.subtract(new java.math.BigDecimal(part)).abs().compareTo(java.math.BigDecimal.ONE)
-                < 0,
-            "part " + i + " of " + minor + " by " + java.util.Arrays.toString(ratios));
+            exact.subtract(new BigDecimal(part)).abs().compareTo(BigDecimal.ONE) < 0,
+            "part " + i + " of " + minor + " by " + Arrays.toString(ratios));
         if (ratios[i] == 0) {
           assertEquals(0, parts.get(i).minorUnits());
         }
       }
-      assertEquals(java.math.BigInteger.valueOf(minor), sum);
+      assertEquals(BigInteger.valueOf(minor), sum);
     }
   }
 

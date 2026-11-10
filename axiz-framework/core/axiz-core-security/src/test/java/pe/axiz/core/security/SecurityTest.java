@@ -10,7 +10,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +29,7 @@ class SecurityTest {
       for (Object invalid :
           List.of(List.of("app"), Map.of("id", "app"), true, 123, "app\uD800", "app\uDC00")) {
         var claims =
-            new java.util.HashMap<String, Object>(
+            new HashMap<String, Object>(
                 Map.of(
                     "iss", "https://idp.example", "sub", "user", "azp", "app", "tenant", "bank"));
         claims.put(claim, invalid);
@@ -65,8 +67,8 @@ class SecurityTest {
   @Test
   void identityClaimsWithControlCharactersAreRejected() {
     for (String claim : List.of("iss", "sub", "azp", "tenant")) {
-      java.util.HashMap<String, Object> claims =
-          new java.util.HashMap<>(
+      HashMap<String, Object> claims =
+          new HashMap<>(
               Map.of("iss", "https://idp.example", "sub", "user-1", "azp", "app", "tenant", "t1"));
       claims.put(claim, claims.get(claim) + "\u0000\u0002other");
       assertThrows(AccessException.class, () -> mapper.map(claims), claim);
@@ -296,12 +298,12 @@ class SecurityTest {
     Instant now = Instant.parse("2026-03-01T10:00:00.500Z");
 
     @Override
-    public java.time.ZoneId getZone() {
+    public ZoneId getZone() {
       return ZoneOffset.UTC;
     }
 
     @Override
-    public Clock withZone(java.time.ZoneId zone) {
+    public Clock withZone(ZoneId zone) {
       return this;
     }
 

@@ -8,6 +8,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.util.Objects;
 import java.util.Optional;
+import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.core.resilience.RetryPolicy;
 import pe.axiz.core.resilience.TimeoutSettings;
@@ -86,7 +87,7 @@ public class ResiliencePolicies {
 
   /** 4xx answers from a dependency are the caller's problem and must not open the circuit. */
   static boolean isClientError(Throwable t) {
-    return t instanceof pe.axiz.core.errors.AxizException a
+    return t instanceof AxizException a
         && !a.category().retryable()
         && a.category().httpStatus() < 500;
   }

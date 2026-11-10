@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ class R2dbcReactiveInboxStoreTest {
         new FakeR2dbc()
             .onUpdate("INSERT INTO", ignored -> 0L)
             .onUpdate("SET owner", ignored -> 0L)
-            .onQuery("SELECT", ignored -> java.util.List.of());
+            .onQuery("SELECT", ignored -> List.of());
     var store = new R2dbcReactiveInboxStore(new R2dbcSql(db), "axiz_inbox");
     StepVerifier.create(
             store.tryAcquire("c", "m", "o", NOW, NOW.plusSeconds(10), NOW.plusSeconds(100)))

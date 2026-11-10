@@ -1,15 +1,29 @@
 package pe.axiz.adapter.observability.aws;
 
 import io.micrometer.observation.ObservationRegistry;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.ChannelOption;
 import java.net.URI;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.stream.XMLInputFactory;
 import org.jspecify.annotations.Nullable;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.signer.Aws4Signer;
 import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption;
+import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
+import software.amazon.awssdk.http.TlsTrustManagersProvider;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
@@ -31,10 +45,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   }
 
   /** Owns the provided credential source, warming it before any native asynchronous call. */
-  public AsyncAwsClients(
-      software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
-      Clock clock,
-      Duration refreshInterval) {
+  public AsyncAwsClients(AwsCredentialsProvider source, Clock clock, Duration refreshInterval) {
     this(source, clock, refreshInterval, 2, 256, null);
   }
 
@@ -51,7 +62,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
 
   /** Explicit bounds for applications with their own warmed credential source. */
   public AsyncAwsClients(
-      software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      AwsCredentialsProvider source,
       Clock clock,
       Duration refreshInterval,
       int workers,
@@ -60,7 +71,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   }
 
   private AsyncAwsClients(
-      software.amazon.awssdk.auth.credentials.AwsCredentialsProvider source,
+      AwsCredentialsProvider source,
       Clock clock,
       Duration refreshInterval,
       int workers,
@@ -101,14 +112,14 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
 
   /** Snapshot-only, non-owning credentials for auxiliary signers; this owner controls refresh. */
   @SuppressWarnings("UnnecessaryMethodReference") // The interface view must not expose close().
-  public software.amazon.awssdk.auth.credentials.AwsCredentialsProvider credentialsProvider() {
+  public AwsCredentialsProvider credentialsProvider() {
     return credentials::resolveCredentials;
   }
 
   public <B extends AwsClientBuilder<B, C> & AwsAsyncClientBuilder<B, C>, C> C configured(
       B builder,
       ObservationRegistry observations,
-      java.util.function.Function<String, @Nullable String> properties,
+      Function<String, @Nullable String> properties,
       String service) {
     return configured(builder, observations, properties, service, null);
   }
@@ -116,14 +127,14 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   public <B extends AwsClientBuilder<B, C> & AwsAsyncClientBuilder<B, C>, C> C configured(
       B builder,
       ObservationRegistry observations,
-      java.util.function.Function<String, @Nullable String> properties,
+      Function<String, @Nullable String> properties,
       String service,
       @Nullable Duration apiCallTimeout) {
     if (apiCallTimeout != null && !apiCallTimeout.isPositive())
       throw new IllegalArgumentException("apiCallTimeout must be positive");
     // The SDK creates per-thread XML parsers on network workers. Discover the provider and
     // load the JDK XML policy files now, while configuring the client on the startup thread.
-    javax.xml.stream.XMLInputFactory.newFactory();
+    XMLInputFactory.newFactory();
     String region = properties.apply("axiz.aws.region");
     if (region == null || region.isBlank()) region = System.getenv("AWS_REGION");
     if (region == null || region.isBlank())
@@ -139,9 +150,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
             .maxConcurrency(64)
             // Adaptive pooling parks event loops while expanding magazines. Own independent
             // chunks instead; demand and transport concurrency bound live buffers.
-            .putChannelOption(
-                io.netty.channel.ChannelOption.ALLOCATOR,
-                new io.netty.buffer.UnpooledByteBufAllocator(true))
+            .putChannelOption(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(true))
             .useNonBlockingDnsResolver(true)
             .tlsTrustManagersProvider(warmedTrustManagers())
             .connectionTimeout(Duration.ofSeconds(3))
@@ -170,44 +179,37 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
               apiCallTimeout.compareTo(Duration.ofSeconds(30)) < 0
                   ? apiCallTimeout
                   : Duration.ofSeconds(30));
-    if (java.util.Set.of("dynamodb", "kms", "secretsmanager", "ssm", "sqs", "sns")
-        .contains(service)) {
+    if (Set.of("dynamodb", "kms", "secretsmanager", "ssm", "sqs", "sns").contains(service)) {
       // These services marshal finite in-memory payloads. The SDK's standard SigV4 signer uses
       // per-thread SHA-256 rather than the new signer's blocking shared digest pool (AWS #6590).
       // Keep streaming S3 on its native signer; never disable payload signing or use reflection.
-      overrides.putAdvancedOption(
-          software.amazon.awssdk.core.client.config.SdkAdvancedClientOption.SIGNER,
-          software.amazon.awssdk.auth.signer.Aws4Signer.create());
+      overrides.putAdvancedOption(SdkAdvancedClientOption.SIGNER, Aws4Signer.create());
     }
     builder.overrideConfiguration(overrides.build());
     return builder.build();
   }
 
-  private static software.amazon.awssdk.http.TlsTrustManagersProvider warmedTrustManagers() {
+  private static TlsTrustManagersProvider warmedTrustManagers() {
     try {
-      var factory =
-          javax.net.ssl.TrustManagerFactory.getInstance(
-              javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
-      factory.init((java.security.KeyStore) null);
-      javax.net.ssl.TrustManager[] snapshot = factory.getTrustManagers();
+      var factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      factory.init((KeyStore) null);
+      TrustManager[] snapshot = factory.getTrustManagers();
       return () -> snapshot.clone();
-    } catch (java.security.GeneralSecurityException failure) {
+    } catch (GeneralSecurityException failure) {
       throw new IllegalStateException(
           "Cannot initialize AWS TLS trust managers at startup", failure);
     }
   }
 
   static Duration duration(
-      java.util.function.Function<String, @Nullable String> properties,
-      String key,
-      Duration fallback) {
+      Function<String, @Nullable String> properties, String key, Duration fallback) {
     String raw = properties.apply(key);
     if (raw == null || raw.isBlank()) return fallback;
     try {
       Duration parsed;
       if (raw.startsWith("P")) parsed = Duration.parse(raw);
       else {
-        var match = java.util.regex.Pattern.compile("([0-9]+)(ms|s|m|h)").matcher(raw);
+        var match = Pattern.compile("([0-9]+)(ms|s|m|h)").matcher(raw);
         if (!match.matches()) throw new IllegalArgumentException("Invalid duration");
         long value = Long.parseLong(match.group(1));
         parsed =

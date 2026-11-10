@@ -11,6 +11,8 @@
   <name>axiz :: adapter :: sequence-jdbc</name>
   <description>Sequence persistence and schema resources over JDBC</description>
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.adapter.sequence.jdbc</axiz.module.name>
     <axiz.api.baseline.artifactId>axiz-core-sequence</axiz.api.baseline.artifactId>
   </properties>

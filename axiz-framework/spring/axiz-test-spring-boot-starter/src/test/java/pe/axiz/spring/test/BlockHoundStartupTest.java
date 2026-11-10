@@ -5,10 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,14 +55,14 @@ class BlockHoundStartupTest {
             .redirectOutput(log.toFile())
             .start();
     try {
-      assertTrue(child.waitFor(30, java.util.concurrent.TimeUnit.SECONDS));
+      assertTrue(child.waitFor(30, TimeUnit.SECONDS));
       assertEquals(0, child.exitValue(), Files.readString(log));
     } finally {
       if (child.isAlive()) child.destroyForcibly();
     }
   }
 
-  @org.junit.jupiter.api.Order(1)
+  @Order(1)
   public static class EarlierPlainChecks {
     @Test
     void infrastructureWasInstalledBeforeThisFirstPlainTest() {
@@ -78,7 +82,7 @@ class BlockHoundStartupTest {
     }
   }
 
-  @org.junit.jupiter.api.Order(2)
+  @Order(2)
   @ExtendWith(BlockHoundExtension.class)
   public static class LaterReactiveChecks {
     @Test
@@ -108,7 +112,7 @@ class BlockHoundStartupTest {
     private Probe() {}
 
     public static void main(String[] args) {
-      var asynchronousErrors = new java.util.concurrent.ConcurrentLinkedQueue<Throwable>();
+      var asynchronousErrors = new ConcurrentLinkedQueue<Throwable>();
       Schedulers.onHandleError(
           "startup-regression", (thread, error) -> asynchronousErrors.add(error));
       var summary = new SummaryGeneratingListener();
@@ -126,7 +130,7 @@ class BlockHoundStartupTest {
       var request = builder.build();
       try {
         LauncherFactory.create().execute(request, summary);
-        summary.getSummary().printTo(new java.io.PrintWriter(System.out, true));
+        summary.getSummary().printTo(new PrintWriter(System.out, true));
         assertEquals(reactive ? 2 : 1, summary.getSummary().getTestsSucceededCount());
         assertTrue(asynchronousErrors.isEmpty(), asynchronousErrors.toString());
       } finally {

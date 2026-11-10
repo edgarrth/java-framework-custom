@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.util.ClassUtils;
 import pe.axiz.core.crypto.BlindIndex;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.KeyProvider;
@@ -41,7 +43,7 @@ public class AxizCryptoAutoConfiguration {
   PasswordHasher axizPasswordHasher(AxizCryptoProperties p) {
     String algorithm = p.password().algorithm();
     boolean springCrypto =
-        org.springframework.util.ClassUtils.isPresent(
+        ClassUtils.isPresent(
             "org.springframework.security.crypto.password.PasswordEncoder",
             AxizCryptoAutoConfiguration.class.getClassLoader());
     return switch (algorithm) {
@@ -80,9 +82,7 @@ public class AxizCryptoAutoConfiguration {
       List<String> ids =
           f.keyIds().contains(current)
               ? f.keyIds()
-              : java.util.stream.Stream.concat(
-                      f.keyIds().stream(), java.util.stream.Stream.of(current))
-                  .toList();
+              : Stream.concat(f.keyIds().stream(), Stream.of(current)).toList();
       for (String id : ids) {
         String name = f.secretPrefix() + id;
         keys.put(
@@ -126,7 +126,7 @@ public class AxizCryptoAutoConfiguration {
     private SpringEncoders() {}
 
     static boolean argon2Available() {
-      return org.springframework.util.ClassUtils.isPresent(
+      return ClassUtils.isPresent(
           "org.bouncycastle.crypto.params.Argon2Parameters",
           AxizCryptoAutoConfiguration.class.getClassLoader());
     }

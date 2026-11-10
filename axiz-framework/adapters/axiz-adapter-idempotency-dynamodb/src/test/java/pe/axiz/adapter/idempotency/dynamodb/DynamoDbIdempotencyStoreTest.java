@@ -16,7 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.test.contracts.AsyncIdempotencyProbe;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
+import pe.axiz.test.support.ImmediateAsyncFakes;
+import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
@@ -167,11 +170,9 @@ class DynamoDbIdempotencyStoreTest {
   Stream<DynamicTest> nativeAsyncContract() {
     return IdempotencyStoreContract.checks(
             clock ->
-                new pe.axiz.test.contracts.AsyncIdempotencyProbe(
+                new AsyncIdempotencyProbe(
                     new DynamoDbAsyncIdempotencyStore(
-                        pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                            software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient.class,
-                            new FakeDynamo()),
+                        ImmediateAsyncFakes.adapt(DynamoDbAsyncClient.class, new FakeDynamo()),
                         "axiz-idempotency",
                         clock)))
         .stream()

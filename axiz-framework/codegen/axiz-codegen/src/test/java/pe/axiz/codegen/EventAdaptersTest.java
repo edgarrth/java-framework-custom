@@ -7,10 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
+import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 
@@ -20,7 +22,7 @@ class EventAdaptersTest {
     var withMessaging =
         AsyncContractSyncTest.request(AsyncContractSyncTest.contract(), Structure.HEXAGONAL);
     var withoutMessaging =
-        new pe.axiz.codegen.model.ProjectRequest(
+        new ProjectRequest(
             withMessaging.name(),
             withMessaging.groupId(),
             withMessaging.basePackage(),
@@ -39,7 +41,7 @@ class EventAdaptersTest {
         result.problems().stream()
             .anyMatch(problem -> problem.contains("requires a messaging capability")));
     var library =
-        new pe.axiz.codegen.model.ProjectRequest(
+        new ProjectRequest(
             "orders-library",
             "pe.axiz",
             "pe.axiz.orders",
@@ -140,8 +142,8 @@ class EventAdaptersTest {
     byte[] bindingBefore = Files.readAllBytes(binding);
     var sync = new AsyncContractSync();
     assertTrue(sync.sync(directory).proposed().isEmpty());
-    assertTrue(java.util.Arrays.equals(handlerBefore, Files.readAllBytes(handler)));
-    assertTrue(java.util.Arrays.equals(bindingBefore, Files.readAllBytes(binding)));
+    assertTrue(Arrays.equals(handlerBefore, Files.readAllBytes(handler)));
+    assertTrue(Arrays.equals(bindingBefore, Files.readAllBytes(binding)));
     Files.delete(handler);
     assertEquals(1, sync.sync(directory).created().size());
   }

@@ -15,6 +15,8 @@
   <description>Distributed locks on Redis or DynamoDB with the lock template (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.lock</axiz.module.name>
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED</axiz.test.argLine>
   </properties>

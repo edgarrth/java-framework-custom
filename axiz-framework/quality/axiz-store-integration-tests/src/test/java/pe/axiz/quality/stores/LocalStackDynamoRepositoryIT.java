@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.observation.ObservationRegistry;
+import java.time.Clock;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
+import javax.crypto.SecretKey;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.StaticKeyProvider;
+import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoAsyncRepository;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepository;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
@@ -34,6 +40,7 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ProjectionType;
@@ -42,7 +49,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 /** Native repository wire contract, with cold operations and callbacks checked by BlockHound. */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackDynamoRepositoryIT {
-  private static final javax.crypto.SecretKey CURSOR_KEY = pe.axiz.core.crypto.AesGcm.newKey();
+  private static final SecretKey CURSOR_KEY = AesGcm.newKey();
   private static final LocalStackContainer LOCALSTACK =
       new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
   private static AsyncAwsClients resources;
@@ -121,8 +128,7 @@ class LocalStackDynamoRepositoryIT {
       setup.createTable(
           b ->
               b.tableName("axiz-native-repository")
-                  .billingMode(
-                      software.amazon.awssdk.services.dynamodb.model.BillingMode.PAY_PER_REQUEST)
+                  .billingMode(BillingMode.PAY_PER_REQUEST)
                   .attributeDefinitions(
                       a -> a.attributeName("pk").attributeType(ScalarAttributeType.S),
                       a -> a.attributeName("sk").attributeType(ScalarAttributeType.S),
@@ -138,8 +144,7 @@ class LocalStackDynamoRepositoryIT {
       setup.waiter().waitUntilTableExists(b -> b.tableName("axiz-native-repository"));
     }
     lifecycle = new NettyLifecycleProbe();
-    resources =
-        new AsyncAwsClients(credentials, java.time.Clock.systemUTC(), Duration.ofMillis(25));
+    resources = new AsyncAwsClients(credentials, Clock.systemUTC(), Duration.ofMillis(25));
     client =
         resources.configured(
             DynamoDbAsyncClient.builder(),
@@ -158,10 +163,7 @@ class LocalStackDynamoRepositoryIT {
             "axiz-native-repository",
             TableSchema.fromBean(Item.class),
             () ->
-                new pe.axiz.kit.dynamodb.CursorCodec(
-                    new pe.axiz.core.crypto.StaticKeyProvider(
-                        "test", java.util.Map.of("test", CURSOR_KEY)),
-                    false));
+                new CursorCodec(new StaticKeyProvider("test", Map.of("test", CURSOR_KEY)), false));
     repository = new ReactiveDynamoRepository<>(nativeRepository);
   }
 

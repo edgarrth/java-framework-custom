@@ -2,6 +2,8 @@ package pe.axiz.spring.soap;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,7 +19,7 @@ import pe.axiz.core.soap.WsSecurity;
 @ConfigurationProperties("axiz.soap")
 public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
   public AxizSoapProperties {
-    clients = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(clients));
+    clients = Collections.unmodifiableMap(new LinkedHashMap<>(clients));
   }
 
   /**

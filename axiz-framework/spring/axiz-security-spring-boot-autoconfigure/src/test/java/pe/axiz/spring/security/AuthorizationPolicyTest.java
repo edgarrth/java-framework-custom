@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
@@ -11,15 +14,22 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AnnotationTemplateExpressionDefaults;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -103,7 +113,7 @@ class AuthorizationPolicyTest {
 
   @Test
   void startupNeverInvokesARealApplicationPolicyEvenWhenOrTrueMakesItTrivial() {
-    Policy policy = org.mockito.Mockito.spy(new Policy());
+    Policy policy = Mockito.spy(new Policy());
     mvc(DynamicTrue.class)
         .withBean("policy", Policy.class, () -> policy)
         .run(
@@ -111,8 +121,7 @@ class AuthorizationPolicyTest {
               assertThrows(
                   IllegalStateException.class,
                   () -> AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext()));
-              org.mockito.Mockito.verify(policy, org.mockito.Mockito.never())
-                  .check(org.mockito.ArgumentMatchers.any());
+              Mockito.verify(policy, Mockito.never()).check(ArgumentMatchers.any());
             });
   }
 
@@ -155,8 +164,7 @@ class AuthorizationPolicyTest {
               AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext());
               var controller = ctx.getBean(Authenticated.class);
               SecurityContextHolder.clearContext();
-              assertThrows(
-                  org.springframework.security.core.AuthenticationException.class, controller::get);
+              assertThrows(AuthenticationException.class, controller::get);
               for (var auth :
                   List.of(
                       jwt(),
@@ -247,9 +255,7 @@ class AuthorizationPolicyTest {
               AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext());
               SecurityContextHolder.getContext().setAuthentication(jwt());
               try {
-                assertThrows(
-                    org.springframework.security.access.AccessDeniedException.class,
-                    ctx.getBean(Templated.class)::get);
+                assertThrows(AccessDeniedException.class, ctx.getBean(Templated.class)::get);
               } finally {
                 SecurityContextHolder.clearContext();
               }
@@ -280,24 +286,18 @@ class AuthorizationPolicyTest {
             ctx -> {
               AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext());
               var controller = ctx.getBean(ReactiveAuthenticated.class);
-              assertThrows(
-                  org.springframework.security.access.AccessDeniedException.class,
-                  () -> controller.get().block());
+              assertThrows(AccessDeniedException.class, () -> controller.get().block());
               assertEquals(
                   "ok",
                   controller
                       .get()
-                      .contextWrite(
-                          org.springframework.security.core.context.ReactiveSecurityContextHolder
-                              .withAuthentication(jwt()))
+                      .contextWrite(ReactiveSecurityContextHolder.withAuthentication(jwt()))
                       .block());
             });
   }
 
   @Configuration(proxyBeanMethods = false)
-  @org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity(
-      securedEnabled = true,
-      jsr250Enabled = true)
+  @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
   static class AdditionalFamilies {}
 
   @RestController
@@ -312,7 +312,7 @@ class AuthorizationPolicyTest {
   @RestController
   static class Roles {
     @GetMapping("/policy")
-    @jakarta.annotation.security.RolesAllowed("admin")
+    @RolesAllowed("admin")
     public String get() {
       return "ok";
     }
@@ -321,7 +321,7 @@ class AuthorizationPolicyTest {
   @RestController
   static class Deny {
     @GetMapping("/policy")
-    @jakarta.annotation.security.DenyAll
+    @DenyAll
     public String get() {
       return "ok";
     }
@@ -330,7 +330,7 @@ class AuthorizationPolicyTest {
   @RestController
   static class Permit {
     @GetMapping("/policy")
-    @jakarta.annotation.security.PermitAll
+    @PermitAll
     public String get() {
       return "ok";
     }
@@ -346,13 +346,10 @@ class AuthorizationPolicyTest {
               var controller = ctx.getBean(Secured.class);
               SecurityContextHolder.getContext().setAuthentication(jwt());
               try {
-                assertThrows(
-                    org.springframework.security.access.AccessDeniedException.class,
-                    controller::get);
+                assertThrows(AccessDeniedException.class, controller::get);
                 SecurityContextHolder.getContext()
                     .setAuthentication(
-                        new org.springframework.security.authentication.TestingAuthenticationToken(
-                            "user", "secret", "IS_AUTHENTICATED_FULLY"));
+                        new TestingAuthenticationToken("user", "secret", "IS_AUTHENTICATED_FULLY"));
                 assertEquals("ok", controller.get());
               } finally {
                 SecurityContextHolder.clearContext();

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
@@ -23,6 +24,7 @@ import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
+import pe.axiz.extension.cqrs.AccessPolicies;
 import pe.axiz.extension.cqrs.Caller;
 import pe.axiz.extension.cqrs.CommandHandler;
 import pe.axiz.extension.cqrs.HandlerNotFoundException;
@@ -176,7 +178,7 @@ class ReactiveCqrsTest {
     }
 
     @Override
-    public org.reactivestreams.Publisher<Void> check(PaymentStatusQuery request, Caller caller) {
+    public Publisher<Void> check(PaymentStatusQuery request, Caller caller) {
       return Mono.fromSupplier(
               () -> {
                 lookups.incrementAndGet();
@@ -193,8 +195,7 @@ class ReactiveCqrsTest {
   void reactivePoliciesDenyBeforeTheHandlerWithoutBlocking() {
     OwnerOnly policy = new OwnerOnly();
     ReactiveBehaviors.Authorization authorization =
-        new ReactiveBehaviors.Authorization(
-            pe.axiz.extension.cqrs.AccessPolicies.none(), List.of(policy));
+        new ReactiveBehaviors.Authorization(AccessPolicies.none(), List.of(policy));
     AtomicInteger handled = new AtomicInteger();
     Invocation<String> invocation =
         new Invocation<>(new PaymentStatusQuery("p-1"), "payment-status-query", String.class);

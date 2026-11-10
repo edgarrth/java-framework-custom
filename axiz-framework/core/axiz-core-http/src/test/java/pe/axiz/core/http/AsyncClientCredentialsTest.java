@@ -9,26 +9,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.net.Authenticator;
+import java.net.CookieHandler;
 import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.Stages;
 import pe.axiz.core.errors.ExternalServiceException;
 
 class AsyncClientCredentialsTest {
@@ -36,7 +51,7 @@ class AsyncClientCredentialsTest {
   // Test-only HTTP driver; production selects a native DNS/transport implementation in Spring.
   private final AsyncHttpExchange transport =
       (request, maxBytes) ->
-          pe.axiz.core.commons.Stages.map(
+          Stages.map(
               http.sendAsync(
                   request,
                   HttpResponse.BodyHandlers.limiting(
@@ -54,8 +69,7 @@ class AsyncClientCredentialsTest {
   private final AtomicReference<String> form = new AtomicReference<>();
   private final CountDownLatch arrived = new CountDownLatch(1);
   private final CountDownLatch release = new CountDownLatch(1);
-  private final java.util.concurrent.ExecutorService handlers =
-      Executors.newVirtualThreadPerTaskExecutor();
+  private final ExecutorService handlers = Executors.newVirtualThreadPerTaskExecutor();
   private volatile boolean hold;
   private volatile int status = 200;
   private HttpServer server;
@@ -80,7 +94,7 @@ class AsyncClientCredentialsTest {
             exchange.getResponseBody().write(content);
           } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
-          } catch (java.io.IOException cancelled) {
+          } catch (IOException cancelled) {
             // Cancellation intentionally closes a response while the local server is writing it.
           }
         });
@@ -125,7 +139,7 @@ class AsyncClientCredentialsTest {
               return CompletableFuture.completedFuture(secret.get());
             },
             Duration.ofSeconds(2));
-    var results = java.util.stream.IntStream.range(0, 40).mapToObj(i -> provider.token()).toList();
+    var results = IntStream.range(0, 40).mapToObj(i -> provider.token()).toList();
     assertTrue(arrived.await(3, TimeUnit.SECONDS));
     assertFalse(results.getFirst().toCompletableFuture().isDone());
     clock.now = clock.now.plusSeconds(5);
@@ -141,8 +155,7 @@ class AsyncClientCredentialsTest {
     assertEquals(
         "my-client:s3cr%26t",
         new String(
-            java.util.Base64.getDecoder().decode(authorization.get().substring(6)),
-            StandardCharsets.UTF_8));
+            Base64.getDecoder().decode(authorization.get().substring(6)), StandardCharsets.UTF_8));
     assertTrue(form.get().contains("scope=payments.read+payments.write"));
     assertTrue(form.get().contains("audience=core"));
     assertSame(first, await(provider.token()));
@@ -155,8 +168,7 @@ class AsyncClientCredentialsTest {
     assertEquals(
         "my-client:rotated",
         new String(
-            java.util.Base64.getDecoder().decode(authorization.get().substring(6)),
-            StandardCharsets.UTF_8));
+            Base64.getDecoder().decode(authorization.get().substring(6)), StandardCharsets.UTF_8));
   }
 
   @Test
@@ -190,10 +202,8 @@ class AsyncClientCredentialsTest {
     // before CompletableFuture.cancel can mark its direct state as cancelled (JDK MinimalFuture).
     var cancelled = assertThrows(RuntimeException.class, nativeFuture::join);
     assertInstanceOf(
-        java.util.concurrent.CancellationException.class,
-        cancelled instanceof java.util.concurrent.CompletionException
-            ? cancelled.getCause()
-            : cancelled);
+        CancellationException.class,
+        cancelled instanceof CompletionException ? cancelled.getCause() : cancelled);
   }
 
   @Test
@@ -323,7 +333,7 @@ class AsyncClientCredentialsTest {
     var timed = provider(() -> CompletableFuture.completedFuture("secret"), Duration.ofMillis(100));
     var timeout = assertThrows(ExecutionException.class, () -> await(timed.token())).getCause();
     assertInstanceOf(ExternalServiceException.class, timeout);
-    assertInstanceOf(java.net.http.HttpTimeoutException.class, timeout.getCause());
+    assertInstanceOf(HttpTimeoutException.class, timeout.getCause());
     assertTrue(http.nativeCall.get().isDone());
   }
 
@@ -353,12 +363,12 @@ class AsyncClientCredentialsTest {
     }
 
     @Override
-    public java.util.Optional<java.net.CookieHandler> cookieHandler() {
+    public Optional<CookieHandler> cookieHandler() {
       return delegate.cookieHandler();
     }
 
     @Override
-    public java.util.Optional<Duration> connectTimeout() {
+    public Optional<Duration> connectTimeout() {
       return delegate.connectTimeout();
     }
 
@@ -368,22 +378,22 @@ class AsyncClientCredentialsTest {
     }
 
     @Override
-    public java.util.Optional<java.net.ProxySelector> proxy() {
+    public Optional<ProxySelector> proxy() {
       return delegate.proxy();
     }
 
     @Override
-    public javax.net.ssl.SSLContext sslContext() {
+    public SSLContext sslContext() {
       return delegate.sslContext();
     }
 
     @Override
-    public javax.net.ssl.SSLParameters sslParameters() {
+    public SSLParameters sslParameters() {
       return delegate.sslParameters();
     }
 
     @Override
-    public java.util.Optional<java.net.Authenticator> authenticator() {
+    public Optional<Authenticator> authenticator() {
       return delegate.authenticator();
     }
 
@@ -393,7 +403,7 @@ class AsyncClientCredentialsTest {
     }
 
     @Override
-    public java.util.Optional<java.util.concurrent.Executor> executor() {
+    public Optional<Executor> executor() {
       return delegate.executor();
     }
 

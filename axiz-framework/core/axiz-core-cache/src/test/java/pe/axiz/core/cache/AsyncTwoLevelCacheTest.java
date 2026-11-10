@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -77,7 +79,7 @@ class AsyncTwoLevelCacheTest {
   @Test
   void unknownExpiredAndUnboundedEntriesHaveDistinctLocalPolicies() throws Exception {
     for (CachedValue value :
-        java.util.List.of(
+        List.of(
             CachedValue.unknownExpiry(VALUE),
             CachedValue.expiringIn(VALUE, Duration.ZERO),
             CachedValue.withoutExpiry(VALUE))) {
@@ -95,7 +97,7 @@ class AsyncTwoLevelCacheTest {
 
   @Test
   void cancellationReachesNativeReadAndDoesNotPopulateL1() {
-    var local = new InMemoryByteCache(10, java.time.Clock.systemUTC());
+    var local = new InMemoryByteCache(10, Clock.systemUTC());
     var remote = new Remote();
     var cache = new AsyncTwoLevelCache(local, remote, TTL);
     var result = cache.get("key").toCompletableFuture();
@@ -106,7 +108,7 @@ class AsyncTwoLevelCacheTest {
 
   @Test
   void remoteFailureIsAMissAndLocalDataSurvivesWriteFailure() throws Exception {
-    var local = new InMemoryByteCache(10, java.time.Clock.systemUTC());
+    var local = new InMemoryByteCache(10, Clock.systemUTC());
     var remote = new Remote();
     var cache = new AsyncTwoLevelCache(local, remote, TTL);
     remote.read.completeExceptionally(new IllegalStateException("timeout"));
@@ -127,7 +129,7 @@ class AsyncTwoLevelCacheTest {
 
   @Test
   void localOnlyNeedsNoRemoteAndRemoteMissStaysAMiss() throws Exception {
-    var local = new InMemoryByteCache(10, java.time.Clock.systemUTC());
+    var local = new InMemoryByteCache(10, Clock.systemUTC());
     var cache = new AsyncTwoLevelCache(local, null, TTL);
     assertTrue(cache.get("missing").toCompletableFuture().get().isEmpty());
     cache.put("one", VALUE, TTL).toCompletableFuture().get();

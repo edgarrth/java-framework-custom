@@ -15,6 +15,8 @@
   <description>Lightweight SOAP 1.1/1.2 client support: envelopes, WS-Security UsernameToken, fault mapping</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.soap</axiz.module.name>
   </properties>
 

@@ -16,6 +16,8 @@
   <description>ArchUnit checks of the framework itself: layer dependencies, plain-Java core, starter isolation and cycles</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <axiz.module.name>pe.axiz.quality.tests</axiz.module.name>
@@ -26,6 +28,7 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-archunit-rules</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-r2dbc</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jdbc</artifactId><version>${project.version}</version><scope>test</scope></dependency>

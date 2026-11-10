@@ -22,6 +22,7 @@ import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.listener.JobExecutionListener;
 import org.springframework.batch.core.repository.support.ResourcelessJobRepository;
 import org.springframework.batch.core.step.StepExecution;
+import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -149,8 +150,7 @@ class ObservedJobListenerTest {
 
     ObservedJobListenerPostProcessor withoutListener =
         new ObservedJobListenerPostProcessor(
-            new org.springframework.beans.factory.support.StaticListableBeanFactory()
-                .getBeanProvider(ObservedJobListener.class));
+            new StaticListableBeanFactory().getBeanProvider(ObservedJobListener.class));
     RecordingJob job = new RecordingJob();
     assertSame(job, withoutListener.postProcessAfterInitialization(job, "job"));
     assertTrue(job.listeners.isEmpty());

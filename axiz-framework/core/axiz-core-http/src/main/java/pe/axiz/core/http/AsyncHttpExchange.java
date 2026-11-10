@@ -4,6 +4,9 @@ import java.net.http.HttpRequest;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.sensitive.MaskType;
+import pe.axiz.core.sensitive.Sensitive;
+import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
  * Bounded native HTTP exchange. Implementations must resolve DNS, connect and consume the body
@@ -18,10 +21,7 @@ public interface AsyncHttpExchange {
   record Response(
       int status,
       @Nullable String contentType,
-      @pe.axiz.core.sensitive.Sensitive(
-              level = pe.axiz.core.sensitive.SensitivityLevel.CRITICAL,
-              mask = pe.axiz.core.sensitive.MaskType.FULL)
-          String body) {
+      @Sensitive(level = SensitivityLevel.CRITICAL, mask = MaskType.FULL) String body) {
     public Response {
       Objects.requireNonNull(body);
     }

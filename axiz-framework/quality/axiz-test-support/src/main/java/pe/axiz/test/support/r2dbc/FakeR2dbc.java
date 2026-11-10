@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -59,8 +61,8 @@ public final class FakeR2dbc implements ConnectionFactory {
       Map<Integer, Class<?>> types,
       int connection) {
     public Execution {
-      binds = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(binds));
-      types = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(types));
+      binds = Collections.unmodifiableMap(new LinkedHashMap<>(binds));
+      types = Collections.unmodifiableMap(new LinkedHashMap<>(types));
     }
   }
 
@@ -73,7 +75,7 @@ public final class FakeR2dbc implements ConnectionFactory {
   private final List<Execution> executions = new CopyOnWriteArrayList<>();
   private final List<String> events = new CopyOnWriteArrayList<>();
   private final AtomicInteger connections = new AtomicInteger();
-  private final java.util.Set<String> failing = java.util.concurrent.ConcurrentHashMap.newKeySet();
+  private final Set<String> failing = ConcurrentHashMap.newKeySet();
 
   /**
    * Makes a connection operation fail after being recorded: {@code begin}, {@code commit}, {@code

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 import pe.axiz.core.commons.Page;
 import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.commons.Sort.Direction;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.structure.layered.CrudService;
 
@@ -72,7 +73,7 @@ public abstract class JpaCrudService<T, I> implements CrudService<T, I> {
             request.sort().orders().stream()
                 .map(
                     o ->
-                        o.direction() == pe.axiz.core.commons.Sort.Direction.DESC
+                        o.direction() == Direction.DESC
                             ? Sort.Order.desc(o.field())
                             : Sort.Order.asc(o.field()))
                 .toList());

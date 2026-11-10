@@ -18,9 +18,11 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.ApplicationContext;
 import pe.axiz.core.cache.AxizCacheable;
 import pe.axiz.core.cache.ByteCache;
 import pe.axiz.core.cache.CacheKeys;
+import pe.axiz.core.cache.CacheScope;
 import pe.axiz.core.cache.InMemoryByteCache;
 import pe.axiz.core.cache.TwoLevelCache;
 import reactor.core.publisher.Flux;
@@ -103,7 +105,7 @@ class CacheContractTest {
           .withConfiguration(AutoConfigurations.of(AxizCacheAutoConfiguration.class))
           .withPropertyValues("spring.application.name=svc");
 
-  private static Lookup proxy(org.springframework.context.ApplicationContext ctx, Lookup target) {
+  private static Lookup proxy(ApplicationContext ctx, Lookup target) {
     ProxyFactory pf = new ProxyFactory(target);
     pf.setProxyTargetClass(true);
     pf.addAdvisor(ctx.getBean("axizCacheableAdvisor", Advisor.class));
@@ -191,7 +193,7 @@ class CacheContractTest {
                   + ":"
                   + AxizCacheableInterceptor.signature(Lookup.class.getMethod("find", String.class))
                   + ":"
-                  + CacheScopes.part(pe.axiz.core.cache.CacheScope.TENANT, null, null)
+                  + CacheScopes.part(CacheScope.TENANT, null, null)
                   + ":s=9";
           assertTrue(caches.store().get(key).isPresent(), key);
           caches

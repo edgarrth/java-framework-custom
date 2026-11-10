@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.oauth2.jwt.JwtException;
 import pe.axiz.core.errors.AccessException;
+import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.security.ClaimMapping;
 import pe.axiz.core.security.ClaimsMapper;
 import pe.axiz.core.security.IssuerPolicy;
@@ -121,7 +122,7 @@ class AccessTokenProfileTest {
               ? decoders.reactive(ISSUER).decode(signed).block(T)
               : decoders.servlet(ISSUER).decode(signed);
       var authentication = converter.convert(jwt);
-      var principal = (pe.axiz.core.security.AxizPrincipal) authentication.getPrincipal();
+      var principal = (AxizPrincipal) authentication.getPrincipal();
       assertEquals(service, principal.isMachine());
       assertEquals(service ? "mobile" : "customer-1", principal.subject());
       assertThat(authentication.getAuthorities())

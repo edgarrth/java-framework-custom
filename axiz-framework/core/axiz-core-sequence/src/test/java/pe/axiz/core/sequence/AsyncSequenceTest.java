@@ -9,14 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 class AsyncSequenceTest {
@@ -123,7 +126,7 @@ class AsyncSequenceTest {
   void capturesPeriodOnceEvenIfTheClockChangesDuringIo() {
     SequenceTest.MutableClock clock = new SequenceTest.MutableClock();
     CompletableFuture<Long> first = new CompletableFuture<>();
-    List<String> periods = new java.util.ArrayList<>();
+    List<String> periods = new ArrayList<>();
     AsyncSequenceGenerator sequence =
         new AsyncSequenceGenerator(
             "operation",
@@ -158,8 +161,8 @@ class AsyncSequenceTest {
     Set<Long> values = ConcurrentHashMap.newKeySet();
     try (var pool = Executors.newFixedThreadPool(8)) {
       var work =
-          java.util.stream.IntStream.range(0, 1000)
-              .<java.util.concurrent.Callable<Boolean>>mapToObj(
+          IntStream.range(0, 1000)
+              .<Callable<Boolean>>mapToObj(
                   i ->
                       () ->
                           values.add(

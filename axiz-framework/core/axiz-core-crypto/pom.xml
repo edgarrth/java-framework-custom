@@ -15,6 +15,8 @@
   <description>AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <!-- M10: measured locally; floor of branch 101/114 and detected mutations 172/192. -->
     <axiz.coverage.branch>0.88</axiz.coverage.branch>
     <axiz.mutation.threshold>89</axiz.mutation.threshold>

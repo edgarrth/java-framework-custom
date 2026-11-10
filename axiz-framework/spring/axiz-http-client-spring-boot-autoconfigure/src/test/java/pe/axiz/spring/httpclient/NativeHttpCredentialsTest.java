@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler;
@@ -15,27 +17,41 @@ import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccess
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.ssl.SslBundle;
+import org.springframework.boot.ssl.SslStoreBundle;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -53,10 +69,9 @@ import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 
 @ExtendWith(BlockHoundExtension.class)
-@org.junit.jupiter.api.Timeout(45)
+@Timeout(45)
 class NativeHttpCredentialsTest {
-  private final java.util.concurrent.ExecutorService handlers =
-      Executors.newVirtualThreadPerTaskExecutor();
+  private final ExecutorService handlers = Executors.newVirtualThreadPerTaskExecutor();
   private final AtomicInteger calls = new AtomicInteger();
   private final AtomicInteger redirected = new AtomicInteger();
   private final AtomicReference<String> authorization = new AtomicReference<>();
@@ -137,7 +152,7 @@ class NativeHttpCredentialsTest {
     var current = new AtomicReference<>("first-secret");
     var secretCalls = new AtomicInteger();
     var observations = ObservationRegistry.create();
-    var stopped = new java.util.concurrent.ConcurrentLinkedQueue<Observation.Context>();
+    var stopped = new ConcurrentLinkedQueue<Observation.Context>();
     observations
         .observationConfig()
         .observationHandler(
@@ -194,7 +209,7 @@ class NativeHttpCredentialsTest {
       assertEquals(
           "client:rotated-secret",
           new String(
-              java.util.Base64.getDecoder().decode(authorization.get().substring(6)),
+              Base64.getDecoder().decode(authorization.get().substring(6)),
               StandardCharsets.UTF_8));
       assertEquals(2, stopped.size());
       for (var http : stopped) assertSame(parent, http.getParentObservation());
@@ -206,12 +221,12 @@ class NativeHttpCredentialsTest {
 
   @Test
   void tlsUsesTheConfiguredBundleForColdConnectionsAndRejectsWrongHostsAndUntrustedPeers(
-      @org.junit.jupiter.api.io.TempDir java.nio.file.Path temporary) throws Exception {
+      @TempDir Path temporary) throws Exception {
     var store = temporary.resolve("oauth.p12");
     var output = temporary.resolve("keytool.log");
     var process =
         new ProcessBuilder(
-                java.nio.file.Path.of(System.getProperty("java.home"), "bin", "keytool").toString(),
+                Path.of(System.getProperty("java.home"), "bin", "keytool").toString(),
                 "-genkeypair",
                 "-alias",
                 "oauth",
@@ -236,29 +251,24 @@ class NativeHttpCredentialsTest {
             .start();
     try {
       assertTrue(process.waitFor(20, TimeUnit.SECONDS));
-      assertEquals(0, process.exitValue(), java.nio.file.Files.readString(output));
+      assertEquals(0, process.exitValue(), Files.readString(output));
     } finally {
       if (process.isAlive()) process.destroyForcibly();
     }
-    var keys = java.security.KeyStore.getInstance("PKCS12");
-    try (var input = java.nio.file.Files.newInputStream(store)) {
+    var keys = KeyStore.getInstance("PKCS12");
+    try (var input = Files.newInputStream(store)) {
       keys.load(input, "changeit".toCharArray());
     }
-    var keyManagers =
-        javax.net.ssl.KeyManagerFactory.getInstance(
-            javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm());
+    var keyManagers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     keyManagers.init(keys, "changeit".toCharArray());
-    var ssl = javax.net.ssl.SSLContext.getInstance("TLS");
+    var ssl = SSLContext.getInstance("TLS");
     ssl.init(keyManagers.getKeyManagers(), null, null);
-    var trust = java.security.KeyStore.getInstance("PKCS12");
+    var trust = KeyStore.getInstance("PKCS12");
     trust.load(null, null);
     trust.setCertificateEntry("oauth", keys.getCertificate("oauth"));
-    var bundle =
-        org.springframework.boot.ssl.SslBundle.of(
-            org.springframework.boot.ssl.SslStoreBundle.of(null, null, trust));
-    var secure =
-        com.sun.net.httpserver.HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-    secure.setHttpsConfigurator(new com.sun.net.httpserver.HttpsConfigurator(ssl));
+    var bundle = SslBundle.of(SslStoreBundle.of(null, null, trust));
+    var secure = HttpsServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    secure.setHttpsConfigurator(new HttpsConfigurator(ssl));
     secure.setExecutor(handlers);
     var successful = new AtomicInteger();
     secure.createContext(
@@ -296,7 +306,7 @@ class NativeHttpCredentialsTest {
             OutboundAuth.createAsync(
                 wrongSettings, secrets, Duration.ZERO, clock, ObservationRegistry.NOOP, bundle);
         var untrusted = OutboundAuth.createAsync(trustedSettings, secrets, Duration.ZERO, clock)) {
-      java.nio.file.Files.delete(store);
+      Files.delete(store);
       for (int index = 0; index < 2; index++) {
         StepVerifier.create(
                 ReactiveStages.from(trusted::headers).subscribeOn(Schedulers.parallel()))
@@ -323,7 +333,7 @@ class NativeHttpCredentialsTest {
   private static void assertHandshakeFailure(Throwable error) {
     assertTrue(error instanceof ExternalServiceException);
     for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-      if (cause instanceof javax.net.ssl.SSLHandshakeException) return;
+      if (cause instanceof SSLHandshakeException) return;
     }
     throw new AssertionError("Expected strict TLS handshake rejection", error);
   }
@@ -386,9 +396,7 @@ class NativeHttpCredentialsTest {
                       ClientRequest.create(HttpMethod.POST, settings.baseUrl()).build(),
                       request -> {
                         assertEquals("native-api-key", request.headers().getFirst("X-Api-Key"));
-                        return Mono
-                            .<org.springframework.web.reactive.function.client.ClientResponse>
-                                never()
+                        return Mono.<ClientResponse>never()
                             .doOnRequest(ignored -> sent.countDown())
                             .doOnCancel(cancelled::countDown);
                       })

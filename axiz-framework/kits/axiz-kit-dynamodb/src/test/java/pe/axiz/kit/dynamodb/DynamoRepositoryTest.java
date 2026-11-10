@@ -9,11 +9,17 @@ import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTag
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primarySortKey;
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.Page;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.StaticKeyProvider;
+import pe.axiz.core.money.Money;
+import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -40,10 +46,7 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemResponse;
  */
 class DynamoRepositoryTest {
   private final CursorCodec cursors =
-      new CursorCodec(
-          new pe.axiz.core.crypto.StaticKeyProvider(
-              "k", Map.of("k", pe.axiz.core.crypto.AesGcm.newKey())),
-          false);
+      new CursorCodec(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())), false);
 
   /** A beneficiary of a customer: partition = customer, sort = beneficiary, index by status. */
   public static final class Beneficiary {
@@ -314,15 +317,14 @@ class DynamoRepositoryTest {
     assertNull(cursors.encode(null, "table/filter"));
     assertNull(cursors.decode(null, "table/filter"));
     String bool =
-        java.util.Base64.getUrlEncoder()
+        Base64.getUrlEncoder()
             .withoutPadding()
-            .encodeToString(
-                "{\"k\":{\"BOOL\":true}}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            .encodeToString("{\"k\":{\"BOOL\":true}}".getBytes(StandardCharsets.UTF_8));
     assertThrows(InvalidCursorException.class, () -> cursors.decode(bool, "table/filter"));
     String plain =
-        java.util.Base64.getUrlEncoder()
+        Base64.getUrlEncoder()
             .withoutPadding()
-            .encodeToString("{\"k\":\"v\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            .encodeToString("{\"k\":\"v\"}".getBytes(StandardCharsets.UTF_8));
     assertThrows(InvalidCursorException.class, () -> cursors.decode(plain, "table/filter"));
   }
 
@@ -332,13 +334,10 @@ class DynamoRepositoryTest {
     assertThrows(
         IllegalArgumentException.class, () -> converter.transformTo(AttributeValue.fromN("1")));
     assertEquals(String.class, converter.type().rawClass());
-    assertEquals(
-        software.amazon.awssdk.enhanced.dynamodb.AttributeValueType.S,
-        converter.attributeValueType());
+    assertEquals(AttributeValueType.S, converter.attributeValueType());
     MoneyAttributeConverter money = new MoneyAttributeConverter();
-    assertEquals(pe.axiz.core.money.Money.class, money.type().rawClass());
-    assertEquals(
-        software.amazon.awssdk.enhanced.dynamodb.AttributeValueType.S, money.attributeValueType());
+    assertEquals(Money.class, money.type().rawClass());
+    assertEquals(AttributeValueType.S, money.attributeValueType());
     assertEquals(
         Key.builder().partitionValue("x").build().partitionKeyValue(), AttributeValue.fromS("x"));
   }

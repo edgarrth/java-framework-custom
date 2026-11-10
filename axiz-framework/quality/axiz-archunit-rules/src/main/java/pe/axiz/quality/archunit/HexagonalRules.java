@@ -6,7 +6,12 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -184,16 +189,12 @@ public final class HexagonalRules {
     };
   }
 
-  private static com.tngtech.archunit.lang.ArchCondition<com.tngtech.archunit.core.domain.JavaClass>
-      noHiddenInfrastructure() {
-    return new com.tngtech.archunit.lang.ArchCondition<>(
-        "not acquire infrastructure through Axiz contracts") {
+  private static ArchCondition<JavaClass> noHiddenInfrastructure() {
+    return new ArchCondition<>("not acquire infrastructure through Axiz contracts") {
       @Override
-      public void check(
-          com.tngtech.archunit.core.domain.JavaClass item,
-          com.tngtech.archunit.lang.ConditionEvents events) {
-        var queue = new java.util.ArrayDeque<com.tngtech.archunit.core.domain.JavaClass>();
-        var seen = new java.util.HashSet<String>();
+      public void check(JavaClass item, ConditionEvents events) {
+        var queue = new ArrayDeque<JavaClass>();
+        var seen = new HashSet<String>();
         queue.add(item);
         while (!queue.isEmpty()) {
           var current = queue.remove();
@@ -218,7 +219,7 @@ public final class HexagonalRules {
                 || name.startsWith("java.sql.")
                 || name.startsWith("javax.sql.")) {
               events.add(
-                  com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                  SimpleConditionEvent.violated(
                       item,
                       item.getName()
                           + " reaches infrastructure through "
@@ -234,7 +235,7 @@ public final class HexagonalRules {
                 && !name.startsWith("reactor.")
                 && !name.startsWith("org.reactivestreams.")) {
               events.add(
-                  com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                  SimpleConditionEvent.violated(
                       item,
                       item.getName()
                           + " reaches an unapproved library through "

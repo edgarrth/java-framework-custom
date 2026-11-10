@@ -7,16 +7,21 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.Stages;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
@@ -86,13 +91,13 @@ class AsyncEnvelopeEncryptorTest {
     List<CompletableFuture<byte[]>> results;
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var submissions =
-          java.util.stream.IntStream.range(0, 100)
+          IntStream.range(0, 100)
               .mapToObj(
                   i ->
                       executor.submit(
                           () -> envelope.encrypt(PLAIN, "account").toCompletableFuture()))
               .toList();
-      var collected = new java.util.ArrayList<CompletableFuture<byte[]>>();
+      var collected = new ArrayList<CompletableFuture<byte[]>>();
       for (var submission : submissions) collected.add(submission.get());
       results = List.copyOf(collected);
     }
@@ -107,11 +112,11 @@ class AsyncEnvelopeEncryptorTest {
     var envelope = encryptor(keys, 100, Clock.systemUTC());
     byte[] input = PLAIN.clone();
     var encryption = envelope.encrypt(input, "account").toCompletableFuture();
-    java.util.Arrays.fill(input, (byte) 0);
+    Arrays.fill(input, (byte) 0);
     keys.completeAll();
     byte[] sealed = encryption.join();
     var decryption = envelope.decrypt(sealed, "account").toCompletableFuture();
-    java.util.Arrays.fill(sealed, (byte) 0);
+    Arrays.fill(sealed, (byte) 0);
     keys.decrypt.complete(keys.plaintext.clone());
     assertArrayEquals(PLAIN, decryption.join());
   }
@@ -172,12 +177,12 @@ class AsyncEnvelopeEncryptorTest {
 
     var pending = new PendingKeys();
     var bounded = encryptor(pending, 100, Clock.systemUTC());
-    var active = new java.util.ArrayList<CompletableFuture<byte[]>>();
+    var active = new ArrayList<CompletableFuture<byte[]>>();
     for (int i = 0; i < EnvelopeEncryptor.MAX_CACHED_KEYS; i++)
       active.add(bounded.encrypt(PLAIN, "pending-" + i).toCompletableFuture());
     var rejected = bounded.encrypt(PLAIN, "overflow").toCompletableFuture();
     assertInstanceOf(
-        java.util.concurrent.RejectedExecutionException.class,
+        RejectedExecutionException.class,
         assertThrows(CompletionException.class, rejected::join).getCause());
     active.getFirst().cancel(true);
     active.add(bounded.encrypt(PLAIN, "overflow").toCompletableFuture());
@@ -231,8 +236,7 @@ class AsyncEnvelopeEncryptorTest {
     void completeAll() {
       for (var load : loads)
         load.future()
-            .complete(
-                new DataKey(plaintext, java.nio.ByteBuffer.allocate(4).putInt(load.id()).array()));
+            .complete(new DataKey(plaintext, ByteBuffer.allocate(4).putInt(load.id()).array()));
     }
   }
 }

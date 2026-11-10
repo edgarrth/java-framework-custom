@@ -11,6 +11,7 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler;
 import io.micrometer.observation.ObservationRegistry;
 import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Path;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.metadata.ConstraintDescriptor;
@@ -21,9 +22,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -36,6 +39,9 @@ import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ValidationException;
 import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
+import pe.axiz.core.idempotency.IdempotencyErrors;
+import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricNames;
 import pe.axiz.core.metrics.MetricsSettings;
@@ -48,9 +54,12 @@ import pe.axiz.extension.cqrs.IdempotentCommand;
 import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 import pe.axiz.extension.cqrs.Query;
+import pe.axiz.extension.cqrs.Request;
+import pe.axiz.spring.audit.ReactiveAuditTrail;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Each behaviour of the pipeline on its own, on both programming models. */
 class CqrsBehaviorsTest {
@@ -80,14 +89,13 @@ class CqrsBehaviorsTest {
 
   public record Note(String text) implements Command<Void> {}
 
-  private static <R> Invocation<R> invocation(
-      pe.axiz.extension.cqrs.Request<R> request, Class<?> resultType) {
+  private static <R> Invocation<R> invocation(Request<R> request, Class<?> resultType) {
     String name =
         request
             .getClass()
             .getSimpleName()
             .replaceAll("([a-z])([A-Z])", "$1-$2")
-            .toLowerCase(java.util.Locale.ROOT);
+            .toLowerCase(Locale.ROOT);
     return new Invocation<>(request, name, resultType);
   }
 
@@ -137,7 +145,7 @@ class CqrsBehaviorsTest {
   void theReactiveAuditRecordsWhenTheResultArrives() {
     ReactiveBehaviors.Audit audit =
         new ReactiveBehaviors.Audit(
-            new pe.axiz.spring.audit.ReactiveAuditTrail(
+            new ReactiveAuditTrail(
                 "svc",
                 event -> Mono.fromRunnable(() -> audited.add(event)),
                 ObjectMasker.defaults(),
@@ -384,7 +392,7 @@ class CqrsBehaviorsTest {
   }
 
   @SuppressWarnings("unchecked")
-  private static <T> T proxy(Class<T> type, java.util.function.Function<String, Object> answers) {
+  private static <T> T proxy(Class<T> type, Function<String, Object> answers) {
     return (T)
         Proxy.newProxyInstance(
             type.getClassLoader(),
@@ -402,7 +410,7 @@ class CqrsBehaviorsTest {
     Annotation notBlank = Annotated.class.getDeclaredField("cardId").getAnnotation(NotBlank.class);
     ConstraintDescriptor<?> descriptor =
         proxy(ConstraintDescriptor.class, m -> "getAnnotation".equals(m) ? notBlank : null);
-    Object path = proxy(jakarta.validation.Path.class, m -> "toString".equals(m) ? "text" : null);
+    Object path = proxy(Path.class, m -> "toString".equals(m) ? "text" : null);
     ConstraintViolation<Object> violation =
         proxy(
             ConstraintViolation.class,
@@ -474,15 +482,14 @@ class CqrsBehaviorsTest {
 
   @Test
   void aRepeatedKeyGetsTheStoredResultAndAFailureCanBeRetried() {
-    pe.axiz.core.idempotency.AsyncIdempotencyService service =
-        new pe.axiz.core.idempotency.AsyncIdempotencyService(
-            new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
+    AsyncIdempotencyService service =
+        new AsyncIdempotencyService(
+            new InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
             Duration.ofSeconds(30),
             Duration.ofHours(1),
             Clock.systemUTC());
     ReactiveBehaviors.Idempotency idempotency =
-        new ReactiveBehaviors.Idempotency(
-            service, tools.jackson.databind.json.JsonMapper.builder().build());
+        new ReactiveBehaviors.Idempotency(service, JsonMapper.builder().build());
     assertEquals(PipelineBehavior.IDEMPOTENCY, idempotency.order());
     AtomicInteger runs = new AtomicInteger();
 
@@ -511,15 +518,14 @@ class CqrsBehaviorsTest {
                 .block(T));
     var uncertain =
         assertThrows(
-            pe.axiz.core.errors.BusinessException.class,
+            BusinessException.class,
             () ->
                 idempotency
                     .handle(
                         invocation(new Transfer("a-2", "idempotency-key-00000002"), String.class),
                         () -> Mono.fromCallable(() -> "t-" + runs.incrementAndGet()))
                     .block(T));
-    assertEquals(
-        pe.axiz.core.idempotency.IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
+    assertEquals(IdempotencyErrors.OUTCOME_UNKNOWN.code(), uncertain.code());
     assertEquals(1, runs.get(), "an uncertain effect is never executed twice");
 
     assertNull(

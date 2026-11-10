@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.LongStream;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +32,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.postgresql.ds.PGSimpleDataSource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.adapter.outbox.jdbc.Dialect;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
@@ -43,6 +48,7 @@ import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.R2dbcTransactionRunner;
+import reactor.blockhound.BlockHound;
 
 /** PostgreSQL semantics, independently exercised through both production drivers. */
 @Timeout(180)
@@ -55,26 +61,26 @@ class PostgresOutboxOrderingIT {
 
   @BeforeAll
   static void start() {
-    boolean docker = org.testcontainers.DockerClientFactory.instance().isDockerAvailable();
+    boolean docker = DockerClientFactory.instance().isDockerAvailable();
     if (Boolean.getBoolean("axiz.it.requireDocker"))
-      org.junit.jupiter.api.Assertions.assertTrue(docker, "Docker is required");
-    org.junit.jupiter.api.Assumptions.assumeTrue(docker, "Docker unavailable");
+      Assertions.assertTrue(docker, "Docker is required");
+    Assumptions.assumeTrue(docker, "Docker unavailable");
     POSTGRES.start();
-    new java.security.SecureRandom().nextBytes(new byte[32]);
-    reactor.blockhound.BlockHound.install();
+    new SecureRandom().nextBytes(new byte[32]);
+    BlockHound.install();
     source = new PGSimpleDataSource();
     source.setUrl(POSTGRES.getJdbcUrl());
     source.setUser(POSTGRES.getUsername());
     source.setPassword(POSTGRES.getPassword());
     connections =
         ConnectionFactories.get(
-            io.r2dbc.spi.ConnectionFactoryOptions.builder()
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.DRIVER, "postgresql")
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.HOST, POSTGRES.getHost())
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(5432))
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.USER, POSTGRES.getUsername())
-                .option(io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
+            ConnectionFactoryOptions.builder()
+                .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+                .option(ConnectionFactoryOptions.HOST, POSTGRES.getHost())
+                .option(ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(5432))
+                .option(ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
+                .option(ConnectionFactoryOptions.USER, POSTGRES.getUsername())
+                .option(ConnectionFactoryOptions.PASSWORD, POSTGRES.getPassword())
                 .build());
   }
 

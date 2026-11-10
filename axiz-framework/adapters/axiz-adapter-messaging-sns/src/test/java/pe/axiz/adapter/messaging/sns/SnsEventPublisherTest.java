@@ -14,7 +14,11 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishException;
+import pe.axiz.test.support.AsyncPublisherProbe;
+import pe.axiz.test.support.ImmediateAsyncFakes;
+import software.amazon.awssdk.services.sns.SnsAsyncClient;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
@@ -24,7 +28,7 @@ class SnsEventPublisherTest {
 
   @Test
   void publishesWithFilterAttributeAndFifoIds() {
-    for (boolean nativeAsync : java.util.List.of(false, true)) {
+    for (boolean nativeAsync : List.of(false, true)) {
       List<PublishRequest> sent = new ArrayList<>();
       boolean[] fail = {false};
       SnsClient sns =
@@ -56,12 +60,10 @@ class SnsEventPublisherTest {
               "application/json",
               "{}".getBytes(StandardCharsets.UTF_8),
               Map.of());
-      pe.axiz.core.messaging.EventPublisher p =
+      EventPublisher p =
           nativeAsync
-              ? new pe.axiz.test.support.AsyncPublisherProbe(
-                  new SnsAsyncEventPublisher(
-                      pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                          software.amazon.awssdk.services.sns.SnsAsyncClient.class, sns)))
+              ? new AsyncPublisherProbe(
+                  new SnsAsyncEventPublisher(ImmediateAsyncFakes.adapt(SnsAsyncClient.class, sns)))
               : new SnsEventPublisher(sns);
       String fifo = "arn:aws:sns:us-east-1:123:payments.fifo";
       assertTrue(p.supports(fifo));
@@ -78,7 +80,7 @@ class SnsEventPublisherTest {
 
   @Test
   void standardTopicsHaveNoGroupAndFifoGroupsBySubject() {
-    for (boolean nativeAsync : java.util.List.of(false, true)) {
+    for (boolean nativeAsync : List.of(false, true)) {
       List<PublishRequest> sent = new ArrayList<>();
       SnsClient sns =
           new SnsClient() {
@@ -106,12 +108,10 @@ class SnsEventPublisherTest {
               "application/json",
               "{}".getBytes(StandardCharsets.UTF_8),
               Map.of());
-      pe.axiz.core.messaging.EventPublisher p =
+      EventPublisher p =
           nativeAsync
-              ? new pe.axiz.test.support.AsyncPublisherProbe(
-                  new SnsAsyncEventPublisher(
-                      pe.axiz.test.support.ImmediateAsyncFakes.adapt(
-                          software.amazon.awssdk.services.sns.SnsAsyncClient.class, sns)))
+              ? new AsyncPublisherProbe(
+                  new SnsAsyncEventPublisher(ImmediateAsyncFakes.adapt(SnsAsyncClient.class, sns)))
               : new SnsEventPublisher(sns);
 
       String standard = "arn:aws:sns:us-east-1:123:payments";

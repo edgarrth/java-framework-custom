@@ -4,10 +4,13 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import org.reactivestreams.Publisher;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectMetadata;
+import pe.axiz.core.storage.PresignedUpload;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.adapter.JdkFlowAdapter;
 import reactor.core.publisher.Flux;
@@ -18,11 +21,10 @@ public final class ReactiveStorage {
   private final AsyncObjectStorage storage;
 
   public ReactiveStorage(AsyncObjectStorage storage) {
-    this.storage = java.util.Objects.requireNonNull(storage);
+    this.storage = Objects.requireNonNull(storage);
   }
 
-  public Mono<Void> put(
-      String key, org.reactivestreams.Publisher<ByteBuffer> content, ObjectMetadata metadata) {
+  public Mono<Void> put(String key, Publisher<ByteBuffer> content, ObjectMetadata metadata) {
     return ReactiveStages.from(
         () -> storage.put(key, JdkFlowAdapter.publisherToFlowPublisher(content), metadata));
   }
@@ -62,8 +64,7 @@ public final class ReactiveStorage {
     return ReactiveStages.from(() -> storage.presignPut(key, contentType, ttl));
   }
 
-  public Mono<pe.axiz.core.storage.PresignedUpload> presignUpload(
-      String key, String contentType, Duration ttl) {
+  public Mono<PresignedUpload> presignUpload(String key, String contentType, Duration ttl) {
     return ReactiveStages.from(() -> storage.presignUpload(key, contentType, ttl));
   }
 

@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
 import org.springframework.r2dbc.core.DatabaseClient;
@@ -53,7 +54,8 @@ public class AxizR2dbcAutoConfiguration {
       AxizR2dbcProperties p,
       Environment env,
       ObjectProvider<ConnectionFactoryDecorator> decorators,
-      ObjectProvider<Clock> clock) {
+      ObjectProvider<Clock> clock,
+      ResourceLoader resources) {
     String url = env.getRequiredProperty("axiz.r2dbc.reader.url");
     String username = env.getProperty("spring.r2dbc.username");
     var iam =
@@ -63,7 +65,8 @@ public class AxizR2dbcAutoConfiguration {
                 username,
                 p.iam(),
                 env.getProperty("axiz.aws.region"),
-                clock.getIfAvailable(Clock::systemUTC))
+                clock.getIfAvailable(Clock::systemUTC),
+                resources.getClassLoader())
             : null;
     return new ReaderDatabase(
         ReaderConnections.create(
@@ -76,7 +79,7 @@ public class AxizR2dbcAutoConfiguration {
                 .bind("spring.r2dbc.properties", Bindable.mapOf(String.class, String.class))
                 .orElseGet(Map::of),
             decorators.orderedStream().toList()),
-        iam);
+        iam instanceof AutoCloseable closeable ? closeable : null);
   }
 
   @Bean

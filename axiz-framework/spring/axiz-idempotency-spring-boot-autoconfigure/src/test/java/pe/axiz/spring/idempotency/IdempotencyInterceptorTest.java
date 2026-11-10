@@ -18,8 +18,10 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
+import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import reactor.core.publisher.Flux;
@@ -65,9 +67,9 @@ class IdempotencyInterceptorTest {
     }
   }
 
-  private final pe.axiz.core.idempotency.AsyncIdempotencyService asyncService =
-      new pe.axiz.core.idempotency.AsyncIdempotencyService(
-          new pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
+  private final AsyncIdempotencyService asyncService =
+      new AsyncIdempotencyService(
+          new InMemoryAsyncIdempotencyStore(Clock.systemUTC()),
           Duration.ofSeconds(30),
           Duration.ofHours(1),
           Clock.systemUTC());

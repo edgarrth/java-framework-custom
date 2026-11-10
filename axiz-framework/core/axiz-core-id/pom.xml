@@ -15,6 +15,8 @@
   <description>Time-ordered UUIDv7, ULID, correlation and idempotency ids</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.core.id</axiz.module.name>
   </properties>
 

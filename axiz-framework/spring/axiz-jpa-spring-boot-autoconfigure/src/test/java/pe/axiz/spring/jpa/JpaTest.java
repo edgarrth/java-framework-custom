@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -132,7 +133,7 @@ class JpaTest {
                   .hasSingleBean(AuditingRegistrar.class);
               assertInstanceOf(RequestAuditorProvider.class, ctx.getBean(AuditorProvider.class));
             });
-    AuditorProvider fixed = () -> java.util.Optional.of("migration");
+    AuditorProvider fixed = () -> Optional.of("migration");
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .withBean(AuditorProvider.class, () -> fixed)

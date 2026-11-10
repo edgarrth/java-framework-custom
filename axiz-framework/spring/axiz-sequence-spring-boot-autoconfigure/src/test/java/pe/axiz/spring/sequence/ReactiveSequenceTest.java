@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -141,7 +142,7 @@ class ReactiveSequenceTest {
                                       .getBean(DynamoDbAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(java.net.URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("http://localhost:4566"));
                         }));
   }
 

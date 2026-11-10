@@ -1,6 +1,8 @@
 package pe.axiz.spring.cache;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -24,7 +26,7 @@ public record AxizCacheProperties(
     @DefaultValue("true") boolean redis,
     @DefaultValue Map<String, CacheSpec> caches) {
   public AxizCacheProperties {
-    caches = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(caches));
+    caches = Collections.unmodifiableMap(new LinkedHashMap<>(caches));
   }
 
   /**

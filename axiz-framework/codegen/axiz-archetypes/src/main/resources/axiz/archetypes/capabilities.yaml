@@ -186,7 +186,7 @@ capabilities:
 
   - name: r2dbc
     stacks: [reactive]
-    dependencies: [pe.axiz:axiz-kit-r2dbc]
+    dependencies: [pe.axiz:axiz-kit-r2dbc, pe.axiz:axiz-adapter-database-auth-aws]
     starter: axiz-r2dbc-spring-boot-starter
     description: Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, IAM tokens, auditing, encrypted and money columns, reader endpoint
     properties:

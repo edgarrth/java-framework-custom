@@ -1,9 +1,11 @@
 package pe.axiz.adapter.storage.s3;
 
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.storage.ObjectKey;
 import pe.axiz.core.storage.ObjectMetadata;
@@ -14,6 +16,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 /** Shared wire contract for the imperative and native asynchronous adapters. */
 final class S3Requests {
@@ -77,14 +80,11 @@ final class S3Requests {
     var headers =
         signed.signedHeaders().entrySet().stream()
             .filter(entry -> !entry.getKey().equalsIgnoreCase("host"))
-            .collect(
-                java.util.stream.Collectors.toUnmodifiableMap(
-                    Map.Entry::getKey, Map.Entry::getValue));
-    return new PresignedUpload(java.net.URI.create(signed.url().toString()), headers);
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    return new PresignedUpload(URI.create(signed.url().toString()), headers);
   }
 
-  private software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest signedPut(
-      String key, String contentType, Duration ttl) {
+  private PresignedPutObjectRequest signedPut(String key, String contentType, Duration ttl) {
     return presigner.presignPutObject(
         b -> b.signatureDuration(bounded(ttl)).putObjectRequest(put(key, contentType).build()));
   }

@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -26,10 +28,10 @@ class KmsAsyncDataKeyProviderTest {
   @Test
   void localAndFatalFailuresKeepTheirIdentityAndCheckedFailuresKeepTheirCause() {
     for (Throwable failure :
-        java.util.List.of(
+        List.of(
             new IllegalStateException("closed"),
             new LinkageError("driver failed"),
-            new java.io.IOException("transport"))) {
+            new IOException("transport"))) {
       var raw = new Pending();
       var generated =
           new KmsAsyncDataKeyProvider(raw, "alias/payments")
@@ -37,7 +39,7 @@ class KmsAsyncDataKeyProviderTest {
               .toCompletableFuture();
       raw.generate.completeExceptionally(failure);
       Throwable actual = assertThrows(CompletionException.class, generated::join).getCause();
-      if (failure instanceof java.io.IOException) assertSame(failure, actual.getCause());
+      if (failure instanceof IOException) assertSame(failure, actual.getCause());
       else assertSame(failure, actual);
     }
   }

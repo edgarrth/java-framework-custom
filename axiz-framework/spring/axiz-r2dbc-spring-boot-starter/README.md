@@ -18,3 +18,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 The starter includes native-image metadata that initializes the R2DBC proxy observation
 listener at application startup. Its Micrometer logger therefore uses the running application's
 logging backend. The setting is scoped to that listener; SQL observations remain enabled.
+
+IAM consumers add `axiz-adapter-database-auth-aws` with runtime scope. The R2DBC capability selects
+it for generated services; plain password consumers can use this starter without the AWS SDK RDS.

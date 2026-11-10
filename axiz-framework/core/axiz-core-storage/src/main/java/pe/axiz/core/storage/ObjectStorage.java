@@ -1,9 +1,11 @@
 package pe.axiz.core.storage;
 
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Object storage port (Amazon S3 in production). Content is always streamed. */
@@ -29,7 +31,7 @@ public interface ObjectStorage {
   /** Complete upload instructions, including content type and backend-specific signed headers. */
   default PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
     return new PresignedUpload(
-        java.net.URI.create(presignPut(key, contentType, ttl).toString()),
-        java.util.Map.of("Content-Type", java.util.List.of(contentType)));
+        URI.create(presignPut(key, contentType, ttl).toString()),
+        Map.of("Content-Type", List.of(contentType)));
   }
 }

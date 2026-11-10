@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.micrometer.observation.NullObservation;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler;
 import io.micrometer.observation.ObservationRegistry;
@@ -14,6 +15,10 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import org.junit.jupiter.api.Test;
+import org.reactivestreams.Subscription;
 import pe.axiz.core.commons.AsyncLoadingCache;
 import pe.axiz.core.commons.Stages;
 import reactor.test.StepVerifier;
@@ -43,12 +48,10 @@ class ReactiveStagesTest {
     var observation = registry.getCurrentObservation();
     // Micrometer clears an existing scope with a NullObservation, then restores it at close.
     assertTrue(
-        observation == null
-            || observation instanceof io.micrometer.observation.NullObservation
-            || observation.isNoop());
+        observation == null || observation instanceof NullObservation || observation.isNoop());
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void coalescedSubscribersKeepTheirOwnParentAndRestoreTheCompletionThread() throws Exception {
     var cache = new AsyncLoadingCache<String>(Duration.ofMinutes(1), 100, 2, Clock.systemUTC());
     var nativeCall = new CompletableFuture<String>();
@@ -97,7 +100,7 @@ class ReactiveStagesTest {
     worker.stop();
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void immediateResultsAndCacheHitsScopeSignalsAsWellAsSubmission() {
     var parent = Observation.start("request", registry);
     var unrelated = Observation.start("caller", registry);
@@ -120,7 +123,7 @@ class ReactiveStagesTest {
     unrelated.stop();
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void composedFallbackSubmissionKeepsTheParentAfterNativeCompletion() throws Exception {
     var parent = Observation.start("request", registry);
     var firstNativeCall = new CompletableFuture<String>();
@@ -153,7 +156,7 @@ class ReactiveStagesTest {
     parent.stop();
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void cancellationAndSubmissionErrorsRestoreTheCallingThread() {
     var parent = Observation.start("request", registry);
     var nativeCall =
@@ -183,7 +186,7 @@ class ReactiveStagesTest {
     parent.stop();
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void missingRequestContextClearsAndRestoresAnUnrelatedObservation() {
     var unrelated = Observation.start("caller", registry);
     try (var scope = unrelated.openScope()) {
@@ -201,18 +204,18 @@ class ReactiveStagesTest {
     unrelated.stop();
   }
 
-  @org.junit.jupiter.api.Test
+  @Test
   void streamingDemandAndCancellationAreScopedWithoutPrefetch() {
     var parent = Observation.start("stream", registry);
-    var requested = new java.util.concurrent.atomic.AtomicLong();
-    var cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+    var requested = new AtomicLong();
+    var cancelled = new AtomicBoolean();
     StepVerifier.create(
             ReactiveStages.<String>flux(
                     () -> {
                       assertSame(parent, registry.getCurrentObservation());
                       return subscriber ->
                           subscriber.onSubscribe(
-                              new org.reactivestreams.Subscription() {
+                              new Subscription() {
                                 public void request(long count) {
                                   assertSame(parent, registry.getCurrentObservation());
                                   requested.addAndGet(count);

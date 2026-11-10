@@ -6,9 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration;
@@ -21,6 +26,7 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 class BodyLimitsTest {
@@ -127,10 +133,10 @@ class BodyLimitsTest {
         ctx -> {
           JsonMapper mapper = ctx.getBean(JsonMapper.class);
           assertThrows(
-              tools.jackson.core.JacksonException.class,
+              JacksonException.class,
               () -> mapper.readValue("{\"n\":" + "9".repeat(1000) + "}", Object.class));
           assertThrows(
-              tools.jackson.core.JacksonException.class,
+              JacksonException.class,
               () -> mapper.readValue("[".repeat(65) + "0" + "]".repeat(65), Object.class));
         });
   }
@@ -146,8 +152,7 @@ class BodyLimitsTest {
                 for (boolean encoding : List.of(false, true))
                   for (int size : List.of(8, 9)) {
                     var request = new MockHttpServletRequest("POST", "/payments");
-                    request.setContent(
-                        "x".repeat(size).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    request.setContent("x".repeat(size).getBytes(StandardCharsets.UTF_8));
                     if (encoding) request.setCharacterEncoding("UTF-8");
                     var chunked =
                         new HttpServletRequestWrapper(request) {
@@ -161,9 +166,8 @@ class BodyLimitsTest {
                         chunked,
                         response,
                         (req, res) -> {
-                          var counted = (jakarta.servlet.http.HttpServletRequest) req;
-                          org.junit.jupiter.api.Assertions.assertSame(
-                              counted.getInputStream(), counted.getInputStream());
+                          var counted = (HttpServletRequest) req;
+                          Assertions.assertSame(counted.getInputStream(), counted.getInputStream());
                           try {
                             if (reader) {
                               var input = counted.getReader();
@@ -172,8 +176,8 @@ class BodyLimitsTest {
                               var input = counted.getInputStream();
                               while (input.read() != -1) {}
                             }
-                          } catch (java.io.IOException tooLarge) {
-                            ((jakarta.servlet.http.HttpServletResponse) res).setStatus(400);
+                          } catch (IOException tooLarge) {
+                            ((HttpServletResponse) res).setStatus(400);
                           }
                         });
                     assertEquals(size == 8 ? 200 : 413, response.getStatus());
@@ -187,10 +191,10 @@ class BodyLimitsTest {
         .withPropertyValues("axiz.web.max-request-body=8B")
         .run(
             ctx -> {
-              var failure = new java.io.IOException("transport failed");
+              var failure = new IOException("transport failed");
               var observed =
                   assertThrows(
-                      java.io.IOException.class,
+                      IOException.class,
                       () ->
                           ctx.getBean(RequestBodyLimitFilter.class)
                               .doFilter(
@@ -199,7 +203,7 @@ class BodyLimitsTest {
                                   (req, res) -> {
                                     throw failure;
                                   }));
-              org.junit.jupiter.api.Assertions.assertSame(failure, observed);
+              Assertions.assertSame(failure, observed);
             });
   }
 }

@@ -9,9 +9,11 @@ import io.r2dbc.spi.ConnectionFactory;
 import java.time.Duration;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 
@@ -45,7 +47,7 @@ class OutboxLeaseValidationTest {
           .run(
               ctx -> {
                 assertThat(ctx).hasNotFailed();
-                org.mockito.Mockito.verify(ctx.getBean(OutboxStore.class)).verifySchema();
+                Mockito.verify(ctx.getBean(OutboxStore.class)).verifySchema();
               });
       runner(reactive)
           .withPropertyValues("axiz.outbox.relay.lease-duration=120001ms")
@@ -56,7 +58,7 @@ class OutboxLeaseValidationTest {
   @Test
   void exactUsableBudgetIsAcceptedAndOneNanosecondLessFails() {
     Duration lease = Duration.ofSeconds(10);
-    Duration margin = pe.axiz.core.commons.LeaseTiming.margin(lease);
+    Duration margin = LeaseTiming.margin(lease);
     Duration allowance = Duration.ofSeconds(2);
     Duration budget = lease.minus(margin).minus(allowance);
     assertDoesNotThrow(() -> OutboxLeaseValidation.validate(lease, budget, allowance));

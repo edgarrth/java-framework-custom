@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -70,8 +71,7 @@ class StandaloneAsyncAwsTest {
         var result =
             client.getItem(
                 b ->
-                    b.tableName("test")
-                        .key(java.util.Map.of("pk", AttributeValue.builder().s("x").build())));
+                    b.tableName("test").key(Map.of("pk", AttributeValue.builder().s("x").build())));
         assertTrue(arrived.await(5, TimeUnit.SECONDS));
         assertFalse(result.isDone());
         response.countDown();

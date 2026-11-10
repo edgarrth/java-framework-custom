@@ -2,6 +2,7 @@ package pe.axiz.spring.cache;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.ClaimAccessor;
 import org.springframework.util.ClassUtils;
 import pe.axiz.core.cache.CacheKeys;
 import pe.axiz.core.security.AxizPrincipal;
@@ -57,7 +58,7 @@ public class DefaultCacheCallerResolver implements CacheCallerResolver {
   /** Loaded only when spring-security-oauth2-core is on the classpath. */
   private static final class Claims {
     static @Nullable String identity(@Nullable Object principal) {
-      if (!(principal instanceof org.springframework.security.oauth2.core.ClaimAccessor claims)) {
+      if (!(principal instanceof ClaimAccessor claims)) {
         return null;
       }
       String issuer = claims.getClaimAsString("iss");

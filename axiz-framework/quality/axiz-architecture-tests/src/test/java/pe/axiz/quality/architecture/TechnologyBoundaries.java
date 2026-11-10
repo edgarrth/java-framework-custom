@@ -5,7 +5,8 @@ import java.util.Set;
 
 /** Shared class/POM policy; every exception must have a documented reason at this declaration. */
 final class TechnologyBoundaries {
-  static final Map<String, Set<String>> EXCEPTIONS = Map.of();
+  // AWS database authentication implements the neutral credential contract owned by the R2DBC kit.
+  static final Map<String, Set<String>> EXCEPTIONS = Map.of("databaseauth.aws", Set.of("r2dbc"));
 
   private TechnologyBoundaries() {}
 

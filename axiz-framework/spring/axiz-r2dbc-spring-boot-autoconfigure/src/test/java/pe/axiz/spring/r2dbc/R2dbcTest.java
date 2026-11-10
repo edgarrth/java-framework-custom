@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.reactivestreams.Publisher;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.r2dbc.autoconfigure.ConnectionFactoryOptionsBuilderCustomizer;
@@ -103,10 +104,8 @@ class R2dbcTest {
                   ConnectionFactoryOptions.parse("r2dbc:postgresql://db/payments").mutate();
               ctx.getBean(ConnectionFactoryOptionsBuilderCustomizer.class).customize(b);
               Object password = b.build().getValue(ConnectionFactoryOptions.PASSWORD);
-              assertInstanceOf(org.reactivestreams.Publisher.class, password);
-              assertEquals(
-                  "token-1",
-                  Mono.from((org.reactivestreams.Publisher<?>) password).block(T).toString());
+              assertInstanceOf(Publisher.class, password);
+              assertEquals("token-1", Mono.from((Publisher<?>) password).block(T).toString());
             });
     new ApplicationContextRunner()
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")

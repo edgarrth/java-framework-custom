@@ -13,7 +13,10 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 class AsyncLoadingCacheTest {
@@ -22,7 +25,7 @@ class AsyncLoadingCacheTest {
     var cache = new AsyncLoadingCache<String>(Duration.ofMinutes(1), 10, 2, Clock.systemUTC());
     var nativeRequest = new CompletableFuture<String>();
     var calls = new AtomicInteger();
-    java.util.function.Supplier<java.util.concurrent.CompletionStage<String>> load =
+    Supplier<CompletionStage<String>> load =
         () -> {
           calls.incrementAndGet();
           return nativeRequest;
@@ -133,7 +136,7 @@ class AsyncLoadingCacheTest {
             .get("overflow", () -> CompletableFuture.completedFuture("overflow"))
             .toCompletableFuture();
     assertInstanceOf(
-        java.util.concurrent.RejectedExecutionException.class,
+        RejectedExecutionException.class,
         assertThrows(CompletionException.class, overflow::join).getCause());
     a.cancel(true);
     assertEquals(

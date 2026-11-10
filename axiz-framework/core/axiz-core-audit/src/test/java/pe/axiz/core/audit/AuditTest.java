@@ -14,7 +14,9 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.json.JsonWriter;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -49,7 +51,7 @@ class AuditTest {
     assertEquals("****", request.get("password"));
     assertEquals("a**@example.com", request.get("email"));
     assertEquals(10, request.get("amount"));
-    String json = pe.axiz.core.commons.json.JsonWriter.write(e.toMap());
+    String json = JsonWriter.write(e.toMap());
     assertTrue(json.contains("\"service\":\"orders-service\""));
     assertFalse(json.contains("ana@"));
   }
@@ -131,8 +133,7 @@ class AuditTest {
   @Test
   void aFailingFallbackDoesNotKillTheWorker() throws Exception {
     List<AuditEvent> delivered = new CopyOnWriteArrayList<>();
-    java.util.concurrent.atomic.AtomicInteger calls =
-        new java.util.concurrent.atomic.AtomicInteger();
+    AtomicInteger calls = new AtomicInteger();
     AuditPublisher flaky =
         e -> {
           if (calls.incrementAndGet() == 1) {

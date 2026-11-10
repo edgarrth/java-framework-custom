@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
@@ -86,7 +87,7 @@ class ReactiveEnvelopeEncryptionTest {
                                   ctx.getBean(KmsAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(java.net.URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("http://localhost:4566"));
                         }));
   }
 

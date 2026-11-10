@@ -17,7 +17,10 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.springframework.util.unit.DataSize;
 import pe.axiz.spring.featureflags.AxizFeatureFlagsProperties;
+import pe.axiz.spring.security.AxizSecurityProperties.Authorization;
+import pe.axiz.spring.security.AxizSecurityProperties.RouteRule;
 
 class ConfigurationSnapshotsTest {
   @TestFactory
@@ -47,16 +50,15 @@ class ConfigurationSnapshotsTest {
     for (int i = 0; i < components.length; i++) {
       Class<?> parameter = components[i].getType();
       arguments[i] = emptyArgument(parameter);
-      if (type == pe.axiz.spring.security.AxizSecurityProperties.Authorization.class
-          && components[i].getName().equals("unprotected")) arguments[i] = "fail";
-      if (type == pe.axiz.spring.security.AxizSecurityProperties.RouteRule.class) {
+      if (type == Authorization.class && components[i].getName().equals("unprotected"))
+        arguments[i] = "fail";
+      if (type == RouteRule.class) {
         if (components[i].getName().equals("paths"))
           arguments[i] = new ArrayList<>(List.of("/snapshot"));
         if (components[i].getName().equals("authorities"))
           arguments[i] = new ArrayList<>(List.of("SCOPE_snapshot"));
       }
-      if (parameter == org.springframework.util.unit.DataSize.class)
-        arguments[i] = org.springframework.util.unit.DataSize.ofMegabytes(1);
+      if (parameter == DataSize.class) arguments[i] = DataSize.ofMegabytes(1);
     }
     Object settings =
         type.getDeclaredConstructor(

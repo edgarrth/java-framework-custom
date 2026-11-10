@@ -1,5 +1,6 @@
 package pe.axiz.core.resilience;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -21,7 +22,7 @@ public record RetryPolicy(int maxAttempts, Backoff backoff, Predicate<Throwable>
   }
 
   public static RetryPolicy none() {
-    return new RetryPolicy(1, Backoff.fixed(java.time.Duration.ZERO), t -> false);
+    return new RetryPolicy(1, Backoff.fixed(Duration.ZERO), t -> false);
   }
 
   public static RetryPolicy transientFailures(int maxAttempts, Backoff backoff) {

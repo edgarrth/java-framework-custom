@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
@@ -14,12 +15,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.ErrorCategory;
+import pe.axiz.core.errors.ErrorDefinition;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.core.resilience.RetryPolicy;
 import pe.axiz.core.saga.ContextCodec;
@@ -281,7 +287,7 @@ class SagaTest {
     }
 
     @Override
-    public java.util.Optional<SagaState> find(String sagaId) {
+    public Optional<SagaState> find(String sagaId) {
       return delegate.find(sagaId);
     }
 
@@ -404,7 +410,7 @@ class SagaTest {
     public List<String> execute(List<String> context) throws Exception {
       attempts.incrementAndGet();
       externalEffects.incrementAndGet(); // the debit happened at the participant...
-      throw new java.io.IOException("connection reset"); // ...but the answer never arrived
+      throw new IOException("connection reset"); // ...but the answer never arrived
     }
   }
 
@@ -518,18 +524,16 @@ class SagaTest {
     assertTrue(StepFailures.isDefiniteRejection(new SagaStepRejectedException("no", null)));
     assertTrue(
         StepFailures.isDefiniteRejection(
-            new pe.axiz.core.errors.BusinessException(
-                pe.axiz.core.errors.ErrorDefinition.of(
-                    "AXZ-TEST-0001", pe.axiz.core.errors.ErrorCategory.UNPROCESSABLE, "funds"),
+            new BusinessException(
+                ErrorDefinition.of("AXZ-TEST-0001", ErrorCategory.UNPROCESSABLE, "funds"),
                 "insufficient funds",
-                java.util.Map.of())));
+                Map.of())));
     assertTrue(
         !StepFailures.isDefiniteRejection(
-            new pe.axiz.core.errors.BusinessException(
-                pe.axiz.core.errors.ErrorDefinition.of(
-                    "AXZ-TEST-0002", pe.axiz.core.errors.ErrorCategory.CONFLICT, "in progress"),
+            new BusinessException(
+                ErrorDefinition.of("AXZ-TEST-0002", ErrorCategory.CONFLICT, "in progress"),
                 "in progress",
-                java.util.Map.of())));
+                Map.of())));
     assertTrue(!StepFailures.isDefiniteRejection(new SocketTimeoutException("read timed out")));
     assertTrue(!StepFailures.isDefiniteRejection(new IllegalStateException("bug")));
     assertTrue(

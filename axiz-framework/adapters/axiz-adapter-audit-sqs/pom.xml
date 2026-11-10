@@ -15,6 +15,8 @@
   <description>Audit publisher for Amazon SQS</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.api.baseline.artifactId>axiz-core-audit-sqs</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.adapter.audit.sqs</axiz.module.name>

@@ -9,9 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 import pe.axiz.core.identifiers.IdentifierType;
@@ -38,9 +40,9 @@ class AxizFoundationAutoConfigurationTest {
     assertEquals(
         Money.ofExact("1", "PEN"),
         mapper.readValue("{\"amount\":\"" + boundary + "\",\"currency\":\"PEN\"}", Money.class));
-    for (String literal : java.util.List.of("9".repeat(257), "9".repeat(1_000_000))) {
+    for (String literal : List.of("9".repeat(257), "9".repeat(1_000_000))) {
       for (String json :
-          java.util.List.of(
+          List.of(
               "{\"amount\":\"" + literal + "\",\"currency\":\"PEN\"}",
               "{\"currency\":\"PEN\",\"amount\":" + literal + "}",
               "\"PEN " + literal + "\"")) {
@@ -97,7 +99,7 @@ class AxizFoundationAutoConfigurationTest {
   void numericAndTextualMoneyKeepExactlyTheSameDecimalValue() {
     JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
     for (String literal :
-        java.util.List.of(
+        List.of(
             "9007199254740992.01",
             "-9007199254740992.01",
             "999999999999999999999999999999.99",
@@ -105,9 +107,9 @@ class AxizFoundationAutoConfigurationTest {
             "150.500",
             "0")) {
       Money expected = Money.ofExact(literal, "PEN");
-      for (String amount : java.util.List.of(literal, "\"" + literal + "\"")) {
+      for (String amount : List.of(literal, "\"" + literal + "\"")) {
         for (String json :
-            java.util.List.of(
+            List.of(
                 "{\"amount\":" + amount + ",\"currency\":\"PEN\"}",
                 "{\"currency\":\"PEN\",\"extra\":{\"nested\":[1]},\"amount\":" + amount + "}")) {
           Money actual = mapper.readValue(json, Money.class);
@@ -117,12 +119,12 @@ class AxizFoundationAutoConfigurationTest {
       }
     }
     for (String value :
-        java.util.List.of(
+        List.of(
             "0.100000000000000000001",
             "-0.100000000000000000001",
             "9007199254740992.001",
             "1e-3")) {
-      for (String amount : java.util.List.of(value, "\"" + value + "\"")) {
+      for (String amount : List.of(value, "\"" + value + "\"")) {
         assertThrows(
             RuntimeException.class,
             () ->
@@ -135,7 +137,7 @@ class AxizFoundationAutoConfigurationTest {
   void invalidOrAmbiguousMoneyJsonIsRejected() {
     JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
     for (String json :
-        java.util.List.of(
+        List.of(
             "[]",
             "42",
             "true",
@@ -210,7 +212,7 @@ class AxizFoundationAutoConfigurationTest {
   void moneyFromClientsIsNeverRounded() {
     JsonMapper mapper = JsonMapper.builder().addModule(new MoneyJacksonModule()).build();
     for (String json :
-        java.util.List.of(
+        List.of(
             "{\"amount\":150.005,\"currency\":\"PEN\"}",
             "{\"amount\":\"150.005\",\"currency\":\"PEN\"}",
             "\"PEN 150.005\"",
@@ -218,7 +220,7 @@ class AxizFoundationAutoConfigurationTest {
       Throwable failure =
           assertThrows(RuntimeException.class, () -> mapper.readValue(json, Money.class));
       Throwable cause = failure;
-      while (cause != null && !(cause instanceof pe.axiz.core.errors.BusinessException)) {
+      while (cause != null && !(cause instanceof BusinessException)) {
         cause = cause.getCause();
       }
       assertTrue(cause != null, json);

@@ -24,6 +24,7 @@ import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 import pe.axiz.spring.outbox.ReactiveTransactionalEvents;
 import pe.axiz.spring.outbox.TransactionalEvents;
 import reactor.core.publisher.Mono;
@@ -127,8 +128,7 @@ class ReactionsTest {
     new ApplicationContextRunner()
         .withConfiguration(
             AutoConfigurations.of(
-                AxizEdaAutoConfiguration.class,
-                pe.axiz.spring.messaging.AxizMessagingAutoConfiguration.class))
+                AxizEdaAutoConfiguration.class, AxizMessagingAutoConfiguration.class))
         .withPropertyValues(
             "axiz.messaging.routes.default-destination=cards-events",
             "axiz.messaging.routes.by-type[pe.axiz.cards.card-blocked.v1]=cards-alerts")

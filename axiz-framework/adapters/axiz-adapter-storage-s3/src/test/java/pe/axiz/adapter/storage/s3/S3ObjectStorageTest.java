@@ -8,15 +8,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.StoredObject;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.AbortableInputStream;
@@ -33,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -227,24 +235,18 @@ class S3ObjectStorageTest {
 
   @Test
   void checksumAndHead404AreConsistentWithoutHidingBucketErrors() {
-    S3Client client = org.mockito.Mockito.mock(S3Client.class);
-    org.mockito.Mockito.when(
-            client.headObject(org.mockito.ArgumentMatchers.any(HeadObjectRequest.class)))
+    S3Client client = Mockito.mock(S3Client.class);
+    Mockito.when(client.headObject(ArgumentMatchers.any(HeadObjectRequest.class)))
+        .thenThrow(S3Exception.builder().statusCode(404).build())
         .thenThrow(
-            software.amazon.awssdk.services.s3.model.S3Exception.builder().statusCode(404).build())
-        .thenThrow(
-            software.amazon.awssdk.services.s3.model.S3Exception.builder()
+            S3Exception.builder()
                 .statusCode(404)
-                .awsErrorDetails(
-                    software.amazon.awssdk.awscore.exception.AwsErrorDetails.builder()
-                        .errorCode("NoSuchBucket")
-                        .build())
+                .awsErrorDetails(AwsErrorDetails.builder().errorCode("NoSuchBucket").build())
                 .build());
     try (var signer = presigner()) {
       var storage = new S3ObjectStorage(client, signer, "files", null, Duration.ofMinutes(1));
       assertTrue(storage.head("x").isEmpty());
-      assertThrows(
-          software.amazon.awssdk.services.s3.model.S3Exception.class, () -> storage.head("x"));
+      assertThrows(S3Exception.class, () -> storage.head("x"));
       var local = new FakeS3();
       new S3ObjectStorage(local, signer, "files", null, Duration.ofMinutes(1))
           .put(
@@ -269,16 +271,15 @@ class S3ObjectStorageTest {
       assertTrue(!upload.headers().containsKey("host"));
       assertTrue(!upload.headers().containsKey("x-amz-server-side-encryption-bucket-key-enabled"));
       String signed =
-          java.util.Arrays.stream(upload.url().getRawQuery().split("&"))
+          Arrays.stream(upload.url().getRawQuery().split("&"))
               .filter(value -> value.startsWith("X-Amz-SignedHeaders="))
               .map(
                   value ->
-                      java.net.URLDecoder.decode(
-                          value.substring("X-Amz-SignedHeaders=".length()),
-                          java.nio.charset.StandardCharsets.UTF_8))
+                      URLDecoder.decode(
+                          value.substring("X-Amz-SignedHeaders=".length()), StandardCharsets.UTF_8))
               .findFirst()
               .orElseThrow();
-      var expected = new java.util.HashSet<>(List.of(signed.split(";")));
+      var expected = new HashSet<>(List.of(signed.split(";")));
       expected.remove("host");
       assertEquals(expected, upload.headers().keySet());
       String legacy = storage.presignPut("in/x", "text/plain", Duration.ofMinutes(1)).toString();

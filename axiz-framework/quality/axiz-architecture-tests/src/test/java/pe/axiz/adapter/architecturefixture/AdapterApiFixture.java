@@ -1,19 +1,21 @@
 package pe.axiz.adapter.architecturefixture;
 
+import org.reactivestreams.Subscriber;
+
 /** Fixtures distinguish an exported protocol leak from an internal SDK bridge. */
 public final class AdapterApiFixture {
   private AdapterApiFixture() {}
 
   /** Invalid exported adapter signature. */
   public static final class Exposed {
-    public void subscribe(org.reactivestreams.Subscriber<String> target) {}
+    public void subscribe(Subscriber<String> target) {}
   }
 
   private static final class Hidden {
-    public void subscribe(org.reactivestreams.Subscriber<String> target) {}
+    public void subscribe(Subscriber<String> target) {}
 
     public static final class NestedHidden {
-      public void subscribe(org.reactivestreams.Subscriber<String> target) {}
+      public void subscribe(Subscriber<String> target) {}
     }
   }
 

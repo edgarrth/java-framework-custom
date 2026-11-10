@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -47,7 +48,7 @@ class SagaConcurrencyInvariantsTest {
     assertEquals(15, conflicts.get());
     assertEquals(next, store.find("id").orElseThrow());
     assertTrue(store.findStale(now, 10).isEmpty());
-    assertEquals(java.util.List.of(next), store.findStale(now.plusNanos(1), 10));
+    assertEquals(List.of(next), store.findStale(now.plusNanos(1), 10));
     store.update(new SagaState("id", "payment", SagaStatus.COMPLETED, 1, "done", null, now, 2));
     assertTrue(store.findStale(now.plusSeconds(1), 10).isEmpty());
   }

@@ -4,19 +4,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
+import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
@@ -59,16 +68,13 @@ class ReactiveKafkaBrokerTest {
                         Instant.now(),
                         "account-1",
                         "application/json",
-                        "{}".getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        "{}".getBytes(StandardCharsets.UTF_8),
                         Map.of());
                 var template =
-                    (org.springframework.kafka.core.KafkaTemplate<String, byte[]>)
-                        ctx.getBean(
-                            "axizAsyncKafkaTemplate",
-                            org.springframework.kafka.core.KafkaTemplate.class);
+                    (KafkaTemplate<String, byte[]>)
+                        ctx.getBean("axizAsyncKafkaTemplate", KafkaTemplate.class);
                 var producerFactory =
-                    (org.springframework.kafka.core.DefaultKafkaProducerFactory<?, ?>)
-                        template.getProducerFactory();
+                    (DefaultKafkaProducerFactory<?, ?>) template.getProducerFactory();
                 producerFactory.updateConfigs(
                     Map.of("buffer.memory", 32768L, "batch.size", 32768, "max.block.ms", 2000L));
                 var publisher = ctx.getBean(AsyncEventPublisher.class);
@@ -88,7 +94,7 @@ class ReactiveKafkaBrokerTest {
                         "earliest",
                         "enable.auto.commit",
                         false);
-                var partition = new org.apache.kafka.common.TopicPartition("payments", 0);
+                var partition = new TopicPartition("payments", 0);
                 try (var consumer =
                     new KafkaConsumer<String, byte[]>(
                         consumerProperties,
@@ -96,11 +102,9 @@ class ReactiveKafkaBrokerTest {
                         new ByteArrayDeserializer())) {
                   consumer.assign(List.of(partition));
                   var record =
-                      org.springframework.kafka.test.utils.KafkaTestUtils.getSingleRecord(
-                          consumer, "payments", Duration.ofSeconds(10));
+                      KafkaTestUtils.getSingleRecord(consumer, "payments", Duration.ofSeconds(10));
                   assertEquals("account-1", record.key());
-                  assertEquals(
-                      "event-1", pe.axiz.adapter.messaging.kafka.KafkaEnvelopes.from(record).id());
+                  assertEquals("event-1", KafkaEnvelopes.from(record).id());
                   consumer.commitSync();
                 }
                 try (var restarted =
@@ -112,10 +116,8 @@ class ReactiveKafkaBrokerTest {
                   assertEquals(1L, restarted.position(partition));
                   restarted.seekToBeginning(List.of(partition));
                   var replay =
-                      org.springframework.kafka.test.utils.KafkaTestUtils.getSingleRecord(
-                          restarted, "payments", Duration.ofSeconds(10));
-                  assertEquals(
-                      "event-1", pe.axiz.adapter.messaging.kafka.KafkaEnvelopes.from(replay).id());
+                      KafkaTestUtils.getSingleRecord(restarted, "payments", Duration.ofSeconds(10));
+                  assertEquals("event-1", KafkaEnvelopes.from(replay).id());
                 }
                 producerFactory.reset();
                 producerFactory.updateConfigs(Map.of("linger.ms", 60000));
@@ -133,7 +135,7 @@ class ReactiveKafkaBrokerTest {
                     Mono.fromCompletionStage(() -> publisher.publish("kafka:payments", large))
                         .subscribeOn(Schedulers.parallel())
                         .toFuture();
-                org.awaitility.Awaitility.await()
+                Awaitility.await()
                     .atMost(Duration.ofSeconds(5))
                     .until(
                         () ->
@@ -149,8 +151,7 @@ class ReactiveKafkaBrokerTest {
                     .expectErrorMatches(ReactiveKafkaBrokerTest::sendTimeout)
                     .verify(Duration.ofSeconds(5));
                 template.flush();
-                assertEquals(
-                    "buffered", buffered.get(5, java.util.concurrent.TimeUnit.SECONDS).eventId());
+                assertEquals("buffered", buffered.get(5, TimeUnit.SECONDS).eventId());
                 producerFactory.reset();
                 producerFactory.updateConfigs(Map.of("linger.ms", 5));
                 broker.getCluster().brokers().get(0).shutdown();
@@ -172,7 +173,7 @@ class ReactiveKafkaBrokerTest {
   @Test
   void unavailableBrokerFailsWithinDeadlineWithoutBlockingReactiveCaller() throws Exception {
     int port;
-    try (var socket = new java.net.ServerSocket(0)) {
+    try (var socket = new ServerSocket(0)) {
       port = socket.getLocalPort();
     }
     new ReactiveWebApplicationContextRunner()

@@ -10,11 +10,16 @@ import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccess
 import io.micrometer.observation.transport.SenderContext;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+import org.assertj.core.api.Assertions;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -28,6 +33,7 @@ import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.commons.json.JsonWriter;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.PublishException;
@@ -114,7 +120,7 @@ class LocalStackMessagingIT {
             .attributesAsStrings()
             .get("QueueArn");
     String policy =
-        pe.axiz.core.commons.json.JsonWriter.write(
+        JsonWriter.write(
             Map.of(
                 "Version",
                 "2012-10-17",
@@ -162,7 +168,7 @@ class LocalStackMessagingIT {
         new AsyncAwsClients(
             () -> {
               REFRESHES.incrementAndGet();
-              java.util.concurrent.locks.LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
               return credentials.resolveCredentials();
             },
             Clock.systemUTC(),
@@ -175,7 +181,7 @@ class LocalStackMessagingIT {
             SnsAsyncClient.builder(), OBSERVATIONS, LocalStackMessagingIT::property, "sns");
   }
 
-  private static @org.jspecify.annotations.Nullable String property(String key) {
+  private static @Nullable String property(String key) {
     return switch (key) {
       case "axiz.aws.region" -> LOCALSTACK.getRegion();
       case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
@@ -220,7 +226,7 @@ class LocalStackMessagingIT {
             "axiz.messaging.destinations.notifications=" + topic)
         .run(
             ctx -> {
-              org.assertj.core.api.Assertions.assertThat(ctx).hasNotFailed();
+              Assertions.assertThat(ctx).hasNotFailed();
               var events = ctx.getBean(ReactiveEvents.class);
               var notifications = ctx.getBean(ReactiveNotifications.class);
               var request =
@@ -262,7 +268,7 @@ class LocalStackMessagingIT {
                       "missing",
                       "urn:service",
                       "event.v1",
-                      java.time.Instant.EPOCH,
+                      Instant.EPOCH,
                       "account",
                       "application/json",
                       new byte[0],
@@ -290,7 +296,7 @@ class LocalStackMessagingIT {
                     c.getParentObservation() != null
                         && AxizObservations.EVENT_PUBLISH.equals(
                             c.getParentObservation().getContextView().getName())));
-    var received = new java.util.ArrayList<Message>();
+    var received = new ArrayList<Message>();
     long deadline = System.nanoTime() + T.toNanos();
     while (received.size() < 2 && System.nanoTime() < deadline) {
       List<Message> batch =

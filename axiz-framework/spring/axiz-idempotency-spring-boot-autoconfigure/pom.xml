@@ -15,6 +15,8 @@
   <description>@Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.idempotency</axiz.module.name>
   </properties>
 

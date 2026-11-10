@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class ServiceRolesTest {
@@ -17,8 +18,7 @@ class ServiceRolesTest {
     assertTrue(ServiceRoles.validName("support", "otp-support"));
     assertTrue(ServiceRoles.validName("event-processor", "notifications-processor"));
     assertTrue(ServiceRoles.validName("batch", "settlement-batch"));
-    for (String name :
-        java.util.List.of("payments-business", "beneficiaries-crud", "payments-hexagonal"))
+    for (String name : List.of("payments-business", "beneficiaries-crud", "payments-hexagonal"))
       assertFalse(ServiceRoles.validName("business", name));
     assertFalse(ServiceRoles.validName("gateway", "external"));
     assertFalse(ServiceRoles.validName("core", "core"));
@@ -31,7 +31,7 @@ class ServiceRolesTest {
     assertDoesNotThrow(() -> ServiceRoles.requireCall("gateway", "external-system"));
     assertDoesNotThrow(() -> ServiceRoles.requireCall("core", "internal-system"));
     assertDoesNotThrow(() -> ServiceRoles.requireCall("support", "commodity-provider"));
-    for (String target : java.util.List.of("core", "gateway", "external-system", "ux"))
+    for (String target : List.of("core", "gateway", "external-system", "ux"))
       assertThrows(IllegalArgumentException.class, () -> ServiceRoles.requireCall("ux", target));
     assertThrows(
         IllegalArgumentException.class, () -> ServiceRoles.requireCall("support", "business"));

@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +70,7 @@ class CryptoBoundaryInvariantsTest {
       assertThrows(CryptoException.class, () -> parsed.open(key, "purpose:other"));
       assertThrows(
           CryptoException.class,
-          () -> EnvelopePayload.parse(java.util.Arrays.copyOf(envelope, envelope.length - 1)));
+          () -> EnvelopePayload.parse(Arrays.copyOf(envelope, envelope.length - 1)));
     }
     assertThrows(
         CryptoException.class,
@@ -76,12 +78,11 @@ class CryptoBoundaryInvariantsTest {
     assertThrows(
         CryptoException.class,
         () -> EnvelopePayload.seal(new byte[0], key, new byte[65536], "purpose:test"));
-    EnvelopePayload.validatePolicy(java.time.Duration.ofSeconds(1), 1);
+    EnvelopePayload.validatePolicy(Duration.ofSeconds(1), 1);
+    assertThrows(
+        IllegalArgumentException.class, () -> EnvelopePayload.validatePolicy(Duration.ZERO, 1));
     assertThrows(
         IllegalArgumentException.class,
-        () -> EnvelopePayload.validatePolicy(java.time.Duration.ZERO, 1));
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> EnvelopePayload.validatePolicy(java.time.Duration.ofSeconds(1), 0));
+        () -> EnvelopePayload.validatePolicy(Duration.ofSeconds(1), 0));
   }
 }

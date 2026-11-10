@@ -3,10 +3,40 @@ package pe.axiz.rewrite;
 import static org.openrewrite.java.Assertions.java;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.test.RewriteTest;
 
 class ReviewApiMigrationTest implements RewriteTest {
+  @ParameterizedTest
+  @ValueSource(strings = {"pe.axiz.core.persistence.r2dbc", "pe.axiz.kit.r2dbc"})
+  void iamAuthenticationMovesToItsAwsAdapterFromEitherPreviousNamespace(String previous) {
+    rewriteRun(
+        spec ->
+            spec.recipeFromResource("/META-INF/rewrite/axiz.yml", "pe.axiz.rewrite.MigrateToAxiz2")
+                .parser(
+                    JavaParser.fromJavaVersion()
+                        .classpath("axiz-adapter-database-auth-aws")
+                        .dependsOn(
+                            "package " + previous + "; public class RdsIamPasswordProvider {}")),
+        java(
+            """
+            import %s.RdsIamPasswordProvider;
+            class Credentials {
+                RdsIamPasswordProvider provider;
+            }
+            """
+                .formatted(previous),
+            """
+            import pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider;
+
+            class Credentials {
+                RdsIamPasswordProvider provider;
+            }
+            """));
+  }
+
   @Test
   void movesOnlyIdentifierValidationAndKeepsJdbcErrorClassificationInTheKit() {
     rewriteRun(

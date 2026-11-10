@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.model.Stack;
@@ -60,7 +62,7 @@ class HttpClientGeneratorTest {
     Files.writeString(file, source);
     assertEquals(
         0,
-        javax.tools.ToolProvider.getSystemJavaCompiler()
+        ToolProvider.getSystemJavaCompiler()
             .run(
                 null,
                 null,
@@ -72,8 +74,7 @@ class HttpClientGeneratorTest {
                 directory.toString(),
                 file.toString()));
     try (var loader =
-        new URLClassLoader(
-            new java.net.URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
+        new URLClassLoader(new URL[] {directory.toUri().toURL()}, getClass().getClassLoader())) {
       Class<?> type = loader.loadClass("example.CollectionsModel");
       var constructor = type.getConstructor(List.class, List.class, Map.class);
       List<String> required = new ArrayList<>(List.of("first"));

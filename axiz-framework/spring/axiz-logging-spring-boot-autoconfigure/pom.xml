@@ -15,6 +15,8 @@
   <description>Structured JSON logging, operation logging with masking and HTTP request logs (auto-configuration)</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.spring.logging</axiz.module.name>
   </properties>
 

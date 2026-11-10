@@ -11,6 +11,8 @@
   <name>axiz :: kit :: jdbc</name>
   <description>Transaction-aware JDBC connections, SQLSTATE helpers and local transactions</description>
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.kit.jdbc</axiz.module.name>
     <axiz.api.baseline.artifactId>axiz-core-commons</axiz.api.baseline.artifactId>
   </properties>

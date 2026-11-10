@@ -11,7 +11,7 @@ axiz add r2dbc
 |---|---|
 | Starter | `pe.axiz:axiz-r2dbc-spring-boot-starter` |
 | Stacks del catálogo | reactive |
-| Dependencias | `pe.axiz:axiz-kit-r2dbc` |
+| Dependencias | `pe.axiz:axiz-kit-r2dbc`<br>`pe.axiz:axiz-adapter-database-auth-aws` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega

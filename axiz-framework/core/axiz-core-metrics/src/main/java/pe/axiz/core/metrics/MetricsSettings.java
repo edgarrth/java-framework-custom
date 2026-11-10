@@ -1,5 +1,6 @@
 package pe.axiz.core.metrics;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +44,7 @@ public record MetricsSettings(
   }
 
   public MetricsSettings withCustomTags(TagPolicy... policies) {
-    var map = new java.util.LinkedHashMap<>(customTags);
+    var map = new LinkedHashMap<>(customTags);
     for (TagPolicy p : policies) {
       map.put(p.key(), p);
     }
@@ -58,7 +59,7 @@ public record MetricsSettings(
   }
 
   public MetricsSettings withEvents(EventDefinition... definitions) {
-    var map = new java.util.LinkedHashMap<>(events);
+    var map = new LinkedHashMap<>(events);
     for (EventDefinition d : definitions) {
       map.put(d.name(), d);
     }

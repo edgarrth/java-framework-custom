@@ -5,6 +5,8 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -15,6 +17,8 @@ import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 import com.tngtech.archunit.library.dependencies.SliceAssignment;
 import com.tngtech.archunit.library.dependencies.SliceIdentifier;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -58,7 +62,7 @@ class FrameworkArchitectureTest {
           .callMethodWhere(
               new DescribedPredicate<>("create or use an elastic worker scheduler") {
                 @Override
-                public boolean test(com.tngtech.archunit.core.domain.JavaMethodCall call) {
+                public boolean test(JavaMethodCall call) {
                   return call.getTargetOwner().getName().equals("reactor.core.scheduler.Schedulers")
                       && Set.of("boundedElastic", "newBoundedElastic", "elastic", "newElastic")
                           .contains(call.getName());
@@ -278,15 +282,11 @@ class FrameworkArchitectureTest {
                 public void check(JavaClass item, ConditionEvents events) {
                   if (r2dbc(item) || !publiclyVisible(item)) return;
                   item.getMethods().stream()
-                      .filter(
-                          m ->
-                              m.getModifiers()
-                                  .contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC))
+                      .filter(m -> m.getModifiers().contains(JavaModifier.PUBLIC))
                       .forEach(
                           m -> {
-                            java.util.List<JavaClass> types =
-                                new java.util.ArrayList<>(
-                                    m.getReturnType().getAllInvolvedRawTypes());
+                            List<JavaClass> types =
+                                new ArrayList<>(m.getReturnType().getAllInvolvedRawTypes());
                             types.add(m.getRawReturnType());
                             types.addAll(m.getRawParameterTypes());
                             m.getParameterTypes()
@@ -309,8 +309,7 @@ class FrameworkArchitectureTest {
               });
 
   static boolean publiclyVisible(JavaClass type) {
-    if (!type.getModifiers().contains(com.tngtech.archunit.core.domain.JavaModifier.PUBLIC))
-      return false;
+    if (!type.getModifiers().contains(JavaModifier.PUBLIC)) return false;
     return type.getEnclosingClass().map(FrameworkArchitectureTest::publiclyVisible).orElse(true);
   }
 

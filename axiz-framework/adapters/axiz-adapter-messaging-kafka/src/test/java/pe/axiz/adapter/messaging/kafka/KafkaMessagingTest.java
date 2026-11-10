@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -102,7 +103,7 @@ class KafkaMessagingTest {
       assertThrows(
           IllegalArgumentException.class,
           () -> new KafkaEventPublisher(producer, Duration.ofSeconds(-1), Duration.ofSeconds(7)));
-      for (var invalid : java.util.List.of(Duration.ZERO, Duration.ofSeconds(-1)))
+      for (var invalid : List.of(Duration.ZERO, Duration.ofSeconds(-1)))
         assertThrows(
             IllegalArgumentException.class,
             () -> new KafkaEventPublisher(producer, Duration.ZERO, invalid));

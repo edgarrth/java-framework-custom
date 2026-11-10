@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class ManifestV2Test {
   @Test
   void anIntegrationMustChooseItsBusinessBoundaryExplicitly(@TempDir Path dir) throws Exception {
     legacy(dir, "integration", "hexagonal");
-    assertThrows(java.io.IOException.class, () -> ProjectManifest.read(dir));
+    assertThrows(IOException.class, () -> ProjectManifest.read(dir));
   }
 
   @Test
@@ -48,6 +49,6 @@ class ManifestV2Test {
     legacy(dir, "business", "hexagonal");
     Path file = dir.resolve(ProjectManifest.PATH);
     Files.writeString(file, Files.readString(file).replace("schema: 1", "schema: 99"));
-    assertThrows(java.io.IOException.class, () -> ProjectManifest.read(dir));
+    assertThrows(IOException.class, () -> ProjectManifest.read(dir));
   }
 }

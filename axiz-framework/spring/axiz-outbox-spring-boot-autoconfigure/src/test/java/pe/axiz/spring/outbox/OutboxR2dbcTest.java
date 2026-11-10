@@ -11,7 +11,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.awaitility.Awaitility;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -66,7 +68,7 @@ class OutboxR2dbcTest {
     FakeR2dbc db =
         new FakeR2dbc()
             .onQuery("WHERE 1=0", b -> List.of())
-            .onQuery("RETURNING last_seq", b -> List.of(java.util.Map.of("last_seq", 1L)))
+            .onQuery("RETURNING last_seq", b -> List.of(Map.of("last_seq", 1L)))
             .onUpdate("UPDATE payments", b -> 1L)
             .onUpdate("INSERT INTO axiz_outbox", b -> 1L);
     new ApplicationContextRunner()
@@ -125,8 +127,7 @@ class OutboxR2dbcTest {
     OutboxStore store =
         new OutboxStore() {
 
-          public java.util.List<OutboxRecord> claimDue(
-              int size, java.time.Duration lease, String owner) {
+          public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
             return lockDue(size, Instant.EPOCH);
           }
 
@@ -139,7 +140,7 @@ class OutboxR2dbcTest {
               String owner,
               int attempts,
               Instant next,
-              @org.jspecify.annotations.Nullable String error,
+              @Nullable String error,
               boolean giveUp) {
             return false;
           }
@@ -195,9 +196,7 @@ class OutboxR2dbcTest {
     CachedPendingCount pending =
         new CachedPendingCount(store, Duration.ofMinutes(1), Clock.systemUTC());
     assertTrue(Double.isNaN(pending.value()));
-    org.awaitility.Awaitility.await()
-        .atMost(Duration.ofSeconds(5))
-        .until(() -> !Double.isNaN(pending.value()));
+    Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> !Double.isNaN(pending.value()));
     assertEquals(41.0, pending.value());
     assertEquals(1, queries.get());
   }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
@@ -31,7 +32,7 @@ class MoneyBoundaryInvariantsTest {
     assertNotEquals(amount.hashCode(), Money.of("2", "PEN").hashCode());
     assertThrows(BusinessException.class, () -> amount.minus(Money.of("1", "USD")));
     assertThrows(IllegalArgumentException.class, () -> amount.allocate(0));
-    assertEquals(java.util.List.of(amount), amount.allocate(1));
+    assertEquals(List.of(amount), amount.allocate(1));
   }
 
   @Test

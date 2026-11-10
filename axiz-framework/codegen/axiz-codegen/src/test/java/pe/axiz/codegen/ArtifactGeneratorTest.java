@@ -180,7 +180,7 @@ class ArtifactGeneratorTest {
     String row =
         reactiveEntity.created().entrySet().stream()
             .filter(e -> e.getKey().endsWith("PaymentEntity.java"))
-            .map(e -> new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8))
+            .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
             .findFirst()
             .orElseThrow();
     assertTrue(row.contains("extends AuditableRow"));

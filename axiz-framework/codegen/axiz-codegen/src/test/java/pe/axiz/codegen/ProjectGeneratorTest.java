@@ -4,20 +4,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import pe.axiz.codegen.model.Archetype;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.output.GeneratedProject;
+import pe.axiz.codegen.render.TemplateSet;
 
 class ProjectGeneratorTest {
 
@@ -35,19 +45,17 @@ class ProjectGeneratorTest {
               Stack.SERVLET,
               "aurora",
               List.of(),
-              cqrs
-                  ? new pe.axiz.codegen.model.Extension[] {pe.axiz.codegen.model.Extension.CQRS}
-                  : new pe.axiz.codegen.model.Extension[0]);
+              cqrs ? new Extension[] {Extension.CQRS} : new Extension[0]);
       var validation = generator.validate(request);
       var files =
-          pe.axiz.codegen.render.TemplateSet.load("service")
+          TemplateSet.load("service")
               .render(generator.context(request, validation.archetype(), validation.contract()));
       var source =
           files.entrySet().stream()
               .filter(e -> e.getKey().endsWith("/ArchitectureTest.java"))
               .findFirst()
               .orElseThrow();
-      String text = new String(source.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+      String text = new String(source.getValue(), StandardCharsets.UTF_8);
       for (String type : List.of("Archetype", "Stack", "Structure")) {
         assertTrue(text.contains("import pe.axiz.quality.archunit." + type + ";"), text);
         assertFalse(text.contains("(" + "pe.axiz.quality.archunit." + type + "."), text);
@@ -86,7 +94,7 @@ class ProjectGeneratorTest {
           r.archetype() + "/" + r.structure().id() + "/" + r.stack().id() + "/" + r.persistence();
       for (Map.Entry<String, byte[]> e : p.files().entrySet()) {
         String path = e.getKey();
-        String text = new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+        String text = new String(e.getValue(), StandardCharsets.UTF_8);
         if (!path.contains("/templates/")) {
           // GitHub expressions (${{ ... }}) are legitimate; any other {{ is an unrendered tag
           assertFalse(UNRENDERED.matcher(text).find(), where + " unrendered mustache in " + path);
@@ -204,7 +212,7 @@ class ProjectGeneratorTest {
                 Stack.REACTIVE,
                 "dynamodb",
                 List.of(),
-                pe.axiz.codegen.model.Extension.CQRS));
+                Extension.CQRS));
     String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("Mono<ResponseEntity<Order>>"));
@@ -227,7 +235,7 @@ class ProjectGeneratorTest {
                 Stack.REACTIVE,
                 "aurora",
                 List.of("outbox", "inbox", "scheduling"),
-                pe.axiz.codegen.model.Extension.CQRS));
+                Extension.CQRS));
     String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
     assertTrue(controller.contains("private final ReactiveCommandBus commandBus;"), controller);
@@ -244,6 +252,12 @@ class ProjectGeneratorTest {
         p.text(base + "application/query/GetOrderHandler.java").contains("ReactiveQueryHandler"));
     String pom = p.text("pom.xml");
     assertTrue(pom.contains("<artifactId>axiz-r2dbc-spring-boot-starter</artifactId>"));
+    assertTrue(
+        Pattern.compile(
+                "<artifactId>axiz-adapter-database-auth-aws</artifactId>\\s*<scope>runtime</scope>")
+            .matcher(pom)
+            .find(),
+        "Generated IAM support must be a runtime adapter: " + pom);
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"), "JPA blocks: never on reactive");
     assertTrue(pom.contains("<artifactId>axiz-adapter-outbox-r2dbc</artifactId>"));
     assertTrue(pom.contains("<artifactId>axiz-adapter-inbox-r2dbc</artifactId>"));
@@ -273,7 +287,7 @@ class ProjectGeneratorTest {
     String handler =
         p.files().entrySet().stream()
             .filter(e -> e.getKey().endsWith("handler/ExampleCreatedHandler.java"))
-            .map(e -> new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8))
+            .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
             .findFirst()
             .orElseThrow();
     assertTrue(handler.contains("extends ReactiveTypedEventHandler<ExampleCreated>"), handler);
@@ -314,12 +328,7 @@ class ProjectGeneratorTest {
   void descriptionsAreEscapedForEveryFormat() throws Exception {
     ProjectRequest base =
         Fixtures.request(
-            "business",
-            Structure.HEXAGONAL,
-            Stack.SERVLET,
-            "aurora",
-            List.of(),
-            pe.axiz.codegen.model.Extension.CQRS);
+            "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of(), Extension.CQRS);
     ProjectRequest r =
         new ProjectRequest(
             base.name(),
@@ -340,10 +349,10 @@ class ProjectGeneratorTest {
             .load(p.text("deploy/helm/orders/Chart.yaml"));
     assertEquals(
         "History: read model <R2DBC> & \"events\" -- see */ docs",
-        ((java.util.Map<?, ?>) chart).get("description"));
-    javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        ((Map<?, ?>) chart).get("description"));
+    DocumentBuilderFactory.newInstance()
         .newDocumentBuilder()
-        .parse(new java.io.ByteArrayInputStream(p.files().get("pom.xml")));
+        .parse(new ByteArrayInputStream(p.files().get("pom.xml")));
     String application = p.text("src/main/java/pe/axiz/orders/orders/OrdersApplication.java");
     assertFalse(application.contains("see */"));
     assertTrue(application.contains("read model &lt;R2DBC&gt; &amp;"), "doclint-safe HTML");
@@ -352,8 +361,7 @@ class ProjectGeneratorTest {
   /** Every run of hyphens, a trailing one and markup still give well-formed POMs and Javadoc. */
   @Test
   void ordinaryPunctuationAlwaysProducesWellFormedFiles() throws Exception {
-    javax.xml.parsers.DocumentBuilderFactory xml =
-        javax.xml.parsers.DocumentBuilderFactory.newInstance();
+    DocumentBuilderFactory xml = DocumentBuilderFactory.newInstance();
     xml.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     for (String description :
         List.of(
@@ -376,7 +384,7 @@ class ProjectGeneratorTest {
                     Stack.SERVLET,
                     "aurora",
                     List.of(),
-                    pe.axiz.codegen.model.Extension.CQRS);
+                    Extension.CQRS);
         ProjectRequest r =
             new ProjectRequest(
                 base.name(),
@@ -392,14 +400,13 @@ class ProjectGeneratorTest {
                 null,
                 base.frameworkVersion());
         GeneratedProject p = generator.generate(r);
-        org.w3c.dom.Document pom =
-            xml.newDocumentBuilder()
-                .parse(new java.io.ByteArrayInputStream(p.files().get("pom.xml")));
+        Document pom =
+            xml.newDocumentBuilder().parse(new ByteArrayInputStream(p.files().get("pom.xml")));
         String text = pom.getElementsByTagName("description").item(0).getTextContent();
         assertTrue(text.startsWith(description.replaceAll("\\.$", "")), archetype + ": " + text);
         for (Map.Entry<String, byte[]> e : p.files().entrySet()) {
           if (e.getKey().endsWith(".java")) {
-            String source = new String(e.getValue(), java.nio.charset.StandardCharsets.UTF_8);
+            String source = new String(e.getValue(), StandardCharsets.UTF_8);
             int start = source.indexOf("/**");
             if (start >= 0) {
               String doc = source.substring(start + 3, source.indexOf("*/", start));
@@ -473,7 +480,7 @@ class ProjectGeneratorTest {
         generator.generate(
             Fixtures.request(
                 "core", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of("crypto", "soap")));
-    String app = p.text("src/main/resources/application.yaml").toLowerCase(java.util.Locale.ROOT);
+    String app = p.text("src/main/resources/application.yaml").toLowerCase(Locale.ROOT);
     assertFalse(app.contains("password:"));
     String values = p.text("deploy/helm/orders-core/values.yaml");
     assertTrue(values.contains("- field-key-v1"), "secrets come from the ExternalSecret");
@@ -582,12 +589,11 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of()));
-    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
     p.writeZip(out);
-    try (java.util.zip.ZipInputStream zip =
-        new java.util.zip.ZipInputStream(new java.io.ByteArrayInputStream(out.toByteArray()))) {
+    try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()))) {
       int n = 0;
-      for (java.util.zip.ZipEntry e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
+      for (ZipEntry e = zip.getNextEntry(); e != null; e = zip.getNextEntry()) {
         assertTrue(e.getName().startsWith("orders/"), e.getName());
         n++;
       }

@@ -2,6 +2,9 @@ package pe.axiz.core.http;
 
 import java.time.Instant;
 import java.util.Objects;
+import pe.axiz.core.sensitive.MaskType;
+import pe.axiz.core.sensitive.Sensitive;
+import pe.axiz.core.sensitive.SensitivityLevel;
 
 /**
  * OAuth2 access token.
@@ -10,10 +13,7 @@ import java.util.Objects;
  * @param expiresAt expiry instant
  */
 public record AccessToken(
-    @pe.axiz.core.sensitive.Sensitive(
-            level = pe.axiz.core.sensitive.SensitivityLevel.CRITICAL,
-            mask = pe.axiz.core.sensitive.MaskType.FULL)
-        String value,
+    @Sensitive(level = SensitivityLevel.CRITICAL, mask = MaskType.FULL) String value,
     Instant expiresAt) {
 
   public AccessToken {

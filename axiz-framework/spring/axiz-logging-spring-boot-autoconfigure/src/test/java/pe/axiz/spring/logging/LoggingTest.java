@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -21,11 +22,11 @@ import pe.axiz.core.logging.NoLog;
 @ExtendWith(OutputCaptureExtension.class)
 class LoggingTest {
 
-  @org.junit.jupiter.api.Test
+  @Test
   void reactiveLoggingUsesAsyncConsoleAndAllowsExplicitConfiguration() {
-    var env = new org.springframework.mock.env.MockEnvironment();
+    var env = new MockEnvironment();
     var application = new SpringApplication();
-    application.setWebApplicationType(org.springframework.boot.WebApplicationType.REACTIVE);
+    application.setWebApplicationType(WebApplicationType.REACTIVE);
     new AxizLoggingEnvironmentPostProcessor().postProcessEnvironment(env, application);
     assertEquals(
         "classpath:pe/axiz/spring/logging/logback-reactive.xml", env.getProperty("logging.config"));

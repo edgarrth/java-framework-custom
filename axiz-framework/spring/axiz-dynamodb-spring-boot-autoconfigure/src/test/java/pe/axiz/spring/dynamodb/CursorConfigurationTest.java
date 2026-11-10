@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -29,7 +30,7 @@ class CursorConfigurationTest {
         .withPropertyValues("axiz.dynamodb.cursor.current-key-id=v1")
         .withBean(SecretResolver.class, () -> name -> Optional.empty())
         .run(ctx -> assertThat(ctx).hasFailed());
-    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    var calls = new AtomicInteger();
     String key = Base64.getEncoder().encodeToString(AesGcm.newKey().getEncoded());
     runner
         .withPropertyValues(

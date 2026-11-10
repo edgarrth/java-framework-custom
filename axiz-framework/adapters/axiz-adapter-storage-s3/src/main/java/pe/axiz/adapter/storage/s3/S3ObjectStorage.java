@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.storage.ObjectKey;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.core.storage.PresignedUpload;
 import pe.axiz.core.storage.StoredObject;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -20,6 +21,7 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
@@ -65,7 +67,7 @@ public final class S3ObjectStorage implements ObjectStorage {
               S3Requests.metadata(
                   r.contentType(), r.contentLength(), r.checksumSHA256(), r.metadata()),
               in));
-    } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
+    } catch (S3Exception e) {
       if (S3Requests.missing(e)) return Optional.empty();
       throw e;
     }
@@ -83,7 +85,7 @@ public final class S3ObjectStorage implements ObjectStorage {
       return Optional.of(
           S3Requests.metadata(
               r.contentType(), r.contentLength(), r.checksumSHA256(), r.metadata()));
-    } catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
+    } catch (S3Exception e) {
       if (S3Requests.missing(e)) return Optional.empty();
       throw e;
     }
@@ -124,8 +126,7 @@ public final class S3ObjectStorage implements ObjectStorage {
   }
 
   @Override
-  public pe.axiz.core.storage.PresignedUpload presignUpload(
-      String key, String contentType, Duration ttl) {
+  public PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
     return requests.presignUpload(key, contentType, ttl);
   }
 }

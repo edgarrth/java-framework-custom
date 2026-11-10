@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.micrometer.core.instrument.binder.MeterBinder;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.ConnectionFactories;
@@ -12,8 +14,14 @@ import io.r2dbc.spi.ConnectionFactoryOptions;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,14 +38,19 @@ import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
 import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.core.audit.AsyncAuditEventPublisher;
+import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.audit.QueuedAsyncAuditPublisher;
 import pe.axiz.core.commons.json.JsonReader;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
+import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -56,16 +69,16 @@ class PostgresAuditBoundaryIT {
 
   @BeforeAll
   static void start() {
-    boolean docker = org.testcontainers.DockerClientFactory.instance().isDockerAvailable();
+    boolean docker = DockerClientFactory.instance().isDockerAvailable();
     if (Boolean.getBoolean("axiz.it.requireDocker"))
-      org.junit.jupiter.api.Assertions.assertTrue(docker, "Docker is required");
-    org.junit.jupiter.api.Assumptions.assumeTrue(docker, "Docker unavailable");
+      Assertions.assertTrue(docker, "Docker is required");
+    Assumptions.assumeTrue(docker, "Docker unavailable");
     POSTGRES.start();
     source = new PGSimpleDataSource();
     source.setURL(POSTGRES.getJdbcUrl());
     source.setUser(POSTGRES.getUsername());
     source.setPassword(POSTGRES.getPassword());
-    pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap.initialize();
+    ReactiveInfrastructureBootstrap.initialize();
   }
 
   @AfterAll
@@ -181,8 +194,7 @@ class PostgresAuditBoundaryIT {
     }
   }
 
-  private java.util.Map<String, @org.jspecify.annotations.Nullable Object> audit()
-      throws Exception {
+  private Map<String, @Nullable Object> audit() throws Exception {
     try (var connection = source.getConnection();
         var statement = connection.createStatement();
         var rows = statement.executeQuery("SELECT envelope FROM axiz_outbox")) {
@@ -291,16 +303,16 @@ class PostgresAuditBoundaryIT {
       statement.execute(
           "ALTER TABLE axiz_outbox ADD CONSTRAINT reject_audit CHECK (false) NOT VALID");
     }
-    var delivered = new java.util.concurrent.CompletableFuture<pe.axiz.core.audit.AuditEvent>();
+    var delivered = new CompletableFuture<AuditEvent>();
     runner()
         .withBean(
-            pe.axiz.spring.audit.AsyncAuditSink.class,
+            AsyncAuditSink.class,
             () ->
-                new pe.axiz.spring.audit.AsyncAuditSink(
+                new AsyncAuditSink(
                     "test",
                     event -> {
                       delivered.complete(event);
-                      return java.util.concurrent.CompletableFuture.completedFuture(null);
+                      return CompletableFuture.completedFuture(null);
                     }))
         .run(
             ctx -> {
@@ -309,7 +321,7 @@ class PostgresAuditBoundaryIT {
                           .subscribeOn(Schedulers.parallel()))
                   .expectErrorMessage("original business failure")
                   .verify();
-              var fallback = delivered.get(5, java.util.concurrent.TimeUnit.SECONDS);
+              var fallback = delivered.get(5, TimeUnit.SECONDS);
               assertEquals("NOT_CONFIRMED", fallback.details().get("audit.persistence"));
               assertEquals("ROLLED_BACK", fallback.transactionOutcome().name());
               assertEquals(
@@ -318,12 +330,10 @@ class PostgresAuditBoundaryIT {
                       .notConfirmedCount());
               assertEquals(0, count("audit_effects"));
               assertEquals(0, count("axiz_outbox"));
-              var queue =
-                  (pe.axiz.core.audit.QueuedAsyncAuditPublisher)
-                      ctx.getBean(pe.axiz.core.audit.AsyncAuditEventPublisher.class);
+              var queue = (QueuedAsyncAuditPublisher) ctx.getBean(AsyncAuditEventPublisher.class);
               assertEquals(0, queue.queue().lostCount());
-              var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
-              ctx.getBeansOfType(io.micrometer.core.instrument.binder.MeterBinder.class)
+              var registry = new SimpleMeterRegistry();
+              ctx.getBeansOfType(MeterBinder.class)
                   .values()
                   .forEach(binder -> binder.bindTo(registry));
               assertEquals(
@@ -334,17 +344,17 @@ class PostgresAuditBoundaryIT {
 
   @Test
   void saturatedNativePoolHonorsTheAuditDeadlineAndPreservesTheBusinessError() {
-    var delivered = new java.util.concurrent.CompletableFuture<pe.axiz.core.audit.AuditEvent>();
+    var delivered = new CompletableFuture<AuditEvent>();
     runner()
         .withPropertyValues("axiz.audit.durable.failure-timeout=30ms")
         .withBean(
-            pe.axiz.spring.audit.AsyncAuditSink.class,
+            AsyncAuditSink.class,
             () ->
-                new pe.axiz.spring.audit.AsyncAuditSink(
+                new AsyncAuditSink(
                     "test",
                     event -> {
                       delivered.complete(event);
-                      return java.util.concurrent.CompletableFuture.completedFuture(null);
+                      return CompletableFuture.completedFuture(null);
                     }))
         .run(
             ctx -> {
@@ -358,10 +368,7 @@ class PostgresAuditBoundaryIT {
                     .verify(Duration.ofSeconds(2));
                 assertEquals(
                     "NOT_CONFIRMED",
-                    delivered
-                        .get(5, java.util.concurrent.TimeUnit.SECONDS)
-                        .details()
-                        .get("audit.persistence"));
+                    delivered.get(5, TimeUnit.SECONDS).details().get("audit.persistence"));
                 assertEquals(
                     1,
                     ((ReactiveTransactionalAuditPublisher)

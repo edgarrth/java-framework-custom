@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,12 +96,12 @@ class DynamoDbDistributedLockTest {
     Clock clock =
         new Clock() {
           @Override
-          public java.time.ZoneId getZone() {
+          public ZoneId getZone() {
             return ZoneOffset.UTC;
           }
 
           @Override
-          public Clock withZone(java.time.ZoneId zone) {
+          public Clock withZone(ZoneId zone) {
             return this;
           }
 
@@ -125,12 +126,12 @@ class DynamoDbDistributedLockTest {
   private static Clock at(Instant[] now) {
     return new Clock() {
       @Override
-      public java.time.ZoneId getZone() {
+      public ZoneId getZone() {
         return ZoneOffset.UTC;
       }
 
       @Override
-      public Clock withZone(java.time.ZoneId zone) {
+      public Clock withZone(ZoneId zone) {
         return this;
       }
 

@@ -16,6 +16,8 @@
   <description>Architecture rules for axiz services: general hygiene and one rule set per architectural style</description>
 
   <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
     <axiz.module.name>pe.axiz.quality.archunit</axiz.module.name>
   </properties>
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -11,6 +12,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -34,7 +36,7 @@ class HttpClientClasspathTest {
         Arrays.stream(
                 System.getProperty(
                         "surefire.test.class.path", System.getProperty("java.class.path"))
-                    .split(java.util.regex.Pattern.quote(File.pathSeparator)))
+                    .split(Pattern.quote(File.pathSeparator)))
             .filter(
                 entry ->
                     excluded.stream()
@@ -67,8 +69,7 @@ class HttpClientClasspathTest {
         Class.forName("reactor.core.publisher.Mono");
         throw new AssertionError("Reactive jars must be physically absent");
       } catch (ClassNotFoundException expected) {
-        var settings =
-            ClientSettings.of("plain-client", java.net.URI.create("https://example.test"));
+        var settings = ClientSettings.of("plain-client", URI.create("https://example.test"));
         try (var auth =
             OutboundAuth.create(settings, null, Duration.ofSeconds(30), Clock.systemUTC())) {
           auth.apply(

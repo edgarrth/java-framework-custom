@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.ObjectProvider;
@@ -23,8 +24,10 @@ import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.ReactiveTransactionManager;
+import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import org.springframework.transaction.support.ResourceTransactionManager;
 import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
@@ -83,7 +86,7 @@ class TransactionalHandlerResourceTest {
     return manager;
   }
 
-  private InboxCompletion completion(Object resource, java.util.function.BooleanSupplier complete) {
+  private InboxCompletion completion(Object resource, BooleanSupplier complete) {
     return new InboxCompletion() {
       @Override
       public Object transactionResource() {
@@ -179,8 +182,7 @@ class TransactionalHandlerResourceTest {
   static class NativeHandler extends ReactiveTypedEventHandler<String> {
     @Override
     protected Mono<Void> on(String payload, EventEnvelope event) {
-      return org.springframework.transaction.reactive.TransactionSynchronizationManager
-          .forCurrentTransaction()
+      return TransactionSynchronizationManager.forCurrentTransaction()
           .doOnNext(transaction -> assertTrue(transaction.isActualTransactionActive()))
           .then();
     }
@@ -261,9 +263,7 @@ class TransactionalHandlerResourceTest {
                 nativeCompletion(new Object(), true)));
     var manager = transactions(new Object());
     var handler =
-        new TransactionalEventHandler<>(
-            handler(() -> {}),
-            new org.springframework.transaction.support.TransactionTemplate(manager));
+        new TransactionalEventHandler<>(handler(() -> {}), new TransactionTemplate(manager));
     assertFalse(handler.completesInTransaction());
     assertThrows(
         IllegalStateException.class,

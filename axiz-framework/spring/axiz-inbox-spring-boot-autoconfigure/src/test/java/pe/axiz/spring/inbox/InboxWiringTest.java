@@ -9,11 +9,14 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -60,8 +63,8 @@ class InboxWiringTest {
     }
   }
 
-  private static void await(java.util.function.BooleanSupplier condition) throws Exception {
-    org.awaitility.Awaitility.await()
+  private static void await(BooleanSupplier condition) throws Exception {
+    Awaitility.await()
         .pollDelay(Duration.ZERO)
         .pollInterval(Duration.ofMillis(5))
         .atMost(Duration.ofSeconds(5))
@@ -110,7 +113,7 @@ class InboxWiringTest {
     purger.start();
     assertTrue(entered.await(5, TimeUnit.SECONDS));
     purger.stop();
-    Thread active = java.util.Objects.requireNonNull(worker.get());
+    Thread active = Objects.requireNonNull(worker.get());
     active.join(Duration.ofSeconds(2));
     assertFalse(active.isAlive(), "the purge worker must terminate after stop");
     assertEquals(1, calls.get(), "the stop flag ends the loop even without the interrupt");

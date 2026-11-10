@@ -1,5 +1,7 @@
 package pe.axiz.spring.security;
 
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.RolesAllowed;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -201,13 +203,9 @@ final class HttpAuthorizationCoverage {
             case SECURED -> Access.RESTRICTED;
             case JSR250 -> {
               var denied =
-                  SecurityAnnotationScanners.requireUnique(
-                          jakarta.annotation.security.DenyAll.class)
-                      .scan(method, target);
+                  SecurityAnnotationScanners.requireUnique(DenyAll.class).scan(method, target);
               var roles =
-                  SecurityAnnotationScanners.requireUnique(
-                          jakarta.annotation.security.RolesAllowed.class)
-                      .scan(method, target);
+                  SecurityAnnotationScanners.requireUnique(RolesAllowed.class).scan(method, target);
               yield denied != null ? Access.FALSE : roles != null ? Access.RESTRICTED : Access.TRUE;
             }
             case PRE_AUTHORIZE -> {

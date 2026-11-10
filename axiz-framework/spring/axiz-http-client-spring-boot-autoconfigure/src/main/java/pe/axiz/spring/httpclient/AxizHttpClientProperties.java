@@ -2,6 +2,8 @@ package pe.axiz.spring.httpclient;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +25,7 @@ import pe.axiz.core.resilience.TimeoutSettings;
 public record AxizHttpClientProperties(
     @DefaultValue Map<String, Client> clients, @DefaultValue("60s") Duration tokenRenewBefore) {
   public AxizHttpClientProperties {
-    clients = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(clients));
+    clients = Collections.unmodifiableMap(new LinkedHashMap<>(clients));
   }
 
   /**

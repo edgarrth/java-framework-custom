@@ -17,6 +17,7 @@ import org.springframework.security.authentication.RememberMeAuthenticationToken
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -87,9 +88,7 @@ class AuthenticatedAccessHttpTest {
               AuthorizationCoverageTest.ready(ctx.getSourceApplicationContext());
               var client =
                   WebTestClient.bindToApplicationContext(ctx)
-                      .apply(
-                          org.springframework.security.test.web.reactive.server
-                              .SecurityMockServerConfigurers.springSecurity())
+                      .apply(SecurityMockServerConfigurers.springSecurity())
                       .configureClient()
                       .build();
               client.get().uri("/policy").exchange().expectStatus().isUnauthorized();

@@ -6,8 +6,14 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 class JdbcTransactionsTest {
@@ -72,31 +78,31 @@ class JdbcTransactionsTest {
   void rollbackAndRestoreFailuresCannotEraseTheOriginalBusinessFailure() throws Exception {
     var actual = new JdbcDataSource();
     actual.setURL("jdbc:h2:mem:cleanup-" + UUID.randomUUID());
-    javax.sql.DataSource broken =
-        (javax.sql.DataSource)
-            java.lang.reflect.Proxy.newProxyInstance(
-                javax.sql.DataSource.class.getClassLoader(),
-                new Class<?>[] {javax.sql.DataSource.class},
+    DataSource broken =
+        (DataSource)
+            Proxy.newProxyInstance(
+                DataSource.class.getClassLoader(),
+                new Class<?>[] {DataSource.class},
                 (proxy, method, args) -> {
                   try {
                     if (!method.getName().equals("getConnection"))
                       return method.invoke(actual, args);
                     var connection = actual.getConnection();
-                    return java.lang.reflect.Proxy.newProxyInstance(
-                        java.sql.Connection.class.getClassLoader(),
-                        new Class<?>[] {java.sql.Connection.class},
+                    return Proxy.newProxyInstance(
+                        Connection.class.getClassLoader(),
+                        new Class<?>[] {Connection.class},
                         (p, m, a) -> {
                           if (m.getName().equals("rollback"))
-                            throw new java.sql.SQLException("rollback cleanup");
+                            throw new SQLException("rollback cleanup");
                           if (m.getName().equals("setAutoCommit") && Boolean.TRUE.equals(a[0]))
-                            throw new java.sql.SQLException("restore cleanup");
+                            throw new SQLException("restore cleanup");
                           try {
                             return m.invoke(connection, a);
-                          } catch (java.lang.reflect.InvocationTargetException failure) {
+                          } catch (InvocationTargetException failure) {
                             throw failure.getCause();
                           }
                         });
-                  } catch (java.lang.reflect.InvocationTargetException failure) {
+                  } catch (InvocationTargetException failure) {
                     throw failure.getCause();
                   }
                 });
@@ -131,8 +137,7 @@ class JdbcTransactionsTest {
               assertTrue(
                   inner.inTransaction(
                       () -> {
-                        org.junit.jupiter.api.Assertions.assertNotSame(
-                            firstConnection, inner.get());
+                        Assertions.assertNotSame(firstConnection, inner.get());
                         assertFalse(inner.get().getAutoCommit());
                         return true;
                       }));

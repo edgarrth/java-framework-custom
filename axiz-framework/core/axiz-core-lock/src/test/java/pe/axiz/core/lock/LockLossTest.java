@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -228,7 +229,7 @@ class LockLossTest {
 
   @Test
   void anAcquisitionThatAnswersAfterItsLeaseIsReleasedAndNeverRunsTheWork() {
-    InMemoryDistributedLock store = new InMemoryDistributedLock(java.time.Clock.systemUTC());
+    InMemoryDistributedLock store = new InMemoryDistributedLock(Clock.systemUTC());
     AtomicInteger attempts = new AtomicInteger();
     // the store grants the lease at once, but its answer arrives after the lease ran out; by then
     // the in-memory store, like Redis, already lets another owner take it
