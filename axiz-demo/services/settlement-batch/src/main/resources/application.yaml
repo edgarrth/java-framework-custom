@@ -41,8 +41,7 @@ axiz:
   storage:
     bucket: ${AXIZ_STORAGE_BUCKET:local-bucket}
   audit:
-    async:
-      enabled: true
+    mode: ASYNC
   jpa:
     aws-wrapper:
       enabled: ${AXIZ_JPA_AWS_WRAPPER:false}

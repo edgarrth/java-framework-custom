@@ -59,8 +59,7 @@ axiz:
       audiences:
       - ${spring.application.name}
   audit:
-    async:
-      enabled: true
+    mode: ASYNC
   r2dbc:
     encryption-context: payment_history.creditor_cci
     iam:

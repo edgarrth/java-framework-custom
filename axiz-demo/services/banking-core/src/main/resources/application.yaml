@@ -76,8 +76,7 @@ axiz:
   lock:
     store: redis
   audit:
-    async:
-      enabled: true
+    mode: ASYNC
     sqs:
       queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
   messaging:

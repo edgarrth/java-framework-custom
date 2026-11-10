@@ -67,10 +67,8 @@ axiz:
       - payments-business
       - payment-orders
   audit:
-    async:
-      enabled: true
+    mode: DURABLE
     durable:
-      enabled: true
       destination: audit
     kafka:
       topic: ${AXIZ_AUDIT_TOPIC:audit}
