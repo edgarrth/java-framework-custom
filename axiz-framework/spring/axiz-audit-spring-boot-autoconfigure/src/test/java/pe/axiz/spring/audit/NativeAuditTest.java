@@ -303,6 +303,7 @@ class NativeAuditTest {
   void reactiveConfigurationRejectsImperativeSinksAndHonorsDisableAndNativeOverrides() {
     var runner =
         new ReactiveWebApplicationContextRunner()
+            .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(
                 AutoConfigurations.of(
                     AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class));

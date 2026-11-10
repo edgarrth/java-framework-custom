@@ -1,5 +1,7 @@
 package pe.axiz.spring.audit;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
@@ -18,6 +20,7 @@ import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.audit.sqs.SqsAuditPublisher;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
@@ -65,9 +68,13 @@ public class AxizAuditSqsAutoConfiguration {
     @ConditionalOnMissingBean(SqsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizAuditAsyncAwsResources(AxizAwsCompletionProperties completion) {
-        return new AsyncAwsClients(
-            "axizAuditAsyncAwsResources", completion.workers(), completion.queueCapacity());
+      AsyncAwsClients axizAuditAsyncAwsResources(
+          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+        return AwsCompletionMetrics.create(
+            "axizAuditAsyncAwsResources",
+            completion.workers(),
+            completion.queueCapacity(),
+            registries.getIfAvailable(() -> Metrics.globalRegistry));
       }
 
       @Bean(destroyMethod = "close")

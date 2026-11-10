@@ -1,5 +1,7 @@
 package pe.axiz.spring.crypto;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.crypto.kms.KmsDataKeyProvider;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
@@ -82,9 +85,13 @@ public class AxizCryptoKmsAutoConfiguration {
     static class NativeConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(KmsAsyncClient.class)
-      AsyncAwsClients axizCryptoAsyncAwsResources(AxizAwsCompletionProperties completion) {
-        return new AsyncAwsClients(
-            "axizCryptoAsyncAwsResources", completion.workers(), completion.queueCapacity());
+      AsyncAwsClients axizCryptoAsyncAwsResources(
+          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+        return AwsCompletionMetrics.create(
+            "axizCryptoAsyncAwsResources",
+            completion.workers(),
+            completion.queueCapacity(),
+            registries.getIfAvailable(() -> Metrics.globalRegistry));
       }
 
       @Bean(destroyMethod = "close")

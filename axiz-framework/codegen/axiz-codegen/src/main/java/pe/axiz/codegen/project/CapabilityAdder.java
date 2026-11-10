@@ -1,6 +1,7 @@
 package pe.axiz.codegen.project;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,11 +10,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Stack;
+import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
@@ -164,6 +167,12 @@ public final class CapabilityAdder {
       keys.addAll(c.configMapKeys());
       secrets.addAll(c.secrets());
     }
+    if (properties.containsKey("axiz.audit.mode")) {
+      if (auditModeDeclared(layout)) properties.remove("axiz.audit.mode");
+      else if (manifest.capabilities().contains("outbox")
+          || missing.stream().anyMatch(c -> c.name().equals("outbox")))
+        properties.put("axiz.audit.mode", "DURABLE");
+    }
     if (mergeYaml(layout.target("src/main/resources/application.yaml"), properties)) {
       changed.add(layout.relative("src/main/resources/application.yaml"));
     }
@@ -227,6 +236,48 @@ public final class CapabilityAdder {
         changed,
         List.copyOf(keys),
         requested.example());
+  }
+
+  private static boolean auditModeDeclared(ProjectLayout layout) throws IOException {
+    Path resources = layout.target("src/main/resources");
+    if (!Files.isDirectory(resources)) return false;
+    try (var files = Files.list(resources)) {
+      for (Path file :
+          files
+              .filter(
+                  p ->
+                      SafePaths.fileName(p)
+                          .matches("application(?:-[a-zA-Z0-9_-]+)?\\.(?:yaml|yml|properties)"))
+              .toList()) {
+        Path safe = layout.target("src/main/resources/" + SafePaths.fileName(file));
+        String content = Files.readString(safe);
+        if (SafePaths.fileName(file).endsWith(".properties")) {
+          var values = new Properties();
+          values.load(new StringReader(content));
+          if (containsAuditSelector(values)) return true;
+        } else {
+          for (Object document : SafeYaml.create(1_000_000).loadAll(content))
+            if (document instanceof Map<?, ?> map && containsAuditSelector(map)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private static boolean containsAuditSelector(Map<?, ?> map) {
+    return containsProperty(map, "axiz.audit.mode")
+        || containsProperty(map, "axiz.audit.durable.enabled")
+        || containsProperty(map, "axiz.audit.async.enabled");
+  }
+
+  private static boolean containsProperty(Map<?, ?> map, String key) {
+    if (map.containsKey(key)) return true;
+    for (int dot = key.indexOf('.'); dot >= 0; dot = key.indexOf('.', dot + 1)) {
+      Object child = map.get(key.substring(0, dot));
+      if (child instanceof Map<?, ?> nested && containsProperty(nested, key.substring(dot + 1)))
+        return true;
+    }
+    return false;
   }
 
   /**

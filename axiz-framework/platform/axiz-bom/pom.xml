@@ -32,6 +32,7 @@
 
   <dependencyManagement>
     <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${revision}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${revision}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-r2dbc</artifactId><version>${revision}</version></dependency>
       <dependency>

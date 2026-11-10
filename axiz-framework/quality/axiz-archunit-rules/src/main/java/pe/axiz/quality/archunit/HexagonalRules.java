@@ -65,7 +65,7 @@ public final class HexagonalRules {
                         "pe.axiz.core.identifiers..",
                         "pe.axiz.core.sensitive..",
                         "pe.axiz.core.time..")
-                    .or(neutralDomainCommons())),
+                    .or(neutralLanguageTypes())),
         noClasses()
             .that()
             .resideInAPackage(application)
@@ -155,6 +155,7 @@ public final class HexagonalRules {
                 "pe.axiz.structure.hexagonal.annotation..",
                 "pe.axiz.extension.cqrs",
                 "pe.axiz.core.commons..",
+                "pe.axiz.core.lang..",
                 "pe.axiz.core.money..",
                 "pe.axiz.core.errors..",
                 "pe.axiz.core.domain..",
@@ -177,14 +178,13 @@ public final class HexagonalRules {
         classes().that().haveSimpleNameEndingWith("Adapter").should().resideInAPackage(adapters));
   }
 
-  private static DescribedPredicate<JavaClass> neutralDomainCommons() {
-    return new DescribedPredicate<>("neutral commons value helpers") {
+  private static DescribedPredicate<JavaClass> neutralLanguageTypes() {
+    return new DescribedPredicate<>("pure language value helpers") {
       @Override
       public boolean test(JavaClass type) {
         return Set.of("Checks", "Strings", "Dates", "Result", "Result$Ok", "Result$Err").stream()
             .anyMatch(
-                name ->
-                    type.getBaseComponentType().getName().equals("pe.axiz.core.commons." + name));
+                name -> type.getBaseComponentType().getName().equals("pe.axiz.core.lang." + name));
       }
     };
   }

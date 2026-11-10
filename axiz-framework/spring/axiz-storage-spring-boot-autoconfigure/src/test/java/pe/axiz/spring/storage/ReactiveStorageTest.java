@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
@@ -19,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
@@ -143,6 +147,44 @@ class ReactiveStorageTest {
                     .hasSingleBean(ReactiveStorage.class)
                     .doesNotHaveBean(S3AsyncClient.class)
                     .doesNotHaveBean(S3Presigner.class));
+  }
+
+  @Test
+  @ResourceLock(Resources.SYSTEM_PROPERTIES)
+  void completionMetricsUseApplicationRegistryWithGlobalExportDisabled() {
+    var registry = new SimpleMeterRegistry();
+    try {
+      TestPropertyValues.of("aws.accessKeyId=test", "aws.secretAccessKey=test")
+          .applyToSystemProperties(
+              () ->
+                  reactive()
+                      .withConfiguration(AutoConfigurations.of(MetricsAutoConfiguration.class))
+                      .withBean(MeterRegistry.class, () -> registry)
+                      .withPropertyValues(
+                          "management.metrics.use-global-registry=false",
+                          "axiz.aws.region=us-east-1",
+                          "axiz.storage.bucket=files")
+                      .run(
+                          context -> {
+                            assertThat(context).hasNotFailed().hasSingleBean(AsyncAwsClients.class);
+                            assertThat(Metrics.globalRegistry.getRegistries())
+                                .doesNotContain(registry);
+                            assertThat(
+                                    registry
+                                        .find("axiz.transport.pending")
+                                        .tag("transport", "axizStorageAsyncAwsResources")
+                                        .gauge())
+                                .isNotNull();
+                          }));
+      assertThat(
+              registry
+                  .find("axiz.transport.pending")
+                  .tag("transport", "axizStorageAsyncAwsResources")
+                  .gauge())
+          .isNull();
+    } finally {
+      registry.close();
+    }
   }
 
   @Test

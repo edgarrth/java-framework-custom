@@ -5,12 +5,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.netty.buffer.ByteBuf;
+import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
+import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import io.r2dbc.postgresql.client.EncodedParameter;
+import io.r2dbc.postgresql.codec.Codec;
+import io.r2dbc.postgresql.codec.CodecMetadata;
+import io.r2dbc.postgresql.codec.PostgresTypeIdentifier;
+import io.r2dbc.postgresql.message.Format;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryOptions;
+import io.r2dbc.spi.Option;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -21,7 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
+import org.awaitility.Awaitility;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
@@ -45,10 +62,14 @@ import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.R2dbcTransactionRunner;
 import reactor.blockhound.BlockHound;
+import reactor.blockhound.BlockingOperationError;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /** PostgreSQL semantics, independently exercised through both production drivers. */
 @Timeout(180)
@@ -60,6 +81,7 @@ class PostgresOutboxOrderingIT {
   private static final Clock CLOCK = Clock.systemUTC();
 
   @BeforeAll
+  @Timeout(120)
   static void start() {
     boolean docker = DockerClientFactory.instance().isDockerAvailable();
     if (Boolean.getBoolean("axiz.it.requireDocker"))
@@ -72,10 +94,28 @@ class PostgresOutboxOrderingIT {
     source.setUrl(POSTGRES.getJdbcUrl());
     source.setUser(POSTGRES.getUsername());
     source.setPassword(POSTGRES.getPassword());
+    source.setConnectTimeout(5);
+    source.setLoginTimeout(5);
+    source.setSocketTimeout(10);
+    source.setOptions(
+        "-c lock_timeout=3000 -c statement_timeout=10000"
+            + " -c idle_in_transaction_session_timeout=30000 -c transaction_timeout=60000");
     connections =
         ConnectionFactories.get(
             ConnectionFactoryOptions.builder()
                 .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+                .option(ConnectionFactoryOptions.CONNECT_TIMEOUT, Duration.ofSeconds(5))
+                .option(
+                    Option.valueOf("options"),
+                    Map.of(
+                        "lock_timeout",
+                        "3s",
+                        "statement_timeout",
+                        "10s",
+                        "idle_in_transaction_session_timeout",
+                        "30s",
+                        "transaction_timeout",
+                        "60s"))
                 .option(ConnectionFactoryOptions.HOST, POSTGRES.getHost())
                 .option(ConnectionFactoryOptions.PORT, POSTGRES.getMappedPort(5432))
                 .option(ConnectionFactoryOptions.DATABASE, POSTGRES.getDatabaseName())
@@ -85,11 +125,13 @@ class PostgresOutboxOrderingIT {
   }
 
   @AfterAll
+  @Timeout(60)
   static void stop() {
     POSTGRES.stop();
   }
 
   @BeforeEach
+  @Timeout(30)
   void schema() throws Exception {
     try (var c = source.getConnection();
         var s = c.createStatement()) {
@@ -147,6 +189,236 @@ class PostgresOutboxOrderingIT {
         Backoff.fixed(Duration.ZERO),
         Duration.ofMinutes(3),
         Duration.ofMillis(1));
+  }
+
+  @Test
+  void jdbcClaimUsesOneSelectionAndOneReturningUpdatePerRow() throws Exception {
+    var backend = backend(false);
+    var writer = new OutboxWriter(backend.store(), CLOCK);
+    for (int n = 0; n < 3; n++)
+      writer.write("t", event("returning-" + n, "aggregate-" + n), "order");
+    var tx = new JdbcTransactions(source);
+    var statements = new ArrayList<String>();
+    ConnectionProvider observed =
+        new ConnectionProvider() {
+          @Override
+          public Connection get() throws SQLException {
+            Connection actual = tx.get();
+            return (Connection)
+                Proxy.newProxyInstance(
+                    Connection.class.getClassLoader(),
+                    new Class<?>[] {Connection.class},
+                    (proxy, method, args) -> {
+                      if (method.getName().equals("prepareStatement"))
+                        statements.add((String) args[0]);
+                      try {
+                        return method.invoke(actual, args);
+                      } catch (InvocationTargetException failure) {
+                        throw failure.getCause();
+                      }
+                    });
+          }
+
+          @Override
+          public void release(Connection connection) throws SQLException {
+            tx.release(connection.unwrap(Connection.class));
+          }
+        };
+    var store = new JdbcOutboxStore(observed, "axiz_outbox", Dialect.POSTGRESQL);
+    var claimed =
+        tx.inTransaction(() -> store.claimDue(3, Duration.ofMinutes(1), "returning-owner"));
+    assertEquals(3, claimed.size());
+    assertEquals(
+        4, statements.size(), "N+1 statements, without an additional lease SELECT per row");
+    assertEquals(
+        3, statements.stream().filter(sql -> sql.endsWith("RETURNING lease_until")).count());
+    try (var c = source.getConnection();
+        var statement = c.prepareStatement("SELECT lease_until FROM axiz_outbox WHERE id=?")) {
+      for (var row : claimed) {
+        statement.setString(1, row.id());
+        try (var rows = statement.executeQuery()) {
+          assertTrue(rows.next());
+          assertEquals(rows.getTimestamp(1).toInstant(), row.leaseUntil());
+          assertEquals("returning-owner", row.leaseOwner());
+        }
+      }
+    }
+  }
+
+  @Test
+  void blockHoundStillRejectsApplicationBlocking() {
+    var failure =
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                Mono.fromRunnable(
+                        () -> {
+                          try {
+                            new CountDownLatch(1).await(1, TimeUnit.MILLISECONDS);
+                          } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                          }
+                        })
+                    .subscribeOn(Schedulers.parallel())
+                    .block(Duration.ofSeconds(5)));
+    assertTrue(failure.getCause() instanceof BlockingOperationError);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void clientDecodingFailureReleasesTransactionAndLocksWithoutStoppingTheServer(boolean fatal)
+      throws Exception {
+    var standard = backend(false);
+    new OutboxWriter(standard.store(), CLOCK).write("t", event("pipeline-fault", "fault"), "order");
+    var fired = new AtomicBoolean();
+    var pid = new AtomicInteger();
+    var factory =
+        new PostgresqlConnectionFactory(
+            PostgresqlConnectionConfiguration.builder()
+                .host(POSTGRES.getHost())
+                .port(POSTGRES.getMappedPort(5432))
+                .database(POSTGRES.getDatabaseName())
+                .username(POSTGRES.getUsername())
+                .password(POSTGRES.getPassword())
+                .applicationName("axiz-pipeline-fault")
+                .connectTimeout(Duration.ofSeconds(5))
+                .options(
+                    Map.of(
+                        "lock_timeout",
+                        "3s",
+                        "statement_timeout",
+                        "10s",
+                        "idle_in_transaction_session_timeout",
+                        "30s",
+                        "transaction_timeout",
+                        "60s"))
+                .codecRegistrar(
+                    (connection, allocator, codecs) -> {
+                      Codec<String> stringCodec = null;
+                      for (Codec<?> codec : codecs) {
+                        if (codec.canDecode(25, Format.FORMAT_TEXT, String.class)) {
+                          @SuppressWarnings("unchecked")
+                          Codec<String> typed = (Codec<String>) codec;
+                          stringCodec = typed;
+                          break;
+                        }
+                      }
+                      assertNotNull(stringCodec);
+                      codecs.addFirst(new FailingStringCodec(stringCodec, fired, fatal));
+                      return connection
+                          .createStatement("SELECT pg_backend_pid()")
+                          .execute()
+                          .flatMap(
+                              result -> result.map((row, metadata) -> row.get(0, Integer.class)))
+                          .doOnNext(pid::set)
+                          .then();
+                    })
+                .build());
+    var store = new R2dbcOutboxStore(new R2dbcSql(factory), "axiz_outbox", Duration.ofSeconds(5));
+    var tx = new R2dbcTransactionRunner(factory, Duration.ofSeconds(5));
+    Throwable failure =
+        assertThrows(
+            Throwable.class,
+            () -> tx.inTransaction(() -> store.claimDue(1, Duration.ofMinutes(1), "failed-owner")));
+    assertTrue(
+        fired.get(), "failure must originate in the real driver decoding a locked outbox row");
+    assertTrue(pid.get() > 0);
+    assertTrue(
+        failure.toString().contains("injected-client-decoding")
+            || containsInjectedFailure(failure));
+    // Three seconds is deliberately shorter than the 30-second server safety net.
+    Awaitility.await()
+        .atMost(Duration.ofSeconds(3))
+        .untilAsserted(
+            () -> {
+              try (var c = source.getConnection();
+                  var query =
+                      c.prepareStatement(
+                          "SELECT NOT EXISTS (SELECT 1 FROM pg_stat_activity"
+                              + " WHERE pid=? AND xact_start IS NOT NULL), "
+                              + "NOT EXISTS (SELECT 1 FROM pg_locks WHERE pid=?"
+                              + " AND locktype='relation' AND granted)")) {
+                query.setInt(1, pid.get());
+                query.setInt(2, pid.get());
+                try (var rows = query.executeQuery()) {
+                  assertTrue(rows.next());
+                  assertTrue(rows.getBoolean(1));
+                  assertTrue(rows.getBoolean(2));
+                }
+              }
+            });
+    // The server and row remain usable, and the failed transaction has not claimed the event.
+    assertEquals(
+        1,
+        standard
+            .tx()
+            .inTransaction(
+                () -> standard.store().claimDue(1, Duration.ofMinutes(1), "healthy-owner"))
+            .size());
+  }
+
+  private static boolean containsInjectedFailure(Throwable failure) {
+    for (Throwable cause = failure.getCause(); cause != null; cause = cause.getCause())
+      if (cause.toString().contains("injected-client-decoding")) return true;
+    return false;
+  }
+
+  /**
+   * Fault injection through the driver's supported CodecRegistrar extension, without private SDK
+   * access.
+   */
+  private record FailingStringCodec(Codec<String> delegate, AtomicBoolean fired, boolean fatal)
+      implements Codec<String>, CodecMetadata {
+    @Override
+    public Class<?> type() {
+      return String.class;
+    }
+
+    @Override
+    public Iterable<? extends PostgresTypeIdentifier> getDataTypes() {
+      return ((CodecMetadata) delegate).getDataTypes();
+    }
+
+    @Override
+    public boolean canDecode(int oid, Format format, Class<?> type) {
+      return delegate.canDecode(oid, format, type);
+    }
+
+    @Override
+    public boolean canEncode(Object value) {
+      return false;
+    }
+
+    @Override
+    public boolean canEncodeNull(Class<?> type) {
+      return false;
+    }
+
+    @Override
+    public @Nullable String decode(
+        @Nullable ByteBuf buffer, int oid, Format format, Class<? extends String> type) {
+      String value = delegate.decode(buffer, oid, format, type);
+      if ("pipeline-fault".equals(value) && fired.compareAndSet(false, true)) {
+        if (fatal) throw new AssertionError("injected-client-decoding");
+        throw new IllegalStateException("injected-client-decoding");
+      }
+      return value;
+    }
+
+    @Override
+    public EncodedParameter encode(Object value) {
+      return delegate.encode(value);
+    }
+
+    @Override
+    public EncodedParameter encode(Object value, int oid) {
+      return delegate.encode(value, oid);
+    }
+
+    @Override
+    public EncodedParameter encodeNull() {
+      return delegate.encodeNull();
+    }
   }
 
   @ParameterizedTest

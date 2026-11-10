@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import pe.axiz.core.lang.Checks;
 
 /**
  * Sort specification parsed from {@code field,asc;other,desc} or repeated {@code field,dir}.

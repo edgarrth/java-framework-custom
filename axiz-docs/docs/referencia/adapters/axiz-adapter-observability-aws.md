@@ -8,9 +8,12 @@ and closes it through `AsyncAwsClients`; existing constructors keep their defaul
 
 When Micrometer core is present, framework-owned pools register `axiz.transport.pending`,
 `axiz.transport.queued`, `axiz.transport.active`, `axiz.transport.rejected` and
-`axiz.transport.latency` in the global registry, tagged by their stable capability resource name.
-Pools sharing a name aggregate their gauges; closing the last owner removes its meters.
-Micrometer core remains optional at runtime.
+`axiz.transport.latency`, tagged by their stable capability resource name. Spring binds these to
+the application's `MeterRegistry`, including when `management.metrics.use-global-registry=false`.
+Pools aggregate only when both the registry identity and pool name match. Closing the last owner
+removes that group's meters without affecting another registry. Standalone constructors fall back
+to the global registry when available; `AwsCompletionMetrics.create`/`bind` accept a specific
+registry. Micrometer core remains optional for standalone `AsyncAwsClients` consumers.
 
 AWS SDK v2 execution interceptor producing Micrometer observations.
 

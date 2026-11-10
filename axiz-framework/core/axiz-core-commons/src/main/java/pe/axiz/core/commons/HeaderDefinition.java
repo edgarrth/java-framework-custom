@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.lang.Checks;
 
 /**
  * Declares a business header in the header catalog.

@@ -125,3 +125,15 @@ una transferencia) necesita además su propia unicidad durable en el sistema que
 `NotificationSender` publica `notification.requested.v1` hacia el servicio que entrega (SNS para
 fan-out o SQS) con canal (`EMAIL`, `SMS`, `PUSH`...), destinatario, plantilla, idioma y parámetros;
 el servicio de canal renderiza con `TemplateRenderer`.
+
+## Límites de PostgreSQL y conexiones abandonadas
+
+Para los relays configura límites de conexión, consulta y espera de locks compatibles con su carga.
+`idle_in_transaction_session_timeout` acota transacciones abandonadas inactivas; PostgreSQL 17+
+también permite `transaction_timeout` para limitar su duración total. Usa configuración de rol o
+sesión apropiada: si el rol comparte transacciones del negocio, los valores deben respetarlas.
+Axiz no cambia parámetros globales del servidor. Consulta los
+[parámetros de PostgreSQL 17](https://www.postgresql.org/docs/17/runtime-config-client.html).
+
+Estas protecciones complementan el cierre y rollback del cliente. `SKIP LOCKED` no evita envíos
+duplicados; la entrega del outbox sigue siendo at-least-once y el consumidor debe ser idempotente.

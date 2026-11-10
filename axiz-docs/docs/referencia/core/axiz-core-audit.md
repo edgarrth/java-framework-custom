@@ -44,3 +44,24 @@ outbox in the business transaction. Logging requires a non-blocking appender and
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-audit verify`.
+
+## Explicit delivery policy in Spring 2.0
+
+Framework-owned publishers require `axiz.audit.mode=ASYNC|DURABLE|SYNC` outside `local`/`test`.
+Legacy boolean selectors remain accepted with a deprecation warning; disabled audit and
+application-owned publishers keep their own policy. ASYNC is the development default and uses
+memory, not crash-safe persistence. The generator writes DURABLE with an effective outbox
+capability, otherwise ASYNC, and preserves existing choices when adding capabilities.
+
+`axiz.audit.async.delivery-timeout` (default 10 s) bounds each imperative and native delivery.
+For an imperative sink, the queue drainer waits on a single owned delivery worker with bounded
+admission; a timed-out delivery is cancelled and follows the existing failure/fallback policy.
+The delegate must cooperate with interruption and configure its transport timeouts: Java cannot
+forcibly stop a delegate that ignores cancellation, and fallback may duplicate a late delivery.
+Shutdown retains its separate 10-second queue-drain budget. Queue admission, delivery and shutdown
+are different limits; none makes ASYNC durable. Context snapshots are opened on the actual delivery
+worker; business transaction state is never transferred across threads.
+
+DURABLE joins the business transaction only with the same transaction manager/resource and a
+configured outbox destination/relay. Success outside a transaction uses async by default;
+`axiz.audit.durable.outside-transaction=fail` rejects it. This is a consumer policy, not a new default.

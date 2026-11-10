@@ -217,7 +217,11 @@ def reference(modules, out):
             first = next((l for l in text.splitlines()[1:] if l.strip() and not l.startswith('#')), '')
             rows.append([f'[`{name}`]({layer}/{name}.md)', first.strip()])
             write(os.path.join(dst, layer, name + '.md'),
-                  text.replace('../../docs/migration/2.0/JDBC.md', '../../migracion/jdbc-2.md'))
+                  re.sub(r'\.\./(axiz-[\w-]+)/README\.md',
+                         lambda match: match.group(1) + '.md'
+                         if match.group(1) in modules.get(layer, {}) else match.group(0),
+                         text.replace('../../docs/migration/2.0/JDBC.md', '../../migracion/jdbc-2.md')
+                         .replace('../../docs/', '../../adr/')))
         parts.append(table(rows, ['Módulo', 'Descripción']) + '\n')
     write(os.path.join(dst, 'index.md'), '\n'.join(parts))
 

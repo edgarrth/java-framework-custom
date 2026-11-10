@@ -8,13 +8,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
+import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;
 import pe.axiz.core.lock.LockErrors;
 import pe.axiz.core.lock.LockLease;
 import pe.axiz.core.lock.LockLostException;
-import pe.axiz.core.lock.LockTiming;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -64,7 +64,7 @@ public final class ReactiveLocks {
               .flatMap(
                   answer -> {
                     if (answer.isPresent()) {
-                      Held held = new Held(answer.get(), LockTiming.validUntil(sent, lease));
+                      Held held = new Held(answer.get(), LeaseTiming.validUntil(sent, lease));
                       if (held.held()) return Mono.just(held);
                       return release(held).onErrorComplete().then(retry(resource, lease, deadline));
                     }
@@ -127,7 +127,7 @@ public final class ReactiveLocks {
                       held.lost.set(true);
                       return Mono.error(new LockLostException(held.resource(), null));
                     }
-                    held.until.set(LockTiming.validUntil(sent, lease));
+                    held.until.set(LeaseTiming.validUntil(sent, lease));
                     held.ensureHeld();
                     return Mono.<Void>empty();
                   })

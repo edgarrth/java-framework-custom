@@ -612,6 +612,14 @@ public final class ProjectGenerator {
       app.put("axiz.messaging.consumer.subscriptions[0]", r.groupId() + ".example.created.v1");
     }
     caps.forEach(cap -> app.putAll(cap.properties(store)));
+    boolean audit = caps.stream().anyMatch(cap -> cap.name().equals("audit"));
+    boolean outbox = caps.stream().anyMatch(cap -> cap.name().equals("outbox"));
+    if (audit) {
+      app.put("axiz.audit.mode", outbox ? "DURABLE" : "ASYNC");
+      if (outbox && caps.stream().anyMatch(cap -> cap.name().equals("messaging-kafka")))
+        app.put("axiz.messaging.destinations.audit", "${AXIZ_AUDIT_DESTINATION:kafka:audit}");
+    }
+
     if (asyncApi != null && !asyncApi.isBlank()) {
       app.keySet()
           .removeIf(

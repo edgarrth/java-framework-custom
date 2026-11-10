@@ -1,7 +1,7 @@
 # Inventario de rupturas de API de 2.0
 
-Estado: **inventario revisado contra 145 reportes reales de 1.0.0**, actualizado el 8 de noviembre de 2026.
-Se registran 214 clases incompatibles, incluidas las extracciones parciales del plan 2.0. La revisión
+Estado: **inventario revisado contra 146 reportes reales de 1.0.0**, actualizado el 9 de noviembre de 2026.
+Se registran 226 entradas de clases incompatibles, incluidas las extracciones parciales del plan 2.0. La revisión
 inicial comparó 161 reubicaciones miembro por miembro con `javap -protected`, aplicando los mapeos
 intencional de `SqlStates.identifier`, sustituida por `SqlIdentifiers.require`; no se presenta esta
 última como una reubicación que conserva todos sus miembros. Las sustituciones de selectores, propiedades y fachadas asíncronas
@@ -12,6 +12,26 @@ modificadores, excepciones y miembros públicos/protegidos. Excluye únicamente 
 formato XML. Cada entrada debe documentar su motivo. Para tipos trasladados se registra además
 el módulo, nombre y hash de la API de reemplazo; así una reubicación no oculta miembros perdidos.
 Los cambios del inventario requieren revisión; `--observed` solo escribe hallazgos aparte.
+
+## Observaciones N1–N11 (9 de noviembre)
+
+- N1 exige una elección explícita de `axiz.audit.mode` fuera de local/test para publicadores
+  administrados por Axiz; se admiten selectores heredados, auditoría deshabilitada y publicadores
+  propios. Es una política de arranque, no una ruptura binaria ficticia. Los proyectos nuevos
+  generan el selector canónico DURABLE con outbox, ASYNC sin él; se conserva la elección existente.
+- N2 separa el plazo real de entrega del cierre de la cola. Los constructores anteriores conservan
+  sus firmas; Spring configura el plazo de entrega nuevo mediante `async.delivery-timeout`.
+- N4 vincula métricas AWS al registro de la aplicación y conserva Micrometer opcional standalone.
+- N5 elimina `pe.axiz.core.lock.LockTiming`: usar `pe.axiz.core.commons.LeaseTiming.validUntil`.
+  LockTiming no forma parte del JAR 1.0.0: se documenta la limpieza previa a publicar 2.0 sin
+  inventar una ruptura histórica que japicmp no observa.
+- N10 mueve `Checks`, `Strings`, `Dates` y `Result` (incluidos Ok/Err) de `pe.axiz.core.commons`
+  a `pe.axiz.core.lang`, artefacto `axiz-core-lang`. Añadir la dependencia directa si se usan esos
+  helpers; `core-commons` conserva una dependencia transitiva para sus contratos. OpenRewrite
+  migra los imports y tipos, incluidos los anidados. Se compara contra el predecesor real
+- N8 migra la base aunque haya perfiles sin selectores, manteniendo las precauciones por import,
+  activación, duplicados, placeholders y composición. N6 conserva H2 y usa RETURNING por fila en
+  PostgreSQL; no implementa el UPDATE por lote excluido. N7 conserva el digest del protocolo.
 
 ## Observaciones de revisión 2.0
 
@@ -51,8 +71,8 @@ Los cambios del inventario requieren revisión; `--observed` solo escribe hallaz
   clientes proporcionados por la aplicación conservan su configuración efectiva.
 - R9 permite elevar `axiz.errorprone.fqn.severity` por módulo, con `WARN` global. D3 genera imports
   según uso también sin formateador JVM. D1/D2 son correcciones del adaptador del demo y no añaden
-  responsabilidades al framework. R3 y la optimización de UPDATE por lote siguen posteriores por
-  acuerdo; R7 permanece descartada.
+  responsabilidades al framework. R3 ya está implementado en el adaptador de autenticación AWS; la optimización de UPDATE por
+  lote permanece excluida por acuerdo y R7 sigue descartada.
 
 El inventario JSON inferior conserva su baseline real 1.0.0. Las trece huellas afectadas por P4/R1
 (dos clases incompatibles y once referencias de reemplazo, incluidas referencias duplicadas entre
@@ -472,6 +492,66 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
     },
     {
       "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Checks",
+      "sha256": "3f0a82d3b74487057328f4355f7f5e9106f63586b60d5568b9936f2519f7fec0",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Checks",
+        "sha256": "55fe2865b937e18a866fca02efad9cdf7cc04b7cf0d3be2594b70fa3831a9615"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Dates",
+      "sha256": "82020a25f7aedee63cfde628bdd9d4b41d535a3bf27a9419df67bc355805f1f4",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Dates",
+        "sha256": "bd44bed982695208f2f1c1f7220f1fa91e116451b57691bc80863c2706b43878"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Result",
+      "sha256": "13dde164f5c0c412d7833e1c0429dc501f71c8b606ae03dff2fb19d4529955cc",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result",
+        "sha256": "c355bb65c7e607ee060d52800b5afcf25e1173a5aaeebafe12052254cab643c5"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Result$Err",
+      "sha256": "b24648a5c169ace5fc46d26f88ebc3b2814789d2d6b7e882bf7d9d6b6cf213cf",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result$Err",
+        "sha256": "45f07af22e7c73cf6122e460810c3b45680d24cd37ac02e7b5917b6f2f14b73a"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Result$Ok",
+      "sha256": "489ae7ae19508c8108b2659ce36ff781ff4b476f2acf84331cc33157dab1d063",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result$Ok",
+        "sha256": "8c9c0f3ff8698a97a6e2cc7566bd8528354b1f6ef749428ca7263661d3449b3c"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
+      "class": "pe.axiz.core.commons.Strings",
+      "sha256": "6c7609ad592a48a3b23d4fabeea216950053832266bc161905c19c250bff57c0",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Strings",
+        "sha256": "de7b5317f0703680d14c1d35af4a167366e8ae79232c22b58214038d588911ba"
+      }
+    },
+    {
+      "artifact": "axiz-core-commons",
       "class": "pe.axiz.core.commons.jdbc.ConnectionProvider",
       "sha256": "3b078132894a223e8182ab6f7057255e9411e3cccf2196315c5ef9db5942ee12",
       "reason": "M8/M9: extracción parcial JDBC aprobada; el artefacto core conserva puertos puros. Comparación con el predecesor real 1.0.0 tanto en core como en el nuevo módulo. La receta cambia tipos individuales; el catálogo/upgrade añade el adaptador runtime. JdbcTransactions preserva el error principal de rollback/restore y SqlStates limita duplicados a 23505/23000.",
@@ -529,6 +609,66 @@ Se revisaron esas cuatro huellas de reemplazo; las huellas de las rupturas origi
         "artifact": "axiz-adapter-inbox-jdbc",
         "class": "pe.axiz.adapter.inbox.jdbc.JdbcInboxStore",
         "sha256": "6b0e523f921307e1caf5a9fde24f25d9d5d1116f5eb46fc6672217513c785dff"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Checks",
+      "sha256": "3f0a82d3b74487057328f4355f7f5e9106f63586b60d5568b9936f2519f7fec0",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Checks",
+        "sha256": "55fe2865b937e18a866fca02efad9cdf7cc04b7cf0d3be2594b70fa3831a9615"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Dates",
+      "sha256": "82020a25f7aedee63cfde628bdd9d4b41d535a3bf27a9419df67bc355805f1f4",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Dates",
+        "sha256": "bd44bed982695208f2f1c1f7220f1fa91e116451b57691bc80863c2706b43878"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Result",
+      "sha256": "13dde164f5c0c412d7833e1c0429dc501f71c8b606ae03dff2fb19d4529955cc",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result",
+        "sha256": "c355bb65c7e607ee060d52800b5afcf25e1173a5aaeebafe12052254cab643c5"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Result$Err",
+      "sha256": "b24648a5c169ace5fc46d26f88ebc3b2814789d2d6b7e882bf7d9d6b6cf213cf",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result$Err",
+        "sha256": "45f07af22e7c73cf6122e460810c3b45680d24cd37ac02e7b5917b6f2f14b73a"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Result$Ok",
+      "sha256": "489ae7ae19508c8108b2659ce36ff781ff4b476f2acf84331cc33157dab1d063",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Result$Ok",
+        "sha256": "8c9c0f3ff8698a97a6e2cc7566bd8528354b1f6ef749428ca7263661d3449b3c"
+      }
+    },
+    {
+      "artifact": "axiz-core-lang",
+      "class": "pe.axiz.core.commons.Strings",
+      "sha256": "6c7609ad592a48a3b23d4fabeea216950053832266bc161905c19c250bff57c0",
+      "replacement": {
+        "artifact": "axiz-core-lang",
+        "class": "pe.axiz.core.lang.Strings",
+        "sha256": "de7b5317f0703680d14c1d35af4a167366e8ae79232c22b58214038d588911ba"
       }
     },
     {

@@ -22,7 +22,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 |---|---|
 | [`axiz-core-audit`](core/axiz-core-audit.md) | Immutable audit events, publication policies, sanitization and asynchronous publishers. |
 | [`axiz-core-cache`](core/axiz-core-cache.md) | Cache port, two-level cache and in-memory implementation. |
-| [`axiz-core-commons`](core/axiz-core-commons.md) | Result type, request and page metadata, header catalog, dates and preconditions. |
+| [`axiz-core-commons`](core/axiz-core-commons.md) | Request/page/header metadata, JSON, concurrency and transaction contracts. |
 | [`axiz-core-crypto`](core/axiz-core-crypto.md) | AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation. |
 | [`axiz-core-domain`](core/axiz-core-domain.md) | DDD building blocks: aggregate root, entity, value object, domain events, typed ids, common value objects. |
 | [`axiz-core-errors`](core/axiz-core-errors.md) | Error model: types, categories with HTTP mapping, AxizException, RFC 9457 problem, externalized catalog. |
@@ -34,6 +34,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | An authoritative resolver that confirms no effect releases the key and returns 409 |
 | [`axiz-core-identifiers`](core/axiz-core-identifiers.md) | Generic identifier SPI with validators (national documents, bank accounts, cards, contact data). |
 | [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer: processed-message registry with JDBC store. |
+| [`axiz-core-lang`](core/axiz-core-lang.md) | Pure Java language helpers: `Checks`, `Strings`, `Dates` and `Result` (including `Ok` and `Err`). |
 | [`axiz-core-lock`](core/axiz-core-lock.md) | Distributed lock port with lease, background renewal and lock template; in-memory implementation. |
 | [`axiz-core-logging`](core/axiz-core-logging.md) | Structured logging fields, scoped MDC, operation logging and header allow-list. |
 | [`axiz-core-messaging`](core/axiz-core-messaging.md) | EventPublisher and EventHandler over CloudEvents 1.0, business headers, retry and DLQ policies. |

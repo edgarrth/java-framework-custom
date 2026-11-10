@@ -42,15 +42,17 @@ public final class MigrateAuditModeSelector extends ScanningRecipe<MigrateAuditM
 
     void add(UUID id, Path path, Map<String, String> values, boolean profiled) {
       Path group = group(path);
-      if (profiled
+      boolean hasSelector =
+          values.containsKey(MODE) || values.containsKey(DURABLE) || values.containsKey(ASYNC);
+      if (profiled && hasSelector
           || values.keySet().stream()
               .anyMatch(
                   key ->
                       key.startsWith("spring.config.")
+                          || key.equals("spring.profiles")
                           || key.startsWith("spring.profiles.")
                           || key.equals("_axiz.duplicate"))) external.add(group);
-      if (values.containsKey(MODE) || values.containsKey(DURABLE) || values.containsKey(ASYNC))
-        selectors.merge(group, 1, Integer::sum);
+      if (hasSelector) selectors.merge(group, 1, Integer::sum);
       if (!values.containsKey(DURABLE) && !values.containsKey(ASYNC)) return;
       documents.put(id, new Document(id, group, Map.copyOf(values)));
     }
@@ -97,7 +99,8 @@ public final class MigrateAuditModeSelector extends ScanningRecipe<MigrateAuditM
 
   @Override
   public String getDescription() {
-    return "Preserves durable precedence and explicit modes; marks profiles, imports, placeholders and conflicts for manual migration.";
+    return "Preserves durable precedence and explicit modes; marks profiles, imports, placeholders"
+               + " and conflicts for manual migration.";
   }
 
   @Override

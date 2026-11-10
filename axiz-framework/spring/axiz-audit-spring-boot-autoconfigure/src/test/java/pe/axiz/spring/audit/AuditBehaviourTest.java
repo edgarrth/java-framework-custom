@@ -1,6 +1,7 @@
 package pe.axiz.spring.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -13,9 +14,14 @@ import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.kafka.clients.producer.MockProducer;
 import org.junit.jupiter.api.Test;
@@ -59,6 +65,59 @@ class AuditBehaviourTest {
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=payments", "axiz.audit.async.enabled=false")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add));
+  }
+
+  @Test
+  void configuredImperativeDeliveryTimeoutActuallyCancelsTheBlockedDelivery() {
+    var interrupted = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
+        .withPropertyValues("axiz.audit.mode=ASYNC", "axiz.audit.async.delivery-timeout=200ms")
+        .withBean(
+            AuditSink.class,
+            () ->
+                new AuditSink(
+                    "blocked",
+                    event -> {
+                      try {
+                        release.await(5, TimeUnit.SECONDS);
+                      } catch (InterruptedException expected) {
+                        Thread.currentThread().interrupt();
+                        interrupted.countDown();
+                      }
+                    }))
+        .run(
+            ctx -> {
+              try {
+                var publisher = (AsyncAuditPublisher) ctx.getBean(AuditPublisher.class);
+                publisher.publish(
+                    new AuditEvent(
+                        "event",
+                        Instant.EPOCH,
+                        "test",
+                        "op",
+                        "account",
+                        null,
+                        new AuditEvent.Actor(null, null, null),
+                        AuditEvent.Outcome.SUCCESS,
+                        null,
+                        null,
+                        null,
+                        null,
+                        Map.of()));
+                assertTrue(interrupted.await(2, TimeUnit.SECONDS));
+                await()
+                    .atMost(Duration.ofSeconds(2))
+                    .untilAsserted(
+                        () -> {
+                          assertEquals(1, publisher.failureCount());
+                          assertEquals(1, publisher.fallbackCount());
+                        });
+              } finally {
+                release.countDown();
+              }
+            });
   }
 
   public static class Accounts {
@@ -135,7 +194,7 @@ class AuditBehaviourTest {
   }
 
   @Test
-  void eventsGoToEverySinkOrToTheLogAndAsyncDeliveryIsTheDefault() {
+  void eventsGoToEverySinkOrToTheLogAndAsyncDeliveryIsTheDevelopmentDefault() {
     List<AuditEvent> second = new CopyOnWriteArrayList<>();
     sync()
         .withBean("second", AuditSink.class, () -> new AuditSink("second", second::add))
@@ -150,6 +209,7 @@ class AuditBehaviourTest {
 
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=test")
         .run(
             ctx -> {
               AuditPublisher publisher = ctx.getBean(AuditPublisher.class);
@@ -371,6 +431,7 @@ class AuditBehaviourTest {
                 AxizAuditAutoConfiguration.class))
         .withBean(ProducerFactory.class, () -> producers)
         .withPropertyValues(
+            "axiz.audit.mode=ASYNC",
             "axiz.audit.kafka.topic=audit",
             "axiz.audit.sqs.queue-url=http://localhost:4566/000000000000/audit",
             "axiz.aws.region=us-east-1")

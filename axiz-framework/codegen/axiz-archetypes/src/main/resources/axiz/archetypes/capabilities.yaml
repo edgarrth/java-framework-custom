@@ -484,9 +484,9 @@ capabilities:
   - name: audit
     stacks: [servlet, reactive]
     starter: axiz-audit-spring-boot-starter
-    description: '@Auditable business audit trail, sanitized by sensitivity, published asynchronously'
+    description: '@Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery'
     properties:
-      axiz.audit.async.enabled: true
+      axiz.audit.mode: ASYNC
     example: |
       @Auditable(action = "create", resource = "order", resourceIdArgument = "id")
 

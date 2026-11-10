@@ -36,3 +36,15 @@ con `application.properties` requiere adaptar esa configuración antes del renom
 1.0.0 con 2.0.0 y rechaza rupturas no previstas. Los reportes funcionales, de mutación y de
 integración deben revisarse junto con las capacidades pendientes; no se publica 2.0 por el hecho
 de haber actualizado el POM.
+
+## Núcleo de lenguaje y auditoría explícita
+
+`Checks`, `Strings`, `Dates` y `Result` (incluidas `Ok`/`Err`) pasan de
+`pe.axiz.core.commons` a `pe.axiz.core.lang`, en `axiz-core-lang`. Declara esa dependencia si
+usas los helpers en el dominio. OpenRewrite migra los tipos; commons conserva las utilidades
+operacionales y depende del nuevo módulo. `LockTiming` se retira a favor de `LeaseTiming`.
+
+Fuera de local/test, declara `axiz.audit.mode: DURABLE|ASYNC|SYNC` para los publicadores de Axiz.
+DURABLE necesita un outbox en la misma transacción del negocio, con destino y relay configurados.
+La receta conserva los selectores heredados ambiguos para revisión manual; perfiles sin selectores
+no impiden migrar la base cuando no hay importaciones o activación que alteren la precedencia.

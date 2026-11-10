@@ -59,18 +59,18 @@ class StructureBoundaryRegressionTest {
       assertTrue(hexagonalViolation("domain", "pe.axiz.core.commons." + type + " value;"));
     assertFalse(
         hexagonalViolation(
-            "domain", "void check() { pe.axiz.core.commons.Checks.notNull(this, \"sample\"); }"));
+            "domain", "void check() { pe.axiz.core.lang.Checks.notNull(this, \"sample\"); }"));
     assertTrue(hexagonalViolation("application", "pe.axiz.core.commons.ApiResponse<?> value;"));
     assertFalse(hexagonalViolation("application", "pe.axiz.core.commons.PageRequest value;"));
     assertFalse(
         hexagonalViolation(
             "domain",
             """
-        pe.axiz.core.commons.Result<String,String> result = new pe.axiz.core.commons.Result.Ok<>("ok");
-        String inspect(pe.axiz.core.commons.Result<String,String> value) {
+        pe.axiz.core.lang.Result<String,String> result = new pe.axiz.core.lang.Result.Ok<>("ok");
+        String inspect(pe.axiz.core.lang.Result<String,String> value) {
           return switch(value) {
-            case pe.axiz.core.commons.Result.Ok<String,String>(var ok) -> ok;
-            case pe.axiz.core.commons.Result.Err<String,String>(var error) -> error;
+            case pe.axiz.core.lang.Result.Ok<String,String>(var ok) -> ok;
+            case pe.axiz.core.lang.Result.Err<String,String>(var error) -> error;
           };
         }
         """));

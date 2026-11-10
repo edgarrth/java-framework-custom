@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Strings;
 import pe.axiz.core.errors.AccessException;
+import pe.axiz.core.lang.Strings;
 
 /** Maps validated token claims to an {@link AxizPrincipal} according to a {@link ClaimMapping}. */
 public final class ClaimsMapper {

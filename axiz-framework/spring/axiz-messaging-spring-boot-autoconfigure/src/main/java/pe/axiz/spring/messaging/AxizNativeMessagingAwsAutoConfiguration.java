@@ -1,5 +1,7 @@
 package pe.axiz.spring.messaging;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -26,6 +28,7 @@ import pe.axiz.adapter.messaging.sns.SnsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
@@ -55,9 +58,13 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     @ConditionalOnMissingBean(SqsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizMessagingSqsAsyncResources(AxizAwsCompletionProperties completion) {
-        return new AsyncAwsClients(
-            "axizMessagingSqsAsyncResources", completion.workers(), completion.queueCapacity());
+      AsyncAwsClients axizMessagingSqsAsyncResources(
+          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+        return AwsCompletionMetrics.create(
+            "axizMessagingSqsAsyncResources",
+            completion.workers(),
+            completion.queueCapacity(),
+            registries.getIfAvailable(() -> Metrics.globalRegistry));
       }
 
       @Bean(destroyMethod = "close")
@@ -93,9 +100,13 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     @ConditionalOnMissingBean(SnsAsyncClient.class)
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
-      AsyncAwsClients axizMessagingSnsAsyncResources(AxizAwsCompletionProperties completion) {
-        return new AsyncAwsClients(
-            "axizMessagingSnsAsyncResources", completion.workers(), completion.queueCapacity());
+      AsyncAwsClients axizMessagingSnsAsyncResources(
+          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+        return AwsCompletionMetrics.create(
+            "axizMessagingSnsAsyncResources",
+            completion.workers(),
+            completion.queueCapacity(),
+            registries.getIfAvailable(() -> Metrics.globalRegistry));
       }
 
       @Bean(destroyMethod = "close")

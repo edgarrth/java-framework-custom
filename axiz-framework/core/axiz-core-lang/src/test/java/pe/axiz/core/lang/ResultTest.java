@@ -1,4 +1,4 @@
-package pe.axiz.core.commons;
+package pe.axiz.core.lang;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

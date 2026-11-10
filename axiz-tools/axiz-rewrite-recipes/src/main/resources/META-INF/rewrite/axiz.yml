@@ -68,6 +68,27 @@ description: Migrates architecture contract coordinates, packages, event contrac
 recipeList:
   - pe.axiz.rewrite.MigrateAuditModeSelector
   - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.commons.Checks
+      newFullyQualifiedTypeName: pe.axiz.core.lang.Checks
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.commons.Strings
+      newFullyQualifiedTypeName: pe.axiz.core.lang.Strings
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.commons.Dates
+      newFullyQualifiedTypeName: pe.axiz.core.lang.Dates
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.commons.Result
+      newFullyQualifiedTypeName: pe.axiz.core.lang.Result
+  - org.openrewrite.maven.AddDependency:
+      groupId: pe.axiz
+      artifactId: axiz-core-lang
+      version: 2.0.0
+      onlyIfUsing: pe.axiz.core.lang.*
+      acceptTransitive: false
+  - org.openrewrite.java.ChangeType:
+      oldFullyQualifiedTypeName: pe.axiz.core.lock.LockTiming
+      newFullyQualifiedTypeName: pe.axiz.core.commons.LeaseTiming
+  - org.openrewrite.java.ChangeType:
       oldFullyQualifiedTypeName: pe.axiz.kit.r2dbc.RdsIamPasswordProvider
       newFullyQualifiedTypeName: pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider
   - org.openrewrite.java.ChangeType:

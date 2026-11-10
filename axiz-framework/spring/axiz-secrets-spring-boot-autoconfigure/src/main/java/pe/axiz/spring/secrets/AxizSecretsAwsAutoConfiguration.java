@@ -1,5 +1,7 @@
 package pe.axiz.spring.secrets;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -14,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.adapter.secrets.aws.ParameterStoreResolver;
 import pe.axiz.adapter.secrets.aws.SecretsManagerResolver;
 import pe.axiz.core.secrets.AsyncSecretResolver;
@@ -43,9 +46,13 @@ public class AxizSecretsAwsAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnMissingBean(AsyncSecretResolver.class)
   @Conditional(AxizSecretsNativeAwsAutoConfiguration.OwnerNeeded.class)
-  AsyncAwsClients axizSecretsAsyncAwsResources(AxizAwsCompletionProperties completion) {
-    return new AsyncAwsClients(
-        "axizSecretsAsyncAwsResources", completion.workers(), completion.queueCapacity());
+  AsyncAwsClients axizSecretsAsyncAwsResources(
+      AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+    return AwsCompletionMetrics.create(
+        "axizSecretsAsyncAwsResources",
+        completion.workers(),
+        completion.queueCapacity(),
+        registries.getIfAvailable(() -> Metrics.globalRegistry));
   }
 
   @Configuration(proxyBeanMethods = false)

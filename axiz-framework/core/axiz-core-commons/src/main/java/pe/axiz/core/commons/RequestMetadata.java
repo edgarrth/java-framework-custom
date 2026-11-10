@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.lang.Checks;
 
 /**
  * Immutable metadata of the request or message being processed.

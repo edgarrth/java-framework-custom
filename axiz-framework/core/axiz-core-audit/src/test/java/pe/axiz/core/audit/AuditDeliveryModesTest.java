@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import pe.axiz.core.commons.TransactionOutcome;
@@ -33,6 +34,78 @@ class AuditDeliveryModesTest {
         null,
         null,
         Map.of());
+  }
+
+  @Test
+  void imperativeDeliveryUsesItsOwnDeadlineAndDoesNotCreateUnboundedWorkers() throws Exception {
+    var started = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    var fallback = new CountDownLatch(3);
+    var calls = new AtomicInteger();
+    var publisher =
+        new AsyncAuditPublisher(
+            e -> {
+              calls.incrementAndGet();
+              started.countDown();
+              boolean interrupted = false;
+              while (release.getCount() != 0) {
+                try {
+                  release.await();
+                } catch (InterruptedException ignored) {
+                  interrupted = true;
+                }
+              }
+              if (interrupted) Thread.currentThread().interrupt();
+            },
+            e -> fallback.countDown(),
+            8,
+            Duration.ZERO,
+            Duration.ofMillis(200),
+            Duration.ofMillis(200),
+            () -> () -> () -> {});
+    try {
+      publisher.publish(event());
+      assertTrue(started.await(2, TimeUnit.SECONDS));
+      publisher.publish(event());
+      publisher.publish(event());
+      assertTrue(fallback.await(2, TimeUnit.SECONDS));
+      assertEquals(1, calls.get(), "An uncooperative delegate occupies the single bounded worker");
+      assertEquals(3, publisher.failureCount());
+    } finally {
+      release.countDown();
+      publisher.close();
+    }
+  }
+
+  @Test
+  void imperativeDeliveryRejectsInvalidBoundsAndReportsDelegateFailure() throws Exception {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new AsyncAuditPublisher(
+                e -> {},
+                e -> {},
+                1,
+                Duration.ZERO,
+                Duration.ofSeconds(1),
+                Duration.ZERO,
+                () -> () -> () -> {}));
+    var fallback = new CountDownLatch(1);
+    try (var publisher =
+        new AsyncAuditPublisher(
+            e -> {
+              throw new IllegalStateException("transport");
+            },
+            e -> fallback.countDown(),
+            1,
+            Duration.ZERO,
+            Duration.ofSeconds(1),
+            Duration.ofSeconds(1),
+            () -> () -> () -> {})) {
+      publisher.publish(event());
+      assertTrue(fallback.await(2, TimeUnit.SECONDS));
+      assertEquals(1, publisher.failureCount());
+    }
   }
 
   @Test

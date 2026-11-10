@@ -29,6 +29,74 @@ class CapabilityAdderTest {
   }
 
   @Test
+  void addingOutboxPreservesTheExistingExplicitAuditMode(@TempDir Path tmp) throws Exception {
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    Path application = dir.resolve("src/main/resources/application.yaml");
+    assertTrue(Files.readString(application).contains("mode: ASYNC"));
+    adder.add(dir, "outbox");
+    assertTrue(Files.readString(application).contains("mode: ASYNC"));
+  }
+
+  @Test
+  void addingAuditToAnExistingOutboxSelectsDurableAndPreservesPreviousSelectors(@TempDir Path tmp)
+      throws Exception {
+    Path fresh =
+        project(tmp.resolve("fresh"), "support", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    adder.add(fresh, "outbox");
+    adder.add(fresh, "audit");
+    assertTrue(
+        Files.readString(fresh.resolve("src/main/resources/application.yaml"))
+            .contains("mode: DURABLE"));
+    int n = 0;
+    for (String selector :
+        List.of(
+            "axiz.audit.mode: SYNC",
+            "axiz:\n  audit:\n    mode: ASYNC",
+            "axiz:\n  audit.async.enabled: false")) {
+      Path existing =
+          project(
+              tmp.resolve("existing-" + n++),
+              "support",
+              Structure.HEXAGONAL,
+              Stack.SERVLET,
+              "aurora");
+      adder.add(existing, "outbox");
+      Path application = existing.resolve("src/main/resources/application.yaml");
+      Files.writeString(application, selector + "\n");
+      adder.add(existing, "audit");
+      String updated = Files.readString(application);
+      assertFalse(updated.contains("DURABLE"), updated);
+      assertTrue(updated.contains(selector), updated);
+    }
+  }
+
+  @Test
+  void addingAuditPreservesSelectorsDeclaredOnlyInProfiles(@TempDir Path tmp) throws Exception {
+    int n = 0;
+    for (String file : List.of("application-prod.yaml", "application-prod.properties")) {
+      Path dir =
+          project(
+              tmp.resolve("profile-" + n++),
+              "support",
+              Structure.HEXAGONAL,
+              Stack.SERVLET,
+              "aurora");
+      adder.add(dir, "outbox");
+      Path profile = dir.resolve("src/main/resources/" + file);
+      String selector =
+          file.endsWith(".properties")
+              ? "axiz.audit.async.enabled=false\n"
+              : "axiz:\n  audit:\n    mode: SYNC\n";
+      Files.writeString(profile, selector);
+      adder.add(dir, "audit");
+      assertEquals(selector, Files.readString(profile));
+      assertFalse(
+          Files.readString(dir.resolve("src/main/resources/application.yaml"))
+              .contains("mode: DURABLE"));
+    }
+  }
+
+  @Test
   void addsStarterAdaptersPropertiesKeysAndManifest(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
     CapabilityAdder.Result r = adder.add(dir, "idempotency-redis");

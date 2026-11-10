@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import pe.axiz.core.audit.AsyncAuditPublisher;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
@@ -69,7 +68,9 @@ public class AxizAuditAutoConfiguration {
 
   @Bean
   SmartInitializingSingleton axizAuditModeNotice(
-      Environment environment, AxizAuditProperties properties) {
+      Environment environment,
+      AxizAuditProperties properties,
+      ConfigurableListableBeanFactory beans) {
     return () -> {
       for (String selector : List.of("axiz.audit.durable.enabled", "axiz.audit.async.enabled"))
         if (environment.containsProperty(selector))
@@ -77,11 +78,11 @@ public class AxizAuditAutoConfiguration {
               .warn(
                   "{} is deprecated as an audit mode selector; migrate to axiz.audit.mode before 3.0",
                   selector);
-      boolean development =
-          environment.acceptsProfiles(Profiles.of("local", "test"))
-              || List.of("local", "test")
-                  .contains(environment.getProperty("axiz.config.environment", ""));
-      if (properties.effectiveMode() == AxizAuditProperties.Mode.ASYNC && !development)
+      boolean managed = AuditModeSelection.managed(beans);
+      if (managed) AuditModeSelection.requireExplicit(environment);
+      if (managed
+          && properties.effectiveMode() == AxizAuditProperties.Mode.ASYNC
+          && !AuditModeSelection.development(environment))
         LoggerFactory.getLogger(AxizAuditAutoConfiguration.class)
             .warn(
                 "Audit mode async uses an in-memory queue and is not durable after a process"
@@ -108,6 +109,7 @@ public class AxizAuditAutoConfiguration {
                 properties.async().capacity(),
                 properties.async().offerTimeout(),
                 Duration.ofSeconds(10),
+                properties.async().deliveryTimeout(),
                 AuditDeliveryContext.PROVIDER)
             : target;
     return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE

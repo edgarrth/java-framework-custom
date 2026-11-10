@@ -8,10 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 class AwsCompletionExecutorTest {
   @Test
@@ -92,6 +96,82 @@ class AwsCompletionExecutorTest {
       remove.run();
       removeOther.run();
       Metrics.removeRegistry(registry);
+      registry.close();
+    }
+  }
+
+  @Test
+  void equalPoolNamesAreIsolatedByApplicationRegistryAndCleanupIsIdempotent() throws Exception {
+    var firstRegistry = new SimpleMeterRegistry();
+    var secondRegistry = new SimpleMeterRegistry();
+    try {
+      var first = new BoundedCompletionExecutor(1, 1);
+      var second = new BoundedCompletionExecutor(1, 1);
+      Runnable removeFirst = AwsCompletionMetrics.bind("same-pool", first, firstRegistry);
+      Runnable removeSecond = AwsCompletionMetrics.bind("same-pool", second, secondRegistry);
+      try {
+        first.execute(() -> {});
+        first.shutdown();
+        assertTrue(first.awaitTermination(5, TimeUnit.SECONDS));
+        assertEquals(
+            1,
+            firstRegistry
+                .get("axiz.transport.latency")
+                .tag("transport", "same-pool")
+                .timer()
+                .count());
+        assertEquals(
+            0,
+            secondRegistry
+                .get("axiz.transport.latency")
+                .tag("transport", "same-pool")
+                .timer()
+                .count());
+        removeFirst.run();
+        removeFirst.run();
+        assertNull(
+            firstRegistry.find("axiz.transport.pending").tag("transport", "same-pool").gauge());
+        assertNotNull(
+            secondRegistry.find("axiz.transport.pending").tag("transport", "same-pool").gauge());
+      } finally {
+        first.shutdownNow();
+        second.shutdownNow();
+        removeFirst.run();
+        removeSecond.run();
+      }
+    } finally {
+      firstRegistry.close();
+      secondRegistry.close();
+    }
+  }
+
+  @Test
+  void applicationBindingDoesNotRequireAddingTheRegistryToTheGlobalComposite() {
+    var registry = new SimpleMeterRegistry();
+    try (var owner =
+        new AsyncAwsClients(
+            StaticCredentialsProvider.create(AwsBasicCredentials.create("offline", "offline")),
+            Clock.systemUTC(),
+            Duration.ofDays(1),
+            1,
+            1)) {
+      AwsCompletionMetrics.bind(owner, "application-only", registry);
+      assertNotNull(
+          registry.find("axiz.transport.pending").tag("transport", "application-only").gauge());
+      assertNull(
+          Metrics.globalRegistry
+              .find("axiz.transport.pending")
+              .tag("transport", "application-only")
+              .gauge());
+      owner.close();
+      owner.close();
+      assertNull(
+          registry.find("axiz.transport.pending").tag("transport", "application-only").gauge());
+      assertThrows(
+          IllegalStateException.class, () -> AwsCompletionMetrics.bind(owner, "closed", registry));
+      assertThrows(
+          IllegalArgumentException.class, () -> AwsCompletionMetrics.create("", 1, 1, registry));
+    } finally {
       registry.close();
     }
   }

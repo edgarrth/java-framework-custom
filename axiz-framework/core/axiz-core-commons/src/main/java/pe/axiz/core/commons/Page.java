@@ -3,6 +3,7 @@ package pe.axiz.core.commons;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.lang.Checks;
 
 /**
  * A page of results.

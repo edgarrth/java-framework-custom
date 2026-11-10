@@ -181,21 +181,30 @@ eso, la propiedad de la cuenta se controla en el sistema de registro y no solo e
 
 ## Auditoría durable
 
-El publicador de auditoría por defecto es asíncrono: un evento puede perderse si el proceso cae
-antes de enviarlo. Para cambios de negocio eso no basta. Con
-`axiz.audit.durable.enabled: true`, el evento de auditoría se escribe en el outbox dentro de la
-misma transacción del cambio: se confirman los dos o no se confirma ninguno.
+Fuera de `local`/`test`, la auditoría administrada por Axiz exige una elección explícita:
+`axiz.audit.mode: ASYNC`, `DURABLE` o `SYNC`. Solo en desarrollo se permite ASYNC implícito:
+puede perder eventos si el proceso cae antes de enviarlos. Los selectores booleanos heredados
+siguen aceptados con aviso de deprecación. Los publicadores propios definen su política.
+
+Con `DURABLE`, el evento se escribe en el outbox dentro de la misma transacción del cambio:
+se confirman los dos o ninguno. El negocio y el outbox deben compartir recurso transaccional;
+un outbox presente en el classpath no demuestra esa integración. El generador selecciona DURABLE
+si incluye la capacidad outbox y ASYNC en caso contrario, con comentarios visibles sobre la garantía.
 
 ```yaml
 axiz:
   audit:
+    mode: DURABLE
     durable:
-      enabled: true
       destination: audit            # destino lógico en axiz.messaging.destinations
       outside-transaction: async    # async | fail
 ```
 
-- Requiere `axiz-core-outbox` y un `OutboxWriter`.
+- Requiere `axiz-core-outbox`, un `OutboxWriter` y destino/relay configurados.
+- `axiz.audit.async.delivery-timeout` limita la entrega imperativa y nativa (10 s por defecto).
+  El cierre de la cola conserva un presupuesto separado de 10 s. La cancelación imperativa es
+  cooperativa: el transporte también necesita timeouts y un delegado que ignore la interrupción
+  puede completar tarde. ASYNC y su fallback no equivalen a persistencia durable.
 - Los eventos de fallo (acceso denegado, validación) no tienen transacción de negocio que
   confirmar, porque esta se revierte. Por eso van por el publicador asíncrono.
 - Si un evento se emite fuera de una transacción, `async` lo envía por el publicador asíncrono y

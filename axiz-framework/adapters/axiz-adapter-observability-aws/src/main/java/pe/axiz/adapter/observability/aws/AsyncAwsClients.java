@@ -35,7 +35,8 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
 public final class AsyncAwsClients implements SdkAutoCloseable {
   private final WarmedAwsCredentials credentials;
   private final BoundedCompletionExecutor completions;
-  private final Runnable removeMeters;
+  private Runnable removeMeters;
+  private boolean closed;
 
   public AsyncAwsClients() {
     this(
@@ -108,6 +109,24 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       return () -> {};
     }
     return AwsCompletionMetrics.bind(name, executor);
+  }
+
+  static AsyncAwsClients unmetered(int workers, int queueCapacity) {
+    return new AsyncAwsClients(
+        DefaultCredentialsProvider.builder().asyncCredentialUpdateEnabled(true).build(),
+        Clock.systemUTC(),
+        Duration.ofSeconds(15),
+        workers,
+        queueCapacity,
+        null);
+  }
+
+  synchronized void replaceCompletionMetrics(
+      Function<BoundedCompletionExecutor, Runnable> binding) {
+    if (closed) throw new IllegalStateException("AWS resources are closed");
+    removeMeters.run();
+    removeMeters = () -> {};
+    removeMeters = binding.apply(completions);
   }
 
   /** Snapshot-only, non-owning credentials for auxiliary signers; this owner controls refresh. */
@@ -229,7 +248,9 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
   }
 
   @Override
-  public void close() {
+  public synchronized void close() {
+    if (closed) return;
+    closed = true;
     completions.shutdown();
     try {
       credentials.close();

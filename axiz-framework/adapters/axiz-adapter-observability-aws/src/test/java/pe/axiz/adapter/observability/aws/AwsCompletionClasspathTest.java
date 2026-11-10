@@ -59,6 +59,9 @@ class AwsCompletionClasspathTest {
             StaticCredentialsProvider.create(AwsBasicCredentials.create("offline", "offline"));
         try (var clients =
             new AsyncAwsClients(source, Clock.systemUTC(), Duration.ofDays(1), 1, 1)) {
+          // Frameworks may inspect all methods reflectively while Micrometer is absent.
+          AsyncAwsClients.class.getDeclaredMethods();
+          AsyncAwsClients.class.getDeclaredConstructors();
           if (clients.credentialsProvider().resolveCredentials() == null)
             throw new AssertionError("Missing warmed credentials");
         }

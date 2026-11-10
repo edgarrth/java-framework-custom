@@ -2,7 +2,7 @@ package pe.axiz.core.sequence;
 
 import java.time.ZoneId;
 import java.util.Objects;
-import pe.axiz.core.commons.Strings;
+import pe.axiz.core.lang.Strings;
 
 /**
  * How a sequence value is rendered: {@code prefix + [period + separator] + zero-padded value}, e.g.

@@ -1,5 +1,7 @@
 package pe.axiz.spring.lock;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,6 +19,7 @@ import pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock;
 import pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
@@ -55,9 +58,13 @@ public class AxizLockDynamoDbAutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-    AsyncAwsClients axizLockAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients(
-          "axizLockAsyncAwsResources", completion.workers(), completion.queueCapacity());
+    AsyncAwsClients axizLockAsyncAwsResources(
+        AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+      return AwsCompletionMetrics.create(
+          "axizLockAsyncAwsResources",
+          completion.workers(),
+          completion.queueCapacity(),
+          registries.getIfAvailable(() -> Metrics.globalRegistry));
     }
 
     @Bean(destroyMethod = "close")

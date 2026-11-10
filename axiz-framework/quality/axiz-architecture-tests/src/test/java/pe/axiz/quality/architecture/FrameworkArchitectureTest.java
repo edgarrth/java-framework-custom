@@ -71,6 +71,15 @@ class FrameworkArchitectureTest {
           .because(
               "architecture contract requires native asynchronous I/O, including CQRS and outbound authentication");
 
+  @ArchTest
+  static final ArchRule LANGUAGE_KERNEL_HAS_NO_FRAMEWORK_DEPENDENCIES =
+      noClasses()
+          .that()
+          .resideInAPackage("pe.axiz.core.lang..")
+          .should()
+          .dependOnClassesThat()
+          .resideOutsideOfPackages("pe.axiz.core.lang..", "java..", "org.jspecify.annotations..");
+
   /** Layer 1 is plain Java: no Spring, no Quarkus, no upper layers. */
   @ArchTest
   static final ArchRule CORE_IS_PLAIN_JAVA =

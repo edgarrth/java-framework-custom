@@ -1,5 +1,6 @@
 package pe.axiz.core.soap;
 
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -82,7 +83,13 @@ public final class WsSecurity {
       MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
       sha1.update(nonce);
       sha1.update(created.getBytes(StandardCharsets.UTF_8));
-      sha1.update(new String(password).getBytes(StandardCharsets.UTF_8));
+      var encoded = StandardCharsets.UTF_8.encode(CharBuffer.wrap(password));
+      try {
+        sha1.update(encoded);
+      } finally {
+        encoded.clear();
+        while (encoded.hasRemaining()) encoded.put((byte) 0);
+      }
       return Base64.getEncoder().encodeToString(sha1.digest());
     } catch (NoSuchAlgorithmException e) {
       throw new SoapException("SHA-1 not available", e);

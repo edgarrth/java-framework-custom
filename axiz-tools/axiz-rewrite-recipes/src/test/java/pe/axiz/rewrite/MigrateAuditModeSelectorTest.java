@@ -11,12 +11,57 @@ class MigrateAuditModeSelectorTest implements RewriteTest {
       "# TODO axiz-2.0: migrar audit selector a axiz.audit.mode manualmente\n";
 
   @Test
+  void profilesWithoutAuditSelectorsDoNotPreventMigrationOfTheBase() {
+    rewriteRun(
+        spec ->
+            spec.recipe(new MigrateAuditModeSelector()).cycles(2).expectedCyclesThatMakeChanges(1),
+        properties(
+            "axiz.audit.async.enabled=true\n",
+            "axiz.audit.mode=ASYNC\n",
+            s -> s.path("src/main/resources/application.properties")),
+        properties(
+            "spring.datasource.url=jdbc:postgresql://database/app\n",
+            s -> s.path("src/main/resources/application-prod.properties")),
+        yaml(
+            "logging.level.root: INFO\n",
+            s -> s.path("src/main/resources/application-local.yaml")));
+  }
+
+  @Test
+  void profileImportsAndActivationStillRequireManualReview() {
+    String base = "axiz.audit.async.enabled=true\n";
+    rewriteRun(
+        spec -> spec.recipe(new MigrateAuditModeSelector()),
+        properties(base, TODO + base, s -> s.path("src/main/resources/application.properties")),
+        yaml(
+            "spring.config.import: optional:file:extra.yaml\n",
+            s -> s.path("src/main/resources/application-prod.yaml")));
+    rewriteRun(
+        spec -> spec.recipe(new MigrateAuditModeSelector()),
+        properties(base, TODO + base, s -> s.path("src/main/resources/application.properties")),
+        yaml(
+            "spring.profiles.include: extra\n",
+            s -> s.path("src/main/resources/application-prod.yaml")));
+  }
+
+  @Test
+  void legacyProfileActivationStillRequiresManualReview() {
+    String base = "axiz.audit.async.enabled=true\n";
+    rewriteRun(
+        spec -> spec.recipe(new MigrateAuditModeSelector()),
+        properties(base, TODO + base, s -> s.path("src/main/resources/application.properties")),
+        yaml("spring.profiles: prod\n", s -> s.path("src/main/resources/application-prod.yaml")));
+  }
+
+  @Test
   void durableWinsOverAsyncWithoutLosingQueueOptions() {
     rewriteRun(
         spec ->
             spec.recipe(new MigrateAuditModeSelector()).cycles(2).expectedCyclesThatMakeChanges(1),
         properties(
-            "axiz.audit.durable.enabled=true\naxiz.audit.async.enabled=true\naxiz.audit.async.capacity=32\n",
+            "axiz.audit.durable.enabled=true\n"
+                + "axiz.audit.async.enabled=true\n"
+                + "axiz.audit.async.capacity=32\n",
             "axiz.audit.mode=DURABLE\naxiz.audit.async.capacity=32\n"));
   }
 
@@ -25,7 +70,10 @@ class MigrateAuditModeSelectorTest implements RewriteTest {
     rewriteRun(
         spec -> spec.recipe(new MigrateAuditModeSelector()),
         properties(
-            "axiz.audit.mode=ASYNC\naxiz.audit.durable.enabled=false\naxiz.audit.async.enabled=true\naxiz.audit.async.offer-timeout=50ms\n",
+            "axiz.audit.mode=ASYNC\n"
+                + "axiz.audit.durable.enabled=false\n"
+                + "axiz.audit.async.enabled=true\n"
+                + "axiz.audit.async.offer-timeout=50ms\n",
             "axiz.audit.mode=ASYNC\naxiz.audit.async.offer-timeout=50ms\n"));
   }
 
@@ -42,16 +90,16 @@ class MigrateAuditModeSelectorTest implements RewriteTest {
         spec -> spec.recipe(new MigrateAuditModeSelector()),
         yaml(
             """
-        axiz:
-          audit:
-            durable:
-              enabled: true
-        """,
+            axiz:
+              audit:
+                durable:
+                  enabled: true
+            """,
             """
-        axiz:
-          audit:
-            mode: DURABLE
-        """));
+            axiz:
+              audit:
+                mode: DURABLE
+            """));
   }
 
   @Test
@@ -107,7 +155,10 @@ class MigrateAuditModeSelectorTest implements RewriteTest {
         spec ->
             spec.recipe(new MigrateAuditModeSelector()).cycles(2).expectedCyclesThatMakeChanges(1),
         yaml(
-            "axiz.audit.durable.enabled: true\n---\nspring.config.activate.on-profile: qa\naxiz.audit.async.enabled: true\n",
+            "axiz.audit.durable.enabled: true\n"
+                + "---\n"
+                + "spring.config.activate.on-profile: qa\n"
+                + "axiz.audit.async.enabled: true\n",
             TODO
                 + "axiz.audit.durable.enabled: true\n\n"
                 + TODO

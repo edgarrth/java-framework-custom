@@ -1,5 +1,7 @@
 package pe.axiz.spring.storage;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.net.URI;
 import java.util.Objects;
@@ -18,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.adapter.storage.s3.S3ObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
@@ -90,9 +93,13 @@ public class AxizStorageS3AutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @Conditional(DefaultResourcesNeeded.class)
-    AsyncAwsClients axizStorageAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients(
-          "axizStorageAsyncAwsResources", completion.workers(), completion.queueCapacity());
+    AsyncAwsClients axizStorageAsyncAwsResources(
+        AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+      return AwsCompletionMetrics.create(
+          "axizStorageAsyncAwsResources",
+          completion.workers(),
+          completion.queueCapacity(),
+          registries.getIfAvailable(() -> Metrics.globalRegistry));
     }
 
     @Bean(destroyMethod = "close")

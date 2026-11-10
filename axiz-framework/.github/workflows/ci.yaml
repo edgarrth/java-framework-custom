@@ -112,12 +112,36 @@ jobs:
       - name: japicmp against the baseline
         run: |
           set -euo pipefail
+          mkdir -p target/api-evidence
           if [[ "$BASELINE" == 1.* ]]; then
-            ./mvnw --bootstrap -B -ntp verify -Papi-compat,api-migration -Daxiz.api.baseline="$BASELINE"
-            python3 .github/scripts/check-api-compatibility.py --baseline "$BASELINE"
+            ./mvnw --bootstrap -B -ntp verify -Papi-compat,api-migration -Daxiz.api.baseline="$BASELINE" 2>&1 | tee target/api-evidence/maven.log
+            python3 .github/scripts/check-api-compatibility.py --baseline "$BASELINE" --observed target/api-evidence/observed.json 2>&1 | tee target/api-evidence/gate.log
           else
-            ./mvnw --bootstrap -B -ntp verify -Papi-compat -Daxiz.api.baseline="$BASELINE"
+            ./mvnw --bootstrap -B -ntp verify -Papi-compat -Daxiz.api.baseline="$BASELINE" 2>&1 | tee target/api-evidence/maven.log
           fi
+      - name: Associate API evidence with the reviewed source
+        if: always()
+        run: |
+          mkdir -p target/api-evidence
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path("target/api-evidence/source.json").write_text(json.dumps({
+              "schema": 1, "commit": os.environ["GITHUB_SHA"],
+              "run": os.environ["GITHUB_RUN_ID"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "baseline": os.environ["BASELINE"]
+          }, indent=2) + "\n")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: api-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            target/api-evidence
+            **/target/japicmp/*.xml
+            docs/migration/2.0/api-changes.md
+          retention-days: 90
+          if-no-files-found: error
 
   native-reactive:
     needs: axiz-workflows-trust

@@ -9,6 +9,7 @@ import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.junit.jupiter.api.Assertions;
@@ -210,15 +211,30 @@ class AuthorizationCoverageTest {
 
   @Test
   void annotationWithoutAnAdvisorAndPostAuthorizationAreInsufficient() throws Exception {
-    var target = new ProtectedController();
-    var method = ProtectedController.class.getMethod("pay");
-    assertFalse(
-        HttpAuthorizationCoverage.priorAdvisor(target, new HandlerMethod(target, method), false));
-    var proxy = new ProxyFactory(target);
-    proxy.addAdvice((MethodInterceptor) invocation -> invocation.proceed());
-    Object bean = proxy.getProxy();
-    assertFalse(
-        HttpAuthorizationCoverage.priorAdvisor(bean, new HandlerMethod(bean, method), false));
+    mvc()
+        .run(
+            ctx -> {
+              var target = new ProtectedController();
+              var proxy = new ProxyFactory(target);
+              proxy.addAdvice((MethodInterceptor) invocation -> invocation.proceed());
+              for (Object bean : List.of(target, proxy.getProxy())) {
+                var endpoint =
+                    new HttpAuthorizationCoverage.Endpoint(
+                        new HandlerMethod(bean, ProtectedController.class.getMethod("pay")),
+                        Set.of("/payments"),
+                        Set.of("POST"));
+                assertThrows(
+                    IllegalStateException.class,
+                    () ->
+                        HttpAuthorizationCoverage.verify(
+                            ctx.getSourceApplicationContext(),
+                            ctx.getBean(AxizSecurityProperties.class),
+                            List.of(endpoint),
+                            false,
+                            true,
+                            "/actuator"));
+              }
+            });
     mvc()
         .withBean(PostOnlyController.class, PostOnlyController::new)
         .run(

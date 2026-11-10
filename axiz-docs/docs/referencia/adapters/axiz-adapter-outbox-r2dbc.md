@@ -24,3 +24,30 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl adapters/axiz-adapter-outbox-r2dbc verify`.
+
+## PostgreSQL operational limits and failure tests
+
+Set bounded connection, statement and lock waits for the relay's workload. Consider
+`idle_in_transaction_session_timeout` for abandoned transactions and, on PostgreSQL 17+,
+`transaction_timeout` for their total duration. Apply role/session values compatible with all
+transactions using that role, including business work; Axiz does not change global server settings.
+See [PostgreSQL 17 client defaults](https://www.postgresql.org/docs/17/runtime-config-client.html).
+Server timeouts complement client cancellation and cleanup; they do not replace them.
+
+The PostgreSQL integration fixture limits connection/read/query/lock waits, explicitly bounds
+schema setup, and gives the failsafe fork a final process deadline. It uses Netty's supported
+`io.netty.allocator.type=pooled` JVM option **only in this module's test forks**, avoiding the adaptive
+allocator's magazine contention under load. BlockHound remains installed, with a negative test
+that still rejects application blocking; no application/package-wide allowance is introduced.
+The production driver's allocator configuration is unchanged.
+
+Fault injection uses the driver's public `CodecRegistrar`: a real locked outbox row causes a
+client decoding exception or Error while PostgreSQL stays up. An independent JDBC connection
+checks the captured backend PID and locks within three seconds, before the fixture's 30-second
+idle-transaction safety net. This regression covers those decoding paths; it does not establish
+that every driver pipeline error has identical cleanup, nor reproduce the exact adaptive allocator
+incident. Driver versions and actual results are recorded in the implementation report.
+
+A failed transaction rolls back database changes. `SKIP LOCKED` lets other relays pass locked
+rows; it does not prevent duplicate sends. Delivery remains at-least-once and consumers must be
+idempotent.

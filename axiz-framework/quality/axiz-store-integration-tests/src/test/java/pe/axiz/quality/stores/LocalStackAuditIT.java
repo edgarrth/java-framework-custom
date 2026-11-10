@@ -151,7 +151,10 @@ class LocalStackAuditIT {
                 AxizNativeAuditAutoConfiguration.class))
         .withBean(SqsAsyncClient.class, () -> client)
         .withBean(ObservationRegistry.class, () -> OBSERVATIONS)
-        .withPropertyValues("spring.application.name=accounts", "axiz.audit.sqs.queue-url=" + queue)
+        .withPropertyValues(
+            "axiz.audit.mode=ASYNC",
+            "spring.application.name=accounts",
+            "axiz.audit.sqs.queue-url=" + queue)
         .run(
             ctx -> {
               Assertions.assertThat(ctx).hasNotFailed();

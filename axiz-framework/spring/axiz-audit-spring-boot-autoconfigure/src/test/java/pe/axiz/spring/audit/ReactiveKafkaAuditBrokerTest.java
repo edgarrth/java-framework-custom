@@ -55,7 +55,10 @@ class ReactiveKafkaAuditBrokerTest {
                   AxizAuditAutoConfiguration.class,
                   AxizAuditKafkaAutoConfiguration.class,
                   AxizNativeAuditAutoConfiguration.class))
-          .withPropertyValues("axiz.audit.kafka.topic=audit", "axiz.audit.kafka.timeout=10s")
+          .withPropertyValues(
+              "axiz.audit.mode=ASYNC",
+              "axiz.audit.kafka.topic=audit",
+              "axiz.audit.kafka.timeout=10s")
           .run(
               ctx -> {
                 assertThat(ctx).hasNotFailed();

@@ -21,6 +21,7 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-inbox-jdbc</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId><optional>true</optional></dependency>

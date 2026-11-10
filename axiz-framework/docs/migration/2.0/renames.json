@@ -337,6 +337,11 @@
       "oldArtifact": "axiz-core-persistence-r2dbc",
       "newArtifact": "axiz-adapter-database-auth-aws",
       "newPath": "adapters/axiz-adapter-database-auth-aws"
+    },
+    {
+      "oldArtifact": "axiz-core-commons",
+      "newArtifact": "axiz-core-lang",
+      "newPath": "core/axiz-core-lang"
     }
   ]
 }

@@ -42,7 +42,7 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 | [`lock-redis`](lock-redis.md) | Distributed locks on ElastiCache (Redis/Valkey) | – |
 | [`lock-dynamodb`](lock-dynamodb.md) | Distributed locks on DynamoDB (leases) | – |
 | [`scheduling`](scheduling.md) | @Scheduled jobs with ShedLock (JDBC, R2DBC or DynamoDB) so only one replica runs them | – |
-| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, published asynchronously | business, core, gateway, batch |
+| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery | business, core, gateway, batch |
 | [`audit-kafka`](audit-kafka.md) | Audit events published to MSK | – |
 | [`audit-sqs`](audit-sqs.md) | Audit events published to SQS | – |
 | [`crypto`](crypto.md) | Field encryption (JPA and DynamoDB converters, rotating keys from the secret store), KMS envelope encryption, blind index, JOSE, password hashing | – |

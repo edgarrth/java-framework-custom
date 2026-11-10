@@ -29,6 +29,7 @@
 
   <dependencyManagement>
     <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${axiz.version}</version><scope>test</scope></dependency>
       <!-- rewrite-java asks for ASM 9.9; gizmo (rewrite-core) still for 9.3 -->
       <dependency>
         <groupId>org.ow2.asm</groupId>

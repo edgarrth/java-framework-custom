@@ -36,6 +36,27 @@ class ProjectGeneratorTest {
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
 
   @Test
+  void generatedServicesDeclareCanonicalAuditModeForTheirEffectiveCapabilities() {
+    for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
+      for (boolean outbox : List.of(false, true)) {
+        var project =
+            generator.generate(
+                Fixtures.request(
+                    "business",
+                    Structure.HEXAGONAL,
+                    stack,
+                    "aurora",
+                    outbox ? List.of("outbox", "messaging-kafka") : List.of()));
+        String config = project.text("src/main/resources/application.yaml");
+        assertTrue(config.contains("mode: " + (outbox ? "DURABLE" : "ASYNC")), config);
+        assertTrue(config.contains("Audit convention:"));
+        assertTrue(config.contains("same transactional resource"));
+        if (outbox) assertTrue(config.contains("AXIZ_AUDIT_DESTINATION:kafka:audit"));
+      }
+    }
+  }
+
+  @Test
   void architectureImportsAreCompleteWithoutDependingOnTheJvmFormatter() {
     for (boolean cqrs : List.of(false, true)) {
       var request =

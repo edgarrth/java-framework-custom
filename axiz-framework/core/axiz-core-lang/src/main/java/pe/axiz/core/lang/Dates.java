@@ -1,4 +1,4 @@
-package pe.axiz.core.commons;
+package pe.axiz.core.lang;
 
 import java.time.Instant;
 import java.time.LocalDate;

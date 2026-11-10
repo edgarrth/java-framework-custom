@@ -159,6 +159,23 @@ class SoapProtocolTest {
   }
 
   @Test
+  void digestPreservesUnicodeAndTheCallersPasswordArray() throws Exception {
+    byte[] nonce = {1, 2, 3};
+    String created = "2026-11-09T00:00:00Z";
+    for (String text : new String[] {"", "páss\uD83D\uDD10漢字", "bad\uD800"}) {
+      char[] password = text.toCharArray();
+      var reference = MessageDigest.getInstance("SHA-1");
+      reference.update(nonce);
+      reference.update(created.getBytes(StandardCharsets.UTF_8));
+      reference.update(text.getBytes(StandardCharsets.UTF_8));
+      assertEquals(
+          Base64.getEncoder().encodeToString(reference.digest()),
+          WsSecurity.digest(nonce, created, password));
+      assertArrayEquals(text.toCharArray(), password);
+    }
+  }
+
+  @Test
   void aDigestTokenFollowsTheUsernameTokenProfile() throws Exception {
     SoapEnvelope.Credentials credentials =
         new SoapEnvelope.Credentials(

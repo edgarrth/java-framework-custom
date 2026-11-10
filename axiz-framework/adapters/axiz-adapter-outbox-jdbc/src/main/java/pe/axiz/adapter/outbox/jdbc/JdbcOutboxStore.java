@@ -145,19 +145,27 @@ public final class JdbcOutboxStore implements OutboxStore {
                         + table
                         + " SET status='IN_FLIGHT',lease_owner=?,lease_until="
                         + dialect.leasedUntilExpression()
-                        + " WHERE id=?")) {
+                        + " WHERE id=?"
+                        + (dialect == Dialect.POSTGRESQL ? " RETURNING lease_until" : ""))) {
               ps.setString(1, owner);
               if (dialect == Dialect.POSTGRESQL) ps.setDouble(2, lease.toNanos() / 1_000_000_000.0);
               else ps.setLong(2, lease.toMillis());
               ps.setString(3, r.id());
-              ps.executeUpdate();
-            }
-            try (PreparedStatement ps =
-                c.prepareStatement("SELECT lease_until FROM " + table + " WHERE id=?")) {
-              ps.setString(1, r.id());
-              try (ResultSet rs = ps.executeQuery()) {
-                if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
-                leaseUntil = rs.getTimestamp(1).toInstant();
+              if (dialect == Dialect.POSTGRESQL) {
+                try (ResultSet rs = ps.executeQuery()) {
+                  if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
+                  leaseUntil = rs.getTimestamp(1).toInstant();
+                }
+              } else {
+                ps.executeUpdate();
+                try (PreparedStatement read =
+                    c.prepareStatement("SELECT lease_until FROM " + table + " WHERE id=?")) {
+                  read.setString(1, r.id());
+                  try (ResultSet rs = read.executeQuery()) {
+                    if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
+                    leaseUntil = rs.getTimestamp(1).toInstant();
+                  }
+                }
               }
             }
             claimed.add(

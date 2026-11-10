@@ -1,5 +1,7 @@
 package pe.axiz.core.commons;
 
+import pe.axiz.core.lang.Checks;
+
 /**
  * Page request with zero-based page index.
  *

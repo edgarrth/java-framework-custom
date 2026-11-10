@@ -14,9 +14,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Strings;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.id.IdempotencyKeys;
+import pe.axiz.core.lang.Strings;
 
 /**
  * API idempotency: the first request with a key runs, a repeated identical request gets the stored

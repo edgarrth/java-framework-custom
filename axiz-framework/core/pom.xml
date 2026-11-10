@@ -8,6 +8,7 @@
   <modules>
     <module>axiz-core-audit</module>
     <module>axiz-core-cache</module>
+    <module>axiz-core-lang</module>
     <module>axiz-core-commons</module>
     <module>axiz-core-crypto</module>
     <module>axiz-core-domain</module>

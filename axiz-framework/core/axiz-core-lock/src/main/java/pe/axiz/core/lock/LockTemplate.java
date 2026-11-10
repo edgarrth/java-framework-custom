@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 
 /**
@@ -140,7 +141,7 @@ public final class LockTemplate {
 
   /** Until when a lease asked for at {@code sent} is trusted: the lease minus the drift margin. */
   static long validUntil(long sent, Duration lease) {
-    return LockTiming.validUntil(sent, lease);
+    return LeaseTiming.validUntil(sent, lease);
   }
 
   private static void releaseQuietly(LockHandle handle) {

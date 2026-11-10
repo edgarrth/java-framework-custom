@@ -12,11 +12,14 @@
 
   <artifactId>axiz-core-commons</artifactId>
   <name>axiz :: core :: commons</name>
-  <description>Result type, request and page metadata, header catalog, dates and preconditions</description>
+  <description>Shared request/page/header contracts, concurrency utilities and transaction boundaries</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.core.commons</axiz.module.name>
   </properties>
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version></dependency>
+  </dependencies>
 </project>

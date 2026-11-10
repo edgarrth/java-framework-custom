@@ -1,5 +1,7 @@
 package pe.axiz.spring.idempotency;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import org.springframework.beans.factory.ObjectProvider;
@@ -16,6 +18,7 @@ import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
@@ -55,9 +58,13 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
-    AsyncAwsClients axizIdempotencyAsyncAwsResources(AxizAwsCompletionProperties completion) {
-      return new AsyncAwsClients(
-          "axizIdempotencyAsyncAwsResources", completion.workers(), completion.queueCapacity());
+    AsyncAwsClients axizIdempotencyAsyncAwsResources(
+        AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
+      return AwsCompletionMetrics.create(
+          "axizIdempotencyAsyncAwsResources",
+          completion.workers(),
+          completion.queueCapacity(),
+          registries.getIfAvailable(() -> Metrics.globalRegistry));
     }
 
     @Bean(destroyMethod = "close")

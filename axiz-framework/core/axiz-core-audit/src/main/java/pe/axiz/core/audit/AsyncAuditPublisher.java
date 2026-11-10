@@ -4,12 +4,16 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.commons.BoundedCallbackExecutor;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.Stages;
 
@@ -36,6 +40,8 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
   private final Stages.ContextProvider context;
   private final Duration offerTimeout;
   private final Duration closeTimeout;
+  private final @Nullable BoundedCallbackExecutor deliveries;
+  private final long deliveryTimeoutNanos;
   private final Thread worker;
   private final AtomicBoolean running = new AtomicBoolean(true);
   private final AtomicLong delivered = new AtomicLong();
@@ -74,12 +80,57 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       Duration offerTimeout,
       Duration closeTimeout,
       Stages.ContextProvider context) {
+    this(delegate, fallback, capacity, offerTimeout, closeTimeout, context, null);
+  }
+
+  /** Bounds each delivery independently of queue admission and shutdown, with one owned worker. */
+  public AsyncAuditPublisher(
+      AuditPublisher delegate,
+      AuditPublisher fallback,
+      int capacity,
+      Duration offerTimeout,
+      Duration closeTimeout,
+      Duration deliveryTimeout,
+      Stages.ContextProvider context) {
+    this(
+        delegate,
+        fallback,
+        capacity,
+        offerTimeout,
+        closeTimeout,
+        context,
+        requireDeliveryTimeout(deliveryTimeout));
+  }
+
+  private static Duration requireDeliveryTimeout(Duration timeout) {
+    if (!timeout.isPositive())
+      throw new IllegalArgumentException("Audit delivery timeout must be positive");
+    return timeout;
+  }
+
+  private AsyncAuditPublisher(
+      AuditPublisher delegate,
+      AuditPublisher fallback,
+      int capacity,
+      Duration offerTimeout,
+      Duration closeTimeout,
+      Stages.ContextProvider context,
+      @Nullable Duration deliveryTimeout) {
     this.delegate = Objects.requireNonNull(delegate);
     this.fallback = Objects.requireNonNull(fallback);
     this.queue = new ArrayBlockingQueue<>(capacity);
     this.offerTimeout = Objects.requireNonNull(offerTimeout);
     this.closeTimeout = Objects.requireNonNull(closeTimeout);
     this.context = Objects.requireNonNull(context);
+    this.deliveryTimeoutNanos = deliveryTimeout == null ? 0 : deliveryTimeout.toNanos();
+    this.deliveries =
+        deliveryTimeout == null
+            ? null
+            : new BoundedCallbackExecutor(
+                1,
+                1,
+                Thread.ofVirtual().name("axiz-audit-delivery-", 0).factory(),
+                "audit delivery");
     this.worker = Thread.ofVirtual().name("axiz-audit-publisher").start(this::drain);
   }
 
@@ -122,13 +173,38 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
 
   private void deliver(Pending pending) {
     AuditEvent event = pending.event();
-    try (var scope = pending.context().get()) {
-      delegate.publish(event);
+    try {
+      var executor = deliveries;
+      if (executor == null) {
+        publishDelegate(pending);
+      } else {
+        var delivery = executor.submit(() -> publishDelegate(pending));
+        try {
+          delivery.get(deliveryTimeoutNanos, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException interrupted) {
+          delivery.cancel(true);
+          executor.purge();
+          Thread.currentThread().interrupt();
+          throw new AuditPublishException("Audit delivery interrupted", interrupted);
+        } catch (TimeoutException timeout) {
+          delivery.cancel(true);
+          executor.purge();
+          throw new AuditPublishException("Audit delivery timeout", timeout);
+        } catch (ExecutionException failure) {
+          throw new AuditPublishException("Audit delivery failed", Stages.unwrap(failure));
+        }
+      }
       delivered.incrementAndGet();
     } catch (RuntimeException e) {
       failures.incrementAndGet();
       LOG.error("Audit delivery failed for event {}, writing to fallback", event.id(), e);
       toFallback(event);
+    }
+  }
+
+  private void publishDelegate(Pending pending) {
+    try (var scope = pending.context().get()) {
+      delegate.publish(pending.event());
     }
   }
 
@@ -195,6 +271,8 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       toFallback(remaining.event());
       flushed++;
     }
+    var executor = deliveries;
+    if (executor != null) executor.shutdownNow();
     if (!drained || flushed > 0 || lost.get() > 0) {
       LOG.warn(
           "Audit publisher closed: drained in time={}, {} event(s) written to the fallback, {}"

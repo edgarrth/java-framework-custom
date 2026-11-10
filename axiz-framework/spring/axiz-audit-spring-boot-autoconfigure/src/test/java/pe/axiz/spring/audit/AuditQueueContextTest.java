@@ -65,6 +65,7 @@ class AuditQueueContextTest {
             2,
             Duration.ZERO,
             Duration.ofSeconds(5),
+            Duration.ofSeconds(1),
             AuditDeliveryContext.PROVIDER)) {
       transaction.set("must-not-cross");
       try (var observation = parent.openScope();

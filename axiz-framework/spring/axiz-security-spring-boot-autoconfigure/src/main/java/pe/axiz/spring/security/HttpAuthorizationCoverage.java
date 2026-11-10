@@ -133,10 +133,6 @@ final class HttpAuthorizationCoverage {
     }
   }
 
-  static boolean priorAdvisor(Object bean, HandlerMethod handler, boolean reactive) {
-    return !priorAdvisors(bean, handler, reactive, null).isEmpty();
-  }
-
   private static Set<Family> priorAdvisors(
       Object bean, HandlerMethod handler, boolean reactive, @Nullable ApplicationContext context) {
     var found = EnumSet.noneOf(Family.class);

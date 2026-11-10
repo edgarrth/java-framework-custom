@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-core/pom.xml</relativePath></parent>
+  <artifactId>axiz-core-lang</artifactId>
+  <name>axiz :: core :: lang</name>
+  <description>Pure Java preconditions, strings, date helpers and business results</description>
+  <properties>
+    <axiz.module.name>pe.axiz.core.lang</axiz.module.name>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+    <axiz.api.baseline.artifactId>axiz-core-commons</axiz.api.baseline.artifactId>
+  </properties>
+  <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId>
+    <executions><execution><id>axiz-lang-independent</id><goals><goal>enforce</goal></goals>
+      <configuration><rules><bannedDependencies><excludes><exclude>pe.axiz:*</exclude></excludes><searchTransitive>true</searchTransitive></bannedDependencies></rules></configuration>
+    </execution></executions>
+  </plugin></plugins></build>
+  <profiles><profile><id>api-compat</id><build><plugins><plugin>
+    <groupId>com.github.siom79.japicmp</groupId><artifactId>japicmp-maven-plugin</artifactId>
+    <configuration><parameter><includes>
+      <include>pe.axiz.core.commons.Checks</include><include>pe.axiz.core.commons.Strings</include>
+      <include>pe.axiz.core.commons.Dates</include><include>pe.axiz.core.commons.Result*</include>
+      <include>pe.axiz.core.lang.*</include>
+    </includes></parameter></configuration>
+  </plugin></plugins></build></profile></profiles>
+</project>

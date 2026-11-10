@@ -3,6 +3,7 @@ package pe.axiz.core.commons;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.lang.Checks;
 
 /**
  * Metadata of the request or message being processed by the current thread.
