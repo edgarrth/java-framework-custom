@@ -54,6 +54,18 @@ class MigrateAuditModeSelectorTest implements RewriteTest {
   }
 
   @Test
+  void aProfileReferencingALegacySelectorStillRequiresManualReview() {
+    String base = "axiz.audit.async.enabled=true\n";
+    rewriteRun(
+        spec -> spec.recipe(new MigrateAuditModeSelector()),
+        properties(
+            base, TODO + base, source -> source.path("src/main/resources/application.properties")),
+        properties(
+            "client.async.enabled=${axiz.audit.async.enabled:false}\n",
+            source -> source.path("src/main/resources/application-prod.properties")));
+  }
+
+  @Test
   void durableWinsOverAsyncWithoutLosingQueueOptions() {
     rewriteRun(
         spec ->

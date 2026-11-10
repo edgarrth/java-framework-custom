@@ -51,10 +51,17 @@ public final class MigrateAuditModeSelector extends ScanningRecipe<MigrateAuditM
                       key.startsWith("spring.config.")
                           || key.equals("spring.profiles")
                           || key.startsWith("spring.profiles.")
-                          || key.equals("_axiz.duplicate"))) external.add(group);
+                          || key.equals("_axiz.duplicate"))
+          || values.values().stream().anyMatch(State::referencesLegacySelector))
+        external.add(group);
       if (hasSelector) selectors.merge(group, 1, Integer::sum);
       if (!values.containsKey(DURABLE) && !values.containsKey(ASYNC)) return;
       documents.put(id, new Document(id, group, Map.copyOf(values)));
+    }
+
+    private static boolean referencesLegacySelector(String value) {
+      return List.of(DURABLE, ASYNC).stream()
+          .anyMatch(key -> value.contains("${" + key + "}") || value.contains("${" + key + ":"));
     }
 
     Decision decision(UUID id) {
@@ -100,7 +107,7 @@ public final class MigrateAuditModeSelector extends ScanningRecipe<MigrateAuditM
   @Override
   public String getDescription() {
     return "Preserves durable precedence and explicit modes; marks profiles, imports, placeholders"
-               + " and conflicts for manual migration.";
+        + " and conflicts for manual migration.";
   }
 
   @Override
