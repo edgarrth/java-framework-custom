@@ -115,7 +115,8 @@ public final class R2dbcOutboxStore implements OutboxStore {
                         "UPDATE "
                             + table
                             + " SET status='IN_FLIGHT',lease_owner=:owner,lease_until=statement_timestamp()"
-                            + " + make_interval(secs => :seconds) WHERE id=:id RETURNING lease_until",
+                            + " + make_interval(secs => :seconds) WHERE id=:id RETURNING"
+                            + " lease_until",
                         SqlParams.of()
                             .bind("owner", owner)
                             .bind("seconds", lease.toNanos() / 1_000_000_000.0)
@@ -166,9 +167,11 @@ public final class R2dbcOutboxStore implements OutboxStore {
             sql.update(
                 "UPDATE "
                     + table
-                    + " SET status=:status,attempts=:attempts,next_attempt_at=:next,last_error=:error,"
-                    + "lease_owner=NULL,lease_until=NULL WHERE id=:id AND lease_owner=:owner AND "
-                    + "status='IN_FLIGHT'",
+                    + """
+                     SET status=:status,attempts=:attempts,next_attempt_at=:next,last_error=:error,
+                     lease_owner=NULL,lease_until=NULL
+                     WHERE id=:id AND lease_owner=:owner AND status='IN_FLIGHT'
+                    """,
                 SqlParams.of()
                     .bind("id", id)
                     .bind("owner", owner)
@@ -231,53 +234,6 @@ public final class R2dbcOutboxStore implements OutboxStore {
                         SqlParams.of(),
                         r -> r.require("last_seq", Long.class))
                     .then()));
-  }
-
-  @Override
-  public List<OutboxRecord> lockDue(int size, Instant now) {
-    return await(
-        sql.query(
-                "SELECT "
-                    + COLUMNS
-                    + " FROM "
-                    + table
-                    + " WHERE status = 'PENDING' AND next_attempt_at <= :now ORDER BY created_at,"
-                    + " id FETCH FIRST "
-                    + Math.max(1, size)
-                    + " ROWS ONLY FOR UPDATE SKIP LOCKED",
-                SqlParams.of().bind("now", now),
-                R2dbcOutboxStore::record)
-            .collectList());
-  }
-
-  @Override
-  public void markPublished(String id, Instant at) {
-    await(
-        sql.update(
-            "UPDATE "
-                + table
-                + " SET status = 'PUBLISHED', published_at = :at, last_error = NULL WHERE id = :id",
-            SqlParams.of().bind("at", at).bind("id", id)));
-  }
-
-  @Override
-  public void markFailed(
-      String id, int attempts, Instant nextAttemptAt, @Nullable String error, boolean giveUp) {
-    String status = giveUp ? OutboxRecord.Status.FAILED.name() : OutboxRecord.Status.PENDING.name();
-    String trimmed =
-        error == null ? null : error.length() > MAX_ERROR ? error.substring(0, MAX_ERROR) : error;
-    await(
-        sql.update(
-            "UPDATE "
-                + table
-                + " SET status = :status, attempts = :attempts, next_attempt_at = :next, last_error"
-                + " = :error WHERE id = :id",
-            SqlParams.of()
-                .bind("status", status)
-                .bind("attempts", attempts)
-                .bind("next", nextAttemptAt)
-                .bind("error", trimmed, String.class)
-                .bind("id", id)));
   }
 
   @Override

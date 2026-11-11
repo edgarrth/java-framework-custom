@@ -1,0 +1,41 @@
+public class pe.axiz.spring.inbox.AxizInboxAutoConfiguration {
+public pe.axiz.spring.inbox.AxizInboxAutoConfiguration();
+}
+
+public class pe.axiz.spring.inbox.AxizInboxDynamoDbAutoConfiguration {
+public pe.axiz.spring.inbox.AxizInboxDynamoDbAutoConfiguration();
+}
+
+public final class pe.axiz.spring.inbox.AxizInboxProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String store();
+public java.lang.String table();
+public java.lang.String transactional();
+public java.time.Duration lease();
+public java.time.Duration purgeInterval();
+public java.time.Duration retention();
+public java.time.Duration statementTimeout();
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
+public pe.axiz.spring.inbox.AxizInboxProperties(java.lang.String, java.lang.String, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode, java.time.Duration, java.lang.String);
+}
+
+public class pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration {
+public pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration();
+}
+
+public class pe.axiz.spring.inbox.InboxPurger implements org.springframework.context.SmartLifecycle {
+public boolean isRunning();
+public pe.axiz.spring.inbox.InboxPurger(pe.axiz.core.inbox.InboxStore, java.time.Duration, java.time.Clock);
+public void start();
+public void stop();
+}
+
+public interface pe.axiz.spring.inbox.ReactiveInbox {
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> markProcessed(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> release(java.lang.String, java.lang.String, java.lang.String);
+public abstract reactor.core.publisher.Mono<java.lang.Integer> purgeExpired(java.time.Instant);
+public abstract reactor.core.publisher.Mono<java.lang.Void> verifySchema();
+public abstract reactor.core.publisher.Mono<pe.axiz.core.inbox.InboxStore$Acquisition> tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
+}

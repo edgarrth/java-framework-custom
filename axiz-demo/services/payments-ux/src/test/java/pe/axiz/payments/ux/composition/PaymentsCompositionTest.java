@@ -111,7 +111,7 @@ class PaymentsCompositionTest {
 
   @Test
   void translatesDownstreamBusinessErrorsToChannelErrors() {
-    business.failure = Fakes.downstream(422, "PAYMENTS-PAYMENTSBUSINESS-0001");
+    business.failure = Fakes.downstream(422, "PAYMENTS-PAYMENTORDERS-0001");
     assertThatThrownBy(() -> as("C-1", composition.createPayment("k", request("B-01", "PEN"))))
         .isInstanceOf(BusinessException.class)
         .satisfies(e -> assertCode(e, ChannelErrors.LIMIT_EXCEEDED));
@@ -137,7 +137,7 @@ class PaymentsCompositionTest {
   @Test
   void theAliasIsOptionalWhenBeneficiariesAreDown() {
     as("C-1", composition.createPayment("key-1", request("B-01", "PEN")));
-    crud.listFailure = new IllegalStateException("beneficiaries-crud down");
+    crud.listFailure = new IllegalStateException("beneficiaries down");
 
     PaymentView view = as("C-1", composition.getPayment("P-1"));
 

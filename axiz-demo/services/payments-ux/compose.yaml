@@ -1,6 +1,6 @@
-# Local dependencies of payments-experience (docker compose up -d, or axiz local up).
+# Local dependencies of payments-ux (docker compose up -d, or axiz local up).
 # Development only: no value here is a real credential.
-name: payments-experience
+name: payments-ux
 
 services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)

@@ -1,0 +1,92 @@
+public interface pe.axiz.kit.r2dbc.DatabasePasswordProvider {
+public abstract java.lang.CharSequence password();
+}
+
+public final class pe.axiz.kit.r2dbc.EncryptedText extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String toString();
+public java.lang.String value();
+public pe.axiz.kit.r2dbc.EncryptedText(java.lang.String);
+public static pe.axiz.kit.r2dbc.EncryptedText of(java.lang.String);
+}
+
+public final class pe.axiz.kit.r2dbc.NamedSql extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String sql();
+public java.util.List<java.lang.String> names();
+public pe.axiz.kit.r2dbc.NamedSql(java.lang.String, java.util.List<java.lang.String>);
+public static pe.axiz.kit.r2dbc.NamedSql parse(java.lang.String);
+}
+
+public final class pe.axiz.kit.r2dbc.R2dbcRow implements pe.axiz.kit.r2dbc.SqlRow {
+public <T> T get(java.lang.String, java.lang.Class<T>);
+public pe.axiz.kit.r2dbc.R2dbcRow(io.r2dbc.spi.Row);
+}
+
+public final class pe.axiz.kit.r2dbc.R2dbcSql implements pe.axiz.kit.r2dbc.ReactiveSql {
+public <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
+public <T> reactor.core.publisher.Mono<T> inTransaction(java.util.function.Function<pe.axiz.kit.r2dbc.ReactiveSql, reactor.core.publisher.Mono<T>>);
+public <T> reactor.core.publisher.Mono<T> withCallingTransaction(reactor.core.publisher.Mono<T>);
+public java.lang.Object transactionResource();
+public pe.axiz.kit.r2dbc.R2dbcSql(io.r2dbc.spi.ConnectionFactory);
+public reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
+public static final java.lang.String CONNECTION_KEY = "pe.axiz.r2dbc.connection";
+}
+
+public final class pe.axiz.kit.r2dbc.R2dbcTransactionRunner implements pe.axiz.core.commons.tx.TransactionRunner {
+public <T> T inTransaction(java.util.concurrent.Callable<T>) throws java.lang.Exception;
+public pe.axiz.kit.r2dbc.R2dbcTransactionRunner(io.r2dbc.spi.ConnectionFactory, java.time.Duration);
+}
+
+public final class pe.axiz.kit.r2dbc.R2dbcUrls {
+public static java.lang.String toJdbc(java.lang.String);
+public static pe.axiz.kit.r2dbc.R2dbcUrls$Endpoint endpoint(java.lang.String);
+}
+
+public final class pe.axiz.kit.r2dbc.R2dbcUrls$Endpoint extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int port();
+public java.lang.String database();
+public java.lang.String host();
+public pe.axiz.kit.r2dbc.R2dbcUrls$Endpoint(java.lang.String, int, java.lang.String);
+}
+
+public interface pe.axiz.kit.r2dbc.ReactiveSql {
+public abstract <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
+public abstract reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
+public default <T> reactor.core.publisher.Mono<T> queryOne(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
+public default java.lang.Object transactionResource();
+}
+
+public interface pe.axiz.kit.r2dbc.RowMapper<T> {
+public abstract T map(pe.axiz.kit.r2dbc.SqlRow);
+}
+
+public final class pe.axiz.kit.r2dbc.SqlParams {
+public java.lang.String toString();
+public java.util.List<pe.axiz.kit.r2dbc.SqlParams$Param> params();
+public pe.axiz.kit.r2dbc.SqlParams bind(java.lang.String, java.lang.Object);
+public pe.axiz.kit.r2dbc.SqlParams bind(java.lang.String, java.lang.Object, java.lang.Class<?>);
+public pe.axiz.kit.r2dbc.SqlParams$Param get(java.lang.String);
+public static pe.axiz.kit.r2dbc.SqlParams of();
+}
+
+public final class pe.axiz.kit.r2dbc.SqlParams$Param extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.Class<?> type();
+public java.lang.Object value();
+public java.lang.String name();
+public pe.axiz.kit.r2dbc.SqlParams$Param(java.lang.String, java.lang.Object, java.lang.Class<?>);
+}
+
+public interface pe.axiz.kit.r2dbc.SqlRow {
+public abstract <T> T get(java.lang.String, java.lang.Class<T>);
+public default <T> T require(java.lang.String, java.lang.Class<T>);
+}

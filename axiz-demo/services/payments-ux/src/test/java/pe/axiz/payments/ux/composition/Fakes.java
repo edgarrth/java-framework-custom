@@ -40,7 +40,7 @@ public final class Fakes {
 
   static ExternalServiceException downstream(int status, @Nullable String code) {
     return ExternalServiceException.from(
-        new ExternalErrorDetail("payments-business", status, code, "rejected", "{}"));
+        new ExternalErrorDetail("payment-orders", status, code, "rejected", "{}"));
   }
 
   public static final class Crud implements BeneficiariesClient {

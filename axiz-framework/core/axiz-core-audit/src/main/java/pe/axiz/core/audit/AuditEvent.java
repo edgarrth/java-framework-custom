@@ -79,39 +79,6 @@ public record AuditEvent(
     this.details = Collections.unmodifiableMap(new LinkedHashMap<>(details));
   }
 
-  /** Compatibility constructor; callers without transaction evidence use UNKNOWN on both axes. */
-  public AuditEvent(
-      String id,
-      Instant occurredAt,
-      String service,
-      String action,
-      String resourceType,
-      @Nullable String resourceId,
-      Actor actor,
-      Outcome outcome,
-      @Nullable String errorCode,
-      @Nullable String correlationId,
-      @Nullable String channel,
-      @Nullable String tenant,
-      Map<String, @Nullable Object> details) {
-    this(
-        id,
-        occurredAt,
-        service,
-        action,
-        resourceType,
-        resourceId,
-        actor,
-        outcome,
-        errorCode,
-        correlationId,
-        channel,
-        tenant,
-        details,
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
-  }
-
   public AuditEvent withOutcomes(TransactionOutcome local, TransactionOutcome operation) {
     return new AuditEvent(
         id,

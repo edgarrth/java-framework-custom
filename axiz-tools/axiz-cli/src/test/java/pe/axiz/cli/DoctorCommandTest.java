@@ -74,10 +74,18 @@ class DoctorCommandTest {
               .orElseThrow();
     }
     String annotated = Files.readString(application);
-    Files.writeString(
-        application,
-        annotated.replace(
-            "@ExtendWith(BlockHoundExtension.class)", "// @ExtendWith(BlockHoundExtension.class)"));
+    // Scoped contracts also generate instrumented authorization tests. Remove every explicit
+    // extension so this project-level check does not accidentally find one in another class.
+    try (var sources = Files.walk(project.resolve("src/test/java"))) {
+      for (Path source : sources.filter(path -> path.toString().endsWith(".java")).toList()) {
+        String text = Files.readString(source);
+        Files.writeString(
+            source,
+            text.replace(
+                "@ExtendWith(BlockHoundExtension.class)",
+                "// @ExtendWith(BlockHoundExtension.class)"));
+      }
+    }
     assertTrue(
         any(
             messages(doctor().checks(project), DoctorCommand.Level.ERROR),
@@ -143,7 +151,8 @@ class DoctorCommandTest {
     Path persistence = Files.createDirectories(sources.resolve("adapter/out/persistence"));
     Files.writeString(
         persistence.resolve("Persistence.java"),
-        "package pe.axiz.orders.adapter.out.persistence;\nimport pe.axiz.kit.jpa.JpaRepositories;\n");
+        "package pe.axiz.orders.adapter.out.persistence;\n"
+            + "import pe.axiz.kit.jpa.JpaRepositories;\n");
     List<String> errors = messages(doctor().checks(p), DoctorCommand.Level.ERROR);
     assertTrue(any(errors, "hexagonal domain"), errors.toString());
     assertTrue(any(errors, "kits are only allowed"), errors.toString());

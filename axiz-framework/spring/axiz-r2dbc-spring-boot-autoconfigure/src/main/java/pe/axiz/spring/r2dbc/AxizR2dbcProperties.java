@@ -30,10 +30,6 @@ public record AxizR2dbcProperties(
     if (encryptionContext != null) EncryptionContext.require(encryptionContext);
   }
 
-  public AxizR2dbcProperties(Iam iam, Reader reader, boolean flywayFromR2dbc, Auditing auditing) {
-    this(iam, reader, flywayFromR2dbc, auditing, null);
-  }
-
   /**
    * IAM authentication: each new connection gets a token signed with the pod's credentials (IRSA or
    * EKS Pod Identity) instead of a stored password.

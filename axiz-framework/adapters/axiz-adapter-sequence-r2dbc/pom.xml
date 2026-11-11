@@ -10,9 +10,6 @@
 
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
     <axiz.module.name>pe.axiz.adapter.sequence.r2dbc</axiz.module.name>
-    <!-- No 1.x coordinate exists. The API gate checks the approved new-module inventory instead. -->
-    <axiz.api.skip>true</axiz.api.skip>
-    <axiz.api.new-module>true</axiz.api.new-module>
   </properties>
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-r2dbc</artifactId><version>${project.version}</version></dependency>

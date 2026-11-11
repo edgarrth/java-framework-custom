@@ -1,0 +1,141 @@
+public final class pe.axiz.extension.cqrs.AccessPolicies {
+public boolean covers(java.lang.Class<?>);
+public boolean isEmpty();
+public java.util.List<java.lang.Class<?>> unprotected(java.util.Collection<java.lang.Class<?>>);
+public pe.axiz.extension.cqrs.AccessPolicies(java.util.Collection<? extends pe.axiz.extension.cqrs.AccessPolicy<?>>);
+public static pe.axiz.extension.cqrs.AccessPolicies none();
+public void check(java.lang.Object, pe.axiz.extension.cqrs.Caller);
+}
+
+public interface pe.axiz.extension.cqrs.AccessPolicy<R> {
+public abstract java.lang.Class<R> requestType();
+public abstract void check(R, pe.axiz.extension.cqrs.Caller);
+}
+
+public interface pe.axiz.extension.cqrs.AuditedCommand<R> extends pe.axiz.extension.cqrs.Command<R> {
+public abstract java.lang.String auditAction();
+public abstract java.lang.String auditResource();
+public default java.lang.String auditResourceId();
+}
+
+public final class pe.axiz.extension.cqrs.Buses implements pe.axiz.extension.cqrs.CommandBus,pe.axiz.extension.cqrs.QueryBus {
+public <R> R ask(pe.axiz.extension.cqrs.Query<R>);
+public <R> R send(pe.axiz.extension.cqrs.Command<R>);
+public boolean handles(java.lang.Class<?>);
+public pe.axiz.extension.cqrs.Buses(java.util.List<pe.axiz.extension.cqrs.Buses$Registration>, java.util.List<pe.axiz.extension.cqrs.PipelineBehavior>);
+public static <C extends pe.axiz.extension.cqrs.Command<R>, R> pe.axiz.extension.cqrs.Buses$Registration command(java.lang.Class<C>, java.lang.Class<R>, pe.axiz.extension.cqrs.CommandHandler<C, R>);
+public static <Q extends pe.axiz.extension.cqrs.Query<R>, R> pe.axiz.extension.cqrs.Buses$Registration query(java.lang.Class<Q>, java.lang.Class<R>, pe.axiz.extension.cqrs.QueryHandler<Q, R>);
+public static java.lang.String operationName(java.lang.Class<?>);
+}
+
+public final class pe.axiz.extension.cqrs.Buses$Registration extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.Class<?> requestType();
+public java.lang.Class<?> resultType();
+public java.util.function.Function<java.lang.Object, java.lang.Object> handler();
+public pe.axiz.extension.cqrs.Buses$Registration(java.lang.Class<?>, java.lang.Class<?>, java.util.function.Function<java.lang.Object, java.lang.Object>);
+}
+
+public final class pe.axiz.extension.cqrs.Caller extends java.lang.Record {
+public boolean authenticated();
+public boolean hasAnyAuthority(java.lang.String...);
+public boolean hasAuthority(java.lang.String);
+public boolean isMachine();
+public boolean isUser(java.lang.String);
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String clientId();
+public java.lang.String issuer();
+public java.lang.String subject();
+public java.lang.String tenant();
+public java.util.Set<java.lang.String> authorities();
+public pe.axiz.extension.cqrs.Caller(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Set<java.lang.String>);
+public static pe.axiz.extension.cqrs.Caller anonymous();
+}
+
+public interface pe.axiz.extension.cqrs.Command<R> extends pe.axiz.extension.cqrs.Request<R> {
+}
+
+public interface pe.axiz.extension.cqrs.CommandBus {
+public abstract <R> R send(pe.axiz.extension.cqrs.Command<R>);
+}
+
+public interface pe.axiz.extension.cqrs.CommandHandler<C extends pe.axiz.extension.cqrs.Command<R>, R> {
+public abstract R handle(C);
+}
+
+public class pe.axiz.extension.cqrs.HandlerNotFoundException extends java.lang.IllegalStateException {
+public pe.axiz.extension.cqrs.HandlerNotFoundException(java.lang.Class<?>);
+}
+
+public interface pe.axiz.extension.cqrs.IdempotentCommand<R> extends pe.axiz.extension.cqrs.Command<R> {
+public abstract java.lang.String idempotencyKey();
+}
+
+public final class pe.axiz.extension.cqrs.Invocation<R> extends java.lang.Record {
+public boolean isCommand();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.Class<?> resultType();
+public java.lang.String name();
+public pe.axiz.extension.cqrs.Invocation(pe.axiz.extension.cqrs.Request<R>, java.lang.String, java.lang.Class<?>);
+public pe.axiz.extension.cqrs.Request<R> request();
+}
+
+public interface pe.axiz.extension.cqrs.OpenAccess extends java.lang.annotation.Annotation {
+public abstract java.lang.String reason();
+}
+
+public interface pe.axiz.extension.cqrs.PipelineBehavior {
+public abstract <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
+public abstract int order();
+public static final int AUDIT = 500;
+public static final int AUTHORIZATION = 200;
+public static final int IDEMPOTENCY = 300;
+public static final int METRICS = 600;
+public static final int TRANSACTION = 400;
+public static final int VALIDATION = 100;
+}
+
+public interface pe.axiz.extension.cqrs.PipelineBehavior$Next<R> {
+public abstract R proceed();
+}
+
+public interface pe.axiz.extension.cqrs.Projection<E> {
+public abstract void project(E);
+}
+
+public interface pe.axiz.extension.cqrs.Query<R> extends pe.axiz.extension.cqrs.Request<R> {
+}
+
+public interface pe.axiz.extension.cqrs.QueryBus {
+public abstract <R> R ask(pe.axiz.extension.cqrs.Query<R>);
+}
+
+public interface pe.axiz.extension.cqrs.QueryHandler<Q extends pe.axiz.extension.cqrs.Query<R>, R> {
+public abstract R handle(Q);
+}
+
+public interface pe.axiz.extension.cqrs.ReactiveAccessPolicy<R> {
+public abstract java.lang.Class<R> requestType();
+public abstract org.reactivestreams.Publisher<java.lang.Void> check(R, pe.axiz.extension.cqrs.Caller);
+}
+
+public interface pe.axiz.extension.cqrs.ReactiveCommandHandler<C extends pe.axiz.extension.cqrs.Command<R>, R> {
+public abstract org.reactivestreams.Publisher<R> handle(C);
+}
+
+public interface pe.axiz.extension.cqrs.ReactiveQueryHandler<Q extends pe.axiz.extension.cqrs.Query<R>, R> {
+public abstract org.reactivestreams.Publisher<R> handle(Q);
+}
+
+public interface pe.axiz.extension.cqrs.Request<R> {
+}
+
+public interface pe.axiz.extension.cqrs.RequiresAuthority extends java.lang.annotation.Annotation {
+public abstract java.lang.String[] value();
+}

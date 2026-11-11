@@ -26,6 +26,7 @@ import pe.axiz.adapter.storage.s3.S3ObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -77,7 +78,7 @@ public class AxizStorageS3AutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  @ConditionalOnProperty("axiz.storage.bucket")
+  @ConditionalOnConfiguredProperty("axiz.storage.bucket")
   @ConditionalOnImperativeApplication
   ObjectStorage axizS3ObjectStorage(S3Client s3, S3Presigner presigner, AxizStorageProperties p) {
     String configuredKey = p.kmsKeyId();
@@ -89,7 +90,7 @@ public class AxizStorageS3AutoConfiguration {
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnMissingBean(AsyncObjectStorage.class)
-  @ConditionalOnProperty("axiz.storage.bucket")
+  @ConditionalOnConfiguredProperty("axiz.storage.bucket")
   static class ReactiveConfiguration {
     @Bean(destroyMethod = "close")
     @Conditional(DefaultResourcesNeeded.class)

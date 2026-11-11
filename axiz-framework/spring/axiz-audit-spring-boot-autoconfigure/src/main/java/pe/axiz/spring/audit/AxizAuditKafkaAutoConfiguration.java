@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +23,7 @@ import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.adapter.audit.kafka.KafkaAuditPublisher;
 import pe.axiz.adapter.audit.kafka.KafkaAuditRecords;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 
 /**
@@ -37,7 +37,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
       "pe.axiz.adapter.audit.kafka.KafkaAuditPublisher",
       "org.springframework.kafka.core.ProducerFactory"
     })
-@ConditionalOnProperty("axiz.audit.kafka.topic")
+@ConditionalOnConfiguredProperty("axiz.audit.kafka.topic")
 @ConditionalOnBean(ProducerFactory.class)
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizAuditProperties.class)

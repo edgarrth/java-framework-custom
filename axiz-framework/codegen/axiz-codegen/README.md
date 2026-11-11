@@ -32,7 +32,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Extension` | Optional architectural extension, such as CQRS, validated against the archetype and structure. |
 | `ProjectRequest` | What to generate. |
 | `Stack` | Web stack of a service. |
-| `ApiOperation` | One operation of the contract. |
+| `ApiOperation` | One contract operation, including its explicit `Access` policy and scopes. |
 | `ContractDiff` | Compatibility check between two versions of a contract, from the point of view of existing consumers: removed operations, new required inputs, removed or retyped response fields and narrowed enums are breaking; new operations, optional inputs and response fields are not. |
 | `LintFinding` | A contract rule violation. |
 | `OpenApiDocument` | Minimal, safe reader of OpenAPI 3.x documents (YAML or JSON): operations, tags, schemas and examples needed by the generators. |
@@ -85,3 +85,39 @@ receivers use their declared CloudEvents identity and reject messages until busi
 implemented. Synchronization creates missing adapters and preserves existing implementations and
 binding configuration. Consuming contracts require a declared messaging capability. Reference
 expansion has a shared budget across the whole contract, including repeated operations.
+
+## Explicit HTTP access
+
+Service generation and contract synchronization require a supported access policy for every
+operation. Operation-level `security` overrides the root requirement; an omitted declaration
+inherits the root. The generator does not infer public access from missing scopes.
+
+| Contract policy | Generated protection |
+|---|---|
+| One OAuth2/OpenID Connect requirement with scopes | `@PreAuthorize` requiring every declared scope |
+| One HTTP bearer or OAuth2/OpenID Connect requirement with an empty scope list | `@AuthenticatedAccess` |
+| Explicit `security: []` | `@PublicEndpoint` and the corresponding `axiz.security.public-paths` entry |
+
+Missing declarations, unknown schemes, alternative/multiple requirements and unsupported schemes
+are rejected before writing a service. A public path pattern overlapping an authenticated-only
+path is rejected too: the framework's public matcher is path based. Use distinct paths or scoped
+method guards. Contract synchronization preserves application configuration; review public-path
+configuration when merging a newly public controller proposal. Parsing external HTTP-client
+contracts remains independent of these service-generation rules.
+
+## Generated audit resources
+
+AWS audit destinations stay required in production. LocalStack init creates a dedicated
+`<service>-audit` queue or SNS topic, and the local profile points to it. Generated
+`AuditTestConfiguration` provisions actual resources and registers their returned queue URL/topic
+ARN through a context initializer before auto-configuration conditions are evaluated. Temporary
+synchronous setup clients close immediately; application clients, completion pools and metrics are
+created by the production auto-configurations. The integration class closes its context after the
+class, restoring the SDK test credentials and stopping its container, and runs in isolation when
+JUnit parallel execution is enabled. No application resource is
+silently provisioned by the framework's generic LocalStack fixture.
+
+The regular `samples` and nightly `samples-matrix` jobs verify six extra consumers: servlet and
+reactive, each with outbox/SQS, outbox/SNS and `audit-sqs`. Their manifest is separate from the
+nine default archetypes so native module selection keeps its explicit scope. The HTTP acceptance
+job also exercises scoped, authenticated-only and public requests in both stacks.

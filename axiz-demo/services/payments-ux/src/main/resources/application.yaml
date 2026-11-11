@@ -31,7 +31,7 @@ axiz:
   config:
     environment: ${AXIZ_ENVIRONMENT:local}
     parameter-store:
-      application: payments-experience
+      application: payments-ux
   i18n:
     default-locale: es-PE
   sensitive:
@@ -53,7 +53,6 @@ axiz:
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
-      - payments-experience
       - payments-ux
   resilience:
     defaults:
@@ -62,13 +61,13 @@ axiz:
   http-client:
     clients:
       payment-orders:
-        base-url: ${PAYMENTS_BUSINESS_BASE_URL:http://localhost:8089}
+        base-url: ${PAYMENT_ORDERS_BASE_URL:http://localhost:8089}
         auth:
           type: TOKEN_RELAY
         read-timeout: 2s
         total-timeout: 3s
       beneficiaries:
-        base-url: ${BENEFICIARIES_CRUD_BASE_URL:http://localhost:8089}
+        base-url: ${BENEFICIARIES_BASE_URL:http://localhost:8089}
         auth:
           type: TOKEN_RELAY
         read-timeout: 2s
@@ -88,11 +87,11 @@ axiz:
         enabled: ${AXIZ_FLAG_PAYMENTS_USD:false}
         percentage: 100
   messaging:
-    source: urn:axiz:payments-experience
+    source: urn:axiz:payments-ux
     consumer:
-      name: payments-experience
+      name: payments-ux
     kafka:
-      group-id: payments-experience
+      group-id: payments-ux
 management:
   opentelemetry:
     tracing:

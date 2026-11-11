@@ -35,6 +35,13 @@ public record AxizCryptoProperties(
       @DefaultValue("16") int blindIndexBytes) {
     public Fields {
       keyIds = List.copyOf(keyIds);
+      if (currentKeyId != null && (currentKeyId.isBlank() || currentKeyId.contains("${")))
+        throw new IllegalArgumentException(
+            "axiz.crypto.fields.current-key-id must not be blank or unresolved");
+      if (blindIndexSecret != null
+          && (blindIndexSecret.isBlank() || blindIndexSecret.contains("${")))
+        throw new IllegalArgumentException(
+            "axiz.crypto.fields.blind-index-secret must not be blank or unresolved");
     }
   }
 
@@ -48,7 +55,13 @@ public record AxizCryptoProperties(
   public record Kms(
       @Nullable String keyId,
       @DefaultValue("5m") Duration dataKeyMaxAge,
-      @DefaultValue("1000") long dataKeyMaxUses) {}
+      @DefaultValue("1000") long dataKeyMaxUses) {
+    public Kms {
+      if (keyId != null && (keyId.isBlank() || keyId.contains("${")))
+        throw new IllegalArgumentException(
+            "axiz.crypto.kms.key-id must not be blank or unresolved");
+    }
+  }
 
   /**
    * Password hashing.

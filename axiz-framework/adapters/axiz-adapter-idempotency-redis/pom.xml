@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-idempotency-redis</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.adapter.idempotency.redis</axiz.module.name>
   </properties>
 

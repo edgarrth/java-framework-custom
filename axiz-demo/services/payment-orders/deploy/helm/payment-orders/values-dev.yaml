@@ -1,7 +1,7 @@
 environment: dev
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/payments-business-dev
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/payment-orders-dev
 resources:
   requests:
     cpu: 250m
@@ -17,7 +17,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: dev/payments-business
+  remotePrefix: dev/payment-orders
 config:
   axiz:
     config:
@@ -26,7 +26,6 @@ config:
       issuers:
       - issuer: https://sso.dev.axiz-demo.example/realms/axiz
         audiences:
-        - payments-business
         - payment-orders
     jpa:
       aws-wrapper:
@@ -34,7 +33,7 @@ config:
         iam: true
     crypto:
       kms:
-        key-id: alias/payments-business-dev
+        key-id: alias/payment-orders-dev
       fields:
         current-key-id: v1
         key-ids:
@@ -51,8 +50,8 @@ config:
         probability: '1.0'
   spring:
     datasource:
-      url: jdbc:aws-wrapper:postgresql://payments-dev.cluster-demo.us-east-1.rds.amazonaws.com:5432/payments_business
-      username: payments-business-app
+      url: jdbc:aws-wrapper:postgresql://payments-dev.cluster-demo.us-east-1.rds.amazonaws.com:5432/payment_orders
+      username: payment-orders-app
     kafka:
       bootstrap-servers: b-1.payments-dev.kafka.us-east-1.amazonaws.com:9098,b-2.payments-dev.kafka.us-east-1.amazonaws.com:9098
 errors: []

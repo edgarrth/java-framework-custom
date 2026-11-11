@@ -38,7 +38,7 @@ class PaymentNotificationHandlerTest {
   static EventEnvelope envelope(String id) {
     return new EventEnvelope(
             id,
-            "urn:axiz:payments-business",
+            "urn:axiz:payment-orders",
             "pe.axiz.payments.payment-order.status-changed.v1",
             Instant.parse("2026-10-12T15:00:00Z"),
             "O-1",

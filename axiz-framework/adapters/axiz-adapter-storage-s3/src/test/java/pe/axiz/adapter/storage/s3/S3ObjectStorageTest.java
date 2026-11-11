@@ -151,7 +151,8 @@ class S3ObjectStorageTest {
       assertTrue(url.contains("X-Amz-Expires=900"), url);
       assertTrue(
           storage
-              .presignPut("in/new.txt", "text/plain", Duration.ofMinutes(1))
+              .presignUpload("in/new.txt", "text/plain", Duration.ofMinutes(1))
+              .url()
               .toString()
               .contains("X-Amz-Expires=60"));
       assertThrows(
@@ -203,7 +204,8 @@ class S3ObjectStorageTest {
       assertNull(s3.puts.get(0).serverSideEncryption());
       assertNull(s3.puts.get(0).ssekmsKeyId());
       assertEquals(2L, s3.contentLengths.get(0));
-      String url = storage.presignPut("in/y.txt", "text/plain", Duration.ofMinutes(1)).toString();
+      String url =
+          storage.presignUpload("in/y.txt", "text/plain", Duration.ofMinutes(1)).url().toString();
       assertTrue(!url.contains("x-amz-server-side-encryption"), url);
     }
   }
@@ -258,7 +260,7 @@ class S3ObjectStorageTest {
   }
 
   @Test
-  void presignedUploadsIncludeEverySignedHeaderAndPreserveTheLegacySseContract() {
+  void presignedUploadsIncludeEverySignedHeaderAndPreserveSsePolicy() {
     try (var signer = presigner()) {
       var storage =
           new S3ObjectStorage(new FakeS3(), signer, "files", "alias/files", Duration.ofMinutes(15));
@@ -282,8 +284,9 @@ class S3ObjectStorageTest {
       var expected = new HashSet<>(List.of(signed.split(";")));
       expected.remove("host");
       assertEquals(expected, upload.headers().keySet());
-      String legacy = storage.presignPut("in/x", "text/plain", Duration.ofMinutes(1)).toString();
-      assertTrue(!legacy.contains("bucket-key-enabled"));
+      String url =
+          storage.presignUpload("in/x", "text/plain", Duration.ofMinutes(1)).url().toString();
+      assertTrue(!url.contains("bucket-key-enabled"));
     }
   }
 }

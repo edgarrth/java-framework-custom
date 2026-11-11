@@ -59,14 +59,14 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
   @Option(
       names = "--outbox-jdbc-url",
       description =
-          "Read-only outbox upgrade report (PostgreSQL); credentials from"
+          "Read-only outbox diagnostic report (PostgreSQL); credentials from"
               + " AXIZ_DOCTOR_DB_USER/PASSWORD.")
   @Nullable String outboxJdbcUrl;
 
   @Option(
       names = "--outbox-table",
       defaultValue = "axiz_outbox",
-      description = "Outbox table for the optional upgrade report.")
+      description = "Outbox table for the optional diagnostic report.")
   String outboxTable = "axiz_outbox";
 
   /** Result of one check. */

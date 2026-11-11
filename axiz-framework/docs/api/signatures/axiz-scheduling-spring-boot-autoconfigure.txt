@@ -1,0 +1,22 @@
+public class pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration {
+public pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration();
+}
+
+public class pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration {
+public pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration();
+}
+
+public final class pe.axiz.spring.scheduling.AxizSchedulingProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String store();
+public java.lang.String table();
+public java.time.Duration defaultLockAtMostFor();
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
+public pe.axiz.spring.scheduling.AxizSchedulingProperties(java.lang.String, java.lang.String, java.time.Duration, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
+}
+
+public class pe.axiz.spring.scheduling.AxizSchedulingR2dbcAutoConfiguration {
+public pe.axiz.spring.scheduling.AxizSchedulingR2dbcAutoConfiguration();
+}

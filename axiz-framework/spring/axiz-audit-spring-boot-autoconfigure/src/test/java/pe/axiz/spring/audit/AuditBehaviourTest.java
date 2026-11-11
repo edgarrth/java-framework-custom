@@ -50,6 +50,7 @@ import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.ConfirmedAuditPublisher;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
 import reactor.core.publisher.Flux;
@@ -63,7 +64,7 @@ class AuditBehaviourTest {
   private ApplicationContextRunner sync() {
     return new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-        .withPropertyValues("spring.application.name=payments", "axiz.audit.async.enabled=false")
+        .withPropertyValues("spring.application.name=payments", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add));
   }
 
@@ -105,7 +106,9 @@ class AuditBehaviourTest {
                         null,
                         null,
                         null,
-                        Map.of()));
+                        Map.of(),
+                        TransactionOutcome.UNKNOWN,
+                        TransactionOutcome.UNKNOWN));
                 assertTrue(interrupted.await(2, TimeUnit.SECONDS));
                 await()
                     .atMost(Duration.ofSeconds(2))
@@ -243,7 +246,7 @@ class AuditBehaviourTest {
   void durableAuditNeedsTheOutboxAndKeepsTheQueueAsFallback() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-        .withPropertyValues("axiz.audit.durable.enabled=true")
+        .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
         .run(
             ctx ->
                 assertThat(ctx)
@@ -254,7 +257,8 @@ class AuditBehaviourTest {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues(
-            "axiz.audit.durable.enabled=true",
+            "axiz.audit.mode=DURABLE",
+            "axiz.outbox.relay.enabled=false",
             "axiz.audit.durable.destination=audit-events",
             "axiz.audit.durable.outside-transaction=fail")
         .withBean(OutboxWriter.class, () -> new OutboxWriter(outbox(), Clock.systemUTC()))
@@ -320,7 +324,7 @@ class AuditBehaviourTest {
   void theServletAuditRecordsChangesByRoutePatternAndStatus() throws Exception {
     new WebApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-        .withPropertyValues("axiz.audit.async.enabled=false", "axiz.audit.http.enabled=true")
+        .withPropertyValues("axiz.audit.mode=SYNC", "axiz.audit.http.enabled=true")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
         .run(
             ctx -> {
@@ -368,7 +372,7 @@ class AuditBehaviourTest {
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
-        .withPropertyValues("axiz.audit.async.enabled=false", "axiz.audit.http.enabled=true")
+        .withPropertyValues("axiz.audit.mode=SYNC", "axiz.audit.http.enabled=true")
         .withBean(
             AsyncAuditSink.class,
             () ->

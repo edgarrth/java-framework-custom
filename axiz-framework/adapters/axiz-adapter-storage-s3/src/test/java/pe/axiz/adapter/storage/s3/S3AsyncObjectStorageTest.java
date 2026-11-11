@@ -314,9 +314,10 @@ class S3AsyncObjectStorageTest {
               .contains("X-Amz-Expires=900"));
       assertTrue(
           storage
-              .presignPut("x", "text/plain", Duration.ofMinutes(1))
+              .presignUpload("x", "text/plain", Duration.ofMinutes(1))
               .toCompletableFuture()
               .join()
+              .url()
               .toString()
               .contains("X-Amz-Expires=60"));
       var upload =

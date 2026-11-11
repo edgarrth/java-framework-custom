@@ -54,12 +54,13 @@ public final class KafkaEventPublisher implements EventPublisher, BoundedPublish
 
   @Override
   public boolean supports(String destination) {
-    return destination.startsWith(SCHEME)
-        || (!destination.startsWith("https://") && !destination.startsWith("arn:"));
+    return KafkaEventRecords.isDestination(destination);
   }
 
   /** The topic of a destination, without the {@code kafka:} scheme. */
   static String topic(String destination) {
+    if (!KafkaEventRecords.isDestination(destination))
+      throw new IllegalArgumentException("Invalid Kafka destination");
     return destination.startsWith(SCHEME) ? destination.substring(SCHEME.length()) : destination;
   }
 

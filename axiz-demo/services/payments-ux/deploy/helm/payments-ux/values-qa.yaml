@@ -1,7 +1,7 @@
 environment: qa
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/payments-experience-qa
+    eks.amazonaws.com/role-arn: arn:aws:iam::222222222222:role/payments-ux-qa
 resources:
   requests:
     cpu: 250m
@@ -17,7 +17,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: qa/payments-experience
+  remotePrefix: qa/payments-ux
 config:
   axiz:
     config:
@@ -26,7 +26,6 @@ config:
       issuers:
       - issuer: https://sso.qa.axiz-demo.example/realms/axiz
         audiences:
-        - payments-experience
         - payments-ux
     http-client:
       clients:

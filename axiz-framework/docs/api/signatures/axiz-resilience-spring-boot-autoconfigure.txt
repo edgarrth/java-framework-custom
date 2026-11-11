@@ -1,0 +1,78 @@
+public class pe.axiz.spring.resilience.AxizResilienceAutoConfiguration {
+public pe.axiz.spring.resilience.AxizResilienceAutoConfiguration();
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.Map<java.lang.String, pe.axiz.spring.resilience.AxizResilienceProperties$Policy> instances();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Policy defaults();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Policy policy(java.lang.String);
+public pe.axiz.spring.resilience.AxizResilienceProperties(pe.axiz.spring.resilience.AxizResilienceProperties$Policy, java.util.Map<java.lang.String, pe.axiz.spring.resilience.AxizResilienceProperties$Policy>);
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$Bulkhead extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxConcurrentCalls();
+public java.time.Duration maxWait();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Bulkhead(boolean, int, java.time.Duration);
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public float failureRateThreshold();
+public float slowCallRateThreshold();
+public int minimumNumberOfCalls();
+public int permittedCallsInHalfOpenState();
+public int slidingWindowSize();
+public java.time.Duration slowCallDuration();
+public java.time.Duration waitInOpenState();
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker(boolean, float, float, java.time.Duration, int, int, java.time.Duration, int);
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$Policy extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Bulkhead bulkhead();
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker circuitBreaker();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Policy(pe.axiz.spring.resilience.AxizResilienceProperties$Timeouts, pe.axiz.spring.resilience.AxizResilienceProperties$Retry, pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker, pe.axiz.spring.resilience.AxizResilienceProperties$Bulkhead);
+public pe.axiz.spring.resilience.AxizResilienceProperties$Retry retry();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Timeouts timeouts();
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$Retry extends java.lang.Record {
+public double multiplier();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxAttempts();
+public java.time.Duration initialDelay();
+public java.time.Duration maxDelay();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Retry(int, java.time.Duration, double, java.time.Duration);
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$Timeouts extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.Duration connect();
+public java.time.Duration read();
+public java.time.Duration total();
+public pe.axiz.spring.resilience.AxizResilienceProperties$Timeouts(java.time.Duration, java.time.Duration, java.time.Duration);
+}
+
+public class pe.axiz.spring.resilience.ResiliencePolicies {
+public java.util.Optional<io.github.resilience4j.bulkhead.Bulkhead> bulkhead(java.lang.String);
+public java.util.Optional<io.github.resilience4j.circuitbreaker.CircuitBreaker> circuitBreaker(java.lang.String);
+public pe.axiz.core.resilience.RetryPolicy retry(java.lang.String);
+public pe.axiz.core.resilience.TimeoutSettings timeouts(java.lang.String);
+public pe.axiz.spring.resilience.ResiliencePolicies(pe.axiz.spring.resilience.AxizResilienceProperties, io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry, io.github.resilience4j.bulkhead.BulkheadRegistry);
+}

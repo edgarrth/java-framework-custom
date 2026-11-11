@@ -1,0 +1,44 @@
+public final class pe.axiz.core.featureflags.EvaluationContext extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String channel();
+public java.lang.String targetingKey();
+public java.lang.String tenant();
+public java.util.Map<java.lang.String, java.lang.String> attributes();
+public pe.axiz.core.featureflags.EvaluationContext(java.lang.String, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>);
+public static pe.axiz.core.featureflags.EvaluationContext empty();
+public static pe.axiz.core.featureflags.EvaluationContext of(java.lang.String);
+}
+
+public final class pe.axiz.core.featureflags.FeatureFlags {
+public boolean isDefined(java.lang.String);
+public boolean isEnabled(java.lang.String, pe.axiz.core.featureflags.EvaluationContext);
+public java.lang.String variant(java.lang.String, pe.axiz.core.featureflags.EvaluationContext, java.lang.String);
+public pe.axiz.core.featureflags.FeatureFlags(pe.axiz.core.featureflags.FlagProvider);
+}
+
+public final class pe.axiz.core.featureflags.FlagDefinition extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int percentage();
+public java.lang.String name();
+public java.lang.String variant();
+public java.util.Map<java.lang.String, java.util.Set<java.lang.String>> rules();
+public java.util.Set<java.lang.String> channels();
+public java.util.Set<java.lang.String> tenants();
+public pe.axiz.core.featureflags.FlagDefinition(java.lang.String, boolean, int, java.util.Set<java.lang.String>, java.util.Set<java.lang.String>, java.util.Map<java.lang.String, java.util.Set<java.lang.String>>, java.lang.String);
+public static pe.axiz.core.featureflags.FlagDefinition off(java.lang.String);
+public static pe.axiz.core.featureflags.FlagDefinition on(java.lang.String);
+}
+
+public interface pe.axiz.core.featureflags.FlagProvider {
+public abstract java.util.Optional<pe.axiz.core.featureflags.FlagDefinition> find(java.lang.String);
+}
+
+public final class pe.axiz.core.featureflags.MapFlagProvider implements pe.axiz.core.featureflags.FlagProvider {
+public java.util.Optional<pe.axiz.core.featureflags.FlagDefinition> find(java.lang.String);
+public pe.axiz.core.featureflags.MapFlagProvider(java.util.Collection<pe.axiz.core.featureflags.FlagDefinition>);
+}

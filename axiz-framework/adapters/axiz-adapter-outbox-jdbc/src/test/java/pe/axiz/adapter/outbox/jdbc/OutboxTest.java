@@ -84,28 +84,36 @@ class OutboxTest {
   }
 
   @Test
-  void legacyOperationsStillRespectHeadOrderingRetryEligibilityAndTerminalRecovery()
-      throws Exception {
+  void claimsRespectHeadOrderingRetryEligibilityAndTerminalRecovery() throws Exception {
     var writer = new OutboxWriter(store, clock);
     writer.write("t", event("head"), "order");
     writer.write("t", event("successor"), "order");
     assertEquals(
         List.of("head"),
-        tx.inTransaction(() -> store.lockDue(10, clock.instant())).stream()
+        tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner")).stream()
             .map(OutboxRecord::id)
             .toList());
-    store.markFailed("head", 1, clock.instant().plusSeconds(10), null, false);
-    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
-    store.markFailed("head", 2, clock.instant(), "permanent failure", true);
-    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
+    store.markFailed("head", "owner", 1, Instant.now().plusSeconds(3600), null, false);
+    assertTrue(
+        tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner")).isEmpty());
+    try (var connection = tx.get();
+        var statement = connection.createStatement()) {
+      statement.executeUpdate(
+          "UPDATE axiz_outbox SET next_attempt_at=CURRENT_TIMESTAMP WHERE id='head'");
+    }
+    tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner"));
+    store.markFailed("head", "owner", 2, clock.instant(), "permanent failure", true);
+    assertTrue(
+        tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner")).isEmpty());
     assertTrue(store.skip("head", "explicit recovery"));
     assertEquals(
         List.of("successor"),
-        tx.inTransaction(() -> store.lockDue(10, clock.instant())).stream()
+        tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner")).stream()
             .map(OutboxRecord::id)
             .toList());
-    store.markPublished("successor", clock.instant());
-    assertTrue(tx.inTransaction(() -> store.lockDue(10, clock.instant())).isEmpty());
+    store.markPublished("successor", "owner", clock.instant());
+    assertTrue(
+        tx.inTransaction(() -> store.claimDue(10, Duration.ofSeconds(30), "owner")).isEmpty());
     assertEquals(0, store.countPending());
   }
 
@@ -442,52 +450,6 @@ class OutboxTest {
     assertEquals("2", relayed.getLast().extension("axizseq").orElseThrow());
   }
 
-  @Test
-  void h2UpgradeKeepsFailuresAndInitializesPersistentCounters() throws Exception {
-    try (Connection c = tx.get();
-        Statement stmt = c.createStatement()) {
-      stmt.execute("DROP TABLE axiz_outbox_aggregate");
-      stmt.execute("DROP TABLE axiz_outbox");
-      stmt.execute(
-          "CREATE TABLE axiz_outbox (id VARCHAR(100) PRIMARY KEY, destination VARCHAR(200),"
-              + "aggregate_type VARCHAR(100),aggregate_id VARCHAR(200),event_type VARCHAR(200),"
-              + "envelope CLOB,status VARCHAR(20),attempts INT,created_at TIMESTAMP WITH TIME ZONE,"
-              + "next_attempt_at TIMESTAMP WITH TIME ZONE,published_at TIMESTAMP WITH TIME ZONE,"
-              + "last_error VARCHAR(1000))");
-      stmt.execute(
-          "INSERT INTO axiz_outbox VALUES ('a','t','order','agg-1','e','{}','FAILED',5,"
-              + "CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,NULL,'original error'),('b','t','order','agg-1',"
-              + "'e','{}','PUBLISHED',0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,NULL),"
-              + "('c','t',NULL,'partial','e','{}','PENDING',0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,"
-              + "NULL,NULL)");
-      try (InputStream input =
-          getClass().getResourceAsStream("/axiz/sql/outbox-h2-upgrade-sequence.sql")) {
-        for (String sql :
-            new String(input.readAllBytes(), StandardCharsets.UTF_8)
-                .replaceAll("(?m)--.*", "")
-                .split(";")) if (!sql.replaceAll("--.*", "").isBlank()) stmt.execute(sql);
-      }
-      store.verifySchema();
-      try (ResultSet rows =
-          stmt.executeQuery(
-              "SELECT status,attempts,last_error,aggregate_seq FROM axiz_outbox WHERE id='a'")) {
-        rows.next();
-        assertEquals("FAILED", rows.getString(1));
-        assertEquals(5, rows.getInt(2));
-        assertEquals("original error", rows.getString(3));
-        assertEquals(1, rows.getLong(4));
-      }
-    }
-    new OutboxWriter(store, clock).write("t", event("new"), "order");
-    try (Connection c = tx.get();
-        Statement stmt = c.createStatement();
-        ResultSet rows =
-            stmt.executeQuery("SELECT aggregate_seq FROM axiz_outbox WHERE id='new'")) {
-      rows.next();
-      assertEquals(3, rows.getLong(1));
-    }
-  }
-
   static final class MutableClock extends Clock {
     Instant now = Instant.parse("2026-01-01T00:00:00Z");
 
@@ -516,7 +478,8 @@ class OutboxTest {
     try (var connection = tx.get();
         var statement = connection.createStatement()) {
       statement.executeUpdate(
-          "UPDATE axiz_outbox SET status='FAILED',attempts=5,last_error='original error' WHERE id='a'");
+          "UPDATE axiz_outbox SET status='FAILED',attempts=5,last_error='original error' WHERE"
+              + " id='a'");
       statement.executeUpdate("UPDATE axiz_outbox SET status='PUBLISHED' WHERE id='b'");
       var failures = new ArrayList<JdbcOutboxPreflight.Failure>();
       assertEquals(1, JdbcOutboxPreflight.report(connection, "axiz_outbox", failures::add));

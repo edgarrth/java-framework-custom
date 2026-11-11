@@ -9,7 +9,7 @@ import pe.axiz.payments.process.adapter.out.bankingcore.model.Movement;
 import pe.axiz.payments.process.adapter.out.bankingcore.model.MovementRequest;
 
 /**
- * Client of the Core integration API (1.0.0), HTTP service group {@code banking-core}: base URL,
+ * Client of the Banking Core API (1.0.0), HTTP service group {@code banking-core}: base URL,
  * timeouts, retries, circuit breaker and authentication come from {@code
  * axiz.http-client.clients.banking-core.*}.
  */

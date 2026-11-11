@@ -109,31 +109,6 @@ class ProjectRenameTest {
     assertTrue(ProjectRename.problems(dir).stream().anyMatch(s -> s.contains("consumer.name")));
   }
 
-  @Test
-  void legacyIntegrationNeedsExplicitDecisionAndMigrationKeepsPackage(@TempDir Path dir)
-      throws Exception {
-    Files.createDirectories(dir.resolve(".axiz"));
-    Files.writeString(
-        dir.resolve(ProjectManifest.PATH),
-        """
-        schema: 1
-        name: core-integration
-        groupId: pe.axiz.payments
-        basePackage: pe.axiz.payments.coreintegration
-        archetype: integration
-        framework: hexagonal
-        stack: servlet
-        persistence: none
-        axizVersion: 1.0.0
-        """);
-    assertThrows(IOException.class, () -> ProjectManifest.read(dir));
-    ProjectManifest migrated = ProjectManifest.read(dir, "core").withName("banking-core");
-    migrated.write(dir);
-    assertEquals("core", ProjectManifest.read(dir).archetype());
-    assertEquals("pe.axiz.payments.coreintegration", ProjectManifest.read(dir).basePackage());
-    assertTrue(Files.readString(dir.resolve(ProjectManifest.PATH)).contains("schema: 2"));
-  }
-
   private static ProjectManifest manifest(String name) {
     return new ProjectManifest(
         name,

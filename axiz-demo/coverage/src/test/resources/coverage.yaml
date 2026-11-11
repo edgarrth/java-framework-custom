@@ -16,7 +16,7 @@ metrics:
 config:
   - {service: payment-orders, file: deploy/helm/payment-orders/templates/configmap.yaml, contains: mounted in /etc/axiz/config/service}
 i18n:
-  - {service: payments-ux, file: src/main/resources/messages_en.properties, contains: error.PAYMENTS-PAYMENTSEXPERIENCE-0001}
+  - {service: payments-ux, file: src/main/resources/messages_en.properties, contains: error.PAYMENTS-PAYMENTSUX-0001}
 sensitive:
   - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/ChannelViews.java, contains: MaskType.NAME}
 security:

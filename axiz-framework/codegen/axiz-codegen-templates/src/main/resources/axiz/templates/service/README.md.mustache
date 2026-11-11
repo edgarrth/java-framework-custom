@@ -33,6 +33,14 @@
 `ContractExamplesTest` checks that every request example of the contract is a valid request.
 {{/hasExamples}}
 
+{{#auditResources.required}}
+Audit tests create their own LocalStack resources before auto-configuration and register the returned URL/ARN.
+The framework creates the application clients; the test context owns and closes its container. They do not
+require `AXIZ_AUDIT_DESTINATION` or `AXIZ_AUDIT_QUEUE_URL` in the environment. The local profile
+uses the `{{project.name}}-audit` resource created by Compose init. Production must supply its
+configured audit destination; the local values are not production defaults.
+{{/auditResources.required}}
+
 ## Run locally
 
 ```bash
@@ -65,6 +73,11 @@ as skeletons that answer `501 Not Implemented` until each operation is implement
 - `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
   changes against the previous version (openapi-diff).
 - Lint the contract with the axiz Spectral ruleset before publishing it.
+- Declare access per operation or inherit root `security`: OAuth2/OpenID Connect scopes produce
+  a scope guard, an empty bearer/OAuth2 scope list requires authentication, and explicit
+  `security: []` declares public access. Missing or unsupported policies fail generation.
+- Review `axiz.security.public-paths` when merging a new public operation during contract sync.
+  Public paths must not overlap authenticated-only routes; use distinct paths or scoped guards.
 
 | Operation | Method | Path |
 |---|---|---|

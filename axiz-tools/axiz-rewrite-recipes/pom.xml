@@ -2,7 +2,7 @@
 <!--
   OpenRewrite recipes that `axiz upgrade` applies when a project moves to another axiz version:
   rewrite-maven-plugin with -Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:<version>
-  -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz. Each release adds its migration to the chain.
+  -Drewrite.activeRecipes=pe.axiz.UpgradeToAxiz. No pre-v2 Axiz migration is distributed.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -29,7 +29,6 @@
 
   <dependencyManagement>
     <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${axiz.version}</version><scope>test</scope></dependency>
       <!-- rewrite-java asks for ASM 9.9; gizmo (rewrite-core) still for 9.3 -->
       <dependency>
         <groupId>org.ow2.asm</groupId>
@@ -51,38 +50,10 @@
   </dependencyManagement>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>2.0.0</version><scope>test</scope></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-r2dbc</artifactId><version>2.0.0</version><scope>test</scope></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-extension-cqrs-api</artifactId><version>2.0.0</version><scope>test</scope></dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-sensitive</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.data</groupId>
-      <artifactId>spring-data-r2dbc</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-kit-jpa</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-r2dbc-spring-boot-autoconfigure</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-dynamodb-spring-boot-autoconfigure</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
+
+
+
+
     <dependency>
       <groupId>org.openrewrite</groupId>
       <artifactId>rewrite-xml</artifactId>
@@ -101,24 +72,8 @@
       <artifactId>junit-platform-launcher</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-messaging-spring-boot-autoconfigure</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.projectreactor</groupId>
-      <artifactId>reactor-core</artifactId>
-      <scope>test</scope>
-    </dependency>
 
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-archunit-rules</artifactId>
-      <version>2.0.0</version>
-      <scope>test</scope>
-    </dependency>
+
 
     <dependency>
       <groupId>org.openrewrite</groupId>

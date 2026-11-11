@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Core integration
+  title: Banking Core
   version: 1.0.0
   description: Anti-corruption layer in front of the (simulated) core banking system
     and payment network.

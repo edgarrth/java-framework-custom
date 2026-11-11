@@ -12,7 +12,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +26,7 @@ import pe.axiz.core.crypto.Pbkdf2PasswordHasher;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
 /**
  * Field encryption with keys from the secret store, blind indexes, and password hashing (Argon2id
@@ -69,7 +69,7 @@ public class AxizCryptoAutoConfiguration {
 
   /** Field encryption, active when a current key id is configured. */
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnProperty("axiz.crypto.fields.current-key-id")
+  @ConditionalOnConfiguredProperty("axiz.crypto.fields.current-key-id")
   @ConditionalOnBean(SecretResolver.class)
   static class FieldsConfiguration {
 
@@ -100,7 +100,7 @@ public class AxizCryptoAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty("axiz.crypto.fields.blind-index-secret")
+    @ConditionalOnConfiguredProperty("axiz.crypto.fields.blind-index-secret")
     BlindIndex axizBlindIndex(AxizCryptoProperties p, SecretResolver secrets) {
       String name = Objects.requireNonNull(p.fields().blindIndexSecret());
       byte[] key =

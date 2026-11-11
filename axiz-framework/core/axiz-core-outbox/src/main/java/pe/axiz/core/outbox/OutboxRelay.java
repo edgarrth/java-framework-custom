@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.LongSupplier;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.commons.tx.TransactionRunner;
-import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
@@ -43,44 +41,9 @@ public final class OutboxRelay {
   private final LongSupplier nanoTime;
   private final OutboxRelayListener listener;
 
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        Duration.ofMinutes(3));
-  }
-
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        lease,
-        BoundedPublisher.of(publisher).budget(Optional.empty()));
+  /** Declared routing compatibility of the effective publisher; does not query the broker. */
+  public boolean supportsDestination(String destination) {
+    return publisher.supports(destination);
   }
 
   public OutboxRelay(

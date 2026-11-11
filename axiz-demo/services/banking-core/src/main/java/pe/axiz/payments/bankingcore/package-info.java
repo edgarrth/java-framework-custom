@@ -1,7 +1,6 @@
 /**
- * Core Integration: Anti-corruption layer of the core banking system and the payment network.
- * Archetype integration, hexagonal style, servlet stack. Types are non-null unless annotated
- * {@code @Nullable}.
+ * Banking Core: Anti-corruption layer of the internal core banking system. Archetype core,
+ * hexagonal structure, servlet stack. Types are non-null unless annotated {@code @Nullable}.
  */
 @NullMarked
 package pe.axiz.payments.bankingcore;

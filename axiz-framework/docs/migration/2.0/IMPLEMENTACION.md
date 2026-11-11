@@ -1,3 +1,6 @@
+> Registro histórico de implementación hasta el 3 de noviembre. La política vigente del 10 de
+> descritas abajo documentan ejecuciones anteriores; no son criterios actuales de aceptación.
+
 
 Estado: **implementación y validación local completadas para el alcance de 2.0.0**, actualizado el 3 de noviembre de 2026. Este registro no declara
 terminada ni publicada la versión 2.0. La referencia normativa es el

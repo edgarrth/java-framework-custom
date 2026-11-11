@@ -29,7 +29,7 @@ axiz:
   config:
     environment: ${AXIZ_ENVIRONMENT:local}
     parameter-store:
-      application: core-integration
+      application: banking-core
   i18n:
     default-locale: es-PE
   sensitive:
@@ -42,7 +42,6 @@ axiz:
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
-      - core-integration
       - banking-core
   resilience:
     defaults:
@@ -59,7 +58,7 @@ axiz:
         auth:
           type: CLIENT_CREDENTIALS
           token-uri: ${CORE_BANKING_TOKEN_URI:http://localhost:8089/oauth/token}
-          client-id: ${CORE_BANKING_CLIENT_ID:core-integration}
+          client-id: ${CORE_BANKING_CLIENT_ID:banking-core}
           client-secret-ref: core-banking-client-secret
           scopes:
           - movements
@@ -70,7 +69,7 @@ axiz:
       core-credit:
         endpoint: ${CORE_CREDIT_SOAP_ENDPOINT:http://localhost:8089/soap/credit}
         timeout: 8s
-        username: ${CORE_CREDIT_SOAP_USER:core-integration}
+        username: ${CORE_CREDIT_SOAP_USER:banking-core}
         password-ref: core-soap-password
         password-mode: LEGACY_SHA1_DIGEST
   lock:
@@ -78,13 +77,13 @@ axiz:
   audit:
     mode: ASYNC
     sqs:
-      queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+      queue-url: ${AXIZ_AUDIT_QUEUE_URL}
   messaging:
-    source: urn:axiz:core-integration
+    source: urn:axiz:banking-core
     consumer:
-      name: core-integration
+      name: banking-core
     kafka:
-      group-id: core-integration
+      group-id: banking-core
 management:
   opentelemetry:
     tracing:

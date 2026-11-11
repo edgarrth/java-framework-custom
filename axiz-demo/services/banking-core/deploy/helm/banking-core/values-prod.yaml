@@ -1,7 +1,7 @@
 environment: prod
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/core-integration-prod
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/banking-core-prod
 resources:
   requests:
     cpu: 500m
@@ -19,7 +19,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: prod/core-integration
+  remotePrefix: prod/banking-core
 config:
   axiz:
     config:
@@ -28,7 +28,6 @@ config:
       issuers:
       - issuer: https://sso.prod.axiz-demo.example/realms/axiz
         audiences:
-        - core-integration
         - banking-core
     http-client:
       clients:
@@ -37,7 +36,7 @@ config:
           auth:
             type: CLIENT_CREDENTIALS
             token-uri: https://core-gw.prod.bank.example/oauth/token
-            client-id: core-integration
+            client-id: banking-core
             client-secret-ref: core-banking-client-secret
             scopes:
             - movements
@@ -45,7 +44,7 @@ config:
       clients:
         core-credit:
           endpoint: https://core-gw.prod.bank.example/soap/credit
-          username: core-integration
+          username: banking-core
           password-ref: core-soap-password
     audit:
       sqs:

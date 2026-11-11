@@ -1,0 +1,94 @@
+public final class pe.axiz.core.observability.ArchitectureObservation {
+public <T> T observe(java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, java.util.Map<java.lang.String, java.lang.String>, java.util.function.Supplier<T>);
+public pe.axiz.core.observability.ArchitectureObservation$Started start(java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, java.util.Map<java.lang.String, java.lang.String>);
+public pe.axiz.core.observability.ArchitectureObservation(io.micrometer.observation.ObservationRegistry, java.util.function.Function<java.lang.Throwable, java.lang.Boolean>, pe.axiz.core.observability.AttributeSanitizer);
+public void event(java.lang.String, java.lang.String);
+public void run(java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, java.lang.Runnable);
+}
+
+public final class pe.axiz.core.observability.ArchitectureObservation$Started {
+public io.micrometer.observation.Observation observation();
+public void fail(java.lang.Throwable);
+public void succeed();
+}
+
+public final class pe.axiz.core.observability.AttributeSanitizer {
+public java.lang.String sanitizeValue(java.lang.String);
+public java.util.Map<java.lang.String, java.lang.String> sanitize(java.util.Map<java.lang.String, java.lang.String>);
+public pe.axiz.core.observability.AttributeSanitizer(java.util.Set<java.lang.String>);
+public static pe.axiz.core.observability.AttributeSanitizer defaults();
+}
+
+public final class pe.axiz.core.observability.AxizAttributes {
+public static final java.lang.String AGGREGATE_ID = "axiz.aggregate.id";
+public static final java.lang.String AWS_OPERATION = "aws.operation";
+public static final java.lang.String AWS_REQUEST_ID = "aws.request_id";
+public static final java.lang.String AWS_SERVICE = "aws.service";
+public static final java.lang.String CHANNEL = "axiz.channel";
+public static final java.lang.String CLIENT = "axiz.client";
+public static final java.lang.String COMPONENT = "axiz.component";
+public static final java.lang.String CORRELATION_ID = "axiz.correlation_id";
+public static final java.lang.String DESTINATION = "axiz.destination";
+public static final java.lang.String ERROR_CODE = "axiz.error.code";
+public static final java.lang.String ERROR_TYPE = "axiz.error.type";
+public static final java.lang.String EVENT_ID = "axiz.event.id";
+public static final java.lang.String EVENT_TYPE = "axiz.event.type";
+public static final java.lang.String OPERATION = "axiz.operation";
+public static final java.lang.String OUTCOME = "axiz.outcome";
+public static final java.lang.String TENANT = "axiz.tenant";
+}
+
+public final class pe.axiz.core.observability.AxizObservations {
+public static final java.lang.String AWS_SDK = "axiz.aws.sdk";
+public static final java.lang.String BATCH_STEP = "axiz.batch.step";
+public static final java.lang.String CLIENT = "axiz.client";
+public static final java.lang.String COMMAND = "axiz.command";
+public static final java.lang.String EVENT_HANDLER = "axiz.event.handler";
+public static final java.lang.String EVENT_PUBLISH = "axiz.event.publish";
+public static final java.lang.String INBOX = "axiz.inbox";
+public static final java.lang.String OUTBOX_DISPATCH = "axiz.outbox.dispatch";
+public static final java.lang.String OUTBOX_RELAY = "axiz.outbox.relay";
+public static final java.lang.String OUTBOX_WRITE = "axiz.outbox.write";
+public static final java.lang.String QUERY = "axiz.query";
+public static final java.lang.String SAGA_STEP = "axiz.saga.step";
+public static final java.lang.String SOAP_CLIENT = "axiz.soap.client";
+public static final java.lang.String USE_CASE = "axiz.usecase";
+}
+
+public final class pe.axiz.core.observability.LoggingStructuredEventEmitter implements pe.axiz.core.observability.StructuredEventEmitter {
+public pe.axiz.core.observability.LoggingStructuredEventEmitter(io.micrometer.observation.ObservationRegistry, pe.axiz.core.observability.AttributeSanitizer);
+public void emit(pe.axiz.core.observability.StructuredEvent);
+}
+
+public final class pe.axiz.core.observability.Outcomes {
+public static final java.lang.String CANCELLED = "cancelled";
+public static final java.lang.String ERROR = "error";
+public static final java.lang.String REJECTED = "rejected";
+public static final java.lang.String SUCCESS = "success";
+public static final java.lang.String TIMEOUT = "timeout";
+public static java.lang.String of(java.lang.Throwable, java.util.function.Function<java.lang.Throwable, java.lang.Boolean>);
+}
+
+public final class pe.axiz.core.observability.StructuredEvent extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String name();
+public java.time.Instant at();
+public java.util.Map<java.lang.String, java.lang.String> attributes();
+public pe.axiz.core.observability.StructuredEvent$Kind kind();
+public pe.axiz.core.observability.StructuredEvent(pe.axiz.core.observability.StructuredEvent$Kind, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, java.time.Instant);
+}
+
+public final class pe.axiz.core.observability.StructuredEvent$Kind extends java.lang.Enum<pe.axiz.core.observability.StructuredEvent$Kind> {
+public static final pe.axiz.core.observability.StructuredEvent$Kind BUSINESS;
+public static final pe.axiz.core.observability.StructuredEvent$Kind ERROR;
+public static final pe.axiz.core.observability.StructuredEvent$Kind EXTERNAL_CALL;
+public static pe.axiz.core.observability.StructuredEvent$Kind valueOf(java.lang.String);
+public static pe.axiz.core.observability.StructuredEvent$Kind[] values();
+}
+
+public interface pe.axiz.core.observability.StructuredEventEmitter {
+public abstract void emit(pe.axiz.core.observability.StructuredEvent);
+public static pe.axiz.core.observability.StructuredEventEmitter noop();
+}

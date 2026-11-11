@@ -16,7 +16,7 @@ import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.Transfer
 import pe.axiz.payments.process.adapter.out.paymentnetworkgateway.model.TransferRequest;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** What the saga's money movements send to core-integration and what they read back. */
+/** What the saga's money movements send to banking-core and what they read back. */
 class BankingCoreAdaptersTest {
 
   /** Client that records requests and answers what the test sets. */

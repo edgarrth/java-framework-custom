@@ -2,13 +2,21 @@ package pe.axiz.core.audit;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -18,72 +26,57 @@ import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.Stages;
 
 /**
- * Real asynchronous publication: a bounded queue drained by a virtual thread. When the queue is
- * full the caller waits up to {@code offerTimeout}; if it is still full the event is written to the
- * fallback publisher (normally the log) so it is never silently lost.
- *
- * <p>The worker never dies because of a publisher: a delivery failure goes to the fallback, and a
- * fallback failure is counted in {@link #lostCount()} and logged with the event id. {@link
- * #close()} drains the queue; whatever the worker could not deliver in time is written to the
- * fallback by the closing thread, and the outcome is returned so shutdown can report it.
+ * Bounded asynchronous delivery with independently bounded admission, delivery and fallback.
+ * Shutdown shares one total budget across draining, cancellation, flushing and executor
+ * termination. A callback ignoring interruption can outlive that budget; {@link
+ * Shutdown#terminated()} exposes this explicitly. A timed-out acknowledgement is uncertain and may
+ * physically complete later; consumers must tolerate duplicates. Publication after shutdown is
+ * rejected.
  */
 public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable {
-
   private static final Logger LOG = LoggerFactory.getLogger(AsyncAuditPublisher.class);
-
-  private final AuditPublisher delegate;
-  private final AuditPublisher fallback;
 
   private record Pending(AuditEvent event, Supplier<RequestContext.Scope> context) {}
 
+  private final AuditPublisher delegate;
+  private final AuditPublisher fallback;
   private final BlockingQueue<Pending> queue;
+  private final int capacity;
+  private final AtomicInteger queued = new AtomicInteger();
+  private final Set<CompletableFuture<Void>> nativeFallbacks = ConcurrentHashMap.newKeySet();
   private final Stages.ContextProvider context;
-  private final Duration offerTimeout;
-  private final Duration closeTimeout;
-  private final @Nullable BoundedCallbackExecutor deliveries;
+  private final long offerTimeoutNanos;
+  private final long closeTimeoutNanos;
   private final long deliveryTimeoutNanos;
+  private final @Nullable BoundedCallbackExecutor deliveries;
+  private final BoundedCallbackExecutor fallbackDeliveries;
   private final Thread worker;
+  private final ReentrantLock admission = new ReentrantLock();
+  private final Condition space = admission.newCondition();
   private final AtomicBoolean running = new AtomicBoolean(true);
   private final AtomicLong delivered = new AtomicLong();
   private final AtomicLong fallbacks = new AtomicLong();
   private final AtomicLong failures = new AtomicLong();
   private final AtomicLong lost = new AtomicLong();
+  private final AtomicLong unconfirmed = new AtomicLong();
+  private final AtomicInteger callerFallbacks = new AtomicInteger();
+  private volatile long shutdownDeadline = Long.MAX_VALUE;
+  private @Nullable Shutdown result;
 
   /**
-   * Result of {@link #close()}.
-   *
-   * @param drainedInTime the worker emptied the queue before the timeout
-   * @param flushedToFallback events the closing thread wrote to the fallback
-   * @param lost events lost since start (fallback failures)
+   * Shutdown snapshot. Counts are final when terminated is true; otherwise a callback or the
+   * drainer may still be finishing. Unconfirmed means fallback acceptance is unknown, not confirmed
+   * loss. Flushed counts only events taken from the queue by the closing thread.
    */
-  public record Shutdown(boolean drainedInTime, int flushedToFallback, long lost) {}
+  public record Shutdown(
+      boolean drainedInTime,
+      int flushedToFallback,
+      long lost,
+      boolean terminated,
+      long unconfirmed,
+      int pending) {}
 
-  public AsyncAuditPublisher(
-      AuditPublisher delegate, AuditPublisher fallback, int capacity, Duration offerTimeout) {
-    this(delegate, fallback, capacity, offerTimeout, Duration.ofSeconds(10));
-  }
-
-  public AsyncAuditPublisher(
-      AuditPublisher delegate,
-      AuditPublisher fallback,
-      int capacity,
-      Duration offerTimeout,
-      Duration closeTimeout) {
-    this(delegate, fallback, capacity, offerTimeout, closeTimeout, () -> () -> () -> {});
-  }
-
-  /** Captures only the metadata selected by the integration, never an execution or transaction. */
-  public AsyncAuditPublisher(
-      AuditPublisher delegate,
-      AuditPublisher fallback,
-      int capacity,
-      Duration offerTimeout,
-      Duration closeTimeout,
-      Stages.ContextProvider context) {
-    this(delegate, fallback, capacity, offerTimeout, closeTimeout, context, null);
-  }
-
-  /** Bounds each delivery independently of queue admission and shutdown, with one owned worker. */
+  /** All execution paths, including fallback, use a finite delivery timeout. */
   public AsyncAuditPublisher(
       AuditPublisher delegate,
       AuditPublisher fallback,
@@ -92,20 +85,42 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       Duration closeTimeout,
       Duration deliveryTimeout,
       Stages.ContextProvider context) {
-    this(
-        delegate,
-        fallback,
-        capacity,
-        offerTimeout,
-        closeTimeout,
-        context,
-        requireDeliveryTimeout(deliveryTimeout));
+    this(delegate, fallback, capacity, offerTimeout, closeTimeout, deliveryTimeout, context, false);
   }
 
-  private static Duration requireDeliveryTimeout(Duration timeout) {
-    if (!timeout.isPositive())
-      throw new IllegalArgumentException("Audit delivery timeout must be positive");
-    return timeout;
+  /** Native submissions are non-blocking by contract; the owned drainer awaits just their ACK. */
+  static AsyncAuditPublisher forNative(
+      AsyncAuditEventPublisher target,
+      AuditPublisher fallback,
+      int capacity,
+      Duration deliveryTimeout,
+      Stages.ContextProvider context) {
+    Objects.requireNonNull(target);
+    AuditPublisher acknowledged =
+        event -> {
+          var pending = Stages.call(() -> target.publish(event)).toCompletableFuture();
+          try {
+            pending.get(deliveryTimeout.toNanos(), TimeUnit.NANOSECONDS);
+          } catch (InterruptedException interrupted) {
+            pending.cancel(true);
+            Thread.currentThread().interrupt();
+            throw new AuditPublishException("Native audit interrupted", interrupted);
+          } catch (TimeoutException timeout) {
+            pending.cancel(true);
+            throw new AuditPublishException("Native audit acknowledgement timeout", timeout);
+          } catch (ExecutionException failure) {
+            throw new AuditPublishException("Native audit delivery failed", Stages.unwrap(failure));
+          }
+        };
+    return new AsyncAuditPublisher(
+        acknowledged,
+        fallback,
+        capacity,
+        Duration.ZERO,
+        Duration.ofSeconds(10),
+        deliveryTimeout,
+        context,
+        true);
   }
 
   private AsyncAuditPublisher(
@@ -114,91 +129,185 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       int capacity,
       Duration offerTimeout,
       Duration closeTimeout,
+      Duration deliveryTimeout,
       Stages.ContextProvider context,
-      @Nullable Duration deliveryTimeout) {
+      boolean nativeAcknowledgementBounded) {
     this.delegate = Objects.requireNonNull(delegate);
     this.fallback = Objects.requireNonNull(fallback);
-    this.queue = new ArrayBlockingQueue<>(capacity);
-    this.offerTimeout = Objects.requireNonNull(offerTimeout);
-    this.closeTimeout = Objects.requireNonNull(closeTimeout);
+    if (offerTimeout.isNegative() || !closeTimeout.isPositive() || !deliveryTimeout.isPositive())
+      throw new IllegalArgumentException("Audit timeouts must be positive (offer may be zero)");
+    if (capacity < 1) throw new IllegalArgumentException("Audit queue capacity must be positive");
+    this.capacity = capacity;
+    this.queue = new LinkedTransferQueue<>();
+    this.offerTimeoutNanos = offerTimeout.toNanos();
+    this.closeTimeoutNanos = closeTimeout.toNanos();
+    this.deliveryTimeoutNanos = deliveryTimeout.toNanos();
     this.context = Objects.requireNonNull(context);
-    this.deliveryTimeoutNanos = deliveryTimeout == null ? 0 : deliveryTimeout.toNanos();
-    this.deliveries =
-        deliveryTimeout == null
-            ? null
-            : new BoundedCallbackExecutor(
-                1,
-                1,
-                Thread.ofVirtual().name("axiz-audit-delivery-", 0).factory(),
-                "audit delivery");
-    this.worker = Thread.ofVirtual().name("axiz-audit-publisher").start(this::drain);
+    deliveries = nativeAcknowledgementBounded ? null : executor("axiz-audit-delivery-");
+    fallbackDeliveries = executor("axiz-audit-fallback-");
+    worker = Thread.ofVirtual().name("axiz-audit-publisher").start(this::drain);
+  }
+
+  private static BoundedCallbackExecutor executor(String name) {
+    return new BoundedCallbackExecutor(1, 1, Thread.ofVirtual().name(name, 0).factory(), name);
   }
 
   @Override
   public void publish(AuditEvent event) {
-    if (!running.get()) {
-      toFallback(event);
-      return;
-    }
+    enqueue(event, offerTimeoutNanos);
+  }
+
+  /** Immediate admission for native callers; never waits for queue space. */
+  public void publishWithoutWait(AuditEvent event) {
+    Objects.requireNonNull(event);
+    callerFallbacks.incrementAndGet();
     try {
-      if (!queue.offer(
-          new Pending(event, context.capture()), offerTimeout.toMillis(), TimeUnit.MILLISECONDS)) {
-        toFallback(event);
+      if (!running.get()) throw new IllegalStateException("Audit publisher is closed");
+      Pending pending = new Pending(event, context.capture());
+      if (admission.tryLock()) {
+        try {
+          if (!running.get()) throw new IllegalStateException("Audit publisher is closed");
+          if (offer(pending)) return;
+        } finally {
+          admission.unlock();
+        }
       }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      toFallback(event);
+      fallbackWithoutWait(event);
+    } finally {
+      callerFallbacks.decrementAndGet();
     }
   }
 
-  /** Native facade acceptance: immediate offer, with the same observable fallback policy. */
-  public void publishWithoutWait(AuditEvent event) {
-    if (!running.get() || !queue.offer(new Pending(event, context.capture()))) toFallback(event);
+  // Producers hold admission; the queue itself uses lock-free, non-waiting offers.
+  private boolean offer(Pending pending) {
+    if (queued.get() >= capacity) return false;
+    queued.incrementAndGet();
+    queue.offer(pending);
+    return true;
+  }
+
+  private void fallbackWithoutWait(AuditEvent event) {
+    fallbacks.incrementAndGet();
+    var completion = new CompletableFuture<Void>();
+    nativeFallbacks.add(completion);
+    completion.whenComplete(
+        (ignored, failure) -> {
+          if (failure instanceof TimeoutException || failure instanceof CancellationException)
+            unconfirmed.incrementAndGet();
+          else if (failure != null) lost.incrementAndGet();
+          // Removal is the completion barrier used by shutdown's final snapshot.
+          nativeFallbacks.remove(completion);
+        });
+    try {
+      fallbackDeliveries.execute(
+          () -> {
+            try {
+              fallback.publish(event);
+              completion.complete(null);
+            } catch (RuntimeException | Error failure) {
+              completion.completeExceptionally(failure);
+              LOG.error("Audit fallback failed for event {}", event.id(), failure);
+            }
+          });
+      completion.orTimeout(deliveryTimeoutNanos, TimeUnit.NANOSECONDS);
+    } catch (RuntimeException rejected) {
+      completion.completeExceptionally(rejected);
+    }
+  }
+
+  private void enqueue(AuditEvent event, long wait) {
+    Pending pending = new Pending(Objects.requireNonNull(event), context.capture());
+    boolean accepted = false;
+    admission.lock();
+    try {
+      while (running.get()) {
+        if (offer(pending)) {
+          accepted = true;
+          break;
+        }
+        if (wait <= 0) break;
+        try {
+          wait = space.awaitNanos(wait);
+        } catch (InterruptedException interrupted) {
+          Thread.currentThread().interrupt();
+          break;
+        }
+      }
+      if (!running.get()) throw new IllegalStateException("Audit publisher is closed");
+      if (!accepted) callerFallbacks.incrementAndGet();
+    } finally {
+      admission.unlock();
+    }
+    if (!accepted) {
+      try {
+        toFallback(event);
+      } finally {
+        callerFallbacks.decrementAndGet();
+      }
+    }
   }
 
   private void drain() {
     while (running.get() || !queue.isEmpty()) {
-      Pending event;
+      if (Thread.currentThread().isInterrupted()) return;
       try {
-        event = queue.poll(200, TimeUnit.MILLISECONDS);
-      } catch (InterruptedException e) {
+        Pending event = queue.poll(200, TimeUnit.MILLISECONDS);
+        if (event != null) {
+          queued.decrementAndGet();
+          admission.lock();
+          try {
+            space.signalAll();
+          } finally {
+            admission.unlock();
+          }
+          deliver(event);
+        }
+      } catch (InterruptedException interrupted) {
         Thread.currentThread().interrupt();
-        return; // the closing thread flushes what is left
-      }
-      if (event != null) {
-        deliver(event);
+        return;
       }
     }
   }
 
+  private long remaining() {
+    return shutdownDeadline == Long.MAX_VALUE
+        ? deliveryTimeoutNanos
+        : Math.max(0, Math.min(deliveryTimeoutNanos, shutdownDeadline - System.nanoTime()));
+  }
+
+  private void invoke(BoundedCallbackExecutor executor, Runnable callback) {
+    long budget = remaining();
+    if (budget <= 0)
+      throw new AuditPublishException(
+          "Audit shutdown budget exhausted", new TimeoutException("shutdown"));
+    var task = executor.submit(callback);
+    try {
+      task.get(budget, TimeUnit.NANOSECONDS);
+    } catch (InterruptedException interrupted) {
+      task.cancel(true);
+      Thread.currentThread().interrupt();
+      throw new AuditPublishException("Audit delivery interrupted", interrupted);
+    } catch (TimeoutException timeout) {
+      task.cancel(true);
+      throw new AuditPublishException("Audit acknowledgement timeout", timeout);
+    } catch (ExecutionException failure) {
+      Throwable cause = Stages.unwrap(failure);
+      if (cause instanceof Error fatal) throw fatal;
+      throw new AuditPublishException("Audit delivery failed", cause);
+    }
+  }
+
   private void deliver(Pending pending) {
-    AuditEvent event = pending.event();
     try {
       var executor = deliveries;
-      if (executor == null) {
-        publishDelegate(pending);
-      } else {
-        var delivery = executor.submit(() -> publishDelegate(pending));
-        try {
-          delivery.get(deliveryTimeoutNanos, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException interrupted) {
-          delivery.cancel(true);
-          executor.purge();
-          Thread.currentThread().interrupt();
-          throw new AuditPublishException("Audit delivery interrupted", interrupted);
-        } catch (TimeoutException timeout) {
-          delivery.cancel(true);
-          executor.purge();
-          throw new AuditPublishException("Audit delivery timeout", timeout);
-        } catch (ExecutionException failure) {
-          throw new AuditPublishException("Audit delivery failed", Stages.unwrap(failure));
-        }
-      }
+      if (executor == null) publishDelegate(pending);
+      else invoke(executor, () -> publishDelegate(pending));
       delivered.incrementAndGet();
-    } catch (RuntimeException e) {
+    } catch (RuntimeException failure) {
       failures.incrementAndGet();
-      LOG.error("Audit delivery failed for event {}, writing to fallback", event.id(), e);
-      toFallback(event);
+      LOG.error(
+          "Audit delivery failed for event {}, writing to fallback", pending.event().id(), failure);
+      toFallback(pending.event());
     }
   }
 
@@ -210,16 +319,28 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
 
   private void toFallback(AuditEvent event) {
     fallbacks.incrementAndGet();
+    // Cancellation of a delivery must still allow its fallback within the shared deadline.
+    boolean interrupted = Thread.interrupted();
     try {
-      fallback.publish(event);
-    } catch (RuntimeException e) {
-      lost.incrementAndGet();
-      LOG.error("Audit event {} lost: the fallback publisher failed too", event.id(), e);
+      invoke(fallbackDeliveries, () -> fallback.publish(event));
+    } catch (RuntimeException failure) {
+      if (failure instanceof RejectedExecutionException
+          || failure instanceof AuditPublishException
+              && failure.getCause() != null
+              && !(failure.getCause() instanceof TimeoutException)
+              && !(failure.getCause() instanceof InterruptedException)) {
+        lost.incrementAndGet();
+      } else {
+        unconfirmed.incrementAndGet();
+      }
+      LOG.error("Audit fallback did not confirm event {}", event.id(), failure);
+    } finally {
+      if (interrupted) Thread.currentThread().interrupt();
     }
   }
 
   public int pending() {
-    return queue.size();
+    return queued.get();
   }
 
   public long deliveredCount() {
@@ -234,12 +355,15 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
     return failures.get();
   }
 
-  /** Events that neither the delegate nor the fallback accepted. */
+  /** Confirmed failures of the fallback; uncertain acceptance is counted separately. */
   public long lostCount() {
     return lost.get();
   }
 
-  /** {@code true} while the worker thread is draining the queue. */
+  public long unconfirmedCount() {
+    return unconfirmed.get();
+  }
+
   public boolean workerAlive() {
     return worker.isAlive();
   }
@@ -249,38 +373,67 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
     shutdown();
   }
 
-  /**
-   * Stops accepting events, waits for the worker to drain the queue and writes anything left to the
-   * fallback.
-   */
-  public Shutdown shutdown() {
-    running.set(false);
-    boolean drained;
+  private boolean joinWorker(long deadline) throws InterruptedException {
+    long nanos = deadline - System.nanoTime();
+    return !worker.isAlive() || nanos > 0 && worker.join(Duration.ofNanos(nanos));
+  }
+
+  /** Idempotent shutdown. No new admission can race with the final queue flush. */
+  public synchronized Shutdown shutdown() {
+    if (result != null) return result;
+    long started = System.nanoTime();
+    shutdownDeadline = started + closeTimeoutNanos;
+    admission.lock();
     try {
-      drained = worker.join(closeTimeout);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      drained = false;
+      running.set(false);
+      space.signalAll();
+    } finally {
+      admission.unlock();
     }
-    if (!drained) {
-      worker.interrupt();
-    }
+    boolean drained = false;
     int flushed = 0;
-    Pending remaining;
-    while ((remaining = queue.poll()) != null) {
-      toFallback(remaining.event());
-      flushed++;
+    try {
+      drained = joinWorker(started + closeTimeoutNanos / 2) && queue.isEmpty();
+      if (!drained) {
+        worker.interrupt();
+        // Reserve time for the closing thread to flush and terminate resources.
+        joinWorker(started + closeTimeoutNanos * 3 / 4);
+      }
+      Pending pending;
+      while (remaining() > 0 && (pending = queue.poll()) != null) {
+        queued.decrementAndGet();
+        toFallback(pending.event());
+        flushed++;
+      }
+    } catch (InterruptedException interrupted) {
+      worker.interrupt();
+      Thread.currentThread().interrupt();
+    } finally {
+      if (deliveries != null) deliveries.shutdownNow();
+      nativeFallbacks.forEach(completion -> completion.cancel(false));
+      fallbackDeliveries.shutdownNow();
     }
-    var executor = deliveries;
-    if (executor != null) executor.shutdownNow();
-    if (!drained || flushed > 0 || lost.get() > 0) {
-      LOG.warn(
-          "Audit publisher closed: drained in time={}, {} event(s) written to the fallback, {}"
-              + " lost",
-          drained,
-          flushed,
-          lost.get());
+    try {
+      joinWorker(shutdownDeadline);
+      if (deliveries != null)
+        deliveries.awaitTermination(
+            Math.max(0, shutdownDeadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+      fallbackDeliveries.awaitTermination(
+          Math.max(0, shutdownDeadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+    } catch (InterruptedException interrupted) {
+      Thread.currentThread().interrupt();
     }
-    return new Shutdown(drained, flushed, lost.get());
+    boolean terminated =
+        !worker.isAlive()
+            && (deliveries == null || deliveries.isTerminated())
+            && fallbackDeliveries.isTerminated()
+            && queue.isEmpty()
+            && callerFallbacks.get() == 0
+            && nativeFallbacks.isEmpty();
+    result =
+        new Shutdown(drained, flushed, lost.get(), terminated, unconfirmed.get(), queue.size());
+    if (!terminated || lost.get() > 0 || unconfirmed.get() > 0)
+      LOG.warn("Audit shutdown: {}", result);
+    return result;
   }
 }

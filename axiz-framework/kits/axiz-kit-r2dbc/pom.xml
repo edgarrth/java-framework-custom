@@ -18,7 +18,6 @@
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.technology.reactive-native>true</axiz.technology.reactive-native>
-    <axiz.api.baseline.artifactId>axiz-core-persistence-r2dbc</axiz.api.baseline.artifactId>
 
     <axiz.module.name>pe.axiz.kit.r2dbc</axiz.module.name>
   </properties>

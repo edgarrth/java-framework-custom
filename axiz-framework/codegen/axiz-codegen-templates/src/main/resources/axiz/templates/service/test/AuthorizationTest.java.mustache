@@ -80,4 +80,25 @@ class {{item.className}}AuthorizationTest {
     verifyNoInteractions({{#item.fields}}{{name}}{{^last}}, {{/last}}{{/item.fields}});
   }
 {{/item.securedOperations}}
+{{#item.authenticatedOperations}}
+
+  @Test
+  void {{methodName}}RejectsAnAnonymousCallerBeforeInvocation() throws Exception {
+{{#stack.servlet}}
+    client.perform(request(HttpMethod.{{httpMethod}}, "{{{testUri}}}")
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).content("{{{example}}}")
+{{/hasRequest}}
+        ).andExpect(status().isUnauthorized());
+{{/stack.servlet}}
+{{#stack.reactive}}
+    client.method(HttpMethod.{{httpMethod}}).uri("{{{testUri}}}")
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).bodyValue("{{{example}}}")
+{{/hasRequest}}
+        .exchange().expectStatus().isUnauthorized();
+{{/stack.reactive}}
+    verifyNoInteractions({{#item.fields}}{{name}}{{^last}}, {{/last}}{{/item.fields}});
+  }
+{{/item.authenticatedOperations}}
 }

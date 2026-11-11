@@ -62,6 +62,6 @@ externalSecret:
   enabled: true
   storeName: aws-secrets-manager
   refreshInterval: 1h
-  remotePrefix: dev/core-integration
+  remotePrefix: dev/banking-core
   keys:
   - payment-network-api-key

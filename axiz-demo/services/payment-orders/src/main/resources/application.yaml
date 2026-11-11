@@ -30,13 +30,13 @@ axiz:
     type-prefix: pe.axiz.payments.
     kafka:
       iam: ${AXIZ_KAFKA_IAM:false}
-      group-id: payments-business
+      group-id: payment-orders
     destinations:
       payments: ${AXIZ_PAYMENTS_TOPIC:kafka:payments}
       audit: ${AXIZ_AUDIT_DESTINATION:kafka:audit}
-    source: urn:axiz:payments-business
+    source: urn:axiz:payment-orders
     consumer:
-      name: payments-business
+      name: payment-orders
   foundation:
     zone: America/Lima
   web:
@@ -51,7 +51,7 @@ axiz:
   config:
     environment: ${AXIZ_ENVIRONMENT:local}
     parameter-store:
-      application: payments-business
+      application: payment-orders
   i18n:
     default-locale: es-PE
   sensitive:
@@ -64,7 +64,6 @@ axiz:
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
-      - payments-business
       - payment-orders
   audit:
     mode: DURABLE

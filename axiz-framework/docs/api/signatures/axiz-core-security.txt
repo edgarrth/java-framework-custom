@@ -1,0 +1,160 @@
+public interface pe.axiz.core.security.AsyncNonceStore {
+public abstract java.util.concurrent.CompletionStage<java.lang.Boolean> markUsed(java.lang.String, java.time.Duration);
+}
+
+public interface pe.axiz.core.security.AsyncRateLimiter {
+public abstract java.util.concurrent.CompletionStage<pe.axiz.core.security.RateLimiter$Decision> tryAcquire(java.lang.String, long, java.time.Duration, boolean);
+}
+
+public interface pe.axiz.core.security.AuthenticatedAccess extends java.lang.annotation.Annotation {
+}
+
+public final class pe.axiz.core.security.AuthorityMapper {
+public static java.util.Set<java.lang.String> authorities(pe.axiz.core.security.AxizPrincipal);
+}
+
+public final class pe.axiz.core.security.AxizPrincipal extends java.lang.Record implements java.io.Serializable {
+public boolean hasRole(java.lang.String);
+public boolean hasScope(java.lang.String);
+public boolean isMachine();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String clientId();
+public java.lang.String issuer();
+public java.lang.String name();
+public java.lang.String subject();
+public java.lang.String tenantId();
+public java.util.List<java.lang.String> audience();
+public java.util.Map<java.lang.String, java.lang.Object> attributes();
+public java.util.Set<java.lang.String> roles();
+public java.util.Set<java.lang.String> scopes();
+public pe.axiz.core.security.AxizPrincipal(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.Set<java.lang.String>, java.util.Set<java.lang.String>, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public final class pe.axiz.core.security.ClaimMapping extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<java.lang.String> attributes();
+public java.util.List<java.lang.String> clientId();
+public java.util.List<java.lang.String> machine();
+public java.util.List<java.lang.String> roles();
+public java.util.List<java.lang.String> scopes();
+public java.util.List<java.lang.String> subject();
+public java.util.List<java.lang.String> tenant();
+public pe.axiz.core.security.ClaimMapping(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
+public pe.axiz.core.security.ClaimMapping(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
+public static final java.util.List<java.lang.String> DEFAULT_MACHINE_MARKERS;
+public static pe.axiz.core.security.ClaimMapping defaults();
+}
+
+public final class pe.axiz.core.security.ClaimsMapper {
+public pe.axiz.core.security.AxizPrincipal map(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.core.security.ClaimsMapper(pe.axiz.core.security.ClaimMapping);
+public pe.axiz.core.security.ClaimsMapper(pe.axiz.core.security.ClaimMapping, boolean);
+}
+
+public final class pe.axiz.core.security.InMemoryAsyncRateLimiter implements pe.axiz.core.security.AsyncRateLimiter {
+public java.util.concurrent.CompletionStage<pe.axiz.core.security.RateLimiter$Decision> tryAcquire(java.lang.String, long, java.time.Duration, boolean);
+public pe.axiz.core.security.InMemoryAsyncRateLimiter(java.time.Clock);
+}
+
+public final class pe.axiz.core.security.InMemoryNonceStore implements pe.axiz.core.security.NonceStore {
+public boolean markUsed(java.lang.String, java.time.Duration);
+public pe.axiz.core.security.InMemoryNonceStore(int, java.time.Clock);
+}
+
+public final class pe.axiz.core.security.InMemoryRateLimiter implements pe.axiz.core.security.RateLimiter {
+public pe.axiz.core.security.InMemoryRateLimiter(java.time.Clock);
+public pe.axiz.core.security.RateLimiter$Decision tryAcquire(java.lang.String, long, java.time.Duration);
+}
+
+public final class pe.axiz.core.security.IssuerPolicy {
+public boolean audienceAccepted(java.lang.String, java.util.List<java.lang.String>);
+public boolean isTrusted(java.lang.String);
+public java.util.List<pe.axiz.core.security.TrustedIssuer> all();
+public java.util.Optional<pe.axiz.core.security.TrustedIssuer> find(java.lang.String);
+public pe.axiz.core.security.IssuerPolicy(java.util.Collection<pe.axiz.core.security.TrustedIssuer>);
+}
+
+public interface pe.axiz.core.security.NonceStore {
+public abstract boolean markUsed(java.lang.String, java.time.Duration);
+}
+
+public interface pe.axiz.core.security.PublicEndpoint extends java.lang.annotation.Annotation {
+}
+
+public final class pe.axiz.core.security.RateLimitKeys {
+public static java.lang.String forClient(pe.axiz.core.security.AxizPrincipal, java.lang.String);
+public static java.lang.String forSubject(pe.axiz.core.security.AxizPrincipal, java.lang.String);
+}
+
+public final class pe.axiz.core.security.RateLimitUnavailableException extends java.lang.RuntimeException {
+public pe.axiz.core.security.RateLimitUnavailableException(java.lang.Throwable);
+}
+
+public interface pe.axiz.core.security.RateLimiter {
+public abstract pe.axiz.core.security.RateLimiter$Decision tryAcquire(java.lang.String, long, java.time.Duration);
+public default pe.axiz.core.security.RateLimiter$Decision tryAcquire(java.lang.String, long, java.time.Duration, boolean);
+}
+
+public final class pe.axiz.core.security.RateLimiter$Decision extends java.lang.Record {
+public boolean allowed();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.Duration retryAfter();
+public long remaining();
+public pe.axiz.core.security.RateLimiter$Decision(boolean, long, java.time.Duration);
+}
+
+public final class pe.axiz.core.security.RequestSignature {
+public java.lang.String sign(pe.axiz.core.security.RequestSignature$Message);
+public pe.axiz.core.security.RequestSignature$Outcome verify(pe.axiz.core.security.RequestSignature$Message, java.lang.String);
+public pe.axiz.core.security.RequestSignature(java.util.Map<java.lang.String, byte[]>, java.lang.String, java.time.Duration, java.time.Clock, pe.axiz.core.security.NonceStore);
+public static final int MAX_TARGET = 8192;
+public static final java.lang.String NONCE_HEADER = "X-Axiz-Nonce";
+public static final java.lang.String SIGNATURE_HEADER = "X-Axiz-Signature";
+public static final java.lang.String TIMESTAMP_HEADER = "X-Axiz-Timestamp";
+public static final java.lang.String VERSION = "AXIZ-HMAC-V2";
+public static java.lang.String canonical(java.lang.String, pe.axiz.core.security.RequestSignature$Message);
+public static java.lang.String newNonce();
+}
+
+public final class pe.axiz.core.security.RequestSignature$Message {
+public boolean equals(java.lang.Object);
+public byte[] body();
+public int hashCode();
+public java.lang.String method();
+public java.lang.String nonce();
+public java.lang.String target();
+public java.lang.String toString();
+public java.time.Instant timestamp();
+public pe.axiz.core.security.RequestSignature$Message(java.time.Instant, java.lang.String, java.lang.String, java.lang.String, byte[]);
+public static pe.axiz.core.security.RequestSignature$Message of(java.time.Instant, java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.core.security.RequestSignature$Outcome extends java.lang.Enum<pe.axiz.core.security.RequestSignature$Outcome> {
+public boolean valid();
+public static final pe.axiz.core.security.RequestSignature$Outcome BAD_SIGNATURE;
+public static final pe.axiz.core.security.RequestSignature$Outcome MALFORMED;
+public static final pe.axiz.core.security.RequestSignature$Outcome REPLAYED;
+public static final pe.axiz.core.security.RequestSignature$Outcome REPLAY_CHECK_UNAVAILABLE;
+public static final pe.axiz.core.security.RequestSignature$Outcome STALE;
+public static final pe.axiz.core.security.RequestSignature$Outcome UNKNOWN_KEY;
+public static final pe.axiz.core.security.RequestSignature$Outcome VALID;
+public static pe.axiz.core.security.RequestSignature$Outcome valueOf(java.lang.String);
+public static pe.axiz.core.security.RequestSignature$Outcome[] values();
+}
+
+public final class pe.axiz.core.security.TrustedIssuer extends java.lang.Record {
+public boolean discovered();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String issuer();
+public java.net.URI jwkSetUri();
+public java.util.List<java.lang.String> audiences();
+public pe.axiz.core.security.TrustedIssuer(java.lang.String, java.net.URI, java.util.List<java.lang.String>);
+}

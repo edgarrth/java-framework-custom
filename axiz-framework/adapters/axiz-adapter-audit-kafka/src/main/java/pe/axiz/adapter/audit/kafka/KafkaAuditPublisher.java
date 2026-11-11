@@ -26,6 +26,7 @@ public final class KafkaAuditPublisher implements AuditPublisher {
   public KafkaAuditPublisher(Producer<String, String> producer, String topic, Duration timeout) {
     this.producer = Objects.requireNonNull(producer);
     this.topic = Objects.requireNonNull(topic);
+    if (topic.isBlank()) throw new IllegalArgumentException("Audit Kafka topic must not be blank");
     this.timeout = Objects.requireNonNull(timeout);
   }
 

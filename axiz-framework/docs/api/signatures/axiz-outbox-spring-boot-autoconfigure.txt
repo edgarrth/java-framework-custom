@@ -1,0 +1,67 @@
+public class pe.axiz.spring.outbox.AxizOutboxAutoConfiguration {
+public pe.axiz.spring.outbox.AxizOutboxAutoConfiguration();
+}
+
+public final class pe.axiz.spring.outbox.AxizOutboxProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String table();
+public java.time.Duration statementTimeout();
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay relay();
+public pe.axiz.spring.outbox.AxizOutboxProperties(java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode, pe.axiz.spring.outbox.AxizOutboxProperties$Relay, java.time.Duration);
+}
+
+public final class pe.axiz.spring.outbox.AxizOutboxProperties$Relay extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int batchSize();
+public int maxAttempts();
+public java.time.Duration claimAllowance();
+public java.time.Duration initialDelay();
+public java.time.Duration leaseDuration();
+public java.time.Duration maxDelay();
+public java.time.Duration pollInterval();
+public java.time.Duration publishBudget();
+public java.time.Duration purgeInterval();
+public java.time.Duration retention();
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
+}
+
+public class pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration {
+public pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration();
+}
+
+public final class pe.axiz.spring.outbox.CachedPendingCount {
+public double value();
+public pe.axiz.spring.outbox.CachedPendingCount(pe.axiz.core.outbox.OutboxStore, java.time.Duration, java.time.Clock);
+public pe.axiz.spring.outbox.CachedPendingCount(pe.axiz.core.outbox.OutboxStore, java.time.Duration, java.time.Clock, java.util.function.ToLongFunction<pe.axiz.core.outbox.OutboxStore>);
+}
+
+public class pe.axiz.spring.outbox.OutboxBlockedMetrics {
+public pe.axiz.spring.outbox.OutboxBlockedMetrics();
+}
+
+public class pe.axiz.spring.outbox.OutboxRelayRunner implements org.springframework.context.SmartLifecycle {
+public boolean isRunning();
+public int runOnce();
+public pe.axiz.spring.outbox.OutboxRelayRunner(pe.axiz.core.outbox.OutboxRelay, pe.axiz.core.outbox.OutboxStore, io.micrometer.observation.ObservationRegistry, pe.axiz.spring.outbox.AxizOutboxProperties$Relay, java.time.Clock);
+public void start();
+public void stop();
+}
+
+public class pe.axiz.spring.outbox.ReactiveTransactionalEvents {
+public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter);
+public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter, io.micrometer.observation.ObservationRegistry);
+public reactor.core.publisher.Mono<pe.axiz.core.messaging.EventEnvelope> enqueue(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Object);
+}
+
+public class pe.axiz.spring.outbox.TransactionalEvents {
+public pe.axiz.core.messaging.EventEnvelope enqueue(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Object);
+public pe.axiz.spring.outbox.TransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.core.outbox.OutboxWriter);
+}

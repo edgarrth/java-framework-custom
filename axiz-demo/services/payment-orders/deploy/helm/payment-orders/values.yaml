@@ -62,12 +62,7 @@ externalSecret:
   enabled: true
   storeName: aws-secrets-manager
   refreshInterval: 1h
-  remotePrefix: dev/payments-business
+  remotePrefix: dev/payment-orders
   keys:
   - field-key-v1
   - blind-index-key
-migration:
-  serviceAliases:
-  - payments-business
-  previousAudience: payments-business
-  currentAudience: payment-orders

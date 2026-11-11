@@ -2,6 +2,7 @@ package pe.axiz.codegen.openapi;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
@@ -38,7 +39,17 @@ public record ApiOperation(
     List<QueryParam> queryParams,
     List<String> pagingParams,
     List<QueryParam> headerParams,
-    List<String> scopes) {
+    List<String> scopes,
+    Access access) {
+
+  /** Explicit HTTP access policy; undeclared/unsupported policies cannot generate a service. */
+  public enum Access {
+    SCOPED,
+    AUTHENTICATED,
+    PUBLIC,
+    UNDECLARED,
+    UNSUPPORTED
+  }
 
   /**
    * A query or header parameter.
@@ -49,48 +60,19 @@ public record ApiOperation(
   public record QueryParam(String name, boolean required) {}
 
   public ApiOperation {
+    Objects.requireNonNull(access);
     pathParams = List.copyOf(pathParams);
     queryParams = List.copyOf(queryParams);
     pagingParams = List.copyOf(pagingParams);
     headerParams = List.copyOf(headerParams);
     scopes = List.copyOf(new LinkedHashSet<>(scopes));
+    if ((access == Access.SCOPED) != !scopes.isEmpty())
+      throw new IllegalArgumentException(
+          "Scoped access requires scopes; other policies must not declare them");
     for (String scope : scopes) {
       if (!scope.matches("[A-Za-z0-9:_./-]{1,128}"))
         throw new IllegalArgumentException("Unsupported security scope");
     }
-  }
-
-  public ApiOperation(
-      String operationId,
-      String method,
-      String path,
-      String tag,
-      String summary,
-      @Nullable String requestSchema,
-      @Nullable String responseSchema,
-      int successStatus,
-      List<String> pathParams,
-      boolean paged,
-      @Nullable String requestExample,
-      List<QueryParam> queryParams,
-      List<String> pagingParams,
-      List<QueryParam> headerParams) {
-    this(
-        operationId,
-        method,
-        path,
-        tag,
-        summary,
-        requestSchema,
-        responseSchema,
-        successStatus,
-        pathParams,
-        paged,
-        requestExample,
-        queryParams,
-        pagingParams,
-        headerParams,
-        List.of());
   }
 
   public String authorizationExpression() {

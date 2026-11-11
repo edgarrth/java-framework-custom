@@ -128,7 +128,7 @@ class OutboxR2dbcTest {
         new OutboxStore() {
 
           public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
-            return lockDue(size, Instant.EPOCH);
+            return List.of();
           }
 
           public boolean markPublished(String id, String owner, Instant at) {
@@ -165,22 +165,6 @@ class OutboxR2dbcTest {
 
           @Override
           public void append(OutboxRecord record) {}
-
-          @Override
-          public List<OutboxRecord> lockDue(int size, Instant now) {
-            return List.of();
-          }
-
-          @Override
-          public void markPublished(String id, Instant at) {}
-
-          @Override
-          public void markFailed(
-              String id,
-              int attempts,
-              Instant nextAttemptAt,
-              @Nullable String error,
-              boolean giveUp) {}
 
           @Override
           public int purgePublished(Instant before) {

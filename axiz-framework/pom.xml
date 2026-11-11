@@ -75,7 +75,6 @@
     <revision>2.0.0</revision>
     <!-- version of axiz used by children (the code standards); resolved when the parents are published -->
     <axiz.version>${revision}</axiz.version>
-    <axiz.api.baseline.artifactId>${project.artifactId}</axiz.api.baseline.artifactId>
     <axiz.api.breakBuildOnIncompatible>true</axiz.api.breakBuildOnIncompatible>
     <axiz.api.skip>false</axiz.api.skip>
 
@@ -130,7 +129,6 @@
     <rewrite-maven-plugin.version>6.46.1</rewrite-maven-plugin.version>
     <japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
     <!-- Classpath-only dependency for inspecting the removed 1.x EDA Publisher signatures. -->
-    <axiz.api.baseline.reactive-streams.version>1.0.4</axiz.api.baseline.reactive-streams.version>
 
     <!-- Must match axiz-dependencies -->
     <spring-boot.version>4.1.2</spring-boot.version>
@@ -668,10 +666,8 @@
         </plugins>
       </build>
     </profile>
-    <!-- API and SPI compatibility against a released version (-Papi-compat
-         -Daxiz.api.baseline=<x.y.z>): binary or source incompatible changes of public types break
-         the build. Opt-in before 1.0.0, required by CI from 1.0.0 (CONTRIBUTING.md); an intended
-         break needs an architecture contract. Modules new since the baseline are skipped. -->
+    <!-- Subsequent releases compare against a genuine published v2 baseline.
+         First release API is validated by the mandatory reviewed-signature gate. -->
     <profile>
       <id>api-compat</id>
       <build>
@@ -689,8 +685,12 @@
                   <rules>
                     <requireProperty>
                       <property>axiz.api.baseline</property>
-                      <regex>\d+\.\d+\.\d+</regex>
+                      <regex>2\.\d+\.\d+</regex>
                       <message>-Papi-compat needs -Daxiz.api.baseline=&lt;released version&gt;</message>
+                    </requireProperty>
+                    <requireProperty>
+                      <property>axiz.api.baseline.directory</property>
+                      <message>Prepare the published v2 baseline with check-api-compatibility.py --prepare-baseline; local/candidate caches are not a baseline</message>
                     </requireProperty>
                   </rules>
                 </configuration>
@@ -704,12 +704,9 @@
             <configuration>
               <skip>${axiz.api.skip}</skip>
               <oldVersion>
-                <dependency>
-                  <groupId>${project.groupId}</groupId>
-                  <artifactId>${axiz.api.baseline.artifactId}</artifactId>
-                  <version>${axiz.api.baseline}</version>
-                  <type>jar</type>
-                </dependency>
+                <file>
+                  <path>${axiz.api.baseline.directory}/${project.artifactId}-${axiz.api.baseline}.jar</path>
+                </file>
               </oldVersion>
               <newVersion>
                 <file>
@@ -738,71 +735,6 @@
         </plugins>
       </build>
     </profile>
-    <profile>
-      <!-- Only the 1.x to 2.0 migration is reviewed against the explicit inventory.
-           CI must run check-api-compatibility.py after the reports are produced. -->
-      <id>api-migration</id>
-      <properties>
-        <axiz.api.breakBuildOnIncompatible>false</axiz.api.breakBuildOnIncompatible>
-      </properties>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.siom79.japicmp</groupId>
-            <artifactId>japicmp-maven-plugin</artifactId>
-            <configuration>
-              <!-- Old signatures reference the relocated kit types. Keep the real baseline
-                   definitions available; missing classes must still fail the comparison. -->
-              <dependencies>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-outbox</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-inbox</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-saga</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sequence</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-persistence-jpa</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-persistence-r2dbc</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-persistence-dynamodb</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-framework-hexagonal-api</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-framework-cqrs-api</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>pe.axiz</groupId><artifactId>axiz-framework-layered-api</artifactId><version>${axiz.api.baseline}</version></dependency>
-                <dependency><groupId>org.reactivestreams</groupId><artifactId>reactive-streams</artifactId><version>${axiz.api.baseline.reactive-streams.version}</version></dependency>
-              </dependencies>
-            </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-enforcer-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>api-migration-version</id>
-                <goals><goal>enforce</goal></goals>
-                <configuration>
-                  <rules>
-                    <requireProperty>
-                      <property>revision</property>
-                      <regex>2\.0\.0</regex>
-                      <message>The migration API inventory is only valid for 2.0.0</message>
-                    </requireProperty>
-                  </rules>
-                </configuration>
-              </execution>
-              <execution>
-                <id>api-migration-baseline</id>
-                <goals><goal>enforce</goal></goals>
-                <configuration>
-                  <rules>
-                    <requireProperty>
-                      <property>axiz.api.baseline</property>
-                      <regex>1\.\d+\.\d+</regex>
-                      <message>The migration API inventory requires a released 1.x baseline</message>
-                    </requireProperty>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
+
   </profiles>
 </project>

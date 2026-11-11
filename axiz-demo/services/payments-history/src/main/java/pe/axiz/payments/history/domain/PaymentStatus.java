@@ -1,6 +1,6 @@
 package pe.axiz.payments.history.domain;
 
-/** Status of a payment order, as published by payments-business. */
+/** Status of a payment order, as published by payment-orders. */
 public enum PaymentStatus {
   RECEIVED,
   PROCESSING,

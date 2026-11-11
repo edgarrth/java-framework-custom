@@ -33,7 +33,9 @@ class AuditDeliveryModesTest {
         null,
         null,
         null,
-        Map.of());
+        Map.of(),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
   }
 
   @Test

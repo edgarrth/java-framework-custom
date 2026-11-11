@@ -82,8 +82,10 @@ public final class JdbcOutboxStore implements OutboxStore {
               c.prepareStatement(
                   "INSERT INTO "
                       + table
-                      + " (id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,"
-                      + "created_at,next_attempt_at,aggregate_seq) VALUES (?,?,?,?,?,?,?,?,?,?,?)")) {
+                      + """
+                       (id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,
+                       created_at,next_attempt_at,aggregate_seq) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                      """)) {
             ps.setString(1, r.id());
             ps.setString(2, r.destination());
             ps.setString(3, r.aggregateType());
@@ -190,32 +192,6 @@ public final class JdbcOutboxStore implements OutboxStore {
   }
 
   @Override
-  public List<OutboxRecord> lockDue(int size, Instant now) {
-    return transaction(
-        c -> {
-          List<OutboxRecord> rows = new ArrayList<>();
-          try (PreparedStatement ps =
-              c.prepareStatement(
-                  "SELECT "
-                      + COLUMNS
-                      + " FROM "
-                      + table
-                      + " h WHERE h.status='PENDING' AND h.next_attempt_at<=? AND "
-                      + headPredicate()
-                      + " ORDER BY h.created_at,h.id FETCH FIRST "
-                      + Math.max(1, size)
-                      + " ROWS ONLY"
-                      + dialect.lockClause())) {
-            ps.setTimestamp(1, Timestamp.from(now));
-            try (ResultSet rs = ps.executeQuery()) {
-              while (rs.next()) rows.add(record(rs));
-            }
-          }
-          return rows;
-        });
-  }
-
-  @Override
   public boolean markPublished(String id, String owner, Instant at) {
     return update(
             "UPDATE "
@@ -226,17 +202,6 @@ public final class JdbcOutboxStore implements OutboxStore {
             id,
             owner)
         == 1;
-  }
-
-  @Override
-  public void markPublished(String id, Instant at) {
-    update(
-        "UPDATE "
-            + table
-            + " SET status='PUBLISHED',published_at=?,last_error=NULL WHERE id=? AND"
-            + " status='PENDING'",
-        Timestamp.from(at),
-        id);
   }
 
   @Override
@@ -254,21 +219,6 @@ public final class JdbcOutboxStore implements OutboxStore {
             id,
             owner)
         == 1;
-  }
-
-  @Override
-  public void markFailed(
-      String id, int attempts, Instant next, @Nullable String error, boolean giveUp) {
-    update(
-        "UPDATE "
-            + table
-            + " SET status=?,attempts=?,next_attempt_at=?,last_error=? WHERE id=? AND"
-            + " status='PENDING'",
-        giveUp ? "FAILED" : "PENDING",
-        attempts,
-        Timestamp.from(next),
-        trim(error),
-        id);
   }
 
   @Override

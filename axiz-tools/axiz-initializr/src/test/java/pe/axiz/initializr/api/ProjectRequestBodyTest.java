@@ -71,7 +71,7 @@ class ProjectRequestBodyTest {
   @Test
   void explicitChoicesAreKeptCaseInsensitively() {
     ProjectRequest r =
-        body("Orders", "Layered", "Reactive", "dynamodb", List.of("cache"), "1.2.3")
+        body("Orders", "Layered", "Reactive", "dynamodb", List.of("cache"), "2.1.3")
             .toRequest(CATALOG, "9.9.9");
 
     assertThat(r.description()).isEqualTo("Orders");
@@ -79,7 +79,7 @@ class ProjectRequestBodyTest {
     assertThat(r.stack()).isEqualTo(Stack.of("reactive"));
     assertThat(r.persistence()).isEqualTo("dynamodb");
     assertThat(r.capabilities()).containsExactly("cache");
-    assertThat(r.frameworkVersion()).isEqualTo("1.2.3");
+    assertThat(r.frameworkVersion()).isEqualTo("2.1.3");
     assertThat(r.archetype()).isEqualTo("business");
   }
 
@@ -89,7 +89,7 @@ class ProjectRequestBodyTest {
         new ProjectRequestBody(
             "x", "g", "p", null, "teleport", null, null, null, null, null, null, null, null);
 
-    assertThatThrownBy(() -> b.toRequest(CATALOG, "1.0.0"))
+    assertThatThrownBy(() -> b.toRequest(CATALOG, "2.0.0"))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Unknown archetype teleport");
   }

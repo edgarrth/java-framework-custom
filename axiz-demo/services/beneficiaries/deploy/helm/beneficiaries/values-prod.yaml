@@ -1,7 +1,7 @@
 environment: prod
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/beneficiaries-crud-prod
+    eks.amazonaws.com/role-arn: arn:aws:iam::333333333333:role/beneficiaries-prod
 resources:
   requests:
     cpu: 500m
@@ -19,7 +19,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: prod/beneficiaries-crud
+  remotePrefix: prod/beneficiaries
 config:
   axiz:
     config:
@@ -28,7 +28,6 @@ config:
       issuers:
       - issuer: https://sso.prod.axiz-demo.example/realms/axiz
         audiences:
-        - beneficiaries-crud
         - beneficiaries
     dynamodb:
       table-prefix: prod-

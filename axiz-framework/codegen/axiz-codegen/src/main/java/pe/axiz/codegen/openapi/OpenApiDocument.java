@@ -179,6 +179,10 @@ public final class OpenApiDocument {
         break;
       }
     }
+    Object security = op.containsKey("security") ? op.get("security") : root.get("security");
+    List<String> scopes = scopes(security);
+    ApiOperation.Access access = access(root, security, scopes);
+    if (access != ApiOperation.Access.SCOPED) scopes = List.of();
     return new ApiOperation(
         operationId,
         method,
@@ -194,7 +198,27 @@ public final class OpenApiDocument {
         queryParams,
         pagingParams,
         headerParams,
-        scopes(op.containsKey("security") ? op.get("security") : root.get("security")));
+        scopes,
+        access);
+  }
+
+  private static ApiOperation.Access access(
+      Map<String, Object> root, @Nullable Object security, List<String> scopes) {
+    if (security == null) return ApiOperation.Access.UNDECLARED;
+    if (!(security instanceof List<?> alternatives)) return ApiOperation.Access.UNSUPPORTED;
+    if (alternatives.isEmpty()) return ApiOperation.Access.PUBLIC;
+    if (alternatives.size() != 1) return ApiOperation.Access.UNSUPPORTED;
+    var requirement = map(alternatives.getFirst());
+    if (requirement.size() != 1) return ApiOperation.Access.UNSUPPORTED;
+    String schemeName = requirement.keySet().iterator().next();
+    var scheme =
+        deref(root, map(map(map(root.get("components")).get("securitySchemes")).get(schemeName)));
+    Object type = scheme.get("type");
+    boolean oauth = "oauth2".equals(type) || "openIdConnect".equals(type);
+    boolean bearer =
+        "http".equals(type) && "bearer".equalsIgnoreCase(String.valueOf(scheme.get("scheme")));
+    if (!oauth && !bearer || bearer && !scopes.isEmpty()) return ApiOperation.Access.UNSUPPORTED;
+    return scopes.isEmpty() ? ApiOperation.Access.AUTHENTICATED : ApiOperation.Access.SCOPED;
   }
 
   /** Multiple security objects are OR alternatives and require an explicit application policy. */

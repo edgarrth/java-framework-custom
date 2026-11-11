@@ -1,0 +1,183 @@
+public final class pe.axiz.core.metrics.EventDefinition extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String category();
+public java.lang.String name();
+public java.lang.String valueUnit();
+public java.util.List<java.lang.Double> amountSlos();
+public java.util.List<java.lang.Double> valueSlos();
+public java.util.List<java.time.Duration> durationSlos();
+public pe.axiz.core.metrics.EventDefinition(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.time.Duration>, java.util.List<java.lang.Double>, java.util.List<java.lang.Double>);
+public static pe.axiz.core.metrics.EventDefinition of(java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.core.metrics.EventMetrics {
+public <T> T observe(java.lang.String, java.lang.String, boolean, java.util.List<?>, pe.axiz.core.metrics.EventMetrics$ThrowingSupplier<T>) throws java.lang.Throwable;
+public <T> void gauge(java.lang.String, T, java.util.function.ToDoubleFunction<T>);
+public <T> void gauge(java.lang.String, T, java.util.function.ToDoubleFunction<T>, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+public pe.axiz.core.metrics.EventMetrics$ActiveCounter active(java.lang.String);
+public pe.axiz.core.metrics.EventMetrics$ActiveCounter active(java.lang.String, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+public pe.axiz.core.metrics.EventMetrics$InflightTask inflight(java.lang.String, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+public pe.axiz.core.metrics.EventMetrics$Observed begin(java.lang.String, java.lang.String, boolean, java.util.List<?>);
+public pe.axiz.core.metrics.EventMetrics$Sample start(java.lang.String);
+public pe.axiz.core.metrics.EventMetrics(io.micrometer.core.instrument.MeterRegistry, pe.axiz.core.metrics.MetricsSettings);
+public pe.axiz.core.metrics.EventMetrics(io.micrometer.core.instrument.MeterRegistry, pe.axiz.core.metrics.MetricsSettings, java.util.List<pe.axiz.core.metrics.FailureClassifier>);
+public pe.axiz.core.metrics.FailureClassifier$Classification classify(java.lang.Throwable);
+public void amount(java.lang.String, pe.axiz.core.money.Money, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+public void count(java.lang.String);
+public void count(java.lang.String, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+public void record(pe.axiz.core.metrics.MetricEvent);
+public void value(java.lang.String, double, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+}
+
+public final class pe.axiz.core.metrics.EventMetrics$ActiveCounter {
+public long get();
+public void add(long);
+public void decrement();
+public void increment();
+}
+
+public final class pe.axiz.core.metrics.EventMetrics$InflightTask implements java.lang.AutoCloseable {
+public synchronized void stop();
+public void close();
+}
+
+public final class pe.axiz.core.metrics.EventMetrics$Observed {
+public void fail(java.lang.Throwable);
+public void succeed(java.lang.Object);
+}
+
+public final class pe.axiz.core.metrics.EventMetrics$Sample {
+public void stop(pe.axiz.core.metrics.Outcome);
+public void stop(pe.axiz.core.metrics.Outcome, java.util.function.Consumer<pe.axiz.core.metrics.MetricEvent>);
+}
+
+public interface pe.axiz.core.metrics.EventMetrics$ThrowingSupplier<T> {
+public abstract T get() throws java.lang.Throwable;
+}
+
+public final class pe.axiz.core.metrics.EventMetricsMeterFilter implements io.micrometer.core.instrument.config.MeterFilter {
+public io.micrometer.core.instrument.config.MeterFilterReply accept(io.micrometer.core.instrument.Meter$Id);
+public io.micrometer.core.instrument.distribution.DistributionStatisticConfig configure(io.micrometer.core.instrument.Meter$Id, io.micrometer.core.instrument.distribution.DistributionStatisticConfig);
+public pe.axiz.core.metrics.EventMetricsMeterFilter(pe.axiz.core.metrics.MetricsSettings, java.util.Set<java.lang.String>);
+public static java.time.Duration millis(long);
+}
+
+public interface pe.axiz.core.metrics.FailureClassifier {
+public abstract java.util.Optional<pe.axiz.core.metrics.FailureClassifier$Classification> classify(java.lang.Throwable);
+public static pe.axiz.core.metrics.FailureClassifier defaults();
+}
+
+public final class pe.axiz.core.metrics.FailureClassifier$Classification extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String reason();
+public pe.axiz.core.metrics.FailureClassifier$Classification(pe.axiz.core.metrics.Outcome, java.lang.String);
+public pe.axiz.core.metrics.Outcome outcome();
+}
+
+public interface pe.axiz.core.metrics.Metered extends java.lang.annotation.Annotation {
+public abstract boolean duration();
+public abstract java.lang.String category();
+public abstract java.lang.String event();
+}
+
+public final class pe.axiz.core.metrics.MetricEvent {
+public java.lang.Double value();
+public java.lang.String category();
+public java.lang.String channel();
+public java.lang.String event();
+public java.lang.String product();
+public java.lang.String reason();
+public java.lang.String stage();
+public java.lang.String tenant();
+public java.time.Duration duration();
+public java.util.Map<java.lang.String, java.lang.String> tags();
+public pe.axiz.core.metrics.MetricEvent amount(pe.axiz.core.money.Money);
+public pe.axiz.core.metrics.MetricEvent category(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent channel(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent duration(java.time.Duration);
+public pe.axiz.core.metrics.MetricEvent outcome(pe.axiz.core.metrics.Outcome);
+public pe.axiz.core.metrics.MetricEvent product(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent reason(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent stage(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent tag(java.lang.String, java.lang.String);
+public pe.axiz.core.metrics.MetricEvent tenant(java.lang.String);
+public pe.axiz.core.metrics.MetricEvent value(double);
+public pe.axiz.core.metrics.Outcome outcome();
+public pe.axiz.core.money.Money amount();
+public static pe.axiz.core.metrics.MetricEvent of(java.lang.String);
+}
+
+public final class pe.axiz.core.metrics.MetricNames {
+public static boolean isEventMetric(java.lang.String);
+public static final java.lang.String ACTIVE = "axiz.events.active";
+public static final java.lang.String AMOUNT = "axiz.events.amount";
+public static final java.lang.String COUNT = "axiz.events";
+public static final java.lang.String DURATION = "axiz.events.duration";
+public static final java.lang.String GAUGE = "axiz.events.gauge";
+public static final java.lang.String INFLIGHT = "axiz.events.inflight";
+public static final java.lang.String VALUE = "axiz.events.value";
+}
+
+public interface pe.axiz.core.metrics.MetricSource {
+public abstract void describe(pe.axiz.core.metrics.MetricEvent);
+}
+
+public final class pe.axiz.core.metrics.MetricTags {
+public static final java.lang.String CATEGORY = "category";
+public static final java.lang.String CHANNEL = "channel";
+public static final java.lang.String CURRENCY = "currency";
+public static final java.lang.String EVENT = "event";
+public static final java.lang.String NONE = "none";
+public static final java.lang.String OTHER = "other";
+public static final java.lang.String OUTCOME = "outcome";
+public static final java.lang.String PRODUCT = "product";
+public static final java.lang.String REASON = "reason";
+public static final java.lang.String STAGE = "stage";
+public static final java.lang.String TENANT = "tenant";
+public static final java.lang.String UNIT = "unit";
+}
+
+public final class pe.axiz.core.metrics.MetricsSettings extends java.lang.Record {
+public boolean percentileHistograms();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxEvents();
+public int maxValuesPerTag();
+public java.util.Map<java.lang.String, pe.axiz.core.metrics.EventDefinition> events();
+public java.util.Map<java.lang.String, pe.axiz.core.metrics.TagPolicy> customTags();
+public java.util.Map<java.lang.String, pe.axiz.core.metrics.TagPolicy> standardTagPolicies();
+public java.util.Set<java.lang.String> channels();
+public pe.axiz.core.metrics.MetricsSettings withCustomTags(pe.axiz.core.metrics.TagPolicy...);
+public pe.axiz.core.metrics.MetricsSettings withEvents(pe.axiz.core.metrics.EventDefinition...);
+public pe.axiz.core.metrics.MetricsSettings(int, int, java.util.Set<java.lang.String>, java.util.Map<java.lang.String, pe.axiz.core.metrics.TagPolicy>, java.util.Map<java.lang.String, pe.axiz.core.metrics.TagPolicy>, java.util.Map<java.lang.String, pe.axiz.core.metrics.EventDefinition>, boolean);
+public static final java.util.List<java.lang.String> DEFAULT_CHANNELS;
+public static pe.axiz.core.metrics.MetricsSettings defaults();
+}
+
+public final class pe.axiz.core.metrics.Outcome extends java.lang.Enum<pe.axiz.core.metrics.Outcome> {
+public java.lang.String tagValue();
+public static final pe.axiz.core.metrics.Outcome CANCELLED;
+public static final pe.axiz.core.metrics.Outcome ERROR;
+public static final pe.axiz.core.metrics.Outcome REJECTED;
+public static final pe.axiz.core.metrics.Outcome SUCCESS;
+public static final pe.axiz.core.metrics.Outcome TIMEOUT;
+public static pe.axiz.core.metrics.Outcome valueOf(java.lang.String);
+public static pe.axiz.core.metrics.Outcome[] values();
+}
+
+public final class pe.axiz.core.metrics.TagPolicy extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxDistinctValues();
+public java.lang.String key();
+public java.util.Set<java.lang.String> allowedValues();
+public pe.axiz.core.metrics.TagPolicy(java.lang.String, java.util.Set<java.lang.String>, int);
+public static pe.axiz.core.metrics.TagPolicy allowed(java.lang.String, java.util.Set<java.lang.String>);
+public static pe.axiz.core.metrics.TagPolicy bounded(java.lang.String, int);
+}

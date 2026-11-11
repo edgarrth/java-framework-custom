@@ -1,0 +1,96 @@
+package {{project.basePackage}};
+
+import java.time.Duration;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.support.GenericApplicationContext;
+import pe.axiz.spring.test.AxizContainers;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+{{#auditResources.queue}}
+import software.amazon.awssdk.services.sqs.SqsClient;
+{{/auditResources.queue}}
+{{#auditResources.topic}}
+import software.amazon.awssdk.services.sns.SnsClient;
+{{/auditResources.topic}}
+
+/** Creates only test resources, before Spring selects the production AWS auto-configurations. */
+class AuditTestConfiguration implements ApplicationContextInitializer<GenericApplicationContext> {
+  @Override
+  public void initialize(GenericApplicationContext context) {
+    var localstack = AxizContainers.localstack();
+    String previousAccess = System.getProperty("aws.accessKeyId");
+    String previousSecret = System.getProperty("aws.secretAccessKey");
+    try {
+      localstack.start();
+      var credentials = StaticCredentialsProvider.create(
+          AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey()));
+{{#auditResources.queue}}
+      String queueUrl;
+      try (var sqs = SqsClient.builder()
+          .endpointOverride(localstack.getEndpoint())
+          .region(Region.of(localstack.getRegion()))
+          .credentialsProvider(credentials)
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          .build()) {
+        queueUrl = sqs.createQueue(request -> request.queueName("{{project.name}}-audit")).queueUrl();
+      }
+{{/auditResources.queue}}
+{{#auditResources.topic}}
+      String topicArn;
+      try (var sns = SnsClient.builder()
+          .endpointOverride(localstack.getEndpoint())
+          .region(Region.of(localstack.getRegion()))
+          .credentialsProvider(credentials)
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          .build()) {
+        topicArn = sns.createTopic(request -> request.name("{{project.name}}-audit")).topicArn();
+      }
+{{/auditResources.topic}}
+      TestPropertyValues.of(
+          "axiz.aws.endpoint=" + localstack.getEndpoint(),
+          "axiz.aws.region=" + localstack.getRegion(),
+          "spring.cloud.aws.endpoint=" + localstack.getEndpoint(),
+          "spring.cloud.aws.region.static=" + localstack.getRegion(),
+          "spring.cloud.aws.credentials.access-key=" + localstack.getAccessKey(),
+          "spring.cloud.aws.credentials.secret-key=" + localstack.getSecretKey()
+{{#auditResources.sqsSink}}
+          , "axiz.audit.sqs.queue-url=" + queueUrl
+{{/auditResources.sqsSink}}
+{{#auditResources.outboxSqs}}
+          , "axiz.messaging.destinations.audit=" + queueUrl
+{{/auditResources.outboxSqs}}
+{{#auditResources.outboxSns}}
+          , "axiz.messaging.destinations.audit=" + topicArn
+{{/auditResources.outboxSns}}
+      ).applyTo(context);
+      // The SDK's production default credential chain reads these fixed LocalStack test values.
+      System.setProperty("aws.accessKeyId", localstack.getAccessKey());
+      System.setProperty("aws.secretAccessKey", localstack.getSecretKey());
+      context.getBeanFactory().registerSingleton("auditTestLocalStack", localstack);
+      context.getDefaultListableBeanFactory().registerDisposableBean("auditTestLocalStack", () -> {
+        try {
+          localstack.stop();
+        } finally {
+          restore("aws.accessKeyId", previousAccess);
+          restore("aws.secretAccessKey", previousSecret);
+        }
+      });
+    } catch (RuntimeException | Error failure) {
+      try {
+        localstack.stop();
+      } catch (RuntimeException | Error cleanupFailure) {
+        failure.addSuppressed(cleanupFailure);
+      }
+      restore("aws.accessKeyId", previousAccess);
+      restore("aws.secretAccessKey", previousSecret);
+      throw failure;
+    }
+  }
+
+  private static void restore(String key, String previous) {
+    if (previous == null) System.clearProperty(key);
+    else System.setProperty(key, previous);
+  }
+}

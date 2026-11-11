@@ -5,6 +5,8 @@ info:
   version: 1.0.0
 tags:
   - name: orders
+security:
+  - oauth: [orders:read]
 paths:
   /v1/orders:
     get:
@@ -31,6 +33,7 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
     post:
       operationId: createOrder
+      security: [{oauth: [orders:write]}]
       tags: [orders]
       summary: Creates an order
       parameters:
@@ -80,6 +83,7 @@ paths:
               schema: {$ref: '#/components/schemas/Problem'}
     delete:
       operationId: cancelOrder
+      security: [{oauth: [orders:write]}]
       tags: [orders]
       summary: Cancels an order
       responses:
@@ -114,6 +118,13 @@ paths:
                 items: {$ref: '#/components/schemas/Order'}
               example: []
 components:
+  securitySchemes:
+    oauth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://issuer.test/token
+          scopes: {orders:read: Read orders, orders:write: Change orders}
   parameters:
     page:
       name: page

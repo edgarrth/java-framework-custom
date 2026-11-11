@@ -19,7 +19,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: prod/core-integration
+  remotePrefix: prod/banking-core
 config:
   axiz:
     config:

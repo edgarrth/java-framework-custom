@@ -1,0 +1,28 @@
+public interface pe.axiz.structure.layered.CommandService<T, I> {
+public abstract T create(T);
+public abstract T update(I, T);
+public abstract void delete(I);
+}
+
+public interface pe.axiz.structure.layered.CrudService<T, I> extends pe.axiz.structure.layered.QueryService<T, I>, pe.axiz.structure.layered.CommandService<T, I> {
+}
+
+public class pe.axiz.structure.layered.InMemoryCrudService<T, I extends java.lang.Comparable<I>> implements pe.axiz.structure.layered.CrudService<T, I> {
+public T create(T);
+public T update(I, T);
+public java.lang.Object update(java.lang.Object, java.lang.Object);
+public java.lang.String resourceName();
+public java.util.Optional find(java.lang.Object);
+public java.util.Optional<T> find(I);
+public pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public pe.axiz.structure.layered.InMemoryCrudService(java.lang.String, java.util.function.Function<T, I>, java.util.function.BiFunction<I, T, T>);
+public void delete(I);
+public void delete(java.lang.Object);
+}
+
+public interface pe.axiz.structure.layered.QueryService<T, I> {
+public abstract java.lang.String resourceName();
+public abstract java.util.Optional<T> find(I);
+public abstract pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public default T get(I);
+}

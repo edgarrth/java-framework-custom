@@ -12,6 +12,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
+import pe.axiz.core.commons.TransactionOutcome;
 
 class KafkaAuditPublisherTest {
 
@@ -29,7 +30,20 @@ class KafkaAuditPublisherTest {
         "c-1",
         "web",
         null,
-        Map.of("k", "v"));
+        Map.of("k", "v"),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
+  }
+
+  @Test
+  void emptyDestinationIsRejectedBeforePublication() {
+    try (var client =
+        new MockProducer<String, String>(
+            true, null, new StringSerializer(), new StringSerializer())) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new KafkaAuditPublisher(client, " ", Duration.ofSeconds(1)));
+    }
   }
 
   @Test

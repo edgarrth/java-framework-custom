@@ -1,0 +1,34 @@
+public final class pe.axiz.core.id.CorrelationIds {
+public static boolean isValid(java.lang.String);
+public static java.lang.String newId();
+public static java.lang.String reuseOrCreate(java.lang.String);
+}
+
+public interface pe.axiz.core.id.IdGenerator {
+public abstract java.lang.String newId();
+public static pe.axiz.core.id.IdGenerator ulid();
+public static pe.axiz.core.id.IdGenerator uuidV7();
+}
+
+public final class pe.axiz.core.id.IdempotencyKeys {
+public static boolean isValid(java.lang.String);
+public static java.lang.String derive(java.lang.String...);
+public static java.lang.String newKey();
+}
+
+public final class pe.axiz.core.id.Ulid implements pe.axiz.core.id.IdGenerator {
+public java.lang.String newId();
+public static boolean isValid(java.lang.String);
+public static java.lang.String generate();
+public static java.time.Instant timestamp(java.lang.String);
+public static pe.axiz.core.id.Ulid generator(java.time.Clock);
+}
+
+public final class pe.axiz.core.id.UuidV7 implements pe.axiz.core.id.IdGenerator {
+public java.lang.String newId();
+public java.util.UUID next();
+public static boolean isV7(java.util.UUID);
+public static java.time.Instant timestamp(java.util.UUID);
+public static java.util.UUID generate();
+public static pe.axiz.core.id.UuidV7 generator(java.time.Clock);
+}

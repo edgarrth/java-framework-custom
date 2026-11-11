@@ -18,6 +18,7 @@ import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
+import pe.axiz.core.commons.TransactionOutcome;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
@@ -42,6 +43,13 @@ class SqsAsyncAuditPublisherTest {
 
     public void close() {
       closed = true;
+    }
+  }
+
+  @Test
+  void emptyDestinationIsRejectedBeforePublication() {
+    try (var client = new Client()) {
+      assertThrows(IllegalArgumentException.class, () -> new SqsAsyncAuditPublisher(client, " "));
     }
   }
 
@@ -119,6 +127,8 @@ class SqsAsyncAuditPublisherTest {
         "corr",
         null,
         null,
-        Map.of());
+        Map.of(),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
   }
 }

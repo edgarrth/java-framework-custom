@@ -55,13 +55,13 @@ class MavenReactorTest {
             .filter(path -> path.toString().contains("autoconfigure"))
             .findFirst()
             .orElseThrow();
-    Files.writeString(spring, PomEditor.setParentVersion(Files.readString(spring), "1.0.0"));
+    Files.writeString(spring, PomEditor.setParentVersion(Files.readString(spring), "2.0.1"));
     List<String> errors =
         DoctorCommandTest.messages(
             DoctorCommandTest.doctor().checks(project), DoctorCommand.Level.ERROR);
     assertTrue(
         errors.stream()
-            .anyMatch(message -> message.contains("1.0.0") && message.contains("autoconfigure")),
+            .anyMatch(message -> message.contains("2.0.1") && message.contains("autoconfigure")),
         errors.toString());
   }
 
@@ -144,7 +144,8 @@ class MavenReactorTest {
     assertThrows(IOException.class, () -> MavenReactor.read(root));
     Files.writeString(
         root.resolve("pom.xml"),
-        "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><dependencyManagement><modules><module>not-a-module</module></modules></dependencyManagement></project>");
+        "<project"
+            + " xmlns=\"http://maven.apache.org/POM/4.0.0\"><dependencyManagement><modules><module>not-a-module</module></modules></dependencyManagement></project>");
     assertEquals(1, MavenReactor.read(root).size());
   }
 }

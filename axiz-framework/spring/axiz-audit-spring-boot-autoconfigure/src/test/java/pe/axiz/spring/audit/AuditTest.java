@@ -36,7 +36,7 @@ class AuditTest {
     List<AuditEvent> events = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-        .withPropertyValues("spring.application.name=orders", "axiz.audit.async.enabled=false")
+        .withPropertyValues("spring.application.name=orders", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
         .run(
             ctx -> {

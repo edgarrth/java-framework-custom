@@ -1,0 +1,66 @@
+public final class pe.axiz.spring.test.AxizContainers {
+public static final org.testcontainers.utility.DockerImageName KAFKA;
+public static final org.testcontainers.utility.DockerImageName LOCALSTACK;
+public static final org.testcontainers.utility.DockerImageName POSTGRES;
+public static final org.testcontainers.utility.DockerImageName VALKEY;
+public static org.testcontainers.containers.GenericContainer<?> valkey();
+public static org.testcontainers.kafka.KafkaContainer kafka();
+public static org.testcontainers.localstack.LocalStackContainer localstack();
+public static org.testcontainers.postgresql.PostgreSQLContainer postgres();
+}
+
+public class pe.axiz.spring.test.BlockHoundExtension implements org.junit.jupiter.api.extension.BeforeAllCallback {
+public pe.axiz.spring.test.BlockHoundExtension();
+public static java.util.List<pe.axiz.spring.test.BlockHoundExtension$BlockingCall> detectedBlockingCalls();
+public void beforeAll(org.junit.jupiter.api.extension.ExtensionContext);
+}
+
+public final class pe.axiz.spring.test.BlockHoundExtension$BlockingCall extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String method();
+public java.lang.String thread();
+public java.util.List<java.lang.StackTraceElement> stack();
+public pe.axiz.spring.test.BlockHoundExtension$BlockingCall(java.lang.String, java.lang.String, java.util.List<java.lang.StackTraceElement>);
+}
+
+public final class pe.axiz.spring.test.BlockHoundTestExecutionListener implements org.junit.platform.launcher.TestExecutionListener {
+public pe.axiz.spring.test.BlockHoundTestExecutionListener();
+public void testPlanExecutionStarted(org.junit.platform.launcher.TestPlan);
+}
+
+public final class pe.axiz.spring.test.EphemeralSecrets {
+public static java.nio.file.Path keys(java.lang.String...);
+public static void register(org.springframework.test.context.DynamicPropertyRegistry, java.lang.String...);
+}
+
+public final class pe.axiz.spring.test.HttpStubs {
+public static com.github.tomakehurst.wiremock.WireMockServer start(java.lang.String, org.springframework.test.context.DynamicPropertyRegistry);
+}
+
+public class pe.axiz.spring.test.KafkaTestConfiguration {
+public pe.axiz.spring.test.KafkaTestConfiguration();
+}
+
+public class pe.axiz.spring.test.LocalStackTestConfiguration {
+public pe.axiz.spring.test.LocalStackTestConfiguration();
+}
+
+public final class pe.axiz.spring.test.OpenApiResponses {
+public int assertExamples();
+public pe.axiz.spring.test.OpenApiResponses(java.nio.file.Path) throws java.io.IOException;
+public void assertResponse(java.lang.String, java.lang.String, int, java.lang.String, java.lang.String);
+}
+
+public class pe.axiz.spring.test.PostgresTestConfiguration {
+public pe.axiz.spring.test.PostgresTestConfiguration();
+}
+
+public class pe.axiz.spring.test.RedisTestConfiguration {
+public pe.axiz.spring.test.RedisTestConfiguration();
+}
+
+public final class pe.axiz.spring.test.RequestContexts {
+public static pe.axiz.core.commons.RequestContext$Scope open(java.lang.String, java.lang.String, java.lang.String);
+}

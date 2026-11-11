@@ -35,8 +35,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 ## Native delivery
 
-Reactive integrations select `AsyncAuditEventPublisher`, never the background queue publisher.
-Builders belong to one operation. Each event receives an immutable snapshot of sanitized details;
+Reactive integrations select `AsyncAuditEventPublisher`. In ASYNC mode,
+`QueuedAsyncAuditPublisher` admits events without waiting and delegates acknowledgement waiting to
+its owned drainer; request threads do not wait for network I/O. Builders belong to one operation. Each event receives an immutable snapshot of sanitized details;
 subsequent builder changes cannot alter a delivered event. Native transport ownership stays with
 its application owner. For transactional evidence, use Spring's reactive durable audit and R2DBC
 outbox in the business transaction. Logging requires a non-blocking appender and remains best effort.
@@ -48,18 +49,23 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 ## Explicit delivery policy in Spring 2.0
 
 Framework-owned publishers require `axiz.audit.mode=ASYNC|DURABLE|SYNC` outside `local`/`test`.
-Legacy boolean selectors remain accepted with a deprecation warning; disabled audit and
-application-owned publishers keep their own policy. ASYNC is the development default and uses
+Retired boolean selectors are rejected, including alongside a canonical mode. Disabled audit and
+application-owned publishers keep their own delivery policy. ASYNC is the development default and uses
 memory, not crash-safe persistence. The generator writes DURABLE with an effective outbox
 capability, otherwise ASYNC, and preserves existing choices when adding capabilities.
 
 `axiz.audit.async.delivery-timeout` (default 10 s) bounds each imperative and native delivery.
 For an imperative sink, the queue drainer waits on a single owned delivery worker with bounded
 admission; a timed-out delivery is cancelled and follows the existing failure/fallback policy.
+Native queue delivery invokes the non-blocking submission contract on its owned virtual drainer
+and awaits one acknowledgement deadline. Cancellation reaches that stage before fallback, avoiding
+two competing timers. This internal native path does not expose an unchecked imperative constructor.
 The delegate must cooperate with interruption and configure its transport timeouts: Java cannot
 forcibly stop a delegate that ignores cancellation, and fallback may duplicate a late delivery.
-Shutdown retains its separate 10-second queue-drain budget. Queue admission, delivery and shutdown
-are different limits; none makes ASYNC durable. Context snapshots are opened on the actual delivery
+Shutdown shares its total 10-second budget across draining, cancellation, fallback and worker
+termination. `Shutdown.terminated` explicitly reports uncooperative callbacks, and `unconfirmed`
+distinguishes uncertain fallback acceptance from confirmed losses. Closed publishers reject new events.
+Queue admission, delivery and shutdown are different limits; none makes ASYNC durable. Context snapshots are opened on the actual delivery
 worker; business transaction state is never transferred across threads.
 
 DURABLE joins the business transaction only with the same transaction manager/resource and a

@@ -21,6 +21,8 @@ public final class SqsAsyncAuditPublisher implements AsyncAuditEventPublisher {
   public SqsAsyncAuditPublisher(SqsAsyncClient sqs, String queueUrl) {
     this.sqs = Objects.requireNonNull(sqs);
     this.queueUrl = Objects.requireNonNull(queueUrl);
+    if (queueUrl.isBlank())
+      throw new IllegalArgumentException("Audit SQS queue URL must not be blank");
     this.fifo = queueUrl.endsWith(".fifo");
   }
 

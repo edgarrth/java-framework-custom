@@ -84,7 +84,7 @@ class ReactiveStorageTest {
               StepVerifier.create(storage.presignGet("x", Duration.ofSeconds(1)))
                   .expectNextCount(1)
                   .verifyComplete();
-              StepVerifier.create(storage.presignPut("x", "t", Duration.ofSeconds(1)))
+              StepVerifier.create(storage.presignUpload("x", "t", Duration.ofSeconds(1)))
                   .expectNextCount(1)
                   .verifyComplete();
               StepVerifier.create(storage.presignUpload("x", "t", Duration.ofSeconds(1)))

@@ -6,26 +6,6 @@
       "description": "Canonical audit delivery mode: DURABLE requires transactional outbox; ASYNC uses an in-memory queue; SYNC confirms delivery before returning."
     },
     {
-      "name": "axiz.audit.durable.enabled",
-      "type": "java.lang.Boolean",
-      "defaultValue": false,
-      "deprecation": {
-        "level": "warning",
-        "replacement": "axiz.audit.mode",
-        "reason": "Legacy mode selector; removal in 3.0. Migrate the effective configuration as a whole, preserving DURABLE precedence."
-      }
-    },
-    {
-      "name": "axiz.audit.async.enabled",
-      "type": "java.lang.Boolean",
-      "defaultValue": true,
-      "deprecation": {
-        "level": "warning",
-        "replacement": "axiz.audit.mode",
-        "reason": "Legacy mode selector; removal in 3.0. Queue settings remain supported; do not migrate independently of durable.enabled."
-      }
-    },
-    {
       "name": "axiz.audit.kafka.send-workers",
       "type": "java.lang.Integer",
       "defaultValue": 2,

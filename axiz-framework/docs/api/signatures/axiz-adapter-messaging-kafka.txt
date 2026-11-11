@@ -1,0 +1,22 @@
+public final class pe.axiz.adapter.messaging.kafka.KafkaEnvelopes {
+public static pe.axiz.core.messaging.EventEnvelope from(org.apache.kafka.clients.consumer.ConsumerRecord<java.lang.String, byte[]>);
+}
+
+public final class pe.axiz.adapter.messaging.kafka.KafkaEventPublisher implements pe.axiz.core.messaging.EventPublisher,pe.axiz.core.messaging.BoundedPublisher {
+public boolean supports(java.lang.String);
+public pe.axiz.adapter.messaging.kafka.KafkaEventPublisher(org.apache.kafka.clients.producer.Producer<java.lang.String, byte[]>, java.time.Duration);
+public pe.axiz.adapter.messaging.kafka.KafkaEventPublisher(org.apache.kafka.clients.producer.Producer<java.lang.String, byte[]>, java.time.Duration, java.time.Duration);
+public pe.axiz.core.messaging.PublishBound publishBound();
+public pe.axiz.core.messaging.PublishResult publish(java.lang.String, pe.axiz.core.messaging.EventEnvelope);
+public static final java.lang.String SCHEME = "kafka:";
+}
+
+public final class pe.axiz.adapter.messaging.kafka.KafkaEventRecords {
+public static boolean isDestination(java.lang.String);
+public static org.apache.kafka.clients.producer.ProducerRecord<java.lang.String, byte[]> create(java.lang.String, pe.axiz.core.messaging.EventEnvelope);
+}
+
+public final class pe.axiz.adapter.messaging.kafka.MskIam {
+public static java.util.Map<java.lang.String, java.lang.Object> clientProperties();
+public static java.util.Map<java.lang.String, java.lang.Object> reliableProducer();
+}

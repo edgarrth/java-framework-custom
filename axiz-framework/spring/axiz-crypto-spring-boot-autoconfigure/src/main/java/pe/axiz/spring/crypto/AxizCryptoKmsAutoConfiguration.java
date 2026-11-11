@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +25,7 @@ import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -37,7 +37,7 @@ import software.amazon.awssdk.services.kms.KmsClient;
       "pe.axiz.adapter.crypto.kms.KmsDataKeyProvider",
       "software.amazon.awssdk.services.kms.KmsClient"
     })
-@ConditionalOnProperty("axiz.crypto.kms.key-id")
+@ConditionalOnConfiguredProperty("axiz.crypto.kms.key-id")
 @EnableConfigurationProperties({AxizCryptoProperties.class, AxizAwsCompletionProperties.class})
 public class AxizCryptoKmsAutoConfiguration {
 

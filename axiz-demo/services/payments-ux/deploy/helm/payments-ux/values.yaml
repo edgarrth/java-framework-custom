@@ -62,10 +62,5 @@ externalSecret:
   enabled: true
   storeName: aws-secrets-manager
   refreshInterval: 1h
-  remotePrefix: dev/payments-experience
+  remotePrefix: dev/payments-ux
   keys: []
-migration:
-  serviceAliases:
-  - payments-experience
-  previousAudience: payments-experience
-  currentAudience: payments-ux

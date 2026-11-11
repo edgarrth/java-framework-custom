@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.outbox.OutboxRecord;
@@ -68,7 +69,9 @@ class DurableAuditTest {
         "corr-1",
         "web",
         null,
-        Map.of());
+        Map.of(),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
   }
 
   @Test

@@ -18,6 +18,36 @@ class SampleWorkflowsTest(unittest.TestCase):
     def test_all_actual_framework_workflows_use_the_same_v2_release_as_their_guard(self):
         self.assertEqual([], policy.check(HERE.resolve().parents[1]))
 
+    def test_sample_builds_reject_missing_or_mutating_format_checks(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflows = root / '.github/workflows'
+            workflows.mkdir(parents=True)
+            for name in ['ci.yaml', 'samples-matrix.yaml']:
+                path = workflows / name
+                for goal, valid in [('verify', False), ('spotless:apply verify', False),
+                                    ('spotless:check verify', True)]:
+                    document = {'jobs': {'samples': {'steps': [{'run':
+                        'for dir in target/samples/*/ target/audit-samples/*/; do\n'
+                        f'  (cd "$dir" && ./mvnw -B -ntp {goal})\n' + 'done'}]}}}
+                    path.write_text(yaml.safe_dump(document))
+                    with self.subTest(workflow=name, goal=goal):
+                        self.assertEqual(valid, not policy.check(root))
+                path.unlink()
+
+    def test_acceptance_scripts_cannot_repair_generated_sources(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            scripts = root / '.github/scripts'
+            scripts.mkdir(parents=True)
+            for name, goal in [('authorization-samples.sh', 'test'), ('reactive-native-sample.sh', 'verify')]:
+                path = scripts / name
+                for formatting, valid in [('spotless:apply', False), ('', False), ('spotless:check', True)]:
+                    path.write_text(f'./mvnw -B -ntp {formatting} {goal}\n')
+                    with self.subTest(script=name, formatting=formatting):
+                        self.assertEqual(valid, not policy.check(root))
+                path.unlink()
+
     def fixture(self, root):
         workflows = root / '.github/workflows'
         workflows.mkdir(parents=True)

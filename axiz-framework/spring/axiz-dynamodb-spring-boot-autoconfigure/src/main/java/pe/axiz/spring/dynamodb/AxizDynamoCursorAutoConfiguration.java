@@ -7,18 +7,18 @@ import java.util.Objects;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.kit.dynamodb.CursorCodec;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
 /** Loads cursor key material at startup; request processing performs no secret-store I/O. */
 @AutoConfiguration(afterName = "pe.axiz.spring.secrets.AxizSecretsAutoConfiguration")
 @ConditionalOnClass(CursorCodec.class)
-@ConditionalOnProperty("axiz.dynamodb.cursor.current-key-id")
+@ConditionalOnConfiguredProperty("axiz.dynamodb.cursor.current-key-id")
 @EnableConfigurationProperties(AxizDynamoCursorProperties.class)
 public class AxizDynamoCursorAutoConfiguration {
   @Bean

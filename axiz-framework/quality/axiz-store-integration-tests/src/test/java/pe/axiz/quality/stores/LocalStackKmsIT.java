@@ -66,7 +66,7 @@ class LocalStackKmsIT {
   private static KmsAsyncClient async;
   private static AsyncAwsClients resources;
   private static KmsAsyncDataKeyProvider provider;
-  private static EnvelopeEncryptor legacy;
+  private static EnvelopeEncryptor imperative;
   private static NettyLifecycleProbe lifecycle;
 
   @BeforeAll
@@ -129,7 +129,7 @@ class LocalStackKmsIT {
               public void close() {}
             },
             keyId);
-    legacy =
+    imperative =
         new EnvelopeEncryptor(
             new KmsDataKeyProvider(sync, keyId), Duration.ofMinutes(1), 100, Clock.systemUTC());
   }
@@ -155,7 +155,7 @@ class LocalStackKmsIT {
   }
 
   @Test
-  void nativeAndLegacyEnvelopesInteroperateWithColdCrypto() {
+  void nativeAndImperativeEnvelopesInteroperateWithColdCrypto() {
     var encryption = facade(Clock.systemUTC(), 100);
     var sealed = new AtomicReference<byte[]>();
     StepVerifier.create(
@@ -167,10 +167,12 @@ class LocalStackKmsIT {
         .assertNext(plain -> assertArrayEquals(PLAIN, plain))
         .expectComplete()
         .verify(Duration.ofSeconds(30));
-    assertArrayEquals(PLAIN, legacy.decrypt(sealed.get(), "statements"));
-    byte[] old = legacy.encrypt(PLAIN, "legacy-statements");
+    assertArrayEquals(PLAIN, imperative.decrypt(sealed.get(), "statements"));
+    byte[] ciphertext = imperative.encrypt(PLAIN, "imperative-statements");
     StepVerifier.create(
-            encryption.decrypt(old, "legacy-statements").subscribeOn(Schedulers.parallel()))
+            encryption
+                .decrypt(ciphertext, "imperative-statements")
+                .subscribeOn(Schedulers.parallel()))
         .assertNext(plain -> assertArrayEquals(PLAIN, plain))
         .expectComplete()
         .verify(Duration.ofSeconds(30));

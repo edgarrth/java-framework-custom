@@ -12,6 +12,7 @@ import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.commons.json.JsonReader;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
@@ -56,7 +57,16 @@ class SqsAuditPublisherTest {
         null,
         null,
         null,
-        Map.of());
+        Map.of(),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
+  }
+
+  @Test
+  void emptyDestinationIsRejectedBeforePublication() {
+    try (var client = new FakeSqs()) {
+      assertThrows(IllegalArgumentException.class, () -> new SqsAuditPublisher(client, " "));
+    }
   }
 
   @Test

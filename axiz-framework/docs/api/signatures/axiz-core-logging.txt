@@ -1,0 +1,54 @@
+public final class pe.axiz.core.logging.HttpLogFormatter {
+public java.lang.String body(java.lang.String, java.lang.String);
+public java.lang.String body(java.lang.String, java.lang.String, boolean);
+public java.lang.String omitted(java.lang.String, long);
+public java.util.Map<java.lang.String, java.lang.String> headers(java.util.Collection<java.lang.String>, java.util.function.Function<java.lang.String, java.lang.String>);
+public pe.axiz.core.logging.HttpLogFormatter(java.util.Collection<java.lang.String>, int, pe.axiz.core.sensitive.ObjectMasker);
+}
+
+public final class pe.axiz.core.logging.LogFields {
+public static final java.lang.String CHANNEL = "channel";
+public static final java.lang.String CLIENT_ID = "clientId";
+public static final java.lang.String CORRELATION_ID = "correlationId";
+public static final java.lang.String DURATION_MS = "durationMs";
+public static final java.lang.String ERROR_CODE = "errorCode";
+public static final java.lang.String OPERATION = "operation";
+public static final java.lang.String OUTCOME = "outcome";
+public static final java.lang.String REQUEST_ID = "requestId";
+public static final java.lang.String SERVICE = "service";
+public static final java.lang.String SPAN_ID = "span_id";
+public static final java.lang.String TENANT = "tenant";
+public static final java.lang.String TRACE_ID = "trace_id";
+}
+
+public interface pe.axiz.core.logging.LogOperation extends java.lang.annotation.Annotation {
+public abstract boolean logArguments();
+public abstract boolean logResult();
+public abstract java.lang.String value();
+public abstract pe.axiz.core.logging.LogOperation$Level level();
+}
+
+public final class pe.axiz.core.logging.LogOperation$Level extends java.lang.Enum<pe.axiz.core.logging.LogOperation$Level> {
+public static final pe.axiz.core.logging.LogOperation$Level DEBUG;
+public static final pe.axiz.core.logging.LogOperation$Level INFO;
+public static pe.axiz.core.logging.LogOperation$Level valueOf(java.lang.String);
+public static pe.axiz.core.logging.LogOperation$Level[] values();
+}
+
+public interface pe.axiz.core.logging.NoLog extends java.lang.annotation.Annotation {
+}
+
+public final class pe.axiz.core.logging.OperationLogger {
+public pe.axiz.core.logging.OperationLogger(pe.axiz.core.sensitive.ObjectMasker);
+public void entry(java.lang.String, java.util.List<java.lang.String>, java.lang.Object[], boolean[], pe.axiz.core.logging.LogOperation$Level);
+public void entry(java.lang.String, pe.axiz.core.logging.LogOperation$Level);
+public void failure(java.lang.String, java.time.Duration, java.lang.Throwable, boolean, java.lang.String);
+public void success(java.lang.String, java.time.Duration, java.lang.Object, boolean, pe.axiz.core.logging.LogOperation$Level);
+}
+
+public final class pe.axiz.core.logging.ScopedMdc implements java.lang.AutoCloseable {
+public pe.axiz.core.logging.ScopedMdc with(java.lang.String, java.lang.String);
+public static pe.axiz.core.logging.ScopedMdc of(java.lang.String, java.lang.String);
+public static pe.axiz.core.logging.ScopedMdc of(java.util.Map<java.lang.String, java.lang.String>);
+public void close();
+}

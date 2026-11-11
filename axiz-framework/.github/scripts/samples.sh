@@ -12,6 +12,10 @@ revision=$(./mvnw -q -N help:evaluate -Dexpression=revision -DforceStdout)
   org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
   -Dexec.mainClass=pe.axiz.codegen.tools.SampleProjects \
   -Dexec.args="target/samples codegen/axiz-codegen/src/test/resources/contracts/orders.yaml ${revision} ${MODE}"
+./mvnw -B -ntp -q -pl codegen/axiz-codegen \
+  org.codehaus.mojo:exec-maven-plugin:3.5.1:java \
+  -Dexec.mainClass=pe.axiz.codegen.tools.SampleProjects \
+  -Dexec.args="target/audit-samples codegen/axiz-codegen/src/test/resources/contracts/orders.yaml ${revision} audit"
 if [ "$MODE" = defaults ]; then
   validation_env=$(mktemp -d "${TMPDIR:-/tmp}/axiz-sample-validation.XXXXXX")
   trap 'rm -rf "$validation_env"' EXIT

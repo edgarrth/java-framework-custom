@@ -1,0 +1,51 @@
+public interface pe.axiz.structure.hexagonal.AggregateEvent extends pe.axiz.core.domain.DomainEvent {
+public abstract java.lang.String aggregateType();
+}
+
+public interface pe.axiz.structure.hexagonal.DomainEventSink {
+public abstract void publish(java.util.List<pe.axiz.core.domain.DomainEvent>);
+public default boolean transactional();
+public static pe.axiz.structure.hexagonal.DomainEventSink discard();
+}
+
+public final class pe.axiz.structure.hexagonal.DomainEvents {
+public static void collect(pe.axiz.core.domain.AggregateRoot<?>);
+public static void raise(java.util.Collection<? extends pe.axiz.core.domain.DomainEvent>);
+}
+
+public interface pe.axiz.structure.hexagonal.ReactiveDomainEventSink {
+public abstract org.reactivestreams.Publisher<java.lang.Void> publish(java.util.Collection<? extends pe.axiz.core.domain.DomainEvent>);
+}
+
+public interface pe.axiz.structure.hexagonal.ReactiveUseCase<I, O> {
+public abstract org.reactivestreams.Publisher<O> execute(I);
+}
+
+public interface pe.axiz.structure.hexagonal.UseCase<I, O> {
+public abstract O execute(I);
+}
+
+public final class pe.axiz.structure.hexagonal.UseCaseRunner {
+public <I, O> O run(pe.axiz.structure.hexagonal.UseCase<I, O>, I);
+public <T> T run(boolean, java.util.function.Supplier<T>);
+public pe.axiz.structure.hexagonal.UseCaseRunner(pe.axiz.structure.hexagonal.UseCaseTransaction, pe.axiz.structure.hexagonal.DomainEventSink);
+}
+
+public interface pe.axiz.structure.hexagonal.UseCaseTransaction {
+public abstract <T> T execute(boolean, java.util.function.Supplier<T>);
+public static pe.axiz.structure.hexagonal.UseCaseTransaction none();
+}
+
+public interface pe.axiz.structure.hexagonal.annotation.Adapter extends java.lang.annotation.Annotation {
+}
+
+public interface pe.axiz.structure.hexagonal.annotation.InboundPort extends java.lang.annotation.Annotation {
+}
+
+public interface pe.axiz.structure.hexagonal.annotation.OutboundPort extends java.lang.annotation.Annotation {
+}
+
+public interface pe.axiz.structure.hexagonal.annotation.UseCase extends java.lang.annotation.Annotation {
+public abstract boolean readOnly();
+public abstract java.lang.String value();
+}

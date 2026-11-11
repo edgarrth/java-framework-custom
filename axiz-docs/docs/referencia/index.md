@@ -100,7 +100,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 
 | Módulo | Descripción |
 |---|---|
-| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode` is the canonical delivery selector. Legacy `durable.enabled` and `async.enabled` |
+| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode=ASYNC\|DURABLE\|SYNC` is the only delivery selector. Removed boolean selectors |
 | [`axiz-audit-spring-boot-starter`](spring/axiz-audit-spring-boot-starter.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS). |
 | [`axiz-cache-spring-boot-autoconfigure`](spring/axiz-cache-spring-boot-autoconfigure.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance (auto-configuration). |
 | [`axiz-cache-spring-boot-starter`](spring/axiz-cache-spring-boot-starter.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance. |

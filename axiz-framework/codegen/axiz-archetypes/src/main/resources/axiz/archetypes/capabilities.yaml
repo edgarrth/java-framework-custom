@@ -509,7 +509,7 @@ capabilities:
     requires: [audit]
     dependencies: [pe.axiz:axiz-adapter-audit-sqs, software.amazon.awssdk:sqs]
     properties:
-      axiz.audit.sqs.queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+      axiz.audit.sqs.queue-url: ${AXIZ_AUDIT_QUEUE_URL}
     configMapKeys: [axiz.audit.sqs.queue-url]
     local:
       axiz.aws.endpoint: http://localhost:4566

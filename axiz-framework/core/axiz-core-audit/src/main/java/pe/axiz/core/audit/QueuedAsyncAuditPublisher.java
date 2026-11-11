@@ -3,9 +3,6 @@ package pe.axiz.core.audit;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import pe.axiz.core.commons.Stages;
 
 /**
@@ -30,30 +27,7 @@ public final class QueuedAsyncAuditPublisher implements AsyncAuditEventPublisher
       int capacity,
       Duration deliveryTimeout,
       Stages.ContextProvider context) {
-    if (!deliveryTimeout.isPositive())
-      throw new IllegalArgumentException("Audit delivery timeout must be positive");
-    queue =
-        new AsyncAuditPublisher(
-            event -> {
-              var pending = Stages.call(() -> target.publish(event)).toCompletableFuture();
-              try {
-                var _ = pending.get(deliveryTimeout.toNanos(), TimeUnit.NANOSECONDS);
-              } catch (InterruptedException interrupted) {
-                pending.cancel(true);
-                Thread.currentThread().interrupt();
-                throw new AuditPublishException("Audit worker interrupted", interrupted);
-              } catch (TimeoutException timeout) {
-                pending.cancel(true);
-                throw new AuditPublishException("Audit acknowledgement timeout", timeout);
-              } catch (ExecutionException failure) {
-                throw new AuditPublishException("Audit delivery failed", Stages.unwrap(failure));
-              }
-            },
-            fallback,
-            capacity,
-            Duration.ZERO,
-            Duration.ofSeconds(10),
-            context);
+    queue = AsyncAuditPublisher.forNative(target, fallback, capacity, deliveryTimeout, context);
   }
 
   @Override

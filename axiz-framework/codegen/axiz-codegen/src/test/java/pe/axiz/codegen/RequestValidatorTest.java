@@ -136,7 +136,7 @@ class RequestValidatorTest {
             List.of(),
             null,
             null,
-            "1.0.0");
+            "2.0.0");
     assertTrue(mentions(problems(missing), "OpenAPI 3.1 contract is required"));
     ProjectRequest broken =
         new ProjectRequest(
@@ -151,7 +151,7 @@ class RequestValidatorTest {
             List.of(),
             "openapi: 3.1.0\npaths:\n  /orders:\n    get:\n      responses: {}\n",
             null,
-            "1.0.0");
+            "2.0.0");
     assertFalse(generator.validate(broken).valid(), "lint errors block the generation");
   }
 
@@ -172,7 +172,7 @@ class RequestValidatorTest {
             List.of(),
             base.openApi(),
             null,
-            "1.0.0");
+            "2.0.0");
     assertTrue(mentions(problems(evil), "kebab-case"));
     assertThrows(GenerationException.class, () -> generator.generate(evil));
   }

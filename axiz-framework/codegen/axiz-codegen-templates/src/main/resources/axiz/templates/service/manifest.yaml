@@ -77,6 +77,7 @@ files:
   # --- tests ---------------------------------------------------------------------------------
   - {template: test/ArchitectureTest.java.mustache, path: "src/test/java/{{project.packagePath}}/ArchitectureTest.java"}
   - {template: test/ApplicationTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{project.className}}ApplicationTest.java"}
+  - {template: test/AuditTestConfiguration.java.mustache, path: "src/test/java/{{project.packagePath}}/AuditTestConfiguration.java", when: auditResources.required}
   - {template: test/ContractExamplesTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.restPath}}/ContractExamplesTest.java", when: hasExamples}
   - {template: test/example.json.mustache, path: "src/test/resources/contract-examples/{{item.operationId}}.json", each: examples}
   - {template: test/ExampleCreatedHandlerTest.java.mustache, path: "src/test/java/{{project.packagePath}}/handler/ExampleCreatedHandlerTest.java", when: fw.exampleEvents}

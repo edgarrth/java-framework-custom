@@ -1,15 +1,12 @@
 package pe.axiz.core.storage;
 
-import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
-import pe.axiz.core.commons.Stages;
 
 /**
  * Native asynchronous object storage. Content is streamed with demand and cancellation; publishers
@@ -30,15 +27,6 @@ public interface AsyncObjectStorage {
 
   CompletionStage<URL> presignGet(String key, Duration ttl);
 
-  CompletionStage<URL> presignPut(String key, String contentType, Duration ttl);
-
   /** Complete upload instructions; cancellation reaches the native signing operation. */
-  default CompletionStage<PresignedUpload> presignUpload(
-      String key, String contentType, Duration ttl) {
-    return Stages.map(
-        Stages.call(() -> presignPut(key, contentType, ttl)),
-        url ->
-            new PresignedUpload(
-                URI.create(url.toString()), Map.of("Content-Type", List.of(contentType))));
-  }
+  CompletionStage<PresignedUpload> presignUpload(String key, String contentType, Duration ttl);
 }

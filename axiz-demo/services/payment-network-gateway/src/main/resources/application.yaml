@@ -27,7 +27,7 @@ axiz:
   config:
     environment: ${AXIZ_ENVIRONMENT:local}
     parameter-store:
-      application: core-integration
+      application: banking-core
   sensitive:
     response: MEDIUM
   web:
@@ -62,7 +62,7 @@ axiz:
   audit:
     mode: ASYNC
     sqs:
-      queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+      queue-url: ${AXIZ_AUDIT_QUEUE_URL}
   idempotency:
     retention: 24h
     store: redis

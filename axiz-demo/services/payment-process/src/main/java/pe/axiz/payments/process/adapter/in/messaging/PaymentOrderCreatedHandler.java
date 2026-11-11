@@ -12,7 +12,7 @@ import pe.axiz.payments.process.application.usecase.StartPaymentProcessUseCase;
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
 /**
- * Starts the payment process when payments-business registers an order ({@code
+ * Starts the payment process when payment-orders registers an order ({@code
  * payment-order.created.v1} on the {@code payments} topic). Redeliveries are harmless: the use case
  * returns the existing process. Business rejections end in the saga; only infrastructure failures
  * reach the consumer retries and its dead-letter topic.

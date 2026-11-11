@@ -47,7 +47,9 @@ class OutboxWiringTest {
   static final class CountingStore implements OutboxStore {
 
     public List<OutboxRecord> claimDue(int size, Duration lease, String owner) {
-      return lockDue(size, Instant.EPOCH);
+      locks.incrementAndGet();
+      if (failing.get()) throw new IllegalStateException("database down");
+      return List.of();
     }
 
     public boolean markPublished(String id, String owner, Instant at) {
@@ -89,22 +91,6 @@ class OutboxWiringTest {
 
     @Override
     public void append(OutboxRecord record) {}
-
-    @Override
-    public List<OutboxRecord> lockDue(int size, Instant now) {
-      locks.incrementAndGet();
-      if (failing.get()) {
-        throw new IllegalStateException("database down");
-      }
-      return List.of();
-    }
-
-    @Override
-    public void markPublished(String id, Instant at) {}
-
-    @Override
-    public void markFailed(
-        String id, int attempts, Instant nextAttemptAt, @Nullable String error, boolean giveUp) {}
 
     @Override
     public int purgePublished(Instant before) {

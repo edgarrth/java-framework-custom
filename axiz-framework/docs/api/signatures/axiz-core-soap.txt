@@ -1,0 +1,52 @@
+public final class pe.axiz.core.soap.SafeXml {
+public static java.lang.String toString(org.w3c.dom.Node);
+public static org.w3c.dom.Document newDocument();
+public static org.w3c.dom.Document parse(java.lang.String);
+}
+
+public final class pe.axiz.core.soap.SoapClient {
+public org.w3c.dom.Element call(java.lang.String, java.lang.String);
+public pe.axiz.core.soap.SoapClient(java.lang.String, java.net.http.HttpClient, java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, pe.axiz.core.soap.SoapEnvelope$Credentials, pe.axiz.core.sensitive.ObjectMasker, java.time.Clock);
+}
+
+public final class pe.axiz.core.soap.SoapEnvelope {
+public static java.lang.String wrap(pe.axiz.core.soap.SoapVersion, java.lang.String, pe.axiz.core.soap.SoapEnvelope$Credentials, java.time.Instant);
+}
+
+public final class pe.axiz.core.soap.SoapEnvelope$Credentials {
+public boolean equals(java.lang.Object);
+public char[] password();
+public int hashCode();
+public java.lang.String toString();
+public java.lang.String username();
+public pe.axiz.core.soap.SoapEnvelope$Credentials(java.lang.String, char[], pe.axiz.core.soap.WsSecurity$Mode);
+public pe.axiz.core.soap.WsSecurity$Mode mode();
+}
+
+public class pe.axiz.core.soap.SoapException extends java.lang.RuntimeException {
+public pe.axiz.core.soap.SoapException(java.lang.String);
+public pe.axiz.core.soap.SoapException(java.lang.String, java.lang.Throwable);
+}
+
+public final class pe.axiz.core.soap.SoapResponse {
+public static org.w3c.dom.Element payload(java.lang.String, int, java.lang.String);
+}
+
+public final class pe.axiz.core.soap.SoapVersion extends java.lang.Enum<pe.axiz.core.soap.SoapVersion> {
+public java.lang.String contentType();
+public java.lang.String namespace();
+public static final pe.axiz.core.soap.SoapVersion SOAP_11;
+public static final pe.axiz.core.soap.SoapVersion SOAP_12;
+public static pe.axiz.core.soap.SoapVersion valueOf(java.lang.String);
+public static pe.axiz.core.soap.SoapVersion[] values();
+}
+
+public final class pe.axiz.core.soap.WsSecurity {
+}
+
+public final class pe.axiz.core.soap.WsSecurity$Mode extends java.lang.Enum<pe.axiz.core.soap.WsSecurity$Mode> {
+public static final pe.axiz.core.soap.WsSecurity$Mode LEGACY_SHA1_DIGEST;
+public static final pe.axiz.core.soap.WsSecurity$Mode TEXT;
+public static pe.axiz.core.soap.WsSecurity$Mode valueOf(java.lang.String);
+public static pe.axiz.core.soap.WsSecurity$Mode[] values();
+}

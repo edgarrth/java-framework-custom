@@ -26,6 +26,8 @@ public final class SqsAuditPublisher implements AuditPublisher {
   public SqsAuditPublisher(SqsClient sqs, String queueUrl) {
     this.sqs = Objects.requireNonNull(sqs);
     this.queueUrl = Objects.requireNonNull(queueUrl);
+    if (queueUrl.isBlank())
+      throw new IllegalArgumentException("Audit SQS queue URL must not be blank");
     this.fifo = queueUrl.endsWith(".fifo");
   }
 

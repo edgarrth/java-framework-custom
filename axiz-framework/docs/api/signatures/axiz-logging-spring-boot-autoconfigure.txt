@@ -1,0 +1,55 @@
+public class pe.axiz.spring.logging.AxizLoggingAutoConfiguration {
+public pe.axiz.spring.logging.AxizLoggingAutoConfiguration();
+}
+
+public class pe.axiz.spring.logging.AxizLoggingEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.logging.AxizLoggingEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
+public final class pe.axiz.spring.logging.AxizLoggingProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.Boolean json();
+public pe.axiz.spring.logging.AxizLoggingProperties$Http http();
+public pe.axiz.spring.logging.AxizLoggingProperties(java.lang.Boolean, pe.axiz.spring.logging.AxizLoggingProperties$Http);
+}
+
+public final class pe.axiz.spring.logging.AxizLoggingProperties$Http extends java.lang.Record {
+public boolean bodies();
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxBodyLength();
+public int maxMaskedBodyLength();
+public java.util.List<java.lang.String> excludedPaths();
+public java.util.List<java.lang.String> headers();
+public pe.axiz.spring.logging.AxizLoggingProperties$Http(boolean, java.util.List<java.lang.String>, boolean, int, java.util.List<java.lang.String>, int);
+}
+
+public interface pe.axiz.spring.logging.FailureKind {
+public abstract boolean isExpected(java.lang.Throwable);
+public abstract java.lang.String code(java.lang.Throwable);
+public static pe.axiz.spring.logging.FailureKind axiz();
+}
+
+public class pe.axiz.spring.logging.HttpLoggingFilter extends org.springframework.web.filter.OncePerRequestFilter implements org.springframework.core.Ordered {
+protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest);
+protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException, java.io.IOException;
+public int getOrder();
+public pe.axiz.spring.logging.HttpLoggingFilter(pe.axiz.core.logging.HttpLogFormatter, pe.axiz.spring.logging.AxizLoggingProperties$Http);
+}
+
+public class pe.axiz.spring.logging.HttpLoggingWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.logging.HttpLoggingWebFilter(pe.axiz.core.logging.HttpLogFormatter, pe.axiz.spring.logging.AxizLoggingProperties$Http);
+public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
+}
+
+public class pe.axiz.spring.logging.LogOperationInterceptor implements org.aopalliance.intercept.MethodInterceptor {
+public java.lang.Object invoke(org.aopalliance.intercept.MethodInvocation) throws java.lang.Throwable;
+public pe.axiz.spring.logging.LogOperationInterceptor(pe.axiz.core.logging.OperationLogger, pe.axiz.spring.logging.FailureKind);
+}

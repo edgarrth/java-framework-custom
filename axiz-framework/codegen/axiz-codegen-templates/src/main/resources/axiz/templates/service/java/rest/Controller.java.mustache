@@ -11,7 +11,15 @@ import org.jspecify.annotations.Nullable;
 {{/item.usesNullable}}
 import org.springframework.http.ResponseEntity;
 {{#caps.security}}
+{{#item.hasScopedOperations}}
 import org.springframework.security.access.prepost.PreAuthorize;
+{{/item.hasScopedOperations}}
+{{#item.hasAuthenticatedOperations}}
+import pe.axiz.core.security.AuthenticatedAccess;
+{{/item.hasAuthenticatedOperations}}
+{{#item.hasPublicOperations}}
+import pe.axiz.core.security.PublicEndpoint;
+{{/item.hasPublicOperations}}
 {{/caps.security}}
 {{#item.usesDelete}}
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -115,9 +123,15 @@ public class {{item.className}}Controller {
 
   /** {{summary}} ({{httpMethod}} {{path}}). */
 {{#caps.security}}
-{{#authorizationExpression}}
+{{#requiresScopes}}
   @PreAuthorize("{{{authorizationExpression}}}")
-{{/authorizationExpression}}
+{{/requiresScopes}}
+{{#authenticatedAccess}}
+  @AuthenticatedAccess
+{{/authenticatedAccess}}
+{{#publicEndpoint}}
+  @PublicEndpoint
+{{/publicEndpoint}}
 {{/caps.security}}
   @{{mapping}}("{{path}}")
 {{#stack.servlet}}

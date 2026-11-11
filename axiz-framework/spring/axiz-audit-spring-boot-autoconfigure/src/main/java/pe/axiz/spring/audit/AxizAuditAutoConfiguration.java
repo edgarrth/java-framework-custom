@@ -16,6 +16,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -27,7 +28,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.Ordered;
+import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.PropertySourcesPropertyResolver;
 import pe.axiz.core.audit.AsyncAuditPublisher;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
@@ -36,8 +39,10 @@ import pe.axiz.core.audit.CompositeAuditPublisher;
 import pe.axiz.core.audit.ConfirmedAuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
 import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.foundation.ConfigurationErrors;
 import pe.axiz.spring.foundation.DispatchBoundary;
 
 /**
@@ -67,19 +72,20 @@ public class AxizAuditAutoConfiguration {
   }
 
   @Bean
+  static BeanFactoryPostProcessor axizAuditConfigurationValidation(Environment environment) {
+    return beans -> {
+      AuditModeSelection.rejectRemovedSelectors(environment);
+      if (AuditModeSelection.managed(beans)) AuditModeSelection.requireExplicit(environment);
+    };
+  }
+
+  @Bean
   SmartInitializingSingleton axizAuditModeNotice(
       Environment environment,
       AxizAuditProperties properties,
       ConfigurableListableBeanFactory beans) {
     return () -> {
-      for (String selector : List.of("axiz.audit.durable.enabled", "axiz.audit.async.enabled"))
-        if (environment.containsProperty(selector))
-          LoggerFactory.getLogger(AxizAuditAutoConfiguration.class)
-              .warn(
-                  "{} is deprecated as an audit mode selector; migrate to axiz.audit.mode before 3.0",
-                  selector);
       boolean managed = AuditModeSelection.managed(beans);
-      if (managed) AuditModeSelection.requireExplicit(environment);
       if (managed
           && properties.effectiveMode() == AxizAuditProperties.Mode.ASYNC
           && !AuditModeSelection.development(environment))
@@ -88,6 +94,48 @@ public class AxizAuditAutoConfiguration {
                 "Audit mode async uses an in-memory queue and is not durable after a process"
                     + " crash");
     };
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "pe.axiz.core.outbox.OutboxRelay")
+  static class DurableRouteConfiguration {
+    @Bean
+    SmartInitializingSingleton axizDurableAuditRouteValidation(
+        AxizAuditProperties properties,
+        ConfigurableListableBeanFactory beans,
+        Environment environment) {
+      return () -> {
+        if (properties.effectiveMode() != AxizAuditProperties.Mode.DURABLE
+            || !AuditModeSelection.managed(beans)) return;
+        var relay = beans.getBeanProvider(OutboxRelay.class).getIfAvailable();
+        // A writer-only service must explicitly disable its local relay.
+        if (!environment.getProperty("axiz.outbox.relay.enabled", Boolean.class, true)) return;
+        if (relay == null)
+          throw new IllegalStateException(
+              "DURABLE audit requires an outbox relay publisher; configure messaging or explicitly"
+                  + " disable axiz.outbox.relay.enabled");
+        if (!relay.supportsDestination(properties.durable().destination()))
+          throw new IllegalStateException(
+              unsupportedDestination(properties.durable().destination(), environment));
+      };
+    }
+  }
+
+  private static String unsupportedDestination(String logical, Environment environment) {
+    String key =
+        logical.matches("[A-Za-z0-9_.-]+")
+            ? "axiz.messaging.destinations." + logical
+            : "axiz.audit.durable.destination";
+    String resolved = logical;
+    if (environment instanceof ConfigurableEnvironment configurable) {
+      var resolver = new PropertySourcesPropertyResolver(configurable.getPropertySources());
+      resolver.setIgnoreUnresolvableNestedPlaceholders(true);
+      resolved = resolver.getProperty(key, logical);
+    }
+    return "DURABLE audit "
+        + ConfigurationErrors.destination(logical, resolved)
+        + " and is unsupported by the outbox relay publisher; configure "
+        + key;
   }
 
   @Bean
@@ -112,11 +160,17 @@ public class AxizAuditAutoConfiguration {
                 properties.async().deliveryTimeout(),
                 AuditDeliveryContext.PROVIDER)
             : target;
-    return properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE
-        ? DurableAudit.wrap(beans, properties.durable(), delivery)
-        : properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
-            ? new ConfirmedAuditPublisher(target)
-            : delivery;
+    if (properties.effectiveMode() == AxizAuditProperties.Mode.DURABLE) {
+      try {
+        return DurableAudit.wrap(beans, properties.durable(), delivery);
+      } catch (RuntimeException | Error failure) {
+        if (delivery instanceof AsyncAuditPublisher async) async.close();
+        throw failure;
+      }
+    }
+    return properties.effectiveMode() == AxizAuditProperties.Mode.SYNC
+        ? new ConfirmedAuditPublisher(target)
+        : delivery;
   }
 
   /**
@@ -182,6 +236,10 @@ public class AxizAuditAutoConfiguration {
           .register(registry);
       FunctionCounter.builder("axiz.audit.lost", async, AsyncAuditPublisher::lostCount)
           .description("Audit events lost: delegate and fallback both failed")
+          .register(registry);
+      FunctionCounter.builder(
+              "axiz.audit.unconfirmed", async, AsyncAuditPublisher::unconfirmedCount)
+          .description("Audit fallback acceptances without confirmation")
           .register(registry);
       FunctionCounter.builder("axiz.audit.fallback", async, AsyncAuditPublisher::fallbackCount)
           .description("Audit events written to the fallback publisher")

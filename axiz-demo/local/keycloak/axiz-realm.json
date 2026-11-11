@@ -153,7 +153,7 @@
     },
     {
       "clientId": "payment-process",
-      "description": "payment-process calling payments-business and core-integration (client credentials)",
+      "description": "payment-process calling payment-orders and banking-core (client credentials)",
       "enabled": true,
       "publicClient": false,
       "secret": "local-only-payment-process",

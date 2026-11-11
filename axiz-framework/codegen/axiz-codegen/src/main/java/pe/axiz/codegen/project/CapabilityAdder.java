@@ -265,9 +265,7 @@ public final class CapabilityAdder {
   }
 
   private static boolean containsAuditSelector(Map<?, ?> map) {
-    return containsProperty(map, "axiz.audit.mode")
-        || containsProperty(map, "axiz.audit.durable.enabled")
-        || containsProperty(map, "axiz.audit.async.enabled");
+    return containsProperty(map, "axiz.audit.mode");
   }
 
   private static boolean containsProperty(Map<?, ?> map, String key) {

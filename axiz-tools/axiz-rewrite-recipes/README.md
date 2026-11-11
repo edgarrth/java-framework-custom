@@ -1,9 +1,8 @@
 # axiz-rewrite-recipes
 
-OpenRewrite recipes that `axiz upgrade` applies to a service when it moves to a newer framework
-version (parent, renamed properties and types, API changes). Each release adds its migration to
-the chain `pe.axiz.UpgradeToAxiz`; the version of the recipes matches the framework version they
-upgrade to.
+Current Java, Spring and JSpecify conventions and runtime adapter scope repair, invoked through
+`pe.axiz.UpgradeToAxiz`. Version 2.0.0 is the first Axiz release: no recipes translate unpublished
+Axiz drafts, retired selectors, artifact names or APIs.
 
 ```bash
 mvn org.openrewrite.maven:rewrite-maven-plugin:run \

@@ -128,7 +128,7 @@ class ContractAndUpgradeTest {
     Path p = CliHarness.service(tmp);
     String pom = Files.readString(p.resolve("pom.xml"));
     CliHarness h = new CliHarness();
-    assertEquals(0, h.run("upgrade", "--to", "1.3.0", "--dry-run", "--dir", p.toString()));
+    assertEquals(0, h.run("upgrade", "--to", "2.3.0", "--dry-run", "--dir", p.toString()));
     assertEquals(pom, Files.readString(p.resolve("pom.xml")), "nothing is written");
     assertTrue(
         h.processes
@@ -143,17 +143,17 @@ class ContractAndUpgradeTest {
   void versionsOnlyRecipesFailingOrWithoutMaven(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     CliHarness skip = new CliHarness();
-    assertEquals(0, skip.run("upgrade", "--to", "1.3.0", "--skip-rewrite", "--dir", p.toString()));
-    assertEquals("1.3.0", ProjectManifest.read(p).axizVersion());
+    assertEquals(0, skip.run("upgrade", "--to", "2.3.0", "--skip-rewrite", "--dir", p.toString()));
+    assertEquals("2.3.0", ProjectManifest.read(p).axizVersion());
     assertTrue(skip.processes.commands.isEmpty());
 
     CliHarness failing = new CliHarness();
     failing.processes.exitCode = 3;
     assertEquals(
-        ExitCodes.PROBLEMS, failing.run("upgrade", "--to", "1.4.0", "--dir", p.toString()));
+        ExitCodes.PROBLEMS, failing.run("upgrade", "--to", "2.4.0", "--dir", p.toString()));
     assertTrue(failing.output().contains("OpenRewrite exited with 3"), failing.output());
     assertEquals(
-        "1.3.0",
+        "2.3.0",
         ProjectManifest.read(p).axizVersion(),
         "failed recipes must not advance the manifest");
 
@@ -162,10 +162,10 @@ class ContractAndUpgradeTest {
     CliHarness noMaven = new CliHarness();
     noMaven.processes.installed.clear();
     assertEquals(
-        ExitCodes.PROBLEMS, noMaven.run("upgrade", "--to", "1.5.0", "--dir", p.toString()));
+        ExitCodes.PROBLEMS, noMaven.run("upgrade", "--to", "2.5.0", "--dir", p.toString()));
     assertTrue(noMaven.output().contains("Maven not found"), noMaven.output());
     assertTrue(noMaven.processes.commands.isEmpty());
-    assertEquals("1.3.0", ProjectManifest.read(p).axizVersion());
+    assertEquals("2.3.0", ProjectManifest.read(p).axizVersion());
   }
 
   @Test

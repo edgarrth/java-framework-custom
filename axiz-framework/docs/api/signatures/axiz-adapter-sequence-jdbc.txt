@@ -1,0 +1,4 @@
+public final class pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore implements pe.axiz.core.sequence.SequenceStore {
+public long increment(java.lang.String, java.lang.String, int);
+public pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore(pe.axiz.kit.jdbc.ConnectionProvider, pe.axiz.core.commons.tx.TransactionRunner, java.lang.String);
+}

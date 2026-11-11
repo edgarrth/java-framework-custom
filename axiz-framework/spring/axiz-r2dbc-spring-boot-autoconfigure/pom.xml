@@ -21,6 +21,11 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

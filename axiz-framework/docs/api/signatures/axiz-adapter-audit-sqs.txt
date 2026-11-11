@@ -1,0 +1,9 @@
+public final class pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher(software.amazon.awssdk.services.sqs.SqsAsyncClient, java.lang.String);
+}
+
+public final class pe.axiz.adapter.audit.sqs.SqsAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
+public pe.axiz.adapter.audit.sqs.SqsAuditPublisher(software.amazon.awssdk.services.sqs.SqsClient, java.lang.String);
+public void publish(pe.axiz.core.audit.AuditEvent);
+}

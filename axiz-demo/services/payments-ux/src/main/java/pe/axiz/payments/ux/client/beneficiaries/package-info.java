@@ -1,4 +1,4 @@
-/** Client of the beneficiaries-crud API. */
+/** Client of the beneficiaries API. */
 @NullMarked
 package pe.axiz.payments.ux.client.beneficiaries;
 

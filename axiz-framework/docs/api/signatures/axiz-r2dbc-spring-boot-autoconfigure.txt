@@ -1,0 +1,128 @@
+public abstract class pe.axiz.spring.r2dbc.AuditableRow implements org.springframework.data.domain.Persistable<java.util.UUID> {
+protected void setId(java.util.UUID);
+public boolean isNew();
+public java.lang.Long getVersion();
+public java.lang.Object getId();
+public java.lang.String getCreatedBy();
+public java.lang.String getUpdatedBy();
+public java.time.Instant getCreatedAt();
+public java.time.Instant getUpdatedAt();
+public java.util.UUID getId();
+public pe.axiz.spring.r2dbc.AuditableRow();
+}
+
+public class pe.axiz.spring.r2dbc.AxizR2dbcAuditingAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcAuditingAutoConfiguration();
+}
+
+public class pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration();
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcConverters {
+public static java.util.List<java.lang.Object> all(java.lang.String);
+public static java.util.List<java.lang.Object> all(java.util.function.Supplier<pe.axiz.core.crypto.FieldEncryptor>, java.lang.String);
+public static java.util.List<java.lang.Object> money();
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcConverters$EncryptedTextReader implements org.springframework.core.convert.converter.Converter<java.lang.String, pe.axiz.kit.r2dbc.EncryptedText> {
+public java.lang.Object convert(java.lang.Object);
+public pe.axiz.kit.r2dbc.EncryptedText convert(java.lang.String);
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcConverters$EncryptedTextWriter implements org.springframework.core.convert.converter.Converter<pe.axiz.kit.r2dbc.EncryptedText, java.lang.String> {
+public java.lang.Object convert(java.lang.Object);
+public java.lang.String convert(pe.axiz.kit.r2dbc.EncryptedText);
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcConverters$MoneyReader implements org.springframework.core.convert.converter.Converter<java.lang.String, pe.axiz.core.money.Money> {
+public java.lang.Object convert(java.lang.Object);
+public pe.axiz.core.money.Money convert(java.lang.String);
+public pe.axiz.spring.r2dbc.AxizR2dbcConverters$MoneyReader();
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcConverters$MoneyWriter implements org.springframework.core.convert.converter.Converter<pe.axiz.core.money.Money, java.lang.String> {
+public java.lang.Object convert(java.lang.Object);
+public java.lang.String convert(pe.axiz.core.money.Money);
+public pe.axiz.spring.r2dbc.AxizR2dbcConverters$MoneyWriter();
+}
+
+public class pe.axiz.spring.r2dbc.AxizR2dbcEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.r2dbc.AxizR2dbcEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
+public class pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration();
+}
+
+public class pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration();
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcProperties extends java.lang.Record {
+public boolean flywayFromR2dbc();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String encryptionContext();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Auditing auditing();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Iam iam();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Reader reader();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties(pe.axiz.spring.r2dbc.AxizR2dbcProperties$Iam, pe.axiz.spring.r2dbc.AxizR2dbcProperties$Reader, boolean, pe.axiz.spring.r2dbc.AxizR2dbcProperties$Auditing, java.lang.String);
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcProperties$Auditing extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Auditing(boolean);
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcProperties$Iam extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String region();
+public java.time.Duration refreshAfter();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Iam(boolean, java.lang.String, java.time.Duration);
+}
+
+public final class pe.axiz.spring.r2dbc.AxizR2dbcProperties$Reader extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int maxSize();
+public java.lang.String url();
+public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Reader(java.lang.String, int);
+}
+
+public final class pe.axiz.spring.r2dbc.DatabaseClientReactiveSql implements pe.axiz.kit.r2dbc.ReactiveSql {
+public <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
+public java.lang.Object transactionResource();
+public java.lang.String toString();
+public pe.axiz.spring.r2dbc.DatabaseClientReactiveSql(org.springframework.r2dbc.core.DatabaseClient);
+public reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
+}
+
+public final class pe.axiz.spring.r2dbc.FlywayIamCustomizer implements org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer {
+public pe.axiz.spring.r2dbc.FlywayIamCustomizer(pe.axiz.kit.r2dbc.DatabasePasswordProvider, org.springframework.core.env.Environment);
+public void customize(org.flywaydb.core.api.configuration.FluentConfiguration);
+}
+
+public final class pe.axiz.spring.r2dbc.ReaderDatabase implements org.springframework.beans.factory.DisposableBean {
+public io.r2dbc.spi.ConnectionFactory connectionFactory();
+public org.springframework.r2dbc.core.DatabaseClient client();
+public pe.axiz.kit.r2dbc.ReactiveSql sql();
+public pe.axiz.spring.r2dbc.ReaderDatabase(io.r2dbc.spi.ConnectionFactory);
+public pe.axiz.spring.r2dbc.ReaderDatabase(io.r2dbc.spi.ConnectionFactory, java.lang.AutoCloseable);
+public void destroy();
+}
+
+public class pe.axiz.spring.r2dbc.RequestReactiveAuditor implements org.springframework.data.domain.ReactiveAuditorAware<java.lang.String> {
+public pe.axiz.spring.r2dbc.RequestReactiveAuditor();
+public reactor.core.publisher.Mono<java.lang.String> getCurrentAuditor();
+}

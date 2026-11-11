@@ -7,7 +7,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.context.properties.bind.Bindable;
@@ -24,6 +23,7 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
 /**
  * Reactive relational persistence on Aurora PostgreSQL: a {@link ReactiveSql} that joins the
@@ -49,7 +49,7 @@ public class AxizR2dbcAutoConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty("axiz.r2dbc.reader.url")
+  @ConditionalOnConfiguredProperty("axiz.r2dbc.reader.url")
   ReaderDatabase axizReaderDatabase(
       AxizR2dbcProperties p,
       Environment env,

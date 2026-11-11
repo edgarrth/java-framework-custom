@@ -1,0 +1,86 @@
+public abstract class pe.axiz.core.domain.AggregateRoot<I> extends pe.axiz.core.domain.Entity<I> {
+protected void registerEvent(pe.axiz.core.domain.DomainEvent);
+public java.util.List<pe.axiz.core.domain.DomainEvent> peekEvents();
+public java.util.List<pe.axiz.core.domain.DomainEvent> pullEvents();
+public pe.axiz.core.domain.AggregateRoot();
+}
+
+public final class pe.axiz.core.domain.DomainErrors {
+public static final pe.axiz.core.errors.ErrorDefinition INVALID_VALUE;
+public static final pe.axiz.core.errors.ErrorDefinition RULE_VIOLATED;
+}
+
+public interface pe.axiz.core.domain.DomainEvent {
+public abstract java.lang.String aggregateId();
+public abstract java.lang.String eventId();
+public abstract java.time.Instant occurredAt();
+public default java.lang.String eventType();
+}
+
+public final class pe.axiz.core.domain.EmailAddress extends java.lang.Record implements pe.axiz.core.domain.ValueObject {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String masked();
+public java.lang.String toString();
+public java.lang.String value();
+public pe.axiz.core.domain.EmailAddress(java.lang.String);
+}
+
+public abstract class pe.axiz.core.domain.Entity<I> {
+protected abstract I id();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public pe.axiz.core.domain.Entity();
+}
+
+public final class pe.axiz.core.domain.EventTypes {
+public static java.lang.String kebab(java.lang.String);
+}
+
+public final class pe.axiz.core.domain.PersonalDocument extends java.lang.Record implements pe.axiz.core.domain.ValueObject {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String masked();
+public java.lang.String number();
+public java.lang.String toString();
+public pe.axiz.core.domain.PersonalDocument$Type type();
+public pe.axiz.core.domain.PersonalDocument(pe.axiz.core.domain.PersonalDocument$Type, java.lang.String);
+}
+
+public final class pe.axiz.core.domain.PersonalDocument$Type extends java.lang.Enum<pe.axiz.core.domain.PersonalDocument$Type> {
+public static final pe.axiz.core.domain.PersonalDocument$Type CE;
+public static final pe.axiz.core.domain.PersonalDocument$Type DNI;
+public static final pe.axiz.core.domain.PersonalDocument$Type RUC;
+public static pe.axiz.core.domain.PersonalDocument$Type parse(java.lang.String);
+public static pe.axiz.core.domain.PersonalDocument$Type valueOf(java.lang.String);
+public static pe.axiz.core.domain.PersonalDocument$Type[] values();
+}
+
+public final class pe.axiz.core.domain.PhoneNumber extends java.lang.Record implements pe.axiz.core.domain.ValueObject {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String toString();
+public java.lang.String value();
+public pe.axiz.core.domain.PhoneNumber(java.lang.String);
+}
+
+public final class pe.axiz.core.domain.Rules {
+public static void check(boolean, pe.axiz.core.errors.ErrorDefinition, java.lang.String);
+public static void check(boolean, pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.util.Map<java.lang.String, ?>);
+}
+
+public interface pe.axiz.core.domain.Specification<T> {
+public abstract boolean isSatisfiedBy(T);
+public default pe.axiz.core.domain.Specification<T> and(pe.axiz.core.domain.Specification<T>);
+public default pe.axiz.core.domain.Specification<T> not();
+public default pe.axiz.core.domain.Specification<T> or(pe.axiz.core.domain.Specification<T>);
+}
+
+public interface pe.axiz.core.domain.TypedId extends pe.axiz.core.domain.ValueObject {
+public abstract java.util.UUID value();
+public default java.lang.String asString();
+public static java.util.UUID newUuid();
+}
+
+public interface pe.axiz.core.domain.ValueObject {
+}

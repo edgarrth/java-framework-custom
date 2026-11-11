@@ -1,0 +1,20 @@
+public final class pe.axiz.adapter.security.redis.RedisAsyncNonceStore implements pe.axiz.core.security.AsyncNonceStore {
+public java.util.concurrent.CompletionStage<java.lang.Boolean> markUsed(java.lang.String, java.time.Duration);
+public pe.axiz.adapter.security.redis.RedisAsyncNonceStore(io.lettuce.core.api.async.RedisAsyncCommands<java.lang.String, java.lang.String>, java.lang.String);
+}
+
+public final class pe.axiz.adapter.security.redis.RedisAsyncRateLimiter implements pe.axiz.core.security.AsyncRateLimiter {
+public java.util.concurrent.CompletionStage<pe.axiz.core.security.RateLimiter$Decision> tryAcquire(java.lang.String, long, java.time.Duration, boolean);
+public pe.axiz.adapter.security.redis.RedisAsyncRateLimiter(io.lettuce.core.api.async.RedisAsyncCommands<java.lang.String, java.lang.String>, java.lang.String);
+}
+
+public final class pe.axiz.adapter.security.redis.RedisNonceStore implements pe.axiz.core.security.NonceStore {
+public boolean markUsed(java.lang.String, java.time.Duration);
+public pe.axiz.adapter.security.redis.RedisNonceStore(io.lettuce.core.api.sync.RedisCommands<java.lang.String, java.lang.String>, java.lang.String);
+}
+
+public final class pe.axiz.adapter.security.redis.RedisRateLimiter implements pe.axiz.core.security.RateLimiter {
+public pe.axiz.adapter.security.redis.RedisRateLimiter(io.lettuce.core.api.sync.RedisCommands<java.lang.String, java.lang.String>, java.lang.String, boolean);
+public pe.axiz.core.security.RateLimiter$Decision tryAcquire(java.lang.String, long, java.time.Duration);
+public pe.axiz.core.security.RateLimiter$Decision tryAcquire(java.lang.String, long, java.time.Duration, boolean);
+}

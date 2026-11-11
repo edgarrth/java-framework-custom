@@ -22,6 +22,7 @@ import org.springframework.kafka.test.EmbeddedKafkaKraftBroker;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -79,7 +80,9 @@ class ReactiveKafkaAuditBrokerTest {
                         "correlation",
                         "web",
                         null,
-                        Map.of());
+                        Map.of(),
+                        TransactionOutcome.UNKNOWN,
+                        TransactionOutcome.UNKNOWN);
                 var publisher = ctx.getBean(AsyncAuditEventPublisher.class);
                 StepVerifier.create(
                         Mono.fromCompletionStage(() -> publisher.publish(event))

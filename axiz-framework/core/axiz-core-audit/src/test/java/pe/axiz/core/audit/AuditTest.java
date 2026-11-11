@@ -16,6 +16,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.commons.json.JsonWriter;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
@@ -95,7 +96,14 @@ class AuditTest {
           delivered.add(e);
         };
     try (AsyncAuditPublisher async =
-        new AsyncAuditPublisher(slow, fallback::add, 1, Duration.ofMillis(20))) {
+        new AsyncAuditPublisher(
+            slow,
+            fallback::add,
+            1,
+            Duration.ofMillis(20),
+            Duration.ofSeconds(10),
+            Duration.ofSeconds(10),
+            () -> () -> () -> {})) {
       AuditTrail t =
           new AuditTrail(
               "svc", async, ObjectMasker.defaults(), IdGenerator.ulid(), Clock.systemUTC());
@@ -118,15 +126,18 @@ class AuditTest {
             },
             fallback::add,
             10,
-            Duration.ofMillis(10))) {
+            Duration.ofMillis(10),
+            Duration.ofSeconds(10),
+            Duration.ofSeconds(10),
+            () -> () -> () -> {})) {
       new AuditTrail("svc", async, ObjectMasker.defaults(), IdGenerator.ulid(), Clock.systemUTC())
           .record("x", "y")
           .success();
       async.close();
       assertEquals(1, async.failureCount());
-      async.publish(published.isEmpty() ? sample() : published.get(0));
+      assertThrows(IllegalStateException.class, () -> async.publish(sample()));
     }
-    assertEquals(2, fallback.size());
+    assertEquals(1, fallback.size());
   }
 
   /** Regression: a failing fallback killed the worker and every later event was lost. */
@@ -146,7 +157,14 @@ class AuditTest {
           throw new IllegalStateException("log appender down");
         };
     try (AsyncAuditPublisher async =
-        new AsyncAuditPublisher(flaky, brokenFallback, 10, Duration.ofMillis(10))) {
+        new AsyncAuditPublisher(
+            flaky,
+            brokenFallback,
+            10,
+            Duration.ofMillis(10),
+            Duration.ofSeconds(10),
+            Duration.ofSeconds(10),
+            () -> () -> () -> {})) {
       async.publish(sample());
       assertTrue(async.workerAlive(), "the worker survives a failing fallback");
       async.publish(sample());
@@ -173,7 +191,13 @@ class AuditTest {
         };
     AsyncAuditPublisher async =
         new AsyncAuditPublisher(
-            stuck, fallback::add, 10, Duration.ofMillis(10), Duration.ofMillis(200));
+            stuck,
+            fallback::add,
+            10,
+            Duration.ofMillis(10),
+            Duration.ofMillis(200),
+            Duration.ofSeconds(10),
+            () -> () -> () -> {});
     for (int i = 0; i < 3; i++) {
       async.publish(sample());
     }
@@ -225,6 +249,8 @@ class AuditTest {
         null,
         null,
         null,
-        Map.of());
+        Map.of(),
+        TransactionOutcome.UNKNOWN,
+        TransactionOutcome.UNKNOWN);
   }
 }

@@ -53,12 +53,12 @@ jobs:
       - name: Build every sample without AWS configuration (verify)
         run: |
           failed=()
-          for dir in target/samples/*/; do
+          for dir in target/samples/*/ target/audit-samples/*/; do
             echo "::group::${dir}"
             (cd "$dir" && env -u AWS_REGION -u AWS_DEFAULT_REGION -u AWS_PROFILE \
               -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
               AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null \
-              ./mvnw -B -ntp verify) || failed+=("$dir")
+              ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
             echo "::endgroup::"
           done
           if [ "${#failed[@]}" -gt 0 ]; then

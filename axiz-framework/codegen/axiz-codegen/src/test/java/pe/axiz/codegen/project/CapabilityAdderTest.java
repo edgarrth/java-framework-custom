@@ -52,7 +52,7 @@ class CapabilityAdderTest {
         List.of(
             "axiz.audit.mode: SYNC",
             "axiz:\n  audit:\n    mode: ASYNC",
-            "axiz:\n  audit.async.enabled: false")) {
+            "axiz:\n  audit.mode: SYNC")) {
       Path existing =
           project(
               tmp.resolve("existing-" + n++),
@@ -85,7 +85,7 @@ class CapabilityAdderTest {
       Path profile = dir.resolve("src/main/resources/" + file);
       String selector =
           file.endsWith(".properties")
-              ? "axiz.audit.async.enabled=false\n"
+              ? "axiz.audit.mode=SYNC\n"
               : "axiz:\n  audit:\n    mode: SYNC\n";
       Files.writeString(profile, selector);
       adder.add(dir, "audit");

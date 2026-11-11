@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * What to generate.
  *
- * @param name service name in kebab-case, e.g. {@code payments-business}
+ * @param name service name in kebab-case, e.g. {@code payment-orders}
  * @param groupId Maven group
  * @param basePackage base Java package
  * @param description one-line description
@@ -81,6 +81,6 @@ public record ProjectRequest(
     Objects.requireNonNull(stack, "stack");
     Objects.requireNonNull(persistence, "persistence");
     capabilities = List.copyOf(capabilities);
-    Objects.requireNonNull(frameworkVersion, "frameworkVersion");
+    FrameworkVersions.requireSupported(frameworkVersion);
   }
 }

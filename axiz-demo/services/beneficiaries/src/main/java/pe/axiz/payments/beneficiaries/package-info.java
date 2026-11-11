@@ -1,5 +1,5 @@
 /**
- * Beneficiaries Crud: Frequent beneficiaries of each customer. Archetype crud, layered style,
+ * Beneficiaries: Frequent beneficiaries of each customer. Archetype business, layered structure,
  * servlet stack. Types are non-null unless annotated {@code @Nullable}.
  */
 @NullMarked

@@ -10,11 +10,11 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
 
-/** Read-only upgrade diagnosis; works before and after the aggregate-sequence migration. */
+/** Read-only diagnosis of failed events and their successors in the current v2 schema. */
 public final class JdbcOutboxPreflight {
   private JdbcOutboxPreflight() {}
 
-  /** Historical failure and the successors that require an explicit operational decision. */
+  /** A failure and the successors that require an explicit operational decision. */
   public record Failure(
       String id,
       String aggregateType,
@@ -34,7 +34,7 @@ public final class JdbcOutboxPreflight {
     try (var input =
         Objects.requireNonNull(
             JdbcOutboxPreflight.class.getResourceAsStream(
-                "/axiz/sql/outbox-postgresql-upgrade-preflight.sql"))) {
+                "/axiz/sql/outbox-postgresql-diagnostics.sql"))) {
       sql =
           new String(input.readAllBytes(), StandardCharsets.UTF_8)
               .replace("FROM axiz_outbox", "FROM " + identifier);

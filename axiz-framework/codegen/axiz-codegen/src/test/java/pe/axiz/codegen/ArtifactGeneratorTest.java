@@ -30,7 +30,7 @@ class ArtifactGeneratorTest {
         f,
         s,
         persistence,
-        "1.0.0",
+        "2.0.0",
         "src/main/openapi/openapi.yaml",
         null,
         caps,

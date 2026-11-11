@@ -1,0 +1,52 @@
+public class pe.axiz.spring.dynamodb.AxizDynamoCursorAutoConfiguration {
+public pe.axiz.spring.dynamodb.AxizDynamoCursorAutoConfiguration();
+}
+
+public final class pe.axiz.spring.dynamodb.AxizDynamoCursorProperties extends java.lang.Record {
+public boolean encrypt();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String currentKeyId();
+public java.lang.String secretPrefix();
+public java.util.List<java.lang.String> keyIds();
+public pe.axiz.spring.dynamodb.AxizDynamoCursorProperties(java.lang.String, java.util.List<java.lang.String>, java.lang.String, boolean);
+}
+
+public class pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration {
+public pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration();
+}
+
+public class pe.axiz.spring.dynamodb.DynamoRepositories {
+public <T> pe.axiz.kit.dynamodb.DynamoRepository<T> create(java.lang.String, java.lang.Class<T>);
+public <T> pe.axiz.kit.dynamodb.DynamoRepository<T> create(java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>);
+public java.lang.String tableName(java.lang.String);
+public pe.axiz.kit.dynamodb.CursorCodec cursors();
+public pe.axiz.spring.dynamodb.DynamoRepositories(software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient, java.lang.String);
+public pe.axiz.spring.dynamodb.DynamoRepositories(software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient, java.lang.String, java.util.function.Supplier<pe.axiz.kit.dynamodb.CursorCodec>);
+}
+
+public final class pe.axiz.spring.dynamodb.ReactiveDynamoRepositories {
+public <T> pe.axiz.spring.dynamodb.ReactiveDynamoRepository<T> create(java.lang.String, java.lang.Class<T>);
+public <T> pe.axiz.spring.dynamodb.ReactiveDynamoRepository<T> create(java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>);
+public java.lang.String tableName(java.lang.String);
+public pe.axiz.kit.dynamodb.CursorCodec cursors();
+public pe.axiz.spring.dynamodb.ReactiveDynamoRepositories(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String);
+public pe.axiz.spring.dynamodb.ReactiveDynamoRepositories(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String, java.util.function.Supplier<pe.axiz.kit.dynamodb.CursorCodec>);
+}
+
+public final class pe.axiz.spring.dynamodb.ReactiveDynamoRepository<T> {
+public pe.axiz.spring.dynamodb.ReactiveDynamoRepository(pe.axiz.kit.dynamodb.DynamoAsyncRepository<T>);
+public reactor.core.publisher.Mono<T> findById(java.lang.String);
+public reactor.core.publisher.Mono<T> findById(java.lang.String, java.lang.String);
+public reactor.core.publisher.Mono<T> update(T);
+public reactor.core.publisher.Mono<java.lang.Void> delete(java.lang.String);
+public reactor.core.publisher.Mono<java.lang.Void> delete(java.lang.String, java.lang.String);
+public reactor.core.publisher.Mono<java.lang.Void> insert(T, java.lang.String);
+public reactor.core.publisher.Mono<java.lang.Void> save(T);
+public reactor.core.publisher.Mono<java.lang.Void> transact(java.util.function.Consumer<software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest$Builder>);
+public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> query(java.lang.String, int, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> queryBeginsWith(java.lang.String, java.lang.String, int, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> queryIndex(java.lang.String, java.lang.String, int, java.lang.String);
+public software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable<T> table();
+}

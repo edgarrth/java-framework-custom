@@ -30,12 +30,12 @@ class CryptoBoundaryInvariantsTest {
     assertTrue(provider.find("k").isPresent());
     assertTrue(provider.find("unknown").isEmpty());
     var encryptor = new FieldEncryptor(provider);
-    String legacy = encryptor.encrypt("sensitive", "axiz.field");
-    assertFalse(encryptor.needsRotation(legacy));
-    String rebound = encryptor.reencrypt(legacy, "axiz.field", "account.number");
+    String original = encryptor.encrypt("sensitive", "account.oldNumber");
+    assertFalse(encryptor.needsRotation(original));
+    String rebound = encryptor.reencrypt(original, "account.oldNumber", "account.number");
     assertEquals("sensitive", encryptor.decrypt(rebound, "account.number"));
-    assertThrows(CryptoException.class, () -> encryptor.decrypt(rebound, "axiz.field"));
-    assertNull(encryptor.reencrypt(null, "axiz.field", "account.number"));
+    assertThrows(CryptoException.class, () -> encryptor.decrypt(rebound, "account.oldNumber"));
+    assertNull(encryptor.reencrypt(null, "account.oldNumber", "account.number"));
   }
 
   @Test

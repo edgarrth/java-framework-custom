@@ -37,6 +37,7 @@ import pe.axiz.adapter.secrets.aws.SecretsManagerAsyncResolver;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -210,7 +211,9 @@ class LocalStackAsyncResilienceIT {
                         "correlation",
                         "test",
                         null,
-                        Map.of()))));
+                        Map.of(),
+                        TransactionOutcome.UNKNOWN,
+                        TransactionOutcome.UNKNOWN))));
     OPERATIONS.add(
         new Operation("kms-key", () -> new KmsAsyncDataKeyProvider(kms, key).generate("context")));
     OPERATIONS.add(

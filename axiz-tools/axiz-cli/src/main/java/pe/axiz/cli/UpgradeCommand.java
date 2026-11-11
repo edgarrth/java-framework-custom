@@ -8,8 +8,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.model.FrameworkVersions;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.MavenReactor;
 import pe.axiz.codegen.project.PomEditor;
@@ -30,11 +30,6 @@ import picocli.CommandLine.Option;
     description = "Upgrades the axiz version applying the OpenRewrite recipes.")
 class UpgradeCommand extends BaseCommand implements Callable<Integer> {
 
-  // MAJOR.MINOR.PATCH with an optional -suffix, checked in two parts so that no repetition is
-  // nested inside another and the check is linear in the length of the text.
-  private static final Pattern RELEASE = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
-  private static final Pattern SUFFIX = Pattern.compile("^[A-Za-z0-9.]+$");
-
   @Option(names = "--to", description = "Target version (default: the version of this CLI).")
   @Nullable String to;
 
@@ -52,15 +47,10 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
       description = "New deployment name; preserves stateful identities and Java packages.")
   @Nullable String rename;
 
-  @Option(
-      names = "--archetype",
-      description = "Resolve legacy integration explicitly: core or gateway.")
-  @Nullable String archetype;
-
   @Override
   public Integer call() throws IOException {
     Path dir = project();
-    ProjectManifest manifest = ProjectManifest.read(dir, archetype);
+    ProjectManifest manifest = ProjectManifest.read(dir);
     String target = to == null ? Version.axiz() : to;
     if (!isVersion(target)) {
       throw new IllegalArgumentException("Invalid version " + target);
@@ -73,17 +63,15 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
     if (framework.stream().allMatch(module -> target.equals(module.parentVersion()))
         && target.equals(manifest.axizVersion())
         && rename == null
-        && !WorkflowMigration.required(dir)
         && !CapabilityAdapters.required(dir, manifest)
-        && Files.readString(dir.resolve(ProjectManifest.PATH)).contains("schema: 2")) {
+        && !WorkflowBindings.required(dir, manifest)) {
       ok("Already on axiz " + target);
       return dryRun ? ExitCodes.OK : validate(dir);
     }
     out().println("Upgrading to axiz " + target);
     try (WorkingProject isolated = WorkingProject.create(dir)) {
       Path working = isolated.directory();
-      // The recipe needs schema 2 selectors, while Maven must still parse the valid 1.x model.
-      // Both changes are staged in isolation; the original project is untouched until success.
+      // Stage changes in isolation; apply only after validation.
       manifest.write(working);
       if (rename != null) ProjectRename.apply(working, manifest, rename, true);
       if (skipRewrite) {
@@ -129,11 +117,11 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
       ProjectManifest upgraded = manifest.withAxizVersion(target);
       upgraded.write(working);
       boolean workflowsReady =
-          WorkflowMigration.migrate(working, ProjectManifest.read(dir, archetype), upgraded);
+          WorkflowBindings.rename(working, ProjectManifest.read(dir), upgraded);
       isolated.review();
       if (!workflowsReady) {
         fail(
-            "Customized legacy workflows require review; merge target/rewrite/rewrite.patch. "
+            "Customized workflow bindings require review; merge target/rewrite/rewrite.patch. "
                 + "The original project was not changed");
         return ExitCodes.PROBLEMS;
       }
@@ -163,10 +151,7 @@ class UpgradeCommand extends BaseCommand implements Callable<Integer> {
   }
 
   static boolean isVersion(String text) {
-    int dash = text.indexOf('-');
-    String release = dash < 0 ? text : text.substring(0, dash);
-    return RELEASE.matcher(release).matches()
-        && (dash < 0 || SUFFIX.matcher(text.substring(dash + 1)).matches());
+    return FrameworkVersions.isSupported(text);
   }
 
   List<String> command(String maven, String target) {

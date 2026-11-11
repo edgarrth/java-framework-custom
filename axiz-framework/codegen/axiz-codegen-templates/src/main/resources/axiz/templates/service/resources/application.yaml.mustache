@@ -6,6 +6,8 @@
 # Audit convention: DURABLE with outbox, ASYNC otherwise; SYNC is an explicit alternative.
 # DURABLE joins the business transaction only when both use the same transactional resource.
 # Outside a transaction the default is async; choose durable.outside-transaction=fail to reject it.
+{{#caps.outbox}}
 # Configure the logical audit destination and the outbox relay transport before deployment.
+{{/caps.outbox}}
 {{/caps.audit}}
 {{{config.applicationYaml}}}

@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
+import pe.axiz.spring.foundation.ConfigurationErrors;
 
 /** Native outgoing messages for reactive flows; poll workers retain the imperative dispatcher. */
 @AutoConfiguration(
@@ -37,10 +38,18 @@ public class AxizNativeMessagingAutoConfiguration {
     for (var destination : properties.destinations().entrySet()) {
       if (!routing.supports(destination.getValue()))
         throw new IllegalStateException(
-            "No native messaging adapter supports configured destination " + destination.getKey());
+            "No native messaging adapter supports configured "
+                + ConfigurationErrors.destination(destination.getKey(), destination.getValue())
+                + "; configure "
+                + destinationProperty(destination.getKey()));
     }
     return new ObservedAsyncEventPublisher(
         routing, observations.getIfAvailable(() -> ObservationRegistry.NOOP), properties);
+  }
+
+  private static String destinationProperty(String logical) {
+    return "axiz.messaging.destinations"
+        + (logical.matches("[A-Za-z0-9_.-]+") ? "." + logical : " (see destination above)");
   }
 
   @Bean

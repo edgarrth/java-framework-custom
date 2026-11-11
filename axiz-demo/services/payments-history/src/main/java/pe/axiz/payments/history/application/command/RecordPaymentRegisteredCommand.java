@@ -10,7 +10,7 @@ import pe.axiz.extension.cqrs.Command;
 import pe.axiz.extension.cqrs.OpenAccess;
 
 /**
- * payments-business registered an order: add it to the customer's history.
+ * payment-orders registered an order: add it to the customer's history.
  *
  * @param paymentId order id
  * @param operationNumber operation number

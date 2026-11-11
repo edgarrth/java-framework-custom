@@ -138,8 +138,7 @@ public class AxizMessagingKafkaAutoConfiguration {
         new AsyncEventPublisher() {
           @Override
           public boolean supports(String destination) {
-            return destination.startsWith(KafkaEventPublisher.SCHEME)
-                || (!destination.startsWith("https://") && !destination.startsWith("arn:"));
+            return KafkaEventRecords.isDestination(destination);
           }
 
           @Override

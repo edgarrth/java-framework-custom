@@ -71,8 +71,9 @@ public final class InMemoryObjectStorage implements ObjectStorage {
   }
 
   @Override
-  public URL presignPut(String key, String contentType, Duration ttl) {
-    return url("put", key, ttl);
+  public PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
+    return new PresignedUpload(
+        URI.create(url("put", key, ttl).toString()), Map.of("Content-Type", List.of(contentType)));
   }
 
   private static URL url(String op, String key, Duration ttl) {

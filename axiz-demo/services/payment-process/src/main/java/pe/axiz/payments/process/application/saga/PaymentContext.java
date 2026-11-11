@@ -9,8 +9,8 @@ import pe.axiz.payments.process.domain.PaymentInstruction;
  * @param instruction what to pay
  * @param movementId debit movement, once debited
  * @param transferId network transfer, once sent
- * @param completionPending the money moved but payments-business could not be told yet (the
- *     settlement reconciliation completes the order)
+ * @param completionPending the money moved but payment-orders could not be told yet (the settlement
+ *     reconciliation completes the order)
  */
 public record PaymentContext(
     PaymentInstruction instruction,

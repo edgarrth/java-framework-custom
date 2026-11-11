@@ -1,0 +1,9 @@
+public final class pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore implements pe.axiz.core.sequence.AsyncSequenceStore {
+public java.util.concurrent.CompletionStage<java.lang.Long> increment(java.lang.String, java.lang.String, int);
+public pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String);
+}
+
+public final class pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore implements pe.axiz.core.sequence.SequenceStore {
+public long increment(java.lang.String, java.lang.String, int);
+public pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore(software.amazon.awssdk.services.dynamodb.DynamoDbClient, java.lang.String);
+}

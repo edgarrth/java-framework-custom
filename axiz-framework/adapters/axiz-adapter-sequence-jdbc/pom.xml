@@ -14,7 +14,6 @@
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.adapter.sequence.jdbc</axiz.module.name>
-    <axiz.api.baseline.artifactId>axiz-core-sequence</axiz.api.baseline.artifactId>
   </properties>
   <dependencies>
     <dependency>
@@ -34,24 +33,5 @@
     </dependency>
   </dependencies>
   <profiles>
-    <profile>
-      <id>api-compat</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>com.github.siom79.japicmp</groupId>
-            <artifactId>japicmp-maven-plugin</artifactId>
-            <configuration>
-              <parameter>
-                <includes>
-                  <include>pe.axiz.core.sequence.JdbcSequenceStore</include>
-                  <include>pe.axiz.adapter.sequence.jdbc.*</include>
-                </includes>
-              </parameter>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
   </profiles>
 </project>

@@ -15,10 +15,10 @@ final class DownstreamErrors {
 
   private static final Map<String, ErrorDefinition> BUSINESS =
       Map.of(
-          "PAYMENTS-PAYMENTSBUSINESS-0001", ChannelErrors.LIMIT_EXCEEDED,
-          "PAYMENTS-PAYMENTSBUSINESS-0002", ChannelErrors.INVALID_BENEFICIARY,
-          "PAYMENTS-PAYMENTSBUSINESS-0004", ChannelErrors.CURRENCY_NOT_AVAILABLE,
-          "PAYMENTS-PAYMENTSBUSINESS-0005", ChannelErrors.DUPLICATE_PAYMENT);
+          "PAYMENTS-PAYMENTORDERS-0001", ChannelErrors.LIMIT_EXCEEDED,
+          "PAYMENTS-PAYMENTORDERS-0002", ChannelErrors.INVALID_BENEFICIARY,
+          "PAYMENTS-PAYMENTORDERS-0004", ChannelErrors.CURRENCY_NOT_AVAILABLE,
+          "PAYMENTS-PAYMENTORDERS-0005", ChannelErrors.DUPLICATE_PAYMENT);
 
   private DownstreamErrors() {}
 

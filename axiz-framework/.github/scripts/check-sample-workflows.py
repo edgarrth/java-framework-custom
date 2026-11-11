@@ -46,6 +46,19 @@ def check(root, samples=None):
                     expected = '${{ secrets.NEXUS_READ_' + credential + ' }}'
                     if key in node and node[key] != expected:
                         errors.append(f'{path.name}: {key} must use the read-only credential')
+        for node in nodes(document):
+            run = node.get('run', '')
+            if isinstance(run, str) and 'for dir in target/samples/' in run:
+                commands = [line for line in run.splitlines() if './mvnw' in line]
+                if not commands or any('spotless:check' not in line or 'verify' not in line
+                                       or 'spotless:apply' in line for line in commands):
+                    errors.append(f'{path.name}: generated samples must check formatting and verify without apply')
+    for name, goal in [('authorization-samples.sh', 'test'), ('reactive-native-sample.sh', 'verify')]:
+        script = root / '.github/scripts' / name
+        if script.is_file():
+            content = script.read_text()
+            if 'spotless:apply' in content or not re.search(r'\./mvnw[^\n]*spotless:check\s+' + goal, content):
+                errors.append(f'{name}: acceptance must check formatting without apply')
     if samples is not None:
         # Read the actual generator output, never infer its names from a second naming algorithm.
         generated = json.loads(Path(samples).read_text())

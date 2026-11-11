@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Extension;
@@ -20,30 +21,74 @@ import pe.axiz.codegen.model.Structure;
  * valid combination. Writes {@code modules.json} (the project directories, for a CI matrix).
  *
  * <pre>
- * java -cp axiz-codegen.jar pe.axiz.codegen.tools.SampleProjects target/samples contract.yaml 1.2.0 defaults
+ * java -cp axiz-codegen.jar pe.axiz.codegen.tools.SampleProjects target/samples contract.yaml 2.0.0 defaults
  * </pre>
  */
 public final class SampleProjects {
 
   private SampleProjects() {}
 
-  /** Entry point: {@code <output> <openapi> <structure-version> [defaults|all]}. */
+  /** Entry point: {@code <output> <openapi> <framework-version> [defaults|all|audit]}. */
   public static void main(String[] args) throws IOException {
     if (args.length < 3) {
-      System.err.println(
-          "usage: SampleProjects <output> <openapi> <structure-version> [defaults|all]");
-      System.exit(2);
+      throw new IllegalArgumentException(
+          "usage: SampleProjects <output> <openapi> <framework-version> [defaults|all|audit]");
     }
     String version = args[2];
     String mode = args.length > 3 ? args[3] : "defaults";
+    if (!List.of("defaults", "all", "audit").contains(mode))
+      throw new IllegalArgumentException("Unknown sample mode: " + mode);
     List<String> names =
-        generate(
-            Path.of(args[0]),
-            Files.readString(Path.of(args[1]), StandardCharsets.UTF_8),
-            "all".equals(mode),
-            version,
-            System.out);
+        mode.equals("audit")
+            ? auditSamples(
+                Path.of(args[0]),
+                Files.readString(Path.of(args[1]), StandardCharsets.UTF_8),
+                version)
+            : generate(
+                Path.of(args[0]),
+                Files.readString(Path.of(args[1]), StandardCharsets.UTF_8),
+                "all".equals(mode),
+                version,
+                System.out);
     System.out.println("generated " + names.size() + " projects");
+  }
+
+  private static List<String> auditSamples(Path output, String contract, String version)
+      throws IOException {
+    var generator = ProjectGenerator.withDefaults();
+    var names = new ArrayList<String>();
+    for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
+      for (String route : List.of("outbox-sqs", "outbox-sns", "audit-sqs")) {
+        String name = "audit-orders-" + stack.id() + "-" + route;
+        List<String> capabilities =
+            route.equals("audit-sqs")
+                ? List.of("audit-sqs")
+                : List.of("outbox", "messaging-" + route.substring("outbox-".length()));
+        var request =
+            new ProjectRequest(
+                name,
+                "pe.axiz.samples",
+                "pe.axiz.samples.audit." + stack.id() + route.replace("-", ""),
+                "Audit resource acceptance",
+                "business",
+                Structure.HEXAGONAL,
+                stack,
+                "aurora",
+                capabilities,
+                contract,
+                null,
+                version);
+        generator.generate(request).writeTo(output.resolve(name), true);
+        names.add(name);
+      }
+    }
+    Files.writeString(
+        output.resolve("modules.json"),
+        names.stream()
+            .map(name -> "\"" + output.resolve(name).toString().replace("\\", "/") + "\"")
+            .collect(Collectors.joining(",", "[", "]")),
+        StandardCharsets.UTF_8);
+    return names;
   }
 
   /**

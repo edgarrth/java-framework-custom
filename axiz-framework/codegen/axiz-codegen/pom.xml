@@ -21,6 +21,13 @@
   </properties>
 
   <dependencies>
+    <!-- Generation entry points format their output; native consumers may omit the formatter. -->
+    <dependency>
+      <groupId>com.google.googlejavaformat</groupId>
+      <artifactId>google-java-format</artifactId>
+      <scope>runtime</scope>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-archetypes</artifactId>

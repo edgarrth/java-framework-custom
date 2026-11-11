@@ -19,7 +19,7 @@ Anti-corruption layer in front of the core banking system, simulated by WireMock
 
 - Debits and reversals through the core REST facade (OAuth2 client credentials), credits through
   its SOAP service (WS-Security digest). Core codes (`CB-51`, `CB-62`...) become
-  `PAYMENTS-COREINTEGRATION-*` errors; they never leave this service.
+  `PAYMENTS-BANKINGCORE-*` errors; they never leave this service.
 - Debits of the same account are serialized across replicas with a Redis lock.
 - Every movement is audited to SQS (archived by notifications-processor). Network transfers are
   owned by payment-network-gateway.

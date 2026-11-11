@@ -60,10 +60,6 @@ public final class ReactiveStorage {
     return ReactiveStages.from(() -> storage.presignGet(key, ttl));
   }
 
-  public Mono<URL> presignPut(String key, String contentType, Duration ttl) {
-    return ReactiveStages.from(() -> storage.presignPut(key, contentType, ttl));
-  }
-
   public Mono<PresignedUpload> presignUpload(String key, String contentType, Duration ttl) {
     return ReactiveStages.from(() -> storage.presignUpload(key, contentType, ttl));
   }

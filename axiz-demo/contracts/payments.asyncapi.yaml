@@ -3,7 +3,7 @@ info:
   title: Payment events
   version: 1.1.0
   description: >
-    Events of the payments demo (CloudEvents 1.0, JSON data). payments-business publishes order
+    Events of the payments demo (CloudEvents 1.0, JSON data). payment-orders publishes order
     events through its transactional outbox on the internal MSK topic `payments`; services publish
     their audit trail to the SQS queue `axiz-demo-audit`; the notifications processor publishes
     notification requests to SNS. Fields marked `x-sensitive` are masked in logs and audit records.
@@ -40,12 +40,12 @@ operations:
   publishPaymentOrderCreated:
     action: send
     channel: {$ref: '#/channels/payments'}
-    summary: payments-business registered an order (outbox, key = order id)
+    summary: payment-orders registered an order (outbox, key = order id)
     messages: [{$ref: '#/channels/payments/messages/paymentOrderCreated'}]
   publishPaymentOrderStatusChanged:
     action: send
     channel: {$ref: '#/channels/payments'}
-    summary: payments-business moved an order to a new status
+    summary: payment-orders moved an order to a new status
     messages: [{$ref: '#/channels/payments/messages/paymentOrderStatusChanged'}]
   startPaymentProcess:
     action: receive

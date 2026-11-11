@@ -33,7 +33,7 @@ config:
     jwk-set-uri: http://keycloak.axiz-demo.svc.cluster.local:8080/realms/axiz/protocol/openid-connect/certs
     audiences:
     - local-services
-  spring.datasource.url: jdbc:postgresql://postgres.axiz-demo.svc.cluster.local:5432/payments_business
+  spring.datasource.url: jdbc:postgresql://postgres.axiz-demo.svc.cluster.local:5432/payment_orders
   spring.datasource.username: app
   spring.kafka.bootstrap-servers: kafka.axiz-demo.svc.cluster.local:9092
   axiz.messaging.kafka.iam: false

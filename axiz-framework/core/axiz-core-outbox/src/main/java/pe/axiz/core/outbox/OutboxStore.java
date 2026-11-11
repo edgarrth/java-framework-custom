@@ -38,14 +38,6 @@ public interface OutboxStore {
 
   void verifySchema();
 
-  /** Locks and returns up to {@code size} due entries (skipping entries locked by other relays). */
-  List<OutboxRecord> lockDue(int size, Instant now);
-
-  void markPublished(String id, Instant at);
-
-  void markFailed(
-      String id, int attempts, Instant nextAttemptAt, @Nullable String error, boolean giveUp);
-
   /** Deletes published entries older than the instant; returns how many were removed. */
   int purgePublished(Instant before);
 

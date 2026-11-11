@@ -2,7 +2,7 @@ package pe.axiz.payments.process.application.port.out;
 
 import pe.axiz.payments.process.domain.PaymentInstruction;
 
-/** Customer accounts (core-integration). */
+/** Customer accounts (banking-core). */
 public interface Accounts {
 
   /** Debits the debtor account and returns the movement id. */

@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +21,7 @@ import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsClients;
 import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -38,7 +38,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
       "pe.axiz.adapter.audit.sqs.SqsAuditPublisher",
       "software.amazon.awssdk.services.sqs.SqsClient"
     })
-@ConditionalOnProperty("axiz.audit.sqs.queue-url")
+@ConditionalOnConfiguredProperty("axiz.audit.sqs.queue-url")
 @ConditionalOnBooleanProperty(name = "axiz.audit.enabled", matchIfMissing = true)
 @EnableConfigurationProperties({AxizAuditProperties.class, AxizAwsCompletionProperties.class})
 public class AxizAuditSqsAutoConfiguration {

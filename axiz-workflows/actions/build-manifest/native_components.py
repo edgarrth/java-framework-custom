@@ -339,7 +339,7 @@ def validate_manifest(data, bundle=None):
 
 
 def release_assets(data, bundle):
-    """Expose compatibility aliases only for native bytes bound to the approved main manifest."""
+    """Expose platform downloads only for native bytes bound to the approved main manifest."""
     items = validate_manifest(data, bundle)
     if not items:
         return {}

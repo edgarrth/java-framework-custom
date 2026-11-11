@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-idempotency-dynamodb</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.adapter.idempotency.dynamodb</axiz.module.name>
   </properties>
 

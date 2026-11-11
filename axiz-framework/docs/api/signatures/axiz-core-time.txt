@@ -1,0 +1,58 @@
+public final class pe.axiz.core.time.BusinessCalendar {
+public boolean isBusinessDay(java.time.LocalDate);
+public boolean isHoliday(java.time.LocalDate);
+public java.time.LocalDate addBusinessDays(java.time.LocalDate, int);
+public java.time.LocalDate nextBusinessDay(java.time.LocalDate);
+public java.time.LocalDate onOrAfter(java.time.LocalDate);
+public java.time.LocalDate onOrBefore(java.time.LocalDate);
+public java.time.LocalDate previousBusinessDay(java.time.LocalDate);
+public java.time.ZoneId zone();
+public long businessDaysBetween(java.time.LocalDate, java.time.LocalDate);
+public static pe.axiz.core.time.BusinessCalendar$Builder builder(java.time.ZoneId);
+}
+
+public final class pe.axiz.core.time.BusinessCalendar$Builder {
+public pe.axiz.core.time.BusinessCalendar build();
+public pe.axiz.core.time.BusinessCalendar$Builder holiday(java.time.LocalDate);
+public pe.axiz.core.time.BusinessCalendar$Builder holidays(java.lang.Iterable<java.time.LocalDate>);
+public pe.axiz.core.time.BusinessCalendar$Builder recurringHoliday(java.time.MonthDay);
+public pe.axiz.core.time.BusinessCalendar$Builder weekend(java.util.Set<java.time.DayOfWeek>);
+}
+
+public final class pe.axiz.core.time.CutoffTime extends java.lang.Record {
+public boolean isBeforeCutoff(java.time.Instant);
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.LocalDate processingDate(java.time.Instant);
+public java.time.LocalTime cutoff();
+public pe.axiz.core.time.BusinessCalendar calendar();
+public pe.axiz.core.time.CutoffTime(java.time.LocalTime, pe.axiz.core.time.BusinessCalendar);
+}
+
+public final class pe.axiz.core.time.DueDates {
+public java.time.LocalDate adjust(java.time.LocalDate, pe.axiz.core.time.DueDates$Adjustment);
+public java.time.LocalDate afterBusinessDays(java.time.LocalDate, int);
+public java.time.LocalDate afterCalendarDays(java.time.LocalDate, int, pe.axiz.core.time.DueDates$Adjustment);
+public java.time.LocalDate monthly(java.time.LocalDate, int, int, pe.axiz.core.time.DueDates$Adjustment);
+public pe.axiz.core.time.DueDates(pe.axiz.core.time.BusinessCalendar);
+}
+
+public final class pe.axiz.core.time.DueDates$Adjustment extends java.lang.Enum<pe.axiz.core.time.DueDates$Adjustment> {
+public static final pe.axiz.core.time.DueDates$Adjustment FOLLOWING;
+public static final pe.axiz.core.time.DueDates$Adjustment MODIFIED_FOLLOWING;
+public static final pe.axiz.core.time.DueDates$Adjustment NONE;
+public static final pe.axiz.core.time.DueDates$Adjustment PRECEDING;
+public static pe.axiz.core.time.DueDates$Adjustment valueOf(java.lang.String);
+public static pe.axiz.core.time.DueDates$Adjustment[] values();
+}
+
+public final class pe.axiz.core.time.TimeSettings extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.ZoneId zone();
+public pe.axiz.core.time.TimeSettings(java.time.ZoneId);
+public static final java.time.ZoneId DEFAULT_ZONE;
+public static pe.axiz.core.time.TimeSettings defaults();
+}

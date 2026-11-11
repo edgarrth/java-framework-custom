@@ -1,0 +1,138 @@
+public final class pe.axiz.spring.foundation.AxizAwsCompletionProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int queueCapacity();
+public int workers();
+public pe.axiz.spring.foundation.AxizAwsCompletionProperties(int, int);
+}
+
+public class pe.axiz.spring.foundation.AxizFoundationAutoConfiguration {
+public pe.axiz.spring.foundation.AxizFoundationAutoConfiguration();
+}
+
+public final class pe.axiz.spring.foundation.AxizFoundationProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.LocalTime cutoff();
+public java.time.ZoneId zone();
+public pe.axiz.spring.foundation.AxizFoundationProperties$Calendar calendar();
+public pe.axiz.spring.foundation.AxizFoundationProperties(java.time.ZoneId, pe.axiz.spring.foundation.AxizFoundationProperties$Calendar, java.time.LocalTime);
+}
+
+public final class pe.axiz.spring.foundation.AxizFoundationProperties$Calendar extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<java.lang.String> recurringHolidays();
+public java.util.List<java.time.DayOfWeek> weekend();
+public java.util.List<java.time.LocalDate> holidays();
+public pe.axiz.spring.foundation.AxizFoundationProperties$Calendar(java.util.List<java.time.DayOfWeek>, java.util.List<java.lang.String>, java.util.List<java.time.LocalDate>);
+}
+
+public final class pe.axiz.spring.foundation.BoundedAsyncDispatcher implements java.lang.AutoCloseable {
+public <T> java.util.concurrent.CompletionStage<T> submit(java.util.function.Supplier<? extends java.util.concurrent.CompletionStage<T>>);
+public pe.axiz.spring.foundation.BoundedAsyncDispatcher(java.lang.String, int, int, java.time.Duration, io.micrometer.core.instrument.MeterRegistry);
+public void close();
+}
+
+public interface pe.axiz.spring.foundation.ConditionalOnConfiguredProperty extends java.lang.annotation.Annotation {
+public abstract java.lang.String value();
+}
+
+public interface pe.axiz.spring.foundation.ConditionalOnImperativeApplication extends java.lang.annotation.Annotation {
+}
+
+public final class pe.axiz.spring.foundation.ConfigurationErrors {
+public static java.lang.String destination(java.lang.String, java.lang.String);
+}
+
+public interface pe.axiz.spring.foundation.DispatchBoundary {
+public abstract pe.axiz.spring.foundation.DispatchBoundary$Scope open();
+}
+
+public interface pe.axiz.spring.foundation.DispatchBoundary$Scope extends java.lang.AutoCloseable {
+public abstract void close();
+}
+
+public class pe.axiz.spring.foundation.IdentifierConstraintValidator implements jakarta.validation.ConstraintValidator<pe.axiz.spring.foundation.ValidIdentifier, java.lang.CharSequence> {
+public boolean isValid(java.lang.CharSequence, jakarta.validation.ConstraintValidatorContext);
+public boolean isValid(java.lang.Object, jakarta.validation.ConstraintValidatorContext);
+public pe.axiz.spring.foundation.IdentifierConstraintValidator();
+public void initialize(java.lang.annotation.Annotation);
+public void initialize(pe.axiz.spring.foundation.ValidIdentifier);
+}
+
+public final class pe.axiz.spring.foundation.IdentifierValidation {
+}
+
+public interface pe.axiz.spring.foundation.InboxCompletion {
+public abstract boolean complete(java.lang.String, java.lang.String, java.lang.String);
+public abstract java.lang.Object transactionResource();
+}
+
+public final class pe.axiz.spring.foundation.MoneyJacksonModule extends tools.jackson.databind.module.SimpleModule {
+public pe.axiz.spring.foundation.MoneyJacksonModule();
+}
+
+public interface pe.axiz.spring.foundation.ReactiveDispatchBoundary {
+public abstract reactor.core.publisher.Mono<java.lang.Void> wrap(reactor.core.publisher.Mono<java.lang.Void>);
+}
+
+public interface pe.axiz.spring.foundation.ReactiveInboxCompletion {
+public abstract java.lang.Object transactionResource();
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> complete(java.lang.String, java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap {
+public static void initialize();
+}
+
+public final class pe.axiz.spring.foundation.ReactiveRandomBootstrap {
+public static void initialize();
+}
+
+public final class pe.axiz.spring.foundation.ReactiveStages {
+public static <T> reactor.core.publisher.Flux<T> flux(java.util.function.Supplier<? extends org.reactivestreams.Publisher<T>>);
+public static <T> reactor.core.publisher.Mono<T> from(java.util.function.Supplier<? extends java.util.concurrent.CompletionStage<T>>);
+public static void initialize();
+}
+
+public interface pe.axiz.spring.foundation.ValidIdentifier extends java.lang.annotation.Annotation {
+public abstract java.lang.Class<? extends jakarta.validation.Payload>[] payload();
+public abstract java.lang.Class<?>[] groups();
+public abstract java.lang.String message();
+public abstract java.lang.String type();
+}
+
+public final class pe.axiz.spring.foundation.jdbc.SchemaInitializer implements org.springframework.beans.factory.InitializingBean {
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer(javax.sql.DataSource, java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
+public void afterPropertiesSet();
+}
+
+public final class pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode extends java.lang.Enum<pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode> {
+public static final pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode ALWAYS;
+public static final pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode EMBEDDED;
+public static final pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode NEVER;
+public static pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode valueOf(java.lang.String);
+public static pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode[] values();
+}
+
+public final class pe.axiz.spring.foundation.jdbc.SpringConnectionProvider implements pe.axiz.kit.jdbc.ConnectionProvider {
+public java.sql.Connection get();
+public javax.sql.DataSource dataSource();
+public pe.axiz.spring.foundation.jdbc.SpringConnectionProvider(javax.sql.DataSource);
+public void release(java.sql.Connection);
+}
+
+public final class pe.axiz.spring.foundation.jdbc.SpringTransactionRunner implements pe.axiz.core.commons.tx.TransactionRunner {
+public <T> T inTransaction(java.util.concurrent.Callable<T>) throws java.lang.Exception;
+public pe.axiz.spring.foundation.jdbc.SpringTransactionRunner(org.springframework.transaction.PlatformTransactionManager);
+public pe.axiz.spring.foundation.jdbc.SpringTransactionRunner(org.springframework.transaction.PlatformTransactionManager, int);
+}
+
+public final class pe.axiz.spring.foundation.jdbc.SqlDialects {
+public static boolean isH2(javax.sql.DataSource);
+public static java.lang.String product(javax.sql.DataSource);
+}

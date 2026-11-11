@@ -24,16 +24,6 @@ public record AxizAuditProperties(
     @DefaultValue Sqs sqs,
     @DefaultValue Durable durable,
     @Nullable Mode mode) {
-  @ConstructorBinding
-  public AxizAuditProperties {
-    if (mode != null && mode != Mode.DURABLE && durable.enabled())
-      throw new IllegalArgumentException("audit.mode conflicts with durable.enabled");
-  }
-
-  public AxizAuditProperties(Async async, Http http, Kafka kafka, Sqs sqs, Durable durable) {
-    this(async, http, kafka, sqs, durable, null);
-  }
-
   /** Delivery and persistence guarantee for audit events. */
   public enum Mode {
     ASYNC,
@@ -42,20 +32,16 @@ public record AxizAuditProperties(
   }
 
   public Mode effectiveMode() {
-    return mode != null
-        ? mode
-        : durable.enabled() ? Mode.DURABLE : async.enabled() ? Mode.ASYNC : Mode.SYNC;
+    return mode == null ? Mode.ASYNC : mode;
   }
 
   /**
    * Asynchronous publication.
    *
-   * @param enabled whether events are queued and published by a background virtual thread
    * @param capacity queue capacity; when full, events go to the log publisher instead of being lost
    * @param offerTimeout how long a caller waits for queue space
    */
   public record Async(
-      @DefaultValue("true") boolean enabled,
       @DefaultValue("10000") int capacity,
       @DefaultValue("50ms") Duration offerTimeout,
       @DefaultValue("10s") Duration deliveryTimeout) {
@@ -64,10 +50,6 @@ public record AxizAuditProperties(
       if (capacity < 1 || offerTimeout.isNegative() || !deliveryTimeout.isPositive())
         throw new IllegalArgumentException("Invalid audit queue bounds");
     }
-
-    public Async(boolean enabled, int capacity, Duration offerTimeout) {
-      this(enabled, capacity, offerTimeout, Duration.ofSeconds(10));
-    }
   }
 
   /**
@@ -75,27 +57,22 @@ public record AxizAuditProperties(
    * written to the outbox with the business change (needs the outbox capability) and published by
    * its relay; nothing is lost if the process dies after the commit.
    *
-   * @param enabled whether audited successes go through the outbox
    * @param destination logical outbox destination of audit events (see {@code
    *     axiz.messaging.destinations})
    * @param outsideTransaction {@code async}: successes recorded outside a transaction use the
    *     asynchronous publisher; {@code fail}: they are refused
    */
   public record Durable(
-      @DefaultValue("false") boolean enabled,
       @DefaultValue("audit") String destination,
       @DefaultValue("async") AuditOutsideTransaction outsideTransaction,
       @DefaultValue("2s") Duration failureTimeout,
       @DefaultValue("4") int failureConcurrency) {
     @ConstructorBinding
     public Durable {
+      if (destination == null || destination.isBlank() || destination.contains("${"))
+        throw new IllegalArgumentException("Audit durable destination must not be blank");
       if (!failureTimeout.isPositive() || failureConcurrency < 1)
         throw new IllegalArgumentException("Invalid durable failure timeout or concurrency");
-    }
-
-    public Durable(
-        boolean enabled, String destination, AuditOutsideTransaction outsideTransaction) {
-      this(enabled, destination, outsideTransaction, Duration.ofSeconds(2), 4);
     }
   }
 
@@ -125,12 +102,26 @@ public record AxizAuditProperties(
    * @param topic topic; the sink is active only when set
    * @param timeout send acknowledgement timeout
    */
-  public record Kafka(@Nullable String topic, @DefaultValue("5s") Duration timeout) {}
+  public record Kafka(@Nullable String topic, @DefaultValue("5s") Duration timeout) {
+    public Kafka {
+      if (topic != null && (topic.isBlank() || topic.contains("${")))
+        throw new IllegalArgumentException(
+            "axiz.audit.kafka.topic must not be blank or unresolved when configured");
+      if (!timeout.isPositive())
+        throw new IllegalArgumentException("Audit Kafka timeout must be positive");
+    }
+  }
 
   /**
    * SQS sink.
    *
    * @param queueUrl queue URL; the sink is active only when set
    */
-  public record Sqs(@Nullable String queueUrl) {}
+  public record Sqs(@Nullable String queueUrl) {
+    public Sqs {
+      if (queueUrl != null && (queueUrl.isBlank() || queueUrl.contains("${")))
+        throw new IllegalArgumentException(
+            "axiz.audit.sqs.queue-url must not be blank or unresolved when configured");
+    }
+  }
 }

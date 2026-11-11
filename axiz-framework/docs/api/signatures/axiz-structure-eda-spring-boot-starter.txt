@@ -1,0 +1,13 @@
+public class pe.axiz.structure.eda.spring.AxizEdaAutoConfiguration {
+public pe.axiz.structure.eda.spring.AxizEdaAutoConfiguration();
+}
+
+public class pe.axiz.structure.eda.spring.Reactions {
+public pe.axiz.core.messaging.EventEnvelope emit(java.lang.String, java.lang.String, java.lang.String, java.lang.Object, java.lang.String);
+public pe.axiz.structure.eda.spring.Reactions(pe.axiz.spring.outbox.TransactionalEvents, pe.axiz.core.messaging.EventRoutes);
+}
+
+public class pe.axiz.structure.eda.spring.ReactiveReactions {
+public pe.axiz.structure.eda.spring.ReactiveReactions(pe.axiz.spring.outbox.ReactiveTransactionalEvents, pe.axiz.core.messaging.EventRoutes);
+public reactor.core.publisher.Mono<pe.axiz.core.messaging.EventEnvelope> emit(java.lang.String, java.lang.String, java.lang.String, java.lang.Object, java.lang.String);
+}

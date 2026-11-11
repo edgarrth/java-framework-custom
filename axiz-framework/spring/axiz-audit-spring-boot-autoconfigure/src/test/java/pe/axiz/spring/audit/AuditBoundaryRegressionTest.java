@@ -96,8 +96,8 @@ class AuditBoundaryRegressionTest {
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withUserConfiguration(Config.class)
         .withPropertyValues(
-            "axiz.audit.async.enabled=false",
-            "axiz.audit.durable.enabled=true",
+            "axiz.audit.mode=DURABLE",
+            "axiz.outbox.relay.enabled=false",
             "axiz.audit.durable.outside-transaction=fail")
         .withBean(DataSource.class, () -> source)
         .withBean(JdbcTemplate.class, () -> jdbc)
@@ -217,7 +217,9 @@ class AuditBoundaryRegressionTest {
                           null,
                           null,
                           null,
-                          Map.of());
+                          Map.of(),
+                          TransactionOutcome.UNKNOWN,
+                          TransactionOutcome.UNKNOWN);
                   try (var held = source.getConnection()) {
                     assertTimeoutPreemptively(
                         Duration.ofSeconds(2), () -> publisher.publish(event));

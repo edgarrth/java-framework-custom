@@ -1,0 +1,67 @@
+public final class pe.axiz.core.lang.Checks {
+public static <C extends java.util.Collection<?>> C notEmpty(C, java.lang.String);
+public static <T> T notNull(T, java.lang.String);
+public static int notNegative(int, java.lang.String);
+public static int positive(int, java.lang.String);
+public static java.lang.String matches(java.lang.String, java.util.regex.Pattern, java.lang.String);
+public static java.lang.String maxLength(java.lang.String, int, java.lang.String);
+public static java.lang.String notBlank(java.lang.String, java.lang.String);
+public static long positive(long, java.lang.String);
+public static void argument(boolean, java.lang.String);
+}
+
+public final class pe.axiz.core.lang.Dates {
+public static java.lang.String formatUtc(java.time.Instant);
+public static java.time.Instant endOfDayExclusive(java.time.LocalDate, java.time.ZoneId);
+public static java.time.Instant startOfDay(java.time.LocalDate, java.time.ZoneId);
+public static java.time.LocalDate toLocalDate(java.time.Instant, java.time.ZoneId);
+public static java.time.OffsetDateTime toUtc(java.time.Instant);
+public static java.util.Optional<java.time.Instant> parseInstant(java.lang.String);
+}
+
+public interface pe.axiz.core.lang.Result<T, E> {
+public default <F> pe.axiz.core.lang.Result<T, F> mapError(java.util.function.Function<? super E, ? extends F>);
+public default <R> R fold(java.util.function.Function<? super T, ? extends R>, java.util.function.Function<? super E, ? extends R>);
+public default <U> pe.axiz.core.lang.Result<U, E> flatMap(java.util.function.Function<? super T, ? extends pe.axiz.core.lang.Result<U, E>>);
+public default <U> pe.axiz.core.lang.Result<U, E> map(java.util.function.Function<? super T, ? extends U>);
+public default <X extends java.lang.Exception> T orElseThrow(java.util.function.Function<? super E, X>) throws X;
+public default T orElse(T);
+public default T orElseGet(java.util.function.Function<? super E, ? extends T>);
+public default boolean isErr();
+public default boolean isOk();
+public default java.util.Optional<E> failure();
+public default java.util.Optional<T> success();
+public default pe.axiz.core.lang.Result<T, E> peek(java.util.function.Consumer<? super T>);
+public default pe.axiz.core.lang.Result<T, E> peekError(java.util.function.Consumer<? super E>);
+public static <T, E> pe.axiz.core.lang.Result<T, E> catching(java.util.function.Supplier<? extends T>, java.util.function.Function<? super java.lang.Exception, ? extends E>);
+public static <T, E> pe.axiz.core.lang.Result<T, E> err(E);
+public static <T, E> pe.axiz.core.lang.Result<T, E> ok(T);
+}
+
+public final class pe.axiz.core.lang.Result$Err<T, E> extends java.lang.Record implements pe.axiz.core.lang.Result<T, E> {
+public E error();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.core.lang.Result$Err(E);
+}
+
+public final class pe.axiz.core.lang.Result$Ok<T, E> extends java.lang.Record implements pe.axiz.core.lang.Result<T, E> {
+public T value();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.core.lang.Result$Ok(T);
+}
+
+public final class pe.axiz.core.lang.Strings {
+public static boolean hasText(java.lang.String);
+public static boolean isBlank(java.lang.String);
+public static boolean isWellFormedUnicode(java.lang.String);
+public static java.lang.String leftPad(java.lang.String, int, char);
+public static java.lang.String rightPad(java.lang.String, int, char);
+public static java.lang.String slug(java.lang.String);
+public static java.lang.String stripAccents(java.lang.String);
+public static java.lang.String trimToNull(java.lang.String);
+public static java.lang.String truncate(java.lang.String, int);
+}

@@ -246,12 +246,6 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
   }
 
   @Override
-  public CompletionStage<URL> presignPut(String key, String contentType, Duration ttl) {
-    return Stages.call(
-        () -> CompletableFuture.completedFuture(requests.presignPut(key, contentType, ttl)));
-  }
-
-  @Override
   public CompletionStage<PresignedUpload> presignUpload(
       String key, String contentType, Duration ttl) {
     return Stages.call(

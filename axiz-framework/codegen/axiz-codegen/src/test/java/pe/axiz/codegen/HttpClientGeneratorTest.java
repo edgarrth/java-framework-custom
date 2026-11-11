@@ -107,7 +107,7 @@ class HttpClientGeneratorTest {
         f,
         s,
         "none",
-        "1.0.0",
+        "2.0.0",
         null,
         null,
         List.of("http-client"),

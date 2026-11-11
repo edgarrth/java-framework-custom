@@ -44,9 +44,9 @@ class AuditArchiveTest {
 
   @Test
   void storesOneObjectPerRecordUnderItsUtcDay() {
-    String key = archive.store(record("a/../1", "core-integration"));
+    String key = archive.store(record("a/../1", "banking-core"));
 
-    assertThat(key).isEqualTo("audit/2026/10/12/core-integration/a_.._1.json");
+    assertThat(key).isEqualTo("audit/2026/10/12/banking-core/a_.._1.json");
     assertThat(storage.head(key)).isPresent();
   }
 

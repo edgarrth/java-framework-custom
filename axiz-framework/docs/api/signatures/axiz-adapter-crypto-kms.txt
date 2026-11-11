@@ -1,0 +1,11 @@
+public final class pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider implements pe.axiz.core.crypto.AsyncDataKeyProvider {
+public java.util.concurrent.CompletionStage<byte[]> decrypt(byte[], java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.crypto.DataKeyProvider$DataKey> generate(java.lang.String);
+public pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider(software.amazon.awssdk.services.kms.KmsAsyncClient, java.lang.String);
+}
+
+public final class pe.axiz.adapter.crypto.kms.KmsDataKeyProvider implements pe.axiz.core.crypto.DataKeyProvider {
+public byte[] decrypt(byte[], java.lang.String);
+public pe.axiz.adapter.crypto.kms.KmsDataKeyProvider(software.amazon.awssdk.services.kms.KmsClient, java.lang.String);
+public pe.axiz.core.crypto.DataKeyProvider$DataKey generate(java.lang.String);
+}

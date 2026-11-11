@@ -1,0 +1,192 @@
+public interface pe.axiz.core.audit.AsyncAuditEventPublisher {
+public abstract java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.AsyncAuditPublisher implements pe.axiz.core.audit.AuditPublisher,java.lang.AutoCloseable {
+public boolean workerAlive();
+public int pending();
+public long deliveredCount();
+public long failureCount();
+public long fallbackCount();
+public long lostCount();
+public long unconfirmedCount();
+public pe.axiz.core.audit.AsyncAuditPublisher(pe.axiz.core.audit.AuditPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
+public synchronized pe.axiz.core.audit.AsyncAuditPublisher$Shutdown shutdown();
+public void close();
+public void publish(pe.axiz.core.audit.AuditEvent);
+public void publishWithoutWait(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.AsyncAuditPublisher$Shutdown extends java.lang.Record {
+public boolean drainedInTime();
+public boolean terminated();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int flushedToFallback();
+public int pending();
+public long lost();
+public long unconfirmed();
+public pe.axiz.core.audit.AsyncAuditPublisher$Shutdown(boolean, int, long, boolean, long, int);
+}
+
+public final class pe.axiz.core.audit.AsyncAuditTrail {
+public pe.axiz.core.audit.AsyncAuditTrail$Builder record(java.lang.String, java.lang.String);
+public pe.axiz.core.audit.AsyncAuditTrail(java.lang.String, pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.sensitive.ObjectMasker, pe.axiz.core.id.IdGenerator, java.time.Clock);
+}
+
+public final class pe.axiz.core.audit.AsyncAuditTrail$Builder {
+public java.util.concurrent.CompletionStage<java.lang.Void> failure(java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Void> success();
+public pe.axiz.core.audit.AsyncAuditTrail$Builder context(pe.axiz.core.audit.AuditTrail$Context);
+public pe.axiz.core.audit.AsyncAuditTrail$Builder detail(java.lang.String, java.lang.Object);
+public pe.axiz.core.audit.AsyncAuditTrail$Builder outcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.audit.AsyncAuditTrail$Builder resourceId(java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditEvent extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String action();
+public java.lang.String channel();
+public java.lang.String correlationId();
+public java.lang.String errorCode();
+public java.lang.String id();
+public java.lang.String resourceId();
+public java.lang.String resourceType();
+public java.lang.String service();
+public java.lang.String tenant();
+public java.time.Instant occurredAt();
+public java.util.Map<java.lang.String, java.lang.Object> details();
+public java.util.Map<java.lang.String, java.lang.Object> toMap();
+public java.util.Map<java.lang.String, java.lang.String> cloudEventAttributes();
+public pe.axiz.core.audit.AuditEvent withOutcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.audit.AuditEvent withPersistence(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Actor actor();
+public pe.axiz.core.audit.AuditEvent$Outcome outcome();
+public pe.axiz.core.audit.AuditEvent(java.lang.String, java.time.Instant, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.audit.AuditEvent$Actor, pe.axiz.core.audit.AuditEvent$Outcome, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.commons.TransactionOutcome operationOutcome();
+public pe.axiz.core.commons.TransactionOutcome transactionOutcome();
+public static final java.lang.String CLOUD_EVENT_TYPE = "pe.axiz.audit.event.v1";
+}
+
+public final class pe.axiz.core.audit.AuditEvent$Actor extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String clientId();
+public java.lang.String ip();
+public java.lang.String subject();
+public pe.axiz.core.audit.AuditEvent$Actor(java.lang.String, java.lang.String, java.lang.String);
+public static pe.axiz.core.audit.AuditEvent$Actor system();
+}
+
+public final class pe.axiz.core.audit.AuditEvent$Outcome extends java.lang.Enum<pe.axiz.core.audit.AuditEvent$Outcome> {
+public static final pe.axiz.core.audit.AuditEvent$Outcome FAILURE;
+public static final pe.axiz.core.audit.AuditEvent$Outcome SUCCESS;
+public static pe.axiz.core.audit.AuditEvent$Outcome valueOf(java.lang.String);
+public static pe.axiz.core.audit.AuditEvent$Outcome[] values();
+}
+
+public final class pe.axiz.core.audit.AuditPolicy extends java.lang.Enum<pe.axiz.core.audit.AuditPolicy> {
+public boolean applies(pe.axiz.core.audit.AuditEvent$Outcome);
+public static final pe.axiz.core.audit.AuditPolicy ALWAYS;
+public static final pe.axiz.core.audit.AuditPolicy ON_FAILURE;
+public static final pe.axiz.core.audit.AuditPolicy ON_SUCCESS;
+public static pe.axiz.core.audit.AuditPolicy valueOf(java.lang.String);
+public static pe.axiz.core.audit.AuditPolicy[] values();
+}
+
+public class pe.axiz.core.audit.AuditPublishException extends java.lang.RuntimeException {
+public pe.axiz.core.audit.AuditPublishException(java.lang.String, java.lang.Throwable);
+}
+
+public interface pe.axiz.core.audit.AuditPublisher {
+public abstract void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.AuditRecord {
+public pe.axiz.core.audit.AuditEvent event(pe.axiz.core.audit.AuditEvent$Outcome, java.lang.String);
+public pe.axiz.core.audit.AuditRecord(java.lang.String, pe.axiz.core.sensitive.ObjectMasker, pe.axiz.core.id.IdGenerator, java.time.Clock, java.lang.String, java.lang.String);
+public void context(pe.axiz.core.audit.AuditTrail$Context);
+public void detail(java.lang.String, java.lang.Object);
+public void outcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public void resourceId(java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditTrail {
+public pe.axiz.core.audit.AuditTrail$Builder record(java.lang.String, java.lang.String);
+public pe.axiz.core.audit.AuditTrail(java.lang.String, pe.axiz.core.audit.AuditPublisher, pe.axiz.core.sensitive.ObjectMasker, pe.axiz.core.id.IdGenerator, java.time.Clock);
+}
+
+public final class pe.axiz.core.audit.AuditTrail$Builder {
+public <T> T around(pe.axiz.core.audit.AuditPolicy, java.util.function.Supplier<T>, java.util.function.Function<java.lang.RuntimeException, java.lang.String>);
+public pe.axiz.core.audit.AuditTrail$Builder context(pe.axiz.core.audit.AuditTrail$Context);
+public pe.axiz.core.audit.AuditTrail$Builder detail(java.lang.String, java.lang.Object);
+public pe.axiz.core.audit.AuditTrail$Builder outcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.audit.AuditTrail$Builder resourceId(java.lang.String);
+public void failure(java.lang.String);
+public void success();
+}
+
+public final class pe.axiz.core.audit.AuditTrail$Context extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String channel();
+public java.lang.String correlationId();
+public java.lang.String tenant();
+public pe.axiz.core.audit.AuditEvent$Actor actor();
+public pe.axiz.core.audit.AuditTrail$Context(pe.axiz.core.audit.AuditEvent$Actor, java.lang.String, java.lang.String, java.lang.String);
+public static pe.axiz.core.audit.AuditTrail$Context system();
+}
+
+public interface pe.axiz.core.audit.Auditable extends java.lang.annotation.Annotation {
+public abstract boolean captureArguments();
+public abstract boolean captureResult();
+public abstract java.lang.String action();
+public abstract java.lang.String resource();
+public abstract java.lang.String resourceIdArgument();
+public abstract pe.axiz.core.audit.AuditPolicy policy();
+}
+
+public final class pe.axiz.core.audit.CompositeAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public pe.axiz.core.audit.CompositeAsyncAuditPublisher(java.util.List<pe.axiz.core.audit.AsyncAuditEventPublisher>);
+}
+
+public final class pe.axiz.core.audit.CompositeAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
+public pe.axiz.core.audit.CompositeAuditPublisher(java.util.List<pe.axiz.core.audit.AuditPublisher>);
+public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.ConfirmedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public long unconfirmedCount();
+public pe.axiz.core.audit.ConfirmedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher);
+}
+
+public final class pe.axiz.core.audit.ConfirmedAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
+public long unconfirmedCount();
+public pe.axiz.core.audit.ConfirmedAuditPublisher(pe.axiz.core.audit.AuditPublisher);
+public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.LoggingAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public pe.axiz.core.audit.LoggingAsyncAuditPublisher();
+}
+
+public final class pe.axiz.core.audit.LoggingAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
+public pe.axiz.core.audit.LoggingAuditPublisher();
+public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.QueuedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher,java.lang.AutoCloseable {
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public pe.axiz.core.audit.AsyncAuditPublisher queue();
+public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration);
+public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
+public void close();
+}

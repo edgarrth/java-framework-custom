@@ -303,7 +303,7 @@ process_is() { [ "$(process_status "$1")" = "$2" ]; }
 process_stopped() { [[ " VERIFYING COMPLETED REJECTED NEEDS_ATTENTION " == *" $(process_status "$1") "* ]]; }
 process_final() { [[ " COMPLETED REJECTED NEEDS_ATTENTION " == *" $(process_status "$1") "* ]]; }
 history_is() { [ "$(history_status "$1")" = "$2" ]; }
-reserved() { sql payments_business "SELECT COALESCE(SUM(reserved),0)::numeric(18,2) FROM payment_daily_usage WHERE customer_id='C-1001' AND currency='PEN'"; }
+reserved() { sql payment_orders "SELECT COALESCE(SUM(reserved),0)::numeric(18,2) FROM payment_daily_usage WHERE customer_id='C-1001' AND currency='PEN'"; }
 
 # WireMock journal: reversals requested so far
 reversals() {
@@ -329,11 +329,11 @@ g_beneficiaries() {
 
   call POST "$CRUD/v1/customers/C-1001/beneficiaries" -H "Authorization: Bearer $ANA" "${JSON[@]}" \
     -H "Idempotency-Key: $(key)" -d '{"alias":"Mal","holderName":"X","cci":"12345678901234567890","currency":"PEN"}'
-  expect "CCI with wrong check digits is rejected (422)" 422 '.code == "PAYMENTS-BENEFICIARIESCRUD-0001"'
+  expect "CCI with wrong check digits is rejected (422)" 422 '.code == "PAYMENTS-BENEFICIARIES-0001"'
 
   call POST "$CRUD/v1/customers/C-1001/beneficiaries" -H "Authorization: Bearer $ANA" "${JSON[@]}" \
     -H "Idempotency-Key: $(key)" -d "{\"alias\":\"Otra vez\",\"holderName\":\"Ana Torres\",\"cci\":\"$CCI_LANDLORD\",\"currency\":\"PEN\"}"
-  expect "one active beneficiary per account (409)" 409 '.code == "PAYMENTS-BENEFICIARIESCRUD-0002"'
+  expect "one active beneficiary per account (409)" 409 '.code == "PAYMENTS-BENEFICIARIES-0002"'
 
   # lifecycle on a beneficiary of its own (removed again at the end)
   id=$(beneficiary C-1001 "$ANA" Temporal "Rosa Diaz" "$CCI_TEMP" PEN)
@@ -369,7 +369,7 @@ g_beneficiaries() {
   call GET "$CRUD/v1/customers/C-1001/beneficiaries?size=1&cursor=$cursor" -H "Authorization: Bearer $ANA"
   expect "cursor pagination: the next page has another beneficiary" 200 ".items[0].id != \"$first\""
   call GET "$CRUD/v1/customers/C-1001/beneficiaries?cursor=not-a-cursor" -H "Authorization: Bearer $ANA"
-  expect "a malformed cursor is rejected (400)" 400 '.code == "PAYMENTS-BENEFICIARIESCRUD-0004"'
+  expect "a malformed cursor is rejected (400)" 400 '.code == "PAYMENTS-BENEFICIARIES-0004"'
 
   call GET "$EXP/v1/beneficiaries?size=20" -H "Authorization: Bearer $ANA"
   expect "channel list masks accounts and names" 200 '.items | length > 0' \
@@ -440,19 +440,19 @@ g_rules() {
   if [ -n "${PAY:-}" ]; then
     pay "$ANA" "$BEN" "$ACCOUNT" "$PAY_AMOUNT" PEN
     expect "same amount to the same beneficiary today: probable duplicate (409)" 409 \
-      '.code == "PAYMENTS-PAYMENTSEXPERIENCE-0004"'
+      '.code == "PAYMENTS-PAYMENTSUX-0004"'
   fi
   pay "$ANA" "$BEN" "$ACCOUNT" 30000.01 PEN
-  expect "above the daily limit of 30 000 PEN (422)" 422 '.code == "PAYMENTS-PAYMENTSEXPERIENCE-0003"'
+  expect "above the daily limit of 30 000 PEN (422)" 422 '.code == "PAYMENTS-PAYMENTSUX-0003"'
   call POST "$EXP/v1/payments" -H "Authorization: Bearer $ANA" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -H "Accept-Language: es-PE" -d "{\"beneficiaryId\":\"$USDBEN\",\"debtorAccount\":\"$ACCOUNT\",\"amount\":10,\"currency\":\"USD\"}"
   expect "USD payments are off (feature flag payments-usd), message in Spanish" 422 \
-    '.code == "PAYMENTS-PAYMENTSEXPERIENCE-0002"' '.detail | test("no están disponibles")'
+    '.code == "PAYMENTS-PAYMENTSUX-0002"' '.detail | test("no están disponibles")'
   call POST "$EXP/v1/payments" -H "Authorization: Bearer $ANA" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -H "Accept-Language: en" -d "{\"beneficiaryId\":\"$USDBEN\",\"debtorAccount\":\"$ACCOUNT\",\"amount\":10,\"currency\":\"USD\"}"
   expect "  ... and in English with Accept-Language: en (i18n)" 422 '.detail | test("are not available")'
   pay "$ANA" "$USDBEN" "$ACCOUNT" 10 PEN
-  expect "PEN to a USD beneficiary: currency mismatch (422)" 422 '.code == "PAYMENTS-PAYMENTSEXPERIENCE-0001"'
+  expect "PEN to a USD beneficiary: currency mismatch (422)" 422 '.code == "PAYMENTS-PAYMENTSUX-0001"'
 }
 
 # rejected NAME TOKEN BENEFICIARY ACCOUNT FAILED-STEP: pays, waits REJECTED and checks the process
@@ -543,7 +543,7 @@ g_integration() {
   involved=(banking-core payment-network-gateway)
   call POST "$CORE/v1/debits" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"accountId\":\"$ACCOUNT\",\"amount\":10,\"currency\":\"PEN\",\"holderId\":\"C-1002\",\"reference\":\"X\"}"
-  expect "debit of an account of another holder (422, checked by the core)" 422 '.code == "PAYMENTS-COREINTEGRATION-0004"'
+  expect "debit of an account of another holder (422, checked by the core)" 422 '.code == "PAYMENTS-BANKINGCORE-0004"'
   call POST "$CORE/v1/credits" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"accountId\":\"$ACCOUNT\",\"amount\":15.50,\"currency\":\"PEN\",\"holderId\":\"C-1001\",\"reference\":\"SCN-$RANDOM\"}"
   expect "credit through the SOAP service of the core (WS-Security)" 201 '.movementId | length > 0'
@@ -551,7 +551,7 @@ g_integration() {
   expect "reversal of an unknown movement (404)" 404
   call POST "$GATEWAY/v1/transfers" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"creditorCci\":\"$CCI_CLOSED\",\"amount\":10,\"currency\":\"PEN\",\"reference\":\"SCN-$RANDOM\"}"
-  expect "transfer to a closed account: rejected by the network (422)" 422 '.code == "PAYMENTS-COREINTEGRATION-0003"'
+  expect "transfer to a closed account: rejected by the network (422)" 422 '.code == "PAYMENTS-BANKINGCORE-0003"'
 }
 
 g_events() {
@@ -559,14 +559,14 @@ g_events() {
   local ids g n bad_sagas
   need_payment
   sleep 3
-  n=$(sql payments_business "SELECT count(*) FROM axiz_outbox WHERE status <> 'PUBLISHED'")
+  n=$(sql payment_orders "SELECT count(*) FROM axiz_outbox WHERE status <> 'PUBLISHED'")
   [ "$n" = 0 ] && pass "outbox of payment-orders: every event PUBLISHED" \
     || bad "outbox of payment-orders: every event PUBLISHED" "not published: $n
-$(sql payments_business "SELECT event_type, status, attempts, last_error FROM axiz_outbox WHERE status <> 'PUBLISHED' LIMIT 5")"
+$(sql payment_orders "SELECT event_type, status, attempts, last_error FROM axiz_outbox WHERE status <> 'PUBLISHED' LIMIT 5")"
   if [ -n "${PAY:-}" ]; then
-    n=$(sql payments_business "SELECT count(*) FROM payment_order WHERE id = '$PAY' AND debtor_account LIKE 'axz1:%' AND creditor_cci LIKE 'axz1:%'")
+    n=$(sql payment_orders "SELECT count(*) FROM payment_order WHERE id = '$PAY' AND debtor_account LIKE 'axz1:%' AND creditor_cci LIKE 'axz1:%'")
     [ "$n" = 1 ] && pass "accounts stored encrypted (axz1:...)" \
-      || bad "accounts stored encrypted (axz1:...)" "$(sql payments_business "SELECT left(debtor_account,12), left(creditor_cci,12) FROM payment_order WHERE id = '$PAY'")"
+      || bad "accounts stored encrypted (axz1:...)" "$(sql payment_orders "SELECT left(debtor_account,12), left(creditor_cci,12) FROM payment_order WHERE id = '$PAY'")"
   fi
   if [ ${#run_ids[@]} -gt 0 ]; then
     ids=$(printf "'%s'," "${run_ids[@]}"); ids=${ids%,}

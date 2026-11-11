@@ -29,6 +29,11 @@ public class ObservedEventPublisher implements EventPublisher, BoundedPublisher 
   private final AxizMessagingProperties properties;
 
   @Override
+  public boolean supports(String destination) {
+    return delegate.supports(properties.resolve(destination));
+  }
+
+  @Override
   public PublishBound publishBound() {
     return BoundedPublisher.of(delegate);
   }

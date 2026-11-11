@@ -1,0 +1,166 @@
+public class pe.axiz.spring.security.AudienceValidator implements org.springframework.security.oauth2.core.OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> {
+public org.springframework.security.oauth2.core.OAuth2TokenValidatorResult validate(org.springframework.security.oauth2.core.OAuth2Token);
+public org.springframework.security.oauth2.core.OAuth2TokenValidatorResult validate(org.springframework.security.oauth2.jwt.Jwt);
+public pe.axiz.spring.security.AudienceValidator(pe.axiz.core.security.IssuerPolicy);
+}
+
+public final class pe.axiz.spring.security.AxizAuthentication extends org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken<org.springframework.security.oauth2.jwt.Jwt> {
+public java.lang.String getName();
+public java.util.Map<java.lang.String, java.lang.Object> getTokenAttributes();
+public pe.axiz.core.security.AxizPrincipal axizPrincipal();
+public pe.axiz.spring.security.AxizAuthentication(org.springframework.security.oauth2.jwt.Jwt, pe.axiz.core.security.AxizPrincipal, java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>);
+}
+
+public class pe.axiz.spring.security.AxizJwtConverter implements org.springframework.core.convert.converter.Converter<org.springframework.security.oauth2.jwt.Jwt, pe.axiz.spring.security.AxizAuthentication> {
+public java.lang.Object convert(java.lang.Object);
+public pe.axiz.spring.security.AxizAuthentication convert(org.springframework.security.oauth2.jwt.Jwt);
+public pe.axiz.spring.security.AxizJwtConverter(pe.axiz.core.security.ClaimsMapper);
+}
+
+public class pe.axiz.spring.security.AxizSecurityAutoConfiguration {
+public pe.axiz.spring.security.AxizSecurityAutoConfiguration();
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties extends java.lang.Record {
+public boolean publicApiDocs();
+public boolean publicInfo();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String actuatorAuthority();
+public java.time.Duration clockSkew();
+public java.util.List<java.lang.String> algorithms();
+public java.util.List<java.lang.String> anonymousPaths(java.lang.String);
+public java.util.List<java.lang.String> publicPaths();
+public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer> issuers();
+public pe.axiz.spring.security.AxizSecurityProperties$Authorization authorization();
+public pe.axiz.spring.security.AxizSecurityProperties$Claims claims();
+public pe.axiz.spring.security.AxizSecurityProperties$RateLimit rateLimit();
+public pe.axiz.spring.security.AxizSecurityProperties(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Claims, java.util.List<java.lang.String>, boolean, boolean, java.lang.String, pe.axiz.spring.security.AxizSecurityProperties$RateLimit);
+public pe.axiz.spring.security.AxizSecurityProperties(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Claims, java.util.List<java.lang.String>, boolean, boolean, java.lang.String, pe.axiz.spring.security.AxizSecurityProperties$RateLimit, pe.axiz.spring.security.AxizSecurityProperties$Authorization);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Authorization extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String unprotected();
+public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$RouteRule> rules();
+public pe.axiz.spring.security.AxizSecurityProperties$Authorization(java.lang.String, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$RouteRule>);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Claims extends java.lang.Record {
+public boolean subjectAsClient();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<java.lang.String> attributes();
+public java.util.List<java.lang.String> clientId();
+public java.util.List<java.lang.String> machine();
+public java.util.List<java.lang.String> roles();
+public java.util.List<java.lang.String> scopes();
+public java.util.List<java.lang.String> subject();
+public java.util.List<java.lang.String> tenant();
+public pe.axiz.core.security.ClaimMapping toMapping();
+public pe.axiz.spring.security.AxizSecurityProperties$Claims(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, boolean);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Issuer extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String issuer();
+public java.lang.String jwkSetUri();
+public java.util.List<java.lang.String> audiences();
+public pe.axiz.spring.security.AxizSecurityProperties$Issuer(java.lang.String, java.lang.String, java.util.List<java.lang.String>);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$RateLimit extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule> rules();
+public pe.axiz.spring.security.AxizSecurityProperties$RateLimit(boolean, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$RouteRule extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<java.lang.String> authorities();
+public java.util.List<java.lang.String> methods();
+public java.util.List<java.lang.String> paths();
+public pe.axiz.spring.security.AxizSecurityProperties$RouteRule(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Rule extends java.lang.Record {
+public boolean failurePolicy();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.Boolean failOpen();
+public java.lang.String key();
+public java.lang.String name();
+public java.time.Duration window();
+public java.util.List<java.lang.String> paths();
+public long limit();
+public pe.axiz.spring.security.AxizSecurityProperties$Rule(java.lang.String, java.util.List<java.lang.String>, long, java.time.Duration, java.lang.String, java.lang.Boolean);
+}
+
+public class pe.axiz.spring.security.AxizSecurityRedisAutoConfiguration {
+public pe.axiz.spring.security.AxizSecurityRedisAutoConfiguration();
+}
+
+public class pe.axiz.spring.security.CallerContextFilter extends org.springframework.web.filter.OncePerRequestFilter {
+protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException, java.io.IOException;
+public pe.axiz.spring.security.CallerContextFilter();
+}
+
+public class pe.axiz.spring.security.CallerContextWebFilter implements org.springframework.web.server.WebFilter {
+public pe.axiz.spring.security.CallerContextWebFilter();
+public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
+}
+
+public class pe.axiz.spring.security.ProblemAuthenticationEntryPoint implements org.springframework.security.web.AuthenticationEntryPoint,org.springframework.security.web.access.AccessDeniedHandler {
+public pe.axiz.spring.security.ProblemAuthenticationEntryPoint(pe.axiz.spring.security.SecurityProblems);
+public void commence(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, org.springframework.security.core.AuthenticationException) throws java.io.IOException;
+public void handle(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, org.springframework.security.access.AccessDeniedException) throws java.io.IOException;
+}
+
+public class pe.axiz.spring.security.RateLimitFilter extends org.springframework.web.filter.OncePerRequestFilter {
+protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException, java.io.IOException;
+public pe.axiz.spring.security.RateLimitFilter(pe.axiz.core.security.RateLimiter, pe.axiz.spring.security.RateLimitRules, pe.axiz.spring.security.SecurityProblems);
+}
+
+public class pe.axiz.spring.security.RateLimitRules {
+public java.util.Optional<pe.axiz.spring.security.AxizSecurityProperties$Rule> match(java.lang.String);
+public pe.axiz.spring.security.RateLimitRules(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
+public static java.lang.String key(pe.axiz.spring.security.AxizSecurityProperties$Rule, pe.axiz.core.security.AxizPrincipal);
+}
+
+public class pe.axiz.spring.security.RateLimitWebFilter implements org.springframework.web.server.WebFilter {
+public pe.axiz.spring.security.RateLimitWebFilter(pe.axiz.core.security.AsyncRateLimiter, pe.axiz.spring.security.RateLimitRules, pe.axiz.spring.security.SecurityProblems);
+public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
+}
+
+public class pe.axiz.spring.security.ReactiveProblemHandlers implements org.springframework.security.web.server.ServerAuthenticationEntryPoint,org.springframework.security.web.server.authorization.ServerAccessDeniedHandler {
+public pe.axiz.spring.security.ReactiveProblemHandlers(pe.axiz.spring.security.SecurityProblems);
+public reactor.core.publisher.Mono<java.lang.Void> commence(org.springframework.web.server.ServerWebExchange, org.springframework.security.core.AuthenticationException);
+public reactor.core.publisher.Mono<java.lang.Void> handle(org.springframework.web.server.ServerWebExchange, org.springframework.security.access.AccessDeniedException);
+}
+
+public class pe.axiz.spring.security.SecurityProblems {
+public java.lang.String forbidden(java.util.Locale, java.lang.String);
+public java.lang.String tooManyRequests(java.util.Locale, java.lang.String);
+public java.lang.String unauthorized(java.util.Locale, java.lang.String);
+public java.lang.String unavailable(java.util.Locale, java.lang.String);
+public pe.axiz.spring.security.SecurityProblems(pe.axiz.core.errors.ProblemFactory);
+}
+
+public class pe.axiz.spring.security.TrustedIssuerDecoders {
+public org.springframework.security.oauth2.jwt.NimbusJwtDecoder servlet(java.lang.String);
+public org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder reactive(java.lang.String);
+public pe.axiz.core.security.IssuerPolicy policy();
+public pe.axiz.spring.security.TrustedIssuerDecoders(pe.axiz.core.security.IssuerPolicy, java.util.List<java.lang.String>, java.time.Duration);
+}

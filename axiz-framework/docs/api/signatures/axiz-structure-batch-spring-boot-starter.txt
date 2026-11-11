@@ -1,0 +1,27 @@
+public class pe.axiz.structure.batch.spring.AxizBatchAutoConfiguration {
+public pe.axiz.structure.batch.spring.AxizBatchAutoConfiguration();
+}
+
+public class pe.axiz.structure.batch.spring.AxizBatchEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.structure.batch.spring.AxizBatchEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
+public class pe.axiz.structure.batch.spring.ObservedJobListener implements org.springframework.batch.core.listener.JobExecutionListener {
+public pe.axiz.structure.batch.spring.ObservedJobListener(pe.axiz.core.metrics.EventMetrics, pe.axiz.core.audit.AuditTrail);
+public void afterJob(org.springframework.batch.core.job.JobExecution);
+}
+
+public class pe.axiz.structure.batch.spring.ObservedJobListenerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
+public java.lang.Object postProcessAfterInitialization(java.lang.Object, java.lang.String);
+public pe.axiz.structure.batch.spring.ObservedJobListenerPostProcessor(org.springframework.beans.factory.ObjectProvider<pe.axiz.structure.batch.spring.ObservedJobListener>);
+}
+
+public class pe.axiz.structure.batch.spring.StorageRecordItemReader<T> extends org.springframework.batch.infrastructure.item.support.AbstractItemCountingItemStreamItemReader<T> {
+protected T doRead();
+protected void doClose() throws java.lang.Exception;
+protected void doOpen();
+public pe.axiz.structure.batch.spring.StorageRecordItemReader(pe.axiz.core.storage.ObjectStorage, java.lang.String, java.util.function.Function<java.io.InputStream, pe.axiz.structure.batch.RecordReader<T>>);
+public static <T> pe.axiz.structure.batch.spring.StorageRecordItemReader<T> named(java.lang.String, pe.axiz.core.storage.ObjectStorage, java.lang.String, java.util.function.Function<java.io.InputStream, pe.axiz.structure.batch.RecordReader<T>>);
+}

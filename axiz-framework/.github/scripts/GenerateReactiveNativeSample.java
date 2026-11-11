@@ -5,20 +5,34 @@ import pe.axiz.codegen.ProjectGenerator;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
+import pe.axiz.codegen.render.JavaFormatter;
 
 /** CI fixture generated through the framework's public API, including real AsyncAPI payloads. */
 class GenerateReactiveNativeSample {
   public static void main(String[] args) throws Exception {
     Path output = Path.of(args[0]);
-    var request = new ProjectRequest(
-        "sample-native-orders", "pe.axiz", "pe.axiz.samples.nativeorders",
-        "Reactive native framework acceptance", "business", Structure.HEXAGONAL,
-        Stack.REACTIVE, "aurora", List.of("messaging-sqs"),
-        Files.readString(Path.of(args[1])), Files.readString(Path.of(args[2])), args[3]);
+    var request =
+        new ProjectRequest(
+            "sample-native-orders",
+            "pe.axiz",
+            "pe.axiz.samples.nativeorders",
+            "Reactive native framework acceptance",
+            "business",
+            Structure.HEXAGONAL,
+            Stack.REACTIVE,
+            "aurora",
+            List.of("messaging-sqs"),
+            Files.readString(Path.of(args[1])),
+            Files.readString(Path.of(args[2])),
+            args[3]);
     ProjectGenerator.withDefaults().generate(request).writeTo(output, false);
-    Path test = output.resolve(
-        "src/test/java/pe/axiz/samples/nativeorders/GeneratedEventContractTest.java");
-    Files.writeString(test, """
+    Path test =
+        output.resolve(
+            "src/test/java/pe/axiz/samples/nativeorders/GeneratedEventContractTest.java");
+    Files.writeString(
+        test,
+        JavaFormatter.format(
+"""
         package pe.axiz.samples.nativeorders;
 
         import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,6 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
                 org.springframework.aot.hint.annotation.RegisterReflectionForBinding.class));
           }
         }
-        """);
+"""));
   }
 }

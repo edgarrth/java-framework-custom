@@ -24,10 +24,10 @@ import reactor.core.publisher.Mono;
 
 /**
  * Payment operations of the channels. Paying reads the beneficiary fresh (it must still exist and
- * match the currency), checks the currency flag and registers the order in payments-business with
- * the caller's Idempotency-Key, so a retried channel request never creates two orders. Reading a
+ * match the currency), checks the currency flag and registers the order in payment-orders with the
+ * caller's Idempotency-Key, so a retried channel request never creates two orders. Reading a
  * payment composes the order (required) with the beneficiary alias (optional: the screen still
- * works if beneficiaries-crud is slow or down).
+ * works if beneficiaries is slow or down).
  */
 @Component
 public class PaymentsComposition {

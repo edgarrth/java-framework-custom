@@ -12,7 +12,7 @@ import pe.axiz.core.money.Money;
  * a newer one ({@code lastChangeAt} is the time of the event, not of the projection). A status
  * change seen before the registration creates a partial entry that the registration completes.
  *
- * @param paymentId order id in payments-business
+ * @param paymentId order id in payment-orders
  * @param customerId customer
  * @param operationNumber operation number, null until the registration is seen
  * @param creditorCci destination account (sensitive: stored encrypted, shown masked)

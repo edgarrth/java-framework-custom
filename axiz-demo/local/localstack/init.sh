@@ -11,7 +11,7 @@ table() { # name, then "attribute:type:KEYTYPE" for each key attribute
     --attribute-definitions "${defs[@]}" --key-schema "${keys[@]}" >/dev/null 2>&1 || true
 }
 
-# beneficiaries-crud
+# beneficiaries
 table beneficiaries customerId:S:HASH beneficiaryId:S:RANGE
 table axiz-idempotency pk:S:HASH
 # notifications-processor
@@ -19,11 +19,11 @@ table notification-contacts customerId:S:HASH
 table axiz-inbox pk:S:HASH
 table axiz-locks pk:S:HASH
 
-# payments-business: KMS key for the envelope encryption of fields
+# payment-orders: KMS key for the envelope encryption of fields
 awslocal kms create-alias --alias-name alias/local \
   --target-key-id "$(awslocal kms create-key --query KeyMetadata.KeyId --output text)" || true
 
-# audit trail queue (core-integration publishes, notifications-processor archives), DLQ after 5
+# audit trail queue (banking-core publishes, notifications-processor archives), DLQ after 5
 dlq_url=$(awslocal sqs create-queue --queue-name axiz-demo-audit-dlq --query QueueUrl --output text)
 dlq_arn=$(awslocal sqs get-queue-attributes --queue-url "$dlq_url" --attribute-names QueueArn \
   --query Attributes.QueueArn --output text)

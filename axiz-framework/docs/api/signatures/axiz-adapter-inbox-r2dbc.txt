@@ -1,0 +1,27 @@
+public final class pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore implements pe.axiz.core.inbox.InboxStore {
+public boolean markProcessed(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
+public boolean release(java.lang.String, java.lang.String, java.lang.String);
+public int purgeExpired(java.time.Instant);
+public pe.axiz.adapter.inbox.r2dbc.R2dbcInboxStore(pe.axiz.kit.r2dbc.ReactiveSql, java.lang.String, java.time.Duration);
+public pe.axiz.core.inbox.InboxStore$Acquisition tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
+public void verifySchema();
+}
+
+public final class pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore implements pe.axiz.adapter.inbox.r2dbc.ReactiveInboxStore {
+public java.lang.Object transactionResource();
+public pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore(pe.axiz.kit.r2dbc.ReactiveSql, java.lang.String);
+public reactor.core.publisher.Mono<java.lang.Boolean> markProcessed(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
+public reactor.core.publisher.Mono<java.lang.Boolean> release(java.lang.String, java.lang.String, java.lang.String);
+public reactor.core.publisher.Mono<java.lang.Integer> purgeExpired(java.time.Instant);
+public reactor.core.publisher.Mono<java.lang.Void> verifySchema();
+public reactor.core.publisher.Mono<pe.axiz.core.inbox.InboxStore$Acquisition> tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
+}
+
+public interface pe.axiz.adapter.inbox.r2dbc.ReactiveInboxStore {
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> markProcessed(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> release(java.lang.String, java.lang.String, java.lang.String);
+public abstract reactor.core.publisher.Mono<java.lang.Integer> purgeExpired(java.time.Instant);
+public abstract reactor.core.publisher.Mono<java.lang.Void> verifySchema();
+public abstract reactor.core.publisher.Mono<pe.axiz.core.inbox.InboxStore$Acquisition> tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
+public default java.lang.Object transactionResource();
+}

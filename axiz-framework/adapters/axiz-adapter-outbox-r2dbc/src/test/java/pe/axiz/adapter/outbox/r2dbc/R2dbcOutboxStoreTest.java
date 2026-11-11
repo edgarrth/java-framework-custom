@@ -183,7 +183,7 @@ class R2dbcOutboxStoreTest {
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     Assertions.assertThrows(
         OutboxException.class,
-        () -> store.markPublished("e-1", Instant.parse("2026-10-11T12:00:00Z")));
+        () -> store.markPublished("e-1", "owner", Instant.parse("2026-10-11T12:00:00Z")));
   }
 
   @Test
@@ -250,10 +250,15 @@ class R2dbcOutboxStoreTest {
     Map<String, Object> r = new HashMap<>(row("e-9"));
     r.remove("aggregate_type");
     r.remove("last_error");
-    FakeR2dbc db = new FakeR2dbc().onQuery("FOR UPDATE", b -> List.of(r));
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onQuery("FOR UPDATE", b -> List.of(r))
+            .onQuery(
+                "SET status='IN_FLIGHT'",
+                b -> List.of(Map.of("lease_until", clock.instant().plusSeconds(30))));
     var records =
         new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT)
-            .lockDue(5, Instant.parse("2026-10-11T12:00:00Z"));
+            .claimDue(5, Duration.ofSeconds(30), "owner");
     assertEquals("axiz.event", records.get(0).aggregateType());
     assertEquals("e-9", records.get(0).aggregateId());
     assertNull(records.get(0).lastError());
@@ -273,9 +278,9 @@ class R2dbcOutboxStoreTest {
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     Instant next = Instant.parse("2026-10-11T12:05:00Z");
 
-    store.markFailed("e-1", 3, next, "x".repeat(1500), true);
-    store.markFailed("e-2", 1, next, "broker unavailable", false);
-    store.markFailed("e-3", 1, next, null, false);
+    store.markFailed("e-1", "owner", 3, next, "x".repeat(1500), true);
+    store.markFailed("e-2", "owner", 1, next, "broker unavailable", false);
+    store.markFailed("e-3", "owner", 1, next, null, false);
 
     assertEquals("FAILED", updates.get(0).get(0));
     assertEquals(1000, ((String) updates.get(0).get(3)).length());
@@ -302,11 +307,16 @@ class R2dbcOutboxStoreTest {
   void aRecordWithoutAttemptsHasZero() {
     Map<String, Object> r = new HashMap<>(row("e-10"));
     r.remove("attempts");
-    FakeR2dbc db = new FakeR2dbc().onQuery("FOR UPDATE", b -> List.of(r));
+    FakeR2dbc db =
+        new FakeR2dbc()
+            .onQuery("FOR UPDATE", b -> List.of(r))
+            .onQuery(
+                "SET status='IN_FLIGHT'",
+                b -> List.of(Map.of("lease_until", clock.instant().plusSeconds(30))));
     assertEquals(
         0,
         new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT)
-            .lockDue(5, Instant.parse("2026-10-11T12:00:00Z"))
+            .claimDue(5, Duration.ofSeconds(30), "owner")
             .get(0)
             .attempts());
   }

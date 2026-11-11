@@ -71,7 +71,7 @@ class InboxR2dbcTest {
             ctx -> {
               Throwable failure = ctx.getStartupFailure();
               assertInstanceOf(InboxException.class, failure);
-              assertTrue(failure.getMessage().contains("inbox-postgresql-upgrade-owner.sql"));
+              assertTrue(failure.getMessage().contains("inbox-postgresql.sql"));
             });
   }
 }

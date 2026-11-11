@@ -39,9 +39,10 @@ Thank you for improving the axiz framework (core libraries, Spring Boot starters
 
 ## Compatibility
 
-Public APIs and SPIs follow semantic versioning. From 1.0.0 the `api-compat` profile
-(`./mvnw -Papi-compat verify -Daxiz.api.baseline=<last release>`) must pass; an intentional break
-automated.
+2.0.0 is the first release. No compatibility with unpublished drafts is retained.
+The mandatory API gate uses `docs/api/release-policy.json`, reviewed class-file signatures and
+a fail-closed query of the final publication repository. Later releases run `api-compat` against
+a genuinely earlier published v2 baseline. See [API policy](docs/api/README.md).
 
 ## Pipeline and generated sample checks
 

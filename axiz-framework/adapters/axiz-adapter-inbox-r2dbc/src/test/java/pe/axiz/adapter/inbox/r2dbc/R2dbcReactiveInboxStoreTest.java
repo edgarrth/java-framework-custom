@@ -92,7 +92,7 @@ class R2dbcReactiveInboxStoreTest {
         .expectErrorMatches(
             error ->
                 error instanceof InboxException
-                    && error.getMessage().contains("inbox-postgresql-upgrade-owner.sql"))
+                    && error.getMessage().contains("inbox-postgresql.sql"))
         .verify();
     assertThrows(
         IllegalArgumentException.class,

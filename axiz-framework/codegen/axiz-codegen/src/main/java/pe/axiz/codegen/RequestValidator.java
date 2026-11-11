@@ -11,6 +11,7 @@ import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
+import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.LintFinding;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.openapi.OpenApiLinter;
@@ -192,11 +193,50 @@ public final class RequestValidator {
         try {
           contract = OpenApiDocument.parse(openApi);
           findings.addAll(OpenApiLinter.lint(contract));
+          problems.addAll(accessProblems(contract));
         } catch (IllegalArgumentException e) {
           problems.add(e.getMessage());
         }
       }
     }
     return new Result(a, contract, problems, findings);
+  }
+
+  static List<String> accessProblems(OpenApiDocument contract) {
+    var problems = new ArrayList<String>();
+    for (var operation : contract.operations()) {
+      if (operation.access() == ApiOperation.Access.UNDECLARED
+          || operation.access() == ApiOperation.Access.UNSUPPORTED)
+        problems.add(
+            "Operation "
+                + operation.operationId()
+                + " must declare a supported security requirement (OAuth2/OpenID Connect"
+                + " scopes or bearer authentication), inherited or per operation; use"
+                + " security: [] only for explicit public access");
+    }
+    for (var publicOperation : contract.operations()) {
+      if (publicOperation.access() != ApiOperation.Access.PUBLIC) continue;
+      for (var authenticated : contract.operations()) {
+        if (authenticated.access() == ApiOperation.Access.AUTHENTICATED
+            && overlappingPaths(publicOperation.path(), authenticated.path()))
+          problems.add(
+              "Public operation "
+                  + publicOperation.operationId()
+                  + " overlaps authenticated-only operation "
+                  + authenticated.operationId()
+                  + "; public-paths are path based: use distinct paths or explicit scoped"
+                  + " authorization");
+      }
+    }
+    return problems;
+  }
+
+  private static boolean overlappingPaths(String left, String right) {
+    String[] a = left.split("/");
+    String[] b = right.split("/");
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++)
+      if (!a[i].equals(b[i]) && !a[i].startsWith("{") && !b[i].startsWith("{")) return false;
+    return true;
   }
 }

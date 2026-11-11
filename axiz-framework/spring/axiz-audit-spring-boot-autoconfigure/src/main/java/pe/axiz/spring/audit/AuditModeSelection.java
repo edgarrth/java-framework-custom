@@ -35,11 +35,16 @@ final class AuditModeSelection {
     return type != null && type.getName().equals(owner);
   }
 
+  static void rejectRemovedSelectors(Environment environment) {
+    for (String key : List.of("axiz.audit.async.enabled", "axiz.audit.durable.enabled"))
+      if (environment.containsProperty(key))
+        throw new IllegalStateException(
+            key + " was removed; use only axiz.audit.mode (ASYNC, DURABLE or SYNC)");
+  }
+
   static void requireExplicit(Environment environment) {
-    if (development(environment)) return;
-    for (String key :
-        List.of("axiz.audit.mode", "axiz.audit.durable.enabled", "axiz.audit.async.enabled"))
-      if (!environment.getProperty(key, "").isBlank()) return;
+    if (development(environment) || !environment.getProperty("axiz.audit.mode", "").isBlank())
+      return;
     throw new IllegalStateException(
         "Declare axiz.audit.mode (ASYNC, DURABLE or SYNC) outside local/test: "
             + "ASYNC uses an in-memory queue and cannot survive a process crash");

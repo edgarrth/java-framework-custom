@@ -39,7 +39,7 @@ public class GenerationServiceTest {
         List.of(),
         contract,
         null,
-        "1.0.0");
+        "2.0.0");
   }
 
   @Test

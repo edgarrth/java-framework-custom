@@ -1,0 +1,229 @@
+public class pe.axiz.core.errors.AccessException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.AccessException(pe.axiz.core.errors.ErrorDefinition, java.lang.String);
+public static pe.axiz.core.errors.AccessException forbidden(java.lang.String);
+public static pe.axiz.core.errors.AccessException unauthenticated(java.lang.String);
+}
+
+public class pe.axiz.core.errors.AxizException extends java.lang.RuntimeException {
+protected pe.axiz.core.errors.AxizException(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.util.Map<java.lang.String, ?>, java.util.List<pe.axiz.core.errors.FieldViolation>, pe.axiz.core.errors.ExternalErrorDetail, java.lang.Throwable);
+public java.util.List<pe.axiz.core.errors.FieldViolation> violations();
+public java.util.Map<java.lang.String, java.lang.Object> parameters();
+public pe.axiz.core.errors.AxizException(pe.axiz.core.errors.ErrorDefinition, java.lang.String);
+public pe.axiz.core.errors.AxizException(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.lang.Throwable);
+public pe.axiz.core.errors.ErrorCategory category();
+public pe.axiz.core.errors.ErrorCode code();
+public pe.axiz.core.errors.ErrorDefinition definition();
+public pe.axiz.core.errors.ErrorType type();
+public pe.axiz.core.errors.ExternalErrorDetail external();
+}
+
+public class pe.axiz.core.errors.BusinessException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.BusinessException(pe.axiz.core.errors.ErrorDefinition, java.lang.String);
+public pe.axiz.core.errors.BusinessException(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.util.Map<java.lang.String, ?>);
+}
+
+public final class pe.axiz.core.errors.CoreErrors {
+public static final pe.axiz.core.errors.ErrorDefinition CONFLICT;
+public static final pe.axiz.core.errors.ErrorDefinition EXTERNAL_ERROR;
+public static final pe.axiz.core.errors.ErrorDefinition EXTERNAL_TIMEOUT;
+public static final pe.axiz.core.errors.ErrorDefinition FORBIDDEN;
+public static final pe.axiz.core.errors.ErrorDefinition MALFORMED_BODY;
+public static final pe.axiz.core.errors.ErrorDefinition METHOD_NOT_ALLOWED;
+public static final pe.axiz.core.errors.ErrorDefinition MISSING_HEADER;
+public static final pe.axiz.core.errors.ErrorDefinition NOT_FOUND;
+public static final pe.axiz.core.errors.ErrorDefinition NOT_IMPLEMENTED;
+public static final pe.axiz.core.errors.ErrorDefinition PAYLOAD_TOO_LARGE;
+public static final pe.axiz.core.errors.ErrorDefinition PRECONDITION_FAILED;
+public static final pe.axiz.core.errors.ErrorDefinition TOO_MANY_REQUESTS;
+public static final pe.axiz.core.errors.ErrorDefinition UNAUTHENTICATED;
+public static final pe.axiz.core.errors.ErrorDefinition UNAVAILABLE;
+public static final pe.axiz.core.errors.ErrorDefinition UNEXPECTED;
+public static final pe.axiz.core.errors.ErrorDefinition UNSUPPORTED_MEDIA_TYPE;
+public static final pe.axiz.core.errors.ErrorDefinition VALIDATION_FAILED;
+public static java.util.List<pe.axiz.core.errors.ErrorDefinition> all();
+public static pe.axiz.core.errors.ErrorDefinition forCategory(pe.axiz.core.errors.ErrorCategory);
+}
+
+public final class pe.axiz.core.errors.ErrorCatalog {
+public int size();
+public java.util.Collection<pe.axiz.core.errors.ErrorDefinition> definitions();
+public java.util.Optional<pe.axiz.core.errors.ErrorDefinition> find(java.lang.String);
+public java.util.Optional<pe.axiz.core.errors.ErrorDefinition> find(pe.axiz.core.errors.ErrorCode);
+public pe.axiz.core.errors.ErrorDefinition require(java.lang.String);
+public static pe.axiz.core.errors.ErrorCatalog defaults();
+public static pe.axiz.core.errors.ErrorCatalog$Builder builder();
+}
+
+public final class pe.axiz.core.errors.ErrorCatalog$Builder {
+public pe.axiz.core.errors.ErrorCatalog build();
+public pe.axiz.core.errors.ErrorCatalog$Builder add(pe.axiz.core.errors.ErrorDefinition);
+public pe.axiz.core.errors.ErrorCatalog$Builder addAll(java.util.Collection<pe.axiz.core.errors.ErrorDefinition>);
+public pe.axiz.core.errors.ErrorCatalog$Builder addProperties(java.util.Map<java.lang.String, java.lang.String>);
+}
+
+public final class pe.axiz.core.errors.ErrorCategory extends java.lang.Enum<pe.axiz.core.errors.ErrorCategory> {
+public boolean retryable();
+public int httpStatus();
+public pe.axiz.core.errors.ErrorType defaultType();
+public static final pe.axiz.core.errors.ErrorCategory BAD_GATEWAY;
+public static final pe.axiz.core.errors.ErrorCategory BAD_REQUEST;
+public static final pe.axiz.core.errors.ErrorCategory CONFLICT;
+public static final pe.axiz.core.errors.ErrorCategory FORBIDDEN;
+public static final pe.axiz.core.errors.ErrorCategory GATEWAY_TIMEOUT;
+public static final pe.axiz.core.errors.ErrorCategory INTERNAL;
+public static final pe.axiz.core.errors.ErrorCategory METHOD_NOT_ALLOWED;
+public static final pe.axiz.core.errors.ErrorCategory NOT_FOUND;
+public static final pe.axiz.core.errors.ErrorCategory NOT_IMPLEMENTED;
+public static final pe.axiz.core.errors.ErrorCategory PAYLOAD_TOO_LARGE;
+public static final pe.axiz.core.errors.ErrorCategory PRECONDITION_FAILED;
+public static final pe.axiz.core.errors.ErrorCategory SERVICE_UNAVAILABLE;
+public static final pe.axiz.core.errors.ErrorCategory TOO_MANY_REQUESTS;
+public static final pe.axiz.core.errors.ErrorCategory UNAUTHORIZED;
+public static final pe.axiz.core.errors.ErrorCategory UNPROCESSABLE;
+public static final pe.axiz.core.errors.ErrorCategory UNSUPPORTED_MEDIA_TYPE;
+public static pe.axiz.core.errors.ErrorCategory forExternalStatus(int);
+public static pe.axiz.core.errors.ErrorCategory fromHttpStatus(int);
+public static pe.axiz.core.errors.ErrorCategory valueOf(java.lang.String);
+public static pe.axiz.core.errors.ErrorCategory[] values();
+}
+
+public final class pe.axiz.core.errors.ErrorCode extends java.lang.Record implements java.io.Serializable {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String prefix();
+public java.lang.String toString();
+public java.lang.String value();
+public pe.axiz.core.errors.ErrorCode(java.lang.String);
+public static pe.axiz.core.errors.ErrorCode of(java.lang.String);
+}
+
+public final class pe.axiz.core.errors.ErrorDefinition extends java.lang.Record implements java.io.Serializable {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String messageKey();
+public java.lang.String title();
+public pe.axiz.core.errors.ErrorCategory category();
+public pe.axiz.core.errors.ErrorCode code();
+public pe.axiz.core.errors.ErrorDefinition(pe.axiz.core.errors.ErrorCode, pe.axiz.core.errors.ErrorCategory, pe.axiz.core.errors.ErrorType, java.lang.String, java.lang.String);
+public pe.axiz.core.errors.ErrorType type();
+public static pe.axiz.core.errors.ErrorDefinition of(java.lang.String, pe.axiz.core.errors.ErrorCategory, java.lang.String);
+public static pe.axiz.core.errors.ErrorDefinition of(java.lang.String, pe.axiz.core.errors.ErrorCategory, pe.axiz.core.errors.ErrorType, java.lang.String);
+}
+
+public interface pe.axiz.core.errors.ErrorMessageResolver {
+public abstract java.util.Optional<java.lang.String> resolve(java.lang.String, java.util.Locale, java.util.Map<java.lang.String, java.lang.Object>);
+public static pe.axiz.core.errors.ErrorMessageResolver none();
+}
+
+public final class pe.axiz.core.errors.ErrorType extends java.lang.Enum<pe.axiz.core.errors.ErrorType> {
+public static final pe.axiz.core.errors.ErrorType BUSINESS;
+public static final pe.axiz.core.errors.ErrorType EXTERNAL;
+public static final pe.axiz.core.errors.ErrorType SECURITY;
+public static final pe.axiz.core.errors.ErrorType TECHNICAL;
+public static final pe.axiz.core.errors.ErrorType VALIDATION;
+public static pe.axiz.core.errors.ErrorType valueOf(java.lang.String);
+public static pe.axiz.core.errors.ErrorType[] values();
+}
+
+public interface pe.axiz.core.errors.ExceptionMapper {
+public abstract java.util.Optional<pe.axiz.core.errors.AxizException> map(java.lang.Throwable);
+public static pe.axiz.core.errors.ExceptionMapper byClassName(java.lang.String, pe.axiz.core.errors.ErrorDefinition);
+}
+
+public final class pe.axiz.core.errors.ExternalErrorDetail extends java.lang.Record implements java.io.Serializable {
+public boolean emptyBody();
+public boolean transportError();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int status();
+public java.lang.String body();
+public java.lang.String code();
+public java.lang.String message();
+public java.lang.String system();
+public pe.axiz.core.errors.ExternalErrorDetail(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String);
+public static final int MAX_BODY = 2048;
+}
+
+public class pe.axiz.core.errors.ExternalServiceException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.ExternalErrorDetail detail();
+public pe.axiz.core.errors.ExternalServiceException(pe.axiz.core.errors.ErrorDefinition, pe.axiz.core.errors.ExternalErrorDetail, java.lang.Throwable);
+public static pe.axiz.core.errors.ExternalServiceException from(pe.axiz.core.errors.ExternalErrorDetail);
+public static pe.axiz.core.errors.ExternalServiceException from(pe.axiz.core.errors.ExternalErrorDetail, java.lang.Throwable);
+}
+
+public final class pe.axiz.core.errors.FieldViolation extends java.lang.Record implements java.io.Serializable {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String code();
+public java.lang.String field();
+public java.lang.String message();
+public java.lang.String rejectedValue();
+public pe.axiz.core.errors.FieldViolation(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+public static pe.axiz.core.errors.FieldViolation of(java.lang.String, java.lang.String, java.lang.String);
+}
+
+public interface pe.axiz.core.errors.NoEffect {
+}
+
+public class pe.axiz.core.errors.NotFoundException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.NotFoundException(java.lang.String, java.lang.Object);
+public pe.axiz.core.errors.NotFoundException(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.lang.Object);
+}
+
+public final class pe.axiz.core.errors.Problem extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int status();
+public java.lang.String code();
+public java.lang.String correlationId();
+public java.lang.String detail();
+public java.lang.String instance();
+public java.lang.String title();
+public java.lang.String type();
+public java.time.Instant timestamp();
+public java.util.List<pe.axiz.core.errors.FieldViolation> violations();
+public java.util.Map<java.lang.String, java.lang.Object> external();
+public pe.axiz.core.errors.Problem(java.lang.String, java.lang.String, int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.util.List<pe.axiz.core.errors.FieldViolation>, java.util.Map<java.lang.String, java.lang.Object>);
+public static final java.lang.String MEDIA_TYPE = "application/problem+json";
+}
+
+public final class pe.axiz.core.errors.ProblemFactory {
+public pe.axiz.core.errors.AxizException toAxizException(java.lang.Throwable);
+public pe.axiz.core.errors.Problem create(java.lang.Throwable, java.util.Locale, java.lang.String, java.lang.String);
+public pe.axiz.core.errors.Problem of(pe.axiz.core.errors.ErrorDefinition, java.util.Locale, java.util.Map<java.lang.String, java.lang.Object>, java.lang.String, java.lang.String);
+public pe.axiz.core.errors.ProblemFactory(pe.axiz.core.errors.ErrorCatalog, pe.axiz.core.errors.ErrorMessageResolver, java.util.List<pe.axiz.core.errors.ExceptionMapper>, pe.axiz.core.errors.ProblemFactory$Settings, java.time.Clock);
+}
+
+public final class pe.axiz.core.errors.ProblemFactory$Settings extends java.lang.Record {
+public boolean exposeExternalDetail();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String typeBaseUri();
+public pe.axiz.core.errors.ProblemFactory$Settings(java.lang.String, boolean);
+public static pe.axiz.core.errors.ProblemFactory$Settings defaults();
+}
+
+public final class pe.axiz.core.errors.ProblemJson {
+public static java.lang.String write(pe.axiz.core.errors.Problem);
+public static java.util.Map<java.lang.String, java.lang.Object> toMap(pe.axiz.core.errors.Problem);
+}
+
+public final class pe.axiz.core.errors.RejectedBeforeEffect extends pe.axiz.core.errors.BusinessException implements pe.axiz.core.errors.NoEffect {
+public pe.axiz.core.errors.RejectedBeforeEffect(pe.axiz.core.errors.ErrorDefinition, java.lang.String);
+public pe.axiz.core.errors.RejectedBeforeEffect(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.util.Map<java.lang.String, ?>);
+}
+
+public class pe.axiz.core.errors.TechnicalException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.TechnicalException(java.lang.String, java.lang.Throwable);
+public pe.axiz.core.errors.TechnicalException(pe.axiz.core.errors.ErrorDefinition, java.lang.String, java.lang.Throwable);
+}
+
+public class pe.axiz.core.errors.ValidationException extends pe.axiz.core.errors.AxizException {
+public pe.axiz.core.errors.ValidationException(java.util.List<pe.axiz.core.errors.FieldViolation>);
+public pe.axiz.core.errors.ValidationException(pe.axiz.core.errors.ErrorDefinition, java.util.List<pe.axiz.core.errors.FieldViolation>);
+}

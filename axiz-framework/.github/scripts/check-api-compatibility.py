@@ -1,184 +1,283 @@
 #!/usr/bin/env python3
-"""Compare every published JAR's japicmp report with the reviewed 2.0 API inventory."""
+"""Mandatory API gate: reviewed first-release signatures or a genuine published v2 baseline."""
 import argparse
+import base64
 import hashlib
 import json
+import os
 import re
-import sys
 import subprocess
-import zipfile
+import sys
+import urllib.parse
+import urllib.request
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
-INTERNAL_TESTS = {"axiz-architecture-tests", "axiz-store-integration-tests"}
-VOLATILE = {"oldLineNumber", "newLineNumber"}
+INTERNAL = {"axiz-architecture-tests", "axiz-store-integration-tests"}
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
 
 
 def text(node, path, default=""):
-    return node.findtext(path, default=default, namespaces=NS).strip()
+    return node.findtext(path, default, NS).strip()
 
 
-def shape(element):
-    """Line numbers and XML formatting are not part of an API; parameter order is."""
-    attrs = sorted((key, value) for key, value in element.attrib.items() if key not in VOLATILE)
-    children = [shape(child) for child in element]
-    if element.tag not in {"parameters", "genericTemplates", "genericTypes", "oldGenericTypes", "newGenericTypes"}:
-        children.sort(key=lambda child: json.dumps(child, sort_keys=True))
-    return [element.tag, attrs, children]
-
-
-def fingerprint(element):
-    return hashlib.sha256(json.dumps(shape(element), separators=(",", ":")).encode()).hexdigest()
+def modules(root):
+    """Follow the actual reactor, never accidentally approve samples or stale target POMs."""
+    found = {}
+    def visit(pom):
+        project = ET.parse(pom).getroot()
+        artifact = text(project, "m:artifactId")
+        if artifact in found:
+            raise ValueError("Duplicate reactor artifact: " + artifact)
+        found[artifact] = (pom.parent, text(project, "m:packaging", "jar"), project)
+        for module in project.findall("m:modules/m:module", NS):
+            visit((pom.parent / module.text / "pom.xml").resolve())
+    visit(root / "pom.xml")
+    return found
 
 
 def public_api(jar):
-    """Canonical public/protected signatures of an approved module with no historical JAR."""
+    """Inspect actual class-file signatures; do not compare a JAR to itself as a baseline."""
     with zipfile.ZipFile(jar) as archive:
         names = sorted(name[:-6].replace("/", ".") for name in archive.namelist()
                        if name.endswith(".class") and not name.endswith(("package-info.class", "module-info.class"))
                        and not name.startswith("META-INF/"))
     signatures = []
-    for name in names:
-        result = subprocess.run(["javap", "-protected", "-constants", "-classpath", str(jar), name],
-                                check=True, capture_output=True, text=True, timeout=30)
-        lines = [line.strip() for line in result.stdout.splitlines()
-                 if line.strip() and not line.startswith('Compiled from')]
-        if lines and lines[0].startswith(("public ", "protected ")):
-            signatures.append("\n".join([lines[0], *sorted(lines[1:-1]), lines[-1]]))
+    for offset in range(0, len(names), 64):
+        output = subprocess.run(["javap", "-protected", "-constants", "-classpath", str(jar), *names[offset:offset + 64]],
+                                check=True, capture_output=True, text=True, timeout=90).stdout
+        for section in re.split(r'(?m)^Compiled from .*\n', output):
+            lines = [line.strip() for line in section.splitlines() if line.strip()]
+            if lines and lines[0].startswith(("public ", "protected ")):
+                signatures.append("\n".join([lines[0], *sorted(lines[1:-1]), lines[-1]]))
     return "\n\n".join(signatures) + "\n"
 
 
-def load_inventory(path):
-    blocks = re.findall(r"```json\s*\n(.*?)\n```", path.read_text(encoding="utf-8"), re.S)
-    if len(blocks) != 1:
-        raise ValueError("API inventory must contain exactly one JSON block")
-    data = json.loads(blocks[0])
-    if set(data) != {"schema", "baseline", "version", "changes"} or data["schema"] != 1:
-        raise ValueError("Invalid API inventory schema")
-    return data
+def published_versions(nexus, coordinates, opener=urllib.request.urlopen):
+    """Query only final releases of this product. Candidates and local M2 are never baselines."""
+    parsed = urllib.parse.urlsplit(nexus)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
+        raise ValueError("Invalid final publication Nexus URL")
+    metadata_request = urllib.request.Request(nexus.rstrip("/") + "/service/rest/v1/repositories/maven-releases")
+    username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
+    if username and password:
+        metadata_request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
+    with opener(metadata_request, timeout=30) as response:
+        repository = json.load(response)
+    if not isinstance(repository, dict) or any(repository.get(key) != value for key, value in
+            {"name": "maven-releases", "format": "maven2", "type": "hosted"}.items()):
+        raise ValueError("Final publication repository is missing or ambiguous")
+    token, seen, versions = None, set(), set()
+    while True:
+        params = {"repository": "maven-releases", "group": "pe.axiz"}
+        if token:
+            params["continuationToken"] = token
+        request = urllib.request.Request(nexus.rstrip("/") + "/service/rest/v1/search?" + urllib.parse.urlencode(params))
+        username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
+        if username and password:
+            request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
+        # Errors, invalid JSON, incomplete pagination and ambiguous responses fail closed.
+        with opener(request, timeout=30) as response:
+            data = json.load(response)
+        if not isinstance(data, dict) or not isinstance(data.get("items"), list) or "continuationToken" not in data:
+            raise ValueError("Invalid response from final publication repository")
+        for item in data["items"]:
+            if not isinstance(item, dict) or not all(key in item for key in ("repository", "group", "name", "version")):
+                raise ValueError("Incomplete publication metadata")
+            if not all(isinstance(item[key], str) and item[key].strip()
+                       for key in ("repository", "group", "name", "version")):
+                raise ValueError("Invalid publication metadata")
+            if item["repository"] != "maven-releases":
+                raise ValueError("Publication search returned a different repository")
+            if item["group"] == "pe.axiz" and item["name"] in coordinates and isinstance(item["version"], str) and item["version"].startswith("2."):
+                versions.add(item["version"])
+        token = data["continuationToken"]
+        if token is None:
+            return versions
+        if not isinstance(token, str) or not token or token in seen:
+            raise ValueError("Invalid publication pagination")
+        seen.add(token)
 
 
-def collect(root, baseline, report_name="api-compat"):
-    errors, changes, classes, published = [], [], {}, {}
-    renames = json.loads((root / "docs/migration/2.0/renames.json").read_text())
-    predecessors = {item["newArtifact"]: item["oldArtifact"] for item in [*renames["modules"], *renames.get("extractions", [])]}
-    new_modules = {line.strip() for line in (root / "docs/migration/2.0/new-modules.txt").read_text().splitlines()
-                   if line.strip() and not line.startswith("#")}
-    seen = set()
-    for pom in sorted(root.rglob("pom.xml")):
-        if any(part in {"target", "src", ".git"} for part in pom.relative_to(root).parts):
+def validate_first_release(policy, versions):
+    if policy != {"schema": 1, "mode": "first-release", "version": "2.0.0", "baseline": None}:
+        raise ValueError("First-release mode is restricted to the initial 2.0.0 contract")
+    if versions:
+        raise ValueError("First-release mode is forbidden: this product already has published v2 releases")
+
+
+def release_baseline(root, nexus, version, directory, opener=urllib.request.urlopen):
+    """Pin actual final-repository bytes outside Maven's candidate/local cache."""
+    directory.mkdir(parents=True, exist_ok=True)
+    records = {}
+    for artifact, (_, packaging, _) in modules(root).items():
+        if packaging == "pom" or artifact in INTERNAL:
             continue
-        project = ET.parse(pom).getroot()
-        artifact = text(project, "m:artifactId")
-        seen.add(artifact)
-        if text(project, "m:packaging") == "pom":
-            continue
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", artifact):
+            raise ValueError("Invalid framework coordinate")
+        filename = f"{artifact}-{version}.jar"
+        url = nexus.rstrip("/") + f"/repository/maven-releases/pe/axiz/{artifact}/{version}/{filename}"
+        request = urllib.request.Request(url)
+        username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
+        if username and password:
+            request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
+        with opener(request, timeout=30) as response:
+            data = response.read(50 * 1024 * 1024 + 1)
+        if len(data) > 50 * 1024 * 1024:
+            raise ValueError("Baseline JAR exceeds the bounded download size")
+        path = directory / filename
+        path.write_bytes(data)
+        with zipfile.ZipFile(path) as archive:
+            if archive.testzip() is not None:
+                raise ValueError("Invalid published baseline JAR: " + artifact)
+        records[artifact] = sha(data)
+    (directory / "baseline.json").write_text(json.dumps({"schema": 1, "version": version,
+        "origin": nexus.rstrip("/") + "/repository/maven-releases", "artifacts": records}, indent=2) + "\n")
+
+
+def verify_baseline(root, nexus, version, directory):
+    data = json.loads((directory / "baseline.json").read_text())
+    expected = {artifact for artifact, (_, packaging, _) in modules(root).items()
+                if packaging != "pom" and artifact not in INTERNAL}
+    if data.get("schema") != 1 or data.get("version") != version or data.get("origin") != nexus.rstrip("/") + "/repository/maven-releases" or set(data.get("artifacts", {})) != expected:
+        raise ValueError("Missing or invalid published baseline evidence")
+    for artifact, digest in data["artifacts"].items():
+        if sha((directory / f"{artifact}-{version}.jar").read_bytes()) != digest:
+            raise ValueError("Published baseline was modified: " + artifact)
+
+
+def inventory(root, version, output):
+    output.mkdir(parents=True, exist_ok=True)
+    entries = {}
+    for artifact, (directory, packaging, project) in sorted(modules(root).items()):
         skip = text(project, "m:properties/m:axiz.api.skip") == "true"
-        if artifact in INTERNAL_TESTS:
+        if artifact in INTERNAL:
             if not skip or text(project, "m:properties/m:maven.deploy.skip") != "true" or any(
-                    path.name != "package-info.java" for path in (pom.parent / "src/main/java").rglob("*.java")):
-                errors.append(f"{artifact}: only unpublished test-only modules may skip API comparison")
+                    p.name != "package-info.java" for p in (directory / "src/main/java").rglob("*.java")):
+                raise ValueError("Only unpublished test-only modules may skip: " + artifact)
             continue
-        is_new = artifact in new_modules
-        declared_new = text(project, "m:properties/m:axiz.api.new-module") == "true"
-        if declared_new != is_new:
-            errors.append(f"{artifact}: new-module declaration differs from the approved inventory")
-        if skip and not (is_new and declared_new):
-            errors.append(f"{artifact}: a published API comparison may not be skipped")
-        previous = text(project, "m:properties/m:axiz.api.baseline.artifactId", artifact)
-        if previous != predecessors.get(artifact, artifact):
-            errors.append(f"{artifact}: predecessor differs from the approved coordinate mapping")
-        jar = pom.parent / "target" / f"{artifact}-2.0.0.jar"
-        report = pom.parent / "target/japicmp" / f"{report_name}.xml"
-        if artifact in new_modules:
-            if artifact in predecessors:
-                errors.append(f"{artifact}: a renamed module has a predecessor and is not new")
-            if not skip:
-                errors.append(f"{artifact}: approved new module must avoid resolving a nonexistent historical JAR")
-            reference = root / "docs/migration/2.0/new-api" / f"{artifact}.txt"
-            if not jar.is_file():
-                errors.append(f"{artifact}: missing current JAR for new-module API validation")
-            elif not reference.is_file() or not reference.read_text().strip():
-                errors.append(f"{artifact}: missing reviewed public API for new module")
-            else:
-                try:
-                    if public_api(jar) != reference.read_text():
-                        errors.append(f"{artifact}: new public API differs from its reviewed signatures")
-                except (subprocess.SubprocessError, zipfile.BadZipFile, OSError) as failure:
-                    errors.append(f"{artifact}: cannot inspect new public API: {failure}")
+        if skip:
+            raise ValueError("Published API cannot skip the gate: " + artifact)
+        if packaging == "pom":
             continue
-        published[artifact] = report
-        if not jar.is_file() or not report.is_file():
-            errors.append(f"{artifact}: missing current JAR or mandatory japicmp report")
+        jar = directory / "target" / f"{artifact}-{version}.jar"
+        signatures = public_api(jar)
+        (output / f"{artifact}.txt").write_text(signatures)
+        entries[artifact] = {"apiSha256": sha(signatures.encode()), "jarSha256": sha(jar.read_bytes())}
+    if not entries:
+        raise ValueError("No published API artifacts were inspected")
+    return {"schema": 1, "version": version, "artifacts": entries}
+
+
+def verify_reviewed_signatures(root, approved):
+    for artifact, record in approved["artifacts"].items():
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", artifact):
+            raise ValueError("Invalid reviewed API coordinate")
+        signature = root / "docs/api/signatures" / f"{artifact}.txt"
+        if sha(signature.read_bytes()) != record["apiSha256"]:
+            raise ValueError("Reviewed API signatures differ from their inventory: " + artifact)
+
+
+def check_signatures(observed, approved):
+    if approved.get("schema") != 1 or approved.get("version") != observed["version"]:
+        raise ValueError("Reviewed API inventory version/schema does not match")
+    if set(observed["artifacts"]) != set(approved.get("artifacts", {})):
+        raise ValueError("Published module set differs from the reviewed API inventory")
+    for artifact, item in observed["artifacts"].items():
+        if item["apiSha256"] != approved["artifacts"][artifact]["apiSha256"]:
+            raise ValueError("Unreviewed public/protected API: " + artifact)
+
+
+def check_baseline_version(baseline, version):
+    if not re.fullmatch(r"2\.\d+\.\d+", baseline) or tuple(map(int, baseline.split("."))) >= tuple(map(int, version.split("."))):
+        raise ValueError("Baseline must be a genuinely earlier published v2 release")
+
+
+def check_comparisons(root, baseline, version, baseline_directory=None):
+    check_baseline_version(baseline, version)
+    for artifact, (directory, packaging, _) in modules(root).items():
+        if packaging == "pom" or artifact in INTERNAL:
             continue
-        if report.stat().st_mtime_ns < jar.stat().st_mtime_ns:
-            errors.append(f"{artifact}: API report predates the built JAR")
+        jar = directory / "target" / f"{artifact}-{version}.jar"
+        report = directory / "target/japicmp/api-compat.xml"
+        if not jar.is_file() or not report.is_file() or report.stat().st_mtime_ns < jar.stat().st_mtime_ns:
+            raise ValueError("Missing/stale mandatory API comparison: " + artifact)
+        if baseline_directory is not None:
+            previous = baseline_directory / f"{artifact}-{baseline}.jar"
+            if not previous.is_file() or report.stat().st_mtime_ns < previous.stat().st_mtime_ns:
+                raise ValueError("API comparison predates its pinned baseline: " + artifact)
         result = ET.parse(report).getroot()
-        expected = {"oldVersion": baseline, "newVersion": "2.0.0", "oldJar": f"{previous}-{baseline}.jar",
+        expected = {"oldVersion": baseline, "newVersion": version, "oldJar": f"{artifact}-{baseline}.jar",
                     "newJar": jar.name, "ignoreMissingClasses": "false", "accessModifier": "PROTECTED"}
-        for name, value in expected.items():
-            if result.get(name) != value:
-                errors.append(f"{artifact}: report {name} is not {value}")
-        for cls in result.findall("classes/class"):
-            name = cls.attrib["fullyQualifiedName"]
-            classes[(artifact, name)] = cls
-            if cls.get("changeStatus") != "NEW" and (cls.get("binaryCompatible") == "false" or cls.get("sourceCompatible") == "false"):
-                changes.append({"artifact": artifact, "class": name, "sha256": fingerprint(cls)})
-    if not new_modules <= seen:
-        errors.append(f"New-module inventory contains absent modules: {sorted(new_modules - seen)}")
-    return errors, changes, classes, published
-
-
-def check(root, baseline, report_name="api-compat"):
-    inventory = load_inventory(root / "docs/migration/2.0/api-changes.md")
-    errors, observed, classes, _ = collect(root, baseline, report_name)
-    if inventory["baseline"] != baseline or inventory["version"] != "2.0.0":
-        errors.append("API inventory does not authorize this baseline/target pair")
-    allowed = {}
-    for change in inventory["changes"]:
-        if not set(change) <= {"artifact", "class", "sha256", "reason", "replacement"} or not change.get("reason"):
-            errors.append("API inventory entry lacks a documented reason or has unknown fields")
-            continue
-        key = (change["artifact"], change["class"])
-        if key in allowed:
-            errors.append(f"Duplicate API inventory entry: {key}")
-        allowed[key] = change
-        replacement = change.get("replacement")
-        if replacement:
-            target = classes.get((replacement["artifact"], replacement["class"]))
-            if target is None or fingerprint(target) != replacement["sha256"]:
-                errors.append(f"{key}: relocated public API differs from its reviewed replacement")
-    observed_keys = set()
-    for change in observed:
-        key = (change["artifact"], change["class"])
-        observed_keys.add(key)
-        if key not in allowed or allowed[key]["sha256"] != change["sha256"]:
-            errors.append(f"Unreviewed API break: {key[0]}:{key[1]} ({change['sha256']})")
-    for key in allowed.keys() - observed_keys:
-        errors.append(f"Stale API inventory entry, re-review required: {key}")
-    return errors
+        if any(result.get(key) != value for key, value in expected.items()):
+            raise ValueError("API report does not compare the required published artifacts: " + artifact)
+        for node in result.iter():
+            if node.get("binaryCompatible") == "false" or node.get("sourceCompatible") == "false":
+                raise ValueError("Incompatible public API: " + artifact)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("."))
-    parser.add_argument("--baseline", required=True)
-    parser.add_argument("--report-name", default="api-compat")
-    parser.add_argument("--observed", type=Path, help="Write findings for review outside the inventory; never approves them")
+    parser.add_argument("--output", type=Path, default=Path("target/api-evidence"))
+    parser.add_argument("--nexus-url", default=os.getenv("NEXUS_URL"))
+    preparation = parser.add_mutually_exclusive_group()
+    preparation.add_argument("--inventory-only", action="store_true", help="Local review preparation only; never a passing release gate")
+    preparation.add_argument("--prepare-baseline", action="store_true", help="Pin the actual published baseline before Maven comparison; never passes the gate alone")
+    parser.add_argument("--baseline-directory", type=Path, default=Path("target/api-baseline"))
     args = parser.parse_args()
-    if not re.fullmatch(r"1\.\d+\.\d+", args.baseline):
-        parser.error("The 2.0 migration gate requires a released 1.x baseline")
     root = args.root.resolve()
-    if args.observed:
-        errors, changes, _, _ = collect(root, args.baseline, args.report_name)
-        args.observed.write_text(json.dumps({"errors": errors, "changes": changes}, indent=2) + "\n")
-    errors = check(root, args.baseline, args.report_name)
-    for error in errors:
-        print("::error::" + error)
-    if not errors:
-        print("Every published API comparison matches the reviewed 2.0 migration inventory")
-    return int(bool(errors))
+    args.output.mkdir(parents=True, exist_ok=True)
+    status = {"schema": 1, "passed": False, "commit": os.getenv("GITHUB_SHA"), "run": os.getenv("GITHUB_RUN_ID"),
+              "attempt": os.getenv("GITHUB_RUN_ATTEMPT"), "preparationOnly": args.inventory_only or args.prepare_baseline}
+    try:
+        policy = json.loads((root / "docs/api/release-policy.json").read_text())
+        status["policy"] = policy
+        version = policy["version"]
+        if not re.fullmatch(r"2\.\d+\.\d+", version):
+            raise ValueError("Invalid v2 target version")
+        if policy["mode"] not in {"first-release", "published-baseline"}:
+            raise ValueError("Unknown API gate mode")
+        if not args.inventory_only:
+            if not args.nexus_url:
+                raise ValueError("NEXUS_URL is mandatory; repository lookup must not be skipped")
+            versions = published_versions(args.nexus_url, set(modules(root)))
+            status["publishedVersions"] = sorted(versions)
+            if policy["mode"] == "first-release":
+                validate_first_release(policy, versions)
+            elif policy["baseline"] not in versions:
+                raise ValueError("Required v2 baseline is not published in maven-releases")
+        if args.prepare_baseline:
+            if policy["mode"] != "published-baseline":
+                raise ValueError("Baseline preparation requires published-baseline mode")
+            check_baseline_version(policy["baseline"], version)
+            release_baseline(root, args.nexus_url, policy["baseline"], args.baseline_directory)
+            print("Published baseline pinned from final repository; API gate not yet passed")
+            return 0
+        observed = inventory(root, version, args.output / "signatures")
+        (args.output / "observed.json").write_text(json.dumps(observed, indent=2) + "\n")
+        if args.inventory_only:
+            print("Review preparation only: signatures and artifact hashes exported; release gate NOT passed")
+        else:
+            approved = json.loads((root / "docs/api/public-api.json").read_text())
+            verify_reviewed_signatures(root, approved)
+            check_signatures(observed, approved)
+            if policy["mode"] == "published-baseline":
+                verify_baseline(root, args.nexus_url, policy["baseline"], args.baseline_directory)
+                check_comparisons(root, policy["baseline"], version, args.baseline_directory)
+            status["passed"] = True
+            print("API gate passed: final publication repository verified, every published API inspected")
+    except (OSError, ValueError, KeyError, TypeError, ET.ParseError, subprocess.SubprocessError, zipfile.BadZipFile) as failure:
+        status["error"] = str(failure)
+        print("::error::" + str(failure), file=sys.stderr)
+    finally:
+        (args.output / "result.json").write_text(json.dumps(status, indent=2) + "\n")
+    return int(not (status["passed"] or args.inventory_only and "error" not in status))
 
 
 if __name__ == "__main__":

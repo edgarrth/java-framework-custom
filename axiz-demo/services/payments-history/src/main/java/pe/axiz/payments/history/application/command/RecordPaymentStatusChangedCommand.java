@@ -7,7 +7,7 @@ import pe.axiz.extension.cqrs.OpenAccess;
 import pe.axiz.payments.history.domain.PaymentStatus;
 
 /**
- * payments-business moved an order to a new status.
+ * payment-orders moved an order to a new status.
  *
  * @param paymentId order id
  * @param customerId customer

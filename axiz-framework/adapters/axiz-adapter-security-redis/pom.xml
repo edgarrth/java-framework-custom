@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-security-redis</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.adapter.security.redis</axiz.module.name>
   </properties>
 

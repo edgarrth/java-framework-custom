@@ -14,17 +14,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.testcontainers.localstack.LocalStackContainer;
 import pe.axiz.payments.networkgateway.application.port.out.PaymentNetwork;
 import pe.axiz.payments.networkgateway.domain.Transfer;
 import pe.axiz.payments.networkgateway.domain.TransferStatus;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 import pe.axiz.spring.test.RedisTestConfiguration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
  * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
@@ -32,12 +41,37 @@ import pe.axiz.spring.test.RedisTestConfiguration;
  */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({RedisTestConfiguration.class, LocalStackTestConfiguration.class})
+@Import({
+  RedisTestConfiguration.class,
+  LocalStackTestConfiguration.class,
+  PaymentNetworkGatewayApplicationTest.AuditQueue.class
+})
 class PaymentNetworkGatewayApplicationTest {
+  @TestConfiguration(proxyBeanMethods = false)
+  static class AuditQueue {
+    @Bean(destroyMethod = "close")
+    SqsClient demoAuditSqs(LocalStackContainer localstack) {
+      return SqsClient.builder()
+          .endpointOverride(localstack.getEndpoint())
+          .region(Region.of(localstack.getRegion()))
+          .credentialsProvider(
+              StaticCredentialsProvider.create(
+                  AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey())))
+          .build();
+    }
+
+    @Bean
+    DynamicPropertyRegistrar demoAuditDestination(SqsClient sqs) {
+      String url = sqs.createQueue(request -> request.queueName("demo-audit")).queueUrl();
+      return registry -> registry.add("axiz.audit.sqs.queue-url", () -> url);
+    }
+  }
+
   @MockitoBean PaymentNetwork network;
 
   @Test
-  void aRetryReplaysTheFirstResponseAndNeverSendsTheTransferTwice(@Autowired MockMvc mvc)
+  void aRetryReplaysTheFirstResponseAndNeverSendsTheTransferTwice(
+      @Autowired MockMvc mvc, @Autowired SqsClient sqs, @Autowired Environment env)
       throws Exception {
     String key = "gateway-replay-1";
     when(network.send(any(), eq(key)))
@@ -83,6 +117,19 @@ class PaymentNetworkGatewayApplicationTest {
     assertThat(retry.getResponse().getContentAsString())
         .isEqualTo(first.getResponse().getContentAsString());
     verify(network, times(1)).send(any(), eq(key));
+    var received =
+        sqs.receiveMessage(
+            request ->
+                request
+                    .queueUrl(env.getRequiredProperty("axiz.audit.sqs.queue-url"))
+                    .waitTimeSeconds(10)
+                    .maxNumberOfMessages(10));
+    assertThat(received.messages())
+        .anySatisfy(
+            message -> {
+              assertThat(message.body())
+                  .contains("axiz.audit", "SUCCESS", "payment-network-gateway");
+            });
   }
 
   @Test
@@ -103,7 +150,9 @@ class PaymentNetworkGatewayApplicationTest {
                 .header("Idempotency-Key", "forbidden")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"creditorCci\":\"00219100123456789053\",\"amount\":10,\"currency\":\"PEN\",\"reference\":\"OP-1\"}"))
+                    """
+                    {"creditorCci":"00219100123456789053","amount":10,"currency":"PEN","reference":"OP-1"}
+                    """))
         .andExpect(status().isForbidden());
   }
 

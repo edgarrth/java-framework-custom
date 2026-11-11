@@ -1,4 +1,4 @@
-/** Models of the beneficiaries-crud API. */
+/** Models of the beneficiaries API. */
 @NullMarked
 package pe.axiz.payments.ux.client.beneficiaries.model;
 

@@ -20,8 +20,8 @@ import pe.axiz.payments.process.application.port.out.Transfers;
  *   <li>{@code transfer}: the transfer is sent. This is the pivot: once the network accepts it
  *       nothing is undone.
  *   <li>{@code complete}: the order moves to COMPLETED. It never fails the saga (the money already
- *       moved): if payments-business cannot be reached the context is marked {@code
- *       completionPending} and the settlement reconciliation completes the order.
+ *       moved): if payment-orders cannot be reached the context is marked {@code completionPending}
+ *       and the settlement reconciliation completes the order.
  * </ol>
  *
  * <p>Every downstream call uses a key derived from the order and the step, so retries and resumed
@@ -36,7 +36,7 @@ public final class PaymentSaga {
 
   public static final String NAME = "payment";
 
-  /** Reason sent to payments-business when the payment is undone. */
+  /** Reason sent to payment-orders when the payment is undone. */
   static final String REJECTION_REASON = "payment could not be completed";
 
   private PaymentSaga() {}
@@ -105,10 +105,10 @@ public final class PaymentSaga {
 
   /**
    * A step. With {@code verifiable}, an uncertain failure (timeout, 5xx, lost answer) is verified
-   * by repeating the call with the same idempotency key: every participant (payments-business,
-   * core-integration and through it the core and the network) returns the first outcome for a key
-   * it already processed, and applies the request if it never arrived. A definite rejection means
-   * the effect does not exist; another failure leaves the process VERIFYING.
+   * by repeating the call with the same idempotency key: every participant (payment-orders,
+   * banking-core and through it the core and the network) returns the first outcome for a key it
+   * already processed, and applies the request if it never arrived. A definite rejection means the
+   * effect does not exist; another failure leaves the process VERIFYING.
    */
   static SagaStep<PaymentContext> step(String name, Action action, boolean verifiable, Undo undo) {
     return new SagaStep<>() {

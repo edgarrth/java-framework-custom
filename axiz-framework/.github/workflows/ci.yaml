@@ -93,13 +93,13 @@ jobs:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   api-compat:
-    # Mandatory before promotion; 2.0 is reviewed against the published 1.x API inventory.
+    # Mandatory: explicit first publication or comparison with a genuine published v2 baseline.
     needs: [axiz-workflows-trust, build]
     runs-on: ubuntu-24.04
     env:
       NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-      BASELINE: ${{ vars.AXIZ_API_BASELINE || '1.0.0' }}
+      NEXUS_URL: ${{ secrets.NEXUS_URL }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -109,37 +109,44 @@ jobs:
       - uses: axiz/axiz-workflows/actions/setup-maven@v2.0.0
         with:
           nexus-url: ${{ secrets.NEXUS_URL }}
-      - name: japicmp against the baseline
+      - name: Validate the final public API
         run: |
           set -euo pipefail
           mkdir -p target/api-evidence
-          if [[ "$BASELINE" == 1.* ]]; then
-            ./mvnw --bootstrap -B -ntp verify -Papi-compat,api-migration -Daxiz.api.baseline="$BASELINE" 2>&1 | tee target/api-evidence/maven.log
-            python3 .github/scripts/check-api-compatibility.py --baseline "$BASELINE" --observed target/api-evidence/observed.json 2>&1 | tee target/api-evidence/gate.log
+          mode=$(python3 -c 'import json; print(json.load(open("docs/api/release-policy.json"))["mode"])')
+          if [[ "$mode" == first-release ]]; then
+            ./mvnw --bootstrap -B -ntp package -DskipTests 2>&1 | tee target/api-evidence/maven.log
+          elif [[ "$mode" == published-baseline ]]; then
+            baseline=$(python3 -c 'import json; print(json.load(open("docs/api/release-policy.json"))["baseline"])')
+            python3 .github/scripts/check-api-compatibility.py --prepare-baseline
+            ./mvnw --bootstrap -B -ntp verify -Papi-compat -Daxiz.api.baseline="$baseline" -Daxiz.api.baseline.directory="$PWD/target/api-baseline" -DskipTests 2>&1 | tee target/api-evidence/maven.log
           else
-            ./mvnw --bootstrap -B -ntp verify -Papi-compat -Daxiz.api.baseline="$BASELINE" 2>&1 | tee target/api-evidence/maven.log
+            echo "Unknown API gate mode" >&2
+            exit 1
           fi
-      - name: Associate API evidence with the reviewed source
+          python3 .github/scripts/check-api-compatibility.py 2>&1 | tee target/api-evidence/gate.log
+      - name: Associate every API outcome with its source
         if: always()
         run: |
           mkdir -p target/api-evidence
-          python3 - <<'PY'
+          python3 - <<'PYCODE'
           import json, os
           from pathlib import Path
-          Path("target/api-evidence/source.json").write_text(json.dumps({
-              "schema": 1, "commit": os.environ["GITHUB_SHA"],
-              "run": os.environ["GITHUB_RUN_ID"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"],
-              "baseline": os.environ["BASELINE"]
-          }, indent=2) + "\n")
-          PY
+          evidence = Path("target/api-evidence")
+          source = {"schema": 1, "commit": os.environ["GITHUB_SHA"], "run": os.environ["GITHUB_RUN_ID"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"]}
+          (evidence / "source.json").write_text(json.dumps(source, indent=2) + "\n")
+          if not (evidence / "result.json").is_file():
+              (evidence / "result.json").write_text(json.dumps({**source, "passed": False, "error": "API build or validation did not complete"}, indent=2) + "\n")
+          PYCODE
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: api-evidence-${{ github.sha }}-${{ github.run_attempt }}
           path: |
             target/api-evidence
+            target/api-baseline/baseline.json
             **/target/japicmp/*.xml
-            docs/migration/2.0/api-changes.md
+            docs/api
           retention-days: 90
           if-no-files-found: error
 
@@ -222,6 +229,8 @@ jobs:
         run: .github/scripts/samples.sh
       - name: Generated MVC and WebFlux authorization denies missing scopes before application code
         run: bash .github/scripts/authorization-samples.sh
+      - name: Generated local infrastructure is repeatable
+        run: bash .github/scripts/localstack-init-sample.sh
       - name: Release versions and POM updates of actual generated projects
         run: |
           npm ci --prefix .github/scripts/release-version --no-audit --no-fund --ignore-scripts
@@ -229,9 +238,9 @@ jobs:
       - name: Build every sample (verify)
         run: |
           failed=()
-          for dir in target/samples/*/; do
+          for dir in target/samples/*/ target/audit-samples/*/; do
             echo "::group::${dir}"
-            (cd "$dir" && ./mvnw -B -ntp verify) || failed+=("$dir")
+            (cd "$dir" && ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
             echo "::endgroup::"
           done
           if [ "${#failed[@]}" -gt 0 ]; then

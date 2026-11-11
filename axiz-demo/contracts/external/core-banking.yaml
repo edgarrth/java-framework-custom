@@ -4,7 +4,7 @@ info:
   version: 2.3.0
   description: >
     REST facade of the core banking system as the demo simulates it with WireMock. Only
-    core-integration calls it (anti-corruption layer); errors use the core's own codes
+    banking-core calls it (anti-corruption layer); errors use the core's own codes
     (CB-51 insufficient funds, CB-62 blocked account, CB-14 unknown movement).
 tags:
   - name: core

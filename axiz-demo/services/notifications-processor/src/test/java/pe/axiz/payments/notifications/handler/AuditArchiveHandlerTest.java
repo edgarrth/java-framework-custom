@@ -32,7 +32,7 @@ class AuditArchiveHandlerTest {
         new AuditRecord(
             "e-1",
             "2026-10-12T04:59:59Z",
-            "core-integration",
+            "banking-core",
             "account.debit",
             "account",
             null,
@@ -40,6 +40,6 @@ class AuditArchiveHandlerTest {
             Map.of("amount", "150.75")),
         null);
 
-    assertThat(storage.head("audit/2026/10/12/core-integration/e-1.json")).isPresent();
+    assertThat(storage.head("audit/2026/10/12/banking-core/e-1.json")).isPresent();
   }
 }

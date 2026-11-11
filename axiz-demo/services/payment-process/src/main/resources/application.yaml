@@ -75,7 +75,7 @@ axiz:
   http-client:
     clients:
       payment-orders:
-        base-url: ${PAYMENTS_BUSINESS_BASE_URL:http://localhost:8081}
+        base-url: ${PAYMENT_ORDERS_BASE_URL:http://localhost:8081}
         read-timeout: 5s
         total-timeout: 12s
         auth:
@@ -84,7 +84,7 @@ axiz:
           client-id: ${PAYMENT_PROCESS_CLIENT_ID:payment-process}
           client-secret-ref: payment-process-client-secret
       banking-core:
-        base-url: ${CORE_INTEGRATION_BASE_URL:http://localhost:8083}
+        base-url: ${BANKING_CORE_BASE_URL:http://localhost:8083}
         read-timeout: 5s
         total-timeout: 12s
         auth:

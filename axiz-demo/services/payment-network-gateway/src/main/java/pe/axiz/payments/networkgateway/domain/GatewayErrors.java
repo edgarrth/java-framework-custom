@@ -8,7 +8,7 @@ public final class GatewayErrors {
   /** The legacy public code remains unchanged for callers during migration. */
   public static final ErrorDefinition TRANSFER_REJECTED =
       ErrorDefinition.of(
-          "PAYMENTS-COREINTEGRATION-0003", ErrorCategory.UNPROCESSABLE, "Transfer rejected");
+          "PAYMENTS-BANKINGCORE-0003", ErrorCategory.UNPROCESSABLE, "Transfer rejected");
 
   private GatewayErrors() {}
 }

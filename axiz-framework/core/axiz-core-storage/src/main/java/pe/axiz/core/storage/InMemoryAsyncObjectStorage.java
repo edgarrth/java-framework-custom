@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -199,8 +200,13 @@ public final class InMemoryAsyncObjectStorage implements AsyncObjectStorage {
   }
 
   @Override
-  public CompletionStage<URL> presignPut(String key, String contentType, Duration ttl) {
-    return url("put", key, ttl);
+  public CompletionStage<PresignedUpload> presignUpload(
+      String key, String contentType, Duration ttl) {
+    return Stages.map(
+        url("put", key, ttl),
+        value ->
+            new PresignedUpload(
+                URI.create(value.toString()), Map.of("Content-Type", List.of(contentType))));
   }
 
   private static CompletionStage<URL> url(String operation, String key, Duration ttl) {

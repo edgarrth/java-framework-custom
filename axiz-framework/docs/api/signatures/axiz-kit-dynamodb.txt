@@ -1,0 +1,65 @@
+public final class pe.axiz.kit.dynamodb.CursorCodec {
+public java.lang.String encode(java.util.Map<java.lang.String, software.amazon.awssdk.services.dynamodb.model.AttributeValue>, java.lang.String);
+public java.util.Map<java.lang.String, software.amazon.awssdk.services.dynamodb.model.AttributeValue> decode(java.lang.String, java.lang.String);
+public pe.axiz.kit.dynamodb.CursorCodec(pe.axiz.core.crypto.KeyProvider, boolean);
+}
+
+public final class pe.axiz.kit.dynamodb.DynamoAsyncRepository<T> {
+public java.util.concurrent.CompletionStage<T> update(T);
+public java.util.concurrent.CompletionStage<java.lang.Void> delete(java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Void> delete(java.lang.String, java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Void> insert(T, java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Void> save(T);
+public java.util.concurrent.CompletionStage<java.lang.Void> transact(java.util.function.Consumer<software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest$Builder>);
+public java.util.concurrent.CompletionStage<java.util.Optional<T>> findById(java.lang.String);
+public java.util.concurrent.CompletionStage<java.util.Optional<T>> findById(java.lang.String, java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.commons.Page<T>> query(java.lang.String, int, java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.commons.Page<T>> queryBeginsWith(java.lang.String, java.lang.String, int, java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.commons.Page<T>> queryIndex(java.lang.String, java.lang.String, int, java.lang.String);
+public pe.axiz.kit.dynamodb.DynamoAsyncRepository(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>);
+public pe.axiz.kit.dynamodb.DynamoAsyncRepository(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>, java.util.function.Supplier<pe.axiz.kit.dynamodb.CursorCodec>);
+public software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable<T> table();
+}
+
+public class pe.axiz.kit.dynamodb.DynamoRepository<T> {
+public T update(T);
+public java.util.Optional<T> findById(java.lang.String);
+public java.util.Optional<T> findById(java.lang.String, java.lang.String);
+public pe.axiz.core.commons.Page<T> query(java.lang.String, int, java.lang.String);
+public pe.axiz.core.commons.Page<T> queryBeginsWith(java.lang.String, java.lang.String, int, java.lang.String);
+public pe.axiz.core.commons.Page<T> queryIndex(java.lang.String, java.lang.String, int, java.lang.String);
+public pe.axiz.kit.dynamodb.DynamoRepository(software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient, java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>);
+public pe.axiz.kit.dynamodb.DynamoRepository(software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient, java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>, java.util.function.Supplier<pe.axiz.kit.dynamodb.CursorCodec>);
+public software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable<T> table();
+public void delete(java.lang.String);
+public void delete(java.lang.String, java.lang.String);
+public void insert(T, java.lang.String);
+public void save(T);
+public void transact(java.util.function.Consumer<software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest$Builder>);
+}
+
+public class pe.axiz.kit.dynamodb.EncryptedAttributeConverter implements software.amazon.awssdk.enhanced.dynamodb.AttributeConverter<java.lang.String> {
+protected java.lang.String context();
+public java.lang.Object transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public java.lang.String transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public pe.axiz.kit.dynamodb.EncryptedAttributeConverter();
+public software.amazon.awssdk.enhanced.dynamodb.AttributeValueType attributeValueType();
+public software.amazon.awssdk.enhanced.dynamodb.EnhancedType<java.lang.String> type();
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.Object);
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.String);
+}
+
+public final class pe.axiz.kit.dynamodb.InvalidCursorException extends pe.axiz.core.errors.BusinessException {
+public pe.axiz.kit.dynamodb.InvalidCursorException();
+public static final pe.axiz.core.errors.ErrorDefinition INVALID_CURSOR;
+}
+
+public final class pe.axiz.kit.dynamodb.MoneyAttributeConverter implements software.amazon.awssdk.enhanced.dynamodb.AttributeConverter<pe.axiz.core.money.Money> {
+public java.lang.Object transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public pe.axiz.core.money.Money transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public pe.axiz.kit.dynamodb.MoneyAttributeConverter();
+public software.amazon.awssdk.enhanced.dynamodb.AttributeValueType attributeValueType();
+public software.amazon.awssdk.enhanced.dynamodb.EnhancedType<pe.axiz.core.money.Money> type();
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.Object);
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(pe.axiz.core.money.Money);
+}

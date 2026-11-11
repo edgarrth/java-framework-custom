@@ -14,5 +14,5 @@ axiz:
     directory: ./local/secrets
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/payments_business
+    url: jdbc:postgresql://localhost:5432/payment_orders
     username: app

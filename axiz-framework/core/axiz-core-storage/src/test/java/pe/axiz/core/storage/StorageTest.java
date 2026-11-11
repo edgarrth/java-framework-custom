@@ -30,7 +30,7 @@ class StorageTest {
     assertEquals(List.of("settlement/2026/01/31/file.txt"), s.list("settlement/", 10));
     assertTrue(s.head("settlement/2026/01/31/file.txt").isPresent());
     assertNotNull(s.presignGet("settlement/2026/01/31/file.txt", Duration.ofMinutes(5)));
-    assertNotNull(s.presignPut("x.txt", "text/plain", Duration.ofMinutes(5)));
+    assertNotNull(s.presignUpload("x.txt", "text/plain", Duration.ofMinutes(5)));
     s.delete("settlement/2026/01/31/file.txt");
     assertTrue(s.get("settlement/2026/01/31/file.txt").isEmpty());
   }

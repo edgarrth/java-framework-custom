@@ -71,10 +71,6 @@ final class S3Requests {
         .url();
   }
 
-  URL presignPut(String key, String contentType, Duration ttl) {
-    return signedPut(key, contentType, ttl).url();
-  }
-
   PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
     var signed = signedPut(key, contentType, ttl);
     var headers =

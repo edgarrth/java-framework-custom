@@ -1,0 +1,74 @@
+public final class pe.axiz.core.fileformats.Checksums {
+public static java.lang.String sha256(java.io.InputStream);
+public static long crc32(byte[]);
+}
+
+public final class pe.axiz.core.fileformats.ControlTotals {
+public java.math.BigDecimal sum();
+public long records();
+public pe.axiz.core.fileformats.ControlTotals();
+public void add(java.math.BigDecimal);
+public void verify(long, java.math.BigDecimal, int);
+}
+
+public final class pe.axiz.core.fileformats.CsvReader implements java.lang.Iterable<java.util.List<java.lang.String>>, java.lang.AutoCloseable {
+public int lineNumber();
+public java.util.Iterator<java.util.List<java.lang.String>> iterator();
+public java.util.List<java.lang.String> next();
+public pe.axiz.core.fileformats.CsvReader(java.io.Reader, char);
+public void close() throws java.io.IOException;
+}
+
+public final class pe.axiz.core.fileformats.CsvWriter implements java.lang.AutoCloseable {
+public pe.axiz.core.fileformats.CsvWriter(java.io.Writer, char, boolean);
+public void close() throws java.io.IOException;
+public void write(java.util.List<java.lang.String>);
+}
+
+public final class pe.axiz.core.fileformats.Ebcdic {
+public static byte[] encode(java.lang.String, java.nio.charset.Charset);
+public static byte[] pack(java.math.BigDecimal, int, int);
+public static final java.nio.charset.Charset IBM037;
+public static java.lang.String decode(byte[], java.nio.charset.Charset);
+public static java.math.BigDecimal unpack(byte[], int);
+}
+
+public final class pe.axiz.core.fileformats.FieldType extends java.lang.Enum<pe.axiz.core.fileformats.FieldType> {
+public static final pe.axiz.core.fileformats.FieldType DATE;
+public static final pe.axiz.core.fileformats.FieldType DECIMAL;
+public static final pe.axiz.core.fileformats.FieldType INTEGER;
+public static final pe.axiz.core.fileformats.FieldType TEXT;
+public static pe.axiz.core.fileformats.FieldType valueOf(java.lang.String);
+public static pe.axiz.core.fileformats.FieldType[] values();
+}
+
+public class pe.axiz.core.fileformats.FileFormatException extends java.lang.RuntimeException {
+public int line();
+public pe.axiz.core.fileformats.FileFormatException(java.lang.String, int);
+}
+
+public final class pe.axiz.core.fileformats.FixedField extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int end();
+public int length();
+public int scale();
+public int start();
+public java.lang.String name();
+public java.lang.String pattern();
+public pe.axiz.core.fileformats.FieldType type();
+public pe.axiz.core.fileformats.FixedField(java.lang.String, int, int, pe.axiz.core.fileformats.FieldType, int, java.lang.String);
+public static pe.axiz.core.fileformats.FixedField date(java.lang.String, int, int, java.lang.String);
+public static pe.axiz.core.fileformats.FixedField decimal(java.lang.String, int, int, int);
+public static pe.axiz.core.fileformats.FixedField integer(java.lang.String, int, int);
+public static pe.axiz.core.fileformats.FixedField text(java.lang.String, int, int);
+}
+
+public final class pe.axiz.core.fileformats.FixedWidthLayout {
+public int recordLength();
+public java.lang.String format(java.util.Map<java.lang.String, ?>);
+public java.lang.String name();
+public java.util.Map<java.lang.String, java.lang.Object> parse(java.lang.String, int);
+public pe.axiz.core.fileformats.FixedWidthLayout(java.lang.String, java.util.List<pe.axiz.core.fileformats.FixedField>);
+}

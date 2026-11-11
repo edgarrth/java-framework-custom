@@ -237,6 +237,7 @@ public final class ProjectGenerator {
     c.put("starters", starters);
     c.put("dependencies", dependencies);
     c.put("infra", infrastructure(resolved, r));
+    c.put("auditResources", auditResources(resolved));
     c.put("config", configuration(r, a, resolved, configMapKeys, secrets));
 
     Map<String, Object> api = new LinkedHashMap<>();
@@ -286,7 +287,21 @@ public final class ProjectGenerator {
                   .filter(op -> !String.valueOf(op.get("authorizationExpression")).isEmpty())
                   .toList();
           t.put("securedOperations", secured);
-          t.put("hasSecuredOperations", !secured.isEmpty());
+          var authenticated =
+              ops.stream()
+                  .filter(op -> Boolean.TRUE.equals(op.get("authenticatedAccess")))
+                  .toList();
+          t.put("authenticatedOperations", authenticated);
+          t.put("hasSecuredOperations", !secured.isEmpty() || !authenticated.isEmpty());
+          t.put(
+              "hasScopedOperations",
+              ops.stream().anyMatch(op -> Boolean.TRUE.equals(op.get("requiresScopes"))));
+          t.put(
+              "hasAuthenticatedOperations",
+              ops.stream().anyMatch(op -> Boolean.TRUE.equals(op.get("authenticatedAccess"))));
+          t.put(
+              "hasPublicOperations",
+              ops.stream().anyMatch(op -> Boolean.TRUE.equals(op.get("publicEndpoint"))));
           t.put("usesPaging", ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get("paged"))));
           t.put("usesModels", ops.stream().anyMatch(o -> Boolean.TRUE.equals(o.get("hasModel"))));
           TreeSet<String> models = new TreeSet<>();
@@ -552,7 +567,9 @@ public final class ProjectGenerator {
     if (redis) {
       configurations.add("RedisTestConfiguration");
     }
-    if (!localstack.isEmpty()) {
+    boolean auditTestResources = Boolean.TRUE.equals(auditResources(caps).get("required"));
+    infra.put("sharedLocalstack", !localstack.isEmpty() && !auditTestResources);
+    if (!localstack.isEmpty() && !auditTestResources) {
       configurations.add("LocalStackTestConfiguration");
     }
     List<Map<String, Object>> rows = new ArrayList<>();
@@ -612,12 +629,26 @@ public final class ProjectGenerator {
       app.put("axiz.messaging.consumer.subscriptions[0]", r.groupId() + ".example.created.v1");
     }
     caps.forEach(cap -> app.putAll(cap.properties(store)));
+    String restContract = r.openApi();
+    if (web && restContract != null) {
+      var publicPaths =
+          OpenApiDocument.parse(restContract).operations().stream()
+              .filter(op -> op.access() == ApiOperation.Access.PUBLIC)
+              .map(ApiOperation::path)
+              .distinct()
+              .toList();
+      if (!publicPaths.isEmpty()) app.put("axiz.security.public-paths", publicPaths);
+    }
     boolean audit = caps.stream().anyMatch(cap -> cap.name().equals("audit"));
     boolean outbox = caps.stream().anyMatch(cap -> cap.name().equals("outbox"));
     if (audit) {
       app.put("axiz.audit.mode", outbox ? "DURABLE" : "ASYNC");
-      if (outbox && caps.stream().anyMatch(cap -> cap.name().equals("messaging-kafka")))
-        app.put("axiz.messaging.destinations.audit", "${AXIZ_AUDIT_DESTINATION:kafka:audit}");
+      if (outbox) {
+        boolean kafka = caps.stream().anyMatch(cap -> cap.name().equals("messaging-kafka"));
+        app.put(
+            "axiz.messaging.destinations.audit",
+            kafka ? "${AXIZ_AUDIT_DESTINATION:kafka:audit}" : "${AXIZ_AUDIT_DESTINATION}");
+      }
     }
 
     if (asyncApi != null && !asyncApi.isBlank()) {
@@ -646,6 +677,16 @@ public final class ProjectGenerator {
       local.put("spring.r2dbc.properties.sslMode", "disable");
     }
     caps.forEach(cap -> local.putAll(cap.localProperties()));
+    var auditResources = auditResources(caps);
+    String auditQueue = "http://localhost:4566/000000000000/" + r.name() + "-audit";
+    if (Boolean.TRUE.equals(auditResources.get("sqsSink")))
+      local.put("axiz.audit.sqs.queue-url", auditQueue);
+    if (Boolean.TRUE.equals(auditResources.get("outboxSqs")))
+      local.put("axiz.messaging.destinations.audit", auditQueue);
+    if (Boolean.TRUE.equals(auditResources.get("outboxSns")))
+      local.put(
+          "axiz.messaging.destinations.audit",
+          "arn:aws:sns:us-east-1:000000000000:" + r.name() + "-audit");
 
     Map<String, Object> config = new LinkedHashMap<>();
     config.put("applicationYaml", YamlProperties.dump(YamlProperties.nest(app), 0));
@@ -657,6 +698,28 @@ public final class ProjectGenerator {
     config.put("secrets", secretRows);
     config.put("hasSecrets", !secretRows.isEmpty());
     return config;
+  }
+
+  private static Map<String, Boolean> auditResources(List<Capability> caps) {
+    var names = caps.stream().map(Capability::name).collect(Collectors.toSet());
+    boolean durable =
+        names.contains("audit") && names.contains("outbox") && !names.contains("messaging-kafka");
+    boolean outboxSqs = durable && names.contains("messaging-sqs");
+    boolean outboxSns = durable && !outboxSqs && names.contains("messaging-sns");
+    boolean sqsSink = names.contains("audit-sqs");
+    return Map.of(
+        "queue",
+        sqsSink || outboxSqs,
+        "topic",
+        outboxSns,
+        "sqsSink",
+        sqsSink,
+        "outboxSqs",
+        outboxSqs,
+        "outboxSns",
+        outboxSns,
+        "required",
+        sqsSink || outboxSqs || outboxSns);
   }
 
   private static String controllerDependency(
@@ -689,6 +752,9 @@ public final class ProjectGenerator {
     o.put("readOnly", op.readOnly());
     o.put("write", !op.readOnly());
     o.put("authorizationExpression", op.authorizationExpression());
+    o.put("requiresScopes", op.access() == ApiOperation.Access.SCOPED);
+    o.put("authenticatedAccess", op.access() == ApiOperation.Access.AUTHENTICATED);
+    o.put("publicEndpoint", op.access() == ApiOperation.Access.PUBLIC);
     o.put(
         "partialAuthority",
         op.scopes().size() > 1 ? "SCOPE_" + op.scopes().getFirst() : "SCOPE_unrelated");

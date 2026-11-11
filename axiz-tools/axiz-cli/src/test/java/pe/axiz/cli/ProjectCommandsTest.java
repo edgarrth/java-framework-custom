@@ -151,9 +151,9 @@ class ProjectCommandsTest {
   void upgradeUpdatesVersionsAndRunsTheRecipes(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     CliHarness h = new CliHarness();
-    assertEquals(0, h.run("upgrade", "--to", "1.2.0", "--dir", p.toString()), h.output());
-    assertTrue(Files.readString(p.resolve("pom.xml")).contains("<version>1.2.0</version>"));
-    assertEquals("1.2.0", ProjectManifest.read(p).axizVersion());
+    assertEquals(0, h.run("upgrade", "--to", "2.2.0", "--dir", p.toString()), h.output());
+    assertTrue(Files.readString(p.resolve("pom.xml")).contains("<version>2.2.0</version>"));
+    assertEquals("2.2.0", ProjectManifest.read(p).axizVersion());
     List<String> command = h.processes.commands.get(0);
     // generated projects ship the Maven wrapper, so the recipes run through it
     Path executable = Path.of(command.get(0));
@@ -162,7 +162,7 @@ class ProjectCommandsTest {
         java.io.File.separatorChar == '\\' ? "mvnw.cmd" : "mvnw",
         executable.getFileName().toString());
     assertTrue(
-        command.contains("-Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:1.2.0"));
+        command.contains("-Drewrite.recipeArtifactCoordinates=pe.axiz:axiz-rewrite-recipes:2.2.0"));
     assertEquals(
         ExitCodes.PROBLEMS,
         new CliHarness().run("upgrade", "--to", "latest!", "--dir", p.toString()));
@@ -204,11 +204,11 @@ class ProjectCommandsTest {
 
   @Test
   void versionsAreReleaseNumbersWithAnOptionalSuffix() {
-    for (String valid : List.of("1.2.0", "10.20.30", "1.2.0-SNAPSHOT", "1.2.0-rc.1")) {
+    for (String valid : List.of("2.2.0", "10.20.30", "2.2.0-SNAPSHOT", "2.2.0-rc.1")) {
       assertTrue(UpgradeCommand.isVersion(valid), valid);
     }
     for (String invalid :
-        List.of("", "1.2", "1.2.0.", "v1.2.0", "1.2.0-", "1.2.0-rc_1", "1.2.0-rc-1", "latest!")) {
+        List.of("", "1.2", "2.2.0.", "v2.2.0", "2.2.0-", "2.2.0-rc_1", "2.2.0-rc-1", "latest!")) {
       assertFalse(UpgradeCommand.isVersion(invalid), invalid);
     }
   }

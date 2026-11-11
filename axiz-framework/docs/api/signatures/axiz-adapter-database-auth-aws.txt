@@ -1,0 +1,8 @@
+public final class pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider implements pe.axiz.kit.r2dbc.DatabasePasswordProvider,java.lang.AutoCloseable {
+public java.lang.CharSequence password();
+public java.lang.String toString();
+public pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider(software.amazon.awssdk.services.rds.RdsUtilities, java.lang.String, int, java.lang.String, java.time.Clock, java.time.Duration);
+public pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider(software.amazon.awssdk.services.rds.RdsUtilities, java.lang.String, int, java.lang.String, java.time.Clock, java.time.Duration, java.lang.Runnable);
+public static final java.time.Duration TOKEN_LIFETIME;
+public void close();
+}

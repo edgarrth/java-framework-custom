@@ -32,5 +32,5 @@ tests {
   // USD payments are behind the feature flag payments-usd (off by default): the channel refuses them
   // before looking at the beneficiary. A PEN payment to a USD beneficiary gets 0001 (mismatch).
   test("status 422", function () { expect(res.status).to.equal(422); });
-  test("code PAYMENTS-PAYMENTSEXPERIENCE-0002", function () { expect(res.body.code).to.equal("PAYMENTS-PAYMENTSEXPERIENCE-0002"); });
+  test("code PAYMENTS-PAYMENTSUX-0002", function () { expect(res.body.code).to.equal("PAYMENTS-PAYMENTSUX-0002"); });
 }

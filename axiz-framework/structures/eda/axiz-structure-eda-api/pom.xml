@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-framework-eda-api</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.structure.eda</axiz.module.name>
     <!-- architecture contract retains this artifact, but it now contains package-info only. Messaging owns
          the handlers and their mutation-tested algorithms; no executable EDA API code exists. -->

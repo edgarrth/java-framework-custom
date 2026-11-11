@@ -1,0 +1,20 @@
+public class pe.axiz.spring.jpa.AuditingRegistrar implements org.springframework.beans.factory.InitializingBean,org.springframework.beans.factory.DisposableBean {
+public pe.axiz.spring.jpa.AuditingRegistrar(pe.axiz.kit.jpa.AuditorProvider, java.time.Clock);
+public void afterPropertiesSet();
+public void destroy();
+}
+
+public class pe.axiz.spring.jpa.AxizJpaAutoConfiguration {
+public pe.axiz.spring.jpa.AxizJpaAutoConfiguration();
+}
+
+public class pe.axiz.spring.jpa.AxizJpaEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.jpa.AxizJpaEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
+public class pe.axiz.spring.jpa.RequestAuditorProvider implements pe.axiz.kit.jpa.AuditorProvider {
+public java.util.Optional<java.lang.String> currentAuditor();
+public pe.axiz.spring.jpa.RequestAuditorProvider();
+}

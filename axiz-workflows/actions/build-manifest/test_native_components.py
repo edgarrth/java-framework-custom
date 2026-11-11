@@ -223,7 +223,7 @@ class NativeComponentsTest(unittest.TestCase):
         (bundle / 'build-manifest.sigstore.json').write_bytes(b'fixture main signature')
         return data, bundle
 
-    def test_complete_bundle_binds_native_evidence_and_backward_compatible_release_names(self):
+    def test_complete_bundle_binds_native_evidence_and_platform_download_names(self):
         data, bundle = self.sealed()
         assets = native.release_assets(data, bundle)
         self.assertEqual(6, len(assets))

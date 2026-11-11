@@ -314,7 +314,7 @@ class InboxTest {
    * startup, upgraded by a new migration and keeps its data and invariants.
    */
   @Test
-  void anInboxFromThePreviousVersionIsDetectedAndUpgradedKeepingItsData() throws Exception {
+  void anIncompleteSchemaIsRejectedBeforeConsumption() throws Exception {
     JdbcDataSource ds = new JdbcDataSource();
     ds.setURL("jdbc:h2:mem:inbox-old-" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
     Instant t0 = Instant.parse("2026-01-01T00:00:00Z");
@@ -338,33 +338,6 @@ class InboxTest {
     }
     JdbcInboxStore old = new JdbcInboxStore(new JdbcTransactions(ds), "axiz_inbox");
     InboxException e = assertThrows(InboxException.class, old::verifySchema);
-    assertTrue(e.getMessage().contains("inbox-postgresql-upgrade-owner.sql"), e.getMessage());
-
-    try (Connection c = ds.getConnection();
-        Statement s = c.createStatement();
-        InputStream in =
-            getClass().getResourceAsStream("/axiz/sql/inbox-postgresql-upgrade-owner.sql")) {
-      for (String sql : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";")) {
-        if (!sql.replaceAll("--.*", "").isBlank()) {
-          s.execute(sql);
-        }
-      }
-    }
-    JdbcInboxStore upgraded = new JdbcInboxStore(new JdbcTransactions(ds), "axiz_inbox");
-    upgraded.verifySchema();
-    Instant later = t0.plusSeconds(600);
-    assertEquals(
-        InboxStore.Acquisition.Status.PROCESSED,
-        upgraded
-            .tryAcquire("c", "done", "x", later, later.plusSeconds(60), later.plusSeconds(3600))
-            .status(),
-        "processed messages stay processed");
-    assertEquals(
-        InboxStore.Acquisition.Status.ACQUIRED,
-        upgraded
-            .tryAcquire("c", "stuck", "new", later, later.plusSeconds(60), later.plusSeconds(3600))
-            .status(),
-        "an ownerless lease of the old version is taken over when it ends");
-    assertTrue(upgraded.markProcessed("c", "stuck", "new", later));
+    assertTrue(e.getMessage().contains("inbox-postgresql.sql"), e.getMessage());
   }
 }

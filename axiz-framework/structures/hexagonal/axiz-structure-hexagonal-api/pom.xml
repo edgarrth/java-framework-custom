@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-framework-hexagonal-api</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.structure.hexagonal</axiz.module.name>
   </properties>
 

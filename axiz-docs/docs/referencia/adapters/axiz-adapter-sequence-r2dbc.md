@@ -9,5 +9,4 @@ This is a technology adapter, not a general persistence kit. Consumers select it
 the sequence capability with R2DBC; the generic sequence starter does not impose this backend.
 
 Run `./mvnw --bootstrap -pl adapters/axiz-adapter-sequence-r2dbc -am verify -Daxiz.it.requireDocker=true`
-from the framework root. Public API is new in 2.0, with no invented 1.x predecessor; its reviewed
-signature inventory is enforced by the API gate.
+from the framework root. Public API is reviewed with every other published module by the v2 signature gate.

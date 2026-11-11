@@ -31,5 +31,5 @@ body:json {
 tests {
   // the core checks that the account belongs to the customer of the payment
   test("status 422", function () { expect(res.status).to.equal(422); });
-  test("code PAYMENTS-COREINTEGRATION-0004", function () { expect(res.body.code).to.equal("PAYMENTS-COREINTEGRATION-0004"); });
+  test("code PAYMENTS-BANKINGCORE-0004", function () { expect(res.body.code).to.equal("PAYMENTS-BANKINGCORE-0004"); });
 }

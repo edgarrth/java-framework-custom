@@ -366,7 +366,9 @@ class PostgresReactiveUseCaseIT {
         .withBean(ReactiveOutboxWriter.class, () -> writer)
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(connections))
         .withPropertyValues(
-            "axiz.audit.durable.enabled=true", "axiz.audit.durable.outside-transaction=fail")
+            "axiz.audit.mode=DURABLE",
+            "axiz.outbox.relay.enabled=false",
+            "axiz.audit.durable.outside-transaction=fail")
         .run(
             ctx -> {
               org.assertj.core.api.Assertions.assertThat(ctx).hasNotFailed();

@@ -121,11 +121,6 @@ public final class S3ObjectStorage implements ObjectStorage {
   }
 
   @Override
-  public URL presignPut(String key, String contentType, Duration ttl) {
-    return requests.presignPut(key, contentType, ttl);
-  }
-
-  @Override
   public PresignedUpload presignUpload(String key, String contentType, Duration ttl) {
     return requests.presignUpload(key, contentType, ttl);
   }

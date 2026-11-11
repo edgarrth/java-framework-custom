@@ -1,4 +1,4 @@
--- payments-business: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
+-- payment-orders: initial schema (Aurora PostgreSQL). Flyway owns the schema in every
 -- environment; Hibernate only validates it (spring.jpa.hibernate.ddl-auto=validate).
 -- Add domain tables in new migrations (V2__..., never edit an applied one).
 

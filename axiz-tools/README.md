@@ -35,28 +35,15 @@ Build: `mvn -pl axiz-cli package` (JVM jar `axiz-cli-*-jar-with-dependencies.jar
 
 ## Upgrades
 
-`axiz upgrade` stages the migration in a private temporary copy. It presents schema 2 metadata to
-OpenRewrite while keeping the previous valid Maven model until the recipes can resolve it. It
-updates every declared Axiz parent in the reactor, preserving application versions and unrelated
-parents. `doctor` also validates modules of parentless aggregators. XML parsing refuses DTDs,
-external entities, symlinked modules and paths outside the reactor.
+`axiz upgrade` stages updates of current v2 projects in a private temporary copy. It updates
+Axiz parents, preserves application versions and unrelated parents, validates with doctor and
+applies changes atomically. `--dry-run` retains a patch without changing the project. Manifests
+must use schema 2; old selectors and unpublished draft schemas are not migrated.
 
-A dry-run executes the complete migration in that copy and writes `target/rewrite/rewrite.patch`;
-it leaves source files untouched. Successful application checks that the original files did not
-change concurrently. If applying a later file fails, earlier changes are restored; an unsuccessful
-recovery retains its baseline for manual recovery. Build caches, Git metadata and generated Maven
-POMs are not copied back.
-
-Standard 1.0.0 pipelines are recognized through semantic comparison with the retained generator
-baselines and migrated to independent build/deploy consumers. Custom workflows produce a proposal
-and stop application without discarding custom jobs. Configure the new read/build/publish secrets
-before running those workflows remotely. Renames preserve the identity ledger, existing chart
-path, audiences and DNS aliases; chart metadata follows the new service name.
-
-The OpenRewrite plugin version is filtered from the framework parent into the CLI, so upgrades
-of an older project use the curated plugin rather than its previous parent configuration. The
-current baseline is the last plugin release available in Maven Central; newer releases moved to
-a different artifact repository, which would require a separately configured Nexus proxy.
+Current workflow bindings can be renamed safely without discarding custom jobs. Identity ledgers,
+chart paths and stateful identities protect future renames of v2 services. Java/Spring/JSpecify
+conventions and runtime adapter scope repair remain available; pre-v2 Axiz migration recipes and
+old workflow fixtures have been removed.
 
 ## axiz initializr
 

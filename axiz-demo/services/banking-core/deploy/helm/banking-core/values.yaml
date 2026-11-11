@@ -62,12 +62,7 @@ externalSecret:
   enabled: true
   storeName: aws-secrets-manager
   refreshInterval: 1h
-  remotePrefix: dev/core-integration
+  remotePrefix: dev/banking-core
   keys:
   - core-banking-client-secret
   - core-soap-password
-migration:
-  serviceAliases:
-  - core-integration
-  previousAudience: core-integration
-  currentAudience: banking-core

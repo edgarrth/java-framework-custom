@@ -1,4 +1,4 @@
-/** Client of the payments-business API. */
+/** Client of the payment-orders API. */
 @NullMarked
 package pe.axiz.payments.process.adapter.out.paymentorders;
 

@@ -1,0 +1,26 @@
+public class pe.axiz.spring.i18n.AcceptLanguageLocaleContextResolver implements org.springframework.web.server.i18n.LocaleContextResolver {
+public org.springframework.context.i18n.LocaleContext resolveLocaleContext(org.springframework.web.server.ServerWebExchange);
+public pe.axiz.spring.i18n.AcceptLanguageLocaleContextResolver(pe.axiz.core.i18n.LocaleResolver);
+public void setLocaleContext(org.springframework.web.server.ServerWebExchange, org.springframework.context.i18n.LocaleContext);
+}
+
+public class pe.axiz.spring.i18n.AcceptLanguageLocaleResolver implements org.springframework.web.servlet.LocaleResolver {
+public java.util.Locale resolveLocale(jakarta.servlet.http.HttpServletRequest);
+public pe.axiz.spring.i18n.AcceptLanguageLocaleResolver(pe.axiz.core.i18n.LocaleResolver);
+public void setLocale(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, java.util.Locale);
+}
+
+public class pe.axiz.spring.i18n.AxizI18nAutoConfiguration {
+public pe.axiz.spring.i18n.AxizI18nAutoConfiguration();
+public static final java.lang.String FRAMEWORK_BUNDLE = "axiz/i18n/messages";
+}
+
+public final class pe.axiz.spring.i18n.AxizI18nProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<java.lang.String> basenames();
+public java.util.List<java.util.Locale> supportedLocales();
+public java.util.Locale defaultLocale();
+public pe.axiz.spring.i18n.AxizI18nProperties(java.util.Locale, java.util.List<java.util.Locale>, java.util.List<java.lang.String>);
+}

@@ -19,6 +19,14 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 class StorageTest {
 
   @Test
+  void explicitlyEmptyBucketFailsAtStartup() {
+    s3.withPropertyValues("axiz.storage.bucket=")
+        .run(
+            ctx ->
+                assertThat(ctx.getStartupFailure()).hasStackTraceContaining("must not be blank"));
+  }
+
+  @Test
   void memoryStorageForTests() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizStorageAutoConfiguration.class))

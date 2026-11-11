@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Extension;
+import pe.axiz.codegen.model.FrameworkVersions;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.SafeYaml;
@@ -84,6 +86,7 @@ public record ProjectManifest(
   }
 
   public ProjectManifest {
+    FrameworkVersions.requireSupported(axizVersion);
     extensions = List.copyOf(extensions);
     if (new HashSet<>(extensions).size() != extensions.size())
       throw new IllegalArgumentException("Duplicate service extension");
@@ -94,15 +97,6 @@ public record ProjectManifest(
 
   /** Reads the manifest of the project in {@code dir}. */
   public static ProjectManifest read(Path dir) throws IOException {
-    return read(dir, null);
-  }
-
-  /** Reads schema 1 with an explicit resolution for the former integration role. */
-  public static ProjectManifest read(Path dir, @Nullable String integrationRole)
-      throws IOException {
-    if (integrationRole != null && !List.of("core", "gateway").contains(integrationRole)) {
-      throw new IllegalArgumentException("Legacy integration must choose core or gateway");
-    }
     Path file = dir.resolve(PATH);
     if (!Files.isRegularFile(file)) {
       throw new IOException("Not an axiz project (missing " + PATH + ") in " + dir);
@@ -112,31 +106,16 @@ public record ProjectManifest(
       throw new IOException(PATH + " is not a YAML mapping");
     }
     Object schema = m.get("schema");
-    if (!(schema instanceof Number number)
-        || (number.doubleValue() != 1 && number.doubleValue() != 2)) {
+    if (!(schema instanceof Number number) || number.doubleValue() != 2) {
       throw new IOException("Unsupported project manifest schema: " + schema);
     }
-    boolean legacy = ((Number) schema).intValue() == 1;
-    String structure = String.valueOf(m.get(legacy ? "framework" : "structure"));
-    List<Extension> extensions =
-        legacy && structure.equals("cqrs")
-            ? List.of(Extension.CQRS)
-            : strings(m.get("extensions")).stream().map(Extension::of).toList();
-    if (structure.equals("cqrs")) structure = "hexagonal";
+    String structure = required(m, "structure");
+    List<Extension> extensions = strings(m.get("extensions")).stream().map(Extension::of).toList();
     String role = required(m, "archetype");
-    if (legacy)
-      role =
-          switch (role) {
-            case "experience" -> "ux";
-            case "crud", "process" -> "business";
-            case "integration" -> {
-              if (integrationRole == null)
-                throw new IOException(
-                    "schema 1 integration requires --archetype core or --archetype gateway");
-              yield integrationRole;
-            }
-            default -> role;
-          };
+    if (Catalog.load().archetype(role).isEmpty())
+      throw new IOException("Unsupported v2 archetype: " + role);
+    if (m.containsKey("framework"))
+      throw new IOException("Use structure; framework is not a v2 manifest key");
     Map<?, ?> contract = m.get("contract") instanceof Map<?, ?> c ? c : Map.of();
     return new ProjectManifest(
         required(m, "name"),

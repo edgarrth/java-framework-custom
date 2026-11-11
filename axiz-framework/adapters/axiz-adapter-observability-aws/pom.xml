@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-observability-awssdk</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.adapter.observability.aws</axiz.module.name>
   </properties>
 

@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("axiz.initializr")
 public record InitializrProperties(
-    @DefaultValue("1.0.0") String frameworkVersion,
+    @DefaultValue("2.0.0") String frameworkVersion,
     @DefaultValue("https://api.github.com") URI githubApi,
     @Nullable String githubOrganization,
     @DefaultValue("2000") int maxFiles,

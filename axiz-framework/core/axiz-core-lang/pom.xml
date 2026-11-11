@@ -8,7 +8,6 @@
   <properties>
     <axiz.module.name>pe.axiz.core.lang</axiz.module.name>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
-    <axiz.api.baseline.artifactId>axiz-core-commons</axiz.api.baseline.artifactId>
   </properties>
   <build><plugins><plugin>
     <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId>
@@ -16,12 +15,5 @@
       <configuration><rules><bannedDependencies><excludes><exclude>pe.axiz:*</exclude></excludes><searchTransitive>true</searchTransitive></bannedDependencies></rules></configuration>
     </execution></executions>
   </plugin></plugins></build>
-  <profiles><profile><id>api-compat</id><build><plugins><plugin>
-    <groupId>com.github.siom79.japicmp</groupId><artifactId>japicmp-maven-plugin</artifactId>
-    <configuration><parameter><includes>
-      <include>pe.axiz.core.commons.Checks</include><include>pe.axiz.core.commons.Strings</include>
-      <include>pe.axiz.core.commons.Dates</include><include>pe.axiz.core.commons.Result*</include>
-      <include>pe.axiz.core.lang.*</include>
-    </includes></parameter></configuration>
-  </plugin></plugins></build></profile></profiles>
+  <profiles></profiles>
 </project>

@@ -149,21 +149,6 @@ class OutboxProtocolTest {
     public void verifySchema() {}
 
     @Override
-    public List<OutboxRecord> lockDue(int size, Instant now) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void markPublished(String id, Instant at) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void markFailed(String id, int attempts, Instant next, String error, boolean giveUp) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public int purgePublished(Instant before) {
       return 0;
     }

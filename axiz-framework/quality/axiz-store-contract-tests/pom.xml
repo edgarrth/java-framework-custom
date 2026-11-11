@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-store-contracts</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.test.contracts</axiz.module.name>
     <!-- test fixtures: their value is measured by the stores they check -->
     <skipPitest>true</skipPitest>

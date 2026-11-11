@@ -35,7 +35,7 @@ class PaymentOrderHandlersTest {
   private static EventEnvelope envelope(String type, Instant time) {
     return new EventEnvelope(
         "evt-1",
-        "urn:axiz:payments-business",
+        "urn:axiz:payment-orders",
         type,
         time,
         "p-1",

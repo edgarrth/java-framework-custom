@@ -226,6 +226,25 @@ def reference(modules, out):
     write(os.path.join(dst, 'index.md'), '\n'.join(parts))
 
 
+def prune_reference(modules, out):
+    """Retire generated pages of removed modules; preserve every manually maintained page."""
+    reference_root = os.path.join(out, 'referencia')
+    if not os.path.isdir(reference_root):
+        return
+    for layer in os.listdir(reference_root):
+        directory = os.path.join(reference_root, layer)
+        if not os.path.isdir(directory) or os.path.islink(directory):
+            continue
+        expected = {name + '.md' for name in modules.get(layer, {})}
+        for filename in os.listdir(directory):
+            path = os.path.join(directory, filename)
+            if filename.endswith('.md') and filename not in expected and not os.path.islink(path):
+                with open(path, encoding='utf-8') as page:
+                    generated = page.readline() == GENERATED
+                if generated:
+                    os.remove(path)
+
+
 def cli_reference(help_file, out):
     text = open(help_file, encoding='utf-8').read()
     sections = re.split(r'^===== (.+)$', text, flags=re.M)
@@ -251,6 +270,7 @@ def main():
     _, archetypes = capabilities(a.framework, a.docs, modules)
     archetype_catalog(archetypes, a.docs)
     adrs(a.framework, a.docs)
+    prune_reference(modules, a.docs)
     reference(modules, a.docs)
     if a.cli_help:
         cli_reference(a.cli_help, a.docs)

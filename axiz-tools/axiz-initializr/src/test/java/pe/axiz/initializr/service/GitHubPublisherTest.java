@@ -23,7 +23,7 @@ class GitHubPublisherTest {
 
   static InitializrProperties props(String organization, int maxFiles) {
     return new InitializrProperties(
-        "1.0.0", URI.create("https://api.github.test"), organization, maxFiles, "axiz-initializr");
+        "2.0.0", URI.create("https://api.github.test"), organization, maxFiles, "axiz-initializr");
   }
 
   static GeneratedProject project(String... paths) {
@@ -147,7 +147,7 @@ class GitHubPublisherTest {
     MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
     InitializrProperties props =
         new InitializrProperties(
-            "1.0.0", URI.create("https://api.github.test"), "acme", 100, "axiz-initializr");
+            "2.0.0", URI.create("https://api.github.test"), "acme", 100, "axiz-initializr");
     GeneratedProject project =
         new GeneratedProject(
             "orders",

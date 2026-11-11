@@ -28,8 +28,8 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 ## Native asynchronous transport
 
 Use `presignUpload` when delegating a PUT to an HTTP client. Apply its URI and every returned
-header, including SSE-KMS and content type. The legacy URL-only method remains available, but
-cannot communicate the required headers. `Host` is derived by the HTTP client from the URI.
+header, including SSE-KMS and content type. URL-only upload signing was removed; the current
+port always returns complete upload instructions. `Host` is derived by the HTTP client from the URI.
 
 `S3AsyncObjectStorage` implements the JDK-only `AsyncObjectStorage` port. Its private bridges
 translate JDK Flow and the SDK protocol without Reactor or object aggregation. Each delivered

@@ -1,0 +1,8 @@
+public class pe.axiz.spring.notification.AxizNotificationAutoConfiguration {
+public pe.axiz.spring.notification.AxizNotificationAutoConfiguration();
+}
+
+public final class pe.axiz.spring.notification.ReactiveNotifications {
+public pe.axiz.spring.notification.ReactiveNotifications(pe.axiz.core.notification.AsyncNotificationSender);
+public reactor.core.publisher.Mono<java.lang.Void> send(pe.axiz.core.notification.NotificationRequest);
+}

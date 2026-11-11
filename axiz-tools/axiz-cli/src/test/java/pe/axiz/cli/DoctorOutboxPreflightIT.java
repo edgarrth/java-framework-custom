@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -14,8 +16,11 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.postgresql.PostgreSQLContainer;
+import pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight;
 
-/** Runs the actual doctor command using a SELECT-only PostgreSQL account and legacy columns. */
+/**
+ * Runs the actual doctor command using a SELECT-only PostgreSQL account and the current v2 schema.
+ */
 @Timeout(60)
 class DoctorOutboxPreflightIT {
   private static final PostgreSQLContainer POSTGRES =
@@ -32,15 +37,31 @@ class DoctorOutboxPreflightIT {
             DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
         var sql = connection.createStatement()) {
+      try (var schema =
+          Objects.requireNonNull(
+              JdbcOutboxPreflight.class.getResourceAsStream("/axiz/sql/outbox-postgresql.sql"))) {
+        for (String statement :
+            new String(schema.readAllBytes(), StandardCharsets.UTF_8)
+                .replaceAll("(?m)--.*", "")
+                .split(";")) {
+          if (!statement.isBlank()) sql.execute(statement);
+        }
+      }
       sql.execute(
-          "CREATE TABLE axiz_outbox(id TEXT PRIMARY KEY,status TEXT,attempts INT,"
-              + "last_error TEXT,destination TEXT,created_at TIMESTAMPTZ,aggregate_type TEXT,aggregate_id TEXT)");
-      sql.execute(
-          "INSERT INTO axiz_outbox VALUES "
-              + "('failed','FAILED',7,'preserved diagnostic','topic','2026-01-01','order','one'),"
-              + "('published','PUBLISHED',0,NULL,'topic','2026-01-02','order','one'),"
-              + "('pending','PENDING',0,NULL,'topic','2026-01-03','order','one'),"
-              + "('isolated','FAILED',4,'isolated diagnostic','topic','2026-01-01',NULL,NULL)");
+          """
+          INSERT INTO axiz_outbox (
+            id,status,attempts,last_error,destination,created_at,aggregate_type,aggregate_id,
+            event_type,envelope,next_attempt_at,aggregate_seq
+          ) VALUES
+          ('failed','FAILED',7,'preserved diagnostic','kafka:audit','2026-01-01',
+            'order','one','changed','{}',NOW(),1),
+          ('published','PUBLISHED',0,NULL,'kafka:audit','2026-01-02',
+            'order','one','changed','{}',NOW(),2),
+          ('pending','PENDING',0,NULL,'kafka:audit','2025-01-01',
+            'order','one','changed','{}',NOW(),3),
+          ('isolated','FAILED',4,'isolated diagnostic','kafka:audit','2026-01-01',
+            'order','isolated','changed','{}',NOW(),1)
+          """);
       sql.execute("CREATE USER doctor_reader WITH PASSWORD '" + PASSWORD + "'");
       sql.execute("GRANT SELECT ON axiz_outbox TO doctor_reader");
     }
@@ -69,7 +90,7 @@ class DoctorOutboxPreflightIT {
     assertTrue(report.contains("\"pendingSuccessors\":true"));
     assertTrue(report.contains("preserved diagnostic"));
     assertTrue(report.contains("\"id\":\"isolated\""));
-    assertTrue(report.contains("axiz.event"));
+    assertTrue(report.contains("\"aggregateId\":\"isolated\""));
     assertFalse(report.contains(PASSWORD));
     try (var connection =
             DriverManager.getConnection(

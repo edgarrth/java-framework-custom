@@ -1,0 +1,42 @@
+public class pe.axiz.spring.featureflags.AxizFeatureFlagsAutoConfiguration {
+public pe.axiz.spring.featureflags.AxizFeatureFlagsAutoConfiguration();
+}
+
+public final class pe.axiz.spring.featureflags.AxizFeatureFlagsProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.Map<java.lang.String, pe.axiz.spring.featureflags.AxizFeatureFlagsProperties$Flag> flags();
+public pe.axiz.spring.featureflags.AxizFeatureFlagsProperties(java.util.Map<java.lang.String, pe.axiz.spring.featureflags.AxizFeatureFlagsProperties$Flag>);
+}
+
+public final class pe.axiz.spring.featureflags.AxizFeatureFlagsProperties$Flag extends java.lang.Record {
+public boolean enabled();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int percentage();
+public java.lang.String variant();
+public java.util.Map<java.lang.String, java.util.Set<java.lang.String>> rules();
+public java.util.Set<java.lang.String> channels();
+public java.util.Set<java.lang.String> tenants();
+public pe.axiz.spring.featureflags.AxizFeatureFlagsProperties$Flag(boolean, int, java.util.Set<java.lang.String>, java.util.Set<java.lang.String>, java.util.Map<java.lang.String, java.util.Set<java.lang.String>>, java.lang.String);
+}
+
+public class pe.axiz.spring.featureflags.AxizOpenFeatureAutoConfiguration {
+public pe.axiz.spring.featureflags.AxizOpenFeatureAutoConfiguration();
+}
+
+public class pe.axiz.spring.featureflags.AxizOpenFeatureProvider implements dev.openfeature.sdk.FeatureProvider {
+public dev.openfeature.sdk.Metadata getMetadata();
+public dev.openfeature.sdk.ProviderEvaluation<dev.openfeature.sdk.Value> getObjectEvaluation(java.lang.String, dev.openfeature.sdk.Value, dev.openfeature.sdk.EvaluationContext);
+public dev.openfeature.sdk.ProviderEvaluation<java.lang.Boolean> getBooleanEvaluation(java.lang.String, java.lang.Boolean, dev.openfeature.sdk.EvaluationContext);
+public dev.openfeature.sdk.ProviderEvaluation<java.lang.Double> getDoubleEvaluation(java.lang.String, java.lang.Double, dev.openfeature.sdk.EvaluationContext);
+public dev.openfeature.sdk.ProviderEvaluation<java.lang.Integer> getIntegerEvaluation(java.lang.String, java.lang.Integer, dev.openfeature.sdk.EvaluationContext);
+public dev.openfeature.sdk.ProviderEvaluation<java.lang.String> getStringEvaluation(java.lang.String, java.lang.String, dev.openfeature.sdk.EvaluationContext);
+public pe.axiz.spring.featureflags.AxizOpenFeatureProvider(pe.axiz.core.featureflags.FeatureFlags);
+}
+
+public final class pe.axiz.spring.featureflags.FlagContexts {
+public static pe.axiz.core.featureflags.EvaluationContext current();
+}

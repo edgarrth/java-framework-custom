@@ -20,7 +20,7 @@ axiz add audit-sqs
 Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
 
 ```yaml
-axiz.audit.sqs.queue-url: ${AXIZ_AUDIT_QUEUE_URL:}
+axiz.audit.sqs.queue-url: ${AXIZ_AUDIT_QUEUE_URL}
 ```
 
 Perfil `local` (`application-local.yaml`):

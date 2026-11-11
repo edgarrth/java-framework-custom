@@ -9,9 +9,9 @@ import pe.axiz.payments.ux.client.beneficiaries.model.BeneficiaryPage;
 import reactor.core.publisher.Mono;
 
 /**
- * Reads beneficiaries from beneficiaries-crud. Pages are cached briefly (two levels: memory and
- * Redis, TTL in {@code axiz.cache.caches.customer-beneficiaries}) because channels list them on
- * every payment screen; single beneficiaries are always read fresh before paying.
+ * Reads beneficiaries from beneficiaries. Pages are cached briefly (two levels: memory and Redis,
+ * TTL in {@code axiz.cache.caches.customer-beneficiaries}) because channels list them on every
+ * payment screen; single beneficiaries are always read fresh before paying.
  */
 @Component
 public class BeneficiaryDirectory {

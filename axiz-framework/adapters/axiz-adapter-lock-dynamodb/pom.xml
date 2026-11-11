@@ -17,8 +17,6 @@
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
-    <axiz.api.baseline.artifactId>axiz-core-lock-dynamodb</axiz.api.baseline.artifactId>
-
     <axiz.module.name>pe.axiz.adapter.lock.dynamodb</axiz.module.name>
   </properties>
 

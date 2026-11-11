@@ -1,14 +1,11 @@
 <!-- generated -->
 # axiz-audit-spring-boot-autoconfigure
 
-`axiz.audit.mode` is the canonical delivery selector. Legacy `durable.enabled` and `async.enabled`
-selectors warn only when explicitly supplied and are scheduled for removal in 3.0. Durable audit
-requires outbox and fails startup rather than silently switching to an in-memory mode.
-
-The `MigrateAuditModeSelector` recipe migrates the complete selector with durable precedence,
-preserving queue options, explicit modes and conflict behavior. Configurations composed from
-profiles/documents, imports, external placeholders or conflicting selectors are left unchanged and
-marked for manual migration. Review external runtime overrides before applying a migrated selector.
+`axiz.audit.mode=ASYNC|DURABLE|SYNC` is the only delivery selector. Removed boolean selectors
+are invalid configuration. Framework-owned publishers require an explicit mode outside local/test.
+DURABLE requires a compatible outbox, transaction resource and relay destination; a writer-only
+instance explicitly disables its local relay. Empty configured Kafka topics or SQS queue URLs fail
+startup. Route support validates addressing, not remote resource existence or permissions.
 
 @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS) (auto-configuration).
 

@@ -24,7 +24,7 @@ Channel API of the web and mobile apps (BFF, reactive). The customer is always t
   reported as not found.
 - `GET /v1/beneficiaries`: cached pages (`customer-beneficiaries`, 30 s, L1 + Redis), holder names
   and accounts masked for the channel.
-- Downstream business errors are translated to channel errors (`PAYMENTS-PAYMENTSEXPERIENCE-*`).
+- Downstream business errors are translated to channel errors (`PAYMENTS-PAYMENTSUX-*`).
 - HTTP clients generated with `axiz generate http-client` from the contracts in `../../contracts`.
 
 ## Requirements

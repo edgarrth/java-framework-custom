@@ -78,9 +78,10 @@ class AsyncStorageTest {
             .contains("op=get"));
     assertTrue(
         storage
-            .presignPut("in/a", "text/plain", Duration.ofMinutes(1))
+            .presignUpload("in/a", "text/plain", Duration.ofMinutes(1))
             .toCompletableFuture()
             .join()
+            .url()
             .toString()
             .contains("op=put"));
     storage.delete("in/a").toCompletableFuture().join();

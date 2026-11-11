@@ -148,9 +148,9 @@ public final class R2dbcReactiveInboxStore implements ReactiveInboxStore {
                 new InboxException(
                     "Inbox table "
                         + table
-                        + " is missing or outdated (column owner since axiz 0.1): add a migration"
-                        + " with axiz/sql/inbox-postgresql-upgrade-owner.sql, never edit an applied"
-                        + " one",
+                        + " does not match the current v2 schema (owner required): see"
+                        + " axiz/sql/inbox-postgresql.sql and manage schema with reviewed"
+                        + " migrations",
                     error));
   }
 

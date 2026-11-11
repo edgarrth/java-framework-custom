@@ -18,4 +18,9 @@ public record AxizStorageProperties(
     @DefaultValue("s3") String type,
     @Nullable String bucket,
     @Nullable String kmsKeyId,
-    @DefaultValue("15m") Duration maxPresignTtl) {}
+    @DefaultValue("15m") Duration maxPresignTtl) {
+  public AxizStorageProperties {
+    if (bucket != null && (bucket.isBlank() || bucket.contains("${")))
+      throw new IllegalArgumentException("axiz.storage.bucket must not be blank or unresolved");
+  }
+}

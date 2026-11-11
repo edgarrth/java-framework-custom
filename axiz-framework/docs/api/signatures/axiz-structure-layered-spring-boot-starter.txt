@@ -1,0 +1,19 @@
+public abstract class pe.axiz.structure.layered.spring.CrudController<T, I> {
+protected pe.axiz.structure.layered.spring.CrudController(pe.axiz.structure.layered.CrudService<T, I>, java.util.function.Function<T, I>);
+public T get(I);
+public T update(I, T);
+public org.springframework.http.ResponseEntity<T> create(T);
+public org.springframework.http.ResponseEntity<java.lang.Void> delete(I);
+public pe.axiz.core.commons.PageResponse<T> list(pe.axiz.core.commons.PageRequest);
+}
+
+public abstract class pe.axiz.structure.layered.spring.JpaCrudService<T, I> implements pe.axiz.structure.layered.CrudService<T, I> {
+protected abstract void apply(T, T);
+protected pe.axiz.structure.layered.spring.JpaCrudService(org.springframework.data.jpa.repository.JpaRepository<T, I>, java.lang.String);
+public T create(T);
+public T update(I, T);
+public java.lang.String resourceName();
+public java.util.Optional<T> find(I);
+public pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public void delete(I);
+}

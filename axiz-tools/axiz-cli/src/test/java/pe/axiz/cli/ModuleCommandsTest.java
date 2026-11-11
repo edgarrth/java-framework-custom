@@ -115,7 +115,7 @@ class ModuleCommandsTest {
       throws Exception {
     Path project = CliHarness.service(root);
     Path app = aggregate(project);
-    WorkflowMigrationTest.legacy(project).write(project);
+    ProjectManifest.read(project).write(project);
     Files.move(app.resolve("pom.xml"), app.resolve("service.xml"));
     Path reactor = project.resolve("pom.xml");
     Files.writeString(
@@ -143,12 +143,12 @@ class ModuleCommandsTest {
       throws Exception {
     Path project = CliHarness.service(root);
     Path app = aggregate(project);
-    ProjectManifest before = WorkflowMigrationTest.legacy(project);
+    ProjectManifest before = ProjectManifest.read(project);
     before.write(project);
     for (MavenReactor.Module module : MavenReactor.read(project)) {
       if (module.axizParent())
         Files.writeString(
-            module.pom(), PomEditor.setParentVersion(Files.readString(module.pom()), "1.0.0"));
+            module.pom(), PomEditor.setParentVersion(Files.readString(module.pom()), "2.0.1"));
     }
     CliHarness cli = new CliHarness();
     assertEquals(

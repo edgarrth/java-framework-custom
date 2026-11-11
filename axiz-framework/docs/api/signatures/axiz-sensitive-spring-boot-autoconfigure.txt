@@ -1,0 +1,28 @@
+public class pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration {
+public pe.axiz.spring.sensitive.AxizSensitiveAutoConfiguration();
+}
+
+public final class pe.axiz.spring.sensitive.AxizSensitiveProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.Map<java.lang.String, pe.axiz.spring.sensitive.AxizSensitiveProperties$Key> keys();
+public pe.axiz.core.sensitive.SensitivityLevel audit();
+public pe.axiz.core.sensitive.SensitivityLevel fullMaskLevel();
+public pe.axiz.core.sensitive.SensitivityLevel log();
+public pe.axiz.core.sensitive.SensitivityLevel response();
+public pe.axiz.spring.sensitive.AxizSensitiveProperties(pe.axiz.core.sensitive.SensitivityLevel, pe.axiz.core.sensitive.SensitivityLevel, pe.axiz.core.sensitive.SensitivityLevel, pe.axiz.core.sensitive.SensitivityLevel, java.util.Map<java.lang.String, pe.axiz.spring.sensitive.AxizSensitiveProperties$Key>);
+}
+
+public final class pe.axiz.spring.sensitive.AxizSensitiveProperties$Key extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.core.sensitive.MaskType mask();
+public pe.axiz.core.sensitive.SensitivityLevel level();
+public pe.axiz.spring.sensitive.AxizSensitiveProperties$Key(pe.axiz.core.sensitive.SensitivityLevel, pe.axiz.core.sensitive.MaskType);
+}
+
+public final class pe.axiz.spring.sensitive.SensitiveJacksonModule extends tools.jackson.databind.module.SimpleModule {
+public pe.axiz.spring.sensitive.SensitiveJacksonModule(pe.axiz.core.sensitive.MaskingPolicy);
+}

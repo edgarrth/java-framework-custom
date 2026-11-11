@@ -365,16 +365,30 @@ class NativeMessagingTest {
         .withSystemProperties("aws.accessKeyId=local-test", "aws.secretAccessKey=local-test")
         .withPropertyValues(
             "axiz.aws.region=us-east-1",
+            "axiz.messaging.aws.api-call-timeout=7s",
             "axiz.messaging.destinations.queue=http://localhost:4566/000000000000/queue",
             "axiz.messaging.destinations.topic=arn:aws:sns:us-east-1:000000000000:topic")
         .run(
-            ctx ->
-                assertThat(ctx)
-                    .hasNotFailed()
-                    .hasSingleBean(SqsAsyncClient.class)
-                    .hasSingleBean(SnsAsyncClient.class)
-                    .hasBean("axizMessagingSqsAsyncResources")
-                    .hasBean("axizMessagingSnsAsyncResources"));
+            ctx -> {
+              assertThat(ctx)
+                  .hasNotFailed()
+                  .hasSingleBean(SqsAsyncClient.class)
+                  .hasSingleBean(SnsAsyncClient.class)
+                  .hasBean("axizMessagingSqsAsyncResources")
+                  .hasBean("axizMessagingSnsAsyncResources");
+              assertThat(
+                      ctx.getBean(SqsAsyncClient.class)
+                          .serviceClientConfiguration()
+                          .overrideConfiguration()
+                          .apiCallTimeout())
+                  .contains(Duration.ofSeconds(7));
+              assertThat(
+                      ctx.getBean(SnsAsyncClient.class)
+                          .serviceClientConfiguration()
+                          .overrideConfiguration()
+                          .apiCallTimeout())
+                  .contains(Duration.ofSeconds(7));
+            });
   }
 
   @Test

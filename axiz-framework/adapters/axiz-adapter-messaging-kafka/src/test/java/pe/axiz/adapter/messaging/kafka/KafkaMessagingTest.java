@@ -40,6 +40,29 @@ class KafkaMessagingTest {
   }
 
   @Test
+  void routingNeverClaimsEmptyTopicsUnresolvedPlaceholdersOrAnotherTransport() {
+    for (String destination :
+        new String[] {
+          "",
+          " ",
+          ".",
+          "..",
+          "kafka:",
+          "kafka:..",
+          "${AXIZ_AUDIT_DESTINATION}",
+          "http://localhost:4566/000000000000/audit",
+          "arn:aws:sns:us-east-1:000000000000:audit",
+          "x".repeat(250)
+        }) {
+      assertFalse(KafkaEventRecords.isDestination(destination), destination);
+      assertThrows(
+          IllegalArgumentException.class, () -> KafkaEventRecords.create(destination, event()));
+    }
+    assertTrue(KafkaEventRecords.isDestination("kafka:audit"));
+    assertTrue(KafkaEventRecords.isDestination("audit-v2.0_events"));
+  }
+
+  @Test
   void publishesBinaryCloudEventKeyedBySubject() {
     MockProducer<String, byte[]> producer =
         new MockProducer<>(true, null, new StringSerializer(), new ByteArraySerializer());

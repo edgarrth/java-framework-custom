@@ -9,8 +9,8 @@ import pe.axiz.payments.process.adapter.out.paymentorders.model.StatusChange;
 import pe.axiz.payments.process.application.port.out.PaymentOrders;
 
 /**
- * Moves payment orders in payments-business (client credentials, HTTP service group {@code
- * payments-business}). A 409 because the order already is in the target status counts as done, so a
+ * Moves payment orders in payment-orders (client credentials, HTTP service group {@code
+ * payment-orders}). A 409 because the order already is in the target status counts as done, so a
  * resumed saga can repeat a step safely.
  */
 @Component

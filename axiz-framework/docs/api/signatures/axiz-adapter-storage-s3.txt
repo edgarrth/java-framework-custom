@@ -1,0 +1,21 @@
+public final class pe.axiz.adapter.storage.s3.S3AsyncObjectStorage implements pe.axiz.core.storage.AsyncObjectStorage {
+public java.util.concurrent.CompletionStage<java.lang.Void> delete(java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Void> put(java.lang.String, java.util.concurrent.Flow$Publisher<java.nio.ByteBuffer>, pe.axiz.core.storage.ObjectMetadata);
+public java.util.concurrent.CompletionStage<java.net.URL> presignGet(java.lang.String, java.time.Duration);
+public java.util.concurrent.CompletionStage<java.util.List<java.lang.String>> list(java.lang.String, int);
+public java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.storage.AsyncStoredObject>> get(java.lang.String);
+public java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.storage.ObjectMetadata>> head(java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.storage.PresignedUpload> presignUpload(java.lang.String, java.lang.String, java.time.Duration);
+public pe.axiz.adapter.storage.s3.S3AsyncObjectStorage(software.amazon.awssdk.services.s3.S3AsyncClient, software.amazon.awssdk.services.s3.presigner.S3Presigner, java.lang.String, java.lang.String, java.time.Duration);
+}
+
+public final class pe.axiz.adapter.storage.s3.S3ObjectStorage implements pe.axiz.core.storage.ObjectStorage {
+public java.net.URL presignGet(java.lang.String, java.time.Duration);
+public java.util.List<java.lang.String> list(java.lang.String, int);
+public java.util.Optional<pe.axiz.core.storage.ObjectMetadata> head(java.lang.String);
+public java.util.Optional<pe.axiz.core.storage.StoredObject> get(java.lang.String);
+public pe.axiz.adapter.storage.s3.S3ObjectStorage(software.amazon.awssdk.services.s3.S3Client, software.amazon.awssdk.services.s3.presigner.S3Presigner, java.lang.String, java.lang.String, java.time.Duration);
+public pe.axiz.core.storage.PresignedUpload presignUpload(java.lang.String, java.lang.String, java.time.Duration);
+public void delete(java.lang.String);
+public void put(java.lang.String, java.io.InputStream, pe.axiz.core.storage.ObjectMetadata);
+}

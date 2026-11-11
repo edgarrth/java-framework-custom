@@ -45,7 +45,7 @@ class PaymentOrdersAdapterTest {
     public PaymentOrder changePaymentOrderStatus(String orderId, String key, StatusChange body) {
       throw ExternalServiceException.from(
           new ExternalErrorDetail(
-              "payments-business", 409, "PAYMENTS-PAYMENTSBUSINESS-0003", "conflict", "{}"));
+              "payment-orders", 409, "PAYMENTS-PAYMENTORDERS-0003", "conflict", "{}"));
     }
   }
 

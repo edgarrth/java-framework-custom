@@ -31,7 +31,7 @@ class HistoryAccessTest {
   final HistoryAccess.ListPolicy list = new HistoryAccess.ListPolicy();
 
   static Caller customer(String id) {
-    return new Caller(id, "payments-experience", null, null, Set.of());
+    return new Caller(id, "payments-ux", null, null, Set.of());
   }
 
   static Caller service(String... authorities) {

@@ -1,7 +1,7 @@
 environment: dev
 serviceAccount:
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/beneficiaries-crud-dev
+    eks.amazonaws.com/role-arn: arn:aws:iam::111111111111:role/beneficiaries-dev
 resources:
   requests:
     cpu: 250m
@@ -17,7 +17,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: dev/beneficiaries-crud
+  remotePrefix: dev/beneficiaries
 config:
   axiz:
     config:
@@ -26,7 +26,6 @@ config:
       issuers:
       - issuer: https://sso.dev.axiz-demo.example/realms/axiz
         audiences:
-        - beneficiaries-crud
         - beneficiaries
     dynamodb:
       table-prefix: dev-

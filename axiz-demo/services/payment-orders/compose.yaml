@@ -1,6 +1,6 @@
-# Local dependencies of payments-business (docker compose up -d, or axiz local up).
+# Local dependencies of payment-orders (docker compose up -d, or axiz local up).
 # Development only: no value here is a real credential.
-name: payments-business
+name: payment-orders
 
 services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
@@ -11,12 +11,12 @@ services:
   postgres:
     image: postgres:17.6-alpine
     environment:
-      POSTGRES_DB: payments_business
+      POSTGRES_DB: payment_orders
       POSTGRES_USER: app
       POSTGRES_HOST_AUTH_METHOD: trust
     ports: ["5432:5432"]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d payments_business"]
+      test: ["CMD-SHELL", "pg_isready -U app -d payment_orders"]
       interval: 5s
       retries: 10
 

@@ -1,6 +1,6 @@
-# Local dependencies of core-integration (docker compose up -d, or axiz local up).
+# Local dependencies of banking-core (docker compose up -d, or axiz local up).
 # Development only: no value here is a real credential.
-name: core-integration
+name: banking-core
 
 services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)

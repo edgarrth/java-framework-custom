@@ -35,7 +35,7 @@ axiz:
   config:
     environment: ${AXIZ_ENVIRONMENT:local}
     parameter-store:
-      application: beneficiaries-crud
+      application: beneficiaries
   i18n:
     default-locale: es-PE
   sensitive:
@@ -48,7 +48,6 @@ axiz:
     issuers:
     - issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
       audiences:
-      - beneficiaries-crud
       - beneficiaries
   cache:
     default-ttl: 10m
@@ -61,11 +60,11 @@ axiz:
     store: dynamodb
     table: ${axiz.dynamodb.table-prefix}axiz-idempotency
   messaging:
-    source: urn:axiz:beneficiaries-crud
+    source: urn:axiz:beneficiaries
     consumer:
-      name: beneficiaries-crud
+      name: beneficiaries
     kafka:
-      group-id: beneficiaries-crud
+      group-id: beneficiaries
 management:
   opentelemetry:
     tracing:

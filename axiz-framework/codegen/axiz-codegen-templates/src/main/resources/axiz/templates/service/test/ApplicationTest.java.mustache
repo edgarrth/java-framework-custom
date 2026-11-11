@@ -1,8 +1,29 @@
 package {{project.basePackage}};
 
-{{#fw.batch}}
 import static org.assertj.core.api.Assertions.assertThat;
+{{#auditResources.required}}
+import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
+import org.junit.jupiter.api.parallel.Isolated;
+{{#stack.reactive}}
+import io.micrometer.core.instrument.MeterRegistry;
+{{#caps.outbox}}
+import pe.axiz.spring.messaging.AxizMessagingAwsProperties;
+{{/caps.outbox}}
+{{#auditResources.queue}}
+import software.amazon.awssdk.services.sqs.SqsAsyncClient;
+{{/auditResources.queue}}
+{{#auditResources.topic}}
+import software.amazon.awssdk.services.sns.SnsAsyncClient;
+{{/auditResources.topic}}
+{{/stack.reactive}}
+{{/auditResources.required}}
+{{^caps.web}}
+{{^fw.batch}}
+import org.springframework.context.ConfigurableApplicationContext;
 {{/fw.batch}}
+{{/caps.web}}
 {{#caps.web}}
 {{#stack.servlet}}
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,9 +65,9 @@ import pe.axiz.spring.test.BlockHoundExtension;
 {{#infra.kafka}}
 import pe.axiz.spring.test.KafkaTestConfiguration;
 {{/infra.kafka}}
-{{#infra.localstack}}
+{{#infra.sharedLocalstack}}
 import pe.axiz.spring.test.LocalStackTestConfiguration;
-{{/infra.localstack}}
+{{/infra.sharedLocalstack}}
 {{#infra.postgres}}
 import pe.axiz.spring.test.PostgresTestConfiguration;
 {{/infra.postgres}}
@@ -59,6 +80,11 @@ import pe.axiz.spring.test.RedisTestConfiguration;
  * configuration, migrations and health. Needs Docker.
  */
 @SpringBootTest{{#fw.batch}}(properties = "spring.batch.job.enabled=false"){{/fw.batch}}
+{{#auditResources.required}}
+@ContextConfiguration(initializers = AuditTestConfiguration.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@Isolated("The SDK default credential chain uses temporary LocalStack system properties")
+{{/auditResources.required}}
 {{#caps.web}}
 {{#stack.servlet}}
 @AutoConfigureMockMvc
@@ -74,6 +100,46 @@ import pe.axiz.spring.test.RedisTestConfiguration;
 @ExtendWith(BlockHoundExtension.class)
 {{/stack.reactive}}
 class {{project.className}}ApplicationTest {
+
+{{#auditResources.required}}
+{{#stack.reactive}}
+  @Test
+  void autoConfiguresTheNativeAuditTransport(@Autowired ApplicationContext context,
+      @Autowired MeterRegistry metrics) {
+{{#auditResources.outboxSqs}}
+    var sqs = context.getBean("axizMessagingSqsAsyncClient", SqsAsyncClient.class);
+    assertThat(sqs.serviceClientConfiguration().overrideConfiguration().apiCallTimeout())
+        .contains(context.getBean(AxizMessagingAwsProperties.class).apiCallTimeout());
+    assertThat(context.containsBean("axizMessagingSqsAsyncResources")).isTrue();
+    assertThat(metrics.find("axiz.transport.pending").tag("transport", "axizMessagingSqsAsyncResources").gauge()).isNotNull();
+{{/auditResources.outboxSqs}}
+{{#auditResources.outboxSns}}
+    var sns = context.getBean("axizMessagingSnsAsyncClient", SnsAsyncClient.class);
+    assertThat(sns.serviceClientConfiguration().overrideConfiguration().apiCallTimeout())
+        .contains(context.getBean(AxizMessagingAwsProperties.class).apiCallTimeout());
+    assertThat(context.containsBean("axizMessagingSnsAsyncResources")).isTrue();
+    assertThat(metrics.find("axiz.transport.pending").tag("transport", "axizMessagingSnsAsyncResources").gauge()).isNotNull();
+{{/auditResources.outboxSns}}
+{{#auditResources.sqsSink}}
+    assertThat(context.getBeansOfType(SqsAsyncClient.class)).hasSize(1);
+{{^caps.outbox}}
+    assertThat(context.containsBean("axizAuditAsyncAwsResources")).isTrue();
+    assertThat(metrics.find("axiz.transport.pending").tag("transport", "axizAuditAsyncAwsResources").gauge()).isNotNull();
+{{/caps.outbox}}
+{{/auditResources.sqsSink}}
+    assertThat(context.containsBean("auditTestAsyncResources")).isFalse();
+  }
+{{/stack.reactive}}
+{{/auditResources.required}}
+
+{{^caps.web}}
+{{^fw.batch}}
+  @Test
+  void startsTheWorkerContext(@Autowired ConfigurableApplicationContext context) {
+    assertThat(context.isActive()).isTrue();
+  }
+{{/fw.batch}}
+{{/caps.web}}
 
 {{#caps.web}}
 {{#stack.servlet}}

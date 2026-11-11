@@ -89,7 +89,11 @@ class PostgresOutboxOrderingIT {
     Assumptions.assumeTrue(docker, "Docker unavailable");
     POSTGRES.start();
     new SecureRandom().nextBytes(new byte[32]);
-    BlockHound.install();
+    BlockHound.builder()
+        .loadIntegrations()
+        // Netty 4.2 allocator maintenance; scoped to this integration-test JVM only.
+        .allowBlockingCallsInside("io.netty.buffer.AdaptivePoolingAllocator$Magazine", "free")
+        .install();
     source = new PGSimpleDataSource();
     source.setUrl(POSTGRES.getJdbcUrl());
     source.setUser(POSTGRES.getUsername());
@@ -436,8 +440,8 @@ class PostgresOutboxOrderingIT {
           var statement = c.createStatement();
           var rows =
               statement.executeQuery(
-                  "SELECT lease_until > statement_timestamp() AND "
-                      + "lease_until <= statement_timestamp() + interval '61 seconds' FROM axiz_outbox WHERE id='"
+                  "SELECT lease_until > statement_timestamp() AND lease_until <="
+                      + " statement_timestamp() + interval '61 seconds' FROM axiz_outbox WHERE id='"
                       + id
                       + "'")) {
         assertTrue(rows.next());
@@ -463,7 +467,8 @@ class PostgresOutboxOrderingIT {
       try (var c = source.getConnection();
           var statement = c.createStatement()) {
         statement.executeUpdate(
-            "UPDATE axiz_outbox SET lease_until=statement_timestamp()-interval '1 second' WHERE id='"
+            "UPDATE axiz_outbox SET lease_until=statement_timestamp()-interval '1 second' WHERE"
+                + " id='"
                 + id
                 + "'");
       }
@@ -566,49 +571,6 @@ class PostgresOutboxOrderingIT {
             });
     assertEquals(1, relay(b, broker).drain());
     assertEquals(List.of(1L, 2L, 3L), received);
-  }
-
-  @Test
-  void upgradeRetainsFailedDiagnosticsAndReportsPublishedSuccessors() throws Exception {
-    try (var c = source.getConnection();
-        var s = c.createStatement()) {
-      s.execute("DROP TABLE axiz_outbox");
-      s.execute("DROP TABLE axiz_outbox_aggregate");
-      s.execute(
-          "CREATE TABLE axiz_outbox(id VARCHAR(64) PRIMARY KEY,destination TEXT,aggregate_type "
-              + "VARCHAR(100),aggregate_id VARCHAR(200),event_type TEXT,envelope TEXT,status "
-              + "VARCHAR(16),attempts INT,created_at TIMESTAMPTZ,next_attempt_at TIMESTAMPTZ,"
-              + "published_at TIMESTAMPTZ,last_error TEXT)");
-      s.execute(
-          "INSERT INTO axiz_outbox VALUES ('a','t','a','same','e','{}','FAILED',7,NOW(),NOW(),"
-              + "NULL,'preserved'),('b','t','a','same','e','{}','PUBLISHED',0,NOW(),NOW(),NOW(),NULL),"
-              + "('c','t',NULL,'partial','e','{}','PENDING',0,NOW(),NOW(),NULL,NULL)");
-    }
-    script("outbox-postgresql-upgrade-preflight.sql");
-    script("outbox-postgresql-upgrade-sequence.sql");
-    Backend b = backend(false);
-    b.store().verifySchema();
-    try (var c = source.getConnection();
-        var s = c.createStatement();
-        var rows =
-            s.executeQuery(
-                "SELECT status,attempts,last_error,aggregate_seq FROM axiz_outbox WHERE id='a'")) {
-      assertTrue(rows.next());
-      assertEquals("FAILED", rows.getString(1));
-      assertEquals(7, rows.getInt(2));
-      assertEquals("preserved", rows.getString(3));
-      assertEquals(1, rows.getLong(4));
-    }
-    assertEquals(1, b.store().countBlockedAggregates());
-    b.tx()
-        .inTransaction(
-            () -> {
-              new OutboxWriter(b.store(), CLOCK).write("t", event("new", "same"), "a");
-              return null;
-            });
-    assertTrue(
-        b.tx().inTransaction(() -> b.store().claimDue(10, Duration.ofMinutes(1), "relay")).stream()
-            .noneMatch(r -> r.id().equals("new")));
   }
 
   @Test

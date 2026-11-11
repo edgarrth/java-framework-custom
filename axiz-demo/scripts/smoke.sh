@@ -105,7 +105,7 @@ fi
 step "payment through the channel API (payments-ux $CHANNEL_URL)"
 involved=(payments-ux beneficiaries payment-orders)
 # a different amount per run: the same amount to the same beneficiary on the same day is rejected
-# as a probable duplicate (PAYMENTS-PAYMENTSEXPERIENCE-0004)
+# as a probable duplicate (PAYMENTS-PAYMENTSUX-0004)
 amount=$(printf '1%02d.%02d' $((RANDOM % 100)) $((RANDOM % 100)))
 call POST "$CHANNEL_URL/v1/payments" "${auth[@]}" -H "Idempotency-Key: $(key)" \
   -d "{\"beneficiaryId\":\"$beneficiary\",\"debtorAccount\":\"1910012345678\",\"amount\":$amount,\"currency\":\"PEN\",\"description\":\"Rent\"}"

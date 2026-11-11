@@ -178,7 +178,9 @@ class PostgresAuditBoundaryIT {
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
         .withUserConfiguration(Config.class)
         .withPropertyValues(
-            "axiz.audit.mode=durable", "axiz.audit.durable.outside-transaction=fail")
+            "axiz.audit.mode=DURABLE",
+            "axiz.outbox.relay.enabled=false",
+            "axiz.audit.durable.outside-transaction=fail")
         .withBean(DatabaseClient.class, () -> client)
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(pool))
         .withBean(

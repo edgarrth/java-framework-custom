@@ -3,7 +3,7 @@ package pe.axiz.payments.beneficiaries;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/** Beneficiaries Crud: Frequent beneficiaries of each customer. */
+/** Beneficiaries: Frequent beneficiaries of each customer. */
 @SpringBootApplication
 @SuppressWarnings("checkstyle:hideutilityclassconstructor")
 public class BeneficiariesApplication {

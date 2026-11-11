@@ -17,7 +17,7 @@ Commands:
   generate, g  Generates usecase, command, query, handler, event,
                  event-handler, entity, repository, controller, dto, mapper,
                  http-client, migration, error-code or test.
-  contract     Works with the OpenAPI contract of the service.
+  contract     Works with the OpenAPI and AsyncAPI contracts of the service.
   upgrade      Upgrades the axiz version applying the OpenRewrite recipes.
   doctor       Checks tools, versions, contract, configuration and
                  anti-patterns.
@@ -122,7 +122,7 @@ payments.domain.Payment
 
 ```text
 Usage: axiz contract [-hV] [COMMAND]
-Works with the OpenAPI contract of the service.
+Works with the OpenAPI and AsyncAPI contracts of the service.
   -h, --help      Show this help message and exit.
   -V, --version   Print version information and exit.
 Commands:
@@ -136,16 +136,12 @@ Commands:
 ## `axiz upgrade --help`
 
 ```text
-Usage: axiz upgrade [-hV] [--dry-run] [--skip-rewrite]
-                    [--archetype=<archetype>] [-d=<dir>] [--rename=<rename>]
-                    [--to=<to>]
+Usage: axiz upgrade [-hV] [--dry-run] [--skip-rewrite] [-d=<dir>]
+                    [--rename=<rename>] [--to=<to>]
 Upgrades the axiz version applying the OpenRewrite recipes.
-      --archetype=<archetype>
-                          Resolve legacy integration explicitly: core or
-                            gateway.
   -d, --dir=<dir>         Project directory (default: current directory).
-      --dry-run           Show what would change (rewrite:dryRun), change
-                            nothing.
+      --dry-run           Run the migration in an isolated copy and retain its
+                            patch without changing sources.
   -h, --help              Show this help message and exit.
       --rename=<rename>   New deployment name; preserves stateful identities
                             and Java packages.
@@ -157,10 +153,16 @@ Upgrades the axiz version applying the OpenRewrite recipes.
 ## `axiz doctor --help`
 
 ```text
-Usage: axiz doctor [-hV] [-d=<dir>]
+Usage: axiz doctor [-hV] [-d=<dir>] [--outbox-jdbc-url=<outboxJdbcUrl>]
+                   [--outbox-table=<outboxTable>]
 Checks tools, versions, contract, configuration and anti-patterns.
   -d, --dir=<dir>   Project directory (default: current directory).
   -h, --help        Show this help message and exit.
+      --outbox-jdbc-url=<outboxJdbcUrl>
+                    Read-only outbox diagnostic report (PostgreSQL);
+                      credentials from AXIZ_DOCTOR_DB_USER/PASSWORD.
+      --outbox-table=<outboxTable>
+                    Outbox table for the optional diagnostic report.
   -V, --version     Print version information and exit.
 ```
 

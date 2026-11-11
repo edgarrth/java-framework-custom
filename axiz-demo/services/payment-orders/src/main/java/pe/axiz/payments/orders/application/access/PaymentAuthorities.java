@@ -8,8 +8,8 @@ import pe.axiz.extension.cqrs.Caller;
  * Who may do what with payment orders.
  *
  * <ul>
- *   <li>Customers (channel token relayed by payments-experience): only their own orders; they
- *       create orders and read them, never change their status.
+ *   <li>Customers (channel token relayed by payments-ux): only their own orders; they create orders
+ *       and read them, never change their status.
  *   <li>The payment process (client credentials with {@code payments:process}): moves orders
  *       through their statuses and reads them.
  *   <li>Back-office or reporting services ({@code payments:read}): read any order.

@@ -183,8 +183,8 @@ public final class JdbcInboxStore implements InboxStore {
 
   /** Message of a missing or outdated inbox table. */
   static final String SCHEMA_HINT =
-      "Inbox table %s is missing or outdated (column owner since axiz 0.1): add a migration "
-          + "with axiz/sql/inbox-postgresql-upgrade-owner.sql, never edit an applied one";
+      "Inbox table %s does not match the current v2 schema (owner required): "
+          + "see axiz/sql/inbox-postgresql.sql and manage schema with reviewed migrations";
 
   private void close(@Nullable Connection c) {
     if (c != null) {

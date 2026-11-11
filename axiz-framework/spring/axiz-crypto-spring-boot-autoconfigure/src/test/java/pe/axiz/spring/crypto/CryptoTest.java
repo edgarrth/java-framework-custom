@@ -1,5 +1,6 @@
 package pe.axiz.spring.crypto;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,6 +19,23 @@ import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
 
 class CryptoTest {
+
+  @Test
+  void configuredEmptySecretIdentifiersFailAtStartup() {
+    for (String key :
+        new String[] {
+          "axiz.crypto.fields.current-key-id",
+          "axiz.crypto.fields.blind-index-secret",
+          "axiz.crypto.kms.key-id"
+        }) {
+      new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizCryptoAutoConfiguration.class))
+          .withPropertyValues(key + "=", "axiz.crypto.password.algorithm=pbkdf2")
+          .run(
+              ctx ->
+                  assertThat(ctx.getStartupFailure()).hasStackTraceContaining("must not be blank"));
+    }
+  }
 
   @Test
   void fieldKeysComeFromSecretsAndAreRegistered() {

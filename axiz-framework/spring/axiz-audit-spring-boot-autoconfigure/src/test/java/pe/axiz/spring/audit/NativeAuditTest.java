@@ -34,6 +34,7 @@ import pe.axiz.core.audit.AuditPublishException;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
+import pe.axiz.core.audit.QueuedAsyncAuditPublisher;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.id.IdGenerator;
@@ -61,6 +62,57 @@ class NativeAuditTest {
   @AfterEach
   void noOriginalBlockingSites() {
     assertThat(BlockHoundExtension.detectedBlockingCalls()).isEmpty();
+  }
+
+  @Test
+  void aSaturatedQueueNeverWaitsForFallbackOnTheReactiveCaller() throws Exception {
+    List<AuditEvent> captured = new CopyOnWriteArrayList<>();
+    new AuditTrail(
+            "service",
+            captured::add,
+            ObjectMasker.defaults(),
+            IdGenerator.uuidV7(),
+            Clock.systemUTC())
+        .record("operation", "account")
+        .success();
+    var event = captured.getFirst();
+    var delivery = new CompletableFuture<Void>();
+    var entered = new CountDownLatch(1);
+    var fallbackEntered = new CountDownLatch(1);
+    var release = new CountDownLatch(1);
+    try (var publisher =
+        new QueuedAsyncAuditPublisher(
+            e -> {
+              entered.countDown();
+              return delivery;
+            },
+            e -> {
+              fallbackEntered.countDown();
+              try {
+                release.await(5, TimeUnit.SECONDS);
+              } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+              }
+            },
+            1,
+            Duration.ofSeconds(5))) {
+      try {
+        publisher.publish(event);
+        assertTrue(entered.await(2, TimeUnit.SECONDS));
+        publisher.publish(event);
+        StepVerifier.create(
+                Mono.defer(() -> Mono.fromCompletionStage(publisher.publish(event)))
+                    .subscribeOn(Schedulers.parallel()))
+            .verifyComplete();
+        assertTrue(fallbackEntered.await(2, TimeUnit.SECONDS));
+        assertEquals(1, publisher.queue().fallbackCount());
+        assertEquals(
+            1, release.getCount(), "Reactive admission completed while fallback was still blocked");
+      } finally {
+        release.countDown();
+        delivery.complete(null);
+      }
+    }
   }
 
   public static class Actions {
@@ -327,7 +379,7 @@ class NativeAuditTest {
         .withPropertyValues("axiz.audit.enabled=false")
         .run(ctx -> assertThat(ctx).doesNotHaveBean(ReactiveAuditTrail.class));
     runner
-        .withPropertyValues("axiz.audit.durable.enabled=true")
+        .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
         .run(ctx -> assertThat(ctx).hasFailed());
     runner.run(ctx -> assertThat(ctx).hasNotFailed());
   }

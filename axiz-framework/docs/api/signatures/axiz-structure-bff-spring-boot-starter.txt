@@ -1,0 +1,16 @@
+public class pe.axiz.structure.bff.spring.AxizBffAutoConfiguration {
+public pe.axiz.structure.bff.spring.AxizBffAutoConfiguration();
+}
+
+public class pe.axiz.structure.bff.spring.Compositions {
+public pe.axiz.structure.bff.Composer compose();
+public pe.axiz.structure.bff.Composer compose(java.time.Duration);
+public pe.axiz.structure.bff.spring.Compositions(io.micrometer.context.ContextSnapshotFactory, java.time.Duration);
+}
+
+public final class pe.axiz.structure.bff.spring.ReactiveComposer {
+public <T> pe.axiz.structure.bff.spring.ReactiveComposer optional(java.lang.String, reactor.core.publisher.Mono<T>, java.util.function.Supplier<T>);
+public <T> pe.axiz.structure.bff.spring.ReactiveComposer required(java.lang.String, reactor.core.publisher.Mono<T>);
+public reactor.core.publisher.Mono<pe.axiz.structure.bff.Composition> run();
+public static pe.axiz.structure.bff.spring.ReactiveComposer within(java.time.Duration);
+}

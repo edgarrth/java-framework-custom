@@ -12,6 +12,14 @@ class ScopeGenerationTest {
       info: {title: Payment, version: 1.0.0}
       security:
         - oauth: [payments:read, payments:write]
+      components:
+        securitySchemes:
+          oauth:
+            type: oauth2
+            flows:
+              clientCredentials:
+                tokenUrl: https://issuer.test/token
+                scopes: {payments:read: Read, payments:write: Write}
       paths:
         /payments:
           post:
