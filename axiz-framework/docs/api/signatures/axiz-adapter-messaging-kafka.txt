@@ -20,3 +20,11 @@ public final class pe.axiz.adapter.messaging.kafka.MskIam {
 public static java.util.Map<java.lang.String, java.lang.Object> clientProperties();
 public static java.util.Map<java.lang.String, java.lang.Object> reliableProducer();
 }
+
+public final class pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler implements org.apache.kafka.common.security.auth.AuthenticateCallbackHandler {
+public pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler();
+public static final java.lang.String CREDENTIALS_SOURCE_FACTORY_CONFIG = "axiz.msk.credentials.source-factory";
+public void close();
+public void configure(java.util.Map<java.lang.String, ?>, java.lang.String, java.util.List<javax.security.auth.login.AppConfigurationEntry>);
+public void handle(javax.security.auth.callback.Callback[]) throws java.io.IOException, javax.security.auth.callback.UnsupportedCallbackException;
+}

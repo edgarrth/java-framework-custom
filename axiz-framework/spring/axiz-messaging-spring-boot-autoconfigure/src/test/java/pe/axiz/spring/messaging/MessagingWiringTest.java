@@ -40,6 +40,8 @@ import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PayloadCodec;
 import pe.axiz.core.messaging.PayloadException;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
@@ -50,9 +52,23 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 /** Defaults of the messaging wiring and how Kafka records and SQS queues reach the dispatcher. */
 class MessagingWiringTest {
+  private org.springframework.context.annotation.AnnotationConfigApplicationContext identityContext;
+
+  @org.junit.jupiter.api.BeforeEach
+  void createIdentityContext() {
+    identityContext =
+        new org.springframework.context.annotation.AnnotationConfigApplicationContext(
+            pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration.class);
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void closeIdentityContext() {
+    identityContext.close();
+  }
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class));
 
   public record Note(String text) {}
@@ -150,14 +166,18 @@ class MessagingWiringTest {
             .withProperty("spring.kafka.bootstrap-servers", "broker:9092");
     Map<String, Object> iam =
         AxizMessagingKafkaAutoConfiguration.common(
-            properties(kafka(null, true), Duration.ofSeconds(10)), env);
+            properties(kafka(null, true), Duration.ofSeconds(10)),
+            env,
+            identityContext.getBean(AwsIdentity.class));
     assertEquals("broker:9092", iam.get("bootstrap.servers"), "Spring's setting is the fallback");
     assertEquals("payments", iam.get("client.id"));
     assertEquals("AWS_MSK_IAM", iam.get("sasl.mechanism"));
 
     Map<String, Object> plain =
         AxizMessagingKafkaAutoConfiguration.common(
-            properties(kafka("local:9092", false), Duration.ofSeconds(10)), env);
+            properties(kafka("local:9092", false), Duration.ofSeconds(10)),
+            env,
+            identityContext.getBean(AwsIdentity.class));
     assertEquals("local:9092", plain.get("bootstrap.servers"));
     assertFalse(plain.containsKey("sasl.mechanism"));
   }
@@ -167,7 +187,8 @@ class MessagingWiringTest {
     AxizMessagingProperties p = properties(kafka("localhost:9092", false), Duration.ofSeconds(10));
     AxizMessagingKafkaAutoConfiguration config = new AxizMessagingKafkaAutoConfiguration();
     Map<String, Object> producerProperties =
-        config.axizKafkaProducerProperties(p, new MockEnvironment());
+        config.axizKafkaProducerProperties(
+            p, new MockEnvironment(), identityContext.getBean(AwsIdentity.class));
     KafkaProducer<String, byte[]> producer = config.axizKafkaProducer(producerProperties);
     try {
       EventPublisherAdapter adapter =
@@ -187,7 +208,8 @@ class MessagingWiringTest {
             .axizKafkaConsumers(
                 p,
                 new MockEnvironment().withProperty("spring.application.name", "payments"),
-                dispatcherAnswering(DeliveryDecision.ACK, new AtomicInteger()));
+                dispatcherAnswering(DeliveryDecision.ACK, new AtomicInteger()),
+                identityContext.getBean(AwsIdentity.class));
     assertFalse(consumers.isRunning());
     assertEquals(Integer.MAX_VALUE - 100, consumers.getPhase());
     consumers.stop();
@@ -290,6 +312,7 @@ class MessagingWiringTest {
   @Test
   void kafkaIsOnlyWiredWhenAServerIsConfigured() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizMessagingAutoConfiguration.class, AxizMessagingKafkaAutoConfiguration.class))
@@ -340,6 +363,7 @@ class MessagingWiringTest {
   void sqsAndSnsPublishersAndTheQueueConsumerUseTheProvidedClients() {
     EmptySqs sqs = new EmptySqs();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizMessagingAutoConfiguration.class, AxizMessagingAwsAutoConfiguration.class))
@@ -359,6 +383,7 @@ class MessagingWiringTest {
               assertThat(ctx.getBean(EventPublisher.class)).isNotNull();
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizMessagingAutoConfiguration.class, AxizMessagingAwsAutoConfiguration.class))

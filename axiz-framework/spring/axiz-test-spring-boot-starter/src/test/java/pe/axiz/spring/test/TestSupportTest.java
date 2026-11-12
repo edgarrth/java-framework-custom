@@ -112,33 +112,24 @@ class TestSupportTest {
     when(localstack.getSecretKey()).thenReturn("test-secret");
     String access = System.getProperty("aws.accessKeyId");
     String secret = System.getProperty("aws.secretAccessKey");
-    try {
-      Map<String, Supplier<Object>> properties = new HashMap<>();
-      new LocalStackTestConfiguration()
-          .axizLocalStackProperties(localstack)
-          .accept(properties::put);
-      assertEquals("http://localhost:32124", properties.get("axiz.aws.endpoint").get());
-      assertEquals(
-          properties.get("axiz.aws.endpoint").get(),
-          properties.get("spring.cloud.aws.endpoint").get());
-      assertEquals("us-east-1", properties.get("axiz.aws.region").get());
-      assertEquals("us-east-1", properties.get("spring.cloud.aws.region.static").get());
-      assertEquals("test-access", properties.get("spring.cloud.aws.credentials.access-key").get());
-      assertEquals("test-secret", properties.get("spring.cloud.aws.credentials.secret-key").get());
-      assertEquals("test-access", System.getProperty("aws.accessKeyId"));
-      assertEquals("test-secret", System.getProperty("aws.secretAccessKey"));
-      assertTrue(properties.values().stream().allMatch(value -> value.get() != null));
-    } finally {
-      restore("aws.accessKeyId", access);
-      restore("aws.secretAccessKey", secret);
-    }
-  }
-
-  private static void restore(String name, String value) {
-    if (value == null) {
-      System.clearProperty(name);
-    } else {
-      System.setProperty(name, value);
-    }
+    Map<String, Supplier<Object>> properties = new HashMap<>();
+    new LocalStackTestConfiguration().axizLocalStackProperties(localstack).accept(properties::put);
+    assertEquals("http://localhost:32124", properties.get("axiz.aws.endpoint").get());
+    assertEquals(
+        properties.get("axiz.aws.endpoint").get(),
+        properties.get("spring.cloud.aws.endpoint").get());
+    assertEquals("us-east-1", properties.get("axiz.aws.region").get());
+    assertEquals("us-east-1", properties.get("spring.cloud.aws.region.static").get());
+    assertEquals("test-access", properties.get("spring.cloud.aws.credentials.access-key").get());
+    assertEquals("test-secret", properties.get("spring.cloud.aws.credentials.secret-key").get());
+    var credentials =
+        new LocalStackTestConfiguration()
+            .axizLocalStackCredentialsProvider(localstack)
+            .resolveCredentials();
+    assertEquals("test-access", credentials.accessKeyId());
+    assertEquals("test-secret", credentials.secretAccessKey());
+    assertEquals(access, System.getProperty("aws.accessKeyId"));
+    assertEquals(secret, System.getProperty("aws.secretAccessKey"));
+    assertTrue(properties.values().stream().allMatch(value -> value.get() != null));
   }
 }

@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.storage.s3.S3ObjectStorage;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -29,6 +30,7 @@ class StorageTest {
   @Test
   void memoryStorageForTests() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizStorageAutoConfiguration.class))
         .withPropertyValues("axiz.storage.type=memory", "axiz.config.environment=local")
         .run(
@@ -45,6 +47,7 @@ class StorageTest {
 
   private final ApplicationContextRunner s3 =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(
               AutoConfigurations.of(
                   AxizStorageS3AutoConfiguration.class, AxizStorageAutoConfiguration.class))
@@ -92,6 +95,7 @@ class StorageTest {
   @Test
   void thePresignerIsBuiltForAServiceSpecificEndpoint() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizStorageS3AutoConfiguration.class))
         .withBean(S3Client.class, () -> S3Client.builder().region(Region.US_EAST_1).build())
         .withPropertyValues(
@@ -104,6 +108,7 @@ class StorageTest {
   @Test
   void memoryStorageIsRefusedWhereSeveralReplicasRun() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizStorageAutoConfiguration.class))
         .withPropertyValues("axiz.storage.type=memory", "axiz.config.environment=prod")
         .run(ctx -> assertThat(ctx).hasFailed());

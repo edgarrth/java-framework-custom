@@ -36,6 +36,9 @@ class AuditResourcesGenerationTest {
         assertFalse(fixture.contains("SqsAsyncClient"));
         assertFalse(fixture.contains("SnsAsyncClient"));
         assertTrue(fixture.contains("registerDisposableBean"));
+        assertTrue(fixture.contains("AwsCredentialsProvider.class"));
+        assertFalse(fixture.contains("System.setProperty"));
+        assertFalse(fixture.contains("System.getProperty"));
         assertTrue(fixture.contains("orders-audit"));
         assertTrue(
             fixture.contains(
@@ -46,6 +49,13 @@ class AuditResourcesGenerationTest {
             project
                 .text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java")
                 .contains("AuditTestConfiguration.class"));
+        String consumerTest =
+            project.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java");
+        assertFalse(consumerTest.contains("@Isolated"));
+        assertFalse(consumerTest.contains("autoConfiguresTheNativeAuditTransport"));
+        assertFalse(consumerTest.contains("axiz.transport.pending"));
+        assertFalse(consumerTest.contains("serviceClientConfiguration"));
+        assertFalse(consumerTest.contains("auditTestAsyncResources"));
         assertTrue(project.text("local/localstack/init.sh").contains("orders-audit"));
       }
     }

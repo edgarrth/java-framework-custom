@@ -26,6 +26,7 @@ import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.kms.KmsClient;
 
 /** Key material comes only from the secret store; hashing and envelope encryption are wired. */
@@ -33,6 +34,7 @@ class CryptoConfigurationTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizCryptoAutoConfiguration.class));
 
   private static String newKey() {
@@ -164,6 +166,7 @@ class CryptoConfigurationTest {
         };
     ApplicationContextRunner kms =
         new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withConfiguration(AutoConfigurations.of(AxizCryptoKmsAutoConfiguration.class))
             .withPropertyValues("axiz.aws.region=us-east-1");
     kms.run(ctx -> assertThat(ctx).doesNotHaveBean(EnvelopeEncryptor.class));

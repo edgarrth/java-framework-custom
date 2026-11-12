@@ -28,7 +28,7 @@ axiz:
       subscriptions:
       - pe.axiz.payments.payment-order.created.v1
     kafka:
-      iam: ${AXIZ_KAFKA_IAM:false}
+      iam: ${AXIZ_KAFKA_IAM:true}
       topics:
       - payments
       group-id: payment-process

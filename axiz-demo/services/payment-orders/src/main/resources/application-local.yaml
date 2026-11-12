@@ -16,3 +16,6 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/payment_orders
     username: app
+
+# The local Kafka container has no IAM listener.
+axiz.messaging.kafka.iam: false

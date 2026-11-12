@@ -18,6 +18,7 @@ import pe.axiz.core.messaging.DeliveryDecision;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 
 class InboxAtomicityTest {
@@ -42,6 +43,7 @@ class InboxAtomicityTest {
           }
         };
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizInboxAutoConfiguration.class, AxizMessagingAutoConfiguration.class))

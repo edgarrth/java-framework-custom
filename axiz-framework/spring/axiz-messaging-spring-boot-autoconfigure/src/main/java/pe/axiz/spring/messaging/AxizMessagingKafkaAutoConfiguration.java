@@ -1,7 +1,6 @@
 package pe.axiz.spring.messaging;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.HashMap;
@@ -44,12 +43,16 @@ import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
 import pe.axiz.adapter.messaging.kafka.KafkaEventPublisher;
 import pe.axiz.adapter.messaging.kafka.KafkaEventRecords;
 import pe.axiz.adapter.messaging.kafka.MskIam;
+import pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.PayloadException;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 
 /**
  * Amazon MSK: IAM-authenticated idempotent producer for {@code kafka:} destinations, and listener
@@ -68,23 +71,29 @@ import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 @EnableConfigurationProperties(AxizMessagingProperties.class)
 public class AxizMessagingKafkaAutoConfiguration {
 
-  static Map<String, Object> common(AxizMessagingProperties p, Environment env) {
+  static Map<String, Object> common(
+      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
     Map<String, Object> props = new HashMap<>();
     String servers =
         p.kafka().bootstrapServers() != null
             ? p.kafka().bootstrapServers()
             : env.getProperty("spring.kafka.bootstrap-servers");
-    props.put("bootstrap.servers", Objects.requireNonNull(servers));
+    MskAuthentication.validate(Objects.requireNonNull(servers), p.kafka().iam());
+    props.put("bootstrap.servers", servers);
     props.put("client.id", env.getProperty("spring.application.name", "application"));
     if (p.kafka().iam()) {
       props.putAll(MskIam.clientProperties());
+      props.put(
+          AxizIamClientCallbackHandler.CREDENTIALS_SOURCE_FACTORY_CONFIG,
+          identity.factory(AwsService.MSK, AwsCapability.MESSAGING));
     }
     return props;
   }
 
   @Bean
-  Map<String, Object> axizKafkaProducerProperties(AxizMessagingProperties p, Environment env) {
-    Map<String, Object> props = common(p, env);
+  Map<String, Object> axizKafkaProducerProperties(
+      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
+    Map<String, Object> props = common(p, env, identity);
     props.putAll(MskIam.reliableProducer());
     props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -125,7 +134,7 @@ public class AxizMessagingKafkaAutoConfiguration {
         env.getProperty("axiz.messaging.kafka.send-workers", Integer.class, 2),
         env.getProperty("axiz.messaging.kafka.send-queue-capacity", Integer.class, 256),
         p.kafka().sendTimeout(),
-        registries.getIfAvailable(() -> Metrics.globalRegistry));
+        registries.getIfAvailable());
   }
 
   @Bean
@@ -161,8 +170,9 @@ public class AxizMessagingKafkaAutoConfiguration {
 
   @Bean(destroyMethod = "destroy")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-  KafkaTemplate<String, byte[]> axizAsyncKafkaTemplate(AxizMessagingProperties p, Environment env) {
-    Map<String, Object> props = common(p, env);
+  KafkaTemplate<String, byte[]> axizAsyncKafkaTemplate(
+      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
+    Map<String, Object> props = common(p, env, identity);
     props.putAll(MskIam.reliableProducer());
     props.put(ProducerConfig.CLIENT_ID_CONFIG, props.get("client.id") + "-reactive");
     props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
@@ -188,8 +198,11 @@ public class AxizMessagingKafkaAutoConfiguration {
 
     @Bean
     KafkaConsumers axizKafkaConsumers(
-        AxizMessagingProperties p, Environment env, ObservedDispatcher dispatcher) {
-      Map<String, Object> consumer = common(p, env);
+        AxizMessagingProperties p,
+        Environment env,
+        ObservedDispatcher dispatcher,
+        AwsIdentity identity) {
+      Map<String, Object> consumer = common(p, env, identity);
       consumer.put(
           ConsumerConfig.GROUP_ID_CONFIG,
           p.kafka().groupId() != null
@@ -201,7 +214,7 @@ public class AxizMessagingKafkaAutoConfiguration {
       DefaultKafkaConsumerFactory<String, byte[]> consumers =
           new DefaultKafkaConsumerFactory<>(
               consumer, new StringDeserializer(), new ByteArrayDeserializer());
-      Map<String, Object> producer = common(p, env);
+      Map<String, Object> producer = common(p, env, identity);
       producer.putAll(MskIam.reliableProducer());
       KafkaTemplate<String, byte[]> dlqTemplate =
           new KafkaTemplate<>(

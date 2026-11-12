@@ -25,7 +25,8 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail.Context;
 import pe.axiz.core.commons.RequestContext;
@@ -104,15 +105,17 @@ class LocalStackAuditIT {
     lifecycle = new NettyLifecycleProbe();
     resources =
         new AsyncAwsClients(
-            () -> {
-              REFRESHES.incrementAndGet();
-              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
-              return credentials.resolveCredentials();
-            },
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                () -> {
+                  REFRESHES.incrementAndGet();
+                  LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+                  return credentials.resolveCredentials();
+                }),
             Clock.systemUTC(),
             Duration.ofMillis(25));
     client =
-        resources.configured(
+        AwsObservability.configured(
+            resources,
             SqsAsyncClient.builder(),
             OBSERVATIONS,
             key ->
@@ -149,7 +152,7 @@ class LocalStackAuditIT {
                 AxizAuditSqsAutoConfiguration.class,
                 AxizAuditAutoConfiguration.class,
                 AxizNativeAuditAutoConfiguration.class))
-        .withBean(SqsAsyncClient.class, () -> client)
+        .withBean("axizAuditSqsAsyncClient", SqsAsyncClient.class, () -> client)
         .withBean(ObservationRegistry.class, () -> OBSERVATIONS)
         .withPropertyValues(
             "axiz.audit.mode=ASYNC",

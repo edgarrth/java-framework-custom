@@ -61,6 +61,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 |---|---|
 | [`axiz-adapter-audit-kafka`](adapters/axiz-adapter-audit-kafka.md) | Audit publisher for Amazon MSK (Kafka). |
 | [`axiz-adapter-audit-sqs`](adapters/axiz-adapter-audit-sqs.md) | Audit publisher for Amazon SQS. |
+| [`axiz-adapter-aws`](adapters/axiz-adapter-aws.md) | AWS identity and transport infrastructure without Micrometer or Spring dependencies. |
 | [`axiz-adapter-cache-redis`](adapters/axiz-adapter-cache-redis.md) | Redis (ElastiCache/Valkey) cache with SCAN-based eviction and failure tolerance. |
 | [`axiz-adapter-crypto-jose`](adapters/axiz-adapter-crypto-jose.md) | JWS and JWE utilities. |
 | [`axiz-adapter-crypto-kms`](adapters/axiz-adapter-crypto-kms.md) | AWS KMS key provider for envelope encryption with data key cache. |
@@ -75,7 +76,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-messaging-kafka`](adapters/axiz-adapter-messaging-kafka.md) | Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication. |
 | [`axiz-adapter-messaging-sns`](adapters/axiz-adapter-messaging-sns.md) | Amazon SNS publisher adapter (standard and FIFO). |
 | [`axiz-adapter-messaging-sqs`](adapters/axiz-adapter-messaging-sqs.md) | Amazon SQS publisher and consumer adapter (standard and FIFO). |
-| [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | AWS callback admission remains bounded and rejects saturation without caller-runs. Shared settings |
+| [`axiz-adapter-observability-aws`](adapters/axiz-adapter-observability-aws.md) | Micrometer instrumentation over `axiz-adapter-aws`; no credential or transport implementation is duplicated here. |
 | [`axiz-adapter-outbox-jdbc`](adapters/axiz-adapter-outbox-jdbc.md) | Outbox persistence and schema resources over JDBC. |
 | [`axiz-adapter-outbox-r2dbc`](adapters/axiz-adapter-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
 | [`axiz-adapter-saga-jdbc`](adapters/axiz-adapter-saga-jdbc.md) | Saga persistence and schema resources over JDBC. |

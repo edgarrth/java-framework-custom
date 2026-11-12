@@ -13,6 +13,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 /** The startup migration authenticates with a fresh IAM token, never with a stored password. */
 class FlywayIamCustomizerTest {
@@ -66,6 +67,7 @@ class FlywayIamCustomizerTest {
   void theCustomizerExistsOnlyWithIamAndATokenProvider() {
     ApplicationContextRunner runner =
         new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
             .withConfiguration(AutoConfigurations.of(AxizR2dbcFlywayIamAutoConfiguration.class));
     runner

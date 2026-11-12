@@ -53,6 +53,7 @@ import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriter;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -63,6 +64,7 @@ class AuditBehaviourTest {
 
   private ApplicationContextRunner sync() {
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=payments", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add));
@@ -73,6 +75,7 @@ class AuditBehaviourTest {
     var interrupted = new CountDownLatch(1);
     var release = new CountDownLatch(1);
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=ASYNC", "axiz.audit.async.delivery-timeout=200ms")
         .withBean(
@@ -211,6 +214,7 @@ class AuditBehaviourTest {
     assertEquals(1, second.size());
 
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.config.environment=test")
         .run(
@@ -245,6 +249,7 @@ class AuditBehaviourTest {
   @Test
   void durableAuditNeedsTheOutboxAndKeepsTheQueueAsFallback() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
         .run(
@@ -255,6 +260,7 @@ class AuditBehaviourTest {
                     .hasStackTraceContaining("needs the outbox capability"));
 
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues(
             "axiz.audit.mode=DURABLE",
@@ -323,6 +329,7 @@ class AuditBehaviourTest {
   @Test
   void theServletAuditRecordsChangesByRoutePatternAndStatus() throws Exception {
     new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=SYNC", "axiz.audit.http.enabled=true")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
@@ -369,6 +376,7 @@ class AuditBehaviourTest {
   @Test
   void theReactiveAuditRecordsTheCallerAddressAndStatus() {
     new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
@@ -428,6 +436,7 @@ class AuditBehaviourTest {
   void kafkaAndSqsSinksAreAddedOnlyWhenConfigured() {
     ProducerFactory<String, String> producers = MockProducer::new;
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditKafkaAutoConfiguration.class,
@@ -446,6 +455,7 @@ class AuditBehaviourTest {
                   .containsExactlyInAnyOrder("kafka", "sqs");
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.enabled=false")
         .run(ctx -> assertThat(ctx).doesNotHaveBean(AuditTrail.class));

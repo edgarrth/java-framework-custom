@@ -121,6 +121,8 @@ nav:
       - Contrato primero: herramientas/contratos.md
   - Operación:
       - operacion/index.md
+      - Evolucionar servicios v2: guias/actualizar-servicio.md
+      - Límites JDBC: arquitectura/jdbc.md
       - CI/CD: operacion/ci-cd.md
       - Despliegue GitOps: operacion/despliegue.md
       - Observabilidad: operacion/observabilidad.md
@@ -128,11 +130,6 @@ nav:
       - calidad/index.md
       - Reglas de arquitectura: calidad/arquitectura.md
       - Anti-patrones: calidad/anti-patrones.md
-  - Migración:
-      - migracion/index.md
-      - Migrar a Axiz 2.0: migracion/axiz-2.md
-      - Extracción de JDBC: migracion/jdbc-2.md
-      - Estado de implementación: migracion/implementacion-2.md
   - architecture contract: adr/index.md
   - Demo: demo.md
   - Referencia: referencia/index.md

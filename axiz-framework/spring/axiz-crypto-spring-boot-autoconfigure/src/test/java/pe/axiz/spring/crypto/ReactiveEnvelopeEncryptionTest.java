@@ -17,13 +17,14 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
@@ -33,6 +34,7 @@ import software.amazon.awssdk.services.kms.model.GenerateDataKeyResponse;
 class ReactiveEnvelopeEncryptionTest {
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizCryptoKmsAutoConfiguration.class))
         .withPropertyValues("axiz.crypto.kms.key-id=alias/payments", "axiz.aws.region=us-east-1");
   }

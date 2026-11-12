@@ -304,11 +304,13 @@ capabilities:
     stacks: [servlet, reactive]
     starter: axiz-messaging-spring-boot-starter
     description: CloudEvents over Amazon MSK with IAM auth, retries, DLQ and trace propagation
-    dependencies: [pe.axiz:axiz-adapter-messaging-kafka, org.springframework.boot:spring-boot-starter-kafka, software.amazon.msk:aws-msk-iam-auth]
+    dependencies: [pe.axiz:axiz-adapter-messaging-kafka, org.springframework.boot:spring-boot-starter-kafka, software.amazon.msk:aws-msk-iam-auth, pe.axiz:axiz-adapter-observability-aws]
     properties:
       spring.kafka.bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-      axiz.messaging.kafka.iam: ${AXIZ_KAFKA_IAM:false}
-    configMapKeys: [spring.kafka.bootstrap-servers, axiz.messaging.destinations]
+      axiz.messaging.kafka.iam: ${AXIZ_KAFKA_IAM:true}
+    configMapKeys: [spring.kafka.bootstrap-servers, axiz.messaging.destinations, axiz.messaging.kafka.iam]
+    local:
+      axiz.messaging.kafka.iam: false
     example: |
       axizEvents.publish("orders", "order-created.v1", order.id(), new OrderCreated(order.id()));
 

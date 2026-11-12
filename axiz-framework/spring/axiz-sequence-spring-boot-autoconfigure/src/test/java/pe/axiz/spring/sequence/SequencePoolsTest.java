@@ -21,6 +21,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 
 class SequencePoolsTest {
@@ -33,6 +34,7 @@ class SequencePoolsTest {
     try (var main = new HikariDataSource(config)) {
       var transactions = new DataSourceTransactionManager(main);
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizSequenceAutoConfiguration.class))
           .withBean(DataSource.class, () -> main)
           .withBean(PlatformTransactionManager.class, () -> transactions)

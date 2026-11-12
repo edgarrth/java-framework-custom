@@ -44,6 +44,7 @@ import pe.axiz.kit.r2dbc.RowMapper;
 import pe.axiz.kit.r2dbc.SqlParams;
 import pe.axiz.kit.r2dbc.SqlRow;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -355,6 +356,7 @@ class NativeAuditTest {
   void reactiveConfigurationRejectsImperativeSinksAndHonorsDisableAndNativeOverrides() {
     var runner =
         new ReactiveWebApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(
                 AutoConfigurations.of(

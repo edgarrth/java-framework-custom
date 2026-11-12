@@ -15,10 +15,11 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
 import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.blockhound.BlockHound;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -33,6 +34,7 @@ class ReactiveSequenceTest {
 
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizSequenceAutoConfiguration.class, AxizSequenceDynamoDbAutoConfiguration.class));

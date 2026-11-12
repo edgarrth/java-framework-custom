@@ -28,6 +28,7 @@ import org.springframework.kafka.support.SendResult;
 import pe.axiz.adapter.messaging.kafka.KafkaEventRecords;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -89,6 +90,7 @@ class ReactiveKafkaTest {
   @Test
   void disabledMessagingDoesNotCreateKafkaResources() {
     new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingKafkaAutoConfiguration.class))
         .withPropertyValues(
             "axiz.messaging.enabled=false", "axiz.messaging.kafka.bootstrap-servers=127.0.0.1:1")

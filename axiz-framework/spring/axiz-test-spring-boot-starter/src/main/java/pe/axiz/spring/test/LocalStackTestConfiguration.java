@@ -4,11 +4,14 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.localstack.LocalStackContainer;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /**
  * LocalStack for the AWS adapters. The framework clients read {@code axiz.aws.endpoint} and {@code
- * axiz.aws.region}; LocalStack's fixed test credentials are given to the SDK default chain through
- * system properties (they are not secrets).
+ * axiz.aws.region}; LocalStack credentials are scoped to the Spring test context through a provider
+ * bean.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class LocalStackTestConfiguration {
@@ -19,9 +22,13 @@ public class LocalStackTestConfiguration {
   }
 
   @Bean
+  AwsCredentialsProvider axizLocalStackCredentialsProvider(LocalStackContainer localstack) {
+    return StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey()));
+  }
+
+  @Bean
   DynamicPropertyRegistrar axizLocalStackProperties(LocalStackContainer localstack) {
-    System.setProperty("aws.accessKeyId", localstack.getAccessKey());
-    System.setProperty("aws.secretAccessKey", localstack.getSecretKey());
     return registry -> {
       registry.add("axiz.aws.endpoint", () -> localstack.getEndpoint().toString());
       registry.add("axiz.aws.region", localstack::getRegion);

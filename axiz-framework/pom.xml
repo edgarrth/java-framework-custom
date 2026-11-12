@@ -128,7 +128,7 @@
     <!-- Last release published to Maven Central; newer releases require a Code Genome proxy. -->
     <rewrite-maven-plugin.version>6.46.1</rewrite-maven-plugin.version>
     <japicmp-maven-plugin.version>0.26.5</japicmp-maven-plugin.version>
-    <!-- Classpath-only dependency for inspecting the removed 1.x EDA Publisher signatures. -->
+    <!-- Classpath dependency for inspecting published Reactive Streams signatures. -->
 
     <!-- Must match axiz-dependencies -->
     <spring-boot.version>4.1.2</spring-boot.version>

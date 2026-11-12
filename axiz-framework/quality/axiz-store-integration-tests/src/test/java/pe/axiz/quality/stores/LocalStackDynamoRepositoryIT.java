@@ -15,7 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.dynamodb.CursorCodec;
@@ -144,9 +145,14 @@ class LocalStackDynamoRepositoryIT {
       setup.waiter().waitUntilTableExists(b -> b.tableName("axiz-native-repository"));
     }
     lifecycle = new NettyLifecycleProbe();
-    resources = new AsyncAwsClients(credentials, Clock.systemUTC(), Duration.ofMillis(25));
+    resources =
+        new AsyncAwsClients(
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(credentials),
+            Clock.systemUTC(),
+            Duration.ofMillis(25));
     client =
-        resources.configured(
+        AwsObservability.configured(
+            resources,
             DynamoDbAsyncClient.builder(),
             ObservationRegistry.NOOP,
             key ->

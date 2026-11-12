@@ -1,7 +1,6 @@
 package pe.axiz.spring.dynamodb;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,12 +12,15 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -37,12 +39,13 @@ public class AxizDynamoDbAutoConfiguration {
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
-  DynamoDbClient axizDynamoDbClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
-    return AwsClients.build(
-        DynamoDbClient.builder(),
+  DynamoDbClient axizDynamoDbClient(
+      Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+    return AwsObservability.configured(
+        identity.configure(DynamoDbClient.builder(), AwsService.DYNAMODB, AwsCapability.DYNAMODB),
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
-        env.getProperty("axiz.aws.region"),
-        env.getProperty("axiz.aws.dynamodb.endpoint", env.getProperty("axiz.aws.endpoint", "")));
+        env::getProperty,
+        "dynamodb");
   }
 
   @Bean
@@ -69,12 +72,17 @@ public class AxizDynamoDbAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
     AsyncAwsClients axizRepositoryAsyncAwsResources(
-        AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-      return AwsCompletionMetrics.create(
+        AxizAwsCompletionProperties completion,
+        ObjectProvider<MeterRegistry> registries,
+        AwsIdentity identity) {
+      return AwsAsyncResources.create(
           "axizRepositoryAsyncAwsResources",
           completion.workers(),
           completion.queueCapacity(),
-          registries.getIfAvailable(() -> Metrics.globalRegistry));
+          registries.getIfAvailable(),
+          identity,
+          AwsService.DYNAMODB,
+          AwsCapability.DYNAMODB);
     }
 
     @Bean(destroyMethod = "close")
@@ -83,7 +91,8 @@ public class AxizDynamoDbAutoConfiguration {
         @Qualifier("axizRepositoryAsyncAwsResources") AsyncAwsClients clients,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
-      return clients.configured(
+      return AwsObservability.configured(
+          clients,
           DynamoDbAsyncClient.builder(),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,

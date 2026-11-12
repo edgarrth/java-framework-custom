@@ -18,6 +18,7 @@ import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.core.messaging.Deduplicator;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 class InboxR2dbcTest {
@@ -38,6 +39,7 @@ class InboxR2dbcTest {
                 b -> List.of(Map.of("status", "PROCESSED", "lease_until", Instant.EPOCH)))
             .onUpdate("SET status = 'PROCESSED'", b -> 1L);
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizInboxR2dbcAutoConfiguration.class, AxizInboxAutoConfiguration.class))
@@ -62,6 +64,7 @@ class InboxR2dbcTest {
     // the schema query fails as it does on a table without the owner column
     FakeR2dbc db = new FakeR2dbc();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizInboxR2dbcAutoConfiguration.class, AxizInboxAutoConfiguration.class))

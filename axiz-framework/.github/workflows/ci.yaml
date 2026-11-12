@@ -182,6 +182,7 @@ jobs:
         run: |
           python3 -m unittest discover -s .github/scripts -p 'test_build_inputs.py'
           python3 -m unittest discover -s .github/scripts -p 'test_api_compatibility.py'
+          python3 -m unittest discover -s .github/scripts -p 'test_collect_test_evidence.py'
           python3 .github/scripts/check-build-inputs.py .
       - name: Publication consumes only an independent successful build
         run: |
@@ -241,8 +242,27 @@ jobs:
           for dir in target/samples/*/ target/audit-samples/*/; do
             echo "::group::${dir}"
             (cd "$dir" && ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
+            empty=()
+            if [[ "$dir" == target/samples/axiz-sample-library/ ]]; then empty=(--allow-empty); fi
+            python3 .github/scripts/collect-test-evidence.py "$dir" "${empty[@]}" \
+              --output "$dir/target/test-evidence.json" || failed+=("$dir evidence")
             echo "::endgroup::"
           done
           if [ "${#failed[@]}" -gt 0 ]; then
             echo "::error::samples failed: ${failed[*]}"; exit 1
           fi
+      - name: Verify packaged web identity support without Kafka
+        run: python3 .github/scripts/check-packaged-samples-irsa.py
+      - name: Check effective Kafka IAM configuration with consumer Spring runtime
+        run: bash .github/scripts/check-sample-kafka-iam.sh
+      - name: Preserve complete sample test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: generated-samples-test-evidence
+          path: |
+            target/samples/**/target/test-evidence.json
+            target/audit-samples/**/target/test-evidence.json
+            target/generated-packaged-irsa.json
+          if-no-files-found: error
+          retention-days: 90

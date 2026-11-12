@@ -46,6 +46,7 @@ public interface pe.axiz.spring.foundation.ConditionalOnImperativeApplication ex
 
 public final class pe.axiz.spring.foundation.ConfigurationErrors {
 public static java.lang.String destination(java.lang.String, java.lang.String);
+public static java.lang.String destinationProperty(java.lang.String, java.lang.String);
 }
 
 public interface pe.axiz.spring.foundation.DispatchBoundary {
@@ -104,6 +105,61 @@ public abstract java.lang.Class<? extends jakarta.validation.Payload>[] payload(
 public abstract java.lang.Class<?>[] groups();
 public abstract java.lang.String message();
 public abstract java.lang.String type();
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsAsyncResources {
+public static pe.axiz.adapter.aws.transport.AsyncAwsClients create(java.lang.String, int, int, io.micrometer.core.instrument.MeterRegistry, pe.axiz.spring.foundation.aws.AwsIdentity, pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability);
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsCapability extends java.lang.Enum<pe.axiz.spring.foundation.aws.AwsCapability> {
+public static final pe.axiz.spring.foundation.aws.AwsCapability AUDIT;
+public static final pe.axiz.spring.foundation.aws.AwsCapability CRYPTO;
+public static final pe.axiz.spring.foundation.aws.AwsCapability DYNAMODB;
+public static final pe.axiz.spring.foundation.aws.AwsCapability IDEMPOTENCY;
+public static final pe.axiz.spring.foundation.aws.AwsCapability INBOX;
+public static final pe.axiz.spring.foundation.aws.AwsCapability JPA;
+public static final pe.axiz.spring.foundation.aws.AwsCapability LOCK;
+public static final pe.axiz.spring.foundation.aws.AwsCapability MESSAGING;
+public static final pe.axiz.spring.foundation.aws.AwsCapability R2DBC;
+public static final pe.axiz.spring.foundation.aws.AwsCapability SCHEDULING;
+public static final pe.axiz.spring.foundation.aws.AwsCapability SECRETS;
+public static final pe.axiz.spring.foundation.aws.AwsCapability SEQUENCE;
+public static final pe.axiz.spring.foundation.aws.AwsCapability STORAGE;
+public static final pe.axiz.spring.foundation.aws.AwsCapability UNSPECIFIED;
+public static pe.axiz.spring.foundation.aws.AwsCapability valueOf(java.lang.String);
+public static pe.axiz.spring.foundation.aws.AwsCapability[] values();
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsIdentity implements software.amazon.awssdk.utils.SdkAutoCloseable,org.springframework.beans.factory.SmartInitializingSingleton {
+public <B extends software.amazon.awssdk.awscore.client.builder.AwsClientBuilder<B, C>, C> B configure(B, pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability);
+public java.util.function.Supplier<pe.axiz.adapter.aws.identity.AwsCredentialSource> factory(pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability);
+public pe.axiz.adapter.aws.identity.AwsCredentialSource source(pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability);
+public synchronized void close();
+public void afterSingletonsInstantiated();
+}
+
+public interface pe.axiz.spring.foundation.aws.AwsIdentityFor extends java.lang.annotation.Annotation {
+public abstract pe.axiz.spring.foundation.aws.AwsCapability capability();
+public abstract pe.axiz.spring.foundation.aws.AwsService service();
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsService extends java.lang.Enum<pe.axiz.spring.foundation.aws.AwsService> {
+public static final pe.axiz.spring.foundation.aws.AwsService DYNAMODB;
+public static final pe.axiz.spring.foundation.aws.AwsService KMS;
+public static final pe.axiz.spring.foundation.aws.AwsService MSK;
+public static final pe.axiz.spring.foundation.aws.AwsService RDS;
+public static final pe.axiz.spring.foundation.aws.AwsService S3;
+public static final pe.axiz.spring.foundation.aws.AwsService SECRETS_MANAGER;
+public static final pe.axiz.spring.foundation.aws.AwsService SNS;
+public static final pe.axiz.spring.foundation.aws.AwsService SQS;
+public static final pe.axiz.spring.foundation.aws.AwsService SSM;
+public static final pe.axiz.spring.foundation.aws.AwsService UNSPECIFIED;
+public static pe.axiz.spring.foundation.aws.AwsService valueOf(java.lang.String);
+public static pe.axiz.spring.foundation.aws.AwsService[] values();
+}
+
+public class pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration {
+protected pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration();
 }
 
 public final class pe.axiz.spring.foundation.jdbc.SchemaInitializer implements org.springframework.beans.factory.InitializingBean {

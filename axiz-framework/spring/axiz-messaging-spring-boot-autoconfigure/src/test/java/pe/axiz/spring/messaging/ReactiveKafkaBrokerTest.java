@@ -29,6 +29,7 @@ import pe.axiz.adapter.messaging.kafka.KafkaEnvelopes;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -47,6 +48,7 @@ class ReactiveKafkaBrokerTest {
     broker.afterPropertiesSet();
     try {
       new ReactiveWebApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(
               AutoConfigurations.of(
                   AxizMessagingKafkaAutoConfiguration.class,
@@ -177,6 +179,7 @@ class ReactiveKafkaBrokerTest {
       port = socket.getLocalPort();
     }
     new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizMessagingKafkaAutoConfiguration.class,

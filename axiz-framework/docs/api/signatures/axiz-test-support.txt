@@ -4,6 +4,17 @@ public pe.axiz.core.messaging.PublishResult publish(java.lang.String, pe.axiz.co
 public pe.axiz.test.support.AsyncPublisherProbe(pe.axiz.core.messaging.AsyncEventPublisher);
 }
 
+public final class pe.axiz.test.support.AwsIdentityFixture implements java.lang.AutoCloseable {
+public int imdsRequests();
+public int invalidRequests();
+public int ssmRequests();
+public int stsRequests();
+public java.lang.String endpoint();
+public java.util.Map<java.lang.String, java.lang.String> environment();
+public pe.axiz.test.support.AwsIdentityFixture(boolean) throws java.io.IOException;
+public void close() throws java.io.IOException;
+}
+
 public final class pe.axiz.test.support.ImmediateAsyncFakes {
 public static <A> A adapt(java.lang.Class<A>, java.lang.Object);
 }

@@ -17,6 +17,7 @@ import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.kit.jpa.AuditorProvider;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class JpaTest {
 
@@ -48,8 +49,8 @@ class JpaTest {
             .withProperty("axiz.jpa.aws-wrapper.read-write-splitting", "true");
     epp.postProcessEnvironment(env, new SpringApplication());
     assertEquals(
-        "readWriteSplitting,failover2,efm2,iam",
-        env.getProperty("spring.datasource.hikari.data-source-properties.wrapperPlugins"));
+        "axiz-jpa-iam-split",
+        env.getProperty("spring.datasource.hikari.data-source-properties.wrapperProfileName"));
   }
 
   @Test
@@ -125,6 +126,7 @@ class JpaTest {
   @Test
   void theAuditorIsPublishedToTheEntityListener() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .run(
             ctx -> {
@@ -135,6 +137,7 @@ class JpaTest {
             });
     AuditorProvider fixed = () -> Optional.of("migration");
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .withBean(AuditorProvider.class, () -> fixed)
         .run(ctx -> assertSame(fixed, ctx.getBean(AuditorProvider.class)));

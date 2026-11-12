@@ -20,6 +20,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.BoundedCallbackExecutor;
 
 /**
@@ -34,17 +35,17 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
   private final Set<CompletableFuture<?>> pending = ConcurrentHashMap.newKeySet();
   private final AtomicBoolean closed = new AtomicBoolean();
   private final long timeoutNanos;
-  private final MeterRegistry registry;
+  private final @Nullable MeterRegistry registry;
   private final List<Meter> meters;
-  private final Counter rejected;
-  private final Timer latency;
+  private final @Nullable Counter rejected;
+  private final @Nullable Timer latency;
 
   public BoundedAsyncDispatcher(
-      String name, int workers, int queued, Duration timeout, MeterRegistry registry) {
+      String name, int workers, int queued, Duration timeout, @Nullable MeterRegistry registry) {
     if (workers < 1 || queued < 0 || timeout.isZero() || timeout.isNegative())
       throw new IllegalArgumentException("Positive workers/timeout and nonnegative queue required");
     Objects.requireNonNull(name);
-    this.registry = Objects.requireNonNull(registry);
+    this.registry = registry;
     this.timeoutNanos = timeout.toNanos();
     this.capacity = new Semaphore(Math.addExact(workers, queued));
     this.executor =
@@ -54,23 +55,29 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
         new ScheduledThreadPoolExecutor(
             1, Thread.ofPlatform().daemon().name(name + "-deadline-", 0).factory());
     this.deadlines.setRemoveOnCancelPolicy(true);
-    var pendingGauge =
-        Gauge.builder("axiz.transport.pending", pending, Set::size)
-            .tag("transport", name)
-            .register(registry);
-    var queuedGauge =
-        Gauge.builder("axiz.transport.queued", executor, e -> e.getQueue().size())
-            .tag("transport", name)
-            .register(registry);
-    this.rejected = registry.counter("axiz.transport.rejected", "transport", name);
-    this.latency = registry.timer("axiz.transport.latency", "transport", name);
-    this.meters = List.of(pendingGauge, queuedGauge, rejected, latency);
+    if (registry == null) {
+      this.rejected = null;
+      this.latency = null;
+      this.meters = List.of();
+    } else {
+      var pendingGauge =
+          Gauge.builder("axiz.transport.pending", pending, Set::size)
+              .tag("transport", name)
+              .register(registry);
+      var queuedGauge =
+          Gauge.builder("axiz.transport.queued", executor, e -> e.getQueue().size())
+              .tag("transport", name)
+              .register(registry);
+      this.rejected = registry.counter("axiz.transport.rejected", "transport", name);
+      this.latency = registry.timer("axiz.transport.latency", "transport", name);
+      this.meters = List.of(pendingGauge, queuedGauge, rejected, latency);
+    }
   }
 
   public <T> CompletionStage<T> submit(Supplier<? extends CompletionStage<T>> operation) {
     Objects.requireNonNull(operation);
     if (closed.get() || !capacity.tryAcquire()) {
-      rejected.increment();
+      if (rejected != null) rejected.increment();
       return CompletableFuture.failedFuture(
           new RejectedExecutionException("Transport closed or saturated"));
     }
@@ -92,7 +99,7 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
             pending.remove(result);
             capacity.release();
           }
-          latency.record(System.nanoTime() - started, TimeUnit.NANOSECONDS);
+          if (latency != null) latency.record(System.nanoTime() - started, TimeUnit.NANOSECONDS);
         });
     try {
       var deadline =
@@ -124,7 +131,7 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
               }
             });
     } catch (RejectedExecutionException failure) {
-      rejected.increment();
+      if (rejected != null) rejected.increment();
       release.run();
       result.completeExceptionally(failure);
     }
@@ -139,7 +146,7 @@ public final class BoundedAsyncDispatcher implements AutoCloseable {
       executor.shutdownNow();
       deadlines.shutdownNow();
       pending.clear();
-      meters.forEach(registry::remove);
+      if (registry != null) meters.forEach(registry::remove);
     }
   }
 }

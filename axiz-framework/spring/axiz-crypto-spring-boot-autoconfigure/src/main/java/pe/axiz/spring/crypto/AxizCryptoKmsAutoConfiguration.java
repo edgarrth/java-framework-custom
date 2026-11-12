@@ -1,7 +1,6 @@
 package pe.axiz.spring.crypto;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
 import java.util.Objects;
@@ -15,11 +14,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.crypto.kms.KmsDataKeyProvider;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
@@ -27,6 +25,10 @@ import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.kms.KmsAsyncClient;
 import software.amazon.awssdk.services.kms.KmsClient;
 
@@ -48,9 +50,10 @@ public class AxizCryptoKmsAutoConfiguration {
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
-  KmsClient axizKmsClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
-    return AwsClients.configured(
-        KmsClient.builder(),
+  KmsClient axizKmsClient(
+      Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+    return AwsObservability.configured(
+        identity.configure(KmsClient.builder(), AwsService.KMS, AwsCapability.CRYPTO),
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
         env::getProperty,
         "kms");
@@ -86,12 +89,17 @@ public class AxizCryptoKmsAutoConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(KmsAsyncClient.class)
       AsyncAwsClients axizCryptoAsyncAwsResources(
-          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-        return AwsCompletionMetrics.create(
+          AxizAwsCompletionProperties completion,
+          ObjectProvider<MeterRegistry> registries,
+          AwsIdentity identity) {
+        return AwsAsyncResources.create(
             "axizCryptoAsyncAwsResources",
             completion.workers(),
             completion.queueCapacity(),
-            registries.getIfAvailable(() -> Metrics.globalRegistry));
+            registries.getIfAvailable(),
+            identity,
+            AwsService.KMS,
+            AwsCapability.CRYPTO);
       }
 
       @Bean(destroyMethod = "close")
@@ -100,7 +108,8 @@ public class AxizCryptoKmsAutoConfiguration {
           @Qualifier("axizCryptoAsyncAwsResources") AsyncAwsClients clients,
           Environment env,
           ObjectProvider<ObservationRegistry> observations) {
-        return clients.configured(
+        return AwsObservability.configured(
+            clients,
             KmsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,

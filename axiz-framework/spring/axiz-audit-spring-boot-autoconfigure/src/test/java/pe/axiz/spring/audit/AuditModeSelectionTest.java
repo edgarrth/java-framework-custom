@@ -10,16 +10,19 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditPublisher;
 import pe.axiz.core.audit.LoggingAuditPublisher;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 
 class AuditModeSelectionTest {
   private ApplicationContextRunner imperative() {
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class));
   }
 
   private ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class));

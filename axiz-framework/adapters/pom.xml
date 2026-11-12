@@ -26,6 +26,7 @@
     <module>axiz-adapter-messaging-kafka</module>
     <module>axiz-adapter-messaging-sns</module>
     <module>axiz-adapter-messaging-sqs</module>
+    <module>axiz-adapter-aws</module>
     <module>axiz-adapter-observability-aws</module>
     <module>axiz-adapter-outbox-r2dbc</module>
     <module>axiz-adapter-secrets-aws</module>

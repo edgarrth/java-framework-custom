@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.messaging.Deduplicator;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class InboxTest {
 
@@ -17,6 +18,7 @@ class InboxTest {
     JdbcDataSource h2 = new JdbcDataSource();
     h2.setURL("jdbc:h2:mem:inbox;DB_CLOSE_DELAY=-1");
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizInboxAutoConfiguration.class))
         .withBean(DataSource.class, () -> h2)
         .run(

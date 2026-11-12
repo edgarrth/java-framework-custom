@@ -22,3 +22,6 @@ spring:
     properties:
       sslMode: disable
 
+
+# The local Kafka container has no IAM listener.
+axiz.messaging.kafka.iam: false

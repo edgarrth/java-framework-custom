@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** Sequence counters on DynamoDB for services without a relational database. */
@@ -16,6 +17,7 @@ class SequenceDynamoDbTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizSequenceDynamoDbAutoConfiguration.class));
 
   @Test

@@ -28,6 +28,87 @@ import java.util.TreeSet;
  */
 @AnalyzeClasses(packages = "pe.axiz", importOptions = ImportOption.DoNotIncludeTests.class)
 class FrameworkArchitectureTest {
+  @ArchTest
+  static final ArchRule AWS_IDENTITY_API_DOES_NOT_EXPOSE_CONTAINER =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAPackage("pe.axiz.spring.foundation.aws..")
+          .should(
+              new ArchCondition<>("keep the Spring container out of the public identity API") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  if (!publiclyVisible(item)) return;
+                  for (var method : item.getMethods()) {
+                    if (!method.getModifiers().contains(JavaModifier.PUBLIC)
+                        && !method.getModifiers().contains(JavaModifier.PROTECTED)) continue;
+                    var types = new ArrayList<>(method.getReturnType().getAllInvolvedRawTypes());
+                    method
+                        .getParameterTypes()
+                        .forEach(t -> types.addAll(t.getAllInvolvedRawTypes()));
+                    for (var type : types)
+                      if (type.isAssignableTo(org.springframework.beans.factory.BeanFactory.class)
+                          || type.isAssignableTo(
+                              org.springframework.context.ApplicationContext.class))
+                        events.add(
+                            SimpleConditionEvent.violated(
+                                method,
+                                method.getFullName() + " exposes container " + type.getName()));
+                  }
+                  for (var constructor : item.getConstructors())
+                    if (constructor.getModifiers().contains(JavaModifier.PUBLIC)
+                        || constructor.getModifiers().contains(JavaModifier.PROTECTED))
+                      for (var type : constructor.getRawParameterTypes())
+                        if (type.isAssignableTo(
+                            org.springframework.beans.factory.BeanFactory.class))
+                          events.add(
+                              SimpleConditionEvent.violated(
+                                  constructor, constructor.getFullName() + " exposes container"));
+                }
+              });
+
+  @ArchTest
+  static final ArchRule AWS_IDENTITY_HAS_NO_RUNTIME_DEFINITIONS_OR_CREATION_SWEEPS =
+      noClasses()
+          .that()
+          .resideInAPackage("pe.axiz.spring.foundation.aws..")
+          .should()
+          .callMethodWhere(
+              new DescribedPredicate<>(
+                  "register runtime definitions or infer dependencies from creation state") {
+                @Override
+                public boolean test(JavaMethodCall call) {
+                  return Set.of(
+                              "registerBeanDefinition",
+                              "registerSingleton",
+                              "isCurrentlyInCreation")
+                          .contains(call.getName())
+                      && call.getTargetOwner()
+                          .getPackageName()
+                          .startsWith("org.springframework.beans.");
+                }
+              });
+
+  @ArchTest
+  static final ArchRule AWS_IDENTITY_DOES_NOT_KNOW_TRANSPORT =
+      noClasses()
+          .that()
+          .resideInAPackage("pe.axiz.adapter.aws.identity..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAPackage("pe.axiz.adapter.aws.transport..");
+
+  @ArchTest
+  static final ArchRule AWS_BASE_HAS_NO_TELEMETRY_IMPLEMENTATION =
+      noClasses()
+          .that()
+          .resideInAPackage("pe.axiz.adapter.aws..")
+          .should()
+          .dependOnClassesThat()
+          .resideInAnyPackage(
+              "io.micrometer..",
+              "pe.axiz.core.observability..",
+              "pe.axiz.adapter.observability..",
+              "org.springframework..");
 
   @ArchTest
   static final ArchRule TECHNOLOGY_USES_ONLY_ITS_OWN_KIT =
@@ -69,7 +150,8 @@ class FrameworkArchitectureTest {
                 }
               })
           .because(
-              "architecture contract requires native asynchronous I/O, including CQRS and outbound authentication");
+              "architecture contract requires native asynchronous I/O, including CQRS and outbound"
+                  + " authentication");
 
   @ArchTest
   static final ArchRule LANGUAGE_KERNEL_HAS_NO_FRAMEWORK_DEPENDENCIES =
@@ -235,12 +317,15 @@ class FrameworkArchitectureTest {
           .resideInAPackage("pe.axiz.adapter..")
           .should(
               new ArchCondition<>(
-                  "only use their contract, technology kit and AWS instrumentation") {
+                  "only use their contract, technology kit and shared AWS infrastructure") {
                 @Override
                 public void check(JavaClass item, ConditionEvents events) {
                   String own = item.getPackageName().substring("pe.axiz.adapter.".length());
                   String[] segments = own.split("\\.");
-                  String capability = segments[0] + "." + segments[1];
+                  String capability =
+                      own.equals("aws") || own.startsWith("aws.")
+                          ? "aws"
+                          : segments[0] + "." + segments[1];
                   item.getDirectDependenciesFromSelf()
                       .forEach(
                           d -> {
@@ -249,7 +334,8 @@ class FrameworkArchitectureTest {
                                 && !target.equals("pe.axiz.adapter." + capability)
                                 && !target.startsWith("pe.axiz.adapter." + capability + ".")
                                 && !(aws(item)
-                                    && target.startsWith("pe.axiz.adapter.observability.aws"))) {
+                                    && (target.equals("pe.axiz.adapter.aws")
+                                        || target.startsWith("pe.axiz.adapter.aws.")))) {
                               events.add(SimpleConditionEvent.violated(d, d.getDescription()));
                             }
                           });
@@ -323,8 +409,10 @@ class FrameworkArchitectureTest {
   }
 
   private static boolean aws(JavaClass type) {
-    return type.getPackageName()
-        .matches("pe\\.axiz\\.adapter\\..*\\.(aws|dynamodb|s3|sqs|sns|kms)(\\..*)?");
+    return type.getPackageName().equals("pe.axiz.adapter.aws")
+        || type.getPackageName().startsWith("pe.axiz.adapter.aws.")
+        || type.getPackageName()
+            .matches("pe\\.axiz\\.adapter\\..*\\.(aws|dynamodb|s3|sqs|sns|kms)(\\..*)?");
   }
 
   private static boolean r2dbc(JavaClass type) {

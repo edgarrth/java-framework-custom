@@ -30,6 +30,14 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `RedisTestConfiguration` | Valkey (Redis protocol) for cache, idempotency, locks and rate limits. |
 | `RequestContexts` | Opens a request context in unit tests, as the web and security starters would. |
 
+## Local AWS credentials
+
+`LocalStackTestConfiguration` supplies a context-local `AwsCredentialsProvider` bean together
+with both framework and Spring Cloud AWS endpoint/region properties. It does not set JVM credential
+properties. Generated audit fixtures register their provider and destinations in the initializer,
+before production client auto-configuration; they require no global credential restoration or
+JUnit `@Isolated` annotation.
+
 ## Original blocking sites
 
 `BlockHoundExtension.detectedBlockingCalls()` returns an immutable snapshot of at most 32

@@ -17,18 +17,74 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.spring.foundation.aws.AwsIdentityFor;
+import pe.axiz.spring.foundation.aws.AwsService;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.test.StepVerifier;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 
 class ReactiveSecretsTest {
+  @Test
+  void eachAwsSecretServiceUsesItsOwnQualifiedIdentity(@TempDir Path directory) {
+    reactive()
+        .withUserConfiguration(ServiceIdentities.class)
+        .withPropertyValues(
+            "axiz.secrets.directory=" + directory,
+            "axiz.secrets.secrets-manager.enabled=true",
+            "axiz.secrets.parameter-store.enabled=true",
+            "axiz.secrets.parameter-store.path=/payments/",
+            "axiz.aws.endpoint=http://localhost:4566")
+        .run(
+            ctx -> {
+              assertThat(ctx).hasNotFailed();
+              assertEquals(
+                  "MANAGER",
+                  ctx.getBean(SecretsManagerAsyncClient.class)
+                      .serviceClientConfiguration()
+                      .credentialsProvider()
+                      .resolveIdentity()
+                      .join()
+                      .accessKeyId());
+              assertEquals(
+                  "PARAMETERS",
+                  ctx.getBean(SsmAsyncClient.class)
+                      .serviceClientConfiguration()
+                      .credentialsProvider()
+                      .resolveIdentity()
+                      .join()
+                      .accessKeyId());
+              assertEquals(2, ctx.getBeansOfType(AsyncAwsClients.class).size());
+            });
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  static class ServiceIdentities {
+    @Bean
+    @AwsIdentityFor(service = AwsService.SECRETS_MANAGER)
+    AwsCredentialsProvider manager() {
+      return () -> AwsBasicCredentials.create("MANAGER", "fixture");
+    }
+
+    @Bean
+    @AwsIdentityFor(service = AwsService.SSM)
+    AwsCredentialsProvider parameters() {
+      return () -> AwsBasicCredentials.create("PARAMETERS", "fixture");
+    }
+  }
+
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizSecretsNativeAwsAutoConfiguration.class,
@@ -110,7 +166,7 @@ class ReactiveSecretsTest {
 
   @Test
   @ResourceLock(Resources.SYSTEM_PROPERTIES)
-  void twoNativeSourcesShareOneWarmedResourceOwner(@TempDir Path directory) {
+  void twoNativeSourcesHaveSeparateWarmedOwners(@TempDir Path directory) {
     TestPropertyValues.of("aws.accessKeyId=test", "aws.secretAccessKey=test")
         .applyToSystemProperties(
             () ->
@@ -125,7 +181,8 @@ class ReactiveSecretsTest {
                         ctx ->
                             assertThat(ctx)
                                 .hasNotFailed()
-                                .hasSingleBean(AsyncAwsClients.class)
+                                .hasBean("axizSecretsManagerAsyncAwsResources")
+                                .hasBean("axizSsmAsyncAwsResources")
                                 .hasSingleBean(SecretsManagerAsyncClient.class)
                                 .hasSingleBean(SsmAsyncClient.class)
                                 .hasSingleBean(AsyncSecretResolver.class)

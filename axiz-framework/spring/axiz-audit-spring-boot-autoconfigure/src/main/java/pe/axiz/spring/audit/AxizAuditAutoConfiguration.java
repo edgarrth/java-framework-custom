@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.Advisor;
@@ -24,6 +25,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
@@ -122,15 +126,21 @@ public class AxizAuditAutoConfiguration {
   }
 
   private static String unsupportedDestination(String logical, Environment environment) {
-    String key =
-        logical.matches("[A-Za-z0-9_.-]+")
-            ? "axiz.messaging.destinations." + logical
-            : "axiz.audit.durable.destination";
+    String key = ConfigurationErrors.destinationProperty("axiz.messaging.destinations", logical);
     String resolved = logical;
     if (environment instanceof ConfigurableEnvironment configurable) {
       var resolver = new PropertySourcesPropertyResolver(configurable.getPropertySources());
       resolver.setIgnoreUnresolvableNestedPlaceholders(true);
-      resolved = resolver.getProperty(key, logical);
+      // Bind the same scalar map as messaging: both dotted and bracketed keys are legal.
+      var binder =
+          new Binder(
+              ConfigurationPropertySources.get(configurable),
+              value -> value instanceof String text ? resolver.resolvePlaceholders(text) : value);
+      Map<String, String> destinations =
+          binder
+              .bind("axiz.messaging.destinations", Bindable.mapOf(String.class, String.class))
+              .orElse(Map.of());
+      resolved = destinations.getOrDefault(logical, logical);
     }
     return "DURABLE audit "
         + ConfigurationErrors.destination(logical, resolved)

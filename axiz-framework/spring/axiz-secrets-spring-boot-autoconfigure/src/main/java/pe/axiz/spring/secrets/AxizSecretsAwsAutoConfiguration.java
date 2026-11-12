@@ -1,7 +1,6 @@
 package pe.axiz.spring.secrets;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -11,16 +10,18 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.secrets.aws.ParameterStoreResolver;
 import pe.axiz.adapter.secrets.aws.SecretsManagerResolver;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmClient;
 
@@ -37,22 +38,48 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 @EnableConfigurationProperties({AxizSecretsProperties.class, AxizAwsCompletionProperties.class})
 public class AxizSecretsAwsAutoConfiguration {
 
-  /**
-   * Register the shared owner before native default client definitions. Their own definitions must
-   * not be mistaken for user-supplied clients when deciding whether an owner is needed.
-   */
+  // Register each owner before native clients; each AWS service can use a different identity.
   @Bean(destroyMethod = "close")
   @ConditionalOnClass(name = "reactor.core.publisher.Mono")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-  @ConditionalOnMissingBean(AsyncSecretResolver.class)
-  @Conditional(AxizSecretsNativeAwsAutoConfiguration.OwnerNeeded.class)
-  AsyncAwsClients axizSecretsAsyncAwsResources(
-      AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-    return AwsCompletionMetrics.create(
-        "axizSecretsAsyncAwsResources",
+  @ConditionalOnBooleanProperty(name = "axiz.secrets.secrets-manager.enabled")
+  @ConditionalOnMissingBean(
+      value = AsyncSecretResolver.class,
+      type = "software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient")
+  AsyncAwsClients axizSecretsManagerAsyncAwsResources(
+      AxizAwsCompletionProperties completion,
+      ObjectProvider<MeterRegistry> registries,
+      AwsIdentity identity) {
+    return AwsAsyncResources.create(
+        "axizSecretsManagerAsyncAwsResources",
         completion.workers(),
         completion.queueCapacity(),
-        registries.getIfAvailable(() -> Metrics.globalRegistry));
+        registries.getIfAvailable(),
+        identity,
+        AwsService.SECRETS_MANAGER,
+        AwsCapability.SECRETS);
+  }
+
+  // Register each owner before native clients; each AWS service can use a different identity.
+  @Bean(destroyMethod = "close")
+  @ConditionalOnClass(name = "reactor.core.publisher.Mono")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  @ConditionalOnBooleanProperty(name = "axiz.secrets.parameter-store.enabled")
+  @ConditionalOnMissingBean(
+      value = AsyncSecretResolver.class,
+      type = "software.amazon.awssdk.services.ssm.SsmAsyncClient")
+  AsyncAwsClients axizSsmAsyncAwsResources(
+      AxizAwsCompletionProperties completion,
+      ObjectProvider<MeterRegistry> registries,
+      AwsIdentity identity) {
+    return AwsAsyncResources.create(
+        "axizSsmAsyncAwsResources",
+        completion.workers(),
+        completion.queueCapacity(),
+        registries.getIfAvailable(),
+        identity,
+        AwsService.SSM,
+        AwsCapability.SECRETS);
   }
 
   @Configuration(proxyBeanMethods = false)
@@ -63,9 +90,10 @@ public class AxizSecretsAwsAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     SecretsManagerClient axizSecretsManagerClient(
-        Environment env, ObjectProvider<ObservationRegistry> registry) {
-      return AwsClients.configured(
-          SecretsManagerClient.builder(),
+        Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+      return AwsObservability.configured(
+          identity.configure(
+              SecretsManagerClient.builder(), AwsService.SECRETS_MANAGER, AwsCapability.SECRETS),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "secretsmanager");
@@ -85,9 +113,10 @@ public class AxizSecretsAwsAutoConfiguration {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
-    SsmClient axizSsmClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
-      return AwsClients.configured(
-          SsmClient.builder(),
+    SsmClient axizSsmClient(
+        Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+      return AwsObservability.configured(
+          identity.configure(SsmClient.builder(), AwsService.SSM, AwsCapability.SECRETS),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "ssm");

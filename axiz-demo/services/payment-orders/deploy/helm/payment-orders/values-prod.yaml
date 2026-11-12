@@ -41,6 +41,8 @@ config:
         key-ids:
         - v1
     messaging:
+      kafka:
+        iam: true
       destinations:
         payments: kafka:payments
     audit:

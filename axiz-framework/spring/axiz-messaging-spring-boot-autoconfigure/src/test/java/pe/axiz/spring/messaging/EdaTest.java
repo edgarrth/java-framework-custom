@@ -23,6 +23,7 @@ import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.core.messaging.TypedEventHandler;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class EdaTest {
 
@@ -60,6 +61,7 @@ class EdaTest {
   void handlersRunInATransaction() {
     CardIssuedHandler handler = new CardIssuedHandler();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withBean(PlatformTransactionManager.class, FakeTx::new)
         .withBean("cardIssuedHandler", CardIssuedHandler.class, () -> handler)

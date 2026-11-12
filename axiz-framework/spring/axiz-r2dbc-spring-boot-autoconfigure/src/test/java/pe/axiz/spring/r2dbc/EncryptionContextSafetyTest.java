@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import pe.axiz.kit.r2dbc.EncryptedText;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class EncryptionContextSafetyTest {
   record SecretRow(String id, EncryptedText creditor, EncryptedText debtor) {}
@@ -17,6 +18,7 @@ class EncryptionContextSafetyTest {
     var mapping = new R2dbcMappingContext();
     mapping.getRequiredPersistentEntity(SecretRow.class);
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
         .withBean(R2dbcMappingContext.class, () -> mapping);
   }

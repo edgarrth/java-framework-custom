@@ -51,6 +51,7 @@ import pe.axiz.core.commons.json.JsonReader;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -173,6 +174,7 @@ class PostgresAuditBoundaryIT {
         new R2dbcOutboxStore(
             new DatabaseClientReactiveSql(client), "axiz_outbox", Duration.ofSeconds(5));
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))

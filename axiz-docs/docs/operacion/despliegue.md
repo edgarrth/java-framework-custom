@@ -20,45 +20,29 @@ kube-linter.
 
 ## Cómo llega a un ambiente
 
-El pipeline **nunca** ejecuta `helm` contra un clúster. `service-cd` escribe el release en el
+El pipeline **nunca** ejecuta `helm` contra un clúster. `service-deploy` escribe el release en el
 repositorio GitOps y Argo CD lo aplica:
 
-```yaml
-# axiz-gitops/environments/qa/payments-business.yaml (escrito por service-cd)
-service: payments-business
-environment: qa
-source:
-  repoURL: https://github.com/axiz/payments-business
-  revision: 3f9c2e…        # commit construido: chart, values y código
-  chart: deploy/helm/payments-business
-image:
-  tag: "3f9c2e…"
-  digest: "sha256:…"
-deployedBy: "ana"
-run: "https://github.com/axiz/payments-business/actions/runs/…"
-```
+El workflow `service-deploy` verifica el bundle de un build anterior mediante su run, intento
+y hash externo del manifiesto firmado. La imagen y el chart se consumen por digest. La revisión
+de values es un commit completo e inmutable; no se reconstruye el chart desde una rama móvil.
+El registro GitOps conserva esos identificadores, el environment, el ejecutor y el despliegue
+anterior esperado. Argo CD aplica el estado verificado y el workflow exige sincronización y salud.
 
-Un `ApplicationSet` de Argo CD crea una Application por archivo (`<servicio>-<ambiente>`) con el
-chart del repositorio del servicio en ese commit, `values.yaml` + `values-<ambiente>.yaml` y la
-imagen del archivo, con sincronización automática, prune y self-heal. Las referencias están en
-`axiz-workflows/gitops/` (ApplicationSet, AppProject con los namespaces y tipos de recursos
-permitidos).
-
-- Cada despliegue es un commit: queda auditado en Git y un **rollback es un revert** (o
-  `cd.yaml` con la imagen anterior).
-- `prod` requiere la aprobación del environment de GitHub antes de escribir el release.
-- Con `ARGOCD_SERVER` definido, el workflow espera a que la Application quede sincronizada y sana.
+La promoción a qa/prod y el rollback seleccionan el manifiesto correspondiente y pasan por el
+mismo flujo de verificación y aprobación. Cambiar un tag o recompilar no forma parte del deploy.
+Los permisos de escritura GitOps pertenecen exclusivamente al deploy; el build carece de ellos.
 
 ## Imágenes firmadas
 
 CI firma cada imagen con **cosign** usando una llave de AWS KMS (sin llaves en archivos) y adjunta
 dos atestaciones firmadas con la misma llave: el SBOM (CycloneDX) y la **procedencia SLSA v1**
 (qué workflow, en qué versión, construyó qué commit y en qué ejecución). La firma es obligatoria:
-`service-ci` falla antes de publicar si la llave no está configurada, y un tag nunca publica una
+`service-build` falla antes de publicar si la llave no está configurada, y un tag nunca publica una
 imagen sin firmar. En el clúster, la política de Kyverno (`gitops/policies/verify-images.yaml`)
 solo admite en los namespaces de servicios imágenes del registro de Nexus firmadas con esa llave y
-con una procedencia que nombre a `service-ci` como constructor; qa y prod solo se despliegan por
-digest (`service-cd` rechaza un despliegue sin `image-digest`). Las imágenes base se fijan por tag
+con una procedencia que nombre a `service-build` como constructor; qa y prod solo se despliegan por
+digest (`service-deploy` exige el digest verificado del manifiesto). Las imágenes base se fijan por tag
 y digest; Renovate actualiza ambos y una release no se construye sobre una base sin digest.
 
 ## Configuración y secretos por ambiente

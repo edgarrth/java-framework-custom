@@ -21,6 +21,7 @@ externalSecret:
 config:
   axiz.config.environment: qa
   management.tracing.sampling.probability: '1.0'
+  axiz.messaging.kafka.iam: true
   spring.kafka.bootstrap-servers: b-1.payments-qa.kafka.us-east-1.amazonaws.com:9098,b-2.payments-qa.kafka.us-east-1.amazonaws.com:9098
   axiz.messaging.destinations:
     customer-notifications: arn:aws:sns:us-east-1:222222222222:customer-notifications-qa

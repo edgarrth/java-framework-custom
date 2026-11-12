@@ -9,6 +9,7 @@ import net.javacrumbs.shedlock.provider.r2dbc.R2dbcLockProvider;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 
 class SchedulingR2dbcTest {
@@ -16,6 +17,7 @@ class SchedulingR2dbcTest {
   @Test
   void reactiveServicesLockOverR2dbc() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizSchedulingR2dbcAutoConfiguration.class, AxizSchedulingAutoConfiguration.class))

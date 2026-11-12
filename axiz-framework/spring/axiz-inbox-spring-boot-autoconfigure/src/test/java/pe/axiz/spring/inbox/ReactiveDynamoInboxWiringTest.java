@@ -12,9 +12,10 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.core.inbox.AsyncInboxStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -24,6 +25,7 @@ import software.amazon.awssdk.services.dynamodb.model.PutItemResponse;
 class ReactiveDynamoInboxWiringTest {
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizInboxDynamoDbAutoConfiguration.class, AxizInboxAutoConfiguration.class))

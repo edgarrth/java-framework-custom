@@ -5,17 +5,53 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.ReactiveTransactionManager;
 import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxWriter;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class AuditDestinationValidationTest {
+  @Test
+  void dottedScalarMapKeysRespectBothSpellingsAndSourcePrecedence() {
+    for (String spelling : List.of(".audit.v2", "[audit.v2]")) {
+      new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
+          .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
+          .withPropertyValues(
+              "axiz.audit.mode=DURABLE",
+              "axiz.audit.durable.destination=audit.v2",
+              "axiz.messaging.destinations.audit.v2=kafka:lower")
+          .withInitializer(
+              context ->
+                  context
+                      .getEnvironment()
+                      .getPropertySources()
+                      .addFirst(
+                          new MapPropertySource(
+                              "higher",
+                              Map.of(
+                                  "axiz.messaging.destinations" + spelling,
+                                  "${AXIZ_MISSING_DOTTED_ROUTE}"))))
+          .withBean(OutboxWriter.class, () -> mock(OutboxWriter.class))
+          .withBean(PlatformTransactionManager.class, () -> mock(PlatformTransactionManager.class))
+          .withBean(OutboxRelay.class, () -> mock(OutboxRelay.class))
+          .run(
+              context ->
+                  assertThat(context.getStartupFailure())
+                      .hasStackTraceContaining("axiz.messaging.destinations[audit.v2]")
+                      .hasStackTraceContaining("unresolved variables: [AXIZ_MISSING_DOTTED_ROUTE]")
+                      .hasStackTraceContaining("resolves to '${AXIZ_MISSING_DOTTED_ROUTE}'"));
+    }
+  }
+
   @Test
   void unsupportedRoutesIdentifyTheResolvedDestinationOrMissingVariableWithoutUriCredentials() {
     for (String destination :
@@ -24,6 +60,7 @@ class AuditDestinationValidationTest {
             "https://user:secret@example.test/audit?token=hidden")) {
       var relay = mock(OutboxRelay.class);
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
           .withPropertyValues(
               "axiz.audit.mode=DURABLE", "axiz.messaging.destinations.audit=" + destination)
@@ -53,6 +90,7 @@ class AuditDestinationValidationTest {
     for (String key : List.of("axiz.audit.sqs.queue-url", "axiz.audit.kafka.topic")) {
       for (String value : List.of("", " ", "${AXIZ_MISSING_AUDIT_DESTINATION}")) {
         new ApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
             .withPropertyValues("axiz.audit.mode=ASYNC", key + "=" + value)
             .run(
@@ -60,6 +98,7 @@ class AuditDestinationValidationTest {
                     assertThat(ctx.getStartupFailure())
                         .hasStackTraceContaining("must not be blank"));
         new ReactiveWebApplicationContextRunner()
+            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withConfiguration(
                 AutoConfigurations.of(
                     AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
@@ -79,6 +118,7 @@ class AuditDestinationValidationTest {
       when(relay.supportsDestination("audit")).thenReturn(supported);
       var imperative =
           new ApplicationContextRunner()
+              .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
               .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
               .withPropertyValues("axiz.audit.mode=DURABLE")
               .withBean(OutboxWriter.class, () -> mock(OutboxWriter.class))
@@ -102,6 +142,7 @@ class AuditDestinationValidationTest {
               });
       var reactive =
           new ReactiveWebApplicationContextRunner()
+              .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
               .withConfiguration(
                   AutoConfigurations.of(
                       AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))

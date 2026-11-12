@@ -23,6 +23,40 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizJpaEnvironmentPostProcessor` | Relational defaults (lowest precedence): no open-session-in-view, UTC, batching, schema validation, Flyway, and the AWS Advanced JDBC Wrapper for Aurora (failover, enhanced failure monitoring, optional IAM authentication and read/write splitting for read-only transactions). |
 | `RequestAuditorProvider` | Auditor of `createdBy`/`updatedBy`: the end user, or the calling application for machine-to-machine requests, as authenticated by the security starter; `system` otherwise. |
 
+## IAM workload identity
+
+When `axiz.jpa.aws-wrapper.iam=true`, the framework uses a credential-free wrapper profile with
+failover2, EFM2, optional read/write splitting and its IAM SPI plugin. Each framework-managed Hikari pool borrows one context identity through a credential resource. Every physical connection/reconnection signs a fresh
+token for its effective host and user. No process-global credential handler is replaced.
+
+Custom `wrapperPlugins`, `wrapperProfileName` and per-connection `awsProfile` settings are not
+combined with framework-owned IAM; configure custom authentication explicitly instead. Standard
+password authentication remains available when IAM is disabled. IRSA is exclusive when declared;
+other workloads use the SDK's default source, including Pod Identity.
+
+## Application AWS credentials
+
+With wrapper IAM enabled, a global `AwsCredentialsProvider` bean,
+`@AwsIdentityFor(service = AwsService.RDS)` or
+`@AwsIdentityFor(capability = AwsCapability.JPA)` supplies the identity for Hikari connections. The pool must be unstarted.
+The bridge gives each pool an opaque scope ID and its own SDK plugin profile, preserving failover,
+EFM and optional read/write splitting. Connection properties remain strings; the typed provider
+is borrowed through a scoped registry because the driver normalizes property values to text.
+The SDK's global credential handler is never replaced.
+
+Spring bean destruction closes the pool before removing its scope/profile. Processor destruction
+also removes registrations for pools whose initialization failed. A closed or missing scope fails
+closed; it never silently selects workload credentials. Another context's scope is unaffected.
+The application/Spring owns application-provider closure; connection and profile cleanup do not
+close it. Without an application provider, the context owns one default source; the pool closes its
+resource when its scope is released, including failed initialization. Database or STS failures and individual
+connection replacement do not close that shared source; its provider refreshes credentials as needed.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-jpa-spring-boot-autoconfigure verify`.
+
+Only `axiz-jpa-iam` / `axiz-jpa-iam-split` pools are enrolled. External wrapper pools are left
+unchanged even when running. Unknown reserved scopes fail closed; using the framework IAM plugin
+without a managed scope is rejected before resolving credentials. Pool and identity lifetimes
+are separate: Spring closes pools before the context-owned default source.

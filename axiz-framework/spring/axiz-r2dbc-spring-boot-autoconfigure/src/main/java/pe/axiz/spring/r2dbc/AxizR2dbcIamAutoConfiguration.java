@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
 
 /**
  * IAM database authentication for Aurora ({@code axiz.r2dbc.iam.enabled=true}): every new
@@ -31,14 +32,16 @@ public class AxizR2dbcIamAutoConfiguration {
       Environment env,
       AxizR2dbcProperties p,
       ObjectProvider<Clock> clock,
-      ResourceLoader resources) {
+      ResourceLoader resources,
+      AwsIdentity identity) {
     return IamTokens.provider(
         env.getRequiredProperty("spring.r2dbc.url"),
         env.getRequiredProperty("spring.r2dbc.username"),
         p.iam(),
         env.getProperty("axiz.aws.region"),
         clock.getIfAvailable(Clock::systemUTC),
-        resources.getClassLoader());
+        resources.getClassLoader(),
+        identity);
   }
 
   @Bean

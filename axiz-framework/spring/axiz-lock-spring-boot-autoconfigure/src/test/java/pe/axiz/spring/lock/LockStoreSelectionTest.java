@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.LockTemplate;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** The lock store is chosen explicitly; a lock that cannot exclude other replicas is refused. */
@@ -15,6 +16,7 @@ class LockStoreSelectionTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(
               AutoConfigurations.of(
                   AxizLockRedisAutoConfiguration.class,

@@ -21,6 +21,9 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>io.awspring.cloud</groupId><artifactId>spring-cloud-aws-starter-parameter-store</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-support</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-autoconfigure</artifactId>

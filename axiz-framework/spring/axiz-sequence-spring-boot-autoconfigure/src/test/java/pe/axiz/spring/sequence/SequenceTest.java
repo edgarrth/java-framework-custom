@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.sequence.SequenceStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class SequenceTest {
 
@@ -23,6 +24,7 @@ class SequenceTest {
     h2.setURL("jdbc:h2:mem:seq-rollback;DB_CLOSE_DELAY=-1");
     DataSourceTransactionManager transactions = new DataSourceTransactionManager(h2);
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizSequenceAutoConfiguration.class))
         .withBean(DataSource.class, () -> h2)
         .withBean(PlatformTransactionManager.class, () -> transactions)
@@ -54,6 +56,7 @@ class SequenceTest {
     JdbcDataSource h2 = new JdbcDataSource();
     h2.setURL("jdbc:h2:mem:seq;DB_CLOSE_DELAY=-1");
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizSequenceAutoConfiguration.class))
         .withBean(DataSource.class, () -> h2)
         .withBean(PlatformTransactionManager.class, () -> new DataSourceTransactionManager(h2))

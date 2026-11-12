@@ -21,6 +21,8 @@
   </properties>
 
   <dependencies>
+    <!-- Parameter Store bootstrap uses web identity even without other AWS capabilities. -->
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-config-spring-boot-autoconfigure</artifactId>

@@ -1,7 +1,6 @@
 package pe.axiz.spring.messaging;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Map;
 import org.springframework.beans.factory.ObjectProvider;
@@ -24,20 +23,24 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.messaging.sns.SnsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.sns.SnsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 /** Native AWS producers, created only for configured destinations or supplied async clients. */
 @AutoConfiguration(afterName = "pe.axiz.spring.foundation.AxizFoundationAutoConfiguration")
 @ConditionalOnClass(
-    name = {"reactor.core.publisher.Mono", "pe.axiz.adapter.observability.aws.AsyncAwsClients"})
+    name = {"reactor.core.publisher.Mono", "pe.axiz.adapter.aws.transport.AsyncAwsClients"})
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @ConditionalOnMissingBean(AsyncEventPublisher.class)
@@ -59,12 +62,17 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
       AsyncAwsClients axizMessagingSqsAsyncResources(
-          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-        return AwsCompletionMetrics.create(
+          AxizAwsCompletionProperties completion,
+          ObjectProvider<MeterRegistry> registries,
+          AwsIdentity identity) {
+        return AwsAsyncResources.create(
             "axizMessagingSqsAsyncResources",
             completion.workers(),
             completion.queueCapacity(),
-            registries.getIfAvailable(() -> Metrics.globalRegistry));
+            registries.getIfAvailable(),
+            identity,
+            AwsService.SQS,
+            AwsCapability.MESSAGING);
       }
 
       @Bean(destroyMethod = "close")
@@ -73,7 +81,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
           Environment env,
           ObjectProvider<ObservationRegistry> observations,
           AxizMessagingAwsProperties aws) {
-        return clients.configured(
+        return AwsObservability.configured(
+            clients,
             SqsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,
@@ -101,12 +110,17 @@ public class AxizNativeMessagingAwsAutoConfiguration {
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
       AsyncAwsClients axizMessagingSnsAsyncResources(
-          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-        return AwsCompletionMetrics.create(
+          AxizAwsCompletionProperties completion,
+          ObjectProvider<MeterRegistry> registries,
+          AwsIdentity identity) {
+        return AwsAsyncResources.create(
             "axizMessagingSnsAsyncResources",
             completion.workers(),
             completion.queueCapacity(),
-            registries.getIfAvailable(() -> Metrics.globalRegistry));
+            registries.getIfAvailable(),
+            identity,
+            AwsService.SNS,
+            AwsCapability.MESSAGING);
       }
 
       @Bean(destroyMethod = "close")
@@ -115,7 +129,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
           Environment env,
           ObjectProvider<ObservationRegistry> observations,
           AxizMessagingAwsProperties aws) {
-        return clients.configured(
+        return AwsObservability.configured(
+            clients,
             SnsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,

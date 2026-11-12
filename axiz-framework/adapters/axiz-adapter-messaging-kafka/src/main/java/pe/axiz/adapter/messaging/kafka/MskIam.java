@@ -16,7 +16,7 @@ public final class MskIam {
         "sasl.mechanism", "AWS_MSK_IAM",
         "sasl.jaas.config", "software.amazon.msk.auth.iam.IAMLoginModule required;",
         "sasl.client.callback.handler.class",
-            "software.amazon.msk.auth.iam.IAMClientCallbackHandler");
+            "pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler");
   }
 
   /** Producer defaults for reliable delivery. */

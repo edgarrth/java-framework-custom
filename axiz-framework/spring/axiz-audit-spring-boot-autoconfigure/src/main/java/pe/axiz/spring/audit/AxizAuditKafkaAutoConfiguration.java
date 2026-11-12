@@ -1,7 +1,6 @@
 package pe.axiz.spring.audit;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import java.util.HashMap;
 import java.util.Objects;
 import org.apache.kafka.clients.producer.Producer;
@@ -62,7 +61,7 @@ public class AxizAuditKafkaAutoConfiguration {
         env.getProperty("axiz.audit.kafka.send-workers", Integer.class, 2),
         env.getProperty("axiz.audit.kafka.send-queue-capacity", Integer.class, 256),
         p.kafka().timeout(),
-        registries.getIfAvailable(() -> Metrics.globalRegistry));
+        registries.getIfAvailable());
   }
 
   @Bean

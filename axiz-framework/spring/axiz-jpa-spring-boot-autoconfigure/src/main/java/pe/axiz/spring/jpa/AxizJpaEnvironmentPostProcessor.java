@@ -28,6 +28,7 @@ public class AxizJpaEnvironmentPostProcessor implements EnvironmentPostProcessor
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
+    env.getPropertySources().remove(SOURCE);
     Map<String, Object> d = new LinkedHashMap<>();
     d.put("spring.jpa.open-in-view", "false");
     d.put("spring.jpa.hibernate.ddl-auto", "validate");
@@ -41,16 +42,27 @@ public class AxizJpaEnvironmentPostProcessor implements EnvironmentPostProcessor
     d.put("spring.datasource.hikari.maximum-pool-size", "20");
     if (env.getProperty("axiz.jpa.aws-wrapper.enabled", Boolean.class, false)) {
       List<String> plugins = new ArrayList<>(List.of("failover2", "efm2"));
-      if (env.getProperty("axiz.jpa.aws-wrapper.iam", Boolean.class, false)) {
-        plugins.add("iam");
-      }
-      if (env.getProperty("axiz.jpa.aws-wrapper.read-write-splitting", Boolean.class, false)) {
-        plugins.add(0, "readWriteSplitting");
-      }
+      boolean iam = env.getProperty("axiz.jpa.aws-wrapper.iam", Boolean.class, false);
+      boolean split =
+          env.getProperty("axiz.jpa.aws-wrapper.read-write-splitting", Boolean.class, false);
       d.put("spring.datasource.driver-class-name", "software.amazon.jdbc.Driver");
-      d.put(
-          "spring.datasource.hikari.data-source-properties.wrapperPlugins",
-          String.join(",", plugins));
+      String pluginProperty = "spring.datasource.hikari.data-source-properties.wrapperPlugins";
+      String profileProperty = "spring.datasource.hikari.data-source-properties.wrapperProfileName";
+      if (iam) {
+        if (env.containsProperty(pluginProperty) || env.containsProperty(profileProperty))
+          throw new IllegalStateException(
+              "Framework JDBC IAM owns its wrapper profile; remove custom"
+                  + " wrapperPlugins/wrapperProfileName or configure custom authentication without"
+                  + " axiz.jpa.aws-wrapper.iam");
+        d.put(profileProperty, JdbcIamProfiles.register(split));
+        String region = env.getProperty("axiz.aws.region");
+        if (region == null) region = env.getProperty("AWS_REGION");
+        if (region != null && !region.isBlank())
+          d.put("spring.datasource.hikari.data-source-properties.iamRegion", region);
+      } else {
+        if (split) plugins.add(0, "readWriteSplitting");
+        d.put(pluginProperty, String.join(",", plugins));
+      }
       d.put("spring.datasource.hikari.data-source-properties.wrapperDialect", "aurora-pg");
       d.put(
           "spring.datasource.hikari.exception-override-class-name",

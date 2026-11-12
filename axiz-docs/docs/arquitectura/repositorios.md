@@ -35,7 +35,7 @@ propio parent puede importar ambos sin heredar nada.
 - release-please mantiene un PR de release con la próxima versión y el changelog (Conventional
   Commits); al hacer merge crea el tag `v<x.y.z>`, que publica la versión en Nexus.
 - Toda API obsoleta se marca `@Deprecated(forRemoval = true)` con al menos una minor de aviso, y
-  cada release trae sus recetas de OpenRewrite (ver [Migración](../migracion/index.md)).
+  cada release trae sus recetas de OpenRewrite (ver [Migración](../guias/actualizar-servicio.md)).
 - Nexus Repository es el repositorio de artefactos Maven e imágenes; las credenciales vienen de los
   secretos de CI o de `~/.m2/settings.xml`, nunca de un repositorio.
 

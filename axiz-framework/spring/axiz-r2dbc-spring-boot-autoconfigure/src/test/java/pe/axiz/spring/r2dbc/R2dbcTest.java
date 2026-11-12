@@ -37,6 +37,7 @@ import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.EncryptedText;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -94,6 +95,7 @@ class R2dbcTest {
   void iamTokenIsResolvedPerConnection() {
     DatabasePasswordProvider tokens = () -> "token-1";
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
         .withBean(DatabasePasswordProvider.class, () -> tokens)
@@ -108,6 +110,7 @@ class R2dbcTest {
               assertEquals("token-1", Mono.from((Publisher<?>) password).block(T).toString());
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcIamAutoConfiguration.class))
         .run(ctx -> assertFalse(ctx.containsBean("axizR2dbcIamPassword")));
@@ -218,6 +221,7 @@ class R2dbcTest {
 
   private static ApplicationContextRunner context(FakeR2dbc db) {
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")

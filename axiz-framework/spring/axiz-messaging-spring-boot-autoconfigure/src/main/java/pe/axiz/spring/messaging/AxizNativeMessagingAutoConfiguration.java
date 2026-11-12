@@ -41,15 +41,11 @@ public class AxizNativeMessagingAutoConfiguration {
             "No native messaging adapter supports configured "
                 + ConfigurationErrors.destination(destination.getKey(), destination.getValue())
                 + "; configure "
-                + destinationProperty(destination.getKey()));
+                + ConfigurationErrors.destinationProperty(
+                    "axiz.messaging.destinations", destination.getKey()));
     }
     return new ObservedAsyncEventPublisher(
         routing, observations.getIfAvailable(() -> ObservationRegistry.NOOP), properties);
-  }
-
-  private static String destinationProperty(String logical) {
-    return "axiz.messaging.destinations"
-        + (logical.matches("[A-Za-z0-9_.-]+") ? "." + logical : " (see destination above)");
   }
 
   @Bean

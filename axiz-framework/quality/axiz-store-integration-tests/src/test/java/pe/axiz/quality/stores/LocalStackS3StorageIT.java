@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectMetadata;
@@ -85,15 +86,17 @@ class LocalStackS3StorageIT {
     }
     resources =
         new AsyncAwsClients(
-            () -> {
-              REFRESHES.incrementAndGet();
-              LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
-              return credentials.resolveCredentials();
-            },
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                () -> {
+                  REFRESHES.incrementAndGet();
+                  LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2));
+                  return credentials.resolveCredentials();
+                }),
             Clock.systemUTC(),
             Duration.ofMillis(25));
     client =
-        resources.configured(
+        AwsObservability.configured(
+            resources,
             S3AsyncClient.builder().forcePathStyle(true),
             ObservationRegistry.NOOP,
             key ->

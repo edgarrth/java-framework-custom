@@ -11,7 +11,7 @@ axiz add messaging-kafka
 |---|---|
 | Starter | `pe.axiz:axiz-messaging-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Dependencias | `pe.axiz:axiz-adapter-messaging-kafka`<br>`org.springframework.boot:spring-boot-starter-kafka`<br>`software.amazon.msk:aws-msk-iam-auth` |
+| Dependencias | `pe.axiz:axiz-adapter-messaging-kafka`<br>`org.springframework.boot:spring-boot-starter-kafka`<br>`software.amazon.msk:aws-msk-iam-auth`<br>`pe.axiz:axiz-adapter-observability-aws` |
 | Incluida por defecto en | event-processor |
 
 ## Propiedades que agrega
@@ -20,13 +20,20 @@ Valores por defecto seguros en `application.yaml`; los valores de cada ambiente 
 
 ```yaml
 spring.kafka.bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-axiz.messaging.kafka.iam: ${AXIZ_KAFKA_IAM:false}
+axiz.messaging.kafka.iam: ${AXIZ_KAFKA_IAM:true}
+```
+
+Perfil `local` (`application-local.yaml`):
+
+```yaml
+axiz.messaging.kafka.iam: false
 ```
 
 ## Llaves del ConfigMap por ambiente
 
 - `spring.kafka.bootstrap-servers`
 - `axiz.messaging.destinations`
+- `axiz.messaging.kafka.iam`
 
 ## Uso
 

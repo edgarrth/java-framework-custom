@@ -19,6 +19,7 @@ import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class MessagingTest {
 
@@ -65,6 +66,7 @@ class MessagingTest {
     Recorder recorder = new Recorder();
     OrderHandler handler = new OrderHandler();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withPropertyValues(
             "spring.application.name=orders",
@@ -96,6 +98,7 @@ class MessagingTest {
   @Test
   void missingHandlerForSubscriptionFailsStartup() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withPropertyValues("axiz.messaging.consumer.subscriptions=pe.axiz.other.v1")
         .run(ctx -> assertTrue(ctx.getStartupFailure() != null));

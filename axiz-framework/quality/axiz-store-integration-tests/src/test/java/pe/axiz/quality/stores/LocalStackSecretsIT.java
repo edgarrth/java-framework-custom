@@ -30,7 +30,8 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
@@ -136,14 +137,15 @@ class LocalStackSecretsIT {
     lifecycle = new NettyLifecycleProbe();
     resources =
         new AsyncAwsClients(
-            () -> {
-              REFRESHES.incrementAndGet();
-              assertTrue(
-                  !Thread.currentThread().getName().contains("Netty")
-                      && !Thread.currentThread().getName().startsWith("parallel-"));
-              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
-              return credentials.resolveCredentials();
-            },
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                () -> {
+                  REFRESHES.incrementAndGet();
+                  assertTrue(
+                      !Thread.currentThread().getName().contains("Netty")
+                          && !Thread.currentThread().getName().startsWith("parallel-"));
+                  LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+                  return credentials.resolveCredentials();
+                }),
             Clock.systemUTC(),
             Duration.ofMillis(25));
     Function<String, String> properties =
@@ -155,9 +157,15 @@ class LocalStackSecretsIT {
               default -> null;
             };
     manager =
-        resources.configured(
-            SecretsManagerAsyncClient.builder(), OBSERVATIONS, properties, "secretsmanager");
-    parameters = resources.configured(SsmAsyncClient.builder(), OBSERVATIONS, properties, "ssm");
+        AwsObservability.configured(
+            resources,
+            SecretsManagerAsyncClient.builder(),
+            OBSERVATIONS,
+            properties,
+            "secretsmanager");
+    parameters =
+        AwsObservability.configured(
+            resources, SsmAsyncClient.builder(), OBSERVATIONS, properties, "ssm");
   }
 
   @AfterAll

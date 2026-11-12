@@ -68,4 +68,4 @@ axiz upgrade --to 1.3.0
 ```
 
 `upgrade` cambia la versión del parent y del manifiesto y aplica las recetas de OpenRewrite de esa
-versión (ver [Migración](../migracion/index.md)).
+versión (ver [Migración](../guias/actualizar-servicio.md)).

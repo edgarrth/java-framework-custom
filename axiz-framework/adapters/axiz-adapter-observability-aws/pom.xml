@@ -1,53 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-technology</artifactId>
-    <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
-  </parent>
-
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
   <artifactId>axiz-adapter-observability-aws</artifactId>
   <name>axiz :: adapter :: observability-aws</name>
-  <description>AWS SDK v2 execution interceptor producing Micrometer observations</description>
-
-  <properties>
-    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
-
-    <axiz.module.name>pe.axiz.adapter.observability.aws</axiz.module.name>
-  </properties>
-
+  <description>Micrometer instrumentation of AWS clients and completion resources</description>
+  <properties><axiz.module.name>pe.axiz.adapter.observability.aws</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
-    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId><optional>true</optional></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>io.netty</groupId><artifactId>netty-resolver-dns</artifactId></dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-observability</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>sdk-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>aws-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>regions</artifactId>
-    </dependency>
-    <!-- a real client to check what configured() applies -->
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>dynamodb</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId></dependency>
-    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-observability</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>dynamodb</artifactId><scope>test</scope></dependency>
   </dependencies>
 </project>

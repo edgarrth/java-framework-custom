@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.springframework.util.ClassUtils;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
 import reactor.core.publisher.Mono;
 
 /** IAM authentication tokens as the password of R2DBC connections. */
@@ -21,14 +22,15 @@ final class IamTokens {
       AxizR2dbcProperties.Iam iam,
       @Nullable String awsRegion,
       Clock clock,
-      @Nullable ClassLoader classLoader) {
+      @Nullable ClassLoader classLoader,
+      AwsIdentity identity) {
     if (!ClassUtils.isPresent(
             "pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider", classLoader)
         || !ClassUtils.isPresent("software.amazon.awssdk.services.rds.RdsUtilities", classLoader))
       throw new IllegalStateException(
           "R2DBC IAM requires runtime dependency pe.axiz:axiz-adapter-database-auth-aws"
               + " or an application DatabasePasswordProvider");
-    return AwsIamTokens.provider(r2dbcUrl, username, iam, awsRegion, clock);
+    return AwsIamTokens.provider(r2dbcUrl, username, iam, awsRegion, clock, identity);
   }
 
   /**

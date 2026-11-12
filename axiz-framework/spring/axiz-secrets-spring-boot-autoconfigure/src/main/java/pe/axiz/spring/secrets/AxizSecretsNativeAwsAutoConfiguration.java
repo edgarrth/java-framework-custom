@@ -4,7 +4,6 @@ import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -14,7 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.secrets.aws.ParameterStoreAsyncResolver;
 import pe.axiz.adapter.secrets.aws.SecretsManagerAsyncResolver;
 import pe.axiz.core.secrets.AsyncSecretResolver;
@@ -43,10 +43,11 @@ public class AxizSecretsNativeAwsAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     SecretsManagerAsyncClient axizSecretsManagerAsyncClient(
-        @Qualifier("axizSecretsAsyncAwsResources") AsyncAwsClients clients,
+        @Qualifier("axizSecretsManagerAsyncAwsResources") AsyncAwsClients clients,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
-      return clients.configured(
+      return AwsObservability.configured(
+          clients,
           SecretsManagerAsyncClient.builder(),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
@@ -69,10 +70,11 @@ public class AxizSecretsNativeAwsAutoConfiguration {
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     SsmAsyncClient axizSsmAsyncClient(
-        @Qualifier("axizSecretsAsyncAwsResources") AsyncAwsClients clients,
+        @Qualifier("axizSsmAsyncAwsResources") AsyncAwsClients clients,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
-      return clients.configured(
+      return AwsObservability.configured(
+          clients,
           SsmAsyncClient.builder(),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
@@ -85,27 +87,10 @@ public class AxizSecretsNativeAwsAutoConfiguration {
       String path = p.parameterStore().path();
       if (path == null || path.isBlank())
         throw new IllegalStateException(
-            "axiz.secrets.parameter-store.path is required when the Parameter Store source is enabled");
+            "axiz.secrets.parameter-store.path is required when the Parameter Store source is"
+                + " enabled");
       return new AsyncSecretSource(
           "parameter-store", new ParameterStoreAsyncResolver(client, path));
     }
-  }
-
-  static final class OwnerNeeded extends AnyNestedCondition {
-    OwnerNeeded() {
-      super(ConfigurationPhase.REGISTER_BEAN);
-    }
-
-    @ConditionalOnBooleanProperty(name = "axiz.secrets.secrets-manager.enabled")
-    @ConditionalOnMissingBean(
-        type = "software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient")
-    @ConditionalOnClass(
-        name = "software.amazon.awssdk.services.secretsmanager.SecretsManagerAsyncClient")
-    static class ManagerMissing {}
-
-    @ConditionalOnBooleanProperty(name = "axiz.secrets.parameter-store.enabled")
-    @ConditionalOnMissingBean(type = "software.amazon.awssdk.services.ssm.SsmAsyncClient")
-    @ConditionalOnClass(name = "software.amazon.awssdk.services.ssm.SsmAsyncClient")
-    static class ParameterMissing {}
   }
 }

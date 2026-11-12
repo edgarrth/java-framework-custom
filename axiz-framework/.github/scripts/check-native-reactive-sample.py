@@ -11,6 +11,7 @@ import socket
 import subprocess
 import time
 import urllib.request
+from irsa_fixture import IrsaFixture
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--module', type=Path, required=True)
@@ -26,6 +27,7 @@ if not binary.is_file() or binary.read_bytes()[:4] != b'\x7fELF':
 containers = []
 process = None
 service_log = None
+irsa = IrsaFixture()
 
 def docker(*args):
     return subprocess.check_output(['docker', *args], text=True).strip()
@@ -60,22 +62,18 @@ try:
         if time.monotonic() >= deadline:
             raise TimeoutError('Native runtime dependencies did not become ready')
         time.sleep(0.5)
+    docker('exec', localstack, 'awslocal', 'sqs', 'create-queue',
+           '--queue-name', 'native-acceptance-audit')
     with socket.socket() as reservation:
         reservation.bind(('127.0.0.1', 0))
         service_port = reservation.getsockname()[1]
-    environment = os.environ.copy()
-    environment.update(AWS_ACCESS_KEY_ID='test', AWS_SECRET_ACCESS_KEY='test', AWS_REGION='us-east-1',
-                       AWS_CONFIG_FILE='/dev/null', AWS_SHARED_CREDENTIALS_FILE='/dev/null',
-                       AWS_EC2_METADATA_DISABLED='true')
-    environment.pop('AWS_PROFILE', None)
-    environment.pop('AWS_SESSION_TOKEN', None)
-    environment.pop('NEXUS_USERNAME', None)
-    environment.pop('NEXUS_PASSWORD', None)
+    environment = irsa.environment()
+    # Framework-owned clients must discover STS in this ELF and resolve web identity, not static keys.
     # Deliberately omit runtime PRNG flags: the parent must configure the compiled default.
-    args = [str(binary), '--server.address=127.0.0.1', f'--server.port={service_port}',
+    args = [str(binary), '--axiz.acceptance.default-identity-probe=true', '--server.address=127.0.0.1', f'--server.port={service_port}',
             f'--axiz.aws.endpoint={aws_endpoint}', '--axiz.aws.region=us-east-1',
+            f'--axiz.audit.sqs.queue-url={aws_endpoint}/000000000000/native-acceptance-audit',
             f'--spring.cloud.aws.endpoint={aws_endpoint}', '--spring.cloud.aws.region.static=us-east-1',
-            '--spring.cloud.aws.credentials.access-key=test', '--spring.cloud.aws.credentials.secret-key=test',
             f'--spring.r2dbc.url=r2dbc:postgresql://127.0.0.1:{pg_port}/app',
             '--spring.r2dbc.username=app', '--spring.r2dbc.password=native-acceptance-only',
             '--spring.r2dbc.properties.sslMode=disable',
@@ -103,11 +101,45 @@ try:
         with urllib.request.urlopen(f'http://127.0.0.1:{service_port}/actuator/health/{endpoint}', timeout=5) as response:
             if json.load(response).get('status') != 'UP':
                 raise RuntimeError(f'Native {endpoint} probe is not UP')
+    if irsa.sts_calls < 1 or irsa.imds_calls or irsa.invalid_requests:
+        raise RuntimeError(f'Native IRSA did not resolve through STS exclusively: '
+                           f'sts={irsa.sts_calls}, imds={irsa.imds_calls}, invalid={irsa.invalid_requests}')
+    if 'AXIZ_D3_AUDIT_PROVIDER_USED' not in (logs / 'native-runtime-service.log').read_text():
+        raise RuntimeError('Native audit did not use the qualified application credentials provider')
+    deadline = time.monotonic() + 30
+    while 'AXIZ_I2_DEFAULT_CONTEXT_VALIDATED' not in (logs / 'native-runtime-service.log').read_text():
+        if process.poll() is not None or time.monotonic() >= deadline:
+            raise RuntimeError('Native default-context identity/cleanup probe did not complete')
+        time.sleep(0.2)
+    elapsed = round(time.monotonic() - started, 3)
+    process.terminate()
+    process.wait(timeout=15)
+    irsa.succeed = False
+    previous_sts = irsa.sts_calls
+    with (logs / 'native-runtime-invalid-irsa.log').open('w') as rejected_log:
+        process = subprocess.Popen(args, cwd=project, env=environment,
+                                   stdout=rejected_log, stderr=subprocess.STDOUT)
+        try:
+            status = process.wait(timeout=60)
+        except subprocess.TimeoutExpired as failure:
+            raise RuntimeError('Native service did not reject invalid IRSA during startup') from failure
+    rejected = (logs / 'native-runtime-invalid-irsa.log').read_text()
+    if (status == 0 or not any(reason in rejected for reason in ('InvalidIdentityToken', 'fixture denied'))
+            or irsa.sts_calls <= previous_sts or irsa.imds_calls):
+        raise RuntimeError('Native invalid-IRSA check did not fail closed through STS')
     evidence = {'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
                 'health': 'UP', 'liveness': 'UP', 'readiness': 'UP',
-                'elapsed_to_health_seconds': round(time.monotonic() - started, 3),
+                'elapsed_to_health_seconds': elapsed,
                 'postgres_image': 'postgres:17.6-alpine', 'aws_emulator': 'localstack/localstack:4.9',
-                'runtime': 'native ELF; no JVM process'}
+                'runtime': 'native ELF; no JVM process',
+                'credentials': 'IRSA via local STS; no static AWS credentials in environment',
+                'sts_requests': irsa.sts_calls, 'imds_requests': irsa.imds_calls,
+                'valid_irsa_sts_requests': previous_sts,
+                'invalid_irsa_sts_requests': irsa.sts_calls - previous_sts,
+                'invalid_irsa_exit_code': status,
+                'qualified_application_provider_used': True,
+                'default_context_identity_validated': True,
+                'invalid_irsa_rejected_at_startup': True}
     (logs / 'native-runtime-result.json').write_text(json.dumps(evidence, indent=2) + '\n')
     print('PASS: generated native service health, liveness and readiness UP with real PostgreSQL and LocalStack')
 finally:
@@ -120,6 +152,7 @@ finally:
             process.wait(timeout=5)
     if service_log is not None:
         service_log.close()
+    irsa.close()
     for container in reversed(containers):
         subprocess.run(['docker', 'rm', '-f', container], stdout=subprocess.DEVNULL,
                        stderr=subprocess.DEVNULL, check=False)

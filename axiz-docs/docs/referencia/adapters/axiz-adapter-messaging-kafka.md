@@ -21,7 +21,29 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `KafkaEventRecords` | Shared binary CloudEvents encoding for synchronous and asynchronous Kafka publication. |
 | `KafkaEnvelopes` | Maps consumed Kafka records back to envelopes. |
 | `KafkaEventPublisher` | Publishes CloudEvents (binary mode) to Amazon MSK. |
+| `AxizIamClientCallbackHandler` | AWS IAM callback: exclusive workload identity when IRSA is declared; standard SDK options otherwise. |
 | `MskIam` | Client properties for Amazon MSK with IAM authentication. |
+
+## AWS authentication
+
+The optional `aws-msk-iam-auth` and `axiz-adapter-aws` dependencies support IAM.
+Generated `messaging-kafka` projects include both. A standalone MSK consumer includes both explicitly;
+generic Kafka without IAM does not need them. `MskIam.clientProperties()` selects the callback in
+`pe.axiz.adapter.messaging.kafka.aws`. With IRSA, role/profile overrides in JAAS are rejected and
+invalid web identity cannot fall through to node credentials. The callback owns and closes its
+source. The IAM library still handles its SASL protocol and signing.
+
+Spring supplies `AxizIamClientCallbackHandler.CREDENTIALS_SOURCE_FACTORY_CONFIG`
+(`axiz.msk.credentials.source-factory`) with a `Supplier<AwsCredentialSource>`.
+Each callback acquires and closes its own resource; the selected application provider or the
+context's default identity remains shared and is closed by its owner. A standalone caller can
+supply the same factory contract. Without it, the callback owns a workload source for declared
+IRSA or preserves the standard IAM delegate when IRSA is absent.
+
+The callback uses the IAM library's internal `AWSCredentialsCallback` and
+`region.ConfigurableRegionProvider` classes from `software.amazon.msk.auth.iam.internals`.
+The BOM pins `aws-msk-iam-auth` to 2.3.8; keep `MskIrsaTest` passing when updating it.
+With IRSA declared, static system/environment credentials cannot override web identity.
 
 ## Tests
 

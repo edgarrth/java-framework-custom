@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent-technology</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-adapter-aws</artifactId>
+  <name>axiz :: adapter :: aws</name>
+  <description>AWS identity, credential resources and bounded native client transport</description>
+
+  <properties>
+    <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
+
+    <axiz.module.name>pe.axiz.adapter.aws</axiz.module.name>
+  </properties>
+
+  <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>io.netty</groupId><artifactId>netty-resolver-dns</artifactId></dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sdk-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>regions</artifactId>
+    </dependency>
+    <!-- Runtime web identity support must reach consumers that do not use Kafka. -->
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId></dependency>
+    <!-- a real client to check what configured() applies -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>dynamodb</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId></dependency>
+  </dependencies>
+  <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId>
+    <executions><execution><id>aws-base-independent-of-telemetry</id><goals><goal>enforce</goal></goals>
+      <configuration><rules><bannedDependencies><excludes>
+        <exclude>io.micrometer:*</exclude><exclude>pe.axiz:axiz-core-observability</exclude>
+        <exclude>pe.axiz:axiz-adapter-observability-aws</exclude>
+      </excludes><searchTransitive>true</searchTransitive></bannedDependencies></rules></configuration>
+    </execution></executions>
+  </plugin></plugins></build>
+</project>

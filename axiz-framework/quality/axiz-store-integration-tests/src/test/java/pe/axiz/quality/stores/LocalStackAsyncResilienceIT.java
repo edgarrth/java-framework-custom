@@ -25,13 +25,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
 import pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock;
 import pe.axiz.adapter.messaging.sns.SnsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsAsyncEventPublisher;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.secrets.aws.ParameterStoreAsyncResolver;
 import pe.axiz.adapter.secrets.aws.SecretsManagerAsyncResolver;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
@@ -83,13 +84,16 @@ class LocalStackAsyncResilienceIT {
     LOCALSTACK.start();
     resources =
         new AsyncAwsClients(
-            StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey())),
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()))),
             Clock.systemUTC(),
             Duration.ofSeconds(1));
     var dynamo =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 DynamoDbAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -107,7 +111,8 @@ class LocalStackAsyncResilienceIT {
     }
     var sqs =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 SqsAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -116,7 +121,8 @@ class LocalStackAsyncResilienceIT {
         sqs.createQueue(b -> b.queueName("r8-resilience")).get(20, TimeUnit.SECONDS).queueUrl();
     var sns =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 SnsAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -125,7 +131,8 @@ class LocalStackAsyncResilienceIT {
         sns.createTopic(b -> b.name("r8-resilience")).get(20, TimeUnit.SECONDS).topicArn();
     var kms =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 KmsAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -133,7 +140,8 @@ class LocalStackAsyncResilienceIT {
     String key = kms.createKey(b -> {}).get(20, TimeUnit.SECONDS).keyMetadata().keyId();
     var sm =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 SecretsManagerAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -141,7 +149,8 @@ class LocalStackAsyncResilienceIT {
     sm.createSecret(b -> b.name("r8-token").secretString("test-value")).get(20, TimeUnit.SECONDS);
     var ssm =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 SsmAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,
@@ -150,7 +159,8 @@ class LocalStackAsyncResilienceIT {
         .get(20, TimeUnit.SECONDS);
     var s3 =
         own(
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 S3AsyncClient.builder().forcePathStyle(true),
                 ObservationRegistry.NOOP,
                 LocalStackAsyncResilienceIT::property,

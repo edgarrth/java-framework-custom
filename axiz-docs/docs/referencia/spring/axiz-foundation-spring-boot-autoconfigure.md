@@ -32,6 +32,50 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `SpringTransactionRunner` | Runs work in a new or joined Spring transaction; checked exceptions roll back too. |
 | `SqlDialects` | Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). |
 
+## AWS identity extension
+
+AWS integrations inject the declarative, context-owned `foundation.aws.AwsIdentity` bean.
+It selects optional singleton SDK `AwsCredentialsProvider` beans using typed scopes:
+
+```java
+@Bean(destroyMethod = "close")
+@AwsIdentityFor(service = AwsService.S3)
+StsAssumeRoleCredentialsProvider storageIdentity(
+    StsClient sts, @Value("${app.aws.storage-role-arn}") String roleArn) {
+  return StsAssumeRoleCredentialsProvider.builder()
+      .stsClient(sts)
+      .refreshRequest(request -> request.roleArn(roleArn).roleSessionName("storage"))
+      .asyncCredentialUpdateEnabled(true)
+      .build();
+}
+```
+
+Import `AwsIdentityFor`, `AwsService` and `AwsCapability` from
+`pe.axiz.spring.foundation.aws`. The application configures the STS client and role permissions.
+Declare exactly one of `service` or `capability`:
+`@AwsIdentityFor(capability = AwsCapability.AUDIT)` targets audit, for example.
+Selection order is capability → AWS service → unqualified global bean → context SDK source.
+A unique `@Primary` resolves multiple beans within one scope. Invalid declarations, ambiguous
+scopes and non-singleton providers fail startup, including declarations for unused scopes.
+An unqualified `defaultCandidate=false` bean is excluded from the global scope; a typed scoped
+bean remains eligible. Parent candidates are inherited unless their bean name is shadowed.
+
+Textual or unrelated application qualifiers are excluded from global selection and are never
+interpreted as AWS scopes. Composed annotations may alias the typed annotation attributes.
+A provider is borrowed through a non-closing view of `resolveCredentials`; a custom
+`resolveIdentity` implementation does not bypass the snapshot policy. Application providers
+remain Spring-owned. Asynchronous clients and R2DBC warm and refresh snapshots outside request
+threads. Each capability owns and closes its clients, workers and credential resources.
+
+The manager is passive infrastructure. Creating it never creates SDK sources or application
+providers; the default source is shared lazily within the context. Consumers inject this manager,
+without bean-factory parameters, runtime bean definitions or consumer-name lifecycle APIs.
+An INFO entry reports the configured source for each selected service/capability pair, once and
+lazily. It contains no credentials or full ARN and makes no AWS calls to identify the principal.
+Foundation remains usable without AWS dependencies. Config-data/bootstrap clients created before
+the application context use Spring Cloud AWS's bootstrap extension instead. A complete SDK client
+supplied by the application retains its owner's identity configuration.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-foundation-spring-boot-autoconfigure verify`.
@@ -57,3 +101,15 @@ one native request. Core stage composition captures callbacks through a JDK-only
 core has no dependency on Reactor or Micrometer. Scopes open and close on the same executing
 thread, restoring the worker's previous context. No global Reactor hook is installed.
 Context propagation remains optional; native stages also work when its JAR is physically absent.
+
+## AWS resource ownership
+
+`AwsIdentity.source(AwsService, AwsCapability)` returns `AwsCredentialSource`: consumers always
+close it or transfer it to their resource owner. `.provider()` is a non-closing SDK view, invalid
+after resource/context closure. `factory(...)` supplies an independent resource per invocation;
+`configure(...)` transfers ownership to an SDK client plugin. `AwsAsyncResources.create` composes
+identity, native transport and the optional context registry. No registry means no metric binding.
+
+Spring's direct dependency graph closes consumers before the identity manager. When a lazy
+application provider is selected, the manager records that actual provider dependency internally,
+so it also survives cleanup of failed pools. It does not scan unrelated beans in creation.

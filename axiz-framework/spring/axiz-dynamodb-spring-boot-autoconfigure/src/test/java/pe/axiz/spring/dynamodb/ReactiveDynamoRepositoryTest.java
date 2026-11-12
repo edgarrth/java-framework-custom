@@ -16,12 +16,13 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Item;
 import pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfigurationTest.Movement;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -140,6 +141,7 @@ class ReactiveDynamoRepositoryTest {
 
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizDynamoDbAutoConfiguration.class));
   }
 

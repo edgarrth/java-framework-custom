@@ -17,6 +17,7 @@ import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.PasswordHasher;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class CryptoTest {
 
@@ -29,6 +30,7 @@ class CryptoTest {
           "axiz.crypto.kms.key-id"
         }) {
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizCryptoAutoConfiguration.class))
           .withPropertyValues(key + "=", "axiz.crypto.password.algorithm=pbkdf2")
           .run(
@@ -45,6 +47,7 @@ class CryptoTest {
     Map<String, String> store = Map.of("field-key-k1", k1, "field-key-k2", k2, "blind", hmac);
     SecretResolver secrets = name -> Optional.ofNullable(store.get(name)).map(SecretValue::of);
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizCryptoAutoConfiguration.class))
         .withBean(SecretResolver.class, () -> secrets)
         .withPropertyValues(

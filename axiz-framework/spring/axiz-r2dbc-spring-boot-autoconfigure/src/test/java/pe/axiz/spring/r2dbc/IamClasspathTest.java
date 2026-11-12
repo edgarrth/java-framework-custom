@@ -21,6 +21,7 @@ import org.springframework.boot.r2dbc.autoconfigure.ConnectionFactoryOptionsBuil
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 
 class IamClasspathTest {
@@ -72,6 +73,7 @@ class IamClasspathTest {
 
   private ApplicationContextRunner withoutAwsAdapter() {
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withClassLoader(
             new FilteredClassLoader(
                 "pe.axiz.adapter.databaseauth.aws", "software.amazon.awssdk.services.rds"))

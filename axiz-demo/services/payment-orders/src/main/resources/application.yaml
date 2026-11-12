@@ -29,7 +29,7 @@ axiz:
   messaging:
     type-prefix: pe.axiz.payments.
     kafka:
-      iam: ${AXIZ_KAFKA_IAM:false}
+      iam: ${AXIZ_KAFKA_IAM:true}
       group-id: payment-orders
     destinations:
       payments: ${AXIZ_PAYMENTS_TOPIC:kafka:payments}

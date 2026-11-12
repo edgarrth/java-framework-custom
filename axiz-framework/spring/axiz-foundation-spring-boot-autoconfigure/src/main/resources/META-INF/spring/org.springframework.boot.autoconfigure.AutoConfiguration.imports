@@ -1,1 +1,2 @@
 pe.axiz.spring.foundation.AxizFoundationAutoConfiguration
+pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration

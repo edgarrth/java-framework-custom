@@ -33,7 +33,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -128,7 +129,8 @@ class NativeAwsTlsIT {
     try (var handlers = Executors.newVirtualThreadPerTaskExecutor();
         var resources =
             new AsyncAwsClients(
-                StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")),
+                pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                    StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"))),
                 Clock.systemUTC(),
                 Duration.ofMinutes(1))) {
       server.setExecutor(handlers);
@@ -211,7 +213,8 @@ class NativeAwsTlsIT {
 
   private static S3AsyncClient client(
       AsyncAwsClients resources, String endpoint, ObservationRegistry observations) {
-    return resources.configured(
+    return AwsObservability.configured(
+        resources,
         S3AsyncClient.builder().forcePathStyle(true),
         observations,
         key ->

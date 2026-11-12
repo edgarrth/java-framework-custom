@@ -22,6 +22,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
 import pe.axiz.core.inbox.InboxStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** The purge of expired inbox rows and the DynamoDB store. */
@@ -122,6 +123,7 @@ class InboxWiringTest {
   @Test
   void theDynamoDbStoreUsesTheConfiguredTableAndEndpoint() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizInboxDynamoDbAutoConfiguration.class))
         .withPropertyValues(
             "axiz.inbox.store=dynamodb",
@@ -139,6 +141,7 @@ class InboxWiringTest {
                       .orElseThrow());
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizInboxDynamoDbAutoConfiguration.class))
         .run(ctx -> assertThat(ctx).doesNotHaveBean(InboxStore.class));
   }

@@ -21,6 +21,7 @@ import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.HandlesEvent;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 
@@ -77,6 +78,7 @@ class ReactiveEdaTest {
     FakeR2dbc fake = new FakeR2dbc().onUpdate("INSERT INTO payment_history", b -> 1L);
     ProjectPayment handler = new ProjectPayment(DatabaseClient.create(fake));
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(fake))
         .withBean("projectPayment", ProjectPayment.class, () -> handler)
@@ -102,6 +104,7 @@ class ReactiveEdaTest {
   @SuppressWarnings("unchecked")
   void handlingIsBounded() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withPropertyValues("axiz.messaging.consumer.handler-timeout=100ms")
         .withBean("stuck", Stuck.class, Stuck::new)

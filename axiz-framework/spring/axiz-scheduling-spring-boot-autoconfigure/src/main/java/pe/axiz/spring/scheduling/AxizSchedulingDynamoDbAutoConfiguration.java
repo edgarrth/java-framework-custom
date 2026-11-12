@@ -12,7 +12,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /**
@@ -27,15 +30,16 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 public class AxizSchedulingDynamoDbAutoConfiguration {
 
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnClass(name = "pe.axiz.adapter.observability.aws.AwsClients")
+  @ConditionalOnClass(name = "pe.axiz.adapter.observability.aws.AwsObservability")
   static class Client {
 
     @Bean(destroyMethod = "close")
     @ConditionalOnMissingBean
     DynamoDbClient axizDynamoDbClient(
-        Environment env, ObjectProvider<ObservationRegistry> registry) {
-      return AwsClients.configured(
-          DynamoDbClient.builder(),
+        Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+      return AwsObservability.configured(
+          identity.configure(
+              DynamoDbClient.builder(), AwsService.DYNAMODB, AwsCapability.SCHEDULING),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "dynamodb");

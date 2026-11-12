@@ -43,6 +43,7 @@ import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.spring.foundation.DispatchBoundary;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
 
 /** Real commits and rollbacks with one connection expose publication at the wrong boundary. */
@@ -93,6 +94,7 @@ class AuditBoundaryRegressionTest {
     var jdbc = new JdbcTemplate(source);
     jdbc.execute("CREATE TABLE effects (id VARCHAR(64) PRIMARY KEY)");
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withUserConfiguration(Config.class)
         .withPropertyValues(

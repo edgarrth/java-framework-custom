@@ -24,9 +24,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.crypto.kms.KmsDataKeyProvider;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
@@ -88,16 +89,18 @@ class LocalStackKmsIT {
     lifecycle = new NettyLifecycleProbe();
     resources =
         new AsyncAwsClients(
-            () -> {
-              PROVIDER_THREADS.add(Thread.currentThread().getName());
-              REFRESHES.incrementAndGet();
-              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
-              return credentials.resolveCredentials();
-            },
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                () -> {
+                  PROVIDER_THREADS.add(Thread.currentThread().getName());
+                  REFRESHES.incrementAndGet();
+                  LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+                  return credentials.resolveCredentials();
+                }),
             Clock.systemUTC(),
             Duration.ofMillis(25));
     async =
-        resources.configured(
+        AwsObservability.configured(
+            resources,
             KmsAsyncClient.builder(),
             ObservationRegistry.NOOP,
             key ->

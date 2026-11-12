@@ -1,7 +1,6 @@
 package pe.axiz.spring.audit;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
@@ -17,20 +16,22 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.audit.sqs.SqsAuditPublisher;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * SQS sink for audit events, active when {@code axiz.audit.sqs.queue-url} is set. Credentials come
- * from the SDK default chain (IRSA or EKS Pod Identity); without an {@link SqsClient} bean the
- * client is built like the messaging one ({@code axiz.aws.region}, {@code axiz.aws.sqs.endpoint} or
- * {@code axiz.aws.endpoint}, observed).
+ * Dedicated SQS audit clients use optional audit/service/global identity identity and framework AWS
+ * transport conventions. Their named, non-default identity allow a separate audit account without
+ * becoming messaging's client. Applications may replace them by the explicit audit bean name.
  */
 @AutoConfiguration
 @ConditionalOnClass(
@@ -43,12 +44,13 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 @EnableConfigurationProperties({AxizAuditProperties.class, AxizAwsCompletionProperties.class})
 public class AxizAuditSqsAutoConfiguration {
 
-  @Bean(destroyMethod = "close")
-  @ConditionalOnMissingBean
+  @Bean(destroyMethod = "close", defaultCandidate = false)
+  @ConditionalOnMissingBean(name = "axizAuditSqsClient")
   @ConditionalOnImperativeApplication
-  SqsClient axizSqsClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
-    return AwsClients.configured(
-        SqsClient.builder(),
+  SqsClient axizAuditSqsClient(
+      Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+    return AwsObservability.configured(
+        identity.configure(SqsClient.builder(), AwsService.SQS, AwsCapability.AUDIT),
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
         env::getProperty,
         "sqs");
@@ -56,7 +58,8 @@ public class AxizAuditSqsAutoConfiguration {
 
   @Bean
   @ConditionalOnImperativeApplication
-  AuditSink axizSqsAuditSink(SqsClient sqs, AxizAuditProperties properties) {
+  AuditSink axizSqsAuditSink(
+      @Qualifier("axizAuditSqsClient") SqsClient sqs, AxizAuditProperties properties) {
     return new AuditSink(
         "sqs", new SqsAuditPublisher(sqs, Objects.requireNonNull(properties.sqs().queueUrl())));
   }
@@ -65,24 +68,30 @@ public class AxizAuditSqsAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   static class NativeConfiguration {
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(SqsAsyncClient.class)
+    @ConditionalOnMissingBean(name = "axizAuditSqsAsyncClient")
     static class ClientConfiguration {
       @Bean(destroyMethod = "close")
       AsyncAwsClients axizAuditAsyncAwsResources(
-          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-        return AwsCompletionMetrics.create(
+          AxizAwsCompletionProperties completion,
+          ObjectProvider<MeterRegistry> registries,
+          AwsIdentity identity) {
+        return AwsAsyncResources.create(
             "axizAuditAsyncAwsResources",
             completion.workers(),
             completion.queueCapacity(),
-            registries.getIfAvailable(() -> Metrics.globalRegistry));
+            registries.getIfAvailable(),
+            identity,
+            AwsService.SQS,
+            AwsCapability.AUDIT);
       }
 
-      @Bean(destroyMethod = "close")
+      @Bean(destroyMethod = "close", defaultCandidate = false)
       SqsAsyncClient axizAuditSqsAsyncClient(
           @Qualifier("axizAuditAsyncAwsResources") AsyncAwsClients clients,
           Environment env,
           ObjectProvider<ObservationRegistry> observations) {
-        return clients.configured(
+        return AwsObservability.configured(
+            clients,
             SqsAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,
@@ -91,7 +100,8 @@ public class AxizAuditSqsAutoConfiguration {
     }
 
     @Bean
-    AsyncAuditSink axizSqsAsyncAuditSink(SqsAsyncClient sqs, AxizAuditProperties properties) {
+    AsyncAuditSink axizSqsAsyncAuditSink(
+        @Qualifier("axizAuditSqsAsyncClient") SqsAsyncClient sqs, AxizAuditProperties properties) {
       return new AsyncAuditSink(
           "sqs",
           new SqsAsyncAuditPublisher(sqs, Objects.requireNonNull(properties.sqs().queueUrl())));

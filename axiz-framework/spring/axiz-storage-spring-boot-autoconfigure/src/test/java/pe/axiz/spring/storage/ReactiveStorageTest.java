@@ -25,13 +25,14 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.InMemoryAsyncObjectStorage;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.adapter.JdkFlowAdapter;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -45,6 +46,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 class ReactiveStorageTest {
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizStorageS3AutoConfiguration.class, AxizStorageAutoConfiguration.class));

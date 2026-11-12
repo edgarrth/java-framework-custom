@@ -14,6 +14,7 @@ import pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore;
 import pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore;
 import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 
 class ReactiveRelationalSequenceTest {
@@ -26,6 +27,7 @@ class ReactiveRelationalSequenceTest {
 
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizSequenceAutoConfiguration.class, AxizSequenceR2dbcAutoConfiguration.class));

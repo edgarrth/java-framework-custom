@@ -11,6 +11,7 @@ import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 /** Which store and which filter a service gets, and where the in-memory store is refused. */
@@ -18,10 +19,12 @@ class IdempotencyAutoConfigurationTest {
 
   private final WebApplicationContextRunner servlet =
       new WebApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizIdempotencyAutoConfiguration.class));
 
   private final ReactiveWebApplicationContextRunner reactive =
       new ReactiveWebApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizIdempotencyAutoConfiguration.class));
 
   @Test

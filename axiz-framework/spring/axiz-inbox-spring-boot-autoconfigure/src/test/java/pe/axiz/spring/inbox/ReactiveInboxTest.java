@@ -17,6 +17,7 @@ import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.test.StepVerifier;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -34,6 +35,7 @@ class ReactiveInboxTest {
             .onUpdate("DELETE", ignored -> 1L)
             .onQuery("SELECT", ignored -> List.of());
     new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizInboxR2dbcAutoConfiguration.class))
         .withPropertyValues("axiz.inbox.store=r2dbc")
         .withBean(ReactiveSql.class, () -> new R2dbcSql(db))
@@ -113,6 +115,7 @@ class ReactiveInboxTest {
   void disabledInboxDoesNotInitializeNativeOrPollClients() {
     for (String backend : List.of("dynamodb", "r2dbc")) {
       new ReactiveWebApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(
               AutoConfigurations.of(
                   AxizInboxDynamoDbAutoConfiguration.class,

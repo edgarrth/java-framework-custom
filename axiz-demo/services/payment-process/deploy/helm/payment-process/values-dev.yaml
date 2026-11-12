@@ -36,6 +36,7 @@ config:
       base-url: http://banking-core.payments-dev.svc.cluster.local
     payment-network-gateway:
       base-url: http://payment-network-gateway.payments-dev.svc.cluster.local
+  axiz.messaging.kafka.iam: true
   spring.kafka.bootstrap-servers: b-1.payments-dev.kafka.us-east-1.amazonaws.com:9098,b-2.payments-dev.kafka.us-east-1.amazonaws.com:9098
   axiz.messaging.destinations:
     payments: kafka:payments

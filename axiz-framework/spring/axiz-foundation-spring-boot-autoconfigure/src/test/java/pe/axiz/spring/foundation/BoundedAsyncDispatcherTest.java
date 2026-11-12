@@ -20,6 +20,32 @@ import org.junit.jupiter.api.Test;
 
 class BoundedAsyncDispatcherTest {
   @Test
+  void missingContextRegistryDoesNotDisableDispatchOrCreateGlobalMetrics() throws Exception {
+    try (var dispatcher =
+        new BoundedAsyncDispatcher("without-registry", 1, 1, Duration.ofSeconds(2), null)) {
+      assertEquals(
+          "ok",
+          dispatcher
+              .submit(() -> CompletableFuture.completedFuture("ok"))
+              .toCompletableFuture()
+              .get(2, TimeUnit.SECONDS));
+      dispatcher.close();
+      assertThrows(
+          CompletionException.class,
+          () ->
+              dispatcher
+                  .submit(() -> CompletableFuture.completedFuture("late"))
+                  .toCompletableFuture()
+                  .join());
+    }
+    org.junit.jupiter.api.Assertions.assertNull(
+        io.micrometer.core.instrument.Metrics.globalRegistry
+            .find("axiz.transport.pending")
+            .tag("transport", "without-registry")
+            .gauge());
+  }
+
+  @Test
   void boundsUnacknowledgedSendsAndReturnsCapacityOnAck() throws Exception {
     var registry = new SimpleMeterRegistry();
     try (var dispatcher =

@@ -27,4 +27,4 @@ puede reaparecer y cada una tiene su verificación.
 | Pruebas que afirman un comportamiento defectuoso para subir cobertura | pruebas del comportamiento esperado + mutation testing | PIT, revisión |
 | Prefijos de propiedades mezclados | solo `axiz.<capacidad>.*` | metadata de propiedades, revisión |
 | Rutas de archivos construidas con datos del usuario | directorios temporales aleatorios, `ObjectKey` | Semgrep `axiz-path-from-user-input` |
-| `helm upgrade` desde el pipeline contra el clúster | GitOps con Argo CD | workflows compartidos (`service-cd`) |
+| `helm upgrade` desde el pipeline contra el clúster | GitOps con Argo CD | workflows compartidos (`service-deploy`) |

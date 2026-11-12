@@ -21,6 +21,7 @@ import org.springframework.core.Ordered;
 import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmClient;
 
@@ -29,6 +30,7 @@ class SecretSourcesTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(
               AutoConfigurations.of(
                   AxizSecretsAwsAutoConfiguration.class, AxizSecretsAutoConfiguration.class))

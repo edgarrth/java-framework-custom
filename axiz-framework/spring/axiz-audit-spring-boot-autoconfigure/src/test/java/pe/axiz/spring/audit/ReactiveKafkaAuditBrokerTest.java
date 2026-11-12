@@ -24,6 +24,7 @@ import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -50,6 +51,7 @@ class ReactiveKafkaAuditBrokerTest {
             new StringSerializer());
     try {
       new ReactiveWebApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withBean(ProducerFactory.class, () -> factory)
           .withConfiguration(
               AutoConfigurations.of(

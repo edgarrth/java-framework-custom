@@ -1,9 +1,7 @@
 package pe.axiz.spring.storage;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
-import java.net.URI;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,9 +16,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.aws.identity.AwsCredentialSource;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AwsClientSettings;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.adapter.storage.s3.S3ObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
@@ -28,7 +27,10 @@ import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
-import software.amazon.awssdk.regions.Region;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
@@ -48,32 +50,46 @@ public class AxizStorageS3AutoConfiguration {
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
-  S3Client axizS3Client(Environment env, ObjectProvider<ObservationRegistry> registry) {
-    String endpoint =
-        env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
-    return AwsClients.build(
-        S3Client.builder().forcePathStyle(!endpoint.isBlank()),
+  S3Client axizS3Client(
+      Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+    var settings =
+        AwsClientSettings.resolve(env::getProperty, "s3", AwsClientSettings.RegionPolicy.SDK_CHAIN);
+    return AwsObservability.configured(
+        identity
+            .configure(S3Client.builder(), AwsService.S3, AwsCapability.STORAGE)
+            .forcePathStyle(settings.endpointOverridden()),
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
-        env.getProperty("axiz.aws.region"),
-        endpoint);
+        env::getProperty,
+        "s3");
+  }
+
+  @Bean(destroyMethod = "close")
+  @ConditionalOnMissingBean(S3Presigner.class)
+  @ConditionalOnImperativeApplication
+  AwsCredentialSource axizS3PresignerIdentity(AwsIdentity identity) {
+    return identity.source(AwsService.S3, AwsCapability.STORAGE);
   }
 
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
   @ConditionalOnImperativeApplication
-  S3Presigner axizS3Presigner(Environment env) {
+  S3Presigner axizS3Presigner(
+      Environment env, @Qualifier("axizS3PresignerIdentity") AwsCredentialSource source) {
     S3Presigner.Builder b = S3Presigner.builder();
-    String region = env.getProperty("axiz.aws.region");
-    if (region != null) {
-      b.region(Region.of(region));
-    }
-    String endpoint =
-        env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
-    if (!endpoint.isBlank()) {
-      b.endpointOverride(URI.create(endpoint));
+    var settings =
+        AwsClientSettings.resolve(env::getProperty, "s3", AwsClientSettings.RegionPolicy.SDK_CHAIN);
+    if (settings.region() != null) b.region(settings.region());
+    if (settings.endpoint() != null) {
+      b.endpointOverride(settings.endpoint());
       b.serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
     }
-    return b.build();
+    try {
+      // The presigner closes its provider; use the same fail-closed policy as the S3 client.
+      return b.credentialsProvider(source.provider()).build();
+    } catch (RuntimeException | Error failure) {
+      source.close();
+      throw failure;
+    }
   }
 
   @Bean
@@ -95,12 +111,17 @@ public class AxizStorageS3AutoConfiguration {
     @Bean(destroyMethod = "close")
     @Conditional(DefaultResourcesNeeded.class)
     AsyncAwsClients axizStorageAsyncAwsResources(
-        AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-      return AwsCompletionMetrics.create(
+        AxizAwsCompletionProperties completion,
+        ObjectProvider<MeterRegistry> registries,
+        AwsIdentity identity) {
+      return AwsAsyncResources.create(
           "axizStorageAsyncAwsResources",
           completion.workers(),
           completion.queueCapacity(),
-          registries.getIfAvailable(() -> Metrics.globalRegistry));
+          registries.getIfAvailable(),
+          identity,
+          AwsService.S3,
+          AwsCapability.STORAGE);
     }
 
     @Bean(destroyMethod = "close")
@@ -109,10 +130,12 @@ public class AxizStorageS3AutoConfiguration {
         @Qualifier("axizStorageAsyncAwsResources") AsyncAwsClients clients,
         Environment env,
         ObjectProvider<ObservationRegistry> observations) {
-      String endpoint =
-          env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
-      return clients.configured(
-          S3AsyncClient.builder().forcePathStyle(!endpoint.isBlank()),
+      var settings =
+          AwsClientSettings.resolve(
+              env::getProperty, "s3", AwsClientSettings.RegionPolicy.EXPLICIT);
+      return AwsObservability.configured(
+          clients,
+          S3AsyncClient.builder().forcePathStyle(settings.endpointOverridden()),
           observations.getIfAvailable(() -> ObservationRegistry.NOOP),
           env::getProperty,
           "s3");
@@ -122,19 +145,16 @@ public class AxizStorageS3AutoConfiguration {
     @ConditionalOnMissingBean
     S3Presigner axizReactiveS3Presigner(
         @Qualifier("axizStorageAsyncAwsResources") AsyncAwsClients clients, Environment env) {
-      String region = env.getProperty("axiz.aws.region");
-      if (region == null || region.isBlank()) region = System.getenv("AWS_REGION");
-      if (region == null || region.isBlank())
-        throw new IllegalStateException("Async S3 presigning requires an explicit AWS region");
+      var settings =
+          AwsClientSettings.resolve(
+              env::getProperty, "s3", AwsClientSettings.RegionPolicy.EXPLICIT);
       var builder =
           S3Presigner.builder()
-              .region(Region.of(region))
+              .region(Objects.requireNonNull(settings.region()))
               .credentialsProvider(clients.credentialsProvider());
-      String endpoint =
-          env.getProperty("axiz.aws.s3.endpoint", env.getProperty("axiz.aws.endpoint", ""));
-      if (!endpoint.isBlank())
+      if (settings.endpoint() != null)
         builder
-            .endpointOverride(URI.create(endpoint))
+            .endpointOverride(settings.endpoint())
             .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build());
       return builder.build();
     }

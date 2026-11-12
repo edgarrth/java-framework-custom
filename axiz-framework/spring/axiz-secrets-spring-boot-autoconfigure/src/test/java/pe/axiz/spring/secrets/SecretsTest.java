@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.mock.env.MockEnvironment;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class SecretsTest {
 
@@ -22,6 +23,7 @@ class SecretsTest {
   void mountedFilesWinAndValuesAreNeverPrinted(@TempDir Path dir) throws Exception {
     Files.writeString(dir.resolve("db-password"), "s3cr3t\n");
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizSecretsAutoConfiguration.class))
         .withPropertyValues("axiz.secrets.directory=" + dir, "axiz.secrets.environment=false")
         .withBean(

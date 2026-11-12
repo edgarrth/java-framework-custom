@@ -28,8 +28,9 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.messaging.sns.SnsEventPublisher;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.json.JsonReader;
@@ -166,19 +167,28 @@ class LocalStackMessagingIT {
     lifecycle = new NettyLifecycleProbe();
     resources =
         new AsyncAwsClients(
-            () -> {
-              REFRESHES.incrementAndGet();
-              LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
-              return credentials.resolveCredentials();
-            },
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                () -> {
+                  REFRESHES.incrementAndGet();
+                  LockSupport.parkNanos(Duration.ofMillis(2).toNanos());
+                  return credentials.resolveCredentials();
+                }),
             Clock.systemUTC(),
             Duration.ofMillis(25));
     sqs =
-        resources.configured(
-            SqsAsyncClient.builder(), OBSERVATIONS, LocalStackMessagingIT::property, "sqs");
+        AwsObservability.configured(
+            resources,
+            SqsAsyncClient.builder(),
+            OBSERVATIONS,
+            LocalStackMessagingIT::property,
+            "sqs");
     sns =
-        resources.configured(
-            SnsAsyncClient.builder(), OBSERVATIONS, LocalStackMessagingIT::property, "sns");
+        AwsObservability.configured(
+            resources,
+            SnsAsyncClient.builder(),
+            OBSERVATIONS,
+            LocalStackMessagingIT::property,
+            "sns");
   }
 
   private static @Nullable String property(String key) {

@@ -25,7 +25,7 @@
          auto-configuration uses it, so it travels with the adapter -->
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-observability-aws</artifactId>
+      <artifactId>axiz-adapter-aws</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

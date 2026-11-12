@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.commons.TransactionOutcome;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 
 class AuditOptionalTransactionsTest {
@@ -35,6 +36,7 @@ class AuditOptionalTransactionsTest {
   void imperativeAuditWorksWhenTheTransactionCapabilityIsAbsent() {
     var events = new ArrayList<AuditEvent>();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withClassLoader(new FilteredClassLoader("org.springframework.transaction"))
         .withConfiguration(
             AutoConfigurations.of(AopAutoConfiguration.class, AxizAuditAutoConfiguration.class))
@@ -55,6 +57,7 @@ class AuditOptionalTransactionsTest {
   void nativeAuditWorksWhenTheTransactionCapabilityIsAbsent() {
     var events = new ArrayList<AuditEvent>();
     new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withClassLoader(new FilteredClassLoader("org.springframework.transaction"))
         .withConfiguration(
             AutoConfigurations.of(

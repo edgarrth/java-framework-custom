@@ -23,6 +23,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `RecordingEventPublisher` | Publisher that records events; can be switched to fail to test retries. |
 | `FakeR2dbc` | In-memory R2DBC driver for unit tests, reporting itself as PostgreSQL (`$n` bind markers): statements are matched by a regular expression on their SQL and answered by scripted functions of the bound values; every execution, bind and transaction event is recorded for assertions. |
 
+## Workload identity fixture
+
+`AwsIdentityFixture` provides loopback STS/SSM and an IMDS sentinel with fictitious temporary
+credentials. Its child-process environment removes inherited AWS identity and Java credential
+options. Check request counters and `invalidRequests()` as well as the client's result. This
+fixture verifies local credential selection and signing; it does not authenticate against AWS.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl quality/axiz-test-support verify`.

@@ -24,7 +24,7 @@ axiz:
   messaging:
     type-prefix: pe.axiz.payments.
     kafka:
-      iam: ${AXIZ_KAFKA_IAM:false}
+      iam: ${AXIZ_KAFKA_IAM:true}
       topics:
       - payments
       group-id: payments-history

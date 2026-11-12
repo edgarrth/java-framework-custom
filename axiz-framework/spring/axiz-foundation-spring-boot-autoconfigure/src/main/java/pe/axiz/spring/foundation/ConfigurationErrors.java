@@ -22,6 +22,12 @@ public final class ConfigurationErrors {
         + (missing.isEmpty() ? "" : "; unresolved variables: " + missing);
   }
 
+  /** A safe property hint; display syntax does not dictate how scalar maps are bound. */
+  public static String destinationProperty(String prefix, String logical) {
+    if (!logical.matches("[A-Za-z0-9_.-]+")) return prefix + " (see destination above)";
+    return logical.contains(".") ? prefix + "[" + logical + "]" : prefix + "." + logical;
+  }
+
   private static String address(String value) {
     if (!value.contains("://")) return value;
     try {

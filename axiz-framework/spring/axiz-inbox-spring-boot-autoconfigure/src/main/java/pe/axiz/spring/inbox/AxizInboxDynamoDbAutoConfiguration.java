@@ -1,7 +1,6 @@
 package pe.axiz.spring.inbox;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.observation.ObservationRegistry;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,14 +15,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
-import pe.axiz.adapter.observability.aws.AwsClients;
-import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
+import pe.axiz.spring.foundation.aws.AwsAsyncResources;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
@@ -40,9 +42,10 @@ public class AxizInboxDynamoDbAutoConfiguration {
   /** Only without the DynamoDB starter (or another {@link DynamoDbClient} bean): same settings. */
   @Bean(destroyMethod = "close")
   @ConditionalOnMissingBean
-  DynamoDbClient axizDynamoDbClient(Environment env, ObjectProvider<ObservationRegistry> registry) {
-    return AwsClients.configured(
-        DynamoDbClient.builder(),
+  DynamoDbClient axizDynamoDbClient(
+      Environment env, ObjectProvider<ObservationRegistry> registry, AwsIdentity identity) {
+    return AwsObservability.configured(
+        identity.configure(DynamoDbClient.builder(), AwsService.DYNAMODB, AwsCapability.INBOX),
         registry.getIfAvailable(() -> ObservationRegistry.NOOP),
         env::getProperty,
         "dynamodb");
@@ -64,12 +67,17 @@ public class AxizInboxDynamoDbAutoConfiguration {
       @Bean(destroyMethod = "close")
       @ConditionalOnMissingBean(DynamoDbAsyncClient.class)
       AsyncAwsClients axizInboxAsyncAwsResources(
-          AxizAwsCompletionProperties completion, ObjectProvider<MeterRegistry> registries) {
-        return AwsCompletionMetrics.create(
+          AxizAwsCompletionProperties completion,
+          ObjectProvider<MeterRegistry> registries,
+          AwsIdentity identity) {
+        return AwsAsyncResources.create(
             "axizInboxAsyncAwsResources",
             completion.workers(),
             completion.queueCapacity(),
-            registries.getIfAvailable(() -> Metrics.globalRegistry));
+            registries.getIfAvailable(),
+            identity,
+            AwsService.DYNAMODB,
+            AwsCapability.INBOX);
       }
 
       @Bean(destroyMethod = "close")
@@ -78,7 +86,8 @@ public class AxizInboxDynamoDbAutoConfiguration {
           @Qualifier("axizInboxAsyncAwsResources") AsyncAwsClients clients,
           Environment env,
           ObjectProvider<ObservationRegistry> observations) {
-        return clients.configured(
+        return AwsObservability.configured(
+            clients,
             DynamoDbAsyncClient.builder(),
             observations.getIfAvailable(() -> ObservationRegistry.NOOP),
             env::getProperty,

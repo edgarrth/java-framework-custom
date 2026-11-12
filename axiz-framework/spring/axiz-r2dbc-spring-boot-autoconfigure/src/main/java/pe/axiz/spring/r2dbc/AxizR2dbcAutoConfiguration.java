@@ -24,6 +24,7 @@ import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
 
 /**
  * Reactive relational persistence on Aurora PostgreSQL: a {@link ReactiveSql} that joins the
@@ -55,7 +56,8 @@ public class AxizR2dbcAutoConfiguration {
       Environment env,
       ObjectProvider<ConnectionFactoryDecorator> decorators,
       ObjectProvider<Clock> clock,
-      ResourceLoader resources) {
+      ResourceLoader resources,
+      AwsIdentity identity) {
     String url = env.getRequiredProperty("axiz.r2dbc.reader.url");
     String username = env.getProperty("spring.r2dbc.username");
     var iam =
@@ -66,7 +68,8 @@ public class AxizR2dbcAutoConfiguration {
                 p.iam(),
                 env.getProperty("axiz.aws.region"),
                 clock.getIfAvailable(Clock::systemUTC),
-                resources.getClassLoader())
+                resources.getClassLoader(),
+                identity)
             : null;
     return new ReaderDatabase(
         ReaderConnections.create(

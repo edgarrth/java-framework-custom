@@ -26,6 +26,33 @@ class AxizConfigEnvironmentPostProcessorTest {
           + "file:/etc/axiz/config/errors/application.yaml";
 
   @Test
+  void incompleteWebIdentityFailsBeforeConfigBootstrapWhileCompleteDeclarationsAreAllowed() {
+    for (String key :
+        List.of(
+            "AWS_ROLE_ARN",
+            "AWS_WEB_IDENTITY_TOKEN_FILE",
+            "aws.roleArn",
+            "aws.webIdentityTokenFile")) {
+      var env = new MockEnvironment().withProperty(key, "fixture");
+      assertThrows(
+          IllegalStateException.class,
+          () -> epp.postProcessEnvironment(env, new SpringApplication()));
+    }
+    var complete =
+        new MockEnvironment()
+            .withProperty("AWS_ROLE_ARN", "role")
+            .withProperty("AWS_WEB_IDENTITY_TOKEN_FILE", "token");
+    epp.postProcessEnvironment(complete, new SpringApplication());
+    var blank =
+        new MockEnvironment()
+            .withProperty("aws.roleArn", " ")
+            .withProperty("aws.webIdentityTokenFile", "token");
+    assertThrows(
+        IllegalStateException.class,
+        () -> epp.postProcessEnvironment(blank, new SpringApplication()));
+  }
+
+  @Test
   void insideClusterImportsTheMountedConfigMaps() {
     // shared (optional), then the service and its error catalog (required): later files win
     MockEnvironment env =

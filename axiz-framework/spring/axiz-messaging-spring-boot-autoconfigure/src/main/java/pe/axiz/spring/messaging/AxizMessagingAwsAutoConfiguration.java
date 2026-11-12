@@ -12,8 +12,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import pe.axiz.adapter.messaging.sns.SnsEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
-import pe.axiz.adapter.observability.aws.AwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.spring.foundation.aws.AwsCapability;
+import pe.axiz.spring.foundation.aws.AwsIdentity;
+import pe.axiz.spring.foundation.aws.AwsService;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
@@ -31,7 +34,7 @@ public class AxizMessagingAwsAutoConfiguration {
       name = {
         "pe.axiz.adapter.messaging.sqs.SqsEventPublisher",
         "software.amazon.awssdk.services.sqs.SqsClient",
-        "pe.axiz.adapter.observability.aws.AwsClients"
+        "pe.axiz.adapter.observability.aws.AwsObservability"
       })
   static class SqsConfiguration {
 
@@ -40,12 +43,13 @@ public class AxizMessagingAwsAutoConfiguration {
     SqsClient axizSqsClient(
         Environment env,
         ObjectProvider<ObservationRegistry> registry,
-        AxizMessagingAwsProperties aws) {
-      return AwsClients.build(
-          SqsClient.builder(),
+        AxizMessagingAwsProperties aws,
+        AwsIdentity identity) {
+      return AwsObservability.configured(
+          identity.configure(SqsClient.builder(), AwsService.SQS, AwsCapability.MESSAGING),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
-          env.getProperty("axiz.aws.region"),
-          env.getProperty("axiz.aws.sqs.endpoint", env.getProperty("axiz.aws.endpoint", "")),
+          env::getProperty,
+          "sqs",
           aws.apiCallTimeout());
     }
 
@@ -69,7 +73,7 @@ public class AxizMessagingAwsAutoConfiguration {
       name = {
         "pe.axiz.adapter.messaging.sns.SnsEventPublisher",
         "software.amazon.awssdk.services.sns.SnsClient",
-        "pe.axiz.adapter.observability.aws.AwsClients"
+        "pe.axiz.adapter.observability.aws.AwsObservability"
       })
   static class SnsConfiguration {
 
@@ -78,12 +82,13 @@ public class AxizMessagingAwsAutoConfiguration {
     SnsClient axizSnsClient(
         Environment env,
         ObjectProvider<ObservationRegistry> registry,
-        AxizMessagingAwsProperties aws) {
-      return AwsClients.build(
-          SnsClient.builder(),
+        AxizMessagingAwsProperties aws,
+        AwsIdentity identity) {
+      return AwsObservability.configured(
+          identity.configure(SnsClient.builder(), AwsService.SNS, AwsCapability.MESSAGING),
           registry.getIfAvailable(() -> ObservationRegistry.NOOP),
-          env.getProperty("axiz.aws.region"),
-          env.getProperty("axiz.aws.sns.endpoint", env.getProperty("axiz.aws.endpoint", "")),
+          env::getProperty,
+          "sns",
           aws.apiCallTimeout());
     }
 

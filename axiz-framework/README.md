@@ -17,7 +17,9 @@ Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for the 
 | Generation | `codegen/` | `axiz-codegen`, templates, archetypes | Shared by CLI and Initializr |
 | Quality | `quality/` | Standards, ArchUnit, test support and store contracts | Tests and architecture enforcement |
 
-[implementation and validation status](docs/migration/2.0/IMPLEMENTACION.md) before accepting a
+`axiz-adapter-aws` is the shared AWS identity/transport base; it has no Spring or Micrometer
+dependency. Spring owns context composition and the optional observability adapter adds telemetry.
+
 candidate. Source changes do not imply that 2.0 has been published.
 
 ## Build
@@ -85,3 +87,5 @@ domain may depend on Axiz domain contracts while remaining independent of third-
 CLI and Initializr share `axiz-codegen`. Templates and archetype metadata are generation assets,
 not alternative runtime implementations. Demo, documentation and workflows are maintained parts
 of the distribution, even though they are not runtime layers.
+
+Preparation and validation limits for the first release: [2.0.0 release notes](docs/releases/2.0.0.md).

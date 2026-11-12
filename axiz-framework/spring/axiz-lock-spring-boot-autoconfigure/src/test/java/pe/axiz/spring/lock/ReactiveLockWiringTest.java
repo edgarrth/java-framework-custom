@@ -19,13 +19,14 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock;
 import pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock;
 import pe.axiz.adapter.lock.redis.RedisDistributedLock;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
 import pe.axiz.core.lock.LockTemplate;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -34,6 +35,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 class ReactiveLockWiringTest {
   private static ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizLockAutoConfiguration.class,
@@ -153,6 +155,7 @@ class ReactiveLockWiringTest {
               verify(connection, never()).sync();
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizLockAutoConfiguration.class, AxizLockRedisAutoConfiguration.class))

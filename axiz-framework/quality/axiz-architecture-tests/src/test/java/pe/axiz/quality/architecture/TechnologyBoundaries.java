@@ -11,6 +11,8 @@ final class TechnologyBoundaries {
   private TechnologyBoundaries() {}
 
   static String technology(String packageName) {
+    if (packageName.equals("pe.axiz.adapter.aws") || packageName.startsWith("pe.axiz.adapter.aws."))
+      return "aws";
     String[] parts = packageName.split("\\.");
     if (parts.length >= 4 && packageName.startsWith("pe.axiz.kit.")) return parts[3];
     if (parts.length >= 5 && packageName.startsWith("pe.axiz.adapter.")) return parts[4];
@@ -18,6 +20,8 @@ final class TechnologyBoundaries {
   }
 
   static String module(String packageName) {
+    if (packageName.equals("pe.axiz.adapter.aws") || packageName.startsWith("pe.axiz.adapter.aws."))
+      return "aws";
     String[] parts = packageName.split("\\.");
     if (packageName.startsWith("pe.axiz.kit.") && parts.length >= 4) return "kit." + parts[3];
     if (packageName.startsWith("pe.axiz.adapter.") && parts.length >= 5)

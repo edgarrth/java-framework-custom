@@ -6,6 +6,17 @@ import org.junit.jupiter.api.Test;
 
 class ConfigurationErrorsTest {
   @Test
+  void propertyHintsUseOneSafePolicyWithoutEchoingUris() {
+    assertThat(ConfigurationErrors.destinationProperty("routes", "audit"))
+        .isEqualTo("routes.audit");
+    assertThat(ConfigurationErrors.destinationProperty("routes", "audit.v2"))
+        .isEqualTo("routes[audit.v2]");
+    assertThat(
+            ConfigurationErrors.destinationProperty("routes", "https://user:secret@host?q=token"))
+        .isEqualTo("routes (see destination above)");
+  }
+
+  @Test
   void describesActualRoutesAndMissingVariablesWithoutLeakingUriCredentials() {
     assertThat(ConfigurationErrors.destination("audit", "kafka:audits"))
         .contains("destination 'audit'", "resolves to 'kafka:audits'");

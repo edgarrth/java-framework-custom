@@ -27,12 +27,13 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
 import pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock;
-import pe.axiz.adapter.observability.aws.AsyncAwsClients;
+import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
@@ -103,12 +104,15 @@ class LocalStackDynamoDbStoresIT {
     inboxLifecycle = new NettyLifecycleProbe();
     inboxResources =
         new AsyncAwsClients(
-            StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey())),
+            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()))),
             Clock.systemUTC(),
             Duration.ofSeconds(1));
     nativeDynamo =
-        inboxResources.configured(
+        AwsObservability.configured(
+            inboxResources,
             DynamoDbAsyncClient.builder(),
             ObservationRegistry.NOOP,
             key ->
@@ -215,9 +219,13 @@ class LocalStackDynamoDbStoresIT {
         };
     var lifecycle = new NettyLifecycleProbe();
     try (var resources =
-            new AsyncAwsClients(credentials, Clock.systemUTC(), Duration.ofMillis(25));
+            new AsyncAwsClients(
+                pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(credentials),
+                Clock.systemUTC(),
+                Duration.ofMillis(25));
         var async =
-            resources.configured(
+            AwsObservability.configured(
+                resources,
                 DynamoDbAsyncClient.builder(),
                 ObservationRegistry.NOOP,
                 key ->

@@ -39,6 +39,7 @@ import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.EncryptedText;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.regions.Region;
@@ -66,6 +67,7 @@ class ReaderAndAuditingTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
           .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
           .withPropertyValues("axiz.r2dbc.encryption-context=account.number");
@@ -163,6 +165,7 @@ class ReaderAndAuditingTest {
   @Test
   void theWriterUsesIamTokensAndFlywayGetsOneForTheMigration() {
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(
             AutoConfigurations.of(
@@ -221,6 +224,7 @@ class ReaderAndAuditingTest {
   void rowsAreStampedWithTheCallerAndTheServiceClock() {
     Clock fixed = Clock.fixed(Instant.parse("2026-10-23T10:15:30Z"), ZoneOffset.UTC);
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(
@@ -246,6 +250,7 @@ class ReaderAndAuditingTest {
               assertEquals(row.getCreatedAt(), row.getUpdatedAt());
             });
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(

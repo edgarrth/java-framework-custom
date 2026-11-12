@@ -47,4 +47,4 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 The JDBC implementation and SQL resources now live in `axiz-adapter-sequence-jdbc`; this module contains
 framework-neutral contracts and orchestration. `TransactionRunner` remains in
 `pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
-`runtime` scope in a service. See [JDBC migration](../../docs/migration/2.0/JDBC.md).
+`runtime` scope in a service. See [JDBC migration](../../docs/architecture/JDBC.md).

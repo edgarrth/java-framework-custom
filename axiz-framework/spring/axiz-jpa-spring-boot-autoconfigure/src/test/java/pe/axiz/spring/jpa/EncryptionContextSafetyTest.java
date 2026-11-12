@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.orm.jpa.EntityManagerFactoryInfo;
 import pe.axiz.kit.jpa.EncryptedConverter;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class EncryptionContextSafetyTest {
   public static class LegacyContext extends EncryptedConverter {
@@ -67,6 +68,7 @@ class EncryptionContextSafetyTest {
     when(unit.getManagedClassNames()).thenReturn(managedTypes);
     when(((EntityManagerFactoryInfo) factory).getPersistenceUnitInfo()).thenReturn(unit);
     return new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizJpaAutoConfiguration.class))
         .withBean(EntityManagerFactory.class, () -> factory);
   }

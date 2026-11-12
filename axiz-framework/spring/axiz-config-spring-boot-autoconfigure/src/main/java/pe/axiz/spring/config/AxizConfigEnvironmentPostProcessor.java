@@ -54,6 +54,7 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
+    verifyWebIdentity(env);
     if (!env.getProperty("axiz.config.enabled", Boolean.class, true)) {
       return;
     }
@@ -107,6 +108,17 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
               new MapPropertySource(
                   IMPORTS, Map.of("spring.config.import", String.join(",", merged))));
     }
+  }
+
+  private static void verifyWebIdentity(ConfigurableEnvironment env) {
+    String role = env.getProperty("aws.roleArn");
+    if (role == null) role = env.getProperty("AWS_ROLE_ARN");
+    String token = env.getProperty("aws.webIdentityTokenFile");
+    if (token == null) token = env.getProperty("AWS_WEB_IDENTITY_TOKEN_FILE");
+    if ((role != null || token != null)
+        && (role == null || role.isBlank() || token == null || token.isBlank()))
+      throw new IllegalStateException(
+          "IRSA requires both AWS_ROLE_ARN and AWS_WEB_IDENTITY_TOKEN_FILE");
   }
 
   static boolean inCluster(ConfigurableEnvironment env) {

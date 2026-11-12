@@ -49,6 +49,7 @@ import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
@@ -325,6 +326,7 @@ class NativeMessagingTest {
 
   private static ReactiveWebApplicationContextRunner runner() {
     return new ReactiveWebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
                 AxizMessagingAutoConfiguration.class,

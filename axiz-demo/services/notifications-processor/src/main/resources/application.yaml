@@ -25,7 +25,7 @@ axiz:
     kafka:
       topics:
       - payments
-      iam: ${AXIZ_KAFKA_IAM:false}
+      iam: ${AXIZ_KAFKA_IAM:true}
       group-id: notifications-processor
     sqs:
       wait-time: 20s

@@ -18,6 +18,7 @@ import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class AuditTest {
 
@@ -35,6 +36,7 @@ class AuditTest {
   void auditableRecordsSanitizedEventsWithRequestContext() {
     List<AuditEvent> events = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=orders", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))

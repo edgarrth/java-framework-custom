@@ -18,6 +18,7 @@ import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.spring.foundation.InboxCompletion;
+import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
 class InboxCompletionWiringTest {
@@ -31,6 +32,7 @@ class InboxCompletionWiringTest {
   void jdbcCompletionExposesTheActualSpringDataSourceAndCompletesTheClaim() {
     var source = source();
     new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizInboxAutoConfiguration.class))
         .withBean(DataSource.class, () -> source)
         .run(
@@ -55,6 +57,7 @@ class InboxCompletionWiringTest {
               ? new JdbcInboxStore(new JdbcTransactions(source), "axiz_inbox")
               : new InboxWiringTest.PurgeCounter();
       new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizInboxAutoConfiguration.class))
           .withBean(DataSource.class, () -> source)
           .withBean(InboxStore.class, () -> store)

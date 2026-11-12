@@ -8,7 +8,7 @@ Writes (and overwrites) only generated files, all marked with GENERATED:
     docs/capacidades/index.md, docs/capacidades/<capability>.md
     docs/arquetipos/catalogo.md
     docs/index.md, docs/<adr>.md
-    docs/migracion/implementacion-2.md
+    docs/arquitectura/jdbc.md
     docs/referencia/index.md, docs/referencia/<layer>/<module>.md
     docs/herramientas/cli-referencia.md          (with --cli-help)
 """
@@ -183,20 +183,13 @@ def adrs(framework, out):
         title = next((l[2:].strip() for l in text.splitlines() if l.startswith('# ')), f)
         status = re.search(r'(?im)^\W*(?:status|estado)\W*:?\W*(\w+)', text)
         rows.append([f'[{title}]({f})', status.group(1) if status else '–'])
-        write(os.path.join(dst, f), text.replace('../migration/2.0/IMPLEMENTACION.md', '../migracion/implementacion-2.md'))
-    implementation = os.path.join(framework, 'docs', 'migration', '2.0', 'IMPLEMENTACION.md')
-    if os.path.isfile(implementation):
-        with open(implementation, encoding='utf-8') as source:
-            write(os.path.join(out, 'migracion', 'implementacion-2.md'),
-                  source.read().replace('../../adr/', '../adr/'))
-    jdbc = os.path.join(framework, 'docs', 'migration', '2.0', 'JDBC.md')
+        write(os.path.join(dst, f), text)
+    write(os.path.join(dst, 'index.md'), '# Decisiones de arquitectura\n\n' +
+          table(rows, ['Decisión', 'Estado']) + '\n')
+    jdbc = os.path.join(framework, 'docs', 'architecture', 'JDBC.md')
     if os.path.isfile(jdbc):
         with open(jdbc, encoding='utf-8') as source:
-            write(os.path.join(out, 'migracion', 'jdbc-2.md'), source.read())
-    write(os.path.join(dst, 'index.md'),
-          '# Decisiones de arquitectura (architecture contract)\n\nDecisiones del framework, sincronizadas desde '
-          '`axiz-framework/docs`. Cada servicio registra las suyas en su propio `docs`.\n\n'
-          + table(rows, ['Decisión', 'Estado']) + '\n')
+            write(os.path.join(out, 'arquitectura', 'jdbc.md'), source.read())
 
 
 def reference(modules, out):
@@ -220,7 +213,7 @@ def reference(modules, out):
                   re.sub(r'\.\./(axiz-[\w-]+)/README\.md',
                          lambda match: match.group(1) + '.md'
                          if match.group(1) in modules.get(layer, {}) else match.group(0),
-                         text.replace('../../docs/migration/2.0/JDBC.md', '../../migracion/jdbc-2.md')
+                         text.replace('../../docs/architecture/JDBC.md', '../../arquitectura/jdbc.md')
                          .replace('../../docs/', '../../adr/')))
         parts.append(table(rows, ['Módulo', 'Descripción']) + '\n')
     write(os.path.join(dst, 'index.md'), '\n'.join(parts))
