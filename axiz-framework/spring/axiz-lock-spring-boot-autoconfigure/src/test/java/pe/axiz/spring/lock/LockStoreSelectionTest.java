@@ -26,7 +26,7 @@ class LockStoreSelectionTest {
   @Test
   void anInMemoryLockIsRefusedWhereSeveralReplicasRun() {
     runner
-        .withPropertyValues("axiz.config.environment=prod")
+        .withPropertyValues("axiz.config.environment=prod", "axiz.lock.store=memory")
         .run(
             ctx ->
                 assertThat(ctx)

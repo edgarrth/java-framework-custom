@@ -24,7 +24,7 @@ import pe.axiz.initializr.config.SecurityConfiguration;
  * chain). Only the SSO discovery is replaced, because it needs a running identity provider; the
  * resource server decoder resolves the issuer lazily and is never called here.
  */
-@SpringBootTest
+@SpringBootTest(properties = "axiz.config.environment=test")
 @AutoConfigureMockMvc
 class InitializrApplicationTest {
 

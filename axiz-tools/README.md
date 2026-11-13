@@ -12,7 +12,7 @@ Developer tooling of the axiz platform. Every tool uses the generation engine of
 ## axiz CLI
 
 ```text
-axiz new <name> --archetype <a> [--framework] [--stack] [--persistence] [-c <capability>]... --openapi <file>
+axiz new <name> --archetype <a> [--structure] [--stack] [--persistence] [-c <capability>]... --openapi <file>
 axiz new -i                                   interactive
 axiz add <capability>...                      starter, properties, ConfigMap keys, tables, example
 axiz generate <type> <name>                   usecase, command, query, handler, event, event-handler,
@@ -38,12 +38,11 @@ Build: `mvn -pl axiz-cli package` (JVM jar `axiz-cli-*-jar-with-dependencies.jar
 `axiz upgrade` stages updates of current v2 projects in a private temporary copy. It updates
 Axiz parents, preserves application versions and unrelated parents, validates with doctor and
 applies changes atomically. `--dry-run` retains a patch without changing the project. Manifests
-must use schema 2; old selectors and unpublished draft schemas are not migrated.
+must use schema 2; any other schema or unknown key is rejected.
 
 Current workflow bindings can be renamed safely without discarding custom jobs. Identity ledgers,
 chart paths and stateful identities protect future renames of v2 services. Java/Spring/JSpecify
-conventions and runtime adapter scope repair remain available; pre-v2 Axiz migration recipes and
-old workflow fixtures have been removed.
+conventions and runtime adapter scope repair are available.
 
 ## axiz initializr
 
@@ -61,7 +60,7 @@ old workflow fixtures have been removed.
 
 ## Releases
 
-Tags `v*` build the CLI JVM artifact, signed native components for all three supported operating
+Tags `axiz-tools-v*` build the CLI JVM artifact, signed native components for all three supported operating
 systems, the recipes and the Initializr image. `ci.yaml` does not publish a release or deploy an
 environment. A manual build may request native components with `native-cli` before creating a tag.
 The recipes version must match the framework version it upgrades to.
@@ -79,7 +78,7 @@ as digest-pinned repository variables. Optional framework candidates are passed 
 native and Initializr builders through the same repository/run/attempt/hash inputs.
 
 The complete contract and current limitations are in
-[the pipeline documentation](../axiz-workflows/docs/pipelines-v2.md).
+[the pipeline documentation](../.github/docs/pipelines-v2.md).
 
 `deploy-initializr.yaml` también recibe `workflow_run` del CI y resuelve un comprobante firmado
 específico de `axiz-initializr`. El modo automático promueve a dev desde el HEAD protegido de main;

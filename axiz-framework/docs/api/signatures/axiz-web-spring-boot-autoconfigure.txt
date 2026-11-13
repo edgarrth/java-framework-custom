@@ -171,7 +171,7 @@ public pe.axiz.spring.web.RequestMetadataFilter(pe.axiz.spring.web.RequestMetada
 public static final int ORDER = -2147483628;
 }
 
-public class pe.axiz.spring.web.RequestMetadataResolver {
+public final class pe.axiz.spring.web.RequestMetadataResolver {
 public boolean isExcluded(java.lang.String);
 public java.util.List<java.lang.String> invalidHeaders(java.lang.String, java.util.function.Function<java.lang.String, java.lang.String>);
 public pe.axiz.core.commons.HeaderCatalog catalog();
@@ -179,7 +179,7 @@ public pe.axiz.core.commons.RequestMetadata resolve(java.util.function.Function<
 public pe.axiz.spring.web.RequestMetadataResolver(pe.axiz.core.commons.HeaderCatalog, java.util.List<java.lang.String>, java.lang.String, java.time.Clock);
 }
 
-public class pe.axiz.spring.web.RequestMetadataWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
+public final class pe.axiz.spring.web.RequestMetadataWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
 public int getOrder();
 public pe.axiz.spring.web.RequestMetadataWebFilter(pe.axiz.spring.web.RequestMetadataResolver, pe.axiz.core.errors.ProblemFactory);
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);

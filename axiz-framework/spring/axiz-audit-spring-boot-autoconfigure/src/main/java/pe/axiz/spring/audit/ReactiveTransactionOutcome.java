@@ -45,10 +45,14 @@ final class ReactiveTransactionOutcome {
   private static final class R2dbcFailures {
     static boolean unknown(@Nullable Throwable failure) {
       var visited = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
-      for (Throwable cause = failure; cause != null && visited.add(cause); cause = cause.getCause())
-        if (cause instanceof R2dbcException sql
-            && sql.getSqlState() != null
-            && sql.getSqlState().startsWith("08")) return true;
+      for (Throwable cause = failure;
+          cause != null && visited.add(cause);
+          cause = cause.getCause()) {
+        if (cause instanceof R2dbcException sql) {
+          String state = sql.getSqlState();
+          if (state != null && state.startsWith("08")) return true;
+        }
+      }
       return false;
     }
   }

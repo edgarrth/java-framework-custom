@@ -53,9 +53,9 @@ export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_REGION=us-east-1   
 ```
 
 Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-http://localhost:3000 (OpenTelemetry collector on ports 4317/4318).
+<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
 {{#infra.keycloak}}
-Keycloak (http://localhost:8180, realm `axiz`) issues local tokens:
+Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
@@ -141,7 +141,8 @@ Keys each environment must define:
 ## Deployment
 
 `deploy/helm/{{project.name}}` contains the chart: {{#archetype.deployment}}Deployment with probes, Service, HPA, PDB{{/archetype.deployment}}{{#archetype.cronjob}}CronJob{{/archetype.cronjob}},
-ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
+ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
+require Kubernetes API permissions to read their mounted configuration.
 The workflows use the immutable Axiz 2.0.0 contracts:
 
 - `ci.yaml` builds and validates the product. It records the source commit, final version,
@@ -158,7 +159,8 @@ The workflows use the immutable Axiz 2.0.0 contracts:
   manifest SHA-256, environment, full values commit and previous deployed manifest hash
   (`initial-deployment` for the first deployment). It reuses image/chart digests, updates GitOps
   and waits for Argo CD; deployment never rebuilds. Protected environments provide approval.
-- Build credentials are `NEXUS_READ_USERNAME/PASSWORD`, `BUILD_REGISTRY` and
+- `BUILD_DESTINATION` is the explicit platform JSON for registry authority, namespace, source and GitOps repositories, path and allowed services. Render GitOps from that same configuration.
+- Build credentials are `NEXUS_READ_USERNAME/PASSWORD` and
   `REGISTRY_BUILD_USERNAME/PASSWORD`. Deploy uses registry read credentials plus the GitOps App
   and Argo read token. Configure `GITOPS_REPOSITORY` and `ARGOCD_SERVER` as repository variables.
 - `release.yaml`: release-please keeps a release pull request with the next version and the

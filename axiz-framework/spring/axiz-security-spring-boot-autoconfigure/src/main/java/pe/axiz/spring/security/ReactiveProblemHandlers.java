@@ -15,7 +15,7 @@ import pe.axiz.core.errors.Problem;
 import reactor.core.publisher.Mono;
 
 /** Reactive 401 and 403 handling with problem bodies. */
-public class ReactiveProblemHandlers
+public final class ReactiveProblemHandlers
     implements ServerAuthenticationEntryPoint, ServerAccessDeniedHandler {
 
   private final SecurityProblems problems;

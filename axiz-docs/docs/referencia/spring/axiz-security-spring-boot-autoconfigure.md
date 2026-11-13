@@ -85,7 +85,6 @@ check; permissions on a particular resource remain the service's responsibility.
 ## Rate-limit outage policy
 
 Every rule must explicitly declare `axiz.security.rate-limit.rules[].fail-open` when rate limiting
-is enabled. The former global `axiz.security.rate-limit.fail-open` is removed; the migration recipe
-removes it, but cannot choose each rule's outage policy. A missing rule policy fails startup.
+is enabled; there is no global outage policy. A missing rule policy fails startup.
 `false` returns a 503 Problem if the store is unavailable; `true` allows the request. Exceeding a
 healthy store's quota still returns 429. The framework never interprets an outage as quota exhaustion.

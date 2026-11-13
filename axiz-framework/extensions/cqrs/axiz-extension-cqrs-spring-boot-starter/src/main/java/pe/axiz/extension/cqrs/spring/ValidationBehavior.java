@@ -11,7 +11,7 @@ import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
 /** Bean Validation of commands and queries before anything else runs (400 on violations). */
-public class ValidationBehavior implements PipelineBehavior {
+public final class ValidationBehavior implements PipelineBehavior {
 
   private final Validator validator;
 

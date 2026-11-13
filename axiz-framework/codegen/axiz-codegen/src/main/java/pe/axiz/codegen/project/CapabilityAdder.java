@@ -1,5 +1,6 @@
 package pe.axiz.codegen.project;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -59,6 +60,11 @@ public final class CapabilityAdder {
           "scheduling",
           "shedlock");
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Catalog owns defensive snapshots and exposes no mutator; SpotBugs does not infer "
+              + "its immutability.")
   private final Catalog catalog;
 
   public CapabilityAdder(Catalog catalog) {
@@ -238,17 +244,23 @@ public final class CapabilityAdder {
         requested.example());
   }
 
+  private static boolean applicationFile(Path file) {
+    String name = SafePaths.fileName(file);
+    int extension = name.lastIndexOf('.');
+    if (extension < 0
+        || !List.of("yaml", "yml", "properties").contains(name.substring(extension + 1)))
+      return false;
+    String stem = name.substring(0, extension);
+    return stem.equals("application")
+        || (stem.startsWith("application-")
+            && stem.substring("application-".length()).matches("[a-zA-Z0-9_-]+"));
+  }
+
   private static boolean auditModeDeclared(ProjectLayout layout) throws IOException {
     Path resources = layout.target("src/main/resources");
     if (!Files.isDirectory(resources)) return false;
     try (var files = Files.list(resources)) {
-      for (Path file :
-          files
-              .filter(
-                  p ->
-                      SafePaths.fileName(p)
-                          .matches("application(?:-[a-zA-Z0-9_-]+)?\\.(?:yaml|yml|properties)"))
-              .toList()) {
+      for (Path file : files.filter(CapabilityAdder::applicationFile).toList()) {
         Path safe = layout.target("src/main/resources/" + SafePaths.fileName(file));
         String content = Files.readString(safe);
         if (SafePaths.fileName(file).endsWith(".properties")) {

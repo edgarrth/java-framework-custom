@@ -48,7 +48,10 @@ public final class HexagonalRules {
             .mayOnlyBeAccessedByLayers("Adapters", "Config")
             .whereLayer("Domain")
             .mayOnlyBeAccessedByLayers("Application", "Adapters", "Config"),
-        classes().that().resideInAnyPackage(domain, application).should(noHiddenInfrastructure()),
+        classes()
+            .that()
+            .resideInAnyPackage(domain, application)
+            .should(noHiddenInfrastructure(basePackage)),
         classes()
             .that()
             .resideInAPackage(domain)
@@ -189,7 +192,7 @@ public final class HexagonalRules {
     };
   }
 
-  private static ArchCondition<JavaClass> noHiddenInfrastructure() {
+  private static ArchCondition<JavaClass> noHiddenInfrastructure(String basePackage) {
     return new ArchCondition<>("not acquire infrastructure through Axiz contracts") {
       @Override
       public void check(JavaClass item, ConditionEvents events) {
@@ -202,6 +205,12 @@ public final class HexagonalRules {
           for (var dependency : current.getDirectDependenciesFromSelf()) {
             var target = dependency.getTargetClass();
             String name = target.getName();
+            // Static-analysis metadata on owned contracts does not acquire runtime infrastructure.
+            if (current.getName().startsWith("pe.axiz.core.")
+                && Set.of(
+                        "edu.umd.cs.findbugs.annotations.SuppressFBWarnings",
+                        "edu.umd.cs.findbugs.annotations.SuppressMatchType")
+                    .contains(name)) continue;
             if (name.startsWith("pe.axiz.adapter.")
                 || name.startsWith("pe.axiz.kit.")
                 || name.startsWith("pe.axiz.spring.")
@@ -226,6 +235,7 @@ public final class HexagonalRules {
                           + dependency.getDescription()));
             } else if (!target.isPrimitive()
                 && !target.isArray()
+                && !name.startsWith(basePackage + ".")
                 && !name.startsWith("pe.axiz.")
                 && !name.startsWith("java.")
                 && !name.startsWith("javax.")

@@ -3,6 +3,12 @@
 
 Generation engine shared by axiz-initializr and axiz-cli: OpenAPI model and lint, compatibility rules, templates and safe output.
 
+CQRS projects generate one access policy per protected contract operation. Policies require an
+authenticated caller and every declared scope; public operations explicitly declare `OpenAccess`.
+The generated tests verify anonymous and partial-scope rejection. Object ownership checks belong
+to the consuming application's policies. Contract synchronization proposes updated policies and
+authorization tests as `.axiz-new` files, preserving authored rules for review.
+
 ## Dependency
 
 ```xml
@@ -77,7 +83,7 @@ and omits the unrelated EDA example. `AsyncContractSync` preserves implementatio
 records, writes `.axiz-new` proposals and advances the generation snapshot only after compatibility
 and destination checks. `AsyncApiSubscriptions` checks base configuration and explicit profile
 overrides without bootstrapping Spring or resolving secrets. CLI integration and the build gate
-are documented in `axiz-tools/axiz-cli` and `axiz-workflows/docs/pipelines-v2.md`.
+are documented in `axiz-tools/axiz-cli` and `.github/docs/pipelines-v2.md`.
 
 `EventAdapters` generates typed consumer skeletons and per-payload Spring AOT binding configurations
 outside the owned payload package. The stack selects the imperative or reactive handler base;

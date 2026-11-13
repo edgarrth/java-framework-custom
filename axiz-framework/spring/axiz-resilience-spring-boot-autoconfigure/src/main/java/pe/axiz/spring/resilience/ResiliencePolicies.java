@@ -17,7 +17,7 @@ import pe.axiz.core.resilience.TimeoutSettings;
  * Resolves the resilience components of a named dependency from {@code axiz.resilience}. Circuit
  * breakers and bulkheads are created once per name and exported as metrics.
  */
-public class ResiliencePolicies {
+public final class ResiliencePolicies {
 
   private final AxizResilienceProperties properties;
   private final CircuitBreakerRegistry circuitBreakers;

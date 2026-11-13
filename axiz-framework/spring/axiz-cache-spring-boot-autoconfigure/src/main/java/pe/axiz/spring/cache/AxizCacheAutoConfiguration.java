@@ -113,10 +113,12 @@ public class AxizCacheAutoConfiguration {
                   new InMemoryByteCache(
                       p.l1().maxEntries(), clock.getIfAvailable(Clock::systemUTC)));
       AsyncByteCache l2 = p.redis() ? remote.getIfAvailable() : null;
+      String configuredPrefix = p.prefix();
+      String application = env.getProperty("spring.application.name");
       String prefix =
-          p.prefix() != null
-              ? p.prefix()
-              : env.getProperty("spring.application.name", "application");
+          configuredPrefix != null
+              ? configuredPrefix
+              : application == null ? "application" : application;
       return new ReactiveCaches(prefix, new AsyncTwoLevelCache(l1, l2, p.l1().maxTtl()), p);
     }
   }

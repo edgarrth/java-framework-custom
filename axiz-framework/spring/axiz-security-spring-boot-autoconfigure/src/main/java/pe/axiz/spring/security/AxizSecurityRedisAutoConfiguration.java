@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,7 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
       "pe.axiz.adapter.security.redis.RedisRateLimiter",
       "org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory"
     })
+@ConditionalOnProperty(name = "axiz.security.rate-limit.store", havingValue = "redis")
 @ConditionalOnBean(LettuceConnectionFactory.class)
 @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
 @EnableConfigurationProperties(AxizSecurityProperties.class)

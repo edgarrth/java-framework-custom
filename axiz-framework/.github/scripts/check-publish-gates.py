@@ -19,7 +19,7 @@ def check(build_path, deploy_path):
         errors.append("framework build is missing mandatory gates: " + ", ".join(sorted(GATES - set(jobs))))
     if "/lib-build.yaml@" not in jobs.get("build", {}).get("uses", ""):
         errors.append("build must use the reusable lib-build contract")
-    if jobs.get("native-reactive", {}).get("uses") != "./.github/workflows/native-reactive.yaml":
+    if jobs.get("native-reactive", {}).get("uses") != "./.github/workflows/framework-native-reactive.yaml":
         errors.append("native-reactive must execute the generated service JVM/native acceptance workflow")
     for name, job in jobs.items():
         if DEPLOY.search(job.get("uses", "")):

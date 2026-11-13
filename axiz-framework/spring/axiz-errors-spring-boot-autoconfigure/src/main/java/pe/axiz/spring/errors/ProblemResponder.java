@@ -1,5 +1,6 @@
 package pe.axiz.spring.errors;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Locale;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +26,11 @@ public class ProblemResponder {
 
   private final ProblemFactory factory;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public ProblemResponder(ProblemFactory factory) {
     this.factory = Objects.requireNonNull(factory);
   }

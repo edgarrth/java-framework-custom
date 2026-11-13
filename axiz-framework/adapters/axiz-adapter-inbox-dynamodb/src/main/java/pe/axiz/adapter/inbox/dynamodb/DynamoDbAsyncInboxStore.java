@@ -1,5 +1,6 @@
 package pe.axiz.adapter.inbox.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -12,7 +13,14 @@ import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedExce
 
 /** Native DynamoDB inbox. Cancellation reaches the exact put/update/delete SDK future. */
 public final class DynamoDbAsyncInboxStore implements AsyncInboxStore {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient dynamo;
+
   private final DynamoDbInboxRequests requests;
 
   public DynamoDbAsyncInboxStore(DynamoDbAsyncClient dynamo, String table) {

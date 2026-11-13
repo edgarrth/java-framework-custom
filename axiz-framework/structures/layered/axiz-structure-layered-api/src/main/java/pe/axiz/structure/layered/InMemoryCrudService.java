@@ -1,5 +1,6 @@
 package pe.axiz.structure.layered;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,6 +34,11 @@ public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudServ
    * @param idOf extracts the id of a resource
    * @param withId returns the resource with the given id (for updates)
    */
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public InMemoryCrudService(String resourceName, Function<T, I> idOf, BiFunction<I, T, T> withId) {
     this.resourceName = Objects.requireNonNull(resourceName);
     this.idOf = Objects.requireNonNull(idOf);

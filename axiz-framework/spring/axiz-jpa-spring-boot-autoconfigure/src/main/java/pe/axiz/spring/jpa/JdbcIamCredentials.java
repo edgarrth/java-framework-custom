@@ -2,6 +2,7 @@ package pe.axiz.spring.jpa;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.DisposableBean;
@@ -41,13 +42,17 @@ final class JdbcIamCredentials implements DestructionAwareBeanPostProcessor, Dis
             var definition = DriverConfigurationProfiles.getProfileConfiguration(configured);
             if (definition == null)
               throw new IllegalStateException("Framework JDBC IAM profile is not registered");
+            var factories =
+                Objects.requireNonNull(
+                    definition.getPluginFactories(),
+                    "Framework JDBC IAM profile must declare its authentication plugins");
             String id =
                 JdbcIamCredentialScopes.open(identity.source(AwsService.RDS, AwsCapability.JPA));
             try {
               var profile =
                   ConfigurationProfileBuilder.get()
                       .withName(id)
-                      .withPluginFactories(new ArrayList<>(definition.getPluginFactories()))
+                      .withPluginFactories(new ArrayList<>(factories))
                       .withProperties(new Properties())
                       .build();
               DriverConfigurationProfiles.addOrReplaceProfile(id, profile);

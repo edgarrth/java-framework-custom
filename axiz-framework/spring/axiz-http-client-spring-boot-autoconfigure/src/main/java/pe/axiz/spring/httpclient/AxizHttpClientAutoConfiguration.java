@@ -22,6 +22,7 @@ import org.springframework.web.client.support.RestClientHttpServiceGroupConfigur
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.support.WebClientHttpServiceGroupConfigurer;
 import org.springframework.web.service.registry.HttpServiceGroupConfigurer;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
 
@@ -67,7 +68,8 @@ public class AxizHttpClientAutoConfiguration {
         ssl.getIfAvailable(),
         clock.getIfAvailable(Clock::systemUTC),
         tenantHeader,
-        observations.getIfAvailable(() -> ObservationRegistry.NOOP));
+        observations.getIfAvailable(() -> ObservationRegistry.NOOP),
+        TransportSecurityPolicy.from(env::getProperty));
   }
 
   @Configuration(proxyBeanMethods = false)

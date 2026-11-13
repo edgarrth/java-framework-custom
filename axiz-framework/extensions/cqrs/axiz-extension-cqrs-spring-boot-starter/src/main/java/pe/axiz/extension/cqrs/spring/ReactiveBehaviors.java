@@ -1,5 +1,6 @@
 package pe.axiz.extension.cqrs.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.contextpropagation.ObservationThreadLocalAccessor;
 import jakarta.validation.Validator;
 import java.util.List;
@@ -179,6 +180,12 @@ public final class ReactiveBehaviors {
   public static final class Idempotency implements ReactivePipelineBehavior {
 
     private final AsyncIdempotencyService service;
+
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification =
+            "JsonMapper is an injected collaborator whose identity and lifecycle must be shared, "
+                + "not copied.")
     private final JsonMapper mapper;
 
     /** Retained descriptor; reactive buses reject an imperative service at construction. */
@@ -217,7 +224,8 @@ public final class ReactiveBehaviors {
               })
           .flatMap(
               decision -> {
-                if (decision instanceof IdempotencyService.Replay(StoredResponse stored)) {
+                if (decision instanceof IdempotencyService.Replay replay) {
+                  StoredResponse stored = replay.response();
                   return stored.body().length == 0
                       ? Mono.<R>empty()
                       : Mono.fromSupplier(

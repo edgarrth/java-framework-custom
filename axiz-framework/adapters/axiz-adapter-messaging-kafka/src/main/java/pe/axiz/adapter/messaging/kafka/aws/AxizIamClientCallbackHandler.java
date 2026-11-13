@@ -11,6 +11,7 @@ import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.msk.auth.iam.IAMClientCallbackHandler;
 import software.amazon.msk.auth.iam.internals.AWSCredentialsCallback;
 import software.amazon.msk.auth.iam.internals.region.ConfigurableRegionProvider;
@@ -56,12 +57,12 @@ public final class AxizIamClientCallbackHandler implements AuthenticateCallbackH
     Object customRegion = options.get("awsMskRegionProvider");
     region =
         customRegion instanceof String value ? ConfigurableRegionProvider.getInstance(value) : null;
-    if (supplied instanceof Supplier<?> factory) {
-      Object value = factory.get();
+    if (supplied != null) {
+      Object value = ((Supplier<?>) supplied).get();
       if (!(value instanceof AwsCredentialSource resource))
         throw new IllegalArgumentException("Credential factory must return an AwsCredentialSource");
       source = resource;
-    } else source = AwsCredentialSources.create();
+    } else source = AwsCredentialSources.create(TransportSecurityPolicy.system());
   }
 
   @Override

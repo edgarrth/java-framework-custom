@@ -1,5 +1,6 @@
 package pe.axiz.adapter.storage.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -31,7 +32,13 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 /** Native SDK asynchronous storage with bounded page demand and streamed object bodies. */
 public final class S3AsyncObjectStorage implements AsyncObjectStorage {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "The native S3 client is a borrowed, thread-safe collaborator; copying would lose "
+              + "lifecycle and transport ownership. Its private field is never returned.")
   private final S3AsyncClient s3;
+
   private final S3Requests requests;
 
   /** Clients and presigner are borrowed; construct and warm their credentials during startup. */
@@ -53,7 +60,10 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
           var request = requests.upload(key, metadata);
           var upload = new S3Streams.Upload(content, metadata.contentLength());
           var result = Stages.ignore(Stages.call(() -> s3.putObject(request, upload)));
-          var cleanup = result.whenComplete((ignored, failure) -> upload.close());
+          Stages.observe(
+              result,
+              (ignored, failure) -> upload.close(),
+              failure -> result.toCompletableFuture().completeExceptionally(failure));
           return result;
         });
   }
@@ -78,34 +88,35 @@ public final class S3AsyncObjectStorage implements AsyncObjectStorage {
                   return cancelled;
                 }
               };
-          var delivery =
-              nativeCall.whenComplete(
-                  (response, failure) -> {
-                    if (failure != null) {
-                      Throwable cause = Stages.unwrap(failure);
-                      if (S3Requests.missing(cause)) result.complete(Optional.empty());
-                      else result.completeExceptionally(cause);
-                    } else {
-                      var headers = response.response();
-                      var body = new S3Streams.Download(response);
-                      try {
-                        var object =
-                            new AsyncStoredObject(
-                                key,
-                                S3Requests.metadata(
-                                    headers.contentType(),
-                                    headers.contentLength(),
-                                    headers.checksumSHA256(),
-                                    headers.metadata()),
-                                body,
-                                body);
-                        if (!result.complete(Optional.of(object))) object.close();
-                      } catch (RuntimeException | Error invalid) {
-                        body.run();
-                        result.completeExceptionally(invalid);
-                      }
-                    }
-                  });
+          Stages.observe(
+              nativeCall,
+              (response, failure) -> {
+                if (failure != null) {
+                  Throwable cause = Stages.unwrap(failure);
+                  if (S3Requests.missing(cause)) result.complete(Optional.empty());
+                  else result.completeExceptionally(cause);
+                } else {
+                  var headers = response.response();
+                  var body = new S3Streams.Download(response);
+                  try {
+                    var object =
+                        new AsyncStoredObject(
+                            key,
+                            S3Requests.metadata(
+                                headers.contentType(),
+                                headers.contentLength(),
+                                headers.checksumSHA256(),
+                                headers.metadata()),
+                            body,
+                            body);
+                    if (!result.complete(Optional.of(object))) object.close();
+                  } catch (RuntimeException | Error invalid) {
+                    body.run();
+                    result.completeExceptionally(invalid);
+                  }
+                }
+              },
+              result::completeExceptionally);
           return result;
         });
   }

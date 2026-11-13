@@ -2,16 +2,59 @@ package pe.axiz.kit.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Proxy;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.SqlIdentifiers;
 
 class SqlStatesTest {
+
+  @Test
+  void aFailedSavepointRollbackPreservesTheSqlFailureAndCannotReportAnIgnoredDuplicate() {
+    var original = new SQLException("duplicate", "23505");
+    var rollback = new SQLException("savepoint rollback failed", "08006");
+    var savepoint =
+        (Savepoint)
+            Proxy.newProxyInstance(
+                Savepoint.class.getClassLoader(),
+                new Class<?>[] {Savepoint.class},
+                (proxy, method, args) -> 1);
+    var connection =
+        (Connection)
+            Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class<?>[] {Connection.class},
+                (proxy, method, args) ->
+                    switch (method.getName()) {
+                      case "getAutoCommit" -> false;
+                      case "setSavepoint" -> savepoint;
+                      case "rollback" -> throw rollback;
+                      default -> throw new AssertionError(method.getName());
+                    });
+    var insert =
+        (PreparedStatement)
+            Proxy.newProxyInstance(
+                PreparedStatement.class.getClassLoader(),
+                new Class<?>[] {PreparedStatement.class},
+                (proxy, method, args) -> {
+                  throw original;
+                });
+    var failure =
+        assertThrows(
+            SQLException.class, () -> SqlStates.insertIgnoringDuplicate(connection, insert));
+    assertSame(original, failure);
+    assertEquals(1, failure.getSuppressed().length);
+    assertSame(rollback, failure.getSuppressed()[0]);
+  }
 
   @Test
   void detectsDuplicateKeys() {

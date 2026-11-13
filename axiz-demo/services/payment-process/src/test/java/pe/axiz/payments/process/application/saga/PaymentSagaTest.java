@@ -38,7 +38,7 @@ import pe.axiz.payments.process.domain.ProcessStatus;
 class PaymentSagaTest {
 
   static final ErrorDefinition REJECTED =
-      ErrorDefinition.of("PAYMENTS-BANKINGCORE-0003", ErrorCategory.UNPROCESSABLE, "rejected");
+      ErrorDefinition.of("PAYMENTS-NETWORKGATEWAY-0001", ErrorCategory.UNPROCESSABLE, "rejected");
 
   /** Records every downstream call; failures are injected per operation. */
   static final class Downstream implements PaymentOrders, Accounts, Transfers {

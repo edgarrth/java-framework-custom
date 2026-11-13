@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.BusinessException;
 
 class AsyncIdempotencyServiceTest {
-  static final String KEY = "a-valid-idempotency-key-00001";
+  static final String KEY = "idem-" + java.util.UUID.randomUUID();
   static final Duration LEASE = Duration.ofSeconds(5);
   static final StoredResponse RESPONSE =
       new StoredResponse(201, Map.of("Location", "/orders/1"), new byte[] {1});

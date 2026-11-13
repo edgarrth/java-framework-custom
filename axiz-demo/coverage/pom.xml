@@ -17,6 +17,7 @@
   <name>axiz demo: capability coverage</name>
 
   <properties>
+    <axiz.module.name>pe.axiz.payments.demo.coverage</axiz.module.name>
     <!-- tests only: the jar holds just the manifest, by design (no "JAR will be empty" warning) -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
     <maven.deploy.skip>true</maven.deploy.skip>

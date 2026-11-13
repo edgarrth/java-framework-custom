@@ -32,7 +32,7 @@ import pe.axiz.initializr.service.GenerationService;
 import pe.axiz.initializr.service.GitHubPublisher;
 
 /** Sign-in only through the SSO, and the GitHub authorization as an API answer, not a redirect. */
-@WebMvcTest(GitHubController.class)
+@WebMvcTest(controllers = GitHubController.class, properties = "axiz.config.environment=test")
 @Import({SecurityConfiguration.class, ApiExceptionHandler.class, GitHubControllerTest.Beans.class})
 class GitHubControllerTest {
 

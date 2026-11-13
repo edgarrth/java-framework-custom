@@ -36,7 +36,7 @@ public java.util.List<pe.axiz.core.outbox.OutboxRecord> claimDue(int, java.time.
 public long countBlockedAggregates();
 public long countPending();
 public long countSkipped();
-public pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore(pe.axiz.kit.jdbc.ConnectionProvider, java.lang.String, pe.axiz.adapter.outbox.jdbc.Dialect);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore(pe.axiz.kit.jdbc.ConnectionProvider, pe.axiz.core.commons.tx.TransactionRunner, java.lang.String, pe.axiz.adapter.outbox.jdbc.Dialect);
 public void append(pe.axiz.core.outbox.OutboxRecord);
 public void verifySchema();
 }

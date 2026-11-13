@@ -10,10 +10,7 @@ on:
       environment: {type: choice, options: [dev, qa, prod], required: true}
       previous-manifest-sha256: {description: Current deployed manifest hash or initial-deployment, type: string, required: true}
       destination: {type: choice, options: [maven-releases], required: true}
-permissions:
-  contents: write
-  actions: read
-  id-token: write
+permissions: {}
 jobs:
   axiz-workflows-trust:
     runs-on: ubuntu-24.04
@@ -25,18 +22,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
-          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
           jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
 
   deploy:
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
     needs: axiz-workflows-trust
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/lib-deploy.yaml@v2.0.0
+    uses: edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0
     with:
       build-run-id: ${{ inputs.build-run-id }}
       build-run-attempt: ${{ inputs.build-run-attempt }}

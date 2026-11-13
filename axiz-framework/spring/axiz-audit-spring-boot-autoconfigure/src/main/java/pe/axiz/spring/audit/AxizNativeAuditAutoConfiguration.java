@@ -98,7 +98,7 @@ public class AxizNativeAuditAutoConfiguration {
         AsyncAuditEventPublisher delivery, ReactiveAuditPublisher publisher) {
       return registry -> {
         if (delivery instanceof QueuedAsyncAuditPublisher queued)
-          AxizAuditAutoConfiguration.MetricsConfiguration.bindQueue(registry, queued.queue());
+          AxizAuditAutoConfiguration.MetricsConfiguration.bindQueue(registry, queued);
         if (delivery instanceof ConfirmedAsyncAuditPublisher sync)
           FunctionCounter.builder(
                   "axiz.audit.persistence.unconfirmed",

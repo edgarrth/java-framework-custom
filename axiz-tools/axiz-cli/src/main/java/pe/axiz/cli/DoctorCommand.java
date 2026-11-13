@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -92,7 +91,8 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
 
   private static final Pattern SECRET =
       Pattern.compile(
-          "(?i)^\\s*([\\w.-]*(?:password|secret|token|api-?key|private-key)[\\w.-]*)\\s*:\\s*(.+)$");
+          "(?i)^\\s*([\\w.-]*(?:password|secret|token|api[-_]?key|private[-_]?key|"
+              + "access[-_]?key|secret[-_]?key|secret[-_]?access[-_]?key))\\s*[:=]\\s*(.+)$");
   private static final List<AntiPattern> ANTI_PATTERNS =
       List.of(
           new AntiPattern(
@@ -460,25 +460,17 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       Matcher m = SECRET.matcher(lines.get(i));
       if (m.matches()) {
         String value = m.group(2).strip();
-        String key = m.group(1).toLowerCase(Locale.ROOT);
+        boolean block = value.startsWith("|") || value.startsWith(">");
         String scalar = value.replaceFirst("\\s+#.*$", "").strip();
         if (scalar.length() >= 2
             && ((scalar.startsWith("\"") && scalar.endsWith("\""))
                 || (scalar.startsWith("'") && scalar.endsWith("'"))))
           scalar = scalar.substring(1, scalar.length() - 1);
-        boolean metadata =
-            ((key.equals("api-key-header") || key.endsWith(".api-key-header"))
-                    && scalar.matches("[A-Za-z0-9!#$%&'*+.^_`|~-]+"))
-                || ((key.equals("password-mode") || key.endsWith(".password-mode"))
-                    && Set.of("TEXT", "LEGACY_SHA1_DIGEST").contains(scalar));
         boolean placeholder =
-            metadata
-                || value.isEmpty()
-                || value.startsWith("${")
+            scalar.isEmpty()
+                || scalar.startsWith("${")
                 || value.startsWith("#")
-                || value.startsWith("|")
-                || value.endsWith("-ref")
-                || (value.matches("[a-z0-9-]+") && !value.matches(".*\\d{4,}.*"));
+                || (block && !hasBlockContent(lines, i));
         if (!placeholder) {
           out.add(
               new Check(
@@ -491,6 +483,17 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
         }
       }
     }
+  }
+
+  private static boolean hasBlockContent(List<String> lines, int index) {
+    String declaration = lines.get(index);
+    int indentation = declaration.length() - declaration.stripLeading().length();
+    for (int next = index + 1; next < lines.size(); next++) {
+      String line = lines.get(next);
+      if (line.isBlank() || line.stripLeading().startsWith("#")) continue;
+      return line.length() - line.stripLeading().length() > indentation;
+    }
+    return false;
   }
 
   private static void antiPatterns(Path file, String rel, boolean reactive, List<Check> out)

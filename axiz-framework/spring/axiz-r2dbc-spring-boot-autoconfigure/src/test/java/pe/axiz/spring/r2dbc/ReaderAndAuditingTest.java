@@ -67,6 +67,8 @@ class ReaderAndAuditingTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
+          .withPropertyValues(
+              "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
           .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
           .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
@@ -91,7 +93,7 @@ class ReaderAndAuditingTest {
             "axiz.r2dbc.reader.max-size=4",
             "spring.r2dbc.username=app",
             "spring.r2dbc.password=local-only",
-            "spring.r2dbc.properties.sslMode=require")
+            "spring.r2dbc.properties.sslMode=verify-full")
         .withBean(ConnectionFactoryDecorator.class, () -> counting)
         .run(
             ctx -> {
@@ -106,7 +108,7 @@ class ReaderAndAuditingTest {
               assertEquals("app", driver.getValue(ConnectionFactoryOptions.USER));
               assertEquals(
                   "local-only", String.valueOf(driver.getValue(ConnectionFactoryOptions.PASSWORD)));
-              assertEquals("require", driver.getValue(Option.valueOf("sslMode")));
+              assertEquals("verify-full", driver.getValue(Option.valueOf("sslMode")));
             });
   }
 
@@ -136,7 +138,15 @@ class ReaderAndAuditingTest {
   @Test
   void aReaderWithoutUserOrPasswordLeavesThemToTheUrl() {
     ConnectionFactory cf =
-        ReaderConnections.create(READER, 1, null, null, null, Map.of(), List.of());
+        ReaderConnections.create(
+            READER,
+            1,
+            null,
+            null,
+            null,
+            Map.of(),
+            List.of(),
+            new pe.axiz.core.commons.net.DataTransportSecurityPolicy("test", true));
     try {
       ConnectionFactoryOptions driver = behindThePool();
       assertNull(driver.getValue(ConnectionFactoryOptions.USER));
@@ -149,14 +159,25 @@ class ReaderAndAuditingTest {
   @Test
   void theReaderClosesItsPoolAndToleratesAPlainFactory() {
     ConnectionFactory pooled =
-        ReaderConnections.create(READER, 2, "app", "local-only", null, Map.of(), List.of());
+        ReaderConnections.create(
+            READER,
+            2,
+            "app",
+            "local-only",
+            null,
+            Map.of(),
+            List.of(),
+            new pe.axiz.core.commons.net.DataTransportSecurityPolicy("test", true));
     new ReaderDatabase(pooled).destroy();
     new ReaderDatabase(new FakeR2dbc()).destroy();
   }
 
   @Test
   void theRegionComesFromTheSettingOrTheSdkChain() {
-    assertEquals(Region.SA_EAST_1, AwsIamTokens.region("sa-east-1"));
+    assertEquals(Region.SA_EAST_1, AwsIamTokens.region(" sa-east-1 "));
+    assertEquals(Region.US_EAST_2, AwsIamTokens.region("  ", " us-east-2 "));
+    assertEquals(Region.US_EAST_2, AwsIamTokens.region(null, "us-east-2"));
+    assertEquals(Region.SA_EAST_1, AwsIamTokens.region(" sa-east-1 ", "us-east-2"));
     System.setProperty("aws.region", "us-west-2");
     assertEquals(Region.US_WEST_2, AwsIamTokens.region(null));
     assertEquals(Region.US_WEST_2, AwsIamTokens.region(" "));
@@ -165,6 +186,8 @@ class ReaderAndAuditingTest {
   @Test
   void theWriterUsesIamTokensAndFlywayGetsOneForTheMigration() {
     new ApplicationContextRunner()
+        .withPropertyValues(
+            "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(
@@ -224,6 +247,8 @@ class ReaderAndAuditingTest {
   void rowsAreStampedWithTheCallerAndTheServiceClock() {
     Clock fixed = Clock.fixed(Instant.parse("2026-10-23T10:15:30Z"), ZoneOffset.UTC);
     new ApplicationContextRunner()
+        .withPropertyValues(
+            "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
@@ -250,6 +275,8 @@ class ReaderAndAuditingTest {
               assertEquals(row.getCreatedAt(), row.getUpdatedAt());
             });
     new ApplicationContextRunner()
+        .withPropertyValues(
+            "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))

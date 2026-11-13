@@ -49,7 +49,7 @@ public pe.axiz.spring.logging.HttpLoggingWebFilter(pe.axiz.core.logging.HttpLogF
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
 }
 
-public class pe.axiz.spring.logging.LogOperationInterceptor implements org.aopalliance.intercept.MethodInterceptor {
+public final class pe.axiz.spring.logging.LogOperationInterceptor implements org.aopalliance.intercept.MethodInterceptor {
 public java.lang.Object invoke(org.aopalliance.intercept.MethodInvocation) throws java.lang.Throwable;
 public pe.axiz.spring.logging.LogOperationInterceptor(pe.axiz.core.logging.OperationLogger, pe.axiz.spring.logging.FailureKind);
 }

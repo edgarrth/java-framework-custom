@@ -27,7 +27,7 @@ class IdempotencyTest {
           Duration.ofMinutes(1),
           Duration.ofHours(24),
           Clock.systemUTC());
-  private final String key = "0f0e7c1b-6c2b-4b4e-9f1e-3a6d2b9c1d00";
+  private final String key = "idem-" + java.util.UUID.randomUUID();
   private final byte[] body = "{\"amount\":\"10.00\"}".getBytes(StandardCharsets.UTF_8);
 
   @Test

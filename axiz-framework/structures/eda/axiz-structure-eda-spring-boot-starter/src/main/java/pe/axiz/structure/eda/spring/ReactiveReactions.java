@@ -1,5 +1,6 @@
 package pe.axiz.structure.eda.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.messaging.EventEnvelope;
@@ -11,9 +12,15 @@ import reactor.core.publisher.Mono;
  * Reactive {@link Reactions}: emits events in reaction to a consumed one through the R2DBC outbox,
  * inside the reactive transaction of the handler.
  */
-public class ReactiveReactions {
+public final class ReactiveReactions {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ReactiveTransactionalEvents is an injected collaborator whose identity and "
+              + "lifecycle must be shared, not copied.")
   private final ReactiveTransactionalEvents events;
+
   private final EventRoutes routes;
 
   public ReactiveReactions(ReactiveTransactionalEvents events, EventRoutes routes) {

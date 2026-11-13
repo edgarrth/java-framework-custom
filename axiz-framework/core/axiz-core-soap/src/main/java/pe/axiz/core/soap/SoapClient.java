@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.sensitive.ObjectMasker;
@@ -43,10 +44,14 @@ public final class SoapClient {
       Duration timeout,
       SoapEnvelope.@Nullable Credentials credentials,
       ObjectMasker masker,
-      Clock clock) {
+      Clock clock,
+      TransportSecurityPolicy transportSecurity) {
     this.system = Objects.requireNonNull(system);
     this.http = Objects.requireNonNull(http);
     this.endpoint = Objects.requireNonNull(endpoint);
+    Objects.requireNonNull(transportSecurity).validate(endpoint, "SOAP endpoint");
+    if (http.followRedirects() != HttpClient.Redirect.NEVER)
+      throw new IllegalArgumentException("SOAP transport must disable automatic redirects");
     this.version = Objects.requireNonNull(version);
     this.timeout = Objects.requireNonNull(timeout);
     this.credentials = credentials;

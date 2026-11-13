@@ -109,6 +109,71 @@ class ProjectRenameTest {
     assertTrue(ProjectRename.problems(dir).stream().anyMatch(s -> s.contains("consumer.name")));
   }
 
+  @Test
+  void preservesBootstrapIdentityOverridesAndInheritanceAndDetectsDrift(@TempDir Path dir)
+      throws Exception {
+    Path resources = Files.createDirectories(dir.resolve("src/main/resources"));
+    Files.writeString(
+        resources.resolve("application.yaml"), "spring.application.name: old-business\n");
+    Path chart = Files.createDirectories(dir.resolve("deploy/helm/old-business"));
+    Files.writeString(
+        chart.resolve("Chart.yaml"), "apiVersion: v2\nname: old-business\nversion: 2.0.0\n");
+    Path base = chart.resolve("values.yaml");
+    Files.writeString(
+        base,
+        "configBootstrap.parameterStore.enabled: true\nconfigBootstrap.parameterStore.application: stable-payments\n");
+    Path qa = chart.resolve("values-qa.yaml");
+    Files.writeString(qa, "configBootstrap.parameterStore.application: stable-qa\n");
+    Path prod = chart.resolve("values-prod.yaml");
+    Files.writeString(prod, "replicaCount: 3\n");
+    String before = Files.readString(base);
+    ProjectRename.apply(dir, manifest("old-business"), "payment-orders", true);
+    assertEquals(before, Files.readString(base));
+    assertFalse(Files.exists(dir.resolve(ProjectRename.LEDGER)));
+    ProjectRename.apply(dir, manifest("old-business"), "payment-orders", false);
+    assertTrue(ProjectRename.problems(dir).isEmpty());
+    assertTrue(Files.readString(base).contains("stable-payments"));
+    assertTrue(Files.readString(qa).contains("stable-qa"));
+    assertFalse(
+        Files.readString(resources.resolve("application.yaml")).contains("parameter-store"));
+    assertFalse(
+        Files.readString(prod).contains("parameterStore"), "inheritance is not materialized");
+    CapabilityAdder.mergeYaml(
+        prod, Map.of("configBootstrap.parameterStore.application", "accidental"));
+    assertTrue(
+        ProjectRename.problems(dir).stream()
+            .anyMatch(problem -> problem.contains("values-prod.yaml")));
+    Files.writeString(prod, "replicaCount: 3\n");
+    Files.writeString(qa, "replicaCount: 2\n");
+    assertTrue(
+        ProjectRename.problems(dir).stream()
+            .anyMatch(problem -> problem.contains("values-qa.yaml")));
+  }
+
+  @Test
+  void rejectsMissingOrAmbiguousEnabledBootstrapBeforeWriting(@TempDir Path temporary)
+      throws Exception {
+    for (String selector :
+        List.of("", "configBootstrap.parameterStore.application: '${spring.application.name}'\n")) {
+      Path dir = Files.createTempDirectory(temporary, "bootstrap-");
+      Path resources = Files.createDirectories(dir.resolve("src/main/resources"));
+      Path application = resources.resolve("application.yaml");
+      String before = "spring.application.name: old-business\n";
+      Files.writeString(application, before);
+      Path chart = Files.createDirectories(dir.resolve("deploy/helm/old-business"));
+      Files.writeString(
+          chart.resolve("Chart.yaml"), "apiVersion: v2\nname: old-business\nversion: 2.0.0\n");
+      Files.writeString(
+          chart.resolve("values.yaml"),
+          "configBootstrap.parameterStore.enabled: true\n" + selector);
+      assertThrows(
+          IOException.class,
+          () -> ProjectRename.apply(dir, manifest("old-business"), "payment-orders", false));
+      assertEquals(before, Files.readString(application));
+      assertFalse(Files.exists(dir.resolve(ProjectRename.LEDGER)));
+    }
+  }
+
   private static ProjectManifest manifest(String name) {
     return new ProjectManifest(
         name,

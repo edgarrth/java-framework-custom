@@ -1,5 +1,6 @@
 package pe.axiz.core.fileformats;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
@@ -12,7 +13,13 @@ import org.jspecify.annotations.Nullable;
  */
 public final class CsvWriter implements AutoCloseable {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Writer is an injected collaborator whose identity and lifecycle must be shared, not "
+              + "copied.")
   private final Writer writer;
+
   private final char delimiter;
   private final boolean protectFormulas;
 

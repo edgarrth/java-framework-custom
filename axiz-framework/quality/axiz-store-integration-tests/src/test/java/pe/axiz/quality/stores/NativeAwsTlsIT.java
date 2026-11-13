@@ -34,6 +34,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -95,7 +96,7 @@ class NativeAwsTlsIT {
     }
     var managers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     managers.init(keys, "changeit".toCharArray());
-    SSLContext ssl = SSLContext.getInstance("TLS");
+    SSLContext ssl = SSLContext.getInstance("TLSv1.3");
     ssl.init(managers.getKeyManagers(), null, null);
     var server = HttpsServer.create(new InetSocketAddress("localhost", 0), 0);
     server.setHttpsConfigurator(new HttpsConfigurator(ssl));
@@ -132,7 +133,8 @@ class NativeAwsTlsIT {
                 pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
                     StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"))),
                 Clock.systemUTC(),
-                Duration.ofMinutes(1))) {
+                Duration.ofMinutes(1),
+                AsyncAwsTransportSettings.defaults())) {
       server.setExecutor(handlers);
       server.createContext(
           "/",

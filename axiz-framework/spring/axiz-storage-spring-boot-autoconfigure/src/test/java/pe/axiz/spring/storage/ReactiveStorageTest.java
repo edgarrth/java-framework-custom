@@ -199,7 +199,7 @@ class ReactiveStorageTest {
                   .withPropertyValues(
                       "axiz.aws.region=us-east-1",
                       "axiz.storage.bucket=files",
-                      "axiz.aws.s3.endpoint=http://localhost:4566",
+                      "axiz.aws.s3.endpoint=https://localhost:4566",
                       "axiz.storage.kms-key-id=alias/files")
                   .run(
                       context -> {
@@ -217,7 +217,8 @@ class ReactiveStorageTest {
                             .assertNext(
                                 url ->
                                     assertTrue(
-                                        url.toString().startsWith("http://localhost:4566/files/x")))
+                                        url.toString()
+                                            .startsWith("https://localhost:4566/files/x")))
                             .verifyComplete();
                       });
             });

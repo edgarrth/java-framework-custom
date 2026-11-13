@@ -107,7 +107,7 @@ Marcar el mensaje como procesado o liberarlo solo funciona para la entrega que l
 tardía cuya concesión ya tomó otra no puede tocar el registro nuevo.
 
 En SQS el consumidor extiende la visibilidad de los mensajes en curso cada mitad de
-`axiz.messaging.consumer.sqs.visibility-timeout`, así un handler lento no provoca una segunda
+`axiz.messaging.sqs.visibility-timeout`, así un handler lento no provoca una segunda
 entrega en paralelo; solo los mensajes que no se pueden decodificar van directo a la DLQ, el resto
 de los fallos sigue la política de reintentos. Al detenerse, espera a los handlers en curso hasta
 30 s antes de interrumpirlos.

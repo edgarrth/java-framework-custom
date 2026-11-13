@@ -1,5 +1,6 @@
 package pe.axiz.core.metrics;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
@@ -38,7 +39,13 @@ public final class EventMetrics {
 
   private static final Logger LOG = LoggerFactory.getLogger(EventMetrics.class);
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "MeterRegistry is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final MeterRegistry registry;
+
   private final MetricsSettings settings;
   private final CardinalityGuard guard;
   private final List<FailureClassifier> classifiers;

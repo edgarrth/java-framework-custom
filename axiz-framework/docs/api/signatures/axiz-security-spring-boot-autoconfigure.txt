@@ -1,4 +1,4 @@
-public class pe.axiz.spring.security.AudienceValidator implements org.springframework.security.oauth2.core.OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> {
+public final class pe.axiz.spring.security.AudienceValidator implements org.springframework.security.oauth2.core.OAuth2TokenValidator<org.springframework.security.oauth2.jwt.Jwt> {
 public org.springframework.security.oauth2.core.OAuth2TokenValidatorResult validate(org.springframework.security.oauth2.core.OAuth2Token);
 public org.springframework.security.oauth2.core.OAuth2TokenValidatorResult validate(org.springframework.security.oauth2.jwt.Jwt);
 public pe.axiz.spring.security.AudienceValidator(pe.axiz.core.security.IssuerPolicy);
@@ -11,7 +11,7 @@ public pe.axiz.core.security.AxizPrincipal axizPrincipal();
 public pe.axiz.spring.security.AxizAuthentication(org.springframework.security.oauth2.jwt.Jwt, pe.axiz.core.security.AxizPrincipal, java.util.Collection<? extends org.springframework.security.core.GrantedAuthority>);
 }
 
-public class pe.axiz.spring.security.AxizJwtConverter implements org.springframework.core.convert.converter.Converter<org.springframework.security.oauth2.jwt.Jwt, pe.axiz.spring.security.AxizAuthentication> {
+public final class pe.axiz.spring.security.AxizJwtConverter implements org.springframework.core.convert.converter.Converter<org.springframework.security.oauth2.jwt.Jwt, pe.axiz.spring.security.AxizAuthentication> {
 public java.lang.Object convert(java.lang.Object);
 public pe.axiz.spring.security.AxizAuthentication convert(org.springframework.security.oauth2.jwt.Jwt);
 public pe.axiz.spring.security.AxizJwtConverter(pe.axiz.core.security.ClaimsMapper);
@@ -81,7 +81,15 @@ public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
 public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule> rules();
-public pe.axiz.spring.security.AxizSecurityProperties$RateLimit(boolean, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
+public pe.axiz.spring.security.AxizSecurityProperties$RateLimit(boolean, pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
+public pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore store();
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore extends java.lang.Enum<pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore> {
+public static final pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore MEMORY;
+public static final pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore REDIS;
+public static pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore valueOf(java.lang.String);
+public static pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore[] values();
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$RouteRule extends java.lang.Record {
@@ -139,12 +147,12 @@ public pe.axiz.spring.security.RateLimitRules(java.util.List<pe.axiz.spring.secu
 public static java.lang.String key(pe.axiz.spring.security.AxizSecurityProperties$Rule, pe.axiz.core.security.AxizPrincipal);
 }
 
-public class pe.axiz.spring.security.RateLimitWebFilter implements org.springframework.web.server.WebFilter {
+public final class pe.axiz.spring.security.RateLimitWebFilter implements org.springframework.web.server.WebFilter {
 public pe.axiz.spring.security.RateLimitWebFilter(pe.axiz.core.security.AsyncRateLimiter, pe.axiz.spring.security.RateLimitRules, pe.axiz.spring.security.SecurityProblems);
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
 }
 
-public class pe.axiz.spring.security.ReactiveProblemHandlers implements org.springframework.security.web.server.ServerAuthenticationEntryPoint,org.springframework.security.web.server.authorization.ServerAccessDeniedHandler {
+public final class pe.axiz.spring.security.ReactiveProblemHandlers implements org.springframework.security.web.server.ServerAuthenticationEntryPoint,org.springframework.security.web.server.authorization.ServerAccessDeniedHandler {
 public pe.axiz.spring.security.ReactiveProblemHandlers(pe.axiz.spring.security.SecurityProblems);
 public reactor.core.publisher.Mono<java.lang.Void> commence(org.springframework.web.server.ServerWebExchange, org.springframework.security.core.AuthenticationException);
 public reactor.core.publisher.Mono<java.lang.Void> handle(org.springframework.web.server.ServerWebExchange, org.springframework.security.access.AccessDeniedException);

@@ -1,5 +1,6 @@
 package pe.axiz.adapter.sequence.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -12,7 +13,13 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 /** Atomic counter on DynamoDB ({@code ADD value :inc} with {@code UPDATED_NEW}). */
 public final class DynamoDbSequenceStore implements SequenceStore {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbClient is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final DynamoDbClient dynamo;
+
   private final String table;
 
   public DynamoDbSequenceStore(DynamoDbClient dynamo, String table) {

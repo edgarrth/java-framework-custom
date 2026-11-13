@@ -52,6 +52,7 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -142,8 +143,8 @@ class NativeHttpCredentialsTest {
         null,
         1,
         List.of(),
-        false,
-        2);
+        2,
+        new TransportSecurityPolicy("test", true));
   }
 
   @Test
@@ -261,7 +262,7 @@ class NativeHttpCredentialsTest {
     }
     var keyManagers = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     keyManagers.init(keys, "changeit".toCharArray());
-    var ssl = SSLContext.getInstance("TLS");
+    var ssl = SSLContext.getInstance("TLSv1.3");
     ssl.init(keyManagers.getKeyManagers(), null, null);
     var trust = KeyStore.getInstance("PKCS12");
     trust.load(null, null);
@@ -352,8 +353,8 @@ class NativeHttpCredentialsTest {
         original.circuitBreaker(),
         original.maxConcurrentCalls(),
         original.propagateHeaders(),
-        original.logBodies(),
-        original.maxConnections());
+        original.maxConnections(),
+        new TransportSecurityPolicy("test", true));
   }
 
   @Test

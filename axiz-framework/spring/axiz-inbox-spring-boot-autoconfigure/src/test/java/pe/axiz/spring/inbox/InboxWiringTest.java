@@ -129,12 +129,12 @@ class InboxWiringTest {
             "axiz.inbox.store=dynamodb",
             "axiz.inbox.table=payments_inbox",
             "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:4566")
         .run(
             ctx -> {
               assertThat(ctx.getBean(InboxStore.class)).isInstanceOf(DynamoDbInboxStore.class);
               assertEquals(
-                  URI.create("http://localhost:4566"),
+                  URI.create("https://localhost:4566"),
                   ctx.getBean(DynamoDbClient.class)
                       .serviceClientConfiguration()
                       .endpointOverride()

@@ -11,7 +11,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import pe.axiz.core.security.IssuerPolicy;
 
 /** Accepts a token only when one of its audiences is configured for its issuer. */
-public class AudienceValidator implements OAuth2TokenValidator<Jwt> {
+public final class AudienceValidator implements OAuth2TokenValidator<Jwt> {
 
   private static final OAuth2Error INVALID =
       new OAuth2Error(OAuth2ErrorCodes.INVALID_TOKEN, "The token audience is not accepted", null);

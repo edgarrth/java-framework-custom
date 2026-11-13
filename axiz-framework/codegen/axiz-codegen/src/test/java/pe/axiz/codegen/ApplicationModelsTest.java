@@ -30,8 +30,7 @@ class ApplicationModelsTest {
         components:
           schemas:
         """
-                    + schemas.indent(4)),
-            "sample")
+                    + schemas.indent(4)))
         .toString();
   }
 
@@ -68,11 +67,59 @@ class ApplicationModelsTest {
           "Long total",
           "@Nullable BigDecimal amount",
           "Boolean enabled",
-          "@Nullable List<sample.application.model.Item> children",
+          "@Nullable List<Item> children",
           "@Nullable Map<String, Object> attributes"
         }) {
       assertTrue(result.contains(expected), expected + ": " + result);
     }
+  }
+
+  @Test
+  void jdkImportsDoNotHideOwnedModelsWithTheSameNames(@TempDir Path directory) throws Exception {
+    var models =
+        ApplicationModels.recordsForPackage(
+            Map.of(
+                "BigDecimal", Map.of("type", "object"),
+                "List", Map.of("type", "object"),
+                "Order",
+                    Map.of(
+                        "type",
+                        "object",
+                        "properties",
+                        Map.of(
+                            "amount", Map.of("type", "number"),
+                            "items",
+                                Map.of(
+                                    "type",
+                                    "array",
+                                    "items",
+                                    Map.of("$ref", "#/components/schemas/BigDecimal"))))),
+            true);
+    var arguments = new ArrayList<String>();
+    arguments.addAll(
+        List.of(
+            "-classpath",
+            Path.of(Nullable.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+                .toString(),
+            "-d",
+            directory.toString()));
+    for (var model : models) {
+      Path source = directory.resolve(model.get("name") + ".java");
+      Files.writeString(
+          source,
+          "package sample; import org.jspecify.annotations.Nullable; "
+              + model.getOrDefault("imports", "")
+              + model.get("declaration"));
+      arguments.add(source.toString());
+      Assertions.assertFalse(
+          model.getOrDefault("imports", "").toString().contains("java.math.BigDecimal"));
+      Assertions.assertFalse(
+          model.getOrDefault("imports", "").toString().contains("java.util.List"));
+    }
+    Assertions.assertEquals(
+        0,
+        ToolProvider.getSystemJavaCompiler()
+            .run(null, null, null, arguments.toArray(String[]::new)));
   }
 
   @Test
@@ -117,11 +164,12 @@ class ApplicationModelsTest {
                 label: {type: string}
                 metadata: {type: object}
         """);
-    var model = ApplicationModels.records(document, "sample").getFirst();
+    var model = ApplicationModels.records(document).getFirst();
     var source = directory.resolve("Item.java");
     Files.writeString(
         source,
         "package sample.application.model; import org.jspecify.annotations.Nullable; "
+            + model.get("imports")
             + model.get("declaration"));
     String annotations =
         Path.of(Nullable.class.getProtectionDomain().getCodeSource().getLocation().toURI())

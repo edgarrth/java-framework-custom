@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.sun.net.httpserver.HttpServer;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.micrometer.observation.ObservationRegistry;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,12 +30,16 @@ import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.MapConfigurationPropertySource;
+import org.springframework.boot.http.client.HttpRedirects;
 import org.springframework.boot.ssl.DefaultSslBundleRegistry;
 import org.springframework.boot.ssl.NoSuchSslBundleException;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,8 +50,10 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 import pe.axiz.core.commons.RequestContext;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -110,6 +118,116 @@ class HttpClientBehaviourTest {
     server.start();
   }
 
+  @Test
+  @ExtendWith(OutputCaptureExtension.class)
+  void actualClientBuildersKeepTemplatesAndNeverLogExpandedPathsOrQueryValues(
+      CapturedOutput output) {
+    String identifier = UUID.randomUUID().toString();
+    String secret = UUID.randomUUID().toString();
+    runner("axiz.http-client.clients.bank.base-url=" + base())
+        .run(
+            ctx -> {
+              var bank = ctx.getBean(AxizHttpClients.class).restClient("bank");
+              assertEquals(
+                  "{\"ok\":true}",
+                  bank.get()
+                      .uri("/customers/{id}?credential={secret}", identifier, secret)
+                      .retrieve()
+                      .body(String.class));
+              bank.get()
+                  .uri(URI.create(base() + "/customers/" + identifier + "?credential=" + secret))
+                  .retrieve()
+                  .toBodilessEntity();
+              var registry = ctx.getBean(HttpClientRegistry.class);
+              var settings = registry.find("bank").orElseThrow();
+              var reactive =
+                  WebClient.builder()
+                      .baseUrl(base())
+                      .filter(
+                          new AxizExchangeFilter(
+                              registry.resilience(settings),
+                              registry.asyncAuth(settings),
+                              registry.tenantHeader()))
+                      .build();
+              assertEquals(
+                  "{\"ok\":true}",
+                  reactive
+                      .get()
+                      .uri("/customers/{id}?credential={secret}", identifier, secret)
+                      .retrieve()
+                      .bodyToMono(String.class)
+                      .block(Duration.ofSeconds(5)));
+              reactive
+                  .get()
+                  .uri(URI.create(base() + "/customers/" + identifier + "?credential=" + secret))
+                  .retrieve()
+                  .toBodilessEntity()
+                  .block(Duration.ofSeconds(5));
+            });
+    assertThat(output.getOut())
+        .contains("path=/customers/{id}", "path=127.0.0.1 [no-template]")
+        .doesNotContain(identifier, secret, "credential=");
+  }
+
+  @Test
+  void managedRestClientNeverFollowsRedirectsOrLeaksCredentialsToAbsoluteOrigins() {
+    var redirected = new AtomicInteger();
+    server.createContext(
+        "/redirect",
+        exchange -> {
+          exchange.getResponseHeaders().set("Location", base() + "/destination");
+          exchange.sendResponseHeaders(302, -1);
+          exchange.close();
+        });
+    server.createContext(
+        "/destination",
+        exchange -> {
+          redirected.incrementAndGet();
+          exchange.sendResponseHeaders(200, -1);
+          exchange.close();
+        });
+    runner(
+            "axiz.http-client.clients.bank.base-url=" + base(),
+            "axiz.http-client.clients.bank.auth.type=API_KEY",
+            "axiz.http-client.clients.bank.auth.api-key-ref=bank-api-key",
+            "axiz.http-client.clients.bank.auth.api-key-header=X-Api-Key")
+        .run(
+            context -> {
+              var registry = context.getBean(HttpClientRegistry.class);
+              assertEquals(
+                  HttpRedirects.DONT_FOLLOW,
+                  registry.transport(registry.find("bank").orElseThrow()).redirects());
+              var client = context.getBean(AxizHttpClients.class).restClient("bank");
+              assertEquals(
+                  302,
+                  client
+                      .get()
+                      .uri("/redirect")
+                      .retrieve()
+                      .toBodilessEntity()
+                      .getStatusCode()
+                      .value());
+              assertEquals(0, redirected.get());
+              assertThrows(
+                  IllegalArgumentException.class,
+                  () ->
+                      client
+                          .get()
+                          .uri("https://outside.invalid/secret")
+                          .retrieve()
+                          .toBodilessEntity());
+            });
+  }
+
+  @Test
+  void plaintextClientsFailAtStartupInProductionEvenWithoutAuthentication() {
+    runner(
+            "axiz.config.environment=prod",
+            "axiz.transport.allow-plain-http=true",
+            "axiz.http-client.clients.bank.base-url=" + base())
+        .run(context -> assertThat(context).hasFailed());
+  }
+
   @AfterEach
   void stop() {
     server.stop(0);
@@ -132,6 +250,7 @@ class HttpClientBehaviourTest {
     return new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizHttpClientAutoConfiguration.class))
         .withBean(SecretResolver.class, () -> SECRETS)
+        .withPropertyValues("axiz.config.environment=test", "axiz.transport.allow-plain-http=true")
         .withPropertyValues(properties);
   }
 
@@ -214,8 +333,8 @@ class HttpClientBehaviourTest {
         circuitBreaker,
         0,
         List.of(),
-        false,
-        10);
+        10,
+        TransportSecurityPolicy.system());
   }
 
   @Test
@@ -315,8 +434,8 @@ class HttpClientBehaviourTest {
             "not-configured",
             1,
             List.of(),
-            false,
-            10);
+            10,
+            TransportSecurityPolicy.system());
     ClientResilience ledger = new ClientResilience(oneAtATime, CircuitBreakerRegistry.ofDefaults());
     long start = System.nanoTime();
     ledger.acquire();
@@ -347,8 +466,8 @@ class HttpClientBehaviourTest {
             null,
             0,
             List.of(),
-            false,
-            10);
+            10,
+            TransportSecurityPolicy.system());
     assertFalse(
         new ClientResilience(noRetries, CircuitBreakerRegistry.ofDefaults())
             .retry("GET", null, null, 503, 1, System.nanoTime()));
@@ -421,7 +540,15 @@ class HttpClientBehaviourTest {
             .bindOrCreate("axiz.http-client", AxizHttpClientProperties.class);
     HttpClientRegistry noBundles =
         new HttpClientRegistry(
-            props, CircuitBreakerRegistry.ofDefaults(), null, null, Clock.systemUTC(), null);
+            props,
+            CircuitBreakerRegistry.ofDefaults(),
+            null,
+            null,
+            null,
+            Clock.systemUTC(),
+            null,
+            ObservationRegistry.NOOP,
+            TransportSecurityPolicy.system());
     ClientSettings bank = noBundles.find("bank").orElseThrow();
     assertThat(assertThrows(IllegalStateException.class, () -> noBundles.transport(bank)))
         .hasMessageContaining("partner-mtls");
@@ -430,9 +557,12 @@ class HttpClientBehaviourTest {
             props,
             CircuitBreakerRegistry.ofDefaults(),
             null,
+            null,
             new DefaultSslBundleRegistry(),
             Clock.systemUTC(),
-            null);
+            null,
+            ObservationRegistry.NOOP,
+            TransportSecurityPolicy.system());
     assertThrows(NoSuchSslBundleException.class, () -> emptyBundles.transport(bank));
     assertEquals(1, noBundles.all().size());
   }

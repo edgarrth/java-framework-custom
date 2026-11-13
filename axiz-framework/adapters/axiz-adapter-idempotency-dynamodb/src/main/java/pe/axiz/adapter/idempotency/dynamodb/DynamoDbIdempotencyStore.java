@@ -1,5 +1,6 @@
 package pe.axiz.adapter.idempotency.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
@@ -28,7 +29,13 @@ public final class DynamoDbIdempotencyStore implements IdempotencyStore {
 
   static final String HELD_BY_OWNER = "#st = :inProgress AND #owner = :owner";
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbClient is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final DynamoDbClient dynamo;
+
   private final String table;
   private final Clock clock;
 

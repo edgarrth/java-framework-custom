@@ -20,12 +20,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.aws.transport.CompletionObserver;
 import pe.axiz.adapter.aws.transport.CompletionPool;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 
 /** Optional metrics binding; owners with the same stable pool name share aggregate gauges. */
 public final class AwsCompletionMetrics {
-  private static final Map<MeterRegistry, Map<String, Group>> GROUPS = new IdentityHashMap<>();
+  private static final IdentityHashMap<MeterRegistry, Map<String, Group>> GROUPS =
+      new IdentityHashMap<>();
 
   private AwsCompletionMetrics() {}
 
@@ -34,7 +37,12 @@ public final class AwsCompletionMetrics {
       String name, int workers, int queueCapacity, MeterRegistry registry) {
     requireName(name);
     Objects.requireNonNull(registry, "registry");
-    return create(name, workers, queueCapacity, registry, AwsCredentialSources.create());
+    return create(
+        name,
+        workers,
+        queueCapacity,
+        registry,
+        AwsCredentialSources.create(TransportSecurityPolicy.system()));
   }
 
   /** Creates an owner of the supplied source; pass a non-owning view for a borrowed provider. */
@@ -53,7 +61,12 @@ public final class AwsCompletionMetrics {
     }
     var owner =
         new AsyncAwsClients(
-            source, Clock.systemUTC(), Duration.ofSeconds(15), workers, queueCapacity);
+            source,
+            Clock.systemUTC(),
+            Duration.ofSeconds(15),
+            workers,
+            queueCapacity,
+            AsyncAwsTransportSettings.defaults());
     try {
       bind(owner, name, registry);
       return owner;
@@ -88,14 +101,17 @@ public final class AwsCompletionMetrics {
     return new CompletionObserver() {
       private final AtomicBoolean closed = new AtomicBoolean();
 
+      @Override
       public void rejected() {
         group.rejected();
       }
 
+      @Override
       public void completed(long nanos) {
         group.completed(nanos);
       }
 
+      @Override
       public void close() {
         if (closed.compareAndSet(false, true)) release(name, executor, registry, group);
       }

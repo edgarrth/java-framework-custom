@@ -1,5 +1,6 @@
 package pe.axiz.spring.web;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,12 +33,23 @@ public class RequestMetadataFilter extends OncePerRequestFilter implements Order
   private final RequestMetadataResolver resolver;
   private final @Nullable ProblemFactory problems;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public RequestMetadataFilter(
       RequestMetadataResolver resolver, @Nullable ProblemFactory problems) {
     this.resolver = Objects.requireNonNull(resolver);
     this.problems = problems;
   }
 
+  @SuppressFBWarnings(
+      value = "XSS_SERVLET",
+      justification =
+          "HeaderProblemWriter serializes JSON-escaped Problem data with "
+              + "application/problem+json and nosniff; request values are never interpreted as "
+              + "HTML.")
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
@@ -53,6 +65,7 @@ public class RequestMetadataFilter extends OncePerRequestFilter implements Order
       if (!invalid.isEmpty()) {
         response.setStatus(400);
         response.setContentType(Problem.MEDIA_TYPE);
+        response.setHeader("X-Content-Type-Options", "nosniff");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response
             .getWriter()

@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -43,7 +44,7 @@ import reactor.core.publisher.Mono;
  */
 class CacheAuthorizationTest {
 
-  private static final String SECRET = "synthetic-private-balance";
+  private static final String SECRET = UUID.randomUUID().toString();
   private static final Duration T = Duration.ofSeconds(5);
 
   /** Blocking methods protected before and after the call. */

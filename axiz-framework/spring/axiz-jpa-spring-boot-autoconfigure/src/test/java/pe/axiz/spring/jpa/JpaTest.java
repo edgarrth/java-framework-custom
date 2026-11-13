@@ -33,6 +33,7 @@ class JpaTest {
     MockEnvironment local =
         new MockEnvironment().withProperty("spring.jpa.hibernate.ddl-auto", "update");
     local.setActiveProfiles("local");
+    local.setProperty("axiz.config.environment", "local");
     epp.postProcessEnvironment(local, new SpringApplication());
     MockEnvironment defaults = new MockEnvironment();
     epp.postProcessEnvironment(defaults, new SpringApplication());
@@ -68,7 +69,7 @@ class JpaTest {
   }
 
   @Test
-  void onlyWholeLocalOrTestProfileNamesAllowSchemaChanges() {
+  void onlyExplicitSingleProcessEnvironmentsAllowSchemaChanges() {
     MockEnvironment lookalike =
         new MockEnvironment()
             .withProperty("spring.jpa.hibernate.ddl-auto", "create")
@@ -79,7 +80,8 @@ class JpaTest {
     MockEnvironment test =
         new MockEnvironment()
             .withProperty("spring.jpa.hibernate.ddl-auto", "create-drop")
-            .withProperty("spring.profiles.active", "cloud, test");
+            .withProperty("spring.profiles.active", "cloud, test")
+            .withProperty("axiz.config.environment", "test");
     epp.postProcessEnvironment(test, new SpringApplication());
     MockEnvironment none =
         new MockEnvironment().withProperty("spring.jpa.hibernate.ddl-auto", "none");

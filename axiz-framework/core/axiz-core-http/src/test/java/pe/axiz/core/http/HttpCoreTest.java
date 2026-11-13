@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
@@ -121,7 +122,8 @@ class HttpCoreTest {
         "core",
         Duration.ofSeconds(60),
         Duration.ofSeconds(2),
-        clock);
+        clock,
+        new TransportSecurityPolicy("test", true));
   }
 
   @Test

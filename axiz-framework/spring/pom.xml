@@ -21,6 +21,9 @@
   </properties>
 
   <modules>
+    <module>axiz-kafka-spring-boot-autoconfigure</module>
+    <module>axiz-redis-spring-boot-autoconfigure</module>
+    <module>axiz-jdbc-spring-boot-autoconfigure</module>
     <module>axiz-audit-spring-boot-autoconfigure</module>
     <module>axiz-audit-spring-boot-starter</module>
     <module>axiz-cache-spring-boot-autoconfigure</module>

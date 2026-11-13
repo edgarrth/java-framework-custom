@@ -1,5 +1,6 @@
 package pe.axiz.spring.web;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +17,11 @@ public class PageRequestArgumentResolver implements HandlerMethodArgumentResolve
 
   private final PageRequestParser parser;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public PageRequestArgumentResolver(PageRequestParser parser) {
     this.parser = Objects.requireNonNull(parser);
   }

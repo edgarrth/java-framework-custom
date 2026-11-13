@@ -32,6 +32,10 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kafka-spring-boot-autoconfigure</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${revision}</version></dependency>
+      <dependency><groupId>pe.axiz</groupId><artifactId>axiz-schema</artifactId><version>${revision}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${revision}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${revision}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-r2dbc</artifactId><version>${revision}</version></dependency>
@@ -465,11 +469,6 @@
       <dependency>
         <groupId>pe.axiz</groupId>
         <artifactId>axiz-extension-cqrs-spring-boot-starter</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>pe.axiz</groupId>
-        <artifactId>axiz-structure-eda-api</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

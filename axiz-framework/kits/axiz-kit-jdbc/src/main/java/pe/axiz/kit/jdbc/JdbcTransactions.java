@@ -1,5 +1,6 @@
 package pe.axiz.kit.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
@@ -7,6 +8,7 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import javax.sql.DataSource;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.tx.TransactionRunner;
 
 /**
@@ -23,6 +25,11 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
   private static final ThreadLocal<@Nullable IdentityHashMap<DataSource, Connection>> BOUND =
       new ThreadLocal<>();
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DataSource is a borrowed collaborator; sharing its identity preserves lifecycle, "
+              + "transactions or instrumentation. The field is not an owned mutable value.")
   private final DataSource dataSource;
 
   public JdbcTransactions(DataSource dataSource) {
@@ -34,33 +41,79 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
     if (bound() != null) {
       return work.call(); // join the running transaction
     }
-    try (Connection c = dataSource.getConnection()) {
-      boolean autoCommit = c.getAutoCommit();
-      c.setAutoCommit(false);
-      bind(c);
-      @Nullable Throwable primary = null;
+    Connection connection = dataSource.getConnection();
+    boolean autoCommit = true;
+    boolean restore = false;
+    boolean poisoned = false;
+    @Nullable Throwable primary = null;
+    try {
+      autoCommit = connection.getAutoCommit();
+      connection.setAutoCommit(false);
+      restore = true;
+      bind(connection);
+      T result;
       try {
-        T result = work.call();
-        c.commit();
-        return result;
+        result = work.call();
       } catch (Exception | Error failure) {
-        primary = failure;
         try {
-          c.rollback();
+          connection.rollback();
         } catch (SQLException | RuntimeException rollback) {
+          poisoned = true;
           if (rollback != failure) failure.addSuppressed(rollback);
         }
         throw failure;
-      } finally {
-        unbind();
+      }
+      try {
+        connection.commit();
+      } catch (SQLException | RuntimeException commit) {
+        poisoned = true;
+        throw new TransactionOutcomeUnknownException(commit);
+      }
+      return result;
+    } catch (Exception | Error failure) {
+      primary = failure;
+      if (!restore) poisoned = true;
+      throw failure;
+    } finally {
+      unbind();
+      if (restore && !poisoned) {
         try {
-          c.setAutoCommit(autoCommit);
-        } catch (SQLException | RuntimeException restore) {
-          if (primary == null) throw restore;
-          if (restore != primary) primary.addSuppressed(restore);
+          connection.setAutoCommit(autoCommit);
+        } catch (SQLException | RuntimeException failure) {
+          poisoned = true;
+          cleanupFailure(primary, failure);
+        }
+      }
+      if (!poisoned) {
+        try {
+          connection.close();
+        } catch (SQLException | RuntimeException failure) {
+          poisoned = true;
+          cleanupFailure(primary, failure);
+        }
+      }
+      if (poisoned) {
+        try {
+          connection.abort(Runnable::run);
+        } catch (SQLException | RuntimeException failure) {
+          cleanupFailure(primary, failure);
+        } finally {
+          try {
+            connection.close();
+          } catch (SQLException | RuntimeException failure) {
+            cleanupFailure(primary, failure);
+          }
         }
       }
     }
+  }
+
+  private static void cleanupFailure(@Nullable Throwable primary, Throwable failure) {
+    if (primary != null && primary != failure) primary.addSuppressed(failure);
+    // Driver exception messages can contain SQL and values; log only the cleanup event.
+    LoggerFactory.getLogger(JdbcTransactions.class)
+        .warn(
+            "JDBC transaction cleanup failed; discard the connection; do not retry confirmed commits");
   }
 
   @Override

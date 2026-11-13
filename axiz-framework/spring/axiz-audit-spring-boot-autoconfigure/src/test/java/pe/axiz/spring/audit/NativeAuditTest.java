@@ -106,7 +106,7 @@ class NativeAuditTest {
                     .subscribeOn(Schedulers.parallel()))
             .verifyComplete();
         assertTrue(fallbackEntered.await(2, TimeUnit.SECONDS));
-        assertEquals(1, publisher.queue().fallbackCount());
+        assertEquals(1, publisher.fallbackCount());
         assertEquals(
             1, release.getCount(), "Reactive admission completed while fallback was still blocked");
       } finally {

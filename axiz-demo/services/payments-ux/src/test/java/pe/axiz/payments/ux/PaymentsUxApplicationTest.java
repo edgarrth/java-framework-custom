@@ -17,7 +17,12 @@ import pe.axiz.spring.test.RedisTestConfiguration;
  * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
  * configuration, migrations and health. Needs Docker.
  */
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true"
+    })
 @AutoConfigureWebTestClient
 @Import({RedisTestConfiguration.class})
 @ExtendWith(BlockHoundExtension.class)

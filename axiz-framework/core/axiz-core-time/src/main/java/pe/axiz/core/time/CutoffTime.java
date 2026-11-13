@@ -1,5 +1,6 @@
 package pe.axiz.core.time;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -15,9 +16,22 @@ import java.util.Objects;
  */
 public record CutoffTime(LocalTime cutoff, BusinessCalendar calendar) {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "BusinessCalendar is immutable: its holiday sets are copied and no mutators exist.")
   public CutoffTime {
     Objects.requireNonNull(cutoff, "cutoff");
     Objects.requireNonNull(calendar, "calendar");
+  }
+
+  @Override
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "BusinessCalendar is immutable: its holiday sets are copied and no mutators exist.")
+  public BusinessCalendar calendar() {
+    return calendar;
   }
 
   /**

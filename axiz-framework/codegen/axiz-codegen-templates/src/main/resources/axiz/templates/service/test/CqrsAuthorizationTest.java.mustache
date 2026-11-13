@@ -1,0 +1,43 @@
+package {{project.basePackage}}.config;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+
+import java.util.HashSet;
+import java.util.Set;
+import org.junit.jupiter.api.Test;
+import pe.axiz.core.errors.AccessException;
+import pe.axiz.extension.cqrs.Caller;
+{{#fw.reactiveHandlers}}
+import org.junit.jupiter.api.extension.ExtendWith;
+import pe.axiz.spring.test.BlockHoundExtension;
+import reactor.core.publisher.Mono;
+{{/fw.reactiveHandlers}}
+
+/** A partial scope grant must never bypass the contract through a direct bus invocation. */
+{{#fw.reactiveHandlers}}
+@ExtendWith(BlockHoundExtension.class)
+{{/fw.reactiveHandlers}}
+class CqrsAuthorizationTest {
+  private final CqrsAuthorizationConfiguration policies = new CqrsAuthorizationConfiguration();
+{{#operations}}
+{{^publicEndpoint}}
+  @Test
+  void {{methodName}}RequiresItsDeclaredAccess() {
+    var policy = policies.{{methodName}}Authorization();
+    var request = mock(policy.requestType());
+    Set<String> required = Set.of({{{requiredAuthorities}}});
+    var allowed = new Caller("subject", "client", null, "issuer", required);
+    assertDoesNotThrow(() -> {{#fw.reactiveHandlers}}Mono.from({{/fw.reactiveHandlers}}policy.check(request, allowed){{#fw.reactiveHandlers}}).block(){{/fw.reactiveHandlers}});
+    assertThrows(AccessException.class, () -> {{#fw.reactiveHandlers}}Mono.from({{/fw.reactiveHandlers}}policy.check(request, Caller.anonymous()){{#fw.reactiveHandlers}}).block(){{/fw.reactiveHandlers}});
+    for (String missing : required) {
+      var partial = new HashSet<>(required);
+      partial.remove(missing);
+      var denied = new Caller("subject", "client", null, "issuer", partial);
+      assertThrows(AccessException.class, () -> {{#fw.reactiveHandlers}}Mono.from({{/fw.reactiveHandlers}}policy.check(request, denied){{#fw.reactiveHandlers}}).block(){{/fw.reactiveHandlers}});
+    }
+  }
+{{/publicEndpoint}}
+{{/operations}}
+}

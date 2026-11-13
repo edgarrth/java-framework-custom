@@ -112,6 +112,8 @@ class RdsIamStsTest {
         var env = builder.environment();
         env.keySet().removeIf(key -> key.startsWith("AWS_"));
         String endpoint = "http://127.0.0.1:" + server.getAddress().getPort();
+        env.put("AXIZ_CONFIG_ENVIRONMENT", "test");
+        env.put("AXIZ_TRANSPORT_ALLOW_PLAIN_HTTP", "true");
         env.put("AWS_REGION", "us-east-1");
         env.put("AWS_ROLE_ARN", "arn:aws:iam::123456789012:role/fixture");
         env.put("AWS_WEB_IDENTITY_TOKEN_FILE", token.toString());

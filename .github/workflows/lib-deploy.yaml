@@ -1,0 +1,208 @@
+name: lib-deploy
+on:
+  workflow_call:
+    inputs:
+      build-run-id:
+        type: string
+        required: true
+      build-run-attempt:
+        type: string
+        required: true
+      manifest-sha256:
+        type: string
+        required: true
+      destination:
+        description: Immutable hosted Maven repository (maven-releases)
+        type: string
+        required: true
+      environment:
+        description: Protected GitHub environment with recorded reviewers
+        type: string
+        required: true
+      previous-manifest-sha256:
+        description: Previous deployment identity or initial-deployment
+        type: string
+        required: true
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        required: false
+      BUILD_READ_TOKEN:
+        required: false
+      NEXUS_URL:
+        required: true
+      NEXUS_PUBLISH_USERNAME:
+        required: true
+      NEXUS_PUBLISH_PASSWORD:
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: lib-deploy-${{ github.repository }}-${{ inputs.destination }}
+  cancel-in-progress: false
+
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
+  destination:
+    needs: axiz-workflows-trust
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Validate deployment destination before selecting an environment
+        env:
+          DESTINATION: ${{ inputs.destination }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          [[ "$DESTINATION" == maven-releases ]]
+          [[ "$ENVIRONMENT" == dev || "$ENVIRONMENT" == qa || "$ENVIRONMENT" == prod ]]
+
+  deploy:
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    needs: [axiz-workflows-trust, destination]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: ${{ inputs.environment }}
+    steps:
+      # No checkout or build tool is needed to promote a verified product.
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
+        id: build
+        with:
+          repository: ${{ github.repository }}
+          build-run-id: ${{ inputs.build-run-id }}
+          build-run-attempt: ${{ inputs.build-run-attempt }}
+          manifest-sha256: ${{ inputs.manifest-sha256 }}
+          kind: maven-library
+          token: ${{ secrets.BUILD_READ_TOKEN || github.token }}
+      - name: Validate approval, final tag and durable manifest destination
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+          PYTHON: ${{ steps.build.outputs.python }}
+          TOOLS: ${{ steps.build.outputs.tools-path }}
+          EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+        run: |
+          set -euo pipefail
+          version=$(jq -r .version "$BUNDLE/build-manifest.json")
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag=$("$PYTHON" "$TOOLS/release_tag.py" --manifest "$BUNDLE/build-manifest.json")
+          source_sha=$(jq -r .source.sha "$BUNDLE/build-manifest.json")
+          object=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object)
+          for _ in {1..10}; do
+            [[ $(jq -r .type <<< "$object") == tag ]] || break
+            object=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$(jq -r .sha <<< "$object")" --jq .object)
+          done
+          [[ $(jq -r .type <<< "$object") == commit && $(jq -r .sha <<< "$object") == "$source_sha" ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" > "$RUNNER_TEMP/approvals.json"
+          jq -n --arg environment "$ENVIRONMENT" '[
+            {name:"nexus-username",ref:("environment:"+$environment+"/NEXUS_PUBLISH_USERNAME")},
+            {name:"nexus-password",ref:("environment:"+$environment+"/NEXUS_PUBLISH_PASSWORD")}
+          ]' > "$RUNNER_TEMP/deploy-configuration.json"
+          "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$EXPECTED_HASH" \
+            --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" \
+            --destination "$NEXUS_URL/repository/maven-releases" --previous-manifest "$PREVIOUS" \
+            --approvals "$RUNNER_TEMP/approvals.json" --configuration "$RUNNER_TEMP/deploy-configuration.json" \
+            --result failed --output "$RUNNER_TEMP/deploy-record.json"
+          "$PYTHON" "$TOOLS/release_manifest.py" --repository "$GITHUB_REPOSITORY" --tag "$tag" \
+            --manifest-sha256 "$EXPECTED_HASH" --bundle "$BUNDLE"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Promote exactly the verified Maven files
+        id: promote
+        env:
+          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+          PYTHON: ${{ steps.build.outputs.python }}
+          TOOLS: ${{ steps.build.outputs.tools-path }}
+          EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_PUBLISH_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PUBLISH_PASSWORD }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/promote_maven.py" --bundle "$BUNDLE" \
+            --manifest-sha256 "$EXPECTED_HASH" --repository "$GITHUB_REPOSITORY"
+      - name: Retain the signed build manifest before publishing the final release
+        id: retain
+        if: steps.preflight.outputs.draft == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+          HASH: ${{ inputs.manifest-sha256 }}
+          TAG: ${{ steps.preflight.outputs.tag }}
+          PYTHON: ${{ steps.build.outputs.python }}
+          TOOLS: ${{ steps.build.outputs.tools-path }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/release_manifest.py" --repository "$GITHUB_REPOSITORY" --tag "$TAG" \
+            --manifest-sha256 "$HASH" --bundle "$BUNDLE" --publish
+      - name: Signed deployment outcome from the approved build
+        id: record
+        if: ${{ always() && steps.preflight.outcome == 'success' }}
+        env:
+          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+          PYTHON: ${{ steps.build.outputs.python }}
+          TOOLS: ${{ steps.build.outputs.tools-path }}
+          EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
+          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          PROMOTION: ${{ steps.promote.outcome }}
+          RETENTION: ${{ steps.retain.outcome }}
+        run: |
+          set -euo pipefail
+          result=failed
+          if [[ "$PROMOTION" == success && ("$RETENTION" == success || "$RETENTION" == skipped) ]]; then result=succeeded; fi
+          "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$EXPECTED_HASH" \
+            --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" \
+            --destination "$NEXUS_URL/repository/maven-releases" --previous-manifest "$PREVIOUS" \
+            --approvals "$RUNNER_TEMP/approvals.json" --configuration "$RUNNER_TEMP/deploy-configuration.json" \
+            --result "$result" --output "$RUNNER_TEMP/deploy-record.json"
+          cosign sign-blob --yes --bundle "$RUNNER_TEMP/deploy-record.sigstore.json" "$RUNNER_TEMP/deploy-record.json"
+      - name: Durable deployment audit
+        if: ${{ always() && steps.record.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.build.outputs.source-sha }}
+          HASH: ${{ inputs.manifest-sha256 }}
+        run: |
+          set -euo pipefail
+          printf 'Build manifest: %s\nProducer commit: %s\n' "$HASH" "$SOURCE_SHA" > "$RUNNER_TEMP/deploy-notes.txt"
+          gh release create "deploy/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT" \
+            "$RUNNER_TEMP/deploy-record.json" "$RUNNER_TEMP/deploy-record.sigstore.json" \
+            --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --prerelease --latest=false \
+            --title "Deployment $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT" --notes-file "$RUNNER_TEMP/deploy-notes.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ always() && steps.record.outcome == 'success' }}
+        with:
+          name: deploy-record-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/deploy-record.json
+            ${{ runner.temp }}/deploy-record.sigstore.json
+          if-no-files-found: error
+          retention-days: 90

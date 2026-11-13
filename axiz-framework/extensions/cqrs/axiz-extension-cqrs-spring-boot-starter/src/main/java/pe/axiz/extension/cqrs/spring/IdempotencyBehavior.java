@@ -1,5 +1,6 @@
 package pe.axiz.extension.cqrs.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
@@ -22,13 +23,19 @@ import tools.jackson.databind.json.JsonMapper;
  * after the authorization behavior, so a replay is only returned to a caller that is still allowed
  * to run the command.
  */
-public class IdempotencyBehavior implements PipelineBehavior {
+public final class IdempotencyBehavior implements PipelineBehavior {
 
   private static final byte[] JSON_NULL = "null".getBytes(StandardCharsets.UTF_8);
 
   private static final Logger LOG = LoggerFactory.getLogger(IdempotencyBehavior.class);
 
   private final IdempotencyService service;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "JsonMapper is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final JsonMapper mapper;
 
   public IdempotencyBehavior(IdempotencyService service, JsonMapper mapper) {
@@ -52,9 +59,9 @@ public class IdempotencyBehavior implements PipelineBehavior {
     IdempotencyService.Decision decision =
         service.begin(
             scope(invocation.name(), RequestContext.get()), command.idempotencyKey(), fingerprint);
-    if (decision instanceof IdempotencyService.Replay(StoredResponse stored)) {
-      // the stored result is JSON: "null" for a command without result (Command<Void>); an empty
-      // body was written by earlier versions for the same case
+    if (decision instanceof IdempotencyService.Replay replay) {
+      StoredResponse stored = replay.response();
+      // Blocking commands store JSON null; an empty body represents reactive empty completion.
       byte[] json = stored.body().length == 0 ? JSON_NULL : stored.body();
       return (R) mapper.readValue(json, invocation.resultType());
     }

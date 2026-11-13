@@ -1,5 +1,6 @@
 package pe.axiz.spring.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -17,8 +18,19 @@ import pe.axiz.core.outbox.OutboxWriter;
 public class TransactionalEvents {
 
   private final EventFactory factory;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxWriter is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final OutboxWriter writer;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public TransactionalEvents(EventFactory factory, OutboxWriter writer) {
     this.factory = Objects.requireNonNull(factory);
     this.writer = Objects.requireNonNull(writer);

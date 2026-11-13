@@ -1,5 +1,6 @@
 package pe.axiz.structure.hexagonal.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,14 @@ import reactor.core.publisher.Mono;
 
 /** Enqueues immutable event batches sequentially on the caller's R2DBC transaction. */
 public final class ReactiveOutboxDomainEventSink implements ReactiveDomainEventSink {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ReactiveTransactionalEvents is a borrowed collaborator; sharing its identity "
+              + "preserves lifecycle, transactions or instrumentation. The field is not an owned "
+              + "mutable value.")
   private final ReactiveTransactionalEvents events;
+
   private final String defaultDestination;
   private final Map<String, String> destinations;
   private final String typeSuffix;

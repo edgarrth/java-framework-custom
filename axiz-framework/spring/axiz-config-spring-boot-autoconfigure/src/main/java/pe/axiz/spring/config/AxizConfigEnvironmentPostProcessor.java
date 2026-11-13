@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
@@ -12,13 +11,14 @@ import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
+import pe.axiz.core.commons.Environments;
 
 /**
  * Applies the configuration conventions before config data is loaded.
  *
  * <ul>
- *   <li>Inside Kubernetes (and outside the {@code local} and {@code test} profiles) it imports the
- *       ConfigMaps the chart mounts as files under {@code axiz.config.directory} (default {@value
+ *   <li>Inside Kubernetes (outside explicit single-process environments) it imports the ConfigMaps
+ *       the chart mounts as files under {@code axiz.config.directory} (default {@value
  *       #DEFAULT_DIRECTORY}): {@code common/application.yaml} (ConfigMap {@code axiz-common},
  *       optional), then {@code service/application.yaml} ({@code <app>}) and {@code
  *       errors/application.yaml} ({@code <app>-errors}), both required so a missing ConfigMap stops
@@ -50,29 +50,31 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
 
   static final String DEFAULTS = "axizConfigDefaults";
   static final String IMPORTS = "axizConfigImports";
-  private static final List<String> LOCAL_PROFILES = List.of("local", "test");
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
     verifyWebIdentity(env);
+    var selection = new ConfigBootstrapSelection(env);
+    env.getPropertySources().addLast(selection);
     if (!env.getProperty("axiz.config.enabled", Boolean.class, true)) {
       return;
     }
-    String app = env.getProperty("spring.application.name", "application");
-    boolean cluster = inCluster(env) && !localProfile(env);
+    boolean cluster =
+        inCluster(env) && !Environments.allowsInMemoryState(selection.getSource().environment());
+    if (cluster) ConfigBootstrapSelection.requireEnvironment(selection.getSource().environment());
     Map<String, Object> defaults = new LinkedHashMap<>();
     List<String> imports = new ArrayList<>();
 
-    if (env.getProperty("axiz.config.parameter-store.enabled", Boolean.class, false)) {
-      String environment =
-          env.getProperty("axiz.config.environment", "default").toLowerCase(Locale.ROOT);
-      String prefix = env.getProperty("axiz.config.parameter-store.prefix", "/axiz");
-      String stableApp = env.getProperty("axiz.config.parameter-store.application", app);
-      if (!stableApp.matches("[a-zA-Z0-9][a-zA-Z0-9_.-]*")) {
-        throw new IllegalArgumentException("Invalid axiz.config.parameter-store.application");
-      }
+    if (selection.getSource().enabled()) {
+      var selected = selection.getSource();
       imports.add(
-          "optional:aws-parameterstore:" + prefix + "/" + environment + "/" + stableApp + "/");
+          "optional:aws-parameterstore:"
+              + selected.prefix()
+              + "/"
+              + selected.environment()
+              + "/"
+              + selected.application()
+              + "/");
     }
     if (cluster) {
       String dir = env.getProperty("axiz.config.directory", DEFAULT_DIRECTORY);
@@ -128,16 +130,6 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
     }
     return StringUtils.hasText(env.getProperty("KUBERNETES_SERVICE_HOST"))
         && StringUtils.hasText(env.getProperty("KUBERNETES_SERVICE_PORT"));
-  }
-
-  private static boolean localProfile(ConfigurableEnvironment env) {
-    List<String> active = new ArrayList<>(Arrays.asList(env.getActiveProfiles()));
-    String prop = env.getProperty("spring.profiles.active");
-    if (prop != null) {
-      active.addAll(
-          Arrays.stream(prop.split(",", -1)).map(String::trim).filter(s -> !s.isEmpty()).toList());
-    }
-    return active.stream().anyMatch(LOCAL_PROFILES::contains);
   }
 
   @Override

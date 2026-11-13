@@ -53,18 +53,28 @@ public final class ReaderDatabase implements DisposableBean {
 
   @Override
   public void destroy() {
+    Throwable failure = null;
     try {
       if (connectionFactory instanceof Closeable closeable)
         Mono.from(closeable.close()).block(CLOSE_TIMEOUT);
-    } finally {
-      if (credentials != null) {
-        try {
-          credentials.close();
-        } catch (Exception failure) {
-          if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
-          throw new IllegalStateException("Could not close reader credential resources", failure);
-        }
+    } catch (RuntimeException | Error problem) {
+      failure = problem;
+    }
+    if (credentials != null) {
+      try {
+        credentials.close();
+      } catch (Exception problem) {
+        if (problem instanceof InterruptedException) Thread.currentThread().interrupt();
+        var cleanup =
+            new IllegalStateException("Could not close reader credential resources", problem);
+        if (failure == null) failure = cleanup;
+        else failure.addSuppressed(cleanup);
+      } catch (Error problem) {
+        if (failure == null) failure = problem;
+        else if (failure != problem) failure.addSuppressed(problem);
       }
     }
+    if (failure instanceof RuntimeException problem) throw problem;
+    if (failure instanceof Error problem) throw problem;
   }
 }

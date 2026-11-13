@@ -1,0 +1,5 @@
+# Scan production code and tests. Only build outputs, VCS internals and installed dependencies.
+.git/
+**/target/
+**/node_modules/
+**/.venv/

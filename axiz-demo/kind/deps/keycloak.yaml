@@ -1,0 +1,81 @@
+# Local Keycloak start-dev rebuilds Quarkus runtime files; see the scoped Trivy exception.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:26.4
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: admin
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          value: local-only
+        - name: KC_HOSTNAME
+          value: http://localhost:9180
+        - name: KC_HOSTNAME_BACKCHANNEL_DYNAMIC
+          value: 'true'
+        args:
+        - start-dev
+        - --import-realm
+        volumeMounts:
+        - name: keycloak-realm
+          mountPath: /opt/keycloak/data/import
+          readOnly: true
+        - name: writable-0
+          mountPath: /opt/keycloak/data
+        - name: writable-1
+          mountPath: /tmp
+      volumes:
+      - name: keycloak-realm
+        configMap:
+          name: keycloak-realm
+          defaultMode: 493
+      - name: writable-0
+        emptyDir: {}
+      - name: writable-1
+        emptyDir: {}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 0
+        fsGroup: 0
+        seccompProfile:
+          type: RuntimeDefault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+  - name: p8080
+    port: 8080
+    targetPort: 8080
+    nodePort: 30180
+  type: NodePort

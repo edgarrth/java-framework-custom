@@ -1,0 +1,21 @@
+misconfigurations:
+  - id: KSV-0014
+    paths:
+      - axiz-demo/kind/deps/keycloak.yaml
+    expired_at: 2027-02-12
+    statement: >-
+      Only Deployment/keycloak, container/keycloak, in this single-workload file.
+      The local Keycloak 26.4 start-dev command rewrites its Quarkus runtime JARs;
+      a real non-root/read-only smoke fails with ReadOnlyFileSystemException.
+      runAsNonRoot, dropped capabilities, seccomp and no privilege escalation remain enforced.
+      Production consumers must build an optimized immutable identity-provider image.
+  - id: KSV-0109
+    paths:
+      - axiz-demo/kind/rendered/wiremock-mappings.yaml
+    expired_at: 2027-02-12
+    statement: >-
+      Only the rendered ConfigMap/wiremock-mappings in namespace axiz-demo.
+      core-token.json deliberately returns local-core-token, a public synthetic token matched
+      by the local WireMock debit/reversal fixtures. It grants access only to these stand-ins
+      and is not a credential for any real service. Do not add actual credentials to the mappings.
+      Acceptance renders this ConfigMap into its own file; other ConfigMaps remain scanned.

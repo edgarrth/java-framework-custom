@@ -1,8 +1,12 @@
 package pe.axiz.adapter.aws.identity;
 
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
+import software.amazon.awssdk.awscore.endpoint.AwsClientEndpointProvider;
 import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.profiles.ProfileFile;
+import software.amazon.awssdk.profiles.ProfileFileSystemSetting;
 
 /**
  * Credential policy for framework-owned AWS clients. Each returned source belongs to its caller.
@@ -16,7 +20,16 @@ public final class AwsCredentialSources {
    * IMDS. Without IRSA, retain the SDK default chain, including EKS Pod Identity. Close the source
    * with its owning client; closing more than once is harmless.
    */
-  public static AwsCredentialSource create() {
+  public static AwsCredentialSource create(TransportSecurityPolicy transportSecurity) {
+    // The SDK owns IMDS/Pod Identity protocols. Configurable STS exchange endpoints must use TLS.
+    AwsClientEndpointProvider.builder()
+        .serviceEndpointOverrideEnvironmentVariable("AWS_ENDPOINT_URL_STS")
+        .serviceEndpointOverrideSystemProperty("aws.endpointUrl.sts")
+        .serviceProfileProperty("sts")
+        .profileName(ProfileFileSystemSetting.AWS_PROFILE.getStringValue().orElse("default"))
+        .profileFile(ProfileFile::defaultProfileFile)
+        .resolveFromOverrides()
+        .ifPresent(endpoint -> transportSecurity.validate(endpoint, "STS endpoint"));
     var role = SdkSystemSetting.AWS_ROLE_ARN.getStringValue();
     var token = SdkSystemSetting.AWS_WEB_IDENTITY_TOKEN_FILE.getStringValue();
     if (role.isPresent() || token.isPresent()) {

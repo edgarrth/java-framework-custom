@@ -18,6 +18,7 @@ files:
   - {template: static/gitignore, path: .gitignore, binary: true}
   - {template: static/gitattributes, path: .gitattributes, binary: true}
   - {template: static/gitleaks.toml, path: .gitleaks.toml, binary: true}
+  - {template: static/semgrepignore, path: .semgrepignore, binary: true}
   - {template: /service/static/pre-commit-config.yaml, path: .pre-commit-config.yaml, binary: true}
   - {template: static/renovate.json, path: renovate.json, binary: true}
   - {template: static/pull_request_template.md, path: .github/pull_request_template.md, binary: true}
@@ -55,6 +56,8 @@ files:
   - {template: java/cqrs/CommandHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/command/{{item.className}}Handler.java", each: operations, when: fw.cqrs && item.write}
   - {template: java/cqrs/Query.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{item.className}}Query.java", each: operations, when: fw.cqrs && item.readOnly}
   - {template: java/cqrs/QueryHandler.java.mustache, path: "src/main/java/{{project.packagePath}}/application/query/{{item.className}}Handler.java", each: operations, when: fw.cqrs && item.readOnly}
+  - {template: java/cqrs/AuthorizationConfiguration.java.mustache, path: "src/main/java/{{project.packagePath}}/config/CqrsAuthorizationConfiguration.java", when: fw.cqrs && caps.security}
+  - {template: test/CqrsAuthorizationTest.java.mustache, path: "src/test/java/{{project.packagePath}}/config/CqrsAuthorizationTest.java", when: fw.cqrs && caps.security}
   # layered
   - {template: java/layered/Service.java.mustache, path: "src/main/java/{{project.packagePath}}/service/{{item.className}}Service.java", each: tags, when: fw.layered}
   # bff

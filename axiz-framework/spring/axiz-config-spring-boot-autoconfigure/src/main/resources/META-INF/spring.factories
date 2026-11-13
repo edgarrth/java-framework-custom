@@ -1,2 +1,7 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-pe.axiz.spring.config.AxizConfigEnvironmentPostProcessor
+pe.axiz.spring.config.AxizConfigEnvironmentPostProcessor,\
+pe.axiz.spring.config.AxizConfigValidationEnvironmentPostProcessor
+
+org.springframework.boot.context.config.ConfigDataLocationResolver=pe.axiz.spring.config.AxizParameterStoreResolver
+org.springframework.boot.context.config.ConfigDataLoader=pe.axiz.spring.config.AxizParameterStoreLoader
+org.springframework.boot.SpringApplicationRunListener=pe.axiz.spring.config.AwsBootstrapLifecycle

@@ -32,10 +32,6 @@ axiz:
   logging:
     http:
       enabled: true
-  config:
-    environment: ${AXIZ_ENVIRONMENT:local}
-    parameter-store:
-      application: beneficiaries
   i18n:
     default-locale: es-PE
   sensitive:

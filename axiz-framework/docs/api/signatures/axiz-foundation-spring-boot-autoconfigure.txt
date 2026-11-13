@@ -1,3 +1,13 @@
+public final class pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.Duration connectionTtl();
+public java.time.Duration maxIdleTime();
+public pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings toSettings();
+public pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties(java.time.Duration, java.time.Duration);
+}
+
 public final class pe.axiz.spring.foundation.AxizAwsCompletionProperties extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
@@ -29,6 +39,15 @@ public java.util.List<java.lang.String> recurringHolidays();
 public java.util.List<java.time.DayOfWeek> weekend();
 public java.util.List<java.time.LocalDate> holidays();
 public pe.axiz.spring.foundation.AxizFoundationProperties$Calendar(java.util.List<java.time.DayOfWeek>, java.util.List<java.lang.String>, java.util.List<java.time.LocalDate>);
+}
+
+public final class pe.axiz.spring.foundation.AxizTransportProperties extends java.lang.Record {
+public boolean allowInsecureDataStores();
+public boolean allowPlainHttp();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.spring.foundation.AxizTransportProperties(boolean, boolean);
 }
 
 public final class pe.axiz.spring.foundation.BoundedAsyncDispatcher implements java.lang.AutoCloseable {
@@ -108,7 +127,7 @@ public abstract java.lang.String type();
 }
 
 public final class pe.axiz.spring.foundation.aws.AwsAsyncResources {
-public static pe.axiz.adapter.aws.transport.AsyncAwsClients create(java.lang.String, int, int, io.micrometer.core.instrument.MeterRegistry, pe.axiz.spring.foundation.aws.AwsIdentity, pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability);
+public static pe.axiz.adapter.aws.transport.AsyncAwsClients create(java.lang.String, int, int, io.micrometer.core.instrument.MeterRegistry, pe.axiz.spring.foundation.aws.AwsIdentity, pe.axiz.spring.foundation.aws.AwsService, pe.axiz.spring.foundation.aws.AwsCapability, pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings);
 }
 
 public final class pe.axiz.spring.foundation.aws.AwsCapability extends java.lang.Enum<pe.axiz.spring.foundation.aws.AwsCapability> {
@@ -128,6 +147,22 @@ public static final pe.axiz.spring.foundation.aws.AwsCapability STORAGE;
 public static final pe.axiz.spring.foundation.aws.AwsCapability UNSPECIFIED;
 public static pe.axiz.spring.foundation.aws.AwsCapability valueOf(java.lang.String);
 public static pe.axiz.spring.foundation.aws.AwsCapability[] values();
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsCloudAutoConfigurationFilter implements org.springframework.boot.autoconfigure.AutoConfigurationImportFilter,org.springframework.beans.factory.BeanClassLoaderAware {
+public boolean[] match(java.lang.String[], org.springframework.boot.autoconfigure.AutoConfigurationMetadata);
+public pe.axiz.spring.foundation.aws.AwsCloudAutoConfigurationFilter();
+public void setBeanClassLoader(java.lang.ClassLoader);
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsCredentialConfiguration {
+public static void validate(org.springframework.boot.context.properties.bind.Binder);
+}
+
+public final class pe.axiz.spring.foundation.aws.AwsCredentialEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.foundation.aws.AwsCredentialEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
 }
 
 public final class pe.axiz.spring.foundation.aws.AwsIdentity implements software.amazon.awssdk.utils.SdkAutoCloseable,org.springframework.beans.factory.SmartInitializingSingleton {
@@ -156,6 +191,10 @@ public static final pe.axiz.spring.foundation.aws.AwsService SSM;
 public static final pe.axiz.spring.foundation.aws.AwsService UNSPECIFIED;
 public static pe.axiz.spring.foundation.aws.AwsService valueOf(java.lang.String);
 public static pe.axiz.spring.foundation.aws.AwsService[] values();
+}
+
+public class pe.axiz.spring.foundation.aws.AxizAwsCloudBridgeAutoConfiguration {
+protected pe.axiz.spring.foundation.aws.AxizAwsCloudBridgeAutoConfiguration();
 }
 
 public class pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration {

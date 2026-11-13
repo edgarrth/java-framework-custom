@@ -7,6 +7,7 @@ import dev.openfeature.sdk.Metadata;
 import dev.openfeature.sdk.ProviderEvaluation;
 import dev.openfeature.sdk.Reason;
 import dev.openfeature.sdk.Value;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -20,6 +21,11 @@ public class AxizOpenFeatureProvider implements FeatureProvider {
 
   private final FeatureFlags flags;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public AxizOpenFeatureProvider(FeatureFlags flags) {
     this.flags = Objects.requireNonNull(flags);
   }

@@ -47,7 +47,7 @@ public class pe.axiz.spring.outbox.OutboxBlockedMetrics {
 public pe.axiz.spring.outbox.OutboxBlockedMetrics();
 }
 
-public class pe.axiz.spring.outbox.OutboxRelayRunner implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.outbox.OutboxRelayRunner implements org.springframework.context.SmartLifecycle {
 public boolean isRunning();
 public int runOnce();
 public pe.axiz.spring.outbox.OutboxRelayRunner(pe.axiz.core.outbox.OutboxRelay, pe.axiz.core.outbox.OutboxStore, io.micrometer.observation.ObservationRegistry, pe.axiz.spring.outbox.AxizOutboxProperties$Relay, java.time.Clock);

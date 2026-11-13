@@ -59,10 +59,12 @@ public class AxizInboxAutoConfiguration {
           || !(jdbc.connectionProvider() instanceof SpringConnectionProvider provider)) return null;
       Clock clock = clocks.getIfAvailable(Clock::systemUTC);
       return new InboxCompletion() {
+        @Override
         public Object transactionResource() {
           return provider.dataSource();
         }
 
+        @Override
         public boolean complete(String consumer, String key, String owner) {
           return store.markProcessed(consumer, key, owner, clock.instant());
         }

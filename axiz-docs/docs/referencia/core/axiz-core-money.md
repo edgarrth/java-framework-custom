@@ -24,6 +24,26 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `Money` | Monetary amount in an ISO 4217 currency. |
 | `MoneyErrors` | Errors of the money capability. |
 
+## Exact amounts and explicit rounding
+
+`Money.of` and `Money.parse` accept external amounts exactly; they reject excess fractional
+precision instead of rounding. Use `Money.rounded(amount, currency, mode)` for computed values.
+`multiply`, `divide`, `percentage`, exchange conversion and `CurrencyConverter.convert` require
+an explicit `RoundingMode`; the framework does not select a financial rounding policy.
+
+```java
+Money amount = Money.of("150.50", "PEN");
+Money tax = amount.percentage(new BigDecimal("18"), RoundingMode.HALF_UP);
+```
+
+`CurrencyConverter` prefers a supplied direct quote. Its inverse fallback divides the amount
+by the opposite quote and rounds once at the destination currency scale. It never constructs
+an approximate reciprocal before converting a payment. `ExchangeRate.convertInverse` exposes
+that same operation directly. `ExchangeRate.inverse(scale, mode)` represents an approximate
+rate for display or storage; use `convertInverse` when converting an amount in the other direction.
+Rates are bounded by the same integer-digit and scale limits as monetary operands before any
+inverse division, so extreme exponents cannot trigger unbounded decimal expansion.
+
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-money verify`.

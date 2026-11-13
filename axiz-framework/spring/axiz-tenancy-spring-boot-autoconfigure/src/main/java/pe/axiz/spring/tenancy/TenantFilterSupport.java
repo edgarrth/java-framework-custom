@@ -11,7 +11,7 @@ import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.tenancy.TenantResolver;
 
 /** Shared logic of the servlet and reactive tenant filters. */
-public class TenantFilterSupport {
+public final class TenantFilterSupport {
 
   private final TenantResolver resolver;
   private final boolean required;

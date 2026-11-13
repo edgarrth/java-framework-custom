@@ -78,7 +78,7 @@ class PostgresReplayIT {
   void lostAckThenRecreatedRelayAndConsumerCannotApplyThePaymentTwice() throws Exception {
     var clock = new MutableClock(Instant.now(), ZoneOffset.UTC);
     var tx = new JdbcTransactions(source());
-    var store = new JdbcOutboxStore(tx, "axiz_outbox", Dialect.POSTGRESQL);
+    var store = new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.POSTGRESQL);
     var event =
         new EventEnvelope(
             "payment-1",
@@ -108,7 +108,8 @@ class PostgresReplayIT {
     // New datasource identities ensure the receiver commits independently from the sender.
     // No worker object or inbox object from the first delivery is retained.
     var restartedTx = new JdbcTransactions(source());
-    var restartedStore = new JdbcOutboxStore(restartedTx, "axiz_outbox", Dialect.POSTGRESQL);
+    var restartedStore =
+        new JdbcOutboxStore(restartedTx, restartedTx, "axiz_outbox", Dialect.POSTGRESQL);
     var restarted =
         new OutboxRelay(
             restartedStore,

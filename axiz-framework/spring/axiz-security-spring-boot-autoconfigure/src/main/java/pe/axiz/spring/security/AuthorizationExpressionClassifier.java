@@ -19,22 +19,28 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 /** Structural classification only: no evaluation context and no application bean invocation. */
 final class AuthorizationExpressionClassifier {
   enum Access {
-    FALSE,
-    RESTRICTED,
-    DYNAMIC,
-    OPEN,
-    TRUE;
+    FALSE(0),
+    RESTRICTED(1),
+    DYNAMIC(2),
+    OPEN(3),
+    TRUE(4);
+
+    private final int permissiveness;
+
+    Access(int permissiveness) {
+      this.permissiveness = permissiveness;
+    }
 
     Access and(Access other) {
-      return ordinal() <= other.ordinal() ? this : other;
+      return permissiveness <= other.permissiveness ? this : other;
     }
 
     Access or(Access other) {
-      return ordinal() >= other.ordinal() ? this : other;
+      return permissiveness >= other.permissiveness ? this : other;
     }
 
     boolean protectedAccess() {
-      return ordinal() <= DYNAMIC.ordinal();
+      return permissiveness <= DYNAMIC.permissiveness;
     }
   }
 

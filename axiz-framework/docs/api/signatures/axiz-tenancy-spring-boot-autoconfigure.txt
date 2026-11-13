@@ -36,7 +36,7 @@ protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta
 public pe.axiz.spring.tenancy.TenantFilter(pe.axiz.spring.tenancy.TenantFilterSupport);
 }
 
-public class pe.axiz.spring.tenancy.TenantFilterSupport {
+public final class pe.axiz.spring.tenancy.TenantFilterSupport {
 public boolean required();
 public boolean skip(java.lang.String);
 public java.util.Optional<java.lang.String> resolve(pe.axiz.core.commons.RequestMetadata, java.util.function.Function<java.lang.String, java.lang.String>);
@@ -51,7 +51,7 @@ public pe.axiz.spring.tenancy.TenantIdentifierResolver();
 public static final java.lang.String SYSTEM = "system";
 }
 
-public class pe.axiz.spring.tenancy.TenantWebFilter implements org.springframework.web.server.WebFilter {
+public final class pe.axiz.spring.tenancy.TenantWebFilter implements org.springframework.web.server.WebFilter {
 public pe.axiz.spring.tenancy.TenantWebFilter(pe.axiz.spring.tenancy.TenantFilterSupport);
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
 }

@@ -53,10 +53,21 @@ containers:
     env:
       - name: JAVA_TOOL_OPTIONS
         value: {{ $values.javaOpts | quote }}
-      - name: AXIZ_ENVIRONMENT
-        value: {{ $values.environment | quote }}
+      - name: AXIZ_CONFIG_ENVIRONMENT
+        value: {{ required "values.environment is required" $values.environment | quote }}
       - name: OTEL_SERVICE_NAME
         value: {{ include "service.name" $root }}
+      - name: SPRING_APPLICATION_NAME
+        value: {{ include "service.name" $root | quote }}
+      {{- $parameterStore := (($values.configBootstrap | default dict).parameterStore | default dict) }}
+      {{- if $parameterStore.enabled }}
+      - name: AXIZ_CONFIG_PARAMETER_STORE_ENABLED
+        value: "true"
+      - name: AXIZ_CONFIG_PARAMETER_STORE_APPLICATION
+        value: {{ required "configBootstrap.parameterStore.application is required" $parameterStore.application | quote }}
+      - name: AXIZ_CONFIG_PARAMETER_STORE_PREFIX
+        value: {{ $parameterStore.prefix | default "/axiz" | quote }}
+      {{- end }}
       {{- with $values.env }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
@@ -94,9 +105,11 @@ containers:
       - name: tmp
         mountPath: /tmp
       # ConfigMaps read by axiz-config as files (axiz.config.directory): later ones win
+      {{- if $values.sharedConfigMap }}
       - name: config-common
         mountPath: /etc/axiz/config/common
         readOnly: true
+      {{- end }}
       - name: config-service
         mountPath: /etc/axiz/config/service
         readOnly: true
@@ -111,10 +124,11 @@ containers:
 volumes:
   - name: tmp
     emptyDir: {}
+  {{- if $values.sharedConfigMap }}
   - name: config-common
     configMap:
-      name: {{ $values.sharedConfigMap | default "axiz-common" }}
-      optional: true
+      name: {{ $values.sharedConfigMap | quote }}
+  {{- end }}
   - name: config-service
     configMap:
       name: {{ include "service.fullname" $root }}

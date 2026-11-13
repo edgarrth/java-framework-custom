@@ -217,7 +217,8 @@ public final class OpenApiDocument {
     boolean oauth = "oauth2".equals(type) || "openIdConnect".equals(type);
     boolean bearer =
         "http".equals(type) && "bearer".equalsIgnoreCase(String.valueOf(scheme.get("scheme")));
-    if (!oauth && !bearer || bearer && !scopes.isEmpty()) return ApiOperation.Access.UNSUPPORTED;
+    if ((!oauth && !bearer) || (bearer && !scopes.isEmpty()))
+      return ApiOperation.Access.UNSUPPORTED;
     return scopes.isEmpty() ? ApiOperation.Access.AUTHENTICATED : ApiOperation.Access.SCOPED;
   }
 

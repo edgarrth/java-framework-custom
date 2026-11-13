@@ -1,3 +1,7 @@
+public final class pe.axiz.core.tenancy.InvalidTenantException extends pe.axiz.core.errors.AccessException {
+public pe.axiz.core.tenancy.InvalidTenantException();
+}
+
 public final class pe.axiz.core.tenancy.TenantContext {
 public static <T> T callAs(java.lang.String, java.util.concurrent.Callable<T>) throws java.lang.Exception;
 public static boolean isValid(java.lang.String);

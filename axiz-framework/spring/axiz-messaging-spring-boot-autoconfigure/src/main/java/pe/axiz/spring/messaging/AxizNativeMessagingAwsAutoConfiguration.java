@@ -29,6 +29,7 @@ import pe.axiz.adapter.messaging.sqs.SqsAsyncEventPublisher;
 import pe.axiz.adapter.messaging.sqs.SqsEventPublisher;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.messaging.AsyncEventPublisher;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
 import pe.axiz.spring.foundation.aws.AwsCapability;
@@ -64,7 +65,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
       AsyncAwsClients axizMessagingSqsAsyncResources(
           AxizAwsCompletionProperties completion,
           ObjectProvider<MeterRegistry> registries,
-          AwsIdentity identity) {
+          AwsIdentity identity,
+          AxizAwsAsyncTransportProperties transport) {
         return AwsAsyncResources.create(
             "axizMessagingSqsAsyncResources",
             completion.workers(),
@@ -72,7 +74,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
             registries.getIfAvailable(),
             identity,
             AwsService.SQS,
-            AwsCapability.MESSAGING);
+            AwsCapability.MESSAGING,
+            transport.toSettings());
       }
 
       @Bean(destroyMethod = "close")
@@ -112,7 +115,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
       AsyncAwsClients axizMessagingSnsAsyncResources(
           AxizAwsCompletionProperties completion,
           ObjectProvider<MeterRegistry> registries,
-          AwsIdentity identity) {
+          AwsIdentity identity,
+          AxizAwsAsyncTransportProperties transport) {
         return AwsAsyncResources.create(
             "axizMessagingSnsAsyncResources",
             completion.workers(),
@@ -120,7 +124,8 @@ public class AxizNativeMessagingAwsAutoConfiguration {
             registries.getIfAvailable(),
             identity,
             AwsService.SNS,
-            AwsCapability.MESSAGING);
+            AwsCapability.MESSAGING,
+            transport.toSettings());
       }
 
       @Bean(destroyMethod = "close")

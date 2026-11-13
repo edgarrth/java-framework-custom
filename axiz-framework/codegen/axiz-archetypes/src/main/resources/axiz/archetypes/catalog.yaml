@@ -173,6 +173,7 @@ archetypes:
   - metrics
   - config
   - sensitive
+  - security
   - messaging
   - messaging-kafka
   - inbox

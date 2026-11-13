@@ -173,13 +173,26 @@ public final class SampleProjects {
       boolean all,
       boolean cqrs) {
     if (!archetype.isService()) return "axiz-sample-" + archetype.name();
+    String style =
+        switch (structure) {
+          case LAYERED -> "ly";
+          case HEXAGONAL -> "hx";
+          case EDA -> "ev";
+          case BFF -> "bf";
+          case BATCH -> "bt";
+          case NONE -> "na";
+        };
+    // Technical layer names are reserved service nouns. Stable sample codes keep names valid
+    // without relying on enum declaration order; the manifest retains the full architecture.
     String variant =
         all
             ? "-"
-                + structure.ordinal()
-                + stack.ordinal()
-                + List.of("none", "aurora", "dynamodb").indexOf(store)
-                + (cqrs ? "1" : "0")
+                + style
+                + "-"
+                + (stack == Stack.REACTIVE ? "rx" : "sv")
+                + "-"
+                + store
+                + (cqrs ? "-q" : "")
             : "";
     return switch (archetype.name()) {
       case "business" -> "sample-orders" + variant;

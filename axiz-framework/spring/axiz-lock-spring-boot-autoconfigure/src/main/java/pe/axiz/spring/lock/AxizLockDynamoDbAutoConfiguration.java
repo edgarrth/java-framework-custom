@@ -20,6 +20,7 @@ import pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.DistributedLock;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
@@ -64,7 +65,8 @@ public class AxizLockDynamoDbAutoConfiguration {
     AsyncAwsClients axizLockAsyncAwsResources(
         AxizAwsCompletionProperties completion,
         ObjectProvider<MeterRegistry> registries,
-        AwsIdentity identity) {
+        AwsIdentity identity,
+        AxizAwsAsyncTransportProperties transport) {
       return AwsAsyncResources.create(
           "axizLockAsyncAwsResources",
           completion.workers(),
@@ -72,7 +74,8 @@ public class AxizLockDynamoDbAutoConfiguration {
           registries.getIfAvailable(),
           identity,
           AwsService.DYNAMODB,
-          AwsCapability.LOCK);
+          AwsCapability.LOCK,
+          transport.toSettings());
     }
 
     @Bean(destroyMethod = "close")

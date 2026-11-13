@@ -127,6 +127,8 @@ class LoggingBehaviourTest {
   void bodiesLargerThanWhatIsKeptAreLoggedBySizeOnly(CapturedOutput output) throws Exception {
     HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true, 32));
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/login");
     request.setContentType("application/json");
     request.setContent(
         ("{\"user\":\"ana\",\"password\":\"SYNTHETIC-SECRET-" + "x".repeat(40) + "\"}")
@@ -154,6 +156,9 @@ class LoggingBehaviourTest {
     HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(false));
     assertEquals(Ordered.HIGHEST_PRECEDENCE + 30, filter.getOrder());
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/accounts");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE,
+        "/accounts");
     request.setQueryString("document=12345678");
     request.addHeader("X-Correlation-Id", "corr-12345678");
     request.addHeader("Authorization", "Bearer secret-token");
@@ -176,6 +181,8 @@ class LoggingBehaviourTest {
   void bodiesAreMaskedTruncatedAndStillReachTheClient(CapturedOutput output) throws Exception {
     HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true));
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
+    request.setAttribute(
+        org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/login");
     request.setContentType("application/json");
     request.setContent(
         "{\"user\":\"ana\",\"password\":\"s3cret\"}".getBytes(StandardCharsets.UTF_8));
@@ -202,7 +209,19 @@ class LoggingBehaviourTest {
     MockServerWebExchange exchange =
         MockServerWebExchange.from(
             MockServerHttpRequest.get("/payments").header("X-Correlation-Id", "corr-87654321"));
-    filter.filter(exchange, ex -> Mono.empty()).block();
+    filter
+        .filter(
+            exchange,
+            ex -> {
+              ex.getAttributes()
+                  .put(
+                      org.springframework.web.reactive.HandlerMapping
+                          .BEST_MATCHING_PATTERN_ATTRIBUTE,
+                      new org.springframework.web.util.pattern.PathPatternParser()
+                          .parse("/payments"));
+              return Mono.empty();
+            })
+        .block();
     MockServerWebExchange probe =
         MockServerWebExchange.from(MockServerHttpRequest.get("/actuator/health"));
     filter.filter(probe, ex -> Mono.empty()).block();

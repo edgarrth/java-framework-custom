@@ -48,10 +48,6 @@ axiz:
   logging:
     http:
       enabled: true
-  config:
-    environment: ${AXIZ_ENVIRONMENT:local}
-    parameter-store:
-      application: payment-orders
   i18n:
     default-locale: es-PE
   sensitive:

@@ -1,0 +1,8 @@
+public class pe.axiz.spring.jdbc.AxizJdbcTransportAutoConfiguration {
+public pe.axiz.spring.jdbc.AxizJdbcTransportAutoConfiguration();
+}
+
+public interface pe.axiz.spring.jdbc.JdbcDataSourceTlsValidator {
+public abstract boolean supports(javax.sql.DataSource);
+public abstract void validate(javax.sql.DataSource, pe.axiz.core.commons.net.DataTransportSecurityPolicy);
+}

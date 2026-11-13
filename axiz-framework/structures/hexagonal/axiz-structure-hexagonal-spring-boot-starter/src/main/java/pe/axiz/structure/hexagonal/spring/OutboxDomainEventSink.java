@@ -1,5 +1,6 @@
 package pe.axiz.structure.hexagonal.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -12,9 +13,15 @@ import pe.axiz.structure.hexagonal.DomainEventSink;
  * Writes domain events to the outbox in the use case transaction, so they are published if and only
  * if the business change commits. The event id becomes the CloudEvents id.
  */
-public class OutboxDomainEventSink implements DomainEventSink {
+public final class OutboxDomainEventSink implements DomainEventSink {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "TransactionalEvents is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final TransactionalEvents events;
+
   private final String defaultDestination;
   private final Map<String, String> destinations;
   private final String typeSuffix;

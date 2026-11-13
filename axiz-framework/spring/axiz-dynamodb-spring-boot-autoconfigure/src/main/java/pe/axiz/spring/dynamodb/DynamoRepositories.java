@@ -8,7 +8,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 
 /** Creates repositories on the single enhanced client, applying the table name prefix. */
-public class DynamoRepositories {
+public final class DynamoRepositories {
 
   private final DynamoDbEnhancedClient client;
   private final String tablePrefix;

@@ -1,5 +1,6 @@
 package pe.axiz.core.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,8 +27,20 @@ public final class TwoLevelCache implements ByteCache {
 
   private static final Logger LOG = LoggerFactory.getLogger(TwoLevelCache.class);
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ByteCache is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final ByteCache l1;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ByteCache is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final ByteCache l2;
+
   private final Duration l1MaxTtl;
   private final LongSupplier nanoTime;
 

@@ -68,6 +68,9 @@ class ValkeyReactiveStoresIT {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
     // Keep the endpoint stable across Docker restart: auto-assigned host ports may change.
+    // Owned local Valkey container without TLS; this fixture tests store contracts and
+    // cancellation.
+    // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     try (var port = new ServerSocket(0)) {
       VALKEY.setPortBindings(List.of(port.getLocalPort() + ":6379"));
     }

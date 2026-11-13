@@ -1,6 +1,5 @@
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
-import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 /**
@@ -16,18 +15,11 @@ class IrsaPackagedProbe {
     }
     AwsCredentialsProvider source;
     SdkAutoCloseable resource;
-    try {
-      Object handle = Class.forName("pe.axiz.adapter.aws.identity.AwsCredentialSources")
-          .getMethod("create").invoke(null);
-      resource = (SdkAutoCloseable) handle;
-      source = (AwsCredentialsProvider) handle.getClass().getMethod("provider").invoke(handle);
-    } catch (ClassNotFoundException noFrameworkOwnedClient) {
-      // A Parameter Store-only consumer uses the Spring Cloud AWS bootstrap integration.
-      // This checks its STS runtime closure, not the credential-selection policy of that library.
-      var owned = WebIdentityTokenFileCredentialsProvider.create();
-      source = owned;
-      resource = owned;
-    }
+    Object handle = Class.forName("pe.axiz.adapter.aws.identity.AwsCredentialSources")
+        .getMethod("create", Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy"))
+        .invoke(null, Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy").getMethod("system").invoke(null));
+    resource = (SdkAutoCloseable) handle;
+    source = (AwsCredentialsProvider) handle.getClass().getMethod("provider").invoke(handle);
     try {
       var credentials = source.resolveCredentials();
       if (!Boolean.parseBoolean(args[0])) throw new AssertionError("Invalid IRSA was accepted");

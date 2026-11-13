@@ -19,6 +19,7 @@ import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyStore;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
@@ -65,7 +66,8 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
     AsyncAwsClients axizIdempotencyAsyncAwsResources(
         AxizAwsCompletionProperties completion,
         ObjectProvider<MeterRegistry> registries,
-        AwsIdentity identity) {
+        AwsIdentity identity,
+        AxizAwsAsyncTransportProperties transport) {
       return AwsAsyncResources.create(
           "axizIdempotencyAsyncAwsResources",
           completion.workers(),
@@ -73,7 +75,8 @@ public class AxizIdempotencyDynamoDbAutoConfiguration {
           registries.getIfAvailable(),
           identity,
           AwsService.DYNAMODB,
-          AwsCapability.IDEMPOTENCY);
+          AwsCapability.IDEMPOTENCY,
+          transport.toSettings());
     }
 
     @Bean(destroyMethod = "close")

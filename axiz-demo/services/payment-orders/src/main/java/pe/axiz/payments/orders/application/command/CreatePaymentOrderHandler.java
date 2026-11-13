@@ -72,7 +72,7 @@ public class CreatePaymentOrderHandler
       throw new BusinessException(PaymentErrors.INVALID_CREDITOR_ACCOUNT, "invalid cci", Map.of());
     }
     // a requested amount is never rounded: more decimals than the currency is a 400
-    Money amount = Money.ofExact(c.amount(), c.currency());
+    Money amount = Money.of(c.amount(), c.currency());
     String requestKey = c.requestKey();
     if (requestKey != null) {
       var existing = orders.findByRequestKey(c.customerId(), requestKey);

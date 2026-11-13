@@ -1,10 +1,13 @@
 package pe.axiz.adapter.outbox.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -19,9 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishException;
@@ -34,9 +40,11 @@ import pe.axiz.core.outbox.OutboxWriteTracing;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.jdbc.JdbcTransactions;
+import pe.axiz.kit.jdbc.TransactionOutcomeUnknownException;
 
 class OutboxTest {
 
+  private JdbcDataSource source;
   private JdbcTransactions tx;
   private JdbcOutboxStore store;
   private final MutableClock clock = new MutableClock();
@@ -67,8 +75,120 @@ class OutboxTest {
         }
       }
     }
+    source = ds;
     tx = new JdbcTransactions(ds);
-    store = new JdbcOutboxStore(tx, "axiz_outbox", Dialect.H2);
+    store = new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.H2);
+  }
+
+  @Test
+  void lostCommitAcknowledgmentIsUnknownAndNeverRollsBackOrRestoresAutoCommit() {
+    var calls = new ArrayList<String>();
+    var broken = new JdbcTransactions(failingSource(true, calls));
+    var writer =
+        new OutboxWriter(new JdbcOutboxStore(broken, broken, "axiz_outbox", Dialect.H2), clock);
+    var failure =
+        assertThrows(OutboxException.class, () -> writer.write("t", event("lost-ack"), "order"));
+    assertTrue(failure.getCause() instanceof TransactionOutcomeUnknownException);
+    assertEquals(List.of("commit", "abort"), calls);
+    assertEquals(1, store.countPending(), "the confirmed database commit must not be retried");
+  }
+
+  @Test
+  void aRunnerThatDoesNotBindTheConnectionCannotExecuteNonAtomicOutboxWork() {
+    var unbound =
+        new TransactionRunner() {
+          @Override
+          public <T> T inTransaction(Callable<T> work) throws Exception {
+            return work.call();
+          }
+        };
+    var invalid =
+        new JdbcOutboxStore(new JdbcTransactions(source), unbound, "axiz_outbox", Dialect.H2);
+    var failure = assertThrows(OutboxException.class, invalid::countPending);
+    assertEquals("25000", ((SQLException) failure.getCause()).getSQLState());
+    assertEquals(0, store.countPending());
+  }
+
+  @Test
+  void checkedTransactionFailuresKeepTheirCauseAndInterruptionIsRestored() {
+    for (Exception original :
+        List.of(
+            new Exception("transaction boundary failed"), new InterruptedException("cancelled"))) {
+      var failing =
+          new TransactionRunner() {
+            @Override
+            public <T> T inTransaction(Callable<T> work) throws Exception {
+              throw original;
+            }
+          };
+      var invalid = new JdbcOutboxStore(tx, failing, "axiz_outbox", Dialect.H2);
+      try {
+        var failure = assertThrows(OutboxException.class, invalid::countPending);
+        assertSame(original, failure.getCause());
+        assertEquals(
+            original instanceof InterruptedException, Thread.currentThread().isInterrupted());
+      } finally {
+        Thread.interrupted();
+      }
+    }
+  }
+
+  @Test
+  void failedRollbackAfterDuplicateNeverRestoresAutoCommitOrCommitsTheCounter() {
+    new OutboxWriter(store, clock).write("t", event("duplicate"), "order");
+    var calls = new ArrayList<String>();
+    var broken = new JdbcTransactions(failingSource(false, calls));
+    var writer =
+        new OutboxWriter(new JdbcOutboxStore(broken, broken, "axiz_outbox", Dialect.H2), clock);
+    var failure =
+        assertThrows(OutboxException.class, () -> writer.write("t", event("duplicate"), "order"));
+    assertEquals("23505", ((SQLException) failure.getCause()).getSQLState());
+    assertEquals("rollback failed", failure.getCause().getSuppressed()[0].getMessage());
+    assertEquals(List.of("rollback", "abort"), calls);
+    assertEquals(1, store.countPending());
+    new OutboxWriter(store, clock).write("t", event("successor"), "order");
+    assertEquals(
+        1L, store.claimDue(1, Duration.ofMinutes(1), "owner").getFirst().aggregateSequence());
+  }
+
+  private DataSource failingSource(boolean failCommit, List<String> calls) {
+    return (DataSource)
+        Proxy.newProxyInstance(
+            DataSource.class.getClassLoader(),
+            new Class<?>[] {DataSource.class},
+            (proxy, method, args) -> {
+              try {
+                if (!method.getName().equals("getConnection")) return method.invoke(source, args);
+                var actual = source.getConnection();
+                return Proxy.newProxyInstance(
+                    Connection.class.getClassLoader(),
+                    new Class<?>[] {Connection.class},
+                    (connection, operation, values) -> {
+                      String name = operation.getName();
+                      if (name.equals("commit") || name.equals("rollback") || name.equals("abort"))
+                        calls.add(name);
+                      if (name.equals("setAutoCommit") && Boolean.TRUE.equals(values[0]))
+                        calls.add("restore");
+                      if (name.equals("commit") && failCommit) {
+                        actual.commit();
+                        throw new SQLException("commit acknowledgment lost", "08006");
+                      }
+                      if (name.equals("rollback") && !failCommit)
+                        throw new SQLException("rollback failed", "08006");
+                      if (name.equals("abort")) {
+                        actual.close();
+                        return null;
+                      }
+                      try {
+                        return operation.invoke(actual, values);
+                      } catch (InvocationTargetException failure) {
+                        throw failure.getCause();
+                      }
+                    });
+              } catch (InvocationTargetException failure) {
+                throw failure.getCause();
+              }
+            });
   }
 
   private EventEnvelope event(String id) {
@@ -309,12 +429,12 @@ class OutboxTest {
                 Duration.ofMillis(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> new JdbcOutboxStore(tx, "bad name", Dialect.POSTGRESQL));
+        () -> new JdbcOutboxStore(tx, tx, "bad name", Dialect.POSTGRESQL));
   }
 
   @Test
   void sqlErrorsAreWrapped() {
-    JdbcOutboxStore broken = new JdbcOutboxStore(tx, "missing_table", Dialect.H2);
+    JdbcOutboxStore broken = new JdbcOutboxStore(tx, tx, "missing_table", Dialect.H2);
     assertThrows(OutboxException.class, broken::countPending);
   }
 

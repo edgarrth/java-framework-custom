@@ -18,7 +18,7 @@ class LockTest {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
-        .withPropertyValues("axiz.config.environment=test")
+        .withPropertyValues("axiz.config.environment=test", "axiz.lock.store=memory")
         .run(
             ctx -> {
               assertEquals(
@@ -43,6 +43,7 @@ class LockTest {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizLockAutoConfiguration.class))
+        .withPropertyValues("axiz.config.environment=", "axiz.lock.store=memory")
         .run(
             ctx -> {
               Throwable failure = ctx.getStartupFailure();

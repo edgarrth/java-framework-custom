@@ -7,7 +7,7 @@ spring:
     url: ${DB_R2DBC_URL:r2dbc:postgresql://localhost:5432/app}
     username: ${DB_USERNAME:app}
     properties:
-      sslMode: ${DB_SSL_MODE:require}
+      sslMode: ${DB_SSL_MODE:verify-full}
   flyway:
     enabled: true
   kafka:
@@ -44,7 +44,6 @@ axiz:
     http:
       enabled: true
   config:
-    environment: ${AXIZ_ENVIRONMENT:local}
   i18n:
     default-locale: es-PE
   sensitive:

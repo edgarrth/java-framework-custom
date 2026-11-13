@@ -4,6 +4,11 @@ The `axiz` command: creates services from the archetypes, adds capabilities, gen
 (use cases, handlers, entities, HTTP clients, migrations), keeps code and OpenAPI/AsyncAPI contracts in
 sync, upgrades services between framework versions and checks a project (`axiz doctor`).
 
+`doctor` reports literal credentials in YAML and `.properties`, including multiline values and
+UUID-like API keys. Use explicit reference properties such as `client-secret-ref` or environment
+placeholders. Header names and authentication mode properties are configuration metadata; a
+lowercase value or a value ending in `-ref` does not turn a credential into a reference.
+
 It embeds the generation engine of the framework (`pe.axiz:axiz-codegen`), so it works offline and
 produces exactly what the initializr and CI produce. Generated sources come out formatted as `spotless:check`
 expects: the jar ships google-java-format and exports the `jdk.compiler` packages it needs in its
@@ -31,9 +36,9 @@ application module. Snapshots and the identity ledger stay beside the root manif
 checks require BlockHound in the application tests, without requiring it in a sibling Java library.
 An upgrade updates all declared Axiz parents; `--rename` changes only the application's artifactId
 and deployment identity. It preserves the aggregator, sibling artifacts, Java packages and stateful
-identities. Standard generated workflows migrate to separate build/deploy consumers using the
-application module, its source POM and the existing owned chart directory. Customized legacy
-workflows remain a patch for review.
+identities. The bindings of the generated build/deploy workflows (application module, source POM
+and owned chart directory) are updated with the rename; customized workflows remain a patch for
+review.
 Explicitly named reactor POMs can be read by the editors, but the standard service build
 requires `<module>/pom.xml`; upgrading that workflow with another POM filename also produces
 a proposal and preserves the original project.

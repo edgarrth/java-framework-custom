@@ -9,6 +9,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
@@ -41,7 +42,6 @@ public record AxizHttpClientProperties(
    * @param circuitBreaker circuit breaker configuration name; empty disables it
    * @param maxConcurrentCalls bulkhead limit; 0 disables it
    * @param propagateHeaders catalog headers forwarded to this dependency
-   * @param logBodies whether bodies are logged (masked, truncated)
    * @param maxConnections connection pool size
    * @param sslBundle SSL bundle for custom trust or mutual TLS
    */
@@ -56,14 +56,13 @@ public record AxizHttpClientProperties(
       @DefaultValue("default") String circuitBreaker,
       @DefaultValue("0") int maxConcurrentCalls,
       @DefaultValue List<String> propagateHeaders,
-      @DefaultValue("false") boolean logBodies,
       @DefaultValue("50") int maxConnections,
       @Nullable String sslBundle) {
     public Client {
       propagateHeaders = List.copyOf(propagateHeaders);
     }
 
-    public ClientSettings toSettings(String name) {
+    public ClientSettings toSettings(String name, TransportSecurityPolicy transportSecurity) {
       return new ClientSettings(
           name,
           baseUrl,
@@ -74,8 +73,8 @@ public record AxizHttpClientProperties(
           circuitBreaker.isBlank() ? null : circuitBreaker,
           maxConcurrentCalls,
           propagateHeaders,
-          logBodies,
-          maxConnections);
+          maxConnections,
+          transportSecurity);
     }
   }
 

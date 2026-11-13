@@ -59,6 +59,8 @@ class ReactiveKafkaAuditBrokerTest {
                   AxizAuditKafkaAutoConfiguration.class,
                   AxizNativeAuditAutoConfiguration.class))
           .withPropertyValues(
+              "axiz.config.environment=test",
+              "axiz.transport.allow-insecure-data-stores=true",
               "axiz.audit.mode=ASYNC",
               "axiz.audit.kafka.topic=audit",
               "axiz.audit.kafka.timeout=10s")

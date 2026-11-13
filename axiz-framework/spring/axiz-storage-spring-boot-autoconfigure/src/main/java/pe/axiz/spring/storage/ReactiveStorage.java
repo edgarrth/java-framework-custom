@@ -1,5 +1,6 @@
 package pe.axiz.spring.storage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -18,6 +19,11 @@ import reactor.core.publisher.Mono;
 
 /** Deferred Reactor facade over the native port; content consumption owns the response lifetime. */
 public final class ReactiveStorage {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "The facade shares the injected port and its backend lifecycle, never an owned "
+              + "mutable value.")
   private final AsyncObjectStorage storage;
 
   public ReactiveStorage(AsyncObjectStorage storage) {

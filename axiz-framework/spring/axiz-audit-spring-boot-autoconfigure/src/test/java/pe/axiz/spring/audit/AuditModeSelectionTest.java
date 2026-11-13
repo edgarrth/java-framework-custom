@@ -16,12 +16,14 @@ import reactor.core.publisher.Mono;
 class AuditModeSelectionTest {
   private ApplicationContextRunner imperative() {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class));
   }
 
   private ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
@@ -60,38 +62,13 @@ class AuditModeSelectionTest {
     }
     imperative()
         .withInitializer(ctx -> ctx.getEnvironment().setActiveProfiles("test"))
-        .run(ctx -> assertThat(ctx).hasNotFailed());
+        .run(
+            ctx ->
+                assertThat(ctx.getStartupFailure())
+                    .hasStackTraceContaining("Declare axiz.audit.mode"));
     for (String selection : new String[] {"axiz.audit.mode=ASYNC", "axiz.audit.mode=SYNC"}) {
       imperative().withPropertyValues(selection).run(ctx -> assertThat(ctx).hasNotFailed());
       reactive().withPropertyValues(selection).run(ctx -> assertThat(ctx).hasNotFailed());
-    }
-  }
-
-  @Test
-  void removedSelectorsAreRejectedEvenWithACanonicalModeOrDevelopmentProfile() {
-    for (String key : new String[] {"axiz.audit.async.enabled", "axiz.audit.durable.enabled"}) {
-      for (String value : new String[] {"", "true", "false"}) {
-        for (String environment : new String[] {"prod", "test", "local"}) {
-          imperative()
-              .withPropertyValues(
-                  key + "=" + value,
-                  "axiz.audit.mode=ASYNC",
-                  "axiz.config.environment=" + environment)
-              .run(
-                  ctx ->
-                      assertThat(ctx.getStartupFailure())
-                          .hasStackTraceContaining(key + " was removed"));
-          reactive()
-              .withPropertyValues(
-                  key + "=" + value,
-                  "axiz.audit.mode=ASYNC",
-                  "axiz.config.environment=" + environment)
-              .run(
-                  ctx ->
-                      assertThat(ctx.getStartupFailure())
-                          .hasStackTraceContaining(key + " was removed"));
-        }
-      }
     }
   }
 

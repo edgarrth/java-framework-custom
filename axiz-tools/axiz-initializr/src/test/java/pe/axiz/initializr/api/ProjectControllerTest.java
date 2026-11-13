@@ -29,7 +29,9 @@ import pe.axiz.initializr.service.GenerationService;
 import pe.axiz.initializr.service.GenerationServiceTest;
 import tools.jackson.databind.json.JsonMapper;
 
-@WebMvcTest({ProjectController.class, MetadataController.class})
+@WebMvcTest(
+    controllers = {ProjectController.class, MetadataController.class},
+    properties = "axiz.config.environment=test")
 @Import({SecurityConfiguration.class, ApiExceptionHandler.class, ProjectControllerTest.Beans.class})
 class ProjectControllerTest {
 

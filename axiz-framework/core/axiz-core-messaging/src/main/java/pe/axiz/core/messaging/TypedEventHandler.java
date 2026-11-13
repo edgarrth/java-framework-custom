@@ -1,5 +1,6 @@
 package pe.axiz.core.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -15,6 +16,11 @@ public abstract class TypedEventHandler<T> implements EventHandler<T> {
   private final String eventType;
   private final Class<T> payloadType;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Abstract application extension point validates handler metadata at construction; "
+              + "subclasses are trusted application code and no finalizer is used.")
   protected TypedEventHandler() {
     this.eventType = eventTypeOf(getClass());
     this.payloadType = resolvePayload(getClass(), TypedEventHandler.class);

@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,7 @@ import pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight;
 class DoctorOutboxPreflightIT {
   private static final PostgreSQLContainer POSTGRES =
       new PostgreSQLContainer("postgres:17.6-alpine");
-  private static final String PASSWORD = "local-doctor-read-only";
+  private static final String PASSWORD = UUID.randomUUID().toString();
 
   @BeforeAll
   static void start() throws Exception {

@@ -3,6 +3,7 @@ package pe.axiz.adapter.lock.dynamodb;
 import static pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock.n;
 import static pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock.s;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
@@ -25,7 +26,14 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
  * store.
  */
 public final class DynamoDbAsyncDistributedLock implements AsyncDistributedLock {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient dynamo;
+
   private final String table;
   private final Clock clock;
 

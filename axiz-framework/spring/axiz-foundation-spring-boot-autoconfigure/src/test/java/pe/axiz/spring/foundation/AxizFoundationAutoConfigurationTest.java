@@ -38,7 +38,7 @@ class AxizFoundationAutoConfigurationTest {
     JsonMapper mapper = JsonMapper.builder(factory).addModule(new MoneyJacksonModule()).build();
     String boundary = "0".repeat(Money.MAX_TEXT_LENGTH - 4) + "1.00";
     assertEquals(
-        Money.ofExact("1", "PEN"),
+        Money.of("1", "PEN"),
         mapper.readValue("{\"amount\":\"" + boundary + "\",\"currency\":\"PEN\"}", Money.class));
     for (String literal : List.of("9".repeat(257), "9".repeat(1_000_000))) {
       for (String json :
@@ -106,7 +106,7 @@ class AxizFoundationAutoConfigurationTest {
             "1e-2",
             "150.500",
             "0")) {
-      Money expected = Money.ofExact(literal, "PEN");
+      Money expected = Money.of(literal, "PEN");
       for (String amount : List.of(literal, "\"" + literal + "\"")) {
         for (String json :
             List.of(

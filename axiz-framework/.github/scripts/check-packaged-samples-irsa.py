@@ -3,7 +3,7 @@
 import json
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 import zipfile
 from pathlib import Path
 

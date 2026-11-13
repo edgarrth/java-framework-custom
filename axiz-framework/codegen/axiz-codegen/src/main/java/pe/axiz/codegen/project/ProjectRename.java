@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 import pe.axiz.codegen.ServiceRoles;
 import pe.axiz.codegen.openapi.SafeYaml;
@@ -19,10 +20,9 @@ public final class ProjectRename {
   public static final String LEDGER = ".axiz/identities.yaml";
   private static final List<String> STABLE =
       List.of(
-          "axiz.messaging.source",
-          "axiz.messaging.consumer.name",
-          "axiz.messaging.kafka.group-id",
-          "axiz.config.parameter-store.application");
+          "axiz.messaging.source", "axiz.messaging.consumer.name", "axiz.messaging.kafka.group-id");
+  private static final String BOOTSTRAP_APPLICATION = "configBootstrap.parameterStore.application";
+  private static final String BOOTSTRAP_ENABLED = "configBootstrap.parameterStore.enabled";
 
   private ProjectRename() {}
 
@@ -56,15 +56,7 @@ public final class ProjectRename {
     if (old.contains("${"))
       throw new IOException("Resolve spring.application.name before renaming");
     Map<String, Object> defaults =
-        Map.of(
-            STABLE.get(0),
-            "urn:axiz:" + old,
-            STABLE.get(1),
-            old,
-            STABLE.get(2),
-            old,
-            STABLE.get(3),
-            old);
+        Map.of(STABLE.get(0), "urn:axiz:" + old, STABLE.get(1), old, STABLE.get(2), old);
     try (Stream<Path> paths = Files.walk(layout.target("src/main/resources"))) {
       for (Path path : paths.filter(Files::isRegularFile).sorted().toList()) {
         String file = SafePaths.fileName(path);
@@ -151,10 +143,9 @@ public final class ProjectRename {
           identities.clear();
           updates.forEach(
               (k, value) -> {
-                if (k.startsWith("config.axiz.messaging.")
-                    || k.equals("config.axiz.config.parameter-store.application"))
-                  identities.put(k, value);
+                if (k.startsWith("config.axiz.messaging.")) identities.put(k, value);
               });
+          preserveBootstrapIdentity(current, config, identities);
           tracked.put(relative, new LinkedHashMap<>(identities));
           edits.put(relative, YamlProperties.merge(Files.readString(v), updates));
         }
@@ -187,17 +178,56 @@ public final class ProjectRename {
     if (ledger.get("files") instanceof Map<?, ?> files) {
       for (var file : files.entrySet()) {
         Path path = SafePaths.target(dir, String.valueOf(file.getKey()));
+        if (!Files.isRegularFile(path)) {
+          problems.add("Stable identity file missing: " + file.getKey());
+          continue;
+        }
         Map<String, Object> actual = flat(path);
+        if (SafePaths.fileName(path).startsWith("values")) {
+          Path baseValues =
+              SafePaths.target(
+                  dir,
+                  dir.relativize(Objects.requireNonNull(path.getParent()).resolve("values.yaml"))
+                      .toString());
+          Map<String, Object> inherited = new LinkedHashMap<>(flat(baseValues));
+          inherited.putAll(actual);
+          actual = inherited;
+        }
+        Map<String, Object> effective = actual;
         if (file.getValue() instanceof Map<?, ?> expected)
           expected.forEach(
               (key, value) -> {
-                if (!value.equals(actual.get(String.valueOf(key)))) {
+                if (!value.equals(effective.get(String.valueOf(key)))) {
                   problems.add("Stable identity changed: " + file.getKey() + " : " + key);
                 }
               });
       }
     }
     return problems;
+  }
+
+  private static void preserveBootstrapIdentity(
+      Map<String, Object> base, Map<String, Object> override, Map<String, Object> identities)
+      throws IOException {
+    Object rawEnabled =
+        override.getOrDefault(BOOTSTRAP_ENABLED, base.getOrDefault(BOOTSTRAP_ENABLED, false));
+    if (!(rawEnabled instanceof Boolean)) {
+      throw new IOException(BOOTSTRAP_ENABLED + " must be a boolean");
+    }
+    Object selected = override.getOrDefault(BOOTSTRAP_APPLICATION, base.get(BOOTSTRAP_APPLICATION));
+    if (selected == null || "".equals(selected)) {
+      if (Boolean.TRUE.equals(rawEnabled)) {
+        throw new IOException(
+            BOOTSTRAP_APPLICATION + " is required before renaming when Parameter Store is enabled");
+      }
+      return;
+    }
+    if (!(selected instanceof String application)
+        || !application.matches("[a-zA-Z0-9][a-zA-Z0-9_.-]*")) {
+      throw new IOException(
+          BOOTSTRAP_APPLICATION + " must be an explicit stable application selector");
+    }
+    identities.put(BOOTSTRAP_APPLICATION, selected);
   }
 
   private static void audienceAliases(

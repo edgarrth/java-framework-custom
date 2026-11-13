@@ -19,18 +19,18 @@ def nodes(value):
             yield from nodes(item)
 
 
-def check(root, samples=None):
+def check(root, samples=None, workflows_directory=None):
     root = Path(root).resolve()
     errors = []
-    workflows = root / '.github/workflows'
+    workflows = Path(workflows_directory).resolve() if workflows_directory is not None else root / '.github/workflows'
     for path in sorted([*workflows.glob('*.yaml'), *workflows.glob('*.yml')]):
         document = yaml.safe_load(path.read_text())
         versions = set()
         for node in nodes(document):
             reference = node.get('uses', '')
-            if isinstance(reference, str) and reference.startswith('axiz/axiz-workflows/'):
+            if isinstance(reference, str) and reference.startswith('edgarrth/java-framework-custom/'):
                 version = reference.rpartition('@')[2]
-                if not re.fullmatch(r'v2\.\d+\.\d+', version):
+                if not re.fullmatch(r'axiz-workflows-v2\.\d+\.\d+', version):
                     errors.append(f'{path.name}: an Axiz reference is outside an exact v2 release')
                 versions.add(version)
         if versions:
@@ -39,7 +39,7 @@ def check(root, samples=None):
                        if 'AXIZ_WORKFLOWS_VERSION' in node}
             if len(versions) != 1 or guarded != versions:
                 errors.append(f'{path.name}: workflow and release guard versions differ')
-        if path.name in ('native-nightly.yaml', 'samples-matrix.yaml'):
+        if path.name in ('framework-native-nightly.yaml', 'framework-samples-matrix.yaml'):
             for node in nodes(document):
                 for credential in ('USERNAME', 'PASSWORD'):
                     key = 'NEXUS_' + credential
@@ -76,7 +76,7 @@ def check(root, samples=None):
             manifest = yaml.safe_load((directory / '.axiz/project.yaml').read_text())
             if manifest['archetype'] not in ('library', 'starter'):
                 services.add(directory)
-        nightly = yaml.safe_load((workflows / 'native-nightly.yaml').read_text())
+        nightly = yaml.safe_load((workflows / 'framework-native-nightly.yaml').read_text())
         selected = json.loads(nightly['jobs']['native']['with']['modules'])
         if not isinstance(selected, list) or not selected or any(not isinstance(p, str) for p in selected):
             raise ValueError('Native modules must be a nonempty JSON list of paths')
@@ -94,9 +94,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path('.'))
     parser.add_argument('--samples', type=Path)
+    parser.add_argument('--workflows', type=Path)
     args = parser.parse_args()
     try:
-        errors = check(args.root, args.samples)
+        errors = check(args.root, args.samples, args.workflows)
     except (OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
         errors = [str(error)]
     for error in errors:

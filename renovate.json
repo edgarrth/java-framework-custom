@@ -1,0 +1,6 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>edgarrth/java-framework-custom//.github/renovate/platform#axiz-workflows-v2.0.0"
+  ]
+}

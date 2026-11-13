@@ -1,5 +1,6 @@
 package pe.axiz.adapter.secrets.aws;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.Optional;
 import pe.axiz.core.commons.json.JsonReader;
@@ -15,7 +16,13 @@ import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundExce
  */
 public final class SecretsManagerResolver implements SecretResolver {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Native SDK clients are likewise borrowed, thread-safe resources. Adapters neither "
+              + "expose nor close the supplied clients.")
   private final SecretsManagerClient client;
+
   private final String prefix;
 
   public SecretsManagerResolver(SecretsManagerClient client, String prefix) {

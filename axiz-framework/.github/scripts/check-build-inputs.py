@@ -7,7 +7,7 @@ repositories as well as the umbrella checkout. Does not stage files or change Gi
 from pathlib import Path
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 
 NS = {'m': 'http://maven.apache.org/POM/4.0.0'}
 CONFIG = ('.mvn/jvm.config', '.mvn/maven.config', '.mvn/wrapper/maven-wrapper.properties')

@@ -55,6 +55,8 @@ class S3EndpointConsistencyTest {
             AutoConfigurations.of(
                 AxizAwsIdentityAutoConfiguration.class, AxizStorageS3AutoConfiguration.class);
         String[] settings = {
+          "axiz.config.environment=test",
+          "axiz.transport.allow-plain-http=true",
           "axiz.aws.region=us-east-1",
           "axiz.aws.endpoint=" + host + "/global",
           "axiz.storage.bucket=fixture-bucket"

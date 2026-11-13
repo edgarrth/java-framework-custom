@@ -1,0 +1,3 @@
+
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=pe.axiz.spring.foundation.aws.AwsCloudAutoConfigurationFilter
+org.springframework.boot.EnvironmentPostProcessor=pe.axiz.spring.foundation.aws.AwsCredentialEnvironmentPostProcessor

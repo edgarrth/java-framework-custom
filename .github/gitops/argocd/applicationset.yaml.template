@@ -1,0 +1,65 @@
+# One Argo CD Application per file environments/<env>/<service>.yaml of the GitOps repository
+# (written by service-deploy). Requires native OCI sources in Argo CD 3.1 or newer.
+# Chart and image come from the signed build by digest; environment values use a separate full
+# Git commit. Rollback deploys the previous verified manifest with explicit approved values.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: axiz-services
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: UNCONFIGURED_GITOPS_REPOSITORY
+        revision: main
+        files:
+          - path: "environments/*/*.yaml"
+  template:
+    metadata:
+      name: "{{ .service }}-{{ .environment }}"
+      labels:
+        axiz.pe/service: "{{ .service }}"
+        axiz.pe/environment: "{{ .environment }}"
+      annotations:
+        axiz.pe/build-manifest-sha256: "{{ .manifest_sha256 }}"
+        axiz.pe/deploy-record-sha256: "{{ .deploy_record_sha256 }}"
+    spec:
+      project: axiz-services
+      sources:
+        - repoURL: "{{ .chart.oci }}"
+          targetRevision: "{{ .chart.digest }}"
+          path: .
+          helm:
+            releaseName: "{{ .service }}"
+            valueFiles:
+              - "$values/{{ index .values.files 0 }}"
+              - "$values/{{ index .values.files 1 }}"
+            parameters:
+              - name: image.repository
+                value: "{{ .image.repository }}"
+              - name: image.tag
+                value: "{{ .image.tag }}"
+              - name: image.digest
+                value: "{{ .image.digest }}"
+        - repoURL: "{{ .values.repoURL }}"
+          targetRevision: "{{ .values.revision }}"
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "axiz-{{ .environment }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - ServerSideApply=true
+          - PrunePropagationPolicy=foreground
+        retry:
+          limit: 3
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m
+      revisionHistoryLimit: 10

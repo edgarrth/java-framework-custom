@@ -41,3 +41,10 @@ clients and the file refresher close with the Spring context; custom clients ret
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-secrets-spring-boot-autoconfigure verify`.
+
+## Cache metrics
+
+With a `MeterRegistry`, the resolver publishes `axiz.secrets.cache.requests` (`result=hit|miss`)
+and `axiz.secrets.cache.loads` (`outcome=found|absent|failed`). The only other label is the bounded
+`resolver=sync|async`; secret identifiers and values are never labels. A coalesced async lookup
+counts one actual backend load. No registry or exporter is required to use the cache.

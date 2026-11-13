@@ -16,7 +16,12 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
  * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
  * configuration, migrations and health. Needs Docker.
  */
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true"
+    })
 @AutoConfigureMockMvc
 @Import({PostgresTestConfiguration.class, KafkaTestConfiguration.class})
 class PaymentProcessApplicationTest {

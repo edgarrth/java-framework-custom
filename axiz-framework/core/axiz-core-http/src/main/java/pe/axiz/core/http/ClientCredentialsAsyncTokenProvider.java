@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.AsyncLoadingCache;
 import pe.axiz.core.commons.Stages;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 
 /**
  * Coalesced native token renewal and asynchronous secret lookup through a JDK-only transport port.
@@ -34,10 +35,13 @@ public final class ClientCredentialsAsyncTokenProvider implements AsyncAccessTok
       @Nullable String audience,
       Duration renewBefore,
       Duration timeout,
-      Clock clock) {
+      Clock clock,
+      TransportSecurityPolicy transportSecurity) {
     this.http = Objects.requireNonNull(http);
     this.clientSecret = Objects.requireNonNull(clientSecret);
-    this.exchange = new ClientCredentialsExchange(tokenUri, clientId, scopes, audience, timeout);
+    this.exchange =
+        new ClientCredentialsExchange(
+            tokenUri, clientId, scopes, audience, timeout, transportSecurity);
     this.renewBefore = Objects.requireNonNull(renewBefore);
     if (renewBefore.isNegative())
       throw new IllegalArgumentException("Token renewal margin must not be negative");

@@ -1,5 +1,6 @@
 package pe.axiz.spring.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -9,10 +10,17 @@ import pe.axiz.core.cache.ByteCache;
 import pe.axiz.core.cache.ValueCodec;
 
 /** Named caches over the shared two-level store, with the TTL configured per name. */
-public class AxizCaches {
+public final class AxizCaches {
 
   private final String prefix;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ByteCache is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final ByteCache store;
+
   private final ValueCodec codec;
   private final AxizCacheProperties properties;
   private final Map<String, AxizCache> caches = new ConcurrentHashMap<>();

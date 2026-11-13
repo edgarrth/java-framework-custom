@@ -1,5 +1,6 @@
 package pe.axiz.spring.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
@@ -22,10 +23,17 @@ import pe.axiz.core.observability.AxizObservations;
  * the CloudEvents distributed-tracing extensions ({@code traceparent}, {@code tracestate}), so it
  * travels the same way on MSK, SQS and SNS.
  */
-public class ObservedEventPublisher implements EventPublisher, BoundedPublisher {
+public final class ObservedEventPublisher implements EventPublisher, BoundedPublisher {
 
   private final EventPublisher delegate;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry registry;
+
   private final AxizMessagingProperties properties;
 
   @Override

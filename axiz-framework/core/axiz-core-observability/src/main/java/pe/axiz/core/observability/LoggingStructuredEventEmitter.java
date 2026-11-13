@@ -1,5 +1,6 @@
 package pe.axiz.core.observability;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
@@ -11,7 +12,13 @@ public final class LoggingStructuredEventEmitter implements StructuredEventEmitt
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.event");
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry registry;
+
   private final AttributeSanitizer sanitizer;
 
   public LoggingStructuredEventEmitter(ObservationRegistry registry, AttributeSanitizer sanitizer) {

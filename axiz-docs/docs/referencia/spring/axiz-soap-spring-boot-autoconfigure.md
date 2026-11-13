@@ -25,3 +25,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-soap-spring-boot-autoconfigure verify`.
+
+## Transport security
+
+All SOAP endpoints are validated at startup, including clients without WS-Security credentials.
+HTTPS is required. Local HTTP peers need the common `axiz.transport.allow-plain-http=true` setting
+and an explicit local/test/ci environment. There is no per-client plaintext selector. Managed
+SOAP transports do not follow automatic redirects and retain normal certificate verification.

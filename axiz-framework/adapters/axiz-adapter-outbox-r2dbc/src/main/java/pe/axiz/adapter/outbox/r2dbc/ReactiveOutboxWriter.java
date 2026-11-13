@@ -1,5 +1,6 @@
 package pe.axiz.adapter.outbox.r2dbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -14,7 +15,13 @@ import reactor.core.publisher.Mono;
  */
 public final class ReactiveOutboxWriter {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "R2dbcOutboxStore is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final R2dbcOutboxStore store;
+
   private final Clock clock;
 
   public ReactiveOutboxWriter(R2dbcOutboxStore store, Clock clock) {

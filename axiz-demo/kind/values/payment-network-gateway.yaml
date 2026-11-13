@@ -15,6 +15,9 @@ resources:
   limits:
     memory: 512Mi
 env:
+# Local environments skip automatic cluster imports; load the chart mounts explicitly.
+- name: SPRING_CONFIG_IMPORT
+  value: optional:file:/etc/axiz/config/common/application.yaml,file:/etc/axiz/config/service/application.yaml,file:/etc/axiz/config/errors/application.yaml
 - name: AWS_ACCESS_KEY_ID
   value: test
 - name: AWS_SECRET_ACCESS_KEY
@@ -25,6 +28,9 @@ externalSecret:
   enabled: false
 config:
   axiz.config.environment: local
+  axiz.transport.allow-plain-http: true
+  axiz.transport.allow-insecure-data-stores: true
+  spring.data.redis.ssl.enabled: false
   management.opentelemetry.tracing.export.otlp.endpoint: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/traces
   management.otlp.metrics.export.url: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/metrics
   axiz.security.issuers:

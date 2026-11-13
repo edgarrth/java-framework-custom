@@ -1,0 +1,215 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.3.0/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": true,
+  "include-v-in-tag": true,
+  "tag-separator": "-",
+  "bootstrap-sha": "64b138e185332e4148dc1e2c96eab8cf32236604",
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Fixes"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "build",
+      "section": "Build",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "section": "CI",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "section": "Tests",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "section": "Chores",
+      "hidden": true
+    }
+  ],
+  "packages": {
+    "axiz-framework": {
+      "initial-version": "2.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='properties']/*[local-name()='revision']"
+        },
+        {
+          "type": "xml",
+          "path": "platform/axiz-bom/pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='properties']/*[local-name()='revision']"
+        },
+        {
+          "type": "xml",
+          "path": "platform/axiz-dependencies/pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='properties']/*[local-name()='revision']"
+        }
+      ],
+      "component": "axiz-framework",
+      "draft": true,
+      "force-tag-creation": true
+    },
+    "axiz-tools": {
+      "initial-version": "2.0.0",
+      "extra-files": [
+        {
+          "type": "xml",
+          "path": "pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='version']"
+        },
+        {
+          "type": "xml",
+          "path": "axiz-cli/pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='version']"
+        },
+        {
+          "type": "xml",
+          "path": "axiz-initializr/pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='version']"
+        },
+        {
+          "type": "xml",
+          "path": "axiz-rewrite-recipes/pom.xml",
+          "xpath": "/*[local-name()='project']/*[local-name()='version']"
+        }
+      ],
+      "component": "axiz-tools",
+      "draft": true,
+      "force-tag-creation": true
+    },
+    "axiz-docs": {
+      "initial-version": "2.0.0",
+      "component": "axiz-docs",
+      "draft": false
+    },
+    ".github": {
+      "initial-version": "2.0.0",
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "workflows/native-nightly.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/native.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/pr.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/lib-build.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/lib-deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/service-build.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/service-deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "actions/build-inputs/action.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "actions/consume-build/action.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "gitops/policies/verify-images.yaml.template"
+        },
+        {
+          "type": "generic",
+          "path": "actions/resolve-service-build/action.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "actions/build-manifest/sign_product.py"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/framework-deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/framework-native-reactive.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/tools-deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/tools-ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/demo-deploy.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/framework-samples-matrix.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/framework-ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/demo-native-nightly.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/framework-native-nightly.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/demo-ci.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/docs-pr.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/tools-deploy-initializr.yaml"
+        },
+        {
+          "type": "generic",
+          "path": "workflows/demo-e2e.yaml"
+        }
+      ],
+      "component": "axiz-workflows",
+      "draft": false
+    }
+  }
+}

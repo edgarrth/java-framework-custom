@@ -1,5 +1,6 @@
 package pe.axiz.adapter.audit.sqs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -19,7 +20,13 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
  */
 public final class SqsAuditPublisher implements AuditPublisher {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SqsClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final SqsClient sqs;
+
   private final String queueUrl;
   private final boolean fifo;
 

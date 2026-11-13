@@ -7,7 +7,7 @@ public pe.axiz.core.messaging.AsyncEventPublisher publisher();
 public pe.axiz.spring.messaging.AsyncEventPublisherAdapter(java.lang.String, pe.axiz.core.messaging.AsyncEventPublisher);
 }
 
-public class pe.axiz.spring.messaging.AxizEvents {
+public final class pe.axiz.spring.messaging.AxizEvents {
 public pe.axiz.core.messaging.EventEnvelope envelope(java.lang.String, java.lang.String, java.lang.String, java.lang.Object);
 public pe.axiz.core.messaging.PublishResult publish(java.lang.String, java.lang.String, java.lang.String, java.lang.Object);
 public pe.axiz.core.messaging.PublishResult publish(java.lang.String, pe.axiz.core.messaging.EventEnvelope);
@@ -123,7 +123,7 @@ public pe.axiz.core.messaging.EventPublisher publisher();
 public pe.axiz.spring.messaging.EventPublisherAdapter(java.lang.String, pe.axiz.core.messaging.EventPublisher);
 }
 
-public class pe.axiz.spring.messaging.JacksonPayloadCodec implements pe.axiz.core.messaging.PayloadCodec {
+public final class pe.axiz.spring.messaging.JacksonPayloadCodec implements pe.axiz.core.messaging.PayloadCodec {
 public <T> T decode(byte[], java.lang.Class<T>);
 public byte[] encode(java.lang.Object);
 public java.lang.String contentType();
@@ -150,14 +150,14 @@ public pe.axiz.spring.messaging.ObservedDispatcher(pe.axiz.core.messaging.EventD
 public pe.axiz.spring.messaging.ObservedDispatcher(pe.axiz.core.messaging.EventDispatcher, io.micrometer.observation.ObservationRegistry, java.time.Clock, pe.axiz.spring.foundation.DispatchBoundary);
 }
 
-public class pe.axiz.spring.messaging.ObservedEventPublisher implements pe.axiz.core.messaging.EventPublisher,pe.axiz.core.messaging.BoundedPublisher {
+public final class pe.axiz.spring.messaging.ObservedEventPublisher implements pe.axiz.core.messaging.EventPublisher,pe.axiz.core.messaging.BoundedPublisher {
 public boolean supports(java.lang.String);
 public pe.axiz.core.messaging.PublishBound publishBound();
 public pe.axiz.core.messaging.PublishResult publish(java.lang.String, pe.axiz.core.messaging.EventEnvelope);
 public pe.axiz.spring.messaging.ObservedEventPublisher(pe.axiz.core.messaging.EventPublisher, io.micrometer.observation.ObservationRegistry, pe.axiz.spring.messaging.AxizMessagingProperties);
 }
 
-public class pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
+public final class pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
 public java.lang.Object postProcessAfterInitialization(java.lang.Object, java.lang.String);
 public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration);
 public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.ReactiveInboxCompletion>, java.lang.String);
@@ -195,7 +195,7 @@ public static final java.time.Duration DEFAULT_TIMEOUT;
 public static void await(org.reactivestreams.Publisher<?>, java.time.Duration) throws java.lang.Exception;
 }
 
-public class pe.axiz.spring.messaging.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.messaging.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
 public boolean isRunning();
 public int getPhase();
 public pe.axiz.spring.messaging.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.AxizMessagingProperties$Sqs, pe.axiz.core.resilience.Backoff);
@@ -214,7 +214,7 @@ public void handle(T, pe.axiz.core.messaging.EventEnvelope) throws java.lang.Exc
 public void handleClaimed(T, pe.axiz.core.messaging.EventEnvelope, java.lang.String, java.lang.String, java.lang.String) throws java.lang.Exception;
 }
 
-public class pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
+public final class pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
 public java.lang.Object postProcessAfterInitialization(java.lang.Object, java.lang.String);
 public pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.PlatformTransactionManager>);
 public pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.PlatformTransactionManager>, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.InboxCompletion>, java.lang.String);

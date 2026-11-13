@@ -3,6 +3,7 @@ package pe.axiz.spring.test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
@@ -16,5 +17,14 @@ public class PostgresTestConfiguration {
   @ServiceConnection
   PostgreSQLContainer axizPostgresContainer() {
     return AxizContainers.postgres();
+  }
+
+  @Bean
+  DynamicPropertyRegistrar axizPostgresTransport() {
+    return registry -> {
+      registry.add("spring.datasource.hikari.data-source-properties.sslmode", () -> "disable");
+      registry.add("spring.flyway.jdbc-properties.sslmode", () -> "disable");
+      registry.add("spring.r2dbc.properties.sslMode", () -> "disable");
+    };
   }
 }

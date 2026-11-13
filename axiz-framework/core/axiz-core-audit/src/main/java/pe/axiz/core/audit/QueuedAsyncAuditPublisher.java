@@ -10,7 +10,8 @@ import pe.axiz.core.commons.Stages;
  * native transport acknowledgement; no request thread waits for queue space or network I/O.
  * Immutable events carry audit metadata. This mode intentionally does not propagate a transaction.
  */
-public final class QueuedAsyncAuditPublisher implements AsyncAuditEventPublisher, AutoCloseable {
+public final class QueuedAsyncAuditPublisher
+    implements AsyncAuditEventPublisher, AuditQueueMetrics, AutoCloseable {
   private final AsyncAuditPublisher queue;
 
   public QueuedAsyncAuditPublisher(
@@ -36,8 +37,39 @@ public final class QueuedAsyncAuditPublisher implements AsyncAuditEventPublisher
     return CompletableFuture.completedFuture(null);
   }
 
-  public AsyncAuditPublisher queue() {
-    return queue;
+  @Override
+  public int pending() {
+    return queue.pending();
+  }
+
+  @Override
+  public long deliveredCount() {
+    return queue.deliveredCount();
+  }
+
+  @Override
+  public long fallbackCount() {
+    return queue.fallbackCount();
+  }
+
+  @Override
+  public long failureCount() {
+    return queue.failureCount();
+  }
+
+  @Override
+  public long lostCount() {
+    return queue.lostCount();
+  }
+
+  @Override
+  public long unconfirmedCount() {
+    return queue.unconfirmedCount();
+  }
+
+  @Override
+  public boolean workerAlive() {
+    return queue.workerAlive();
   }
 
   @Override

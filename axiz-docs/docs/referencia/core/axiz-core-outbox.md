@@ -10,8 +10,8 @@ Application `Clock` still timestamps publication and retry scheduling.
 observation. A custom publisher without a known bound needs an explicit
 `axiz.outbox.relay.publish-budget` when a relay is created. The fallback covers unknown routes and
 never reduces a known maximum. Direct core consumers can use the constructor accepting both lease
-and publication budget explicitly. Claims and completion updates require an owner; unfenced
-legacy operations are not part of the v2 port.
+and publication budget explicitly. Claims and completion updates require an owner and are
+fenced by it.
 
 `claim-allowance` (default 2 s) sizes the lease at startup; a slower claim can still publish if its
 actual remaining budget is sufficient. Lease validation requires `lease - margin >= budget +

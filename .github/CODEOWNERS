@@ -1,0 +1,6 @@
+# Supply-chain changes require review by the configured repository owner.
+*                         @edgarrth
+/.github/workflows/       @edgarrth
+/.github/actions/         @edgarrth
+/.github/policies/        @edgarrth
+/.github/gitops/          @edgarrth

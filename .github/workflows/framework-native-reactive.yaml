@@ -1,0 +1,64 @@
+name: framework-native-reactive
+'on':
+  workflow_call:
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        required: false
+      NEXUS_URL:
+        required: true
+      NEXUS_READ_USERNAME:
+        required: true
+      NEXUS_READ_PASSWORD:
+        required: true
+permissions: {}
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+    - name: Verify immutable Axiz workflow release
+      env:
+        GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+        GH_HOST: github.com
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+      shell: bash
+      run: |
+        set -euo pipefail
+        release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+        jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+  acceptance:
+    permissions:
+      contents: read
+      actions: read
+    needs: axiz-workflows-trust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+    steps:
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      with:
+        persist-credentials: false
+    # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+      with:
+        distribution: graalvm
+        nexus-url: ${{ secrets.NEXUS_URL }}
+    - name: Verify generated reactive contracts and native runtime
+      run: bash .github/scripts/reactive-native-sample.sh
+      working-directory: axiz-framework
+    - name: Retain acceptance diagnostics
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: reactive-native-acceptance
+        path: |-
+          axiz-framework/target/reactive-native-acceptance/**/target/surefire-reports/
+          axiz-framework/target/reactive-native-acceptance/**/target/native-runtime-*.log
+          axiz-framework/target/reactive-native-acceptance/**/target/native-runtime-result.json
+        retention-days: 7
+        if-no-files-found: ignore

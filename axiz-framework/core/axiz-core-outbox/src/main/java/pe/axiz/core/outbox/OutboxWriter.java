@@ -1,5 +1,6 @@
 package pe.axiz.core.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
@@ -12,7 +13,13 @@ import pe.axiz.core.messaging.EventEnvelope;
  */
 public final class OutboxWriter {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxStore is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final OutboxStore store;
+
   private final Clock clock;
   private final OutboxWriteTracing tracing;
 

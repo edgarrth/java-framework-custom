@@ -15,7 +15,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("axiz.config")
 public record AxizConfigProperties(
-    @DefaultValue("default") String environment,
+    String environment,
     @DefaultValue List<String> required,
     @DefaultValue ParameterStore parameterStore) {
   public AxizConfigProperties {

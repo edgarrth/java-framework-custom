@@ -38,10 +38,15 @@ final class NativeDynamoCall<T> extends CompletableFuture<T> implements DynamoDb
       var mapped = operation.apply(enhanced);
       call.mappedRequest.set(mapped);
       if (call.isCancelled()) mapped.cancel(true);
-      mapped.whenComplete(
+      Stages.observe(
+          mapped,
           (value, failure) -> {
             if (failure == null) call.complete(value);
             else call.completeExceptionally(Stages.unwrap(failure));
+          },
+          failure -> {
+            call.completeExceptionally(failure);
+            mapped.cancel(true);
           });
     } catch (RuntimeException | Error failure) {
       call.completeExceptionally(failure);

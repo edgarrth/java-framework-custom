@@ -28,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
@@ -109,7 +110,8 @@ class LocalStackDynamoDbStoresIT {
                     AwsBasicCredentials.create(
                         LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()))),
             Clock.systemUTC(),
-            Duration.ofSeconds(1));
+            Duration.ofSeconds(1),
+            AsyncAwsTransportSettings.defaults());
     nativeDynamo =
         AwsObservability.configured(
             inboxResources,
@@ -118,6 +120,8 @@ class LocalStackDynamoDbStoresIT {
             key ->
                 switch (key) {
                   case "axiz.aws.region" -> LOCALSTACK.getRegion();
+                  case "axiz.config.environment" -> "test";
+                  case "axiz.transport.allow-plain-http" -> "true";
                   case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
                   default -> null;
                 },
@@ -222,7 +226,8 @@ class LocalStackDynamoDbStoresIT {
             new AsyncAwsClients(
                 pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(credentials),
                 Clock.systemUTC(),
-                Duration.ofMillis(25));
+                Duration.ofMillis(25),
+                AsyncAwsTransportSettings.defaults());
         var async =
             AwsObservability.configured(
                 resources,
@@ -231,6 +236,8 @@ class LocalStackDynamoDbStoresIT {
                 key ->
                     switch (key) {
                       case "axiz.aws.region" -> LOCALSTACK.getRegion();
+                      case "axiz.config.environment" -> "test";
+                      case "axiz.transport.allow-plain-http" -> "true";
                       case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
                       case "axiz.aws.async.connection-ttl", "axiz.aws.async.max-idle-time" ->
                           "100ms";

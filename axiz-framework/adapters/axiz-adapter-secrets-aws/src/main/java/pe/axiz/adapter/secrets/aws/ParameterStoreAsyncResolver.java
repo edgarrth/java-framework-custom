@@ -1,5 +1,6 @@
 package pe.axiz.adapter.secrets.aws;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
@@ -12,7 +13,13 @@ import software.amazon.awssdk.services.ssm.model.ParameterNotFoundException;
 
 /** Native SSM SecureString lookups with cancellation of the exact SDK request. */
 public final class ParameterStoreAsyncResolver implements AsyncSecretResolver {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Native SDK clients are likewise borrowed, thread-safe resources. Adapters neither "
+              + "expose nor close the supplied clients.")
   private final SsmAsyncClient client;
+
   private final String path;
 
   public ParameterStoreAsyncResolver(SsmAsyncClient client, String path) {

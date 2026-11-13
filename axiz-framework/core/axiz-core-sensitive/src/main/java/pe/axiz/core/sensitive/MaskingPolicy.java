@@ -32,15 +32,6 @@ public record MaskingPolicy(
   }
 
   /**
-   * Applies the policy to a value.
-   *
-   * @param value raw value (may be null)
-   * @param level sensitivity
-   * @param mask mask for partially shown values
-   * @param channel output
-   * @return text to write, or null when the value was null and may be written as null
-   */
-  /**
    * Whether a value of this level is masked on the channel (fully or partially).
    *
    * @param level sensitivity of the value

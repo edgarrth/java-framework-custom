@@ -1,5 +1,6 @@
 package pe.axiz.spring.idempotency;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +19,19 @@ import org.jspecify.annotations.Nullable;
 final class CapturingResponse extends HttpServletResponseWrapper {
 
   private final BoundedCapture capture;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Servlet contract returns the same response stream/writer; callers must write to the "
+              + "captured body.")
   private @Nullable ServletOutputStream stream;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Servlet contract returns the same response stream/writer; callers must write to the "
+              + "captured body.")
   private @Nullable PrintWriter writer;
 
   CapturingResponse(HttpServletResponse response, int limit) {

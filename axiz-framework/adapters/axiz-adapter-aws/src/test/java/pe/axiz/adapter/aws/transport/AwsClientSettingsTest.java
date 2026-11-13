@@ -17,11 +17,11 @@ class AwsClientSettingsTest {
     for (String specific : new String[] {null, "", " ", "\t"}) {
       var properties = new HashMap<String, String>();
       properties.put("axiz.aws.region", " us-east-1 ");
-      properties.put("axiz.aws.endpoint", " http://127.0.0.1:4566 ");
+      properties.put("axiz.aws.endpoint", " https://127.0.0.1:4566 ");
       if (specific != null) properties.put("axiz.aws.s3.endpoint", specific);
       for (var policy : AwsClientSettings.RegionPolicy.values()) {
         var settings = AwsClientSettings.resolve(properties::get, "s3", policy);
-        assertEquals(URI.create("http://127.0.0.1:4566"), settings.endpoint());
+        assertEquals(URI.create("https://127.0.0.1:4566"), settings.endpoint());
         assertEquals("us-east-1", settings.region().id());
         assertTrue(settings.endpointOverridden());
       }
@@ -31,11 +31,11 @@ class AwsClientSettingsTest {
   @Test
   void specificEndpointWinsAndBlankGlobalDoesNotCreateAnOverride() {
     var properties = new HashMap<String, String>();
-    properties.put("axiz.aws.endpoint", "http://127.0.0.1:4566");
-    properties.put("axiz.aws.s3.endpoint", "http://127.0.0.1:9324");
+    properties.put("axiz.aws.endpoint", "https://127.0.0.1:4566");
+    properties.put("axiz.aws.s3.endpoint", "https://127.0.0.1:9324");
     var settings =
         AwsClientSettings.resolve(properties::get, "s3", AwsClientSettings.RegionPolicy.SDK_CHAIN);
-    assertEquals(URI.create("http://127.0.0.1:9324"), settings.endpoint());
+    assertEquals(URI.create("https://127.0.0.1:9324"), settings.endpoint());
     assertNull(settings.region());
     properties.put("axiz.aws.s3.endpoint", "");
     properties.put("axiz.aws.endpoint", " ");

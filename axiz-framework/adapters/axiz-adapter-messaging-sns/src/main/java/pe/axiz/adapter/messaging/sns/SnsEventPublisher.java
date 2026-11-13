@@ -1,5 +1,6 @@
 package pe.axiz.adapter.messaging.sns;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import pe.axiz.core.messaging.BoundedPublisher;
@@ -21,6 +22,11 @@ import software.amazon.awssdk.services.sns.model.PublishRequest;
  */
 public final class SnsEventPublisher implements EventPublisher, BoundedPublisher {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SnsClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final SnsClient sns;
 
   public SnsEventPublisher(SnsClient sns) {

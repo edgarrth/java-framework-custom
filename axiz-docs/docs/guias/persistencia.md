@@ -83,7 +83,8 @@ repo.insert(beneficiary, "customerId");                       // condicional: fa
 repo.update(beneficiary);                                     // bloqueo optimista con @DynamoDbVersionAttribute
 ```
 
-- Tablas con prefijo por ambiente (`axiz.dynamodb.table-prefix`), creadas por Terraform.
+- Tablas con prefijo por ambiente (`axiz.dynamodb.table-prefix`), aprovisionadas por la
+  infraestructura como código de la plataforma, fuera del framework.
 - Paginación por **cursor**: `CursorCodec` codifica la última llave evaluada en base64url; el demo
   además valida que el cursor pertenezca al cliente que pide.
 - `EncryptedAttributeConverter` y `MoneyAttributeConverter` (el dinero se guarda como texto
@@ -106,9 +107,12 @@ falla con `MoneyErrors.INVALID_AMOUNT` antes de devolver un valor. Todo resultad
 el recorrido `Money.parse(value.toString())`, incluido el acarreo al redondear y las asignaciones.
 
 En fronteras externas —HTTP, mensajes, archivos, configuración y lectura de importes persistidos—
-se usa `Money.ofExact(amount, currency)`. Acepta `150.5` y `150.000` en PEN como `150.50` y `150.00`,
-pero rechaza `150.005`. Para cálculos que requieren redondeo se mantienen `Money.of`, `multiply`,
-`divide` y `percentage`, con una política explícita (por defecto `HALF_EVEN`). Las entradas se
+se usa `Money.of(amount, currency)`. Acepta `150.5` y `150.000` en PEN como `150.50` y `150.00`,
+pero rechaza `150.005`. Para cálculos que requieren redondeo se usa `Money.rounded`; `multiply`,
+`divide`, `percentage` y las conversiones exigen un `RoundingMode` explícito, sin valor por defecto.
+`CurrencyConverter` prefiere la tasa directa; si solo existe la inversa, divide directamente el
+monto y redondea una vez a la escala destino. `ExchangeRate.inverse(scale, mode)` representa
+una tasa aproximada y no debe componerse con otra conversión monetaria. Las entradas se
 acotan antes de expandir exponentes; las fábricas, divisores y porcentajes admiten hasta 100
 posiciones decimales dentro del rango documentado por `Money`.
 

@@ -57,6 +57,8 @@ class ReactiveKafkaBrokerTest {
           .withPropertyValues(
               "axiz.messaging.kafka.bootstrap-servers=" + broker.getBrokersAsString(),
               "axiz.messaging.kafka.iam=false",
+              "axiz.config.environment=test",
+              "axiz.transport.allow-insecure-data-stores=true",
               "axiz.messaging.kafka.send-timeout=30s",
               "axiz.messaging.destinations.events=kafka:payments")
           .run(
@@ -175,6 +177,8 @@ class ReactiveKafkaBrokerTest {
   @Test
   void unavailableBrokerFailsWithinDeadlineWithoutBlockingReactiveCaller() throws Exception {
     int port;
+    // Only reserves a temporary test port; no application data or credentials are exchanged.
+    // nosemgrep: java.lang.security.audit.crypto.unencrypted-socket.unencrypted-socket
     try (var socket = new ServerSocket(0)) {
       port = socket.getLocalPort();
     }
@@ -188,6 +192,8 @@ class ReactiveKafkaBrokerTest {
         .withPropertyValues(
             "axiz.messaging.kafka.bootstrap-servers=127.0.0.1:" + port,
             "axiz.messaging.kafka.iam=false",
+            "axiz.config.environment=test",
+            "axiz.transport.allow-insecure-data-stores=true",
             "axiz.messaging.kafka.send-timeout=200ms")
         .run(
             ctx -> {

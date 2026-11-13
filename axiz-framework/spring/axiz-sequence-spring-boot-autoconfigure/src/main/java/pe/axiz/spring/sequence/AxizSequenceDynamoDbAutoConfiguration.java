@@ -19,6 +19,7 @@ import pe.axiz.adapter.sequence.dynamodb.DynamoDbAsyncSequenceStore;
 import pe.axiz.adapter.sequence.dynamodb.DynamoDbSequenceStore;
 import pe.axiz.core.sequence.AsyncSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
@@ -63,7 +64,8 @@ public class AxizSequenceDynamoDbAutoConfiguration {
     AsyncAwsClients axizSequenceAsyncAwsResources(
         AxizAwsCompletionProperties completion,
         ObjectProvider<MeterRegistry> registries,
-        AwsIdentity identity) {
+        AwsIdentity identity,
+        AxizAwsAsyncTransportProperties transport) {
       return AwsAsyncResources.create(
           "axizSequenceAsyncAwsResources",
           completion.workers(),
@@ -71,7 +73,8 @@ public class AxizSequenceDynamoDbAutoConfiguration {
           registries.getIfAvailable(),
           identity,
           AwsService.DYNAMODB,
-          AwsCapability.SEQUENCE);
+          AwsCapability.SEQUENCE,
+          transport.toSettings());
     }
 
     @Bean(destroyMethod = "close")

@@ -13,6 +13,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,9 @@ import org.springframework.context.annotation.Primary;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
 import pe.axiz.adapter.aws.identity.WarmedAwsCredentials;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.aws.transport.AwsClients;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.spring.foundation.AxizFoundationAutoConfiguration;
 import reactor.blockhound.BlockHound;
 import reactor.core.publisher.Mono;
@@ -69,7 +72,7 @@ class AwsIdentityTest {
   void textQualifiersAndEmptyQualifiersAreNotFrameworkScopesOrGlobal() {
     try (var defaults = mockStatic(AwsCredentialSources.class)) {
       defaults
-          .when(AwsCredentialSources::create)
+          .when(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()))
           .thenAnswer(
               x ->
                   AwsCredentialSource.owned(
@@ -90,7 +93,7 @@ class AwsIdentityTest {
                     AwsCapability.CRYPTO,
                     "default");
               });
-      defaults.verify(AwsCredentialSources::create);
+      defaults.verify(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()));
     }
   }
 
@@ -184,7 +187,7 @@ class AwsIdentityTest {
   void selectionReportIsLazyDeduplicatedAndContainsNoCredentialsOrArn(CapturedOutput output) {
     var calls = new AtomicInteger();
     String key = "fixture-access-key-J1";
-    String secret = "fixture-secret-J1";
+    String secret = UUID.randomUUID().toString();
     String arn = "arn:aws:iam::123456789012:role/never-log-this";
     AwsCredentialsProvider provider =
         new AwsCredentialsProvider() {
@@ -261,13 +264,20 @@ class AwsIdentityTest {
               var identity = ctx.getBean(AwsIdentity.class);
               try (var owner =
                       AwsAsyncResources.create(
-                          "borrowed", 1, 4, null, identity, AwsService.S3, AwsCapability.STORAGE);
+                          "borrowed",
+                          1,
+                          4,
+                          null,
+                          identity,
+                          AwsService.S3,
+                          AwsCapability.STORAGE,
+                          AsyncAwsTransportSettings.defaults());
                   var client =
                       AwsClients.build(
                           identity.configure(
                               StsClient.builder(), AwsService.S3, AwsCapability.STORAGE),
                           "us-east-1",
-                          "http://127.0.0.1:1",
+                          "https://127.0.0.1:1",
                           Duration.ofSeconds(3))) {
                 assertEquals(
                     "borrowed",
@@ -377,7 +387,8 @@ class AwsIdentityTest {
                           null,
                           ctx.getBean(AwsIdentity.class),
                           AwsService.S3,
-                          AwsCapability.STORAGE));
+                          AwsCapability.STORAGE,
+                          AsyncAwsTransportSettings.defaults()));
               assertEquals(0, source.closes.get());
             });
     assertEquals(1, source.closes.get());

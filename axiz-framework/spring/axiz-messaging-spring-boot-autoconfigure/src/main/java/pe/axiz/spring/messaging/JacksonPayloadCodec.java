@@ -8,7 +8,7 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /** JSON payloads with the application's Jackson mapper (same modules as the HTTP API). */
-public class JacksonPayloadCodec implements PayloadCodec {
+public final class JacksonPayloadCodec implements PayloadCodec {
 
   private final JsonMapper mapper;
 

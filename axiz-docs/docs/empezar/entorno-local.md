@@ -1,14 +1,15 @@
 # Entorno local
 
 Cada servicio trae su `compose.yaml` con solo las dependencias que sus capacidades necesitan, y un
-perfil `local` que apunta a ellas. Con los perfiles `local` o `test` (y siempre fuera de un clúster)
-el starter de configuración no importa ConfigMaps (`kubernetes:`): la configuración viene de
-`application.yaml`, `application-local.yaml` y el entorno.
+perfil `local` que apunta a ellas. El entorno operativo se declara con
+`AXIZ_CONFIG_ENVIRONMENT=local` (activar un perfil no concede excepciones de seguridad). La
+configuración procede de `application.yaml`, `application-local.yaml`, el entorno y archivos
+montados importados mediante `file:`. No se utiliza el esquema `kubernetes:`.
 
 ```bash
 local/dev-secrets.sh        # crea secretos aleatorios de desarrollo en local/secrets (ignorado por git)
 docker compose up -d        # o axiz local up (espera a que todo esté sano)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+AXIZ_CONFIG_ENVIRONMENT=local ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 axiz local down -v          # baja todo y borra los volúmenes
 ```
 

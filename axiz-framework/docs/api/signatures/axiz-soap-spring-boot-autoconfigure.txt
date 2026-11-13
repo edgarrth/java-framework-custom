@@ -11,7 +11,6 @@ public pe.axiz.spring.soap.AxizSoapProperties(java.util.Map<java.lang.String, pe
 }
 
 public final class pe.axiz.spring.soap.AxizSoapProperties$Client extends java.lang.Record {
-public boolean allowPlainHttp();
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
@@ -22,10 +21,10 @@ public java.time.Duration connectTimeout();
 public java.time.Duration timeout();
 public pe.axiz.core.soap.SoapVersion version();
 public pe.axiz.core.soap.WsSecurity$Mode passwordMode();
-public pe.axiz.spring.soap.AxizSoapProperties$Client(java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, java.time.Duration, java.lang.String, java.lang.String, pe.axiz.core.soap.WsSecurity$Mode, boolean);
+public pe.axiz.spring.soap.AxizSoapProperties$Client(java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, java.time.Duration, java.lang.String, java.lang.String, pe.axiz.core.soap.WsSecurity$Mode);
 }
 
 public class pe.axiz.spring.soap.SoapClients {
 public org.w3c.dom.Element call(java.lang.String, java.lang.String, java.lang.String);
-public pe.axiz.spring.soap.SoapClients(pe.axiz.spring.soap.AxizSoapProperties, pe.axiz.core.secrets.SecretResolver, pe.axiz.core.sensitive.ObjectMasker, io.micrometer.observation.ObservationRegistry, java.time.Clock);
+public pe.axiz.spring.soap.SoapClients(pe.axiz.spring.soap.AxizSoapProperties, pe.axiz.core.secrets.SecretResolver, pe.axiz.core.sensitive.ObjectMasker, io.micrometer.observation.ObservationRegistry, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
 }

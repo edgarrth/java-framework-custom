@@ -35,15 +35,14 @@ Los permisos de escritura GitOps pertenecen exclusivamente al deploy; el build c
 
 ## Imágenes firmadas
 
-CI firma cada imagen con **cosign** usando una llave de AWS KMS (sin llaves en archivos) y adjunta
-dos atestaciones firmadas con la misma llave: el SBOM (CycloneDX) y la **procedencia SLSA v1**
-(qué workflow, en qué versión, construyó qué commit y en qué ejecución). La firma es obligatoria:
-`service-build` falla antes de publicar si la llave no está configurada, y un tag nunca publica una
-imagen sin firmar. En el clúster, la política de Kyverno (`gitops/policies/verify-images.yaml`)
-solo admite en los namespaces de servicios imágenes del registro de Nexus firmadas con esa llave y
-con una procedencia que nombre a `service-build` como constructor; qa y prod solo se despliegan por
-digest (`service-deploy` exige el digest verificado del manifiesto). Las imágenes base se fijan por tag
-y digest; Renovate actualiza ambos y una release no se construye sobre una base sin digest.
+El build firma los digests con **cosign sin llave**, usando el token OIDC del job de firma,
+Fulcio y Rekor, y adjunta las atestaciones de SBOM y procedencia. No requiere una llave KMS para
+firmar. La política Kyverno (`.github/gitops/policies/verify-images.yaml.template`) verifica el issuer
+`https://token.actions.githubusercontent.com`, la identidad
+`https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/axiz-workflows-vX.Y.Z`
+y la transparencia de Rekor. La versión de workflows adoptada determina la identidad exacta.
+El deploy exige los digests verificados del manifiesto. Las imágenes base se fijan por tag y digest;
+Renovate actualiza ambos.
 
 ## Configuración y secretos por ambiente
 
@@ -53,7 +52,7 @@ compartido `axiz-common` lo administra plataforma.
 
 ## Perfil operativo
 
-El chart define `AXIZ_ENVIRONMENT` (`dev`, `qa`, `prod`) y el framework lo usa como perfil
+El chart define `AXIZ_CONFIG_ENVIRONMENT` (`dev`, `qa`, `prod`) y el framework lo usa como perfil
 operativo. Un estado que vive en un solo proceso solo es correcto con una réplica y sin reinicios.
 Por eso solo se acepta en `local`, `test` y `ci`. En cualquier otro ambiente, el servicio no
 arranca si su configuración lo usa:
@@ -76,5 +75,11 @@ garantía declarada se degrade sin dejar rastro:
 | Saga: participante sin respuesta | El paso queda `IN_DOUBT` y la recuperación lo verifica. No se compensa lo que no se sabe si ocurrió. |
 | Auditoría durable | Viaja con el outbox de la transacción. Los eventos asíncronos se reintentan y se cuentan en `axiz.audit.lost` si se pierden. |
 | Caché remota (Redis) | Se degrada a la fuente de verdad. |
-| Rate limit en Redis | `axiz.security.rate-limit.fail-open` (por defecto `true`). En operaciones sensibles, define `false`. |
-| Rate limit en memoria | Se aplica por réplica, así que el límite efectivo es N veces el configurado. Es aceptable como protección básica, no como cuota contractual. |
+| Rate limit en Redis | `axiz.security.rate-limit.rules[].fail-open` es obligatorio en cada regla, sin valor por defecto. |
+| Rate limit en memoria | Solo se admite con store explícito `memory` y entorno `local`, `test` o `ci`. En despliegues compartidos se exige `redis`. |
+
+Las plantillas GitOps se renderizan antes de aplicarse usando la misma configuración JSON
+`BUILD_DESTINATION` del build y del firmador. Esta define autoridad del registro, namespace,
+repositorios exactos y servicios permitidos. Deploy, rollback y ApplicationSet comparten la ruta
+`environments/<ambiente>/<servicio>.yaml` desde la raíz del repositorio GitOps. Véase
+[la configuración de destinos](https://github.com/edgarrth/java-framework-custom/blob/main/.github/gitops/README.md).

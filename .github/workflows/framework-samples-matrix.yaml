@@ -1,0 +1,61 @@
+name: framework-samples-matrix
+'on':
+  schedule:
+  - cron: 47 6 * * *
+  workflow_dispatch: null
+permissions: {}
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+    - name: Verify immutable Axiz workflow release
+      env:
+        GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+        GH_HOST: github.com
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+      shell: bash
+      run: |
+        set -euo pipefail
+        release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+        jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+  samples:
+    permissions:
+      contents: read
+      actions: read
+    needs: axiz-workflows-trust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      MODE: all
+    steps:
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      with:
+        persist-credentials: false
+    # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
+    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+      with:
+        nexus-url: ${{ secrets.NEXUS_URL }}
+    - name: Install the framework and generate every combination
+      run: .github/scripts/samples.sh
+      working-directory: axiz-framework
+    - name: Build every sample without AWS configuration (verify)
+      run: |
+        failed=()
+        for dir in target/samples/*/ target/audit-samples/*/; do
+          echo "::group::${dir}"
+          (cd "$dir" && env -u AWS_REGION -u AWS_DEFAULT_REGION -u AWS_PROFILE \
+            -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
+            AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null \
+            ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
+          echo "::endgroup::"
+        done
+        if [ "${#failed[@]}" -gt 0 ]; then
+          echo "::error::samples failed: ${failed[*]}"; exit 1
+        fi
+      working-directory: axiz-framework

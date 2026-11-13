@@ -1,5 +1,5 @@
 nameOverride: ''
-environment: dev
+environment: ""
 image:
   repository: nexus-docker.axiz.internal/axiz/payment-process
   tag: ''
@@ -11,9 +11,15 @@ serviceAccount:
   name: ''
   annotations: {}
   automountToken: false
-sharedConfigMap: axiz-common
+sharedConfigMap: axiz-common-2-0-0
 javaOpts: -XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError
 env: []
+# Select imports before application.yaml and mounted ConfigMaps are loaded.
+configBootstrap:
+  parameterStore:
+    enabled: false
+    application: ""
+    prefix: /axiz
 resources:
   requests:
     cpu: 250m

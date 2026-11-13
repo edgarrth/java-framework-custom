@@ -26,13 +26,13 @@ class SequenceDynamoDbTest {
         .withPropertyValues(
             "axiz.sequence.store=dynamodb",
             "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:4566")
         .run(
             ctx -> {
               assertThat(ctx.getBean(SequenceStore.class))
                   .isInstanceOf(DynamoDbSequenceStore.class);
               assertEquals(
-                  URI.create("http://localhost:4566"),
+                  URI.create("https://localhost:4566"),
                   ctx.getBean(DynamoDbClient.class)
                       .serviceClientConfiguration()
                       .endpointOverride()

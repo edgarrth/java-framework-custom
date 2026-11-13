@@ -9,6 +9,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.r2dbc.ConnectionFactoryBuilder;
 import org.springframework.boot.r2dbc.ConnectionFactoryDecorator;
+import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 
 /** Builds the pooled connection factory of the reader endpoint. */
@@ -34,7 +35,8 @@ final class ReaderConnections {
       @Nullable String password,
       @Nullable DatabasePasswordProvider iam,
       Map<String, String> driverProperties,
-      List<ConnectionFactoryDecorator> decorators) {
+      List<ConnectionFactoryDecorator> decorators,
+      DataTransportSecurityPolicy transport) {
     ConnectionFactoryBuilder builder =
         ConnectionFactoryBuilder.withUrl(pooled(url))
             .configure(
@@ -58,6 +60,9 @@ final class ReaderConnections {
     } else if (password != null) {
       builder.password(password);
     }
-    return builder.build();
+    R2dbcTransportSecurity.validateOptions(builder.buildOptions(), transport);
+    ConnectionFactory factory = builder.build();
+    R2dbcTransportSecurity.validate(factory, transport);
+    return factory;
   }
 }

@@ -17,7 +17,7 @@ import pe.axiz.spring.foundation.ReactiveInboxCompletion;
  * a reactive transaction when a reactive transaction manager exists (R2DBC), the request context
  * and the handler timeout in every case.
  */
-public class ReactiveEventHandlerPostProcessor implements BeanPostProcessor {
+public final class ReactiveEventHandlerPostProcessor implements BeanPostProcessor {
 
   private final ObjectProvider<ReactiveTransactionManager> transactions;
   private final boolean transactional;

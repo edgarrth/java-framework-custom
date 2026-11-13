@@ -63,8 +63,7 @@ public class PaymentsComposition {
               }
               Money checked;
               try {
-                checked =
-                    Money.ofExact(amount, Objects.requireNonNull(body.getCurrency(), "currency"));
+                checked = Money.of(amount, Objects.requireNonNull(body.getCurrency(), "currency"));
               } catch (BusinessException e) {
                 return Mono.error(e);
               }

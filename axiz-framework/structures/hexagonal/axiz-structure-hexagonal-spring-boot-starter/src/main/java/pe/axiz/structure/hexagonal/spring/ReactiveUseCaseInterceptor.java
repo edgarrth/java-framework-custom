@@ -1,5 +1,6 @@
 package pe.axiz.structure.hexagonal.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
@@ -24,6 +25,13 @@ import reactor.core.publisher.Mono;
  */
 public final class ReactiveUseCaseInterceptor implements MethodInterceptor {
   private final Supplier<@Nullable ReactiveTransactionManager> transactions;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final ObservationRegistry observations;
 
   public ReactiveUseCaseInterceptor(

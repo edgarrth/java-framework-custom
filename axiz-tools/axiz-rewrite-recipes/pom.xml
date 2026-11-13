@@ -125,6 +125,13 @@
 
   <build>
     <plugins>
+      <!-- This tool owns a module identity while deliberately inheriting the general parent. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
+        <configuration><archive><manifestEntries>
+          <Automatic-Module-Name>${axiz.module.name}</Automatic-Module-Name>
+        </manifestEntries></archive></configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>

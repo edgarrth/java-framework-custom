@@ -1,5 +1,6 @@
 package pe.axiz.spring.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
  * waiting for their turn (or a slow handler) are not redelivered to another replica. Stopping lets
  * the current batch finish (up to {@code shutdownTimeout}) before interrupting the pollers.
  */
-public class SqsEventConsumer implements SmartLifecycle {
+public final class SqsEventConsumer implements SmartLifecycle {
 
   private static final Logger LOG = LoggerFactory.getLogger(SqsEventConsumer.class);
   private static final int MAX_VISIBILITY_SECONDS = 43_200;
@@ -44,7 +45,13 @@ public class SqsEventConsumer implements SmartLifecycle {
   /** A received message not yet settled. */
   private record InFlight(String queue, String receiptHandle) {}
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SqsClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final SqsClient sqs;
+
   private final ObservedDispatcher dispatcher;
   private final AxizMessagingProperties.Sqs settings;
   private final Backoff backoff;

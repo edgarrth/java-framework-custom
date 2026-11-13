@@ -1,5 +1,6 @@
 package pe.axiz.spring.foundation.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Locale;
 import java.util.Objects;
 import javax.sql.DataSource;
@@ -22,7 +23,13 @@ public final class SchemaInitializer implements InitializingBean {
     NEVER
   }
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DataSource is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final DataSource dataSource;
+
   private final String name;
   private final Mode mode;
 

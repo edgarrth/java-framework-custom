@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
@@ -124,7 +125,8 @@ class CoreBankingAdapterTest {
                 null,
                 ObjectMasker.defaults(),
                 ObservationRegistry.NOOP,
-                Clock.systemUTC())) {
+                Clock.systemUTC(),
+                TransportSecurityPolicy.system())) {
           @Override
           public Movement credit(MovementOrder o) {
             if (!faults.isEmpty()) {

@@ -1,5 +1,6 @@
 package pe.axiz.core.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
@@ -15,7 +16,13 @@ public final class OutboxAdmin {
     void record(String action, String eventId, String reason, Instant at);
   }
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxStore is a borrowed collaborator; sharing its identity preserves lifecycle, "
+              + "transactions or instrumentation. The field is not an owned mutable value.")
   private final OutboxStore store;
+
   private final TransactionRunner transactions;
   private final RecoveryAudit audit;
   private final Clock clock;

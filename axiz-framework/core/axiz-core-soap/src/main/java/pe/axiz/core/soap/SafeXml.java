@@ -1,5 +1,6 @@
 package pe.axiz.core.soap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +36,11 @@ public final class SafeXml {
     return f;
   }
 
+  @SuppressFBWarnings(
+      value = "XXE_DOCUMENT",
+      justification =
+          "The factory disallows DOCTYPE, external general/parameter entities, external DTD "
+              + "and schema access. Unsupported hardening fails closed before parse.")
   public static Document parse(String xml) {
     try {
       DocumentBuilder b = factory().newDocumentBuilder();

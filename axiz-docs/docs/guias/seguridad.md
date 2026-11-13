@@ -67,13 +67,12 @@ incluso cuando permita atributos personalizados o federación. Esa garantía deb
 todos los emisores admitidos por el servicio. Para proveedores con modelos distintos, se puede
 registrar un `ClaimsMapper` propio que aplique una política explícita por emisor.
 
-**Migración desde las heurísticas anteriores.** Se eliminó la marca automática de username de
-Keycloak. En el demo, únicamente los clientes confidenciales con client credentials habilitado y
+**Marca de cuentas técnicas.** No hay marca automática por username. En el demo, únicamente los clientes confidenciales con client credentials habilitado y
 los flujos de usuario deshabilitados emiten `axiz_token_kind=service` mediante un mapper fijo del
 cliente; los servicios configuran esa marca exacta. No se debe instalar ese mapper en un scope
 compartido con usuarios ni en un cliente que admita también flujos de usuario. Una cuenta técnica
-con UUID en `sub`, sin la marca configurada, se tratará como usuario: configurar el emisor antes de
-actualizar los consumidores y comprobar ambos tipos de token.
+con UUID en `sub`, sin la marca configurada, se trata como usuario: configurar la marca en el
+emisor y comprobar ambos tipos de token.
 
 `subject-as-client` ahora vale `false` por defecto. Activarlo solo permite usar `sub` como client id
 cuando **también coincide una marca de aplicación confiable**. Un token de usuario sin `azp` o
@@ -97,13 +96,14 @@ axiz:
   security:
     rate-limit:
       enabled: true
-      fail-open: true            # política global si Redis no responde
+      store: redis              # obligatorio; memory solo en local/test/ci
       rules:
         - name: catalog
           paths: [/v1/catalog/**]
           limit: 600
           window: 1m
           key: client
+          fail-open: true        # política explícita de esta regla
         - name: payments
           paths: [/v1/payments/**]
           limit: 100
@@ -112,7 +112,7 @@ axiz:
           fail-open: false       # mover dinero: si el limitador no responde, se rechaza (429)
 ```
 
-Cada regla puede tener su propia política ante una caída del almacén del limitador. Las rutas de
+Cada regla debe declarar su propia política ante una caída del almacén del limitador. Las rutas de
 consulta suelen preferir disponibilidad (`fail-open: true`); las que mueven dinero o reciben
 callbacks de terceros deben fallar cerrado (`fail-open: false`), porque perder el límite abre la
 puerta a abuso o fraude justo cuando la plataforma está degradada.

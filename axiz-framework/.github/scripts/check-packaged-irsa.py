@@ -23,8 +23,9 @@ for jar in args.jars:
             raise ValueError(f"Exactly one runtime STS module is required: {jar}")
         kafka = any(Path(name).name.startswith("kafka-clients-") for name in libs)
         result = {"jarSha256": hashlib.sha256(jar.read_bytes()).hexdigest(), "sts": sts[0], "kafka": kafka,
-                  "credentialRoute": "framework policy" if any(Path(name).name.startswith("axiz-adapter-aws-") for name in libs)
-                  else "SDK web identity; Spring Cloud AWS bootstrap dependency closure only"}
+                  "credentialRoute": "framework policy"}
+        if not any(Path(name).name.startswith("axiz-adapter-aws-") for name in libs):
+            raise ValueError(f"Managed AWS credential integration is required: {jar}")
         results[str(jar)] = result
         if kafka:
             continue

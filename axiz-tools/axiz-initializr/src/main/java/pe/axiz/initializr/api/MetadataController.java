@@ -1,5 +1,6 @@
 package pe.axiz.initializr.api;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.codegen.ArtifactGenerator;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Capability;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.initializr.config.InitializrProperties;
@@ -34,7 +36,7 @@ public class MetadataController {
         "archetypes",
         generation.catalog().archetypes().stream().map(MetadataController::archetype).toList());
     List<Map<String, Object>> structures =
-        java.util.Arrays.stream(Structure.values())
+        Arrays.stream(Structure.values())
             .filter(f -> f != Structure.NONE)
             .map(
                 f ->
@@ -56,7 +58,7 @@ public class MetadataController {
     m.put("role", a.role());
     m.put("kind", a.kind());
     m.put("structures", a.structures().stream().map(Structure::id).toList());
-    m.put("extensions", a.extensions().stream().map(pe.axiz.codegen.model.Extension::id).toList());
+    m.put("extensions", a.extensions().stream().map(Extension::id).toList());
     m.put("stacks", a.stacks().stream().map(Stack::id).toList());
     m.put("persistence", a.persistence());
     m.put("starters", a.starters());

@@ -23,6 +23,9 @@ spec:
             axiz.io/environment: {{ .Values.environment | quote }}
           annotations:
             checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+            {{- if .Values.sharedConfigMap }}
+            checksum/config-common: {{ .Values.sharedConfigMap | sha256sum }}
+            {{- end }}
         spec:
           restartPolicy: Never
           {{- include "service.podSpec" (dict "root" . "server" false) | nindent 10 }}

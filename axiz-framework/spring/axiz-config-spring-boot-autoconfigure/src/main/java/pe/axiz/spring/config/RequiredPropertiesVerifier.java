@@ -10,7 +10,7 @@ import org.springframework.util.StringUtils;
  * Fails startup when a property declared in {@code axiz.config.required} is missing or blank. The
  * message lists property names only, never values.
  */
-public class RequiredPropertiesVerifier implements InitializingBean {
+public final class RequiredPropertiesVerifier implements InitializingBean {
 
   private final Environment environment;
   private final List<String> required;

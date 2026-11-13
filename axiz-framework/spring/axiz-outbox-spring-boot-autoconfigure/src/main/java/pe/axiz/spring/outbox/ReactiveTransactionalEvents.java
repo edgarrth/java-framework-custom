@@ -1,5 +1,6 @@
 package pe.axiz.spring.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.util.Objects;
@@ -30,13 +31,34 @@ public class ReactiveTransactionalEvents {
   /** Key of the current observation in the Reactor context (Micrometer context propagation). */
   static final String OBSERVATION_KEY = "micrometer.observation";
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ReactiveOutboxWriter is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ReactiveOutboxWriter writer;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry observations;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public ReactiveTransactionalEvents(EventFactory factory, ReactiveOutboxWriter writer) {
     this(factory, writer, ObservationRegistry.NOOP);
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public ReactiveTransactionalEvents(
       EventFactory factory, ReactiveOutboxWriter writer, ObservationRegistry observations) {
     this.factory = Objects.requireNonNull(factory);

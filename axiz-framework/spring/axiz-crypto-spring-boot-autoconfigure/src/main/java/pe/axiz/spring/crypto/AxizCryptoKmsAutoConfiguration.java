@@ -22,6 +22,7 @@ import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
@@ -91,7 +92,8 @@ public class AxizCryptoKmsAutoConfiguration {
       AsyncAwsClients axizCryptoAsyncAwsResources(
           AxizAwsCompletionProperties completion,
           ObjectProvider<MeterRegistry> registries,
-          AwsIdentity identity) {
+          AwsIdentity identity,
+          AxizAwsAsyncTransportProperties transport) {
         return AwsAsyncResources.create(
             "axizCryptoAsyncAwsResources",
             completion.workers(),
@@ -99,7 +101,8 @@ public class AxizCryptoKmsAutoConfiguration {
             registries.getIfAvailable(),
             identity,
             AwsService.KMS,
-            AwsCapability.CRYPTO);
+            AwsCapability.CRYPTO,
+            transport.toSettings());
       }
 
       @Bean(destroyMethod = "close")

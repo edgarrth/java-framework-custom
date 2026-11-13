@@ -59,6 +59,36 @@ class IdTest {
   }
 
   @Test
+  void ulidsRemainUniqueUnderConcurrentReservationsAndClockRollback() throws Exception {
+    var clock = new MutableClock(Instant.parse("2030-01-01T00:00:01Z"));
+    var generator = Ulid.generator(clock);
+    String first = generator.newId();
+    clock.set(Instant.parse("2030-01-01T00:00:00Z"));
+    Set<String> ids = ConcurrentHashMap.newKeySet();
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      IntStream.range(0, 20_000).forEach(i -> executor.submit(() -> ids.add(generator.newId())));
+    }
+    assertEquals(20_000, ids.size());
+    assertTrue(ids.stream().allMatch(id -> id.compareTo(first) > 0 && Ulid.isValid(id)));
+  }
+
+  @Test
+  void timestampsCannotWrapOutsideTheirFortyEightBitRange() {
+    for (long invalid : new long[] {-1, 0x1_0000_0000_0000L}) {
+      var clock = Clock.fixed(Instant.ofEpochMilli(invalid), ZoneOffset.UTC);
+      assertThrows(IllegalArgumentException.class, () -> UuidV7.generator(clock).next());
+      assertThrows(IllegalArgumentException.class, () -> Ulid.generator(clock).newId());
+    }
+    var clock = Clock.fixed(Instant.ofEpochMilli(0xFFFF_FFFF_FFFFL), ZoneOffset.UTC);
+    var generator = UuidV7.generator(clock);
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          for (int i = 0; i < 4097; i++) generator.next();
+        });
+  }
+
+  @Test
   void ulidFormatOrderAndTimestamp() {
     Instant t = Instant.parse("2026-02-03T04:05:06.789Z");
     Ulid generator = Ulid.generator(Clock.fixed(t, ZoneOffset.UTC));

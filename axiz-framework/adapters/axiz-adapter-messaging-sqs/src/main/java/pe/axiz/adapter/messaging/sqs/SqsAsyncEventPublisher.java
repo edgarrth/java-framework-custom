@@ -1,5 +1,6 @@
 package pe.axiz.adapter.messaging.sqs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
@@ -14,6 +15,12 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 /** Sqs publisher using the SDK's native asynchronous transport. */
 public final class SqsAsyncEventPublisher implements AsyncEventPublisher, BoundedPublisher {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SqsAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final SqsAsyncClient sqs;
 
   public SqsAsyncEventPublisher(SqsAsyncClient sqs) {

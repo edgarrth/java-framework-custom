@@ -1,0 +1,71 @@
+name: demo-deploy
+'on':
+  workflow_dispatch:
+    inputs:
+      build-run-id:
+        description: Completed producer run
+        type: string
+        required: true
+      build-run-attempt:
+        description: Producer attempt
+        type: string
+        required: true
+      manifest-sha256:
+        description: External signed build manifest SHA256
+        type: string
+        required: true
+      environment:
+        type: choice
+        options:
+        - dev
+        - qa
+        - prod
+        required: true
+      previous-manifest-sha256:
+        description: Current deployed manifest hash or initial-deployment
+        type: string
+        required: true
+      values-revision:
+        description: Full commit SHA of authorized environment values
+        type: string
+        required: true
+permissions: {}
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+    - name: Verify immutable Axiz workflow release
+      env:
+        GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+        GH_HOST: github.com
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+      shell: bash
+      run: |
+        set -euo pipefail
+        release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+        jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+  deploy:
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    needs: axiz-workflows-trust
+    uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    with:
+      build-run-id: ${{ inputs.build-run-id }}
+      build-run-attempt: ${{ inputs.build-run-attempt }}
+      manifest-sha256: ${{ inputs.manifest-sha256 }}
+      environment: ${{ inputs.environment }}
+      previous-manifest-sha256: ${{ inputs.previous-manifest-sha256 }}
+      values-revision: ${{ inputs.values-revision }}
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
+      BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
+      REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
+      REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
+      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+      ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

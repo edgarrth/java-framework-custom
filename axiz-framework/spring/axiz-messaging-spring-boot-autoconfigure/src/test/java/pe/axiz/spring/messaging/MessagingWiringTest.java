@@ -153,6 +153,12 @@ class MessagingWiringTest {
         new AxizMessagingProperties.Routes("domain-events", Map.of()));
   }
 
+  private static MockEnvironment localEnvironment() {
+    return new MockEnvironment()
+        .withProperty("axiz.config.environment", "test")
+        .withProperty("axiz.transport.allow-insecure-data-stores", "true");
+  }
+
   private static AxizMessagingProperties.Kafka kafka(String servers, boolean iam) {
     return new AxizMessagingProperties.Kafka(
         servers, iam, List.of("payments", "refunds"), null, 2, ".dlq", Duration.ofSeconds(1));
@@ -168,7 +174,9 @@ class MessagingWiringTest {
         AxizMessagingKafkaAutoConfiguration.common(
             properties(kafka(null, true), Duration.ofSeconds(10)),
             env,
-            identityContext.getBean(AwsIdentity.class));
+            identityContext.getBean(AwsIdentity.class),
+            null,
+            pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind.PRODUCER);
     assertEquals("broker:9092", iam.get("bootstrap.servers"), "Spring's setting is the fallback");
     assertEquals("payments", iam.get("client.id"));
     assertEquals("AWS_MSK_IAM", iam.get("sasl.mechanism"));
@@ -177,7 +185,9 @@ class MessagingWiringTest {
         AxizMessagingKafkaAutoConfiguration.common(
             properties(kafka("local:9092", false), Duration.ofSeconds(10)),
             env,
-            identityContext.getBean(AwsIdentity.class));
+            identityContext.getBean(AwsIdentity.class),
+            null,
+            pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind.PRODUCER);
     assertEquals("local:9092", plain.get("bootstrap.servers"));
     assertFalse(plain.containsKey("sasl.mechanism"));
   }
@@ -188,8 +198,9 @@ class MessagingWiringTest {
     AxizMessagingKafkaAutoConfiguration config = new AxizMessagingKafkaAutoConfiguration();
     Map<String, Object> producerProperties =
         config.axizKafkaProducerProperties(
-            p, new MockEnvironment(), identityContext.getBean(AwsIdentity.class));
-    KafkaProducer<String, byte[]> producer = config.axizKafkaProducer(producerProperties);
+            p, new MockEnvironment(), identityContext.getBean(AwsIdentity.class), null);
+    KafkaProducer<String, byte[]> producer =
+        config.axizKafkaProducer(producerProperties, localEnvironment());
     try {
       EventPublisherAdapter adapter =
           config.axizKafkaPublisherAdapter(producer, p, producerProperties);
@@ -207,9 +218,10 @@ class MessagingWiringTest {
         new AxizMessagingKafkaAutoConfiguration.ConsumerConfiguration()
             .axizKafkaConsumers(
                 p,
-                new MockEnvironment().withProperty("spring.application.name", "payments"),
+                localEnvironment().withProperty("spring.application.name", "payments"),
                 dispatcherAnswering(DeliveryDecision.ACK, new AtomicInteger()),
-                identityContext.getBean(AwsIdentity.class));
+                identityContext.getBean(AwsIdentity.class),
+                null);
     assertFalse(consumers.isRunning());
     assertEquals(Integer.MAX_VALUE - 100, consumers.getPhase());
     consumers.stop();

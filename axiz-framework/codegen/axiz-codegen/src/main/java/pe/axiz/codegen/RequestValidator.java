@@ -1,5 +1,6 @@
 package pe.axiz.codegen;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,11 @@ public final class RequestValidator {
   /** Longest description accepted: one line in every generated file. */
   static final int MAX_DESCRIPTION = 200;
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Catalog owns defensive snapshots and exposes no mutator; SpotBugs does not infer "
+              + "its immutability.")
   private final Catalog catalog;
 
   public RequestValidator(Catalog catalog) {
@@ -232,8 +238,8 @@ public final class RequestValidator {
   }
 
   private static boolean overlappingPaths(String left, String right) {
-    String[] a = left.split("/");
-    String[] b = right.split("/");
+    String[] a = left.split("/", -1);
+    String[] b = right.split("/", -1);
     if (a.length != b.length) return false;
     for (int i = 0; i < a.length; i++)
       if (!a[i].equals(b[i]) && !a[i].startsWith("{") && !b[i].startsWith("{")) return false;

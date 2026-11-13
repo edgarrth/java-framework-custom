@@ -30,6 +30,7 @@ public final class OutboxRelay {
   private static final Logger LOG = LoggerFactory.getLogger(OutboxRelay.class);
 
   private final OutboxStore store;
+
   private final EventPublisher publisher;
   private final TransactionRunner transactions;
   private final Clock clock;

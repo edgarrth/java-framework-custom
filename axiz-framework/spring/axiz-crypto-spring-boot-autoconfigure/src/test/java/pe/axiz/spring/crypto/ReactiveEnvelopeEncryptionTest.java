@@ -76,7 +76,7 @@ class ReactiveEnvelopeEncryptionTest {
         .applyToSystemProperties(
             () ->
                 reactive()
-                    .withPropertyValues("axiz.aws.kms.endpoint=http://localhost:4566")
+                    .withPropertyValues("axiz.aws.kms.endpoint=https://localhost:4566")
                     .run(
                         ctx -> {
                           assertThat(ctx)
@@ -89,7 +89,7 @@ class ReactiveEnvelopeEncryptionTest {
                                   ctx.getBean(KmsAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("https://localhost:4566"));
                         }));
   }
 

@@ -1,5 +1,6 @@
 package pe.axiz.adapter.outbox.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.SqlIdentifiers;
+import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxStore;
@@ -23,12 +25,18 @@ public final class JdbcOutboxStore implements OutboxStore {
       "id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,"
           + "created_at,next_attempt_at,last_error,aggregate_seq,lease_owner,lease_until";
   private final ConnectionProvider connections;
+  private final TransactionRunner transactions;
   private final String table;
   private final String counters;
   private final Dialect dialect;
 
-  public JdbcOutboxStore(ConnectionProvider connections, String table, Dialect dialect) {
+  public JdbcOutboxStore(
+      ConnectionProvider connections,
+      TransactionRunner transactions,
+      String table,
+      Dialect dialect) {
     this.connections = Objects.requireNonNull(connections);
+    this.transactions = Objects.requireNonNull(transactions);
     this.table = SqlIdentifiers.require(table);
     this.counters = SqlIdentifiers.require(table + "_aggregate");
     this.dialect = Objects.requireNonNull(dialect);
@@ -38,69 +46,78 @@ public final class JdbcOutboxStore implements OutboxStore {
   public void append(OutboxRecord r) {
     transaction(
         c -> {
-          String upsert =
-              dialect == Dialect.POSTGRESQL
-                  ? "INSERT INTO "
-                      + counters
-                      + " (aggregate_type,aggregate_id,last_seq) VALUES (?,?,1) ON CONFLICT"
-                      + " (aggregate_type,aggregate_id) DO UPDATE SET last_seq="
-                      + counters
-                      + ".last_seq+1 RETURNING last_seq"
-                  : "MERGE INTO "
-                      + counters
-                      + " c USING (VALUES (?,?)) v(aggregate_type,aggregate_id) ON"
-                      + " c.aggregate_type=v.aggregate_type AND c.aggregate_id=v.aggregate_id WHEN"
-                      + " MATCHED THEN UPDATE SET last_seq=c.last_seq+1 WHEN NOT MATCHED THEN"
-                      + " INSERT (aggregate_type,aggregate_id,last_seq) VALUES"
-                      + " (v.aggregate_type,v.aggregate_id,1)";
-          long sequence;
-          try (PreparedStatement ps = c.prepareStatement(upsert)) {
-            ps.setString(1, r.aggregateType());
-            ps.setString(2, r.aggregateId());
-            if (dialect == Dialect.POSTGRESQL) {
-              try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                sequence = rs.getLong(1);
-              }
-            } else {
-              ps.executeUpdate();
-              try (PreparedStatement next =
-                  c.prepareStatement(
-                      "SELECT last_seq FROM "
-                          + counters
-                          + " WHERE aggregate_type=? AND aggregate_id=?")) {
-                next.setString(1, r.aggregateType());
-                next.setString(2, r.aggregateId());
-                try (ResultSet rs = next.executeQuery()) {
-                  rs.next();
-                  sequence = rs.getLong(1);
-                }
-              }
-            }
-          }
-          try (PreparedStatement ps =
-              c.prepareStatement(
-                  "INSERT INTO "
-                      + table
-                      + """
-                       (id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,
-                       created_at,next_attempt_at,aggregate_seq) VALUES (?,?,?,?,?,?,?,?,?,?,?)
-                      """)) {
-            ps.setString(1, r.id());
-            ps.setString(2, r.destination());
-            ps.setString(3, r.aggregateType());
-            ps.setString(4, r.aggregateId());
-            ps.setString(5, r.eventType());
-            ps.setString(6, r.envelopeJson());
-            ps.setString(7, r.status().name());
-            ps.setInt(8, r.attempts());
-            ps.setTimestamp(9, Timestamp.from(r.createdAt()));
-            ps.setTimestamp(10, Timestamp.from(r.nextAttemptAt()));
-            ps.setLong(11, sequence);
-            ps.executeUpdate();
-          }
+          append(c, r);
           return null;
         });
+  }
+
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
+              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+  private void append(Connection c, OutboxRecord r) throws SQLException {
+    String upsert =
+        dialect == Dialect.POSTGRESQL
+            ? "INSERT INTO "
+                + counters
+                + " (aggregate_type,aggregate_id,last_seq) VALUES (?,?,1) ON CONFLICT"
+                + " (aggregate_type,aggregate_id) DO UPDATE SET last_seq="
+                + counters
+                + ".last_seq+1 RETURNING last_seq"
+            : "MERGE INTO "
+                + counters
+                + " c USING (VALUES (?,?)) v(aggregate_type,aggregate_id) ON"
+                + " c.aggregate_type=v.aggregate_type AND c.aggregate_id=v.aggregate_id WHEN"
+                + " MATCHED THEN UPDATE SET last_seq=c.last_seq+1 WHEN NOT MATCHED THEN"
+                + " INSERT (aggregate_type,aggregate_id,last_seq) VALUES"
+                + " (v.aggregate_type,v.aggregate_id,1)";
+    long sequence;
+    try (PreparedStatement ps = c.prepareStatement(upsert)) {
+      ps.setString(1, r.aggregateType());
+      ps.setString(2, r.aggregateId());
+      if (dialect == Dialect.POSTGRESQL) {
+        try (ResultSet rs = ps.executeQuery()) {
+          rs.next();
+          sequence = rs.getLong(1);
+        }
+      } else {
+        ps.executeUpdate();
+        try (PreparedStatement next =
+            c.prepareStatement(
+                "SELECT last_seq FROM "
+                    + counters
+                    + " WHERE aggregate_type=? AND aggregate_id=?")) {
+          next.setString(1, r.aggregateType());
+          next.setString(2, r.aggregateId());
+          try (ResultSet rs = next.executeQuery()) {
+            rs.next();
+            sequence = rs.getLong(1);
+          }
+        }
+      }
+    }
+    try (PreparedStatement ps =
+        c.prepareStatement(
+            "INSERT INTO "
+                + table
+                + """
+                 (id,destination,aggregate_type,aggregate_id,event_type,envelope,status,attempts,
+                 created_at,next_attempt_at,aggregate_seq) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                """)) {
+      ps.setString(1, r.id());
+      ps.setString(2, r.destination());
+      ps.setString(3, r.aggregateType());
+      ps.setString(4, r.aggregateId());
+      ps.setString(5, r.eventType());
+      ps.setString(6, r.envelopeJson());
+      ps.setString(7, r.status().name());
+      ps.setInt(8, r.attempts());
+      ps.setTimestamp(9, Timestamp.from(r.createdAt()));
+      ps.setTimestamp(10, Timestamp.from(r.nextAttemptAt()));
+      ps.setLong(11, sequence);
+      ps.executeUpdate();
+    }
   }
 
   private String headPredicate() {
@@ -116,79 +133,89 @@ public final class JdbcOutboxStore implements OutboxStore {
       throw new IllegalArgumentException("invalid claim");
     return transaction(
         c -> {
-          String select =
-              "SELECT "
-                  + COLUMNS
-                  + " FROM "
-                  + table
-                  + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<="
-                  + dialect.nowExpression()
-                  + ") OR"
-                  + " (h.status='IN_FLIGHT' AND h.lease_until<="
-                  + dialect.nowExpression()
-                  + ")) AND "
-                  + headPredicate()
-                  + " ORDER BY h.created_at,h.id FETCH FIRST "
-                  + size
-                  + " ROWS ONLY"
-                  + dialect.lockClause();
-          List<OutboxRecord> selected = new ArrayList<>();
-          try (PreparedStatement ps = c.prepareStatement(select)) {
-            try (ResultSet rs = ps.executeQuery()) {
-              while (rs.next()) selected.add(record(rs));
-            }
-          }
-          List<OutboxRecord> claimed = new ArrayList<>();
-          for (OutboxRecord r : selected) {
-            Instant leaseUntil;
-            try (PreparedStatement ps =
-                c.prepareStatement(
-                    "UPDATE "
-                        + table
-                        + " SET status='IN_FLIGHT',lease_owner=?,lease_until="
-                        + dialect.leasedUntilExpression()
-                        + " WHERE id=?"
-                        + (dialect == Dialect.POSTGRESQL ? " RETURNING lease_until" : ""))) {
-              ps.setString(1, owner);
-              if (dialect == Dialect.POSTGRESQL) ps.setDouble(2, lease.toNanos() / 1_000_000_000.0);
-              else ps.setLong(2, lease.toMillis());
-              ps.setString(3, r.id());
-              if (dialect == Dialect.POSTGRESQL) {
-                try (ResultSet rs = ps.executeQuery()) {
-                  if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
-                  leaseUntil = rs.getTimestamp(1).toInstant();
-                }
-              } else {
-                ps.executeUpdate();
-                try (PreparedStatement read =
-                    c.prepareStatement("SELECT lease_until FROM " + table + " WHERE id=?")) {
-                  read.setString(1, r.id());
-                  try (ResultSet rs = read.executeQuery()) {
-                    if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
-                    leaseUntil = rs.getTimestamp(1).toInstant();
-                  }
-                }
-              }
-            }
-            claimed.add(
-                new OutboxRecord(
-                    r.id(),
-                    r.destination(),
-                    r.aggregateType(),
-                    r.aggregateId(),
-                    r.eventType(),
-                    r.envelopeJson(),
-                    OutboxRecord.Status.IN_FLIGHT,
-                    r.attempts(),
-                    r.createdAt(),
-                    r.nextAttemptAt(),
-                    r.lastError(),
-                    r.aggregateSequence(),
-                    owner,
-                    leaseUntil));
-          }
-          return List.copyOf(claimed);
+          return claimDue(c, size, lease, owner);
         });
+  }
+
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
+              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+  private List<OutboxRecord> claimDue(Connection c, int size, Duration lease, String owner)
+      throws SQLException {
+    String select =
+        "SELECT "
+            + COLUMNS
+            + " FROM "
+            + table
+            + " h WHERE ((h.status='PENDING' AND h.next_attempt_at<="
+            + dialect.nowExpression()
+            + ") OR"
+            + " (h.status='IN_FLIGHT' AND h.lease_until<="
+            + dialect.nowExpression()
+            + ")) AND "
+            + headPredicate()
+            + " ORDER BY h.created_at,h.id FETCH FIRST "
+            + size
+            + " ROWS ONLY"
+            + dialect.lockClause();
+    List<OutboxRecord> selected = new ArrayList<>();
+    try (PreparedStatement ps = c.prepareStatement(select)) {
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) selected.add(record(rs));
+      }
+    }
+    List<OutboxRecord> claimed = new ArrayList<>();
+    for (OutboxRecord r : selected) {
+      Instant leaseUntil;
+      try (PreparedStatement ps =
+          c.prepareStatement(
+              "UPDATE "
+                  + table
+                  + " SET status='IN_FLIGHT',lease_owner=?,lease_until="
+                  + dialect.leasedUntilExpression()
+                  + " WHERE id=?"
+                  + (dialect == Dialect.POSTGRESQL ? " RETURNING lease_until" : ""))) {
+        ps.setString(1, owner);
+        if (dialect == Dialect.POSTGRESQL) ps.setDouble(2, lease.toNanos() / 1_000_000_000.0);
+        else ps.setLong(2, lease.toMillis());
+        ps.setString(3, r.id());
+        if (dialect == Dialect.POSTGRESQL) {
+          try (ResultSet rs = ps.executeQuery()) {
+            if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
+            leaseUntil = rs.getTimestamp(1).toInstant();
+          }
+        } else {
+          ps.executeUpdate();
+          try (PreparedStatement read =
+              c.prepareStatement("SELECT lease_until FROM " + table + " WHERE id=?")) {
+            read.setString(1, r.id());
+            try (ResultSet rs = read.executeQuery()) {
+              if (!rs.next()) throw new SQLException("Claimed outbox row disappeared");
+              leaseUntil = rs.getTimestamp(1).toInstant();
+            }
+          }
+        }
+      }
+      claimed.add(
+          new OutboxRecord(
+              r.id(),
+              r.destination(),
+              r.aggregateType(),
+              r.aggregateId(),
+              r.eventType(),
+              r.envelopeJson(),
+              OutboxRecord.Status.IN_FLIGHT,
+              r.attempts(),
+              r.createdAt(),
+              r.nextAttemptAt(),
+              r.lastError(),
+              r.aggregateSequence(),
+              owner,
+              leaseUntil));
+    }
+    return List.copyOf(claimed);
   }
 
   @Override
@@ -269,38 +296,66 @@ public final class JdbcOutboxStore implements OutboxStore {
   public void verifySchema() {
     transaction(
         c -> {
-          try (PreparedStatement ps =
-              c.prepareStatement("SELECT " + COLUMNS + " FROM " + table + " WHERE 1=0")) {
-            ps.executeQuery().close();
-          }
-          try (PreparedStatement ps =
-              c.prepareStatement(
-                  "SELECT aggregate_type,aggregate_id,last_seq FROM " + counters + " WHERE 1=0")) {
-            ps.executeQuery().close();
-          }
+          verifySchema(c);
           return null;
         });
+  }
+
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
+              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+  private void verifySchema(Connection c) throws SQLException {
+    try (PreparedStatement ps =
+        c.prepareStatement("SELECT " + COLUMNS + " FROM " + table + " WHERE 1=0")) {
+      ps.executeQuery().close();
+    }
+    try (PreparedStatement ps =
+        c.prepareStatement(
+            "SELECT aggregate_type,aggregate_id,last_seq FROM " + counters + " WHERE 1=0")) {
+      ps.executeQuery().close();
+    }
   }
 
   private int update(String statement, @Nullable Object... values) {
     return transaction(
         c -> {
-          try (PreparedStatement ps = c.prepareStatement(statement)) {
-            for (int i = 0; i < values.length; i++) ps.setObject(i + 1, values[i]);
-            return ps.executeUpdate();
-          }
+          return update(c, statement, values);
         });
+  }
+
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
+              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+  private int update(Connection c, String statement, @Nullable Object... values)
+      throws SQLException {
+    try (PreparedStatement ps = c.prepareStatement(statement)) {
+      for (int i = 0; i < values.length; i++) ps.setObject(i + 1, values[i]);
+      return ps.executeUpdate();
+    }
   }
 
   private long count(String statement) {
     return transaction(
         c -> {
-          try (PreparedStatement ps = c.prepareStatement(statement);
-              ResultSet rs = ps.executeQuery()) {
-            rs.next();
-            return rs.getLong(1);
-          }
+          return count(c, statement);
         });
+  }
+
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
+              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+  private long count(Connection c, String statement) throws SQLException {
+    try (PreparedStatement ps = c.prepareStatement(statement);
+        ResultSet rs = ps.executeQuery()) {
+      rs.next();
+      return rs.getLong(1);
+    }
   }
 
   private static @Nullable String trim(@Nullable String value) {
@@ -327,42 +382,31 @@ public final class JdbcOutboxStore implements OutboxStore {
   }
 
   private <T extends @Nullable Object> T transaction(ConnectionWork<T> work) {
-    Connection c = null;
-    boolean local = false;
     try {
-      c = connections.get();
-      local = c.getAutoCommit();
-      if (local) c.setAutoCommit(false);
-      try {
-        T result = work.run(c);
-        if (local) c.commit();
-        return result;
-      } catch (SQLException | RuntimeException | Error failure) {
-        if (local) {
-          try {
-            c.rollback();
-          } catch (SQLException rollback) {
-            failure.addSuppressed(rollback);
-          }
-        }
-        throw failure;
-      }
+      return transactions.inTransaction(
+          () -> {
+            Connection c = connections.get();
+            try (ConnectionRelease ignored = () -> connections.release(c)) {
+              if (c.getAutoCommit()) {
+                throw new SQLException("Outbox requires a transaction-bound connection", "25000");
+              }
+              return work.run(c);
+            }
+          });
     } catch (SQLException failure) {
       throw new OutboxException("Outbox SQL failed: " + failure.getSQLState(), failure);
-    } finally {
-      if (c != null) {
-        try {
-          if (local) c.setAutoCommit(true);
-        } catch (SQLException ignored) {
-          /* released below */
-        }
-        try {
-          connections.release(c);
-        } catch (SQLException ignored) {
-          /* primary outcome preserved */
-        }
-      }
+    } catch (RuntimeException failure) {
+      throw failure;
+    } catch (Exception failure) {
+      if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
+      throw new OutboxException("Outbox transaction failed", failure);
     }
+  }
+
+  @FunctionalInterface
+  private interface ConnectionRelease extends AutoCloseable {
+    @Override
+    void close() throws SQLException;
   }
 
   @FunctionalInterface

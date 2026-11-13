@@ -56,13 +56,16 @@ class StandaloneAsyncAwsTest {
                   AwsCredentialSource.borrowed(
                       StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"))),
                   Clock.systemUTC(),
-                  Duration.ofMinutes(1));
+                  Duration.ofMinutes(1),
+                  AsyncAwsTransportSettings.defaults());
           var client =
               resources.configured(
                   DynamoDbAsyncClient.builder(),
                   key ->
                       switch (key) {
                         case "axiz.aws.region" -> "us-east-1";
+                        case "axiz.config.environment" -> "test";
+                        case "axiz.transport.allow-plain-http" -> "true";
                         case "axiz.aws.endpoint" ->
                             "http://localhost:" + server.getAddress().getPort();
                         default -> null;

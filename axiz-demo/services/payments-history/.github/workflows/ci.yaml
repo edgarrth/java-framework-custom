@@ -15,11 +15,7 @@ on:
       candidate-build-run-id: {type: string, default: ''}
       candidate-build-run-attempt: {type: string, default: ''}
       candidate-manifest-sha256: {description: External signed framework candidate manifest SHA256, type: string, default: ''}
-permissions:
-  contents: read
-  pull-requests: read
-  security-events: write
-  id-token: write
+permissions: {}
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -34,14 +30,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: v2.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
         shell: bash
         run: |
           set -euo pipefail
-          release=$(gh api "repos/axiz/axiz-workflows/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
           jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
 
   parameters:
+    permissions:
+      contents: read
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -75,11 +73,16 @@ jobs:
           echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
 
   pr:
+    permissions:
+      contents: read
+      pull-requests: read
+      security-events: write
+      actions: read
     needs: axiz-workflows-trust
     if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/pr.yaml@v2.0.0
+    uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
@@ -88,10 +91,14 @@ jobs:
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
 
   build:
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
     needs: [axiz-workflows-trust, parameters]
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.0.0
+    uses: edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.0.0
     with:
       service: payments-history
       module: '.'
@@ -112,6 +119,6 @@ jobs:
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
       NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
       NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-      BUILD_REGISTRY: ${{ secrets.BUILD_REGISTRY }}
+      BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
       REGISTRY_BUILD_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
       REGISTRY_BUILD_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}

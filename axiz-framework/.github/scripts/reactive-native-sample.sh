@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 ./mvnw --bootstrap
-revision=$(python3 -c 'import xml.etree.ElementTree as E; print(E.parse("pom.xml").getroot().findtext("{*}properties/{*}revision"))')
+revision=$(cat version.txt)
 ./mvnw -B -ntp install -DskipTests
 mkdir -p "$PWD/target/reactive-native-acceptance"
 acceptance_root=$(mktemp -d "$PWD/target/reactive-native-acceptance/run.XXXXXX")
@@ -16,6 +16,12 @@ fixture="$acceptance_root/sample-native-orders"
 (
   cd "$fixture"
   ./mvnw -B -ntp spotless:check verify -Daxiz.it.requireDocker=true
-  ./mvnw -B -ntp -Pnative -DskipTests package native:compile
+  ./mvnw -B -ntp -Pnative -DskipTests package
+)
+# Check generated definitions before spending time compiling the ELF; no runtime annotation scans.
+python3 .github/scripts/check-native-reactive-sample.py --module "$fixture" --runtime jvm-aot
+(
+  cd "$fixture"
+  ./mvnw -B -ntp -Pnative -DskipTests native:compile
 )
 python3 .github/scripts/check-native-reactive-sample.py --module "$fixture"

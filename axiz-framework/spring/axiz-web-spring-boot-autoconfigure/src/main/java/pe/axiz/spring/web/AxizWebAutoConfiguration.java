@@ -15,6 +15,7 @@ import org.springframework.boot.jackson.autoconfigure.JsonFactoryBuilderCustomiz
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.HeaderCatalog;
 import pe.axiz.core.commons.HeaderDefinition;
 import pe.axiz.core.errors.ProblemFactory;
@@ -111,7 +112,8 @@ public class AxizWebAutoConfiguration {
 
     @Bean
     AxizWebMvcConfigurer axizWebMvcConfigurer(
-        AxizWebProperties properties, PageRequestParser parser) {
+        AxizWebProperties properties, PageRequestParser parser, Environment environment) {
+      CorsPolicy.validate(properties.cors(), environment.getProperty("axiz.config.environment"));
       return new AxizWebMvcConfigurer(properties, parser);
     }
   }
@@ -135,7 +137,8 @@ public class AxizWebAutoConfiguration {
 
     @Bean
     AxizWebFluxConfigurer axizWebFluxConfigurer(
-        AxizWebProperties properties, PageRequestParser parser) {
+        AxizWebProperties properties, PageRequestParser parser, Environment environment) {
+      CorsPolicy.validate(properties.cors(), environment.getProperty("axiz.config.environment"));
       return new AxizWebFluxConfigurer(properties, parser);
     }
   }

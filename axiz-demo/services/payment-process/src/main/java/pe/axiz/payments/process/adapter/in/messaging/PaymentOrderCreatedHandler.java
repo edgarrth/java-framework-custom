@@ -67,7 +67,7 @@ public class PaymentOrderCreatedHandler
                 e.operationNumber(),
                 e.debtorAccount(),
                 e.creditorCci(),
-                Money.ofExact(e.amount(), e.currency()),
+                Money.of(e.amount(), e.currency()),
                 e.customerId())));
   }
 }

@@ -45,7 +45,12 @@ public final class SqlStates {
       return true;
     } catch (SQLException e) {
       if (savepoint != null) {
-        connection.rollback(savepoint);
+        try {
+          connection.rollback(savepoint);
+        } catch (SQLException | RuntimeException rollback) {
+          if (rollback != e) e.addSuppressed(rollback);
+          throw e;
+        }
       }
       if (isDuplicateKey(e)) {
         return false;

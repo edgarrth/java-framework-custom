@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.structure.hexagonal.UseCaseTransaction;
 
 /** Use case transactions with Spring's transaction manager (joins an existing transaction). */
-public class SpringUseCaseTransaction implements UseCaseTransaction {
+public final class SpringUseCaseTransaction implements UseCaseTransaction {
 
   private final TransactionTemplate readWrite;
   private final TransactionTemplate readOnly;

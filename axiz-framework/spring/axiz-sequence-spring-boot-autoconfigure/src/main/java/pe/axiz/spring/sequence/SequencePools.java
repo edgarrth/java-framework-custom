@@ -75,7 +75,7 @@ final class SequencePools {
       var credentials = main.getCredentialsProvider();
       if (credentials != null) {
         settings.setCredentialsProviderClassName(null);
-        settings.setCredentialsProvider(credentials::getCredentials);
+        settings.setCredentialsProvider(credentials);
       } else if (main.getCredentialsProviderClassName() == null) {
         // A password rotated on the main pool must also be used for new counter connections.
         settings.setCredentialsProvider(main::getCredentials);

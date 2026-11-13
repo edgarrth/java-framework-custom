@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.slf4j.event.Level;
@@ -75,7 +76,7 @@ class LoggingTest {
   @Test
   void aBodyThatCannotBeMaskedWholeIsNotWritten() {
     HttpLogFormatter f = new HttpLogFormatter(List.of(), 64, ObjectMasker.defaults());
-    String secret = "SYNTHETIC-SECRET";
+    String secret = UUID.randomUUID().toString();
     String cut = "{\"password\":\"" + secret;
     assertEquals(
         "<application/json, more than " + cut.length() + " chars: too large to mask, not logged>",

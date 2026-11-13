@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 
 /**
  * OAuth2 client credentials with cache and early renewal: the token is renewed when less than
@@ -38,9 +39,14 @@ public final class ClientCredentialsTokenProvider implements AccessTokenProvider
       @Nullable String audience,
       Duration renewBefore,
       Duration timeout,
-      Clock clock) {
+      Clock clock,
+      TransportSecurityPolicy transportSecurity) {
     this.http = Objects.requireNonNull(http);
-    this.exchange = new ClientCredentialsExchange(tokenUri, clientId, scopes, audience, timeout);
+    if (http.followRedirects() != HttpClient.Redirect.NEVER)
+      throw new IllegalArgumentException("OAuth transport must disable automatic redirects");
+    this.exchange =
+        new ClientCredentialsExchange(
+            tokenUri, clientId, scopes, audience, timeout, transportSecurity);
     this.clientSecret = Objects.requireNonNull(clientSecret);
     this.renewBefore = Objects.requireNonNull(renewBefore);
     if (renewBefore.isNegative())

@@ -24,6 +24,7 @@ import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.adapter.storage.s3.S3ObjectStorage;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
@@ -113,7 +114,8 @@ public class AxizStorageS3AutoConfiguration {
     AsyncAwsClients axizStorageAsyncAwsResources(
         AxizAwsCompletionProperties completion,
         ObjectProvider<MeterRegistry> registries,
-        AwsIdentity identity) {
+        AwsIdentity identity,
+        AxizAwsAsyncTransportProperties transport) {
       return AwsAsyncResources.create(
           "axizStorageAsyncAwsResources",
           completion.workers(),
@@ -121,7 +123,8 @@ public class AxizStorageS3AutoConfiguration {
           registries.getIfAvailable(),
           identity,
           AwsService.S3,
-          AwsCapability.STORAGE);
+          AwsCapability.STORAGE,
+          transport.toSettings());
     }
 
     @Bean(destroyMethod = "close")

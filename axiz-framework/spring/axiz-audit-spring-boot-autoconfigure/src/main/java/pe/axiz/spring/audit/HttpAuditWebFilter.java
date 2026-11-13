@@ -17,7 +17,7 @@ import pe.axiz.core.errors.AxizException;
 import reactor.core.publisher.Mono;
 
 /** Reactive counterpart of {@link HttpAuditFilter}. */
-public class HttpAuditWebFilter implements WebFilter, Ordered {
+public final class HttpAuditWebFilter implements WebFilter, Ordered {
 
   private final @Nullable AuditTrail trail;
   private final @Nullable ReactiveAuditTrail nativeTrail;

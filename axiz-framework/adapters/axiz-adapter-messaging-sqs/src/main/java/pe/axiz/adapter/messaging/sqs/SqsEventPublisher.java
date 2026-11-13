@@ -1,5 +1,6 @@
 package pe.axiz.adapter.messaging.sqs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +23,11 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
  */
 public final class SqsEventPublisher implements EventPublisher, BoundedPublisher {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SqsClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final SqsClient sqs;
 
   public SqsEventPublisher(SqsClient sqs) {

@@ -21,3 +21,14 @@ The credential plugin transfers its resource through a private closable SDK prov
 The SDK client closes that adapter, which releases only the resource. Calling `provider()`
 directly keeps ownership with the caller; that view cannot close the underlying identity.
 A failed factory build also releases its credential resource and retains the original failure.
+
+## Transport security
+
+`AwsCredentialSources.create(TransportSecurityPolicy)` requires an explicit policy. Framework
+clients use HTTPS by default, validate SDK endpoint overrides and check the effective URI before
+signing/transmission. Standalone callers can use `TransportSecurityPolicy.secure()` or capture
+explicit process configuration with `system()`. HTTP requires both the local/test/ci environment
+and `axiz.transport.allow-plain-http=true`; certificate validation remains enabled.
+
+`AsyncAwsClients` accepts `AsyncAwsTransportSettings` for positive connection TTL/idle durations.
+The base module does not parse Spring properties.

@@ -27,11 +27,13 @@ public final class EventPayloads {
               schemas.put(name, event.payload());
             });
     Map<String, byte[]> result = new LinkedHashMap<>();
-    for (var record : ApplicationModels.recordsForPackage(schemas, namespace, false)) {
+    for (var record : ApplicationModels.recordsForPackage(schemas, false)) {
       String content =
           "package "
               + namespace
               + ";\n\n"
+              + record.getOrDefault("imports", "")
+              + "\n\n"
               + "/** Generated from AsyncAPI. Review .axiz-new proposals after contract sync. */\n"
               + record.get("declaration")
               + "\n";

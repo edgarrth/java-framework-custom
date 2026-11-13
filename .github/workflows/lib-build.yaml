@@ -1,0 +1,296 @@
+name: lib-build
+on:
+  workflow_call:
+    inputs:
+      project-directory:
+        description: Canonical relative Maven reactor path in the checkout
+        type: string
+        default: '.'
+      version:
+        description: Final Maven release coordinate, including for candidates
+        type: string
+        required: true
+      source-sha:
+        description: Full commit equal to the producer run commit
+        type: string
+        required: true
+      candidate:
+        description: Optional readable final-version/attempt label
+        type: string
+        default: ''
+      maven-args:
+        description: JSON array of allowlisted public Maven properties
+        type: string
+        default: '[]'
+      axiz-version:
+        description: Framework dependency version for tools; omit for the framework itself
+        type: string
+        default: ''
+      native-module:
+        description: Optional module with signed native components built earlier in this producer run
+        type: string
+        default: ''
+      native-binary:
+        type: string
+        default: ''
+      native-platforms:
+        description: JSON array of required native targets; empty for JVM-only builds
+        type: string
+        default: '[]'
+      candidate-repository:
+        description: Producer repository of the framework candidate consumed by tools
+        type: string
+        default: ''
+      candidate-build-run-id:
+        type: string
+        default: ''
+      candidate-build-run-attempt:
+        type: string
+        default: ''
+      candidate-manifest-sha256:
+        type: string
+        default: ''
+      runner:
+        type: string
+        default: ubuntu-24.04
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN:
+        required: false
+      NEXUS_URL:
+        required: true
+      NEXUS_READ_USERNAME:
+        required: true
+      NEXUS_READ_PASSWORD:
+        required: true
+      CANDIDATE_READ_TOKEN:
+        required: false
+      SONAR_HOST_URL:
+        required: false
+      SONAR_TOKEN:
+        required: false
+    outputs:
+      manifest-sha256:
+        description: External build identity for independent promotion
+        value: ${{ jobs.sign.outputs.manifest-sha256 }}
+      build-run-id:
+        description: Producer run
+        value: ${{ github.run_id }}
+      build-run-attempt:
+        description: Producer attempt
+        value: ${{ github.run_attempt }}
+
+permissions: {}
+
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
+  build:
+    name: maven:${{ inputs.project-directory }}
+    permissions:
+      contents: read
+      actions: read
+    needs: axiz-workflows-trust
+    defaults:
+      run:
+        working-directory: ${{ inputs.project-directory }}
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ inputs.source-sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
+        id: candidate
+        if: inputs.candidate-manifest-sha256 != '' || inputs.candidate-repository != '' || inputs.candidate-build-run-id != '' || inputs.candidate-build-run-attempt != ''
+        with:
+          repository: ${{ inputs.candidate-repository }}
+          build-run-id: ${{ inputs.candidate-build-run-id }}
+          build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+          manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          kind: maven-library
+          token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
+        id: inputs
+        with:
+          project-directory: ${{ inputs.project-directory }}
+          version: ${{ inputs.version }}
+          source-sha: ${{ inputs.source-sha }}
+          candidate: ${{ inputs.candidate }}
+          native-module: ${{ inputs.native-module }}
+          native-binary: ${{ inputs.native-binary }}
+          native-platforms: ${{ inputs.native-platforms }}
+          maven-args: ${{ inputs.maven-args }}
+          axiz-version: ${{ inputs.axiz-version }}
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+        with:
+          nexus-url: ${{ secrets.NEXUS_URL }}
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          candidate-source-repository: ${{ inputs.candidate-repository }}
+      - name: Compile, test, quality, mutation and local Maven staging
+        env:
+          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+          VERSION: ${{ inputs.version }}
+          ARGUMENTS: ${{ steps.inputs.outputs.arguments }}
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/build-reports
+          "$PYTHON" "$TOOLS/maven_version.py" --version "$VERSION" 2>&1 | tee target/build-reports/coordinates.log
+          mapfile -d '' -t extra < "$ARGUMENTS"
+          maven=mvn
+          if [[ -x ./mvnw ]]; then maven=./mvnw; fi
+          bootstrap=()
+          if [[ -f platform/axiz-dependencies/pom.xml && -f platform/axiz-bom/pom.xml ]]; then
+            [[ "$maven" == ./mvnw ]]
+            bootstrap=(--bootstrap)
+          fi
+          "$maven" "${bootstrap[@]}" -B -ntp deploy -Pquality,release "${extra[@]}" \
+            "-DaltDeploymentRepository=staging::file://$PWD/target/staging-repo" \
+            2>&1 | tee target/build-reports/verify.log
+      - name: Verify mutation workers and encapsulation
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/../check-mutations/check_mutations.py" . 2>&1 | tee target/build-reports/mutation.log
+          "$PYTHON" "$TOOLS/../check-encapsulation/check_encapsulation.py" . 2>&1 | tee target/build-reports/encapsulation.log
+      - name: Sonar quality gate
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$SONAR_TOKEN" ]]; then
+            mvn -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:5.7.0.6970:sonar \
+              "-Drevision=$VERSION" "-Dsonar.host.url=$SONAR_HOST_URL" -Dsonar.qualitygate.wait=true
+          fi
+      - name: SBOM of the complete staged reactor
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+          VERSION: ${{ inputs.version }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+        run: |
+          set -euo pipefail
+          mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
+            "-Drevision=$VERSION" -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false
+          "$PYTHON" "$TOOLS/../check-sbom/check_sbom.py" target/bom.json pom.xml
+          cp target/bom.json target/build-reports/bom.json
+      - name: Scan the dependency inventory
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.70.0
+          scan-type: sbom
+          scan-ref: ${{ inputs.project-directory }}/target/build-reports/bom.json
+          format: json
+          output: ${{ inputs.project-directory }}/target/build-reports/scan.json
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+        if: inputs.native-module != ''
+        with:
+          pattern: native-component-${{ github.run_attempt }}-*
+          path: ${{ runner.temp }}/native-components
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+      - name: Verify and bind native components to the Maven product
+        if: inputs.native-module != ''
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+          COMPONENTS: ${{ runner.temp }}/native-components
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/native_components.py" merge --metadata "$METADATA" --components "$COMPONENTS" \
+            --staging target/staging-repo --reports target/build-reports
+      - name: Record exact artifacts, evidence and parameters
+        id: bundle
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/build_bundle.py" --metadata "$METADATA" --staging target/staging-repo \
+            --reports target/build-reports --bundle target/build-bundle --complete
+      - name: Retain unsigned Maven product
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: unsigned-maven-${{ github.run_attempt }}
+          path: ${{ inputs.project-directory }}/target/build-bundle
+          retention-days: 90
+          if-no-files-found: error
+
+  sign:
+    needs: [axiz-workflows-trust, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    outputs:
+      manifest-sha256: ${{ steps.sign.outputs.manifest-sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          repository: edgarrth/java-framework-custom
+          ref: axiz-workflows-v2.0.0 # x-release-please-version
+          path: .axiz-trusted-workflows
+          persist-credentials: false
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5
+      - name: Verify producer authority and sign exact product data
+        id: sign
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          BUILD_INPUTS_JSON: ${{ toJSON(inputs) }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/axiz-signer-python"
+          python="$RUNNER_TEMP/axiz-signer-python/bin/python"
+          tools="$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest"
+          "$python" -m pip install --require-hashes --quiet -r "$tools/requirements.txt"
+          "$python" "$tools/sign_product.py" --kind maven-library --output "$RUNNER_TEMP/signed-product"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-bundle-${{ steps.sign.outputs.manifest-sha256 }}
+          path: ${{ runner.temp }}/signed-product
+          retention-days: 90
+          if-no-files-found: error

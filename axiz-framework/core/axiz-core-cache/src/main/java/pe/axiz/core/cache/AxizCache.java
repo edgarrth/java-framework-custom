@@ -1,5 +1,6 @@
 package pe.axiz.core.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +24,14 @@ public final class AxizCache {
   private static final Logger LOG = LoggerFactory.getLogger(AxizCache.class);
 
   private final String prefix;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ByteCache is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final ByteCache cache;
+
   private final ValueCodec codec;
   private final Duration defaultTtl;
   private final Map<String, CompletableFuture<Object>> inFlight = new ConcurrentHashMap<>();

@@ -1,5 +1,6 @@
 package pe.axiz.cli;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,6 +20,12 @@ public interface ProcessRunner {
   final class Local implements ProcessRunner {
 
     @Override
+    @SuppressFBWarnings(
+        value = "COMMAND_INJECTION",
+        justification =
+            "The local CLI intentionally executes the selected project's tools. "
+                + "Commands are argv lists passed directly to ProcessBuilder without a shell; "
+                + "no server input is evaluated.")
     public int run(Path directory, List<String> command) throws IOException {
       Process p = new ProcessBuilder(command).directory(directory.toFile()).inheritIO().start();
       try {

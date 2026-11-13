@@ -26,13 +26,14 @@ Fuera de AWS: Nexus Repository (artefactos Maven e imágenes), GitHub Actions (C
 ## Convenciones de los clientes AWS
 
 - Un solo SDK: AWS SDK v2 (el v1 está prohibido). Los clientes síncronos propios se construyen con
-  `AwsClients`; los asíncronos nativos, con `AsyncAwsClients`. Ambos agregan observación
-  (un span CLIENT por llamada con servicio y operación), la región de
+  `AwsClients`; los asíncronos nativos, con `AsyncAwsClients`. La observación se compone mediante `axiz-adapter-observability-aws`
+  (un span CLIENT por llamada con servicio y operación). La región procede de
   `axiz.aws.region` y el endpoint de `axiz.aws.<servicio>.endpoint` o, si no está,
   `axiz.aws.endpoint` (LocalStack en local). Claves de servicio: `sqs`, `sns`, `s3`, `dynamodb`,
   `kms`, `secretsmanager`, `ssm`. Un bean propio del cliente reemplaza al del framework.
   Los módulos adaptadores AWS traen `axiz-adapter-aws`. El bootstrap de Parameter
-  Store pertenece a Spring Cloud AWS y usa su configuración de clientes.
+  Store pertenece a Axiz (`AxizParameterStoreResolver` y `AxizParameterStoreLoader`). Axiz excluye
+  `CredentialsProviderAutoConfiguration` y `AwsAutoConfiguration` de Spring Cloud AWS.
 - Sin una declaración IRSA se conserva la cadena predeterminada del SDK, incluido EKS Pod Identity.
   Con IRSA declarada, la política común exige rol y archivo de token completos y usa exclusivamente
   Web Identity con STS. Las credenciales estáticas de sistema/entorno no la sustituyen. Las pruebas
@@ -44,11 +45,12 @@ Fuera de AWS: Nexus Repository (artefactos Maven e imágenes), GitHub Actions (C
   firma cada conexión física y reconexión usando una fuente compartida por pool Hikari; no instala
   un manejador global del wrapper. Los fallos de conexión y los reemplazos no destruyen esa fuente;
   el pool libera su recurso y Spring cierra la fuente compartida después de sus consumidores. El framework selecciona su perfil de plugins cuando IAM está
-  habilitado. Spring Cloud AWS selecciona su proveedor STS dedicado para el bootstrap IRSA de
-  Parameter Store; una declaración incompleta se rechaza antes de cargar configuración.
+  habilitado. Las integraciones de contexto seleccionan `AwsIdentity` por capacidad, servicio,
+  proveedor global y fuente SDK predeterminada. El bootstrap propio de Parameter Store valida IRSA
+  antes de cargar configuración; una declaración incompleta se rechaza.
 - Nombres de tablas, colas y tópicos por convención con prefijo de ambiente
-  (`${axiz.dynamodb.table-prefix}axiz-idempotency`), creados por Terraform (`infra.yaml`), nunca por
-  el servicio al arrancar.
+  (`${axiz.dynamodb.table-prefix}axiz-idempotency`), aprovisionados por la infraestructura como
+  código de la plataforma, fuera del framework; nunca por el servicio al arrancar.
 - MSK con IAM (`axiz.messaging.kafka.iam=true` en los ambientes), SQS FIFO con el id del evento como
   id de deduplicación, S3 con SSE-KMS y URLs prefirmadas con TTL máximo.
   El generador usa IAM por defecto; local, pruebas y kind lo desactivan expresamente para Kafka sin
@@ -147,3 +149,26 @@ y presigner. En imperativo, una región ausente conserva la cadena regional del 
 en reactivo, `EXPLICIT` exige `axiz.aws.region` o `AWS_REGION`, sin perfiles ni IMDS como respaldo.
 Los timeouts de mensajería síncrona se conservan. `CompletionObserver.NOOP` es el observador común
 sin efectos. La metadata nativa STS proviene del SDK; no se duplica en el adaptador de observación.
+
+## Composición de Spring Cloud AWS y TLS
+
+Spring Cloud AWS usa un puente que selecciona solo el global explícito de aplicación o la fuente
+predeterminada del contexto. Los proveedores con alcance conservan su alcance, incluso con
+`@Primary`; no existe otro proveedor SDK global automático. S3 y DynamoDB usan los adaptadores
+de Axiz sin las integraciones redundantes de Spring Cloud AWS.
+
+La configuración `spring.cloud.aws.credentials.*` activa se rechaza antes del acceso remoto:
+no reemplaza IRSA por claves estáticas, perfiles o reglas STS. `instance-profile=false` es válido.
+Para una identidad explícita se declara un proveedor SDK propio. Parameter Store aplica esta
+misma política antes de cargar configuración y respeta extensiones explícitas de su bootstrap.
+Su dueño de recursos separado cierra el cliente y después la fuente, también en fallos iniciales.
+
+Los transportes gestionados requieren HTTPS y conservan validación de certificados y hostname.
+Solo para emuladores en `local`, `test` o `ci`, habilitar `axiz.transport.allow-plain-http=true`.
+La excepción depende del ambiente y no se habilita por ser loopback. Se comprueban las URLs
+efectivas, incluidos endpoints del SDK obtenidos de JVM, entorno o perfil. Los clientes HTTP
+no siguen redirecciones y no envían credenciales a un origen absoluto diferente.
+
+Las duraciones `axiz.aws.async.connection-ttl` y `max-idle-time` se enlazan como `Duration` (5m y
+30s por defecto); admiten `100ms`, `PT0.1S` o `100` milisegundos, siempre positivos y al menos 1ms.
+Son independientes de `axiz.aws.completion`. La región IAM específica vacía usa el respaldo global.

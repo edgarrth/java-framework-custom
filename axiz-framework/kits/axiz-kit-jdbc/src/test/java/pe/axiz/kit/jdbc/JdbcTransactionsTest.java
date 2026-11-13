@@ -117,9 +117,10 @@ class JdbcTransactionsTest {
                           throw original;
                         }));
     assertSame(original, failure);
-    assertEquals(2, failure.getSuppressed().length);
     assertEquals("rollback cleanup", failure.getSuppressed()[0].getMessage());
-    assertEquals("restore cleanup", failure.getSuppressed()[1].getMessage());
+    assertFalse(
+        java.util.Arrays.stream(failure.getSuppressed())
+            .anyMatch(suppressed -> "restore cleanup".equals(suppressed.getMessage())));
   }
 
   @Test

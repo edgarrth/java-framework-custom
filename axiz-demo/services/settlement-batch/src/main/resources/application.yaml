@@ -37,7 +37,6 @@ axiz:
     http:
       enabled: true
   config:
-    environment: ${AXIZ_ENVIRONMENT:local}
   storage:
     bucket: ${AXIZ_STORAGE_BUCKET:local-bucket}
   audit:

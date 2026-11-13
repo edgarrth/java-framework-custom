@@ -31,7 +31,7 @@ import reactor.core.publisher.SignalType;
  * the captured response (up to {@code maxResponseSize}) is stored; a larger body still streams to
  * the client and only its status and headers are stored.
  */
-public class IdempotencyWebFilter implements WebFilter, Ordered {
+public final class IdempotencyWebFilter implements WebFilter, Ordered {
 
   /** After Spring Security's {@code WebFilterChainProxy} (order -100). */
   public static final int ORDER = Ordered.LOWEST_PRECEDENCE - 100;

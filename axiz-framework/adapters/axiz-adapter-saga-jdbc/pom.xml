@@ -16,6 +16,8 @@
     <axiz.module.name>pe.axiz.adapter.saga.jdbc</axiz.module.name>
   </properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-schema</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-saga</artifactId>

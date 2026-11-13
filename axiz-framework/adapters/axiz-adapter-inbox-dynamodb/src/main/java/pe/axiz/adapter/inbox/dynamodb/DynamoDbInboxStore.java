@@ -1,5 +1,6 @@
 package pe.axiz.adapter.inbox.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Instant;
 import java.util.Objects;
 import pe.axiz.core.inbox.InboxStore;
@@ -11,7 +12,13 @@ import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedExce
  * Synchronous poll-thread inbox; shares wire conditions and status decoding with the native port.
  */
 public final class DynamoDbInboxStore implements InboxStore {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbClient is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final DynamoDbClient dynamo;
+
   private final DynamoDbInboxRequests requests;
 
   public DynamoDbInboxStore(DynamoDbClient dynamo, String table) {

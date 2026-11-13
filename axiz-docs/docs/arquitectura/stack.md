@@ -47,8 +47,8 @@ una petición HTTP.
 ## Condiciones de aceptación
 
 Cada capacidad marcada reactive necesita contratos e integración con BlockHound, incluyendo
-cancelación, errores, reconexión y renovación de credenciales. La migración 2.0 sigue en curso;
-el catálogo no sustituye esa evidencia de aceptación.
+cancelación, errores, reconexión y renovación de credenciales. El catálogo no sustituye esa
+evidencia de aceptación.
 Las pruebas de servicios reactive habilitan la autodetección de extensiones de JUnit:
 
 ```properties

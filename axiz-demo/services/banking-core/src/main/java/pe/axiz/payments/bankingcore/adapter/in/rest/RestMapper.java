@@ -13,7 +13,7 @@ final class RestMapper {
   static MovementOrder order(MovementRequest r) {
     return new MovementOrder(
         r.getAccountId(),
-        Money.ofExact(r.getAmount(), r.getCurrency()),
+        Money.of(r.getAmount(), r.getCurrency()),
         r.getReference(),
         r.getHolderId());
   }

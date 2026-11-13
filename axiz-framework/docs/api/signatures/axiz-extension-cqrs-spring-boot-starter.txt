@@ -1,10 +1,10 @@
-public class pe.axiz.extension.cqrs.spring.AuditBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.AuditBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.AuditBehavior(pe.axiz.core.audit.AuditTrail);
 }
 
-public class pe.axiz.extension.cqrs.spring.AuthorizationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.AuthorizationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.AuthorizationBehavior();
@@ -20,19 +20,19 @@ public class pe.axiz.extension.cqrs.spring.AxizReactiveCqrsAutoConfiguration {
 public pe.axiz.extension.cqrs.spring.AxizReactiveCqrsAutoConfiguration();
 }
 
-public class pe.axiz.extension.cqrs.spring.IdempotencyBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.IdempotencyBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.IdempotencyBehavior(pe.axiz.core.idempotency.IdempotencyService, tools.jackson.databind.json.JsonMapper);
 }
 
-public class pe.axiz.extension.cqrs.spring.MetricsBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.MetricsBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.MetricsBehavior(pe.axiz.core.metrics.EventMetrics);
 }
 
-public class pe.axiz.extension.cqrs.spring.ObservationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.ObservationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.ObservationBehavior(pe.axiz.core.observability.ArchitectureObservation);
@@ -121,13 +121,13 @@ public interface pe.axiz.extension.cqrs.spring.ReactiveQueryBus {
 public abstract <R> reactor.core.publisher.Mono<R> ask(pe.axiz.extension.cqrs.Query<R>);
 }
 
-public class pe.axiz.extension.cqrs.spring.TransactionBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.TransactionBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.TransactionBehavior(org.springframework.transaction.PlatformTransactionManager);
 }
 
-public class pe.axiz.extension.cqrs.spring.ValidationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
+public final class pe.axiz.extension.cqrs.spring.ValidationBehavior implements pe.axiz.extension.cqrs.PipelineBehavior {
 public <R> R handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.PipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.ValidationBehavior(jakarta.validation.Validator);

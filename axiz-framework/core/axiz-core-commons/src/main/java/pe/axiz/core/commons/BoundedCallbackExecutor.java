@@ -1,6 +1,9 @@
 package pe.axiz.core.commons;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -13,29 +16,36 @@ import java.util.concurrent.atomic.AtomicInteger;
  * queued callbacks. Exhaustion rejects immediately; no caller-runs or unbounded pending work.
  * Construct during startup and close with the owning transport.
  */
-public class BoundedCallbackExecutor extends ThreadPoolExecutor {
+public class BoundedCallbackExecutor extends AbstractExecutorService {
+  private final ThreadPoolExecutor workers;
   private final AtomicInteger pending = new AtomicInteger();
   private final int capacity;
   private final String description;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Extension point; starts only its private worker delegate and closes it if startup fails.")
   public BoundedCallbackExecutor(
       int workers, int queued, ThreadFactory threads, String description) {
-    super(
-        workers,
-        workers,
-        0,
-        TimeUnit.MILLISECONDS,
-        new LinkedTransferQueue<>(),
-        threads,
-        new AbortPolicy());
+    if (workers < 1) throw new IllegalArgumentException("Workers must be positive");
     if (queued < 0) throw new IllegalArgumentException("Queued capacity must not be negative");
     this.capacity = Math.addExact(workers, queued);
     this.description = Objects.requireNonNull(description);
+    this.workers =
+        new ThreadPoolExecutor(
+            workers,
+            workers,
+            0,
+            TimeUnit.MILLISECONDS,
+            new LinkedTransferQueue<>(),
+            threads,
+            new ThreadPoolExecutor.AbortPolicy());
     try {
-      if (prestartAllCoreThreads() != workers)
+      if (this.workers.prestartAllCoreThreads() != workers)
         throw new IllegalStateException("Cannot start callback workers");
     } catch (RuntimeException | Error failure) {
-      shutdownNow();
+      this.workers.shutdownNow();
       throw failure;
     }
   }
@@ -50,7 +60,7 @@ public class BoundedCallbackExecutor extends ThreadPoolExecutor {
       if (pending.compareAndSet(count, count + 1)) break;
     }
     try {
-      super.execute(
+      workers.execute(
           () -> {
             try {
               command.run();
@@ -62,5 +72,43 @@ public class BoundedCallbackExecutor extends ThreadPoolExecutor {
       pending.decrementAndGet();
       throw failure;
     }
+  }
+
+  /** Live counts only; callers cannot mutate the owned worker queue or bypass admission. */
+  public final int getPoolSize() {
+    return workers.getPoolSize();
+  }
+
+  public final int getActiveCount() {
+    return workers.getActiveCount();
+  }
+
+  public final int getQueueSize() {
+    return workers.getQueue().size();
+  }
+
+  @Override
+  public void shutdown() {
+    workers.shutdown();
+  }
+
+  @Override
+  public List<Runnable> shutdownNow() {
+    return workers.shutdownNow();
+  }
+
+  @Override
+  public boolean isShutdown() {
+    return workers.isShutdown();
+  }
+
+  @Override
+  public boolean isTerminated() {
+    return workers.isTerminated();
+  }
+
+  @Override
+  public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+    return workers.awaitTermination(timeout, unit);
   }
 }

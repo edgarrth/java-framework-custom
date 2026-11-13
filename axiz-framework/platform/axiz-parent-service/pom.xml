@@ -416,6 +416,10 @@
           <plugin>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-maven-plugin</artifactId>
+            <configuration>
+              <!-- OpenAPI owns mutable wire models; all other detectors remain active. -->
+              <excludeFilterFile>axiz/spotbugs/generated-dtos.xml</excludeFilterFile>
+            </configuration>
             <dependencies>
               <dependency>
                 <groupId>pe.axiz</groupId>

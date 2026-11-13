@@ -63,7 +63,8 @@ class AwsCompletionClasspathTest {
                 Clock.systemUTC(),
                 Duration.ofDays(1),
                 1,
-                1)) {
+                1,
+                AsyncAwsTransportSettings.defaults())) {
           // Frameworks may inspect all methods reflectively while Micrometer is absent.
           AsyncAwsClients.class.getDeclaredMethods();
           AsyncAwsClients.class.getDeclaredConstructors();

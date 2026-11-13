@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Extension;
@@ -51,6 +53,26 @@ public record ProjectManifest(
     List<Extension> extensions) {
 
   public static final String PATH = ".axiz/project.yaml";
+
+  private static final Set<String> KEYS =
+      Set.of(
+          "schema",
+          "kind",
+          "name",
+          "groupId",
+          "basePackage",
+          "archetype",
+          "structure",
+          "extensions",
+          "stack",
+          "persistence",
+          "axizVersion",
+          "contract",
+          "capabilities",
+          "operations");
+  private static final Set<String> CONTRACT_KEYS = Set.of("openapi", "asyncapi");
+  private static final List<String> KINDS = List.of("service", "platform");
+  private static final List<String> PERSISTENCE = List.of("none", Catalog.AURORA, Catalog.DYNAMODB);
 
   public ProjectManifest(
       String name,
@@ -109,28 +131,54 @@ public record ProjectManifest(
     if (!(schema instanceof Number number) || number.doubleValue() != 2) {
       throw new IOException("Unsupported project manifest schema: " + schema);
     }
-    String structure = required(m, "structure");
-    List<Extension> extensions = strings(m.get("extensions")).stream().map(Extension::of).toList();
+    rejectUnknown(m, KEYS, PATH);
+    String kind = required(m, "kind");
+    if (!KINDS.contains(kind))
+      throw new IOException("'kind' in " + PATH + " must be one of " + KINDS + ": " + kind);
+    Structure structure = enumValue(m, "structure", Structure::of);
+    if (kind.equals("service") != (structure != Structure.NONE))
+      throw new IOException(
+          "'kind: " + kind + "' does not match 'structure: " + structure.id() + "' in " + PATH);
+    List<Extension> extensions = names(m, "extensions").stream().map(Extension::of).toList();
     String role = required(m, "archetype");
     if (Catalog.load().archetype(role).isEmpty())
-      throw new IOException("Unsupported v2 archetype: " + role);
-    if (m.containsKey("framework"))
-      throw new IOException("Use structure; framework is not a v2 manifest key");
-    Map<?, ?> contract = m.get("contract") instanceof Map<?, ?> c ? c : Map.of();
+      throw new IOException("Unsupported archetype: " + role);
+    String persistence = m.containsKey("persistence") ? required(m, "persistence") : "none";
+    if (!PERSISTENCE.contains(persistence))
+      throw new IOException(
+          "'persistence' in " + PATH + " must be one of " + PERSISTENCE + ": " + persistence);
+    Object contractValue = m.get("contract");
+    if (contractValue != null && !(contractValue instanceof Map<?, ?>))
+      throw new IOException("'contract' in " + PATH + " must be a mapping");
+    Map<?, ?> contract = contractValue == null ? Map.of() : (Map<?, ?>) contractValue;
+    rejectUnknown(contract, CONTRACT_KEYS, PATH + " contract");
     return new ProjectManifest(
         required(m, "name"),
         required(m, "groupId"),
         required(m, "basePackage"),
         role,
-        Structure.of(structure),
-        Stack.of(String.valueOf(m.containsKey("stack") ? m.get("stack") : "servlet")),
-        String.valueOf(m.containsKey("persistence") ? m.get("persistence") : "none"),
+        structure,
+        m.containsKey("stack") ? enumValue(m, "stack", Stack::of) : Stack.SERVLET,
+        persistence,
         required(m, "axizVersion"),
-        optional(contract.get("openapi")),
-        optional(contract.get("asyncapi")),
-        strings(m.get("capabilities")),
-        strings(m.get("operations")),
+        path(contract, "openapi"),
+        path(contract, "asyncapi"),
+        names(m, "capabilities"),
+        names(m, "operations"),
         extensions);
+  }
+
+  private static void rejectUnknown(Map<?, ?> map, Set<String> allowed, String where)
+      throws IOException {
+    for (Object key : map.keySet())
+      if (!allowed.contains(String.valueOf(key)))
+        throw new IOException(
+            "Unknown key '"
+                + key
+                + "' in "
+                + where
+                + "; allowed: "
+                + allowed.stream().sorted().toList());
   }
 
   /** Writes the manifest back (same layout as the generated one). */
@@ -243,21 +291,44 @@ public record ProjectManifest(
 
   private static String required(Map<?, ?> m, String key) throws IOException {
     Object v = m.get(key);
-    if (v == null || String.valueOf(v).isBlank()) {
+    if (v == null || (v instanceof String blank && blank.isBlank())) {
       throw new IOException("Missing '" + key + "' in " + PATH);
     }
-    return String.valueOf(v);
+    if (!(v instanceof String text)) {
+      throw new IOException("'" + key + "' in " + PATH + " must be text: " + v);
+    }
+    return text;
   }
 
-  private static @Nullable String optional(@Nullable Object v) {
-    return v == null || "null".equals(String.valueOf(v)) ? null : String.valueOf(v);
+  private static @Nullable String path(Map<?, ?> contract, String key) throws IOException {
+    Object v = contract.get(key);
+    if (v == null) return null;
+    if (!(v instanceof String text) || text.isBlank())
+      throw new IOException("'contract." + key + "' in " + PATH + " must be a path or null");
+    return text;
   }
 
-  private static List<String> strings(@Nullable Object o) {
+  private static List<String> names(Map<?, ?> m, String key) throws IOException {
+    Object o = m.get(key);
+    if (o == null) return List.of();
+    if (!(o instanceof List<?> list))
+      throw new IOException("'" + key + "' in " + PATH + " must be a list");
     List<String> out = new ArrayList<>();
-    if (o instanceof List<?> l) {
-      l.forEach(e -> out.add(String.valueOf(e)));
+    for (Object e : list) {
+      if (!(e instanceof String name) || name.isBlank())
+        throw new IOException("'" + key + "' in " + PATH + " must contain only names: " + e);
+      out.add(name);
     }
     return out;
+  }
+
+  private static <T> T enumValue(Map<?, ?> m, String key, Function<String, T> parse)
+      throws IOException {
+    String value = required(m, key);
+    try {
+      return parse.apply(value);
+    } catch (IllegalArgumentException e) {
+      throw new IOException("Unsupported '" + key + "' in " + PATH + ": " + value, e);
+    }
   }
 }

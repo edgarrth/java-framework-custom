@@ -69,8 +69,8 @@ class TenancyTest {
         new TenantResolver(true, "X-Tenant-Id").resolve(null, headers::get));
     assertEquals(
         Optional.empty(), new TenantResolver(false, "X-Tenant-Id").resolve(null, headers::get));
-    assertEquals(
-        Optional.empty(),
-        new TenantResolver(true, "X-Tenant-Id").resolve("INVALID!", h -> "bad value"));
+    assertThrows(
+        InvalidTenantException.class,
+        () -> new TenantResolver(true, "X-Tenant-Id").resolve("INVALID!", h -> "valid-header"));
   }
 }

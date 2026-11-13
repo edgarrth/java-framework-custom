@@ -36,7 +36,9 @@ class OutboxRestartTest {
       for (String sql : new String(in.readAllBytes(), StandardCharsets.UTF_8).split(";"))
         if (!sql.replaceAll("--.*", "").isBlank()) s.execute(sql);
     }
-    var first = new JdbcOutboxStore(new JdbcTransactions(ds), "axiz_outbox", Dialect.H2);
+    var first =
+        new JdbcOutboxStore(
+            new JdbcTransactions(ds), new JdbcTransactions(ds), "axiz_outbox", Dialect.H2);
     var event =
         new EventEnvelope(
             "payment-1",
@@ -52,7 +54,7 @@ class OutboxRestartTest {
     var reopened = new JdbcDataSource();
     reopened.setURL(url);
     var tx = new JdbcTransactions(reopened);
-    var restarted = new JdbcOutboxStore(tx, "axiz_outbox", Dialect.H2);
+    var restarted = new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.H2);
     var published = new ArrayList<EventEnvelope>();
     var relay =
         new OutboxRelay(

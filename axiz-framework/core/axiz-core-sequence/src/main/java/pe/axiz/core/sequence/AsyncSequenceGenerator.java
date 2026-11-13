@@ -110,7 +110,8 @@ public final class AsyncSequenceGenerator {
 
     private CompletableFuture<Block> listener() {
       CompletableFuture<Block> listener = new CompletableFuture<>();
-      listener.whenComplete(
+      Stages.observe(
+          listener,
           (ignored, error) -> {
             if (callers.decrementAndGet() == 0 && !result.isDone()) {
               current.compareAndSet(this, null);
@@ -118,21 +119,39 @@ public final class AsyncSequenceGenerator {
               CompletableFuture<Long> active = nativeCall;
               if (active != null) active.cancel(true);
             }
+          },
+          failure -> {
+            listener.completeExceptionally(failure);
+            failed(failure);
           });
-      result.whenComplete(
+      Stages.observe(
+          result,
           (value, error) -> {
             if (error == null) listener.complete(value);
             else listener.completeExceptionally(Stages.unwrap(error));
+          },
+          failure -> {
+            listener.completeExceptionally(failure);
+            failed(failure);
           });
       return listener;
     }
 
+    private void failed(Throwable failure) {
+      current.compareAndSet(this, null);
+      result.completeExceptionally(failure);
+      CompletableFuture<Long> active = nativeCall;
+      if (active != null) active.cancel(true);
+    }
+
     private void start() {
+      if (result.isDone()) return;
       CompletableFuture<Long> active =
           Stages.call(() -> store.increment(name, period, blockSize)).toCompletableFuture();
       nativeCall = active;
       if (result.isCancelled()) active.cancel(true);
-      active.whenComplete(
+      Stages.observe(
+          active,
           (last, error) -> {
             if (error != null) {
               current.compareAndSet(this, null);
@@ -146,7 +165,8 @@ public final class AsyncSequenceGenerator {
               ready = block;
               result.complete(block);
             }
-          });
+          },
+          this::failed);
     }
   }
 }

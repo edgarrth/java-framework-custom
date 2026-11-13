@@ -45,7 +45,6 @@ axiz:
     http:
       enabled: true
   config:
-    environment: ${AXIZ_ENVIRONMENT:local}
   sensitive:
     response: MEDIUM
   dynamodb:

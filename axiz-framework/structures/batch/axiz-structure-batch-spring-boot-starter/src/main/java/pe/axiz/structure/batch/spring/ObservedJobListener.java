@@ -48,7 +48,7 @@ public class ObservedJobListener implements JobExecutionListener {
               .category("operation")
               .stage(outcome.job())
               .outcome(outcome.successful() ? Outcome.SUCCESS : Outcome.ERROR)
-              .value(outcome.read())
+              .value((double) outcome.read())
               .duration(outcome.duration()));
     }
     if (audit != null) {

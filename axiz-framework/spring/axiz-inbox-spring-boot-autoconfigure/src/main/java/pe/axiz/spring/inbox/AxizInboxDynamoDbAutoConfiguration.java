@@ -21,6 +21,7 @@ import pe.axiz.adapter.inbox.dynamodb.DynamoDbInboxStore;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.inbox.AsyncInboxStore;
 import pe.axiz.core.inbox.InboxStore;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
 import pe.axiz.spring.foundation.aws.AwsCapability;
@@ -69,7 +70,8 @@ public class AxizInboxDynamoDbAutoConfiguration {
       AsyncAwsClients axizInboxAsyncAwsResources(
           AxizAwsCompletionProperties completion,
           ObjectProvider<MeterRegistry> registries,
-          AwsIdentity identity) {
+          AwsIdentity identity,
+          AxizAwsAsyncTransportProperties transport) {
         return AwsAsyncResources.create(
             "axizInboxAsyncAwsResources",
             completion.workers(),
@@ -77,7 +79,8 @@ public class AxizInboxDynamoDbAutoConfiguration {
             registries.getIfAvailable(),
             identity,
             AwsService.DYNAMODB,
-            AwsCapability.INBOX);
+            AwsCapability.INBOX,
+            transport.toSettings());
       }
 
       @Bean(destroyMethod = "close")

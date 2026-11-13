@@ -335,7 +335,7 @@ class PostgresAuditBoundaryIT {
               assertEquals(0, count("audit_effects"));
               assertEquals(0, count("axiz_outbox"));
               var queue = (QueuedAsyncAuditPublisher) ctx.getBean(AsyncAuditEventPublisher.class);
-              assertEquals(0, queue.queue().lostCount());
+              assertEquals(0, queue.lostCount());
               var registry = new SimpleMeterRegistry();
               ctx.getBeansOfType(MeterBinder.class)
                   .values()

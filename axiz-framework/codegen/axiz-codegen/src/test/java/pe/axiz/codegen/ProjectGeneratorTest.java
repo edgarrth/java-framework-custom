@@ -36,6 +36,22 @@ class ProjectGeneratorTest {
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
 
   @Test
+  void eventProcessorsDeclareSecurityForTheirManagementEndpoints() {
+    for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
+      for (Structure structure : List.of(Structure.EDA, Structure.HEXAGONAL)) {
+        var project =
+            generator.generate(
+                Fixtures.request("event-processor", structure, stack, "none", List.of()));
+        assertTrue(project.text("pom.xml").contains("axiz-security-spring-boot-starter"));
+        String config = project.text("src/main/resources/application.yaml");
+        assertTrue(config.contains("issuers:"), config);
+        assertTrue(config.contains("AXIZ_OIDC_ISSUER"), config);
+        assertFalse(config.contains("enabled: false"), config);
+      }
+    }
+  }
+
+  @Test
   void generatedServicesDeclareCanonicalAuditModeForTheirEffectiveCapabilities() {
     for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
       for (String transport : List.of("kafka", "sqs", "sns")) {
@@ -196,14 +212,15 @@ class ProjectGeneratorTest {
                       .anyMatch(ref::contains);
                 }),
         "the producer run must never invoke deployment");
-    assertTrue(ci.contains("service-build.yaml@v2.0.0"), ci);
+    assertTrue(ci.contains("service-build.yaml@axiz-workflows-v2.0.0"), ci);
     assertTrue(ci.contains("source-sha: ${{ github.sha }}"), ci);
     assertTrue(ci.contains("version: ${{ needs.parameters.outputs.version }}"), ci);
     assertTrue(ci.contains("base-image:"), ci);
     assertFalse(ci.contains("<%"), "delimiters fully rendered");
     assertSeparatedDeployment(p, "service-deploy");
     assertFalse(p.files().containsKey(".github/workflows/cd.yaml"));
-    assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@v2.0.0"));
+    assertTrue(
+        p.text(".github/workflows/release.yaml").contains("release.yaml@axiz-workflows-v2.0.0"));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
     // nothing released yet; the first release is the version the pom targets (release-please
@@ -290,6 +307,7 @@ class ProjectGeneratorTest {
     assertTrue(pom.contains("<artifactId>shedlock-provider-r2dbc</artifactId>"));
     String app = p.text("src/main/resources/application.yaml");
     assertTrue(app.contains("r2dbc:postgresql://"), app);
+    assertTrue(app.contains("DB_SSL_MODE:verify-full"), app);
     assertTrue(app.contains("store: r2dbc"), app);
     assertFalse(app.contains("datasource"), app);
     String local = p.text("src/main/resources/application-local.yaml");
@@ -521,7 +539,8 @@ class ProjectGeneratorTest {
             Fixtures.request("library", Structure.NONE, Stack.SERVLET, "none", List.of()));
     assertTrue(lib.text("pom.xml").contains("<artifactId>axiz-parent-core</artifactId>"));
     assertSeparatedDeployment(lib, "lib-deploy");
-    assertTrue(lib.text(".github/workflows/ci.yaml").contains("lib-build.yaml@v2.0.0"));
+    assertTrue(
+        lib.text(".github/workflows/ci.yaml").contains("lib-build.yaml@axiz-workflows-v2.0.0"));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -635,7 +654,7 @@ class ProjectGeneratorTest {
             .get("force-tag-creation"));
     String deploy = project.text(".github/workflows/deploy.yaml");
     assertTrue(deploy.contains("workflow_dispatch"));
-    assertTrue(deploy.contains("/" + reusable + ".yaml@v2.0.0"));
+    assertTrue(deploy.contains("/" + reusable + ".yaml@axiz-workflows-v2.0.0"));
     assertFalse(deploy.contains("image-tag:"));
     assertFalse(deploy.contains("mvnw"));
     assertFalse(deploy.contains("/setup-maven@"));
@@ -666,7 +685,9 @@ class ProjectGeneratorTest {
       Map<?, ?> automatic = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("automatic");
       assertEquals(Map.of("contents", "read", "actions", "read"), automatic.get("permissions"));
       Map<?, ?> step = (Map<?, ?>) ((List<?>) automatic.get("steps")).getFirst();
-      assertEquals("axiz/axiz-workflows/actions/resolve-service-build@v2.0.0", step.get("uses"));
+      assertEquals(
+          "edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2.0.0",
+          step.get("uses"));
       assertEquals("dev", ((Map<?, ?>) step.get("with")).get("environment"));
       assertTrue(job.get("if").toString().contains("needs.automatic.result == 'success'"));
     } else assertEquals("${{ inputs.destination }}", forwarded.get("destination"));

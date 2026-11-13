@@ -446,6 +446,9 @@ class AuditBehaviourTest {
         .withPropertyValues(
             "axiz.audit.mode=ASYNC",
             "axiz.audit.kafka.topic=audit",
+            "axiz.config.environment=test",
+            "axiz.transport.allow-plain-http=true",
+            "axiz.transport.allow-insecure-data-stores=true",
             "axiz.audit.sqs.queue-url=http://localhost:4566/000000000000/audit",
             "axiz.aws.region=us-east-1")
         .run(

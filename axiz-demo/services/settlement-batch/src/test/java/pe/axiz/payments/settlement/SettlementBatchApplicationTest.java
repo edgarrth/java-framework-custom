@@ -24,7 +24,13 @@ import software.amazon.awssdk.services.s3.S3Client;
  * settlement file end to end: S3 input, control totals, Aurora rows, summary on S3, an idempotent
  * rerun and a rerun that writes a lost summary again. Needs Docker.
  */
-@SpringBootTest(properties = "settlement.run-on-startup=false")
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true",
+      "settlement.run-on-startup=false"
+    })
 @Import({PostgresTestConfiguration.class, LocalStackTestConfiguration.class})
 class SettlementBatchApplicationTest {
 

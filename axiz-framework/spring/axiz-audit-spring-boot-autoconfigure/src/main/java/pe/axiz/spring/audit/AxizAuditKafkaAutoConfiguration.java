@@ -21,9 +21,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.adapter.audit.kafka.KafkaAuditPublisher;
 import pe.axiz.adapter.audit.kafka.KafkaAuditRecords;
+import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
+import pe.axiz.spring.kafka.KafkaTransportSecurity;
 
 /**
  * MSK sink for audit events, active when {@code axiz.audit.kafka.topic} is set. It reuses the
@@ -45,7 +47,10 @@ public class AxizAuditKafkaAutoConfiguration {
   @Bean
   @SuppressWarnings("unchecked")
   @ConditionalOnImperativeApplication
-  AuditSink axizKafkaAuditSink(ProducerFactory<?, ?> producers, AxizAuditProperties properties) {
+  AuditSink axizKafkaAuditSink(
+      ProducerFactory<?, ?> producers, AxizAuditProperties properties, Environment env) {
+    KafkaTransportSecurity.validate(
+        producers.getConfigurationProperties(), DataTransportSecurityPolicy.from(env::getProperty));
     Producer<String, String> producer = (Producer<String, String>) producers.createProducer();
     String topic = Objects.requireNonNull(properties.kafka().topic());
     return new AuditSink(
@@ -86,7 +91,7 @@ public class AxizAuditKafkaAutoConfiguration {
   @Bean(destroyMethod = "destroy")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   KafkaTemplate<String, String> axizAsyncAuditKafkaTemplate(
-      ProducerFactory<?, ?> producers, AxizAuditProperties p) {
+      ProducerFactory<?, ?> producers, AxizAuditProperties p, Environment env) {
     var properties = new HashMap<String, Object>(producers.getConfigurationProperties());
     properties.put(
         ProducerConfig.CLIENT_ID_CONFIG,
@@ -95,6 +100,7 @@ public class AxizAuditKafkaAutoConfiguration {
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
     properties.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
     properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().timeout().toMillis());
+    KafkaTransportSecurity.validate(properties, DataTransportSecurityPolicy.from(env::getProperty));
     var factory =
         new DefaultKafkaProducerFactory<String, String>(
             properties, new StringSerializer(), new StringSerializer());

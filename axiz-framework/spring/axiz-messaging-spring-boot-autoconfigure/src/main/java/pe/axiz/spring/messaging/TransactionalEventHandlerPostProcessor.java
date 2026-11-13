@@ -14,7 +14,7 @@ import pe.axiz.spring.foundation.InboxCompletion;
  * Wraps every blocking {@link EventHandler} bean in a transaction when a transaction manager
  * exists; reactive handlers are wrapped by {@link ReactiveEventHandlerPostProcessor}.
  */
-public class TransactionalEventHandlerPostProcessor implements BeanPostProcessor {
+public final class TransactionalEventHandlerPostProcessor implements BeanPostProcessor {
 
   private final ObjectProvider<PlatformTransactionManager> transactions;
   private final @Nullable ObjectProvider<InboxCompletion> completions;

@@ -30,6 +30,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `RedisTestConfiguration` | Valkey (Redis protocol) for cache, idempotency, locks and rate limits. |
 | `RequestContexts` | Opens a request context in unit tests, as the web and security starters would. |
 
+PostgreSQL and Redis fixtures supply the native plaintext options of their local containers.
+They never set `axiz.config.environment` or authorize HTTP/insecure stores. Each Boot test must
+declare its environment and the permissions needed by its imported fixtures explicitly. Generated
+application tests do this in their own `@SpringBootTest` properties. TLS acceptance tests use their
+own TLS-enabled backends instead of these plaintext fixtures.
+
 ## Local AWS credentials
 
 `LocalStackTestConfiguration` supplies a context-local `AwsCredentialsProvider` bean together

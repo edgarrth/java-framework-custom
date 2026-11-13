@@ -37,7 +37,7 @@ public class {{item.className}}Service {
   @Transactional(readOnly = true)
 {{/readOnly}}
 {{/persistence.jpa}}
-  public {{#stack.reactive}}Mono<{{/stack.reactive}}{{returnType}}{{#stack.reactive}}>{{/stack.reactive}} {{methodName}}({{{inputComponents}}}) {
+  public {{#stack.reactive}}Mono<{{responseType}}>{{/stack.reactive}}{{#stack.servlet}}{{returnType}}{{/stack.servlet}} {{methodName}}({{{inputComponents}}}) {
 {{#stack.servlet}}    throw new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet");{{/stack.servlet}}
 {{#stack.reactive}}    return Mono.error(new AxizException(CoreErrors.NOT_IMPLEMENTED, "{{operationId}} is not implemented yet"));{{/stack.reactive}}
   }

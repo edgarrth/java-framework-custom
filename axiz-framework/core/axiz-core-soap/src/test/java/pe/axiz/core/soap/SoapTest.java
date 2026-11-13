@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -70,7 +71,42 @@ class SoapTest {
         timeout,
         creds,
         ObjectMasker.defaults(),
-        Clock.systemUTC());
+        Clock.systemUTC(),
+        new TransportSecurityPolicy("test", true));
+  }
+
+  @Test
+  void rejectsPlaintextAndAutomaticRedirectsBeforePreparingAnyEnvelope() {
+    try (var http = HttpClient.newHttpClient();
+        var redirects =
+            HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS).build()) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              new SoapClient(
+                  "bank",
+                  http,
+                  URI.create("http://localhost/ws"),
+                  SoapVersion.SOAP_11,
+                  Duration.ofSeconds(1),
+                  null,
+                  ObjectMasker.defaults(),
+                  Clock.systemUTC(),
+                  TransportSecurityPolicy.secure()));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              new SoapClient(
+                  "bank",
+                  redirects,
+                  URI.create("https://bank.invalid/ws"),
+                  SoapVersion.SOAP_11,
+                  Duration.ofSeconds(1),
+                  null,
+                  ObjectMasker.defaults(),
+                  Clock.systemUTC(),
+                  TransportSecurityPolicy.secure()));
+    }
   }
 
   @Test

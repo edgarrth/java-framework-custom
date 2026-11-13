@@ -1,0 +1,21 @@
+# Each monorepo component publishes an exact <component>-v<x.y.z> immutable tag.
+name: release-self
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/release.yaml
+    secrets:
+      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
+      RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}

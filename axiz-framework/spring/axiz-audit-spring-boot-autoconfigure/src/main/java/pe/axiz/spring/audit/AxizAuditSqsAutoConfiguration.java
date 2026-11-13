@@ -18,6 +18,7 @@ import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.audit.sqs.SqsAuditPublisher;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsObservability;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
@@ -74,7 +75,8 @@ public class AxizAuditSqsAutoConfiguration {
       AsyncAwsClients axizAuditAsyncAwsResources(
           AxizAwsCompletionProperties completion,
           ObjectProvider<MeterRegistry> registries,
-          AwsIdentity identity) {
+          AwsIdentity identity,
+          AxizAwsAsyncTransportProperties transport) {
         return AwsAsyncResources.create(
             "axizAuditAsyncAwsResources",
             completion.workers(),
@@ -82,7 +84,8 @@ public class AxizAuditSqsAutoConfiguration {
             registries.getIfAvailable(),
             identity,
             AwsService.SQS,
-            AwsCapability.AUDIT);
+            AwsCapability.AUDIT,
+            transport.toSettings());
       }
 
       @Bean(destroyMethod = "close", defaultCandidate = false)

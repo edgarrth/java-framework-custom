@@ -21,6 +21,7 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -87,9 +88,11 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-test-support</artifactId>
+      <artifactId>axiz-test-spring-boot-starter</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency><groupId>org.postgresql</groupId><artifactId>r2dbc-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>
   </dependencies>
 </project>

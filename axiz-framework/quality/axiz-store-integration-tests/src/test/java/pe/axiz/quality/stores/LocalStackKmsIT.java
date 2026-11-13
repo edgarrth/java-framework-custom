@@ -25,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.crypto.kms.KmsDataKeyProvider;
 import pe.axiz.adapter.observability.aws.AwsObservability;
@@ -97,7 +98,8 @@ class LocalStackKmsIT {
                   return credentials.resolveCredentials();
                 }),
             Clock.systemUTC(),
-            Duration.ofMillis(25));
+            Duration.ofMillis(25),
+            AsyncAwsTransportSettings.defaults());
     async =
         AwsObservability.configured(
             resources,
@@ -106,6 +108,8 @@ class LocalStackKmsIT {
             key ->
                 switch (key) {
                   case "axiz.aws.region" -> LOCALSTACK.getRegion();
+                  case "axiz.config.environment" -> "test";
+                  case "axiz.transport.allow-plain-http" -> "true";
                   case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
                   case "axiz.aws.async.connection-ttl", "axiz.aws.async.max-idle-time" -> "100ms";
                   default -> null;

@@ -1,5 +1,6 @@
 package pe.axiz.spring.web;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -13,6 +14,11 @@ public class AxizWebMvcConfigurer implements WebMvcConfigurer {
   private final AxizWebProperties properties;
   private final PageRequestParser parser;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public AxizWebMvcConfigurer(AxizWebProperties properties, PageRequestParser parser) {
     this.properties = Objects.requireNonNull(properties);
     this.parser = Objects.requireNonNull(parser);

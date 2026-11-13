@@ -96,7 +96,9 @@ class AwsResourceLifecycleTest {
     var closes = new AtomicInteger();
     var source = source(closes);
     var interceptor = new ExecutionInterceptor() {};
-    var owner = new AsyncAwsClients(source, Clock.systemUTC(), Duration.ofDays(1));
+    var owner =
+        new AsyncAwsClients(
+            source, Clock.systemUTC(), Duration.ofDays(1), AsyncAwsTransportSettings.defaults());
     try (owner) {
       try (var client =
           owner.configured(
@@ -106,7 +108,7 @@ class AwsResourceLifecycleTest {
                       "axiz.aws.region",
                       "us-east-1",
                       "axiz.aws.endpoint",
-                      "http://localhost:4566",
+                      "https://localhost:4566",
                       "axiz.aws.dynamodb.endpoint",
                       " ")
                   ::get,
@@ -145,7 +147,14 @@ class AwsResourceLifecycleTest {
     var invalid = source(closes);
     assertThrows(
         IllegalArgumentException.class,
-        () -> new AsyncAwsClients(invalid, Clock.systemUTC(), Duration.ofSeconds(15), 0, 1));
+        () ->
+            new AsyncAwsClients(
+                invalid,
+                Clock.systemUTC(),
+                Duration.ofSeconds(15),
+                0,
+                1,
+                AsyncAwsTransportSettings.defaults()));
     assertEquals(2, closes.get());
   }
 

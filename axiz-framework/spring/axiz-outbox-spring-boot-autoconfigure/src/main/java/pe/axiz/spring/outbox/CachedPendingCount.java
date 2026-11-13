@@ -1,5 +1,6 @@
 package pe.axiz.spring.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -23,7 +24,13 @@ public final class CachedPendingCount {
 
   private record Sample(double value, Instant at) {}
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxStore is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final OutboxStore store;
+
   private final ToLongFunction<OutboxStore> query;
   private final Duration maxAge;
   private final Clock clock;

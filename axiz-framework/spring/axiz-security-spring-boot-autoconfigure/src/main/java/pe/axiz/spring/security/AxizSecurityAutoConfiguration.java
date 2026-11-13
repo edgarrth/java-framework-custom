@@ -6,12 +6,13 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -57,6 +58,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
 import org.springframework.web.util.pattern.PathPattern;
+import pe.axiz.core.commons.Environments;
 import pe.axiz.core.errors.ProblemFactory;
 import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.ClaimsMapper;
@@ -150,14 +152,14 @@ public class AxizSecurityAutoConfiguration {
     return new SecurityProblems(factory.getIfAvailable());
   }
 
-  /** Single-instance fallback; the Redis limiter replaces it when Redis is configured. */
+  /** Explicit single-process rate limits, guarded independently of Spring profiles. */
   @Bean
   @ConditionalOnMissingBean
   @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
   @ConditionalOnImperativeApplication
-  RateLimiter axizRateLimiter(ObjectProvider<Clock> clock) {
-    LoggerFactory.getLogger(AxizSecurityAutoConfiguration.class)
-        .warn("Rate limits use an in-memory store: limits apply per instance, not per cluster");
+  @ConditionalOnProperty(name = "axiz.security.rate-limit.store", havingValue = "memory")
+  RateLimiter axizRateLimiter(ObjectProvider<Clock> clock, Environment env) {
+    requireMemoryRateLimits(env);
     return new InMemoryRateLimiter(clock.getIfAvailable(Clock::systemUTC));
   }
 
@@ -165,8 +167,40 @@ public class AxizSecurityAutoConfiguration {
   @ConditionalOnMissingBean
   @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-  AsyncRateLimiter axizAsyncRateLimiter(ObjectProvider<Clock> clock) {
+  @ConditionalOnProperty(name = "axiz.security.rate-limit.store", havingValue = "memory")
+  AsyncRateLimiter axizAsyncRateLimiter(ObjectProvider<Clock> clock, Environment env) {
+    requireMemoryRateLimits(env);
     return new InMemoryAsyncRateLimiter(clock.getIfAvailable(Clock::systemUTC));
+  }
+
+  private static void requireMemoryRateLimits(Environment env) {
+    Environments.requireSingleProcess(
+        env.getProperty("axiz.config.environment"),
+        "axiz.security.rate-limit.store=memory",
+        "redis",
+        "limits would apply per replica and reset on every deploy");
+  }
+
+  @Bean
+  @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
+  @ConditionalOnImperativeApplication
+  InitializingBean axizRateLimitStoreGuard(ObjectProvider<RateLimiter> limiter) {
+    return () -> {
+      if (limiter.getIfAvailable() == null)
+        throw new IllegalStateException(
+            "Selected axiz.security.rate-limit.store is unavailable: add its adapter and connection factory");
+    };
+  }
+
+  @Bean
+  @ConditionalOnBooleanProperty(name = "axiz.security.rate-limit.enabled")
+  @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
+  InitializingBean axizAsyncRateLimitStoreGuard(ObjectProvider<AsyncRateLimiter> limiter) {
+    return () -> {
+      if (limiter.getIfAvailable() == null)
+        throw new IllegalStateException(
+            "Selected axiz.security.rate-limit.store is unavailable: add its async adapter and connection factory");
+    };
   }
 
   static String actuatorBase(Environment env) {

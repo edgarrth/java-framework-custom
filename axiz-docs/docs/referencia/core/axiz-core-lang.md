@@ -6,5 +6,4 @@ This module depends on no other Axiz module and has no transport, JSON, persiste
 JSpecify annotations express null contracts; the JDK provides the implementation.
 
 Declare `pe.axiz:axiz-core-lang` directly when importing `pe.axiz.core.lang`.
-The 2.0 migration recipe moves the four helper types from `pe.axiz.core.commons`.
 `axiz-core-commons` retains request/page/header contracts, concurrency and transaction infrastructure.

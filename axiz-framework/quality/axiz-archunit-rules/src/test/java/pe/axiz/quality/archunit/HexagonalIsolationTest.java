@@ -42,6 +42,27 @@ class HexagonalIsolationTest {
   }
 
   @Test
+  void staticAnalysisAnnotationsOnOwnedContractsDoNotIntroduceInfrastructure() throws Exception {
+    assertFalse(
+        violates(
+            Map.of(
+                "sample.domain.Order",
+                "package sample.domain; public class Order { pe.axiz.core.money.Value value; }",
+                "pe.axiz.core.money.Value",
+                "package pe.axiz.core.money; @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(\"EI_EXPOSE_REP\") "
+                    + "public class Value {}")));
+    assertTrue(
+        violates(
+            Map.of(
+                "sample.domain.Order",
+                "package sample.domain; public class Order { pe.axiz.core.money.Value value; }",
+                "pe.axiz.core.money.Value",
+                "package pe.axiz.core.money; public class Value { edu.umd.cs.findbugs.BugInstance engine; }",
+                "edu.umd.cs.findbugs.BugInstance",
+                "package edu.umd.cs.findbugs; public class BugInstance {}")));
+  }
+
+  @Test
   void allAdapterAndKitNamespacesAreRejectedEvenBehindOwnedCoreContracts() throws Exception {
     for (String namespace :
         List.of(

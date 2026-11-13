@@ -32,6 +32,7 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -52,8 +53,8 @@ class HttpClientTest {
         "default",
         maxConcurrent,
         List.of("X-Channel"),
-        false,
-        10);
+        10,
+        TransportSecurityPolicy.system());
   }
 
   @Test
@@ -113,8 +114,8 @@ class HttpClientTest {
             "default",
             0,
             List.of(),
-            false,
-            10);
+            10,
+            TransportSecurityPolicy.system());
     AxizExchangeFilter filter =
         new AxizExchangeFilter(
             new ClientResilience(relay, CircuitBreakerRegistry.ofDefaults()),

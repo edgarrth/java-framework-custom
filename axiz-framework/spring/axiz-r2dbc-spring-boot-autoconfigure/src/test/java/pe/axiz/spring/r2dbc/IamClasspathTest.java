@@ -88,6 +88,8 @@ class IamClasspathTest {
         .withPropertyValues(
             "spring.r2dbc.username=app",
             "spring.r2dbc.password=local-only",
+            "axiz.config.environment=test",
+            "axiz.transport.allow-insecure-data-stores=true",
             "axiz.r2dbc.reader.url=r2dbc:axiztest://localhost/reader")
         .run(
             context -> {

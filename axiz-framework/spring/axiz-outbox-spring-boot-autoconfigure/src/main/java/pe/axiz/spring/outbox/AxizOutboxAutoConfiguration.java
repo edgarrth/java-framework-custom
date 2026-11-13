@@ -61,10 +61,17 @@ public class AxizOutboxAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   OutboxStore axizOutboxStore(
-      DataSource dataSource, AxizOutboxProperties p, SchemaInitializer axizOutboxSchema) {
+      DataSource dataSource,
+      PlatformTransactionManager tx,
+      AxizOutboxProperties p,
+      SchemaInitializer axizOutboxSchema) {
     Dialect dialect = SqlDialects.isH2(dataSource) ? Dialect.H2 : Dialect.POSTGRESQL;
     OutboxStore store =
-        new JdbcOutboxStore(new SpringConnectionProvider(dataSource), p.table(), dialect);
+        new JdbcOutboxStore(
+            new SpringConnectionProvider(dataSource),
+            new SpringTransactionRunner(tx),
+            p.table(),
+            dialect);
     return store;
   }
 

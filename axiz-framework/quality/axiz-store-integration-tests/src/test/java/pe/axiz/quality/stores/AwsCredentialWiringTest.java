@@ -24,10 +24,10 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 class AwsCredentialWiringTest {
   private static final String[] SETTINGS = {
-    "axiz.audit.sqs.queue-url=http://localhost:4566/000000000000/audit",
-    "axiz.messaging.destinations.orders=http://localhost:4566/000000000000/orders",
+    "axiz.audit.sqs.queue-url=https://localhost:4566/000000000000/audit",
+    "axiz.messaging.destinations.orders=https://localhost:4566/000000000000/orders",
     "axiz.aws.region=us-east-1",
-    "axiz.aws.endpoint=http://127.0.0.1:1"
+    "axiz.aws.endpoint=https://127.0.0.1:1"
   };
 
   @Test

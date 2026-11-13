@@ -1,5 +1,6 @@
 package pe.axiz.spring.idempotency;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 import jakarta.servlet.FilterChain;
@@ -41,6 +42,11 @@ public class IdempotencyFilter extends OncePerRequestFilter {
   private final int maxBodySize;
   private final int maxResponseSize;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public IdempotencyFilter(IdempotencyService service, int maxBodySize, int maxResponseSize) {
     this.service = Objects.requireNonNull(service);
     this.maxBodySize = maxBodySize;

@@ -54,8 +54,8 @@ docker compose up -d
 ```
 
 Or `axiz local up` / `axiz local down`. Traces, metrics and logs are in Grafana at
-http://localhost:3000 (OpenTelemetry collector on ports 4317/4318).
-Keycloak (http://localhost:8180, realm `axiz`) issues local tokens:
+<http://localhost:3000> (OpenTelemetry collector on ports 4317/4318).
+Keycloak (<http://localhost:8180>, realm `axiz`) issues local tokens:
 
 ```bash
 curl -s -d grant_type=client_credentials -d client_id=local-client -d client_secret=local-only \
@@ -92,11 +92,11 @@ as skeletons that answer `501 Not Implemented` until each operation is implement
 |---|---|---|
 | `foundation` | `axiz-foundation-spring-boot-starter` | Clock and business calendar (zone, weekends, holidays), JSON and validation defaults |
 | `web` | `axiz-web-spring-boot-starter` | Request metadata headers, correlation, pagination, API versioning, CORS and JSON conventions |
-| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap <app>-errors), external error mapping |
+| `errors` | `axiz-errors-spring-boot-starter` | RFC 9457 problem details, error catalog (ConfigMap `APP_NAME-errors`), external error mapping |
 | `logging` | `axiz-logging-spring-boot-starter` | Structured JSON logs with trace and request context, HTTP access log with masking |
 | `observability` | `axiz-observability-spring-boot-starter` | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent |
 | `metrics` | `axiz-metrics-spring-boot-starter` | Generic event metrics (count, duration, amounts by currency, values) with bounded tags |
-| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check |
+| `config` | `axiz-config-spring-boot-starter` | ConfigMaps mounted as files (axiz-common, `APP_NAME`, `APP_NAME-errors`; no Kubernetes API access), Parameter Store, required keys check |
 | `i18n` | `axiz-i18n-spring-boot-starter` | Localized messages and problem details (es-PE by default) from messages*.properties |
 | `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
 | `security` | `axiz-security-spring-boot-starter` | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit |
@@ -134,8 +134,9 @@ Keys each environment must define:
 ## Deployment
 
 `deploy/helm/payment-process` contains the chart: Deployment with probes, Service, HPA, PDB,
-ConfigMaps, ExternalSecret, ServiceAccount, RBAC to read the ConfigMaps and a NetworkPolicy.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@v1.0.0`; Renovate pins its commit and proposes new releases):
+ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
+require Kubernetes API permissions to read their mounted configuration.
+The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-v2.0.0`; Renovate pins its commit and proposes new releases):
 
 - `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
   builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys

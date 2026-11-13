@@ -1,5 +1,6 @@
 package pe.axiz.spring.saga;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import pe.axiz.core.saga.ContextCodec;
 import tools.jackson.databind.json.JsonMapper;
@@ -12,7 +13,13 @@ import tools.jackson.databind.json.JsonMapper;
  */
 public final class JacksonContextCodec<C> implements ContextCodec<C> {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "JsonMapper is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final JsonMapper mapper;
+
   private final Class<C> type;
 
   public JacksonContextCodec(JsonMapper mapper, Class<C> type) {

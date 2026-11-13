@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -26,12 +28,14 @@ public class AxizSoapAutoConfiguration {
       ObjectProvider<SecretResolver> secrets,
       ObjectProvider<ObjectMasker> masker,
       ObjectProvider<ObservationRegistry> observations,
-      ObjectProvider<Clock> clock) {
+      ObjectProvider<Clock> clock,
+      Environment env) {
     return new SoapClients(
         p,
         secrets.getIfAvailable(),
         masker.getIfAvailable(ObjectMasker::defaults),
         observations.getIfAvailable(() -> ObservationRegistry.NOOP),
-        clock.getIfAvailable(Clock::systemUTC));
+        clock.getIfAvailable(Clock::systemUTC),
+        TransportSecurityPolicy.from(env::getProperty));
   }
 }

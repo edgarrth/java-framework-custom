@@ -4,12 +4,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.sun.source.util.JavacTask;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.ProjectGenerator;
@@ -77,9 +83,56 @@ class SampleProjectsTest {
             true,
             "2.0.0",
             new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+    var javaSources = new ArrayList<Path>();
+    for (String name : names) {
+      try (var paths = Files.walk(tmp.resolve(name))) {
+        javaSources.addAll(paths.filter(path -> path.toString().endsWith(".java")).toList());
+      }
+    }
+    var diagnostics = new DiagnosticCollector<JavaFileObject>();
+    var compiler = ToolProvider.getSystemJavaCompiler();
+    try (var files = compiler.getStandardFileManager(diagnostics, null, StandardCharsets.UTF_8)) {
+      var task =
+          (JavacTask)
+              compiler.getTask(
+                  null,
+                  files,
+                  diagnostics,
+                  List.of("-proc:none"),
+                  null,
+                  files.getJavaFileObjectsFromPaths(javaSources));
+      task.parse();
+      assertTrue(
+          diagnostics.getDiagnostics().stream()
+              .noneMatch(item -> item.getKind() == Diagnostic.Kind.ERROR),
+          () -> "Generated Java syntax errors: " + diagnostics.getDiagnostics());
+    }
     boolean cqrs = false;
     for (String name : names) {
       var project = ProjectManifest.read(tmp.resolve(name));
+      if (ProjectGenerator.withDefaults()
+          .catalog()
+          .archetype(project.archetype())
+          .orElseThrow()
+          .isService()) {
+        try (var sources = Files.walk(tmp.resolve(name).resolve("src/test/java"))) {
+          var boot =
+              sources
+                  .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+                  .findFirst()
+                  .orElseThrow();
+          String testSource = Files.readString(boot);
+          for (String setting :
+              List.of(
+                  "axiz.config.environment=test",
+                  "axiz.transport.allow-plain-http=true",
+                  "axiz.transport.allow-insecure-data-stores=true")) {
+            assertTrue(
+                testSource.contains(setting),
+                name + " must declare its test transport policy: " + setting);
+          }
+        }
+      }
       if (project.cqrs()
           && project.stack() == Stack.REACTIVE
           && project.persistence().equals("dynamodb")) cqrs = true;

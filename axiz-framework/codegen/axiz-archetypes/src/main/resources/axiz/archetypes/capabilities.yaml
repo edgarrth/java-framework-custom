@@ -79,8 +79,10 @@ capabilities:
     stacks: [servlet, reactive]
     starter: axiz-config-spring-boot-starter
     description: ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check
-    properties:
-      axiz.config.environment: ${AXIZ_ENVIRONMENT:local}
+    localProperties:
+      axiz.config.environment: local
+      axiz.transport.allow-plain-http: true
+      axiz.transport.allow-insecure-data-stores: true
     example: |
       axiz.config.required: [axiz.http-client.clients.core.base-url]
 
@@ -125,7 +127,7 @@ capabilities:
     description: Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation
     requires: [resilience]
     properties:
-      axiz.http-client.clients.example.base-url: ${EXAMPLE_BASE_URL:http://localhost:8089}
+      axiz.http-client.clients.example.base-url: ${EXAMPLE_BASE_URL:https://example.invalid}
     configMapKeys: [axiz.http-client.clients]
     example: |
       @HttpExchange("/v1/accounts")
@@ -146,7 +148,7 @@ capabilities:
     description: SOAP 1.1/1.2 clients with WS-Security, timeouts and observations
     requires: [secrets]
     properties:
-      axiz.soap.clients.example.endpoint: ${EXAMPLE_SOAP_ENDPOINT:http://localhost:8089/soap}
+      axiz.soap.clients.example.endpoint: ${EXAMPLE_SOAP_ENDPOINT:https://example.invalid/soap}
     configMapKeys: [axiz.soap.clients]
     example: |
       Element reply = soapClients.call("example", "urn:getBalance", requestXml);
@@ -192,7 +194,7 @@ capabilities:
     properties:
       spring.r2dbc.url: ${DB_R2DBC_URL:r2dbc:postgresql://localhost:5432/app}
       spring.r2dbc.username: ${DB_USERNAME:app}
-      spring.r2dbc.properties.sslMode: ${DB_SSL_MODE:require}
+      spring.r2dbc.properties.sslMode: ${DB_SSL_MODE:verify-full}
       spring.flyway.enabled: true
       axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:false}
     configMapKeys: [spring.r2dbc.url, spring.r2dbc.username, axiz.r2dbc.iam.enabled]
@@ -430,7 +432,7 @@ capabilities:
     stacks: [servlet, reactive]
     starter: axiz-lock-spring-boot-starter
     description: Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb)
-    properties:
+    localProperties:
       axiz.lock.store: memory
     example: |
       // the lease is checked right before the effect; the debit itself is idempotent (key) in the core

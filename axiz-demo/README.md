@@ -179,5 +179,5 @@ workflows consume a completed successful run, attempt and external signed manife
 an environment, predecessor hash and full values revision. The service is taken from the
 verified manifest; each service built in the root matrix has its own hash. No CI job promotes
 a service automatically. Configure separate dependency-read, registry-build, registry-read and
-GitOps credentials as described in [Pipelines 2.0](../axiz-workflows/docs/pipelines-v2.md).
+GitOps credentials as described in [Pipelines 2.0](../.github/docs/pipelines-v2.md).
 The kind end-to-end workflow deploys an ephemeral test environment as part of its test scenario.

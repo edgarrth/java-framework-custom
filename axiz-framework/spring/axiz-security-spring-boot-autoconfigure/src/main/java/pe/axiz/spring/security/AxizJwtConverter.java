@@ -5,12 +5,14 @@ import java.util.Objects;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
+import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.security.AuthorityMapper;
 import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.security.ClaimsMapper;
 
 /** Maps a validated JWT to an {@link AxizAuthentication} with scope and role authorities. */
-public class AxizJwtConverter implements Converter<Jwt, AxizAuthentication> {
+public final class AxizJwtConverter implements Converter<Jwt, AxizAuthentication> {
 
   private final ClaimsMapper mapper;
 
@@ -20,7 +22,12 @@ public class AxizJwtConverter implements Converter<Jwt, AxizAuthentication> {
 
   @Override
   public AxizAuthentication convert(Jwt jwt) {
-    AxizPrincipal principal = mapper.map(jwt.getClaims());
+    AxizPrincipal principal;
+    try {
+      principal = mapper.map(jwt.getClaims());
+    } catch (AccessException invalid) {
+      throw new InvalidBearerTokenException("Invalid identity claims", invalid);
+    }
     List<SimpleGrantedAuthority> authorities =
         AuthorityMapper.authorities(principal).stream().map(SimpleGrantedAuthority::new).toList();
     return new AxizAuthentication(jwt, principal, authorities);

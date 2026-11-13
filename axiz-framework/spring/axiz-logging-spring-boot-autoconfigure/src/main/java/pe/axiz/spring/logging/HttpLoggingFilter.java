@@ -1,5 +1,6 @@
 package pe.axiz.spring.logging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,8 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.PathContainer;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.logging.HttpLogFormatter;
@@ -34,6 +35,11 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
   private final AxizLoggingProperties.Http settings;
   private final List<PathPattern> excluded;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public HttpLoggingFilter(HttpLogFormatter formatter, AxizLoggingProperties.Http settings) {
     this.formatter = Objects.requireNonNull(formatter);
     this.settings = Objects.requireNonNull(settings);
@@ -56,42 +62,48 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
     long start = System.nanoTime();
     HttpServletRequest req =
         settings.bodies() ? new BoundedRequest(request, settings.maxMaskedBodyLength()) : request;
-    ContentCachingResponseWrapper res =
-        settings.bodies() ? new ContentCachingResponseWrapper(response) : null;
+    BoundedCaptureResponseWrapper res =
+        settings.bodies()
+            ? new BoundedCaptureResponseWrapper(request, response, settings.maxMaskedBodyLength())
+            : null;
     try {
       chain.doFilter(req, res != null ? res : response);
+      if (res != null) res.finish();
     } finally {
       long ms = (System.nanoTime() - start) / 1_000_000;
       Map<String, String> headers =
           formatter.headers(Collections.list(request.getHeaderNames()), request::getHeader);
-      if (settings.bodies() && res != null) {
+      if (settings.bodies() && res != null && !request.isAsyncStarted()) {
         BoundedRequest kept = (BoundedRequest) req;
         String in = new String(kept.getContentAsByteArray(), StandardCharsets.UTF_8);
-        boolean outComplete = res.getContentSize() <= settings.maxMaskedBodyLength();
-        String out =
-            outComplete ? new String(res.getContentAsByteArray(), StandardCharsets.UTF_8) : "";
+        boolean outComplete = res.eligible() && res.complete();
+        String out = outComplete ? new String(res.capturedBytes(), StandardCharsets.UTF_8) : "";
         LOG.info(
             "http method={} path={} status={} durationMs={} headers={} request={} response={}",
             request.getMethod(),
-            request.getRequestURI(),
+            route(request),
             res.getStatus(),
             ms,
             headers,
             formatter.body(request.getContentType(), in, !kept.overflowed()),
             outComplete
                 ? formatter.body(res.getContentType(), out)
-                : formatter.omitted(res.getContentType(), res.getContentSize()));
-        res.copyBodyToResponse();
+                : formatter.omitted(res.getContentType(), res.size()));
       } else {
         LOG.info(
             "http method={} path={} status={} durationMs={} headers={}",
             request.getMethod(),
-            request.getRequestURI(),
+            route(request),
             response.getStatus(),
             ms,
             headers);
       }
     }
+  }
+
+  private static String route(HttpServletRequest request) {
+    Object pattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+    return pattern == null ? "[unmatched]" : pattern.toString();
   }
 
   /**

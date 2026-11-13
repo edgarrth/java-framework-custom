@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/edgarrth/java-framework-custom/schemas/deploy-record-v1.schema.json",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "axiz.deploy-record/v1"
+    },
+    "manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "sha": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      },
+      "required": [
+        "repository",
+        "sha"
+      ],
+      "unevaluatedProperties": false
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "environment": {
+          "enum": [
+            "dev",
+            "qa",
+            "prod"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "environment",
+        "repository"
+      ],
+      "unevaluatedProperties": false
+    },
+    "run_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "configuration_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "name",
+          "ref"
+        ],
+        "unevaluatedProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "actor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reference": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "actor",
+          "reference"
+        ],
+        "unevaluatedProperties": false
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "previous_manifest_sha256": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "const": "initial-deployment"
+        }
+      ]
+    },
+    "result": {
+      "enum": [
+        "requested",
+        "succeeded",
+        "failed",
+        "rolled-back"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schema",
+    "manifest_sha256",
+    "source",
+    "target",
+    "run_id",
+    "configuration_refs",
+    "approvals",
+    "previous_manifest_sha256",
+    "result",
+    "timestamp"
+  ],
+  "unevaluatedProperties": false
+}

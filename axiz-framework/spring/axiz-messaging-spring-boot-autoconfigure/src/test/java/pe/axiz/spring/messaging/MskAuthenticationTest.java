@@ -37,13 +37,21 @@ class MskAuthenticationTest {
         IllegalArgumentException.class,
         () ->
             AxizMessagingKafkaAutoConfiguration.common(
-                properties, env, identityContext.getBean(AwsIdentity.class)));
+                properties,
+                env,
+                identityContext.getBean(AwsIdentity.class),
+                null,
+                pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind.PRODUCER));
     env.withProperty("axiz.messaging.kafka.iam", "true");
     var secured = Binder.get(env).bindOrCreate("axiz.messaging", AxizMessagingProperties.class);
     assertEquals(
         "AWS_MSK_IAM",
         AxizMessagingKafkaAutoConfiguration.common(
-                secured, env, identityContext.getBean(AwsIdentity.class))
+                secured,
+                env,
+                identityContext.getBean(AwsIdentity.class),
+                null,
+                pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind.PRODUCER)
             .get("sasl.mechanism"));
     env.withProperty("axiz.messaging.kafka.iam", "false")
         .withProperty("axiz.messaging.kafka.bootstrap-servers", "broker.internal:9098");
@@ -51,7 +59,11 @@ class MskAuthenticationTest {
     assertEquals(
         "broker.internal:9098",
         AxizMessagingKafkaAutoConfiguration.common(
-                generic, env, identityContext.getBean(AwsIdentity.class))
+                generic,
+                env,
+                identityContext.getBean(AwsIdentity.class),
+                null,
+                pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind.PRODUCER)
             .get("bootstrap.servers"));
   }
 

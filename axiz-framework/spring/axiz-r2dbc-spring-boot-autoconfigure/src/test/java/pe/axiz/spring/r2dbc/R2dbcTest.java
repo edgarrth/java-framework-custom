@@ -87,7 +87,7 @@ class R2dbcTest {
             .withProperty("spring.r2dbc.username", "app")
             .withProperty("axiz.r2dbc.iam.enabled", "true");
     epp.postProcessEnvironment(env, new SpringApplication());
-    assertEquals("require", env.getProperty("spring.r2dbc.properties.sslMode"));
+    assertEquals("verify-full", env.getProperty("spring.r2dbc.properties.sslMode"));
     assertNull(env.getProperty("spring.flyway.password"));
   }
 

@@ -1,5 +1,6 @@
 package pe.axiz.spring.audit;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -41,9 +42,15 @@ import pe.axiz.core.outbox.OutboxWriter;
  * recorded outside a transaction, unless {@code outside-transaction=fail}, and failures, whose
  * transaction is about to roll back and would take the audit record with it.
  */
-public class TransactionalAuditPublisher implements AuditPublisher, AutoCloseable {
+public final class TransactionalAuditPublisher implements AuditPublisher, AutoCloseable {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxWriter is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final OutboxWriter outbox;
+
   private final String destination;
   private final AuditPublisher fallback;
   private final AuditOutsideTransaction outside;
@@ -171,7 +178,7 @@ public class TransactionalAuditPublisher implements AuditPublisher, AutoCloseabl
       return;
     }
     try {
-      var _ = task.get(failureTimeout.toNanos(), TimeUnit.NANOSECONDS);
+      task.get(failureTimeout.toNanos(), TimeUnit.NANOSECONDS);
     } catch (InterruptedException interrupted) {
       cancelled.set(true);
       task.cancel(true);

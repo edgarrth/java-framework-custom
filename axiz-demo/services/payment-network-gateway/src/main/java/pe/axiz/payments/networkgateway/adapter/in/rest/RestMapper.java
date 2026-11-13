@@ -12,7 +12,7 @@ final class RestMapper {
   static TransferOrder order(TransferRequest request) {
     return new TransferOrder(
         request.getCreditorCci(),
-        Money.ofExact(request.getAmount(), request.getCurrency()),
+        Money.of(request.getAmount(), request.getCurrency()),
         request.getReference());
   }
 

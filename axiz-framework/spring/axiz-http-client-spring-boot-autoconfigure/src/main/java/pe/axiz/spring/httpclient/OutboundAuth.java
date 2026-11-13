@@ -91,7 +91,8 @@ public final class OutboundAuth implements AutoCloseable {
                   a.audience(),
                   renewBefore,
                   client.timeouts().read(),
-                  clock);
+                  clock,
+                  client.transportSecurity());
         } catch (RuntimeException | Error failure) {
           try {
             http.close();
@@ -165,7 +166,8 @@ public final class OutboundAuth implements AutoCloseable {
                   a.audience(),
                   renewBefore,
                   client.timeouts().read(),
-                  clock);
+                  clock,
+                  client.transportSecurity());
         } catch (RuntimeException | Error failure) {
           try {
             http.close();

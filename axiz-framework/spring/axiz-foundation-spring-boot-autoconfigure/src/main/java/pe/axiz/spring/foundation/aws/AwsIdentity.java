@@ -15,9 +15,14 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.core.annotation.MergedAnnotations;
+import org.springframework.core.env.Environment;
+import org.springframework.util.ClassUtils;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
 import pe.axiz.adapter.aws.identity.AwsCredentialsPlugin;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -27,21 +32,38 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
 public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSingleton {
   static final String BEAN_NAME = "axizAwsIdentity";
   private final ConfigurableListableBeanFactory beans;
+  private final Environment environment;
   private final Set<Target> reported = ConcurrentHashMap.newKeySet();
   private @Nullable AwsCredentialSource defaults;
   private volatile boolean closed;
 
-  AwsIdentity(ConfigurableListableBeanFactory beans) {
+  AwsIdentity(ConfigurableListableBeanFactory beans, Environment environment) {
     this.beans = Objects.requireNonNull(beans);
+    this.environment = Objects.requireNonNull(environment);
   }
 
   /** Returns an independent closeable resource; application providers remain Spring-owned. */
   public AwsCredentialSource source(AwsService service, AwsCapability capability) {
+    if (service == AwsService.UNSPECIFIED || capability == AwsCapability.UNSPECIFIED)
+      throw new IllegalArgumentException("An explicit AWS service and capability are required");
+    return select(new Target(service, capability), false);
+  }
+
+  AwsCredentialSource globalSource() {
+    return select(new Target(AwsService.UNSPECIFIED, AwsCapability.UNSPECIFIED), true);
+  }
+
+  private AwsCredentialSource select(Target target, boolean globalOnly) {
     checkOpen();
-    var target = new Target(service, capability);
+    var service = target.service();
+    var capability = target.capability();
     var candidates = candidates(beans);
-    List<Candidate> specific = candidates.stream().filter(c -> c.capability == capability).toList();
-    List<Candidate> services = candidates.stream().filter(c -> c.service == service).toList();
+    List<Candidate> specific =
+        globalOnly
+            ? List.of()
+            : candidates.stream().filter(c -> c.capability == capability).toList();
+    List<Candidate> services =
+        globalOnly ? List.of() : candidates.stream().filter(c -> c.service == service).toList();
     List<Candidate> globals = candidates.stream().filter(Candidate::global).toList();
     var matches = !specific.isEmpty() ? specific : !services.isEmpty() ? services : globals;
     Candidate chosen = choose(matches);
@@ -79,6 +101,8 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
   /** Defers acquisition until the callback needs it; each invocation owns a separate resource. */
   public Supplier<AwsCredentialSource> factory(AwsService service, AwsCapability capability) {
     checkOpen();
+    if (service == AwsService.UNSPECIFIED || capability == AwsCapability.UNSPECIFIED)
+      throw new IllegalArgumentException("An explicit AWS service and capability are required");
     var target = new Target(service, capability);
     return () -> source(target.service(), target.capability());
   }
@@ -140,11 +164,11 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
           declared = true;
           Object serviceValue = scope.getAttribute("service");
           Object capabilityValue = scope.getAttribute("capability");
-          if (serviceValue != null && !(serviceValue instanceof AwsService)
-              || capabilityValue != null && !(capabilityValue instanceof AwsCapability))
+          if ((serviceValue != null && !(serviceValue instanceof AwsService))
+              || (capabilityValue != null && !(capabilityValue instanceof AwsCapability)))
             throw new IllegalStateException("AWS identity scope must use typed enums: " + name);
-          if (serviceValue instanceof AwsService value) service = value;
-          if (capabilityValue instanceof AwsCapability value) capability = value;
+          if (serviceValue != null) service = (AwsService) serviceValue;
+          if (capabilityValue != null) capability = (AwsCapability) capabilityValue;
         }
       }
       if (declared
@@ -152,6 +176,23 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
         throw new IllegalStateException(
             "AWS identity must declare exactly one service or capability: " + name);
       boolean global = !declared && !qualified && defaultCandidate;
+      if (global && definition != null) {
+        String factory = definition.getFactoryBeanName();
+        Class<?> origin = factory != null ? owner.getType(factory, false) : null;
+        if (origin == null && definition.getBeanClassName() != null)
+          origin =
+              ClassUtils.resolveClassName(
+                  definition.getBeanClassName(), owner.getBeanClassLoader());
+        if (origin != null
+            && MergedAnnotations.from(origin, MergedAnnotations.SearchStrategy.TYPE_HIERARCHY)
+                .isPresent(AutoConfiguration.class)) {
+          LoggerFactory.getLogger(AwsIdentity.class)
+              .warn("Automatic AWS provider rejected as application global identity");
+          throw new IllegalStateException(
+              "Declare an application AWS credential provider explicitly;"
+                  + " an auto-configuration provider is not an application global identity");
+        }
+      }
       if (!declared && !global) continue;
       if (!owner.isSingleton(name))
         throw new IllegalStateException(
@@ -178,7 +219,9 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
 
   private synchronized AwsCredentialsProvider defaultProvider() {
     checkOpen();
-    if (defaults == null) defaults = AwsCredentialSources.create();
+    if (defaults == null)
+      defaults =
+          AwsCredentialSources.create(TransportSecurityPolicy.from(environment::getProperty));
     return defaults.provider();
   }
 
@@ -193,8 +236,6 @@ public final class AwsIdentity implements SdkAutoCloseable, SmartInitializingSin
     Target {
       Objects.requireNonNull(service);
       Objects.requireNonNull(capability);
-      if (service == AwsService.UNSPECIFIED || capability == AwsCapability.UNSPECIFIED)
-        throw new IllegalArgumentException("An explicit AWS service and capability are required");
     }
   }
 

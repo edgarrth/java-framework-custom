@@ -9,4 +9,3 @@ at runtime and own versioned Flyway schema migrations. The BOM manages every cur
 Core transactions use `pe.axiz.core.commons.tx.TransactionRunner`. Outbox claims and completion
 updates always carry an owner. No unfenced compatibility methods or old-coordinate mappings are
 retained. Schema preflight remains diagnostic and read-only; it does not silently skip evidence.
-This file describes current architecture, not a supported migration from an older Axiz release.

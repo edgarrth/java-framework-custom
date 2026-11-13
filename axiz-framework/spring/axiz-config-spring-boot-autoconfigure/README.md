@@ -26,3 +26,11 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-config-spring-boot-autoconfigure verify`.
+
+## Managed Parameter Store bootstrap
+
+The `aws-parameterstore:` resolver selects managed credentials before the first remote read,
+rejects competing `spring.cloud.aws.credentials.*` settings and preserves explicitly registered
+bootstrap providers/clients. `instance-profile=false` is allowed. Resources created by bootstrap
+are released on early failure or transferred to application shutdown; borrowed resources remain
+owned by the extension. The integration stays optional when the AWS libraries are absent.

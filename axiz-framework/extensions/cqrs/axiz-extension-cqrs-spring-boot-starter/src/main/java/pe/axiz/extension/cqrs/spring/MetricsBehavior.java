@@ -10,7 +10,7 @@ import pe.axiz.extension.cqrs.PipelineBehavior;
  * Counts and times every command and query as a generic event named after the request ({@code
  * create-card}); requests and results implementing {@code MetricSource} add amounts and tags.
  */
-public class MetricsBehavior implements PipelineBehavior {
+public final class MetricsBehavior implements PipelineBehavior {
 
   private final EventMetrics metrics;
 

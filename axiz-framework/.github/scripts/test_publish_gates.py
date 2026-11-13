@@ -14,8 +14,8 @@ spec.loader.exec_module(policy)
 
 class PublishGatesTest(unittest.TestCase):
     def setUp(self):
-        self.build = yaml.safe_load((HERE / "../workflows/ci.yaml").read_text())
-        self.deploy = yaml.safe_load((HERE / "../workflows/deploy.yaml").read_text())
+        self.build = yaml.safe_load((HERE.resolve().parents[2] / ".github/workflows/framework-ci.yaml").read_text())
+        self.deploy = yaml.safe_load((HERE.resolve().parents[2] / ".github/workflows/framework-deploy.yaml").read_text())
 
     def check(self, build=None, deploy=None):
         with tempfile.TemporaryDirectory() as temporary:
@@ -39,7 +39,7 @@ class PublishGatesTest(unittest.TestCase):
                     self.assertTrue(self.check(build=build))
 
     def test_publishing_inside_the_build_is_rejected(self):
-        self.build["jobs"]["publish"] = {"uses": "axiz/axiz-workflows/.github/workflows/lib-deploy.yaml@v2.0.0"}
+        self.build["jobs"]["publish"] = {"uses": "edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0"}
         self.assertTrue(self.check())
 
     def test_native_gate_cannot_be_replaced_with_a_noop(self):

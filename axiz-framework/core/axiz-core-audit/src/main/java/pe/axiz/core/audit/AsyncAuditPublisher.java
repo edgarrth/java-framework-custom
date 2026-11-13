@@ -1,8 +1,8 @@
 package pe.axiz.core.audit;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +33,7 @@ import pe.axiz.core.commons.Stages;
  * physically complete later; consumers must tolerate duplicates. Publication after shutdown is
  * rejected.
  */
-public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable {
+public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetrics, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(AsyncAuditPublisher.class);
 
   private record Pending(AuditEvent event, Supplier<RequestContext.Scope> context) {}
@@ -43,7 +43,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
   private final BlockingQueue<Pending> queue;
   private final int capacity;
   private final AtomicInteger queued = new AtomicInteger();
-  private final Set<CompletableFuture<Void>> nativeFallbacks = ConcurrentHashMap.newKeySet();
+  private final Map<Object, CompletableFuture<Void>> nativeFallbacks = new ConcurrentHashMap<>();
   private final Stages.ContextProvider context;
   private final long offerTimeoutNanos;
   private final long closeTimeoutNanos;
@@ -62,6 +62,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
   private final AtomicInteger callerFallbacks = new AtomicInteger();
   private volatile long shutdownDeadline = Long.MAX_VALUE;
   private @Nullable Shutdown result;
+  private final Object shutdownMonitor = new Object();
 
   /**
    * Shutdown snapshot. Counts are final when terminated is true; otherwise a callback or the
@@ -182,21 +183,31 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
   private boolean offer(Pending pending) {
     if (queued.get() >= capacity) return false;
     queued.incrementAndGet();
-    queue.offer(pending);
+    if (!queue.offer(pending)) {
+      queued.decrementAndGet();
+      return false;
+    }
     return true;
   }
 
   private void fallbackWithoutWait(AuditEvent event) {
     fallbacks.incrementAndGet();
     var completion = new CompletableFuture<Void>();
-    nativeFallbacks.add(completion);
-    completion.whenComplete(
+    Object admissionKey = new Object();
+    nativeFallbacks.put(admissionKey, completion);
+    Stages.observe(
+        completion,
         (ignored, failure) -> {
           if (failure instanceof TimeoutException || failure instanceof CancellationException)
             unconfirmed.incrementAndGet();
           else if (failure != null) lost.incrementAndGet();
           // Removal is the completion barrier used by shutdown's final snapshot.
-          nativeFallbacks.remove(completion);
+          nativeFallbacks.remove(admissionKey);
+        },
+        failure -> {
+          nativeFallbacks.remove(admissionKey);
+          lost.incrementAndGet();
+          LOG.error("Audit fallback completion observation failed", failure);
         });
     try {
       fallbackDeliveries.execute(
@@ -325,10 +336,10 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       invoke(fallbackDeliveries, () -> fallback.publish(event));
     } catch (RuntimeException failure) {
       if (failure instanceof RejectedExecutionException
-          || failure instanceof AuditPublishException
+          || (failure instanceof AuditPublishException
               && failure.getCause() != null
               && !(failure.getCause() instanceof TimeoutException)
-              && !(failure.getCause() instanceof InterruptedException)) {
+              && !(failure.getCause() instanceof InterruptedException))) {
         lost.incrementAndGet();
       } else {
         unconfirmed.incrementAndGet();
@@ -339,31 +350,38 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
     }
   }
 
+  @Override
   public int pending() {
     return queued.get();
   }
 
+  @Override
   public long deliveredCount() {
     return delivered.get();
   }
 
+  @Override
   public long fallbackCount() {
     return fallbacks.get();
   }
 
+  @Override
   public long failureCount() {
     return failures.get();
   }
 
   /** Confirmed failures of the fallback; uncertain acceptance is counted separately. */
+  @Override
   public long lostCount() {
     return lost.get();
   }
 
+  @Override
   public long unconfirmedCount() {
     return unconfirmed.get();
   }
 
+  @Override
   public boolean workerAlive() {
     return worker.isAlive();
   }
@@ -375,11 +393,17 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
 
   private boolean joinWorker(long deadline) throws InterruptedException {
     long nanos = deadline - System.nanoTime();
-    return !worker.isAlive() || nanos > 0 && worker.join(Duration.ofNanos(nanos));
+    return !worker.isAlive() || (nanos > 0 && worker.join(Duration.ofNanos(nanos)));
   }
 
   /** Idempotent shutdown. No new admission can race with the final queue flush. */
-  public synchronized Shutdown shutdown() {
+  public Shutdown shutdown() {
+    synchronized (shutdownMonitor) {
+      return shutdownOwned();
+    }
+  }
+
+  private Shutdown shutdownOwned() {
     if (result != null) return result;
     long started = System.nanoTime();
     shutdownDeadline = started + closeTimeoutNanos;
@@ -410,7 +434,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AutoCloseable 
       Thread.currentThread().interrupt();
     } finally {
       if (deliveries != null) deliveries.shutdownNow();
-      nativeFallbacks.forEach(completion -> completion.cancel(false));
+      nativeFallbacks.values().forEach(completion -> completion.cancel(false));
       fallbackDeliveries.shutdownNow();
     }
     try {

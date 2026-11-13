@@ -2,7 +2,7 @@ public interface pe.axiz.core.audit.AsyncAuditEventPublisher {
 public abstract java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
 }
 
-public final class pe.axiz.core.audit.AsyncAuditPublisher implements pe.axiz.core.audit.AuditPublisher,java.lang.AutoCloseable {
+public final class pe.axiz.core.audit.AsyncAuditPublisher implements pe.axiz.core.audit.AuditPublisher,pe.axiz.core.audit.AuditQueueMetrics,java.lang.AutoCloseable {
 public boolean workerAlive();
 public int pending();
 public long deliveredCount();
@@ -10,8 +10,8 @@ public long failureCount();
 public long fallbackCount();
 public long lostCount();
 public long unconfirmedCount();
+public pe.axiz.core.audit.AsyncAuditPublisher$Shutdown shutdown();
 public pe.axiz.core.audit.AsyncAuditPublisher(pe.axiz.core.audit.AuditPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
-public synchronized pe.axiz.core.audit.AsyncAuditPublisher$Shutdown shutdown();
 public void close();
 public void publish(pe.axiz.core.audit.AuditEvent);
 public void publishWithoutWait(pe.axiz.core.audit.AuditEvent);
@@ -106,6 +106,16 @@ public interface pe.axiz.core.audit.AuditPublisher {
 public abstract void publish(pe.axiz.core.audit.AuditEvent);
 }
 
+public interface pe.axiz.core.audit.AuditQueueMetrics {
+public abstract boolean workerAlive();
+public abstract int pending();
+public abstract long deliveredCount();
+public abstract long failureCount();
+public abstract long fallbackCount();
+public abstract long lostCount();
+public abstract long unconfirmedCount();
+}
+
 public final class pe.axiz.core.audit.AuditRecord {
 public pe.axiz.core.audit.AuditEvent event(pe.axiz.core.audit.AuditEvent$Outcome, java.lang.String);
 public pe.axiz.core.audit.AuditRecord(java.lang.String, pe.axiz.core.sensitive.ObjectMasker, pe.axiz.core.id.IdGenerator, java.time.Clock, java.lang.String, java.lang.String);
@@ -183,9 +193,15 @@ public pe.axiz.core.audit.LoggingAuditPublisher();
 public void publish(pe.axiz.core.audit.AuditEvent);
 }
 
-public final class pe.axiz.core.audit.QueuedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher,java.lang.AutoCloseable {
+public final class pe.axiz.core.audit.QueuedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher,pe.axiz.core.audit.AuditQueueMetrics,java.lang.AutoCloseable {
+public boolean workerAlive();
+public int pending();
 public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
-public pe.axiz.core.audit.AsyncAuditPublisher queue();
+public long deliveredCount();
+public long failureCount();
+public long fallbackCount();
+public long lostCount();
+public long unconfirmedCount();
 public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration);
 public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
 public void close();

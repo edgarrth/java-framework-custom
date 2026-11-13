@@ -2,8 +2,10 @@ package pe.axiz.spring.r2dbc;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.identity.WarmedAwsCredentials;
+import pe.axiz.adapter.aws.transport.AwsClientSettings;
 import pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider;
 import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.R2dbcUrls;
@@ -25,7 +27,7 @@ final class AwsIamTokens {
       Clock clock,
       AwsIdentity identity) {
     R2dbcUrls.Endpoint endpoint = R2dbcUrls.endpoint(r2dbcUrl);
-    Region effectiveRegion = region(iam.region() != null ? iam.region() : awsRegion);
+    Region effectiveRegion = region(iam.region(), awsRegion);
     WarmedAwsCredentials credentials =
         new WarmedAwsCredentials(
             identity.source(AwsService.RDS, AwsCapability.R2DBC), clock, Duration.ofSeconds(15));
@@ -49,14 +51,19 @@ final class AwsIamTokens {
     }
   }
 
+  static Region region(@Nullable String specific, @Nullable String global) {
+    return region(specific != null && !specific.isBlank() ? specific : global);
+  }
+
   static Region region(@Nullable String configured) {
-    String region = configured;
-    if (region == null || region.isBlank()) region = System.getProperty("aws.region");
-    if (region == null || region.isBlank()) region = System.getenv("AWS_REGION");
-    if (region == null || region.isBlank())
-      throw new IllegalStateException(
-          "R2DBC IAM requires an explicit region: axiz.r2dbc.iam.region, axiz.aws.region or"
-              + " AWS_REGION");
-    return Region.of(region);
+    return Objects.requireNonNull(
+        AwsClientSettings.resolveRegion(
+            key ->
+                switch (key) {
+                  case "axiz.aws.region" -> configured;
+                  case "aws.region" -> System.getProperty("aws.region");
+                  default -> null;
+                },
+            AwsClientSettings.RegionPolicy.EXPLICIT));
   }
 }

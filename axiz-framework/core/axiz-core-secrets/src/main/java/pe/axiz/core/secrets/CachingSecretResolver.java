@@ -16,9 +16,16 @@ import pe.axiz.core.commons.Stages;
 public final class CachingSecretResolver implements SecretResolver {
   static final int MAX_CACHED_SECRETS = 1000;
   private final SecretResolver delegate;
+  private final SecretCacheInstrumentation instrumentation;
   private final AsyncLoadingCache<Optional<SecretValue>> cache;
 
   public CachingSecretResolver(SecretResolver delegate, Duration ttl, Clock clock) {
+    this(delegate, ttl, clock, SecretCacheObserver.NONE);
+  }
+
+  public CachingSecretResolver(
+      SecretResolver delegate, Duration ttl, Clock clock, SecretCacheObserver observer) {
+    instrumentation = new SecretCacheInstrumentation(observer);
     this.delegate = Objects.requireNonNull(delegate);
     cache =
         new AsyncLoadingCache<>(
@@ -29,7 +36,12 @@ public final class CachingSecretResolver implements SecretResolver {
   public Optional<SecretValue> resolve(String name) {
     try {
       return cache
-          .get(name, () -> CompletableFuture.completedFuture(delegate.resolve(name)))
+          .get(
+              name,
+              () ->
+                  instrumentation.load(
+                      () -> CompletableFuture.completedFuture(delegate.resolve(name))),
+              instrumentation::lookup)
           .toCompletableFuture()
           .join();
     } catch (CompletionException failure) {

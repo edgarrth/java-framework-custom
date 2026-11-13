@@ -100,6 +100,10 @@ public java.lang.String url();
 public pe.axiz.spring.r2dbc.AxizR2dbcProperties$Reader(java.lang.String, int);
 }
 
+public class pe.axiz.spring.r2dbc.AxizR2dbcTransportAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcTransportAutoConfiguration();
+}
+
 public final class pe.axiz.spring.r2dbc.DatabaseClientReactiveSql implements pe.axiz.kit.r2dbc.ReactiveSql {
 public <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
 public java.lang.Object transactionResource();
@@ -111,6 +115,11 @@ public reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.a
 public final class pe.axiz.spring.r2dbc.FlywayIamCustomizer implements org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer {
 public pe.axiz.spring.r2dbc.FlywayIamCustomizer(pe.axiz.kit.r2dbc.DatabasePasswordProvider, org.springframework.core.env.Environment);
 public void customize(org.flywaydb.core.api.configuration.FluentConfiguration);
+}
+
+public final class pe.axiz.spring.r2dbc.R2dbcTransportSecurity {
+public static void validate(io.r2dbc.spi.ConnectionFactory, pe.axiz.core.commons.net.DataTransportSecurityPolicy);
+public static void validateOptions(io.r2dbc.spi.ConnectionFactoryOptions, pe.axiz.core.commons.net.DataTransportSecurityPolicy);
 }
 
 public final class pe.axiz.spring.r2dbc.ReaderDatabase implements org.springframework.beans.factory.DisposableBean {

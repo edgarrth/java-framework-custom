@@ -24,7 +24,12 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
  * configuration, migrations and health. Needs Docker.
  */
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true"
+    })
 @AutoConfigureMockMvc
 @Import({
   RedisTestConfiguration.class,

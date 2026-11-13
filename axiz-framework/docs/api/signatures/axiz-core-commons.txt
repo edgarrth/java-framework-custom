@@ -11,14 +11,23 @@ public static <T> pe.axiz.core.commons.ApiResponse<T> of(T, java.lang.String);
 
 public final class pe.axiz.core.commons.AsyncLoadingCache<V> {
 public java.util.concurrent.CompletionStage<V> get(java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<V>>);
+public java.util.concurrent.CompletionStage<V> get(java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<V>>, java.util.function.Consumer<java.lang.Boolean>);
 public pe.axiz.core.commons.AsyncLoadingCache(java.time.Duration, long, int, java.time.Clock);
 public pe.axiz.core.commons.AsyncLoadingCache(java.time.Duration, long, int, java.time.Clock, java.util.function.Predicate<? super V>);
 public void evict(java.lang.String);
 }
 
-public class pe.axiz.core.commons.BoundedCallbackExecutor extends java.util.concurrent.ThreadPoolExecutor {
+public class pe.axiz.core.commons.BoundedCallbackExecutor extends java.util.concurrent.AbstractExecutorService {
+public boolean awaitTermination(long, java.util.concurrent.TimeUnit) throws java.lang.InterruptedException;
+public boolean isShutdown();
+public boolean isTerminated();
+public final int getActiveCount();
+public final int getPoolSize();
+public final int getQueueSize();
+public java.util.List<java.lang.Runnable> shutdownNow();
 public pe.axiz.core.commons.BoundedCallbackExecutor(int, int, java.util.concurrent.ThreadFactory, java.lang.String);
 public void execute(java.lang.Runnable);
+public void shutdown();
 }
 
 public final class pe.axiz.core.commons.Environments {
@@ -249,6 +258,32 @@ public pe.axiz.core.commons.json.JsonReader$JsonException(java.lang.String);
 
 public final class pe.axiz.core.commons.json.JsonWriter {
 public static java.lang.String write(java.lang.Object);
+}
+
+public final class pe.axiz.core.commons.net.DataTransportSecurityPolicy extends java.lang.Record {
+public boolean allowInsecureDataStores();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String environment();
+public pe.axiz.core.commons.net.DataTransportSecurityPolicy(java.lang.String, boolean);
+public static pe.axiz.core.commons.net.DataTransportSecurityPolicy from(java.util.function.Function<java.lang.String, java.lang.String>);
+public void requireVerified(boolean, boolean, java.lang.String);
+}
+
+public final class pe.axiz.core.commons.net.TransportSecurityPolicy extends java.lang.Record {
+public boolean allowPlainHttp();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String environment();
+public pe.axiz.core.commons.net.TransportSecurityPolicy(java.lang.String, boolean);
+public static final java.lang.String SETTING = "axiz.transport.allow-plain-http";
+public static pe.axiz.core.commons.net.TransportSecurityPolicy from(java.util.function.Function<java.lang.String, java.lang.String>);
+public static pe.axiz.core.commons.net.TransportSecurityPolicy secure();
+public static pe.axiz.core.commons.net.TransportSecurityPolicy system();
+public void validate(java.net.URI, java.lang.String);
+public void validateTarget(java.net.URI, java.net.URI, boolean, java.lang.String);
 }
 
 public interface pe.axiz.core.commons.tx.TransactionRunner {

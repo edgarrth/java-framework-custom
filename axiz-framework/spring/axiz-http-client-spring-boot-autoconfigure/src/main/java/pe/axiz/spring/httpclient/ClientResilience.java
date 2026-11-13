@@ -48,31 +48,50 @@ public final class ClientResilience {
     if (bulkhead != null && !bulkhead.tryAcquirePermission()) {
       throw unavailable("bulkhead-full");
     }
-    if (circuitBreaker != null && !circuitBreaker.tryAcquirePermission()) {
-      if (bulkhead != null) {
-        bulkhead.onComplete();
+    try {
+      if (circuitBreaker != null && !circuitBreaker.tryAcquirePermission()) {
+        throw unavailable("circuit-open");
       }
-      throw unavailable("circuit-open");
+    } catch (RuntimeException | Error failure) {
+      if (bulkhead != null) bulkhead.onComplete();
+      throw failure;
     }
   }
 
   public void release(long startNanos, @Nullable Throwable failure, int status) {
-    if (circuitBreaker != null) {
-      long elapsed = System.nanoTime() - startNanos;
-      if (failure != null) {
-        circuitBreaker.onError(elapsed, TimeUnit.NANOSECONDS, failure);
-      } else if (status >= 500 || status == 429) {
-        circuitBreaker.onError(
-            elapsed,
-            TimeUnit.NANOSECONDS,
-            ExternalErrorTranslator.translate(settings.name(), status, null, null));
-      } else {
-        circuitBreaker.onSuccess(elapsed, TimeUnit.NANOSECONDS);
+    Throwable notificationFailure = null;
+    try {
+      if (circuitBreaker != null) {
+        long elapsed = System.nanoTime() - startNanos;
+        if (failure != null) circuitBreaker.onError(elapsed, TimeUnit.NANOSECONDS, failure);
+        else if (status >= 500 || status == 429)
+          circuitBreaker.onError(
+              elapsed,
+              TimeUnit.NANOSECONDS,
+              ExternalErrorTranslator.translate(settings.name(), status, null, null));
+        else circuitBreaker.onSuccess(elapsed, TimeUnit.NANOSECONDS);
       }
+    } catch (RuntimeException | Error reporting) {
+      notificationFailure = reporting;
+      if (failure != null) suppress(failure, reporting);
     }
     if (bulkhead != null) {
-      bulkhead.onComplete();
+      try {
+        bulkhead.onComplete();
+      } catch (RuntimeException | Error cleanup) {
+        Throwable primary = failure != null ? failure : notificationFailure;
+        if (primary == null) notificationFailure = cleanup;
+        else suppress(primary, cleanup);
+      }
     }
+    if (failure == null) {
+      if (notificationFailure instanceof RuntimeException reporting) throw reporting;
+      if (notificationFailure instanceof Error reporting) throw reporting;
+    }
+  }
+
+  private static void suppress(Throwable primary, Throwable secondary) {
+    if (primary != secondary) primary.addSuppressed(secondary);
   }
 
   /**

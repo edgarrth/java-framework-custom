@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 /**
@@ -19,10 +19,9 @@ public final class Ulid implements IdGenerator {
   private static final Ulid DEFAULT = new Ulid(Clock.systemUTC());
 
   private final Clock clock;
-  private final ReentrantLock lock = new ReentrantLock();
-  private long lastMillis = -1L;
-  private long lastRandomHigh; // 16 bits
-  private long lastRandomLow; // 64 bits
+  private final AtomicReference<State> state = new AtomicReference<>(new State(-1L, 0, 0));
+
+  private record State(long millis, long high, long low) {}
 
   private Ulid(Clock clock) {
     this.clock = clock;
@@ -40,32 +39,23 @@ public final class Ulid implements IdGenerator {
   @Override
   public String newId() {
     long millis = clock.millis();
-    long high;
-    long low;
-    long time;
-    lock.lock();
-    try {
-      if (millis <= lastMillis) {
-        time = lastMillis;
-        lastRandomLow++;
-        if (lastRandomLow == 0) {
-          lastRandomHigh = (lastRandomHigh + 1) & 0xFFFF;
-          if (lastRandomHigh == 0) {
-            throw new IllegalStateException("ULID random component overflow");
-          }
-        }
+    if (millis < 0 || millis > 0xFFFF_FFFF_FFFFL)
+      throw new IllegalArgumentException("ULID requires a 48-bit Unix millisecond timestamp");
+    State previous;
+    State reserved;
+    do {
+      previous = state.get();
+      if (millis <= previous.millis()) {
+        long low = previous.low() + 1;
+        long high = low == 0 ? (previous.high() + 1) & 0xFFFF : previous.high();
+        if (low == 0 && high == 0)
+          throw new IllegalStateException("ULID random component overflow");
+        reserved = new State(previous.millis(), high, low);
       } else {
-        time = millis;
-        lastMillis = millis;
-        lastRandomHigh = RANDOM.nextInt(1 << 16);
-        lastRandomLow = RANDOM.nextLong();
+        reserved = new State(millis, RANDOM.nextInt(1 << 16), RANDOM.nextLong());
       }
-      high = lastRandomHigh;
-      low = lastRandomLow;
-    } finally {
-      lock.unlock();
-    }
-    return encode(time, high, low);
+    } while (!state.compareAndSet(previous, reserved));
+    return encode(reserved.millis(), reserved.high(), reserved.low());
   }
 
   private static String encode(long time, long randHigh16, long randLow64) {

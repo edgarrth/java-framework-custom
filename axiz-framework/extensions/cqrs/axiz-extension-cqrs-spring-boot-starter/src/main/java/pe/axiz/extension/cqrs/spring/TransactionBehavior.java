@@ -7,7 +7,7 @@ import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
 /** Commands run in a read-write transaction, queries in a read-only one. */
-public class TransactionBehavior implements PipelineBehavior {
+public final class TransactionBehavior implements PipelineBehavior {
 
   private final TransactionTemplate write;
   private final TransactionTemplate read;

@@ -4,6 +4,14 @@
 unpublished Axiz drafts is supported. Imperative/native capabilities and external protocol
 versions remain current functionality.
 
+The 2.0.0 inventory includes the shared JDBC, Kafka and Redis transport guards and canonical
+SQL resources. The empty EDA API artifact is removed. Intentional contract changes include
+exact money construction, explicit rounding, the outbox transaction runner, audit queue metrics,
+explicit rate-limit storage and removal of HTTP body logging. Closed implementations are final;
+the supported extension contracts remain available. These signatures describe the first release,
+without compatibility aliases for unpublished drafts. Updating this inventory prepares review;
+it does not prove publication eligibility or replace the mandatory Nexus check.
+
 `release-policy.json` explicitly selects one of two modes:
 
 - `first-release`: only version 2.0.0 with no baseline. The gate queries Nexus's final

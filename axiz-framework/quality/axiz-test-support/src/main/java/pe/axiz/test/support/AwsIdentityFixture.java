@@ -3,6 +3,7 @@ package pe.axiz.test.support;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -25,7 +26,9 @@ public final class AwsIdentityFixture implements AutoCloseable {
     this.accepted = accepted;
     directory = Files.createTempDirectory("axiz-identity-");
     Files.writeString(directory.resolve("token"), "fixture-token");
-    server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+    server =
+        HttpServer.create(
+            new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 0), 0);
     server.createContext(
         "/imds",
         exchange -> {
@@ -112,6 +115,8 @@ public final class AwsIdentityFixture implements AutoCloseable {
                     || key.equals("JAVA_TOOL_OPTIONS")
                     || key.equals("JDK_JAVA_OPTIONS")
                     || key.equals("_JAVA_OPTIONS"));
+    env.put("AXIZ_CONFIG_ENVIRONMENT", "test");
+    env.put("AXIZ_TRANSPORT_ALLOW_PLAIN_HTTP", "true");
     env.put("AWS_REGION", "us-east-1");
     env.put("AWS_ROLE_ARN", "arn:aws:iam::123456789012:role/fixture");
     env.put("AWS_WEB_IDENTITY_TOKEN_FILE", directory.resolve("token").toString());

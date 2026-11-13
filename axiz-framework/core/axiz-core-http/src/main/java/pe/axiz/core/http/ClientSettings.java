@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.resilience.TimeoutSettings;
 
 /**
@@ -19,7 +20,6 @@ import pe.axiz.core.resilience.TimeoutSettings;
  * @param circuitBreaker circuit breaker configuration name, or null to disable
  * @param maxConcurrentCalls bulkhead limit, or 0 to disable
  * @param propagateHeaders inbound headers forwarded to this dependency (allow-list)
- * @param logBodies whether request and response bodies are logged (masked)
  * @param maxConnections connection pool size
  */
 public record ClientSettings(
@@ -32,8 +32,8 @@ public record ClientSettings(
     @Nullable String circuitBreaker,
     int maxConcurrentCalls,
     List<String> propagateHeaders,
-    boolean logBodies,
-    int maxConnections) {
+    int maxConnections,
+    TransportSecurityPolicy transportSecurity) {
 
   private static final Pattern NAME = Pattern.compile("^[a-z][a-z0-9-]{1,40}$");
 
@@ -43,7 +43,10 @@ public record ClientSettings(
     }
     Objects.requireNonNull(baseUrl, "base-url is required for client " + name);
     Objects.requireNonNull(timeouts, "timeouts are required for client " + name);
+    Objects.requireNonNull(transportSecurity).validate(baseUrl, "HTTP client " + name);
     Objects.requireNonNull(auth);
+    if (auth.tokenUri() != null)
+      transportSecurity.validate(auth.tokenUri(), "OAuth token-uri for " + name);
     Objects.requireNonNull(retry);
     if (maxAttempts < 1 || maxAttempts > 5) {
       throw new IllegalArgumentException("max-attempts must be between 1 and 5");
@@ -72,7 +75,7 @@ public record ClientSettings(
         "default",
         0,
         List.of(),
-        false,
-        50);
+        50,
+        TransportSecurityPolicy.system());
   }
 }

@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsCompletionMetrics;
 
 /** Spring composition of context identity, native transport and optional context metrics. */
@@ -18,12 +19,19 @@ public final class AwsAsyncResources {
       @Nullable MeterRegistry registry,
       AwsIdentity identity,
       AwsService service,
-      AwsCapability capability) {
+      AwsCapability capability,
+      AsyncAwsTransportSettings transportSettings) {
     var source = identity.source(service, capability);
     AsyncAwsClients owner;
     try {
       owner =
-          new AsyncAwsClients(source, Clock.systemUTC(), Duration.ofSeconds(15), workers, capacity);
+          new AsyncAwsClients(
+              source,
+              Clock.systemUTC(),
+              Duration.ofSeconds(15),
+              workers,
+              capacity,
+              transportSettings);
     } catch (RuntimeException | Error failure) {
       source.close();
       throw failure;

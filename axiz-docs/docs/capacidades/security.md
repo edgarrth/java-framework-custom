@@ -11,7 +11,7 @@ axiz add security
 |---|---|
 | Starter | `pe.axiz:axiz-security-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Incluida por defecto en | business, core, gateway, ux, support |
+| Incluida por defecto en | business, core, gateway, ux, support, event-processor |
 
 ## Propiedades que agrega
 

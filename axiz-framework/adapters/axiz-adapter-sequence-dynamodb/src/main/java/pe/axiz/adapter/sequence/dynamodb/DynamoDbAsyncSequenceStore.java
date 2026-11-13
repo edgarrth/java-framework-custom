@@ -1,5 +1,6 @@
 package pe.axiz.adapter.sequence.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
@@ -12,7 +13,14 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
 
 /** Native asynchronous atomic block allocation, sharing the synchronous sequence records. */
 public final class DynamoDbAsyncSequenceStore implements AsyncSequenceStore {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient dynamo;
+
   private final String table;
 
   public DynamoDbAsyncSequenceStore(DynamoDbAsyncClient dynamo, String table) {

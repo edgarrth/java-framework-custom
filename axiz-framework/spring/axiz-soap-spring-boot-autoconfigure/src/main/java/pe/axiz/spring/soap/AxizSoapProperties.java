@@ -33,8 +33,6 @@ public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
    * @param passwordRef secret name of the WS-Security password
    * @param passwordMode {@code TEXT} or {@code LEGACY_SHA1_DIGEST}; required with a username (no
    *     default: the counterparty decides, and the legacy digest is never chosen silently)
-   * @param allowPlainHttp send WS-Security credentials over {@code http://}: only for local
-   *     stand-ins (docker compose, kind); every real endpoint is {@code https://}
    */
   public record Client(
       URI endpoint,
@@ -43,6 +41,5 @@ public record AxizSoapProperties(@DefaultValue Map<String, Client> clients) {
       @DefaultValue("10s") Duration timeout,
       @Nullable String username,
       @Nullable String passwordRef,
-      WsSecurity.@Nullable Mode passwordMode,
-      @DefaultValue("false") boolean allowPlainHttp) {}
+      WsSecurity.@Nullable Mode passwordMode) {}
 }

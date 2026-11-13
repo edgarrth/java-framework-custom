@@ -16,7 +16,9 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.aws.transport.AwsClients;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.test.support.AwsIdentityFixture;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -66,7 +68,7 @@ class AwsContextIdentityTest {
         var first = new AnnotationConfigApplicationContext();
         var second = new AnnotationConfigApplicationContext()) {
       sources
-          .when(AwsCredentialSources::create)
+          .when(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()))
           .thenAnswer(
               call -> {
                 String key = "identity-" + created.incrementAndGet();
@@ -114,7 +116,7 @@ class AwsContextIdentityTest {
     var events = new ArrayList<String>();
     try (var sources = mockStatic(AwsCredentialSources.class)) {
       sources
-          .when(AwsCredentialSources::create)
+          .when(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()))
           .thenAnswer(
               call ->
                   AwsCredentialSource.owned(
@@ -212,7 +214,8 @@ class AwsContextIdentityTest {
                     null,
                     context.getBeanFactory().getBean(AwsIdentity.class),
                     AwsService.SQS,
-                    AwsCapability.MESSAGING)) {
+                    AwsCapability.MESSAGING,
+                    AsyncAwsTransportSettings.defaults())) {
           assertEquals(
               "ASIAFIXTURE",
               first

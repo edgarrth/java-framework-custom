@@ -9,7 +9,7 @@ import org.springframework.http.HttpHeaders;
 import pe.axiz.core.i18n.LocaleResolver;
 
 /** Servlet locale resolver driven only by {@code Accept-Language}; the locale cannot be changed. */
-public class AcceptLanguageLocaleResolver
+public final class AcceptLanguageLocaleResolver
     implements org.springframework.web.servlet.LocaleResolver {
 
   private final LocaleResolver delegate;

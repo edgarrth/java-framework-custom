@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+<parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+<artifactId>axiz-kafka-spring-boot-autoconfigure</artifactId><name>axiz :: spring :: kafka :: transport validation</name>
+<description>Effective native Kafka TLS policy shared by messaging and audit</description>
+<properties><axiz.module.name>pe.axiz.spring.kafka</axiz.module.name></properties>
+<dependencies>
+<dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-kafka</artifactId><optional>true</optional></dependency>
+<dependency><groupId>org.springframework.kafka</groupId><artifactId>spring-kafka</artifactId><optional>true</optional></dependency>
+<dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+</dependencies>
+</project>

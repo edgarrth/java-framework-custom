@@ -52,8 +52,8 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           "axiz.aws.region=" + localstack.getRegion(),
           "spring.cloud.aws.endpoint=" + localstack.getEndpoint(),
           "spring.cloud.aws.region.static=" + localstack.getRegion(),
-          "spring.cloud.aws.credentials.access-key=" + localstack.getAccessKey(),
-          "spring.cloud.aws.credentials.secret-key=" + localstack.getSecretKey()
+          "axiz.config.environment=test",
+          "axiz.transport.allow-plain-http=true"
 {{#auditResources.sqsSink}}
           , "axiz.audit.sqs.queue-url=" + queueUrl
 {{/auditResources.sqsSink}}

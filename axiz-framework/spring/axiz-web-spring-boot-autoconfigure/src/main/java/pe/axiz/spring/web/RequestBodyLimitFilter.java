@@ -1,5 +1,6 @@
 package pe.axiz.spring.web;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;
@@ -69,6 +70,11 @@ public final class RequestBodyLimitFilter extends OncePerRequestFilter implement
       this.limit = limit;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP",
+        justification =
+            "Servlet must return the same stateful bounded stream; copying would bypass "
+                + "cumulative request limits.")
     @Override
     public ServletInputStream getInputStream() throws IOException {
       if (stream != null) return stream;

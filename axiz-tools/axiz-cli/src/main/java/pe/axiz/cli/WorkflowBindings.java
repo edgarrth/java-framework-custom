@@ -100,7 +100,8 @@ final class WorkflowBindings {
               .anyMatch(
                   file ->
                       releasePom.equals(file)
-                          || file instanceof Map<?, ?> item && releasePom.equals(item.get("path")));
+                          || (file instanceof Map<?, ?> item
+                              && releasePom.equals(item.get("path"))));
       if (!configured)
         files.add(
             Map.of(
@@ -127,8 +128,10 @@ final class WorkflowBindings {
     if (node instanceof Map<?, ?> map) {
       Object reference = map.get("uses");
       if (reference instanceof String ref
-          && (ref.startsWith("axiz/axiz-workflows/.github/workflows/service-build.yaml@v2.")
-              || ref.startsWith("axiz/axiz-workflows/actions/resolve-service-build@v2."))
+          && (ref.startsWith(
+                  "edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.")
+              || ref.startsWith(
+                  "edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2."))
           && map.get("with") instanceof Map<?, ?> parameters) {
         for (var value : values.entrySet()) {
           Object old = parameters.get(value.getKey());

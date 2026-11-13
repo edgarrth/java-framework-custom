@@ -44,7 +44,6 @@ axiz:
     http:
       enabled: true
   config:
-    environment: ${AXIZ_ENVIRONMENT:local}
   i18n:
     default-locale: es-PE
   sensitive:

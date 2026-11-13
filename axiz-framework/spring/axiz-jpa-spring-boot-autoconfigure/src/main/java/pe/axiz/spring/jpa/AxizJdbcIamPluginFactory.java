@@ -22,8 +22,8 @@ public final class AxizJdbcIamPluginFactory implements ConnectionPluginFactory {
   @Override
   public ConnectionPlugin getInstance(FullServicesContainer services, Properties properties) {
     String name = PropertyDefinition.PROFILE_NAME.getString(properties);
-    if (name == null && services.getConfigurationProfile() != null)
-      name = services.getConfigurationProfile().getName();
+    var configuration = services.getConfigurationProfile();
+    if (name == null && configuration != null) name = configuration.getName();
     if (name != null && name.startsWith(JdbcIamCredentialScopes.PREFIX)) {
       AwsCredentialsProvider provider = JdbcIamCredentialScopes.find(name);
       if (provider == null) throw new IllegalStateException("JDBC IAM credential scope is closed");
@@ -79,8 +79,11 @@ public final class AxizJdbcIamPluginFactory implements ConnectionPluginFactory {
         String token =
             IamAuthUtils.getTokenUtility()
                 .generateAuthenticationToken(source, region, iamHost.getHost(), port, user);
-        properties.setProperty(
-            IamAuthConnectionPlugin.IAM_TOKEN_PROPERTY_NAME.getString(properties), token);
+        String property =
+            Objects.requireNonNull(
+                IamAuthConnectionPlugin.IAM_TOKEN_PROPERTY_NAME.getString(properties),
+                "JDBC IAM token property name is required");
+        properties.setProperty(property, token);
         // Runs on every physical connect, including wrapper failover/reconnect after token expiry.
         return connect.call();
       } catch (RuntimeException failure) {

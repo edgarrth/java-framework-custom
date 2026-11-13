@@ -65,6 +65,7 @@ class IdempotencyAutoConfigurationTest {
   void theMemoryStoreIsRefusedWhenTheEnvironmentIsNotSet() {
     servlet
         .withPropertyValues("axiz.idempotency.store=memory")
+        .withPropertyValues("axiz.config.environment=")
         .run(
             ctx ->
                 assertThat(ctx)
@@ -92,7 +93,7 @@ class IdempotencyAutoConfigurationTest {
         .withPropertyValues(
             "axiz.idempotency.store=dynamodb",
             "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:4566")
         .run(
             ctx -> {
               assertThat(ctx.getBean(IdempotencyStore.class))

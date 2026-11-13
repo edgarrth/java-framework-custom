@@ -25,6 +25,9 @@ spec:
       annotations:
         # ConfigMap reload is disabled: a config change rolls the pods
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if .Values.sharedConfigMap }}
+        checksum/config-common: {{ .Values.sharedConfigMap | sha256sum }}
+        {{- end }}
         checksum/errors: {{ include (print $.Template.BasePath "/configmap-errors.yaml") . | sha256sum }}
     spec:
       {{- include "service.podSpec" (dict "root" . "server" true) | nindent 6 }}

@@ -57,7 +57,7 @@ Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`errors`](
 
 Consumes domain events without a public REST API
 
-Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`errors`](../capacidades/errors.md), [`logging`](../capacidades/logging.md), [`observability`](../capacidades/observability.md), [`metrics`](../capacidades/metrics.md), [`config`](../capacidades/config.md), [`sensitive`](../capacidades/sensitive.md), [`messaging`](../capacidades/messaging.md), [`messaging-kafka`](../capacidades/messaging-kafka.md), [`inbox`](../capacidades/inbox.md)
+Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`errors`](../capacidades/errors.md), [`logging`](../capacidades/logging.md), [`observability`](../capacidades/observability.md), [`metrics`](../capacidades/metrics.md), [`config`](../capacidades/config.md), [`sensitive`](../capacidades/sensitive.md), [`security`](../capacidades/security.md), [`messaging`](../capacidades/messaging.md), [`messaging-kafka`](../capacidades/messaging-kafka.md), [`inbox`](../capacidades/inbox.md)
 
 ```yaml
 axiz.messaging.consumer.max-attempts: 5

@@ -1,5 +1,6 @@
 package pe.axiz.spring.security;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,6 +25,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private final RateLimitRules rules;
   private final SecurityProblems problems;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public RateLimitFilter(RateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);

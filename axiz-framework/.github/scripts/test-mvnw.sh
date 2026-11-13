@@ -29,7 +29,10 @@ tamper_checksum() {
   # Always change the digest: a freshly built ZIP can already have a checksum starting with 0.
   local checksum replacement
   checksum=$(sed -n 's/^distributionSha512Sum=//p' "$PROPS")
-  case "$checksum" in 0*) replacement=1 ;; *) replacement=0 ;; esac
+  case "$checksum" in
+    0*) replacement=1 ;;
+    *) replacement=0 ;;
+  esac
   sed -i "s/^distributionSha512Sum=./distributionSha512Sum=$replacement/" "$PROPS"
 }
 

@@ -11,6 +11,8 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.lang.Strings;
+import pe.axiz.core.tenancy.InvalidTenantException;
+import pe.axiz.core.tenancy.TenantContext;
 
 /** Maps validated token claims to an {@link AxizPrincipal} according to a {@link ClaimMapping}. */
 public final class ClaimsMapper {
@@ -56,7 +58,7 @@ public final class ClaimsMapper {
     if (clientId == null) {
       throw AccessException.unauthenticated("token without client id");
     }
-    String tenant = first(claims, mapping.tenant());
+    String tenant = tenant(claims);
     // identity claims key caches, idempotency scopes, audit and logs: a control character there
     // could make two callers look alike once the values are joined
     requirePrintable("iss", issuer);
@@ -83,6 +85,31 @@ public final class ClaimsMapper {
         firstSet(claims, mapping.roles()),
         tenant,
         attributes);
+  }
+
+  private @Nullable String tenant(Map<String, Object> claims) {
+    for (String path : mapping.tenant()) {
+      ClaimValue selected = claimValue(claims, path);
+      if (!selected.present()) continue;
+      Object value = selected.value();
+      if (!(value instanceof String text) || !TenantContext.isValid(text))
+        throw new InvalidTenantException();
+      return text;
+    }
+    return null;
+  }
+
+  private record ClaimValue(boolean present, @Nullable Object value) {}
+
+  private static ClaimValue claimValue(Map<String, Object> claims, String path) {
+    if (claims.containsKey(path)) return new ClaimValue(true, claims.get(path));
+    @Nullable Object current = claims;
+    for (String segment : path.split("\\.", -1)) {
+      if (!(current instanceof Map<?, ?> map)) return new ClaimValue(true, null);
+      if (!map.containsKey(segment)) return new ClaimValue(false, null);
+      current = map.get(segment);
+    }
+    return new ClaimValue(true, current);
   }
 
   private static void requirePrintable(String claim, @Nullable String value) {

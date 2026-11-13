@@ -69,7 +69,7 @@ public java.time.Duration total();
 public pe.axiz.spring.resilience.AxizResilienceProperties$Timeouts(java.time.Duration, java.time.Duration, java.time.Duration);
 }
 
-public class pe.axiz.spring.resilience.ResiliencePolicies {
+public final class pe.axiz.spring.resilience.ResiliencePolicies {
 public java.util.Optional<io.github.resilience4j.bulkhead.Bulkhead> bulkhead(java.lang.String);
 public java.util.Optional<io.github.resilience4j.circuitbreaker.CircuitBreaker> circuitBreaker(java.lang.String);
 public pe.axiz.core.resilience.RetryPolicy retry(java.lang.String);

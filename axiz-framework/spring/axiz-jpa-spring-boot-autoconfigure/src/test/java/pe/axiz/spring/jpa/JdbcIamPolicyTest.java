@@ -28,6 +28,19 @@ import software.amazon.jdbc.util.FullServicesContainer;
 
 class JdbcIamPolicyTest {
   @Test
+  void blankFrameworkRegionUsesNormalizedExplicitSdkProperty() {
+    var env =
+        new MockEnvironment()
+            .withProperty("axiz.jpa.aws-wrapper.enabled", "true")
+            .withProperty("axiz.jpa.aws-wrapper.iam", "true")
+            .withProperty("axiz.aws.region", "  ")
+            .withProperty("aws.region", " eu-west-1 ");
+    new AxizJpaEnvironmentPostProcessor().postProcessEnvironment(env, new SpringApplication());
+    assertEquals(
+        "eu-west-1", env.getProperty("spring.datasource.hikari.data-source-properties.iamRegion"));
+  }
+
+  @Test
   void unscopedPluginsFailBeforeResolvingCredentialsAndScopedPluginsOnlyBorrow() throws Exception {
     var factory = new AxizJdbcIamPluginFactory();
     var services = mock(FullServicesContainer.class);
@@ -154,7 +167,7 @@ class JdbcIamPolicyTest {
               .withProperty("axiz.jpa.aws-wrapper.enabled", "true")
               .withProperty("axiz.jpa.aws-wrapper.iam", "true")
               .withProperty("axiz.jpa.aws-wrapper.read-write-splitting", Boolean.toString(split))
-              .withProperty("axiz.aws.region", "us-east-1");
+              .withProperty("axiz.aws.region", " us-east-1 ");
       epp.postProcessEnvironment(env, new SpringApplication());
       epp.postProcessEnvironment(env, new SpringApplication());
       var profile =

@@ -1,5 +1,6 @@
 package pe.axiz.adapter.saga.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -121,6 +122,12 @@ public final class JdbcSagaStateStore implements SagaStateStore {
     return out;
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   private <T> T run(String sql, Work<T> work) {
     Connection c = null;
     try {

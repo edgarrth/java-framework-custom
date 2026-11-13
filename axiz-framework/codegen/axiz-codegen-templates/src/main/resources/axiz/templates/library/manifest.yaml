@@ -12,6 +12,7 @@ files:
   - {template: /service/static/gitignore, path: .gitignore, binary: true}
   - {template: /service/static/gitattributes, path: .gitattributes, binary: true}
   - {template: /service/static/gitleaks.toml, path: .gitleaks.toml, binary: true}
+  - {template: /service/static/semgrepignore, path: .semgrepignore, binary: true}
   - {template: /service/static/pre-commit-config.yaml, path: .pre-commit-config.yaml, binary: true}
   - {template: /service/static/renovate.json, path: renovate.json, binary: true}
   - {template: /service/static/pull_request_template.md, path: .github/pull_request_template.md, binary: true}

@@ -17,7 +17,7 @@ public class pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration {
 public pe.axiz.spring.dynamodb.AxizDynamoDbAutoConfiguration();
 }
 
-public class pe.axiz.spring.dynamodb.DynamoRepositories {
+public final class pe.axiz.spring.dynamodb.DynamoRepositories {
 public <T> pe.axiz.kit.dynamodb.DynamoRepository<T> create(java.lang.String, java.lang.Class<T>);
 public <T> pe.axiz.kit.dynamodb.DynamoRepository<T> create(java.lang.String, software.amazon.awssdk.enhanced.dynamodb.TableSchema<T>);
 public java.lang.String tableName(java.lang.String);

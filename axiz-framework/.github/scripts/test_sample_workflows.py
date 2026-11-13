@@ -16,7 +16,7 @@ spec.loader.exec_module(policy)
 
 class SampleWorkflowsTest(unittest.TestCase):
     def test_all_actual_framework_workflows_use_the_same_v2_release_as_their_guard(self):
-        self.assertEqual([], policy.check(HERE.resolve().parents[1]))
+        self.assertEqual([], policy.check(HERE.resolve().parents[1], workflows_directory=HERE.resolve().parents[2] / '.github/workflows'))
 
     def test_sample_builds_reject_missing_or_mutating_format_checks(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -61,16 +61,16 @@ class SampleWorkflowsTest(unittest.TestCase):
         generated.write_text(json.dumps(modules + ['target/samples/axiz-sample-library']))
         document = {
             'jobs': {
-                'axiz-workflows-trust': {'steps': [{'env': {'AXIZ_WORKFLOWS_VERSION': 'v2.0.0'}}]},
+                'axiz-workflows-trust': {'steps': [{'env': {'AXIZ_WORKFLOWS_VERSION': 'axiz-workflows-v2.0.0'}}]},
                 'native': {
-                    'uses': 'axiz/axiz-workflows/.github/workflows/native-nightly.yaml@v2.0.0',
+                    'uses': 'edgarrth/java-framework-custom/.github/workflows/native-nightly.yaml@axiz-workflows-v2.0.0',
                     'with': {'modules': json.dumps(modules)},
                     'secrets': {'NEXUS_USERNAME': '${{ secrets.NEXUS_READ_USERNAME }}',
                                 'NEXUS_PASSWORD': '${{ secrets.NEXUS_READ_PASSWORD }}'},
                 },
             },
         }
-        path = workflows / 'native-nightly.yaml'
+        path = workflows / 'framework-native-nightly.yaml'
         path.write_text(yaml.safe_dump(document))
         return path, document, generated, modules
 

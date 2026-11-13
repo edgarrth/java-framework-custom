@@ -1,5 +1,6 @@
 package pe.axiz.spring.r2dbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.EnvironmentPostProcessor;
@@ -20,6 +21,11 @@ public class AxizR2dbcEnvironmentPostProcessor implements EnvironmentPostProcess
 
   static final String SOURCE = "axizR2dbcDefaults";
 
+  @SuppressFBWarnings(
+      value = "HARD_CODE_PASSWORD",
+      justification =
+          "An empty Flyway placeholder selects the managed JDBC IAM credential integration; "
+              + "it is not an embedded password.")
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
     Map<String, Object> d = new LinkedHashMap<>();
@@ -35,16 +41,18 @@ public class AxizR2dbcEnvironmentPostProcessor implements EnvironmentPostProcess
     d.put("spring.r2dbc.pool.validation-depth", "remote");
     d.put("spring.r2dbc.properties.applicationName", "${spring.application.name:axiz}");
     d.put("spring.flyway.locations", "classpath:db/migration");
-    if (env.getProperty("axiz.r2dbc.iam.enabled", Boolean.class, false)) {
-      // Aurora accepts IAM tokens only over TLS
-      d.put("spring.r2dbc.properties.sslMode", "require");
-    }
+    d.put("spring.r2dbc.properties.sslMode", "verify-full");
     String url = env.getProperty("spring.r2dbc.url");
     if (url != null
         && env.getProperty("axiz.r2dbc.flyway-from-r2dbc", Boolean.class, true)
         && !env.containsProperty("spring.flyway.url")
         && url.contains("postgresql")) {
       d.put("spring.flyway.url", R2dbcUrls.toJdbc(url));
+      d.put(
+          "spring.flyway.jdbc-properties.sslmode",
+          env.getProperty("spring.r2dbc.properties.sslMode", "verify-full"));
+      String rootCert = env.getProperty("spring.r2dbc.properties.sslRootCert");
+      if (rootCert != null) d.put("spring.flyway.jdbc-properties.sslrootcert", rootCert);
       d.put("spring.flyway.user", "${spring.r2dbc.username:}");
       if (!env.getProperty("axiz.r2dbc.iam.enabled", Boolean.class, false)) {
         d.put("spring.flyway.password", "${spring.r2dbc.password:}");

@@ -8,6 +8,7 @@ public enum AwsCapability {
   MESSAGING,
   CRYPTO,
   SECRETS,
+  /** Generic DynamoDB client and repositories; separate from stores backed by that service. */
   DYNAMODB,
   IDEMPOTENCY,
   INBOX,

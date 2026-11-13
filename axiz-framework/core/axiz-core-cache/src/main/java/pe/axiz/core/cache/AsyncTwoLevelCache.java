@@ -1,5 +1,6 @@
 package pe.axiz.core.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,7 +17,15 @@ import pe.axiz.core.commons.Stages;
  */
 public final class AsyncTwoLevelCache implements AsyncByteCache {
   private final LocalByteCache l1;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "AsyncByteCache is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final @Nullable AsyncByteCache l2;
+
   private final Duration maxTtl;
   private final LongSupplier nanoTime;
 

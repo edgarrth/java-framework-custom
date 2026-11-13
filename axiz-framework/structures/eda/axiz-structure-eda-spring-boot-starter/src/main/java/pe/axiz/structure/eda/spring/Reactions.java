@@ -1,5 +1,6 @@
 package pe.axiz.structure.eda.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.messaging.EventEnvelope;
@@ -10,9 +11,15 @@ import pe.axiz.spring.outbox.TransactionalEvents;
  * Emits events in reaction to a consumed one (choreography) through the outbox, inside the handler
  * transaction. The correlation id of the request context is propagated automatically.
  */
-public class Reactions {
+public final class Reactions {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "TransactionalEvents is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final TransactionalEvents events;
+
   private final EventRoutes routes;
 
   public Reactions(TransactionalEvents events, EventRoutes routes) {

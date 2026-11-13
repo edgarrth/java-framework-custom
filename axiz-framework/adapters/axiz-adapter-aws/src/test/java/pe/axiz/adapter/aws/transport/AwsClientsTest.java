@@ -37,9 +37,10 @@ class AwsClientsTest {
   void theSharedEndpointAppliesToEveryService() {
     try (DynamoDbClient client =
         dynamo(
-            Map.of("axiz.aws.region", "us-east-1", "axiz.aws.endpoint", "http://localhost:4566"))) {
+            Map.of(
+                "axiz.aws.region", "us-east-1", "axiz.aws.endpoint", "https://localhost:4566"))) {
       assertEquals(
-          URI.create("http://localhost:4566"),
+          URI.create("https://localhost:4566"),
           client.serviceClientConfiguration().endpointOverride().orElseThrow());
       assertEquals(Region.US_EAST_1, client.serviceClientConfiguration().region());
     }
@@ -51,10 +52,10 @@ class AwsClientsTest {
         dynamo(
             Map.of(
                 "axiz.aws.region", "us-east-1",
-                "axiz.aws.endpoint", "http://localhost:4566",
-                "axiz.aws.dynamodb.endpoint", "http://localhost:9324"))) {
+                "axiz.aws.endpoint", "https://localhost:4566",
+                "axiz.aws.dynamodb.endpoint", "https://localhost:9324"))) {
       assertEquals(
-          URI.create("http://localhost:9324"),
+          URI.create("https://localhost:9324"),
           client.serviceClientConfiguration().endpointOverride().orElseThrow());
     }
   }
@@ -72,7 +73,7 @@ class AwsClientsTest {
         Map.of(
             "axiz.aws.region", " ",
             "axiz.aws.dynamodb.endpoint", " ",
-            "axiz.aws.endpoint", "http://localhost:4566");
+            "axiz.aws.endpoint", "https://localhost:4566");
     // a blank region leaves the one of the builder (or the SDK chain) in place
     try (DynamoDbClient client =
         AwsClients.configured(
@@ -81,7 +82,7 @@ class AwsClientsTest {
             "dynamodb")) {
       assertEquals(Region.SA_EAST_1, client.serviceClientConfiguration().region());
       assertEquals(
-          URI.create("http://localhost:4566"),
+          URI.create("https://localhost:4566"),
           client.serviceClientConfiguration().endpointOverride().orElseThrow());
     }
   }

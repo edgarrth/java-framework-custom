@@ -21,6 +21,17 @@ import pe.axiz.core.secrets.SecretValue;
 class SoapTest {
 
   @Test
+  void unauthenticatedSoapEndpointsAlsoFailAtStartupWithoutTls() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizSoapAutoConfiguration.class))
+        .withPropertyValues(
+            "axiz.config.environment=prod",
+            "axiz.transport.allow-plain-http=true",
+            "axiz.soap.clients.core.endpoint=http://localhost:8080/ws")
+        .run(context -> assertThat(context).hasFailed());
+  }
+
+  @Test
   void callsConfiguredClient() throws Exception {
     HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
@@ -43,6 +54,8 @@ class SoapTest {
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizSoapAutoConfiguration.class))
           .withPropertyValues(
+              "axiz.config.environment=test",
+              "axiz.transport.allow-plain-http=true",
               "axiz.soap.clients.core-bank.endpoint=http://127.0.0.1:"
                   + server.getAddress().getPort()
                   + "/ws")
@@ -103,16 +116,12 @@ class SoapTest {
                           ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
               assertThat(e).hasMessageContaining("password-mode is required");
             });
-    withCredentials("http://core.example/ws", "axiz.soap.clients.core.password-mode=TEXT")
-        .run(
-            ctx -> {
-              IllegalStateException e =
-                  Assertions.assertThrows(
-                      IllegalStateException.class,
-                      () ->
-                          ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
-              assertThat(e).hasMessageContaining("must be https://");
-            });
+    withCredentials(
+            "http://core.example/ws",
+            "axiz.soap.clients.core.password-mode=TEXT",
+            "axiz.config.environment=prod",
+            "axiz.transport.allow-plain-http=false")
+        .run(ctx -> assertThat(ctx).hasFailed());
   }
 
   @Test
@@ -123,7 +132,8 @@ class SoapTest {
       withCredentials(
               "http://127.0.0.1:" + server.getAddress().getPort() + "/ws",
               "axiz.soap.clients.core.password-mode=LEGACY_SHA1_DIGEST",
-              "axiz.soap.clients.core.allow-plain-http=true")
+              "axiz.config.environment=test",
+              "axiz.transport.allow-plain-http=true")
           .run(
               ctx -> {
                 ctx.getBean(SoapClients.class).call("core", "urn:a", "<A xmlns=\"urn:x\"/>");
@@ -134,7 +144,8 @@ class SoapTest {
       withCredentials(
               "http://127.0.0.1:" + server.getAddress().getPort() + "/ws",
               "axiz.soap.clients.core.password-mode=TEXT",
-              "axiz.soap.clients.core.allow-plain-http=true")
+              "axiz.config.environment=test",
+              "axiz.transport.allow-plain-http=true")
           .run(
               ctx -> {
                 ctx.getBean(SoapClients.class).call("core", "urn:a", "<A xmlns=\"urn:x\"/>");

@@ -14,7 +14,13 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("axiz.lock")
 public record AxizLockProperties(
-    @DefaultValue("memory") String store,
+    String store,
     @DefaultValue("axiz-locks") String table,
     @DefaultValue("axiz:lock:") String keyPrefix,
-    @DefaultValue("100ms") Duration pollInterval) {}
+    @DefaultValue("100ms") Duration pollInterval) {
+  public AxizLockProperties {
+    if (store == null || store.isBlank())
+      throw new IllegalArgumentException(
+          "axiz.lock.store is required (redis or dynamodb; memory only in local, test or ci)");
+  }
+}

@@ -24,10 +24,6 @@ axiz:
   logging:
     http:
       enabled: true
-  config:
-    environment: ${AXIZ_ENVIRONMENT:local}
-    parameter-store:
-      application: banking-core
   sensitive:
     response: MEDIUM
   web:

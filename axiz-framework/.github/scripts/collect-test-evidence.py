@@ -3,7 +3,7 @@
 import argparse
 import hashlib
 import json
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from pathlib import Path
 
 

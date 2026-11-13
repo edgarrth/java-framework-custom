@@ -11,7 +11,7 @@
 import os
 import re
 import sys
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 
 REPORT_POM = 'quality/axiz-coverage-report/pom.xml'
 
@@ -36,10 +36,10 @@ def modules_with_code(root):
 
 
 def check_inventory(root):
-    pom = open(os.path.join(root, REPORT_POM), encoding='utf-8').read()
-    deps = {m.group(1): m.group(2) for m in re.finditer(
-        r'<dependency>\s*<groupId>pe\.axiz</groupId>\s*<artifactId>([^<]+)</artifactId>'
-        r'.*?<scope>([^<]+)</scope>\s*</dependency>', pom, re.S)}
+    pom = ET.parse(os.path.join(root, REPORT_POM)).getroot()
+    deps = {dependency.findtext('{*}artifactId'): dependency.findtext('{*}scope', 'compile')
+            for dependency in pom.findall('{*}dependencies/{*}dependency')
+            if dependency.findtext('{*}groupId') == 'pe.axiz'}
     errors = 0
     for artifact in sorted(modules_with_code(root)):
         if artifact not in deps:

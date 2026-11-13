@@ -15,6 +15,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-parent-spring`](platform/axiz-parent-spring.md) | Parent of layer 2 starters, layer 3 frameworks and the Spring libraries of the teams: Spring Boot |
 | [`axiz-parent-technology`](platform/axiz-parent-technology.md) | Maven parent of technology adapters and persistence kits. Inherits shared standards and tests; forbids runtime-framework coupling. It governs technology dependencies independently of pure core contracts. |
 | [`axiz-parent-test`](platform/axiz-parent-test.md) | Test-support libraries: fixtures and contract suites. This parent is only for quality modules and is never a runtime contract. |
+| [`axiz-schema`](platform/axiz-schema.md) | Canonical SQL resources for Axiz tables, under `axiz/sql/`. This JAR contains resources only: no drivers, runtime or startup migration runner. JDBC adapters and project generation consume the same bytes. |
 
 ## Capa 1: core (Java puro)
 
@@ -125,8 +126,10 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-idempotency-spring-boot-starter`](spring/axiz-idempotency-spring-boot-starter.md) | @Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB. |
 | [`axiz-inbox-spring-boot-autoconfigure`](spring/axiz-inbox-spring-boot-autoconfigure.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB (auto-configuration). |
 | [`axiz-inbox-spring-boot-starter`](spring/axiz-inbox-spring-boot-starter.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB. |
+| [`axiz-jdbc-spring-boot-autoconfigure`](spring/axiz-jdbc-spring-boot-autoconfigure.md) | Shared JDBC transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector. |
 | [`axiz-jpa-spring-boot-autoconfigure`](spring/axiz-jpa-spring-boot-autoconfigure.md) | Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults (auto-configuration). |
 | [`axiz-jpa-spring-boot-starter`](spring/axiz-jpa-spring-boot-starter.md) | Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults. |
+| [`axiz-kafka-spring-boot-autoconfigure`](spring/axiz-kafka-spring-boot-autoconfigure.md) | Shared effective Kafka transport validation for messaging and audit. Require SSL or SASL_SSL and peer/hostname verification outside an explicit local/test/ci exception (`axiz.transport.allow-insecure-data-stores=true`). |
 | [`axiz-lock-spring-boot-autoconfigure`](spring/axiz-lock-spring-boot-autoconfigure.md) | Distributed locks on Redis or DynamoDB with the lock template (auto-configuration). |
 | [`axiz-lock-spring-boot-starter`](spring/axiz-lock-spring-boot-starter.md) | Distributed locks on Redis or DynamoDB with the lock template. |
 | [`axiz-logging-spring-boot-autoconfigure`](spring/axiz-logging-spring-boot-autoconfigure.md) | Structured JSON logging, operation logging with masking and HTTP request logs (auto-configuration). |
@@ -143,6 +146,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-outbox-spring-boot-starter`](spring/axiz-outbox-spring-boot-starter.md) | Transactional outbox on Aurora PostgreSQL with background relay. |
 | [`axiz-r2dbc-spring-boot-autoconfigure`](spring/axiz-r2dbc-spring-boot-autoconfigure.md) | Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, Flyway over JDBC, transactional ReactiveSql, auditing, encrypted and money columns, reader endpoint (auto-configuration). |
 | [`axiz-r2dbc-spring-boot-starter`](spring/axiz-r2dbc-spring-boot-starter.md) | Aurora PostgreSQL for reactive services over R2DBC. |
+| [`axiz-redis-spring-boot-autoconfigure`](spring/axiz-redis-spring-boot-autoconfigure.md) | Shared REDIS transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector. |
 | [`axiz-resilience-spring-boot-autoconfigure`](spring/axiz-resilience-spring-boot-autoconfigure.md) | Resilience4j defaults (circuit breaker, bulkhead) and Spring @Retryable configured by properties (auto-configuration). |
 | [`axiz-resilience-spring-boot-starter`](spring/axiz-resilience-spring-boot-starter.md) | Resilience4j defaults (circuit breaker, bulkhead) and Spring @Retryable configured by properties. |
 | [`axiz-saga-spring-boot-autoconfigure`](spring/axiz-saga-spring-boot-autoconfigure.md) | Saga orchestrator with persistent state on PostgreSQL and recovery of stale sagas (auto-configuration). |

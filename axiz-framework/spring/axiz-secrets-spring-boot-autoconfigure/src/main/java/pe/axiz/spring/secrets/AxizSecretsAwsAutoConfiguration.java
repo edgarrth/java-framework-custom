@@ -17,6 +17,7 @@ import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.secrets.aws.ParameterStoreResolver;
 import pe.axiz.adapter.secrets.aws.SecretsManagerResolver;
 import pe.axiz.core.secrets.AsyncSecretResolver;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
 import pe.axiz.spring.foundation.aws.AwsCapability;
@@ -49,7 +50,8 @@ public class AxizSecretsAwsAutoConfiguration {
   AsyncAwsClients axizSecretsManagerAsyncAwsResources(
       AxizAwsCompletionProperties completion,
       ObjectProvider<MeterRegistry> registries,
-      AwsIdentity identity) {
+      AwsIdentity identity,
+      AxizAwsAsyncTransportProperties transport) {
     return AwsAsyncResources.create(
         "axizSecretsManagerAsyncAwsResources",
         completion.workers(),
@@ -57,7 +59,8 @@ public class AxizSecretsAwsAutoConfiguration {
         registries.getIfAvailable(),
         identity,
         AwsService.SECRETS_MANAGER,
-        AwsCapability.SECRETS);
+        AwsCapability.SECRETS,
+        transport.toSettings());
   }
 
   // Register each owner before native clients; each AWS service can use a different identity.
@@ -71,7 +74,8 @@ public class AxizSecretsAwsAutoConfiguration {
   AsyncAwsClients axizSsmAsyncAwsResources(
       AxizAwsCompletionProperties completion,
       ObjectProvider<MeterRegistry> registries,
-      AwsIdentity identity) {
+      AwsIdentity identity,
+      AxizAwsAsyncTransportProperties transport) {
     return AwsAsyncResources.create(
         "axizSsmAsyncAwsResources",
         completion.workers(),
@@ -79,7 +83,8 @@ public class AxizSecretsAwsAutoConfiguration {
         registries.getIfAvailable(),
         identity,
         AwsService.SSM,
-        AwsCapability.SECRETS);
+        AwsCapability.SECRETS,
+        transport.toSettings());
   }
 
   @Configuration(proxyBeanMethods = false)

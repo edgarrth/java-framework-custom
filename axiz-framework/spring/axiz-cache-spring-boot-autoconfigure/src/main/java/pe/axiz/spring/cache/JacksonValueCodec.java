@@ -1,12 +1,18 @@
 package pe.axiz.spring.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import pe.axiz.core.cache.ValueCodec;
 import tools.jackson.databind.json.JsonMapper;
 
 /** JSON values with the application mapper. */
-public class JacksonValueCodec implements ValueCodec {
+public final class JacksonValueCodec implements ValueCodec {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "JsonMapper is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final JsonMapper mapper;
 
   public JacksonValueCodec(JsonMapper mapper) {

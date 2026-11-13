@@ -9,6 +9,11 @@ import org.jspecify.annotations.Nullable;
  * (in-memory idempotency keys, locks, object storage) is only correct with a single replica and no
  * restarts, so it is accepted in {@link #SINGLE_PROCESS} environments and rejected anywhere else: a
  * deployed environment must use a shared store for the guarantees the framework declares.
+ *
+ * <p>This is also the common allowlist for explicitly requested transport exceptions (HTTP and
+ * data-store TLS), embedded databases, schema-changing JPA modes, credentialed CORS policy and
+ * local audit defaults. Active Spring profiles never grant these exceptions. Each integration must
+ * still require its own explicit exception flag or selector where applicable.
  */
 public final class Environments {
 

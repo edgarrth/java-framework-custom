@@ -1,0 +1,86 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "axiz base preset: weekly batches, semantic commits, security updates right away",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    "helpers:pinGitHubActionDigestsToSemver"
+  ],
+  "timezone": "America/Lima",
+  "schedule": [
+    "before 7am on monday"
+  ],
+  "prConcurrentLimit": 5,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": [
+      "at any time"
+    ],
+    "labels": [
+      "security"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Minor and patch updates of build plugins and test libraries are grouped",
+      "matchDepTypes": [
+        "build",
+        "test"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "build and test dependencies"
+    },
+    {
+      "description": "GitHub Actions grouped",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Container images are pinned by digest (tag kept for readability)",
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true
+    },
+    {
+      "description": "Update Axiz actions and their release verification in the same pull request",
+      "matchPackageNames": [
+        "edgarrth/java-framework-custom",
+        "edgarrth/java-framework-custom/**"
+      ],
+      "groupName": "axiz workflows"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Container base images in pom properties annotated with a renovate comment: the tag and its digest are updated together",
+      "managerFilePatterns": [
+        "/(^|/)pom\\.xml$/"
+      ],
+      "matchStrings": [
+        "<!-- renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+) -->\\s*<[^>]+>[^:<]+:(?<currentValue>[^@<]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?</"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Keep the immutable release verification version aligned with internal action references",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
+        "/\\.ya?ml\\.mustache$/"
+      ],
+      "matchStrings": [
+        "AXIZ_WORKFLOWS_VERSION: (?<currentValue>axiz-workflows-v\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "edgarrth/java-framework-custom",
+      "versioningTemplate": "regex:^axiz-workflows-v(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    }
+  ]
+}

@@ -20,6 +20,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.DialectResolver;
 import org.springframework.r2dbc.core.DatabaseClient;
+import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.kit.r2dbc.ReactiveSql;
@@ -81,7 +82,8 @@ public class AxizR2dbcAutoConfiguration {
             Binder.get(env)
                 .bind("spring.r2dbc.properties", Bindable.mapOf(String.class, String.class))
                 .orElseGet(Map::of),
-            decorators.orderedStream().toList()),
+            decorators.orderedStream().toList(),
+            DataTransportSecurityPolicy.from(env::getProperty)),
         iam instanceof AutoCloseable closeable ? closeable : null);
   }
 

@@ -1,5 +1,7 @@
 package pe.axiz.payments.notifications.event;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
@@ -26,9 +28,6 @@ public record AuditRecord(
     String outcome,
     @Nullable Map<String, Object> details) {
   public AuditRecord {
-    details =
-        details == null
-            ? null
-            : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(details));
+    details = details == null ? null : Collections.unmodifiableMap(new LinkedHashMap<>(details));
   }
 }

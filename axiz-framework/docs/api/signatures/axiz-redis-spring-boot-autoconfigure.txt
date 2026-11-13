@@ -1,0 +1,9 @@
+public class pe.axiz.spring.redis.AxizRedisTransportAutoConfiguration {
+public pe.axiz.spring.redis.AxizRedisTransportAutoConfiguration();
+}
+
+public final class pe.axiz.spring.redis.AxizRedisTransportEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.redis.AxizRedisTransportEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}

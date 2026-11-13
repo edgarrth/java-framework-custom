@@ -1,5 +1,6 @@
 package pe.axiz.spring.idempotency;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -51,6 +52,11 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
   private final Supplier<IdempotencyService> service;
   private final Supplier<AsyncIdempotencyService> asyncService;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
     this(
         service,
@@ -59,6 +65,11 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
         });
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Spring advice extension validates service suppliers; no external resource is "
+              + "acquired or this reference published.")
   public IdempotencyMethodInterceptor(
       Supplier<IdempotencyService> service, Supplier<AsyncIdempotencyService> asyncService) {
     this.service = Objects.requireNonNull(service);
@@ -116,7 +127,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       return invocation.proceed();
     } catch (Throwable failure) {
       if (failure instanceof NoEffect)
-        request.setAttribute(IdempotencyFilter.NO_EFFECT_ATTRIBUTE, Boolean.TRUE);
+        request.setAttribute(IdempotencyFilter.NO_EFFECT_ATTRIBUTE, true);
       throw failure;
     }
   }

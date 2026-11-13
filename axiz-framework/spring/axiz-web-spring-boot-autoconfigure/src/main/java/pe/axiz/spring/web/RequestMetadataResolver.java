@@ -19,7 +19,7 @@ import pe.axiz.core.id.CorrelationIds;
  * Builds {@link RequestMetadata} from an inbound request and validates the header catalog. Shared
  * by the servlet filter and the reactive web filter.
  */
-public class RequestMetadataResolver {
+public final class RequestMetadataResolver {
 
   private final HeaderCatalog catalog;
   private final List<PathPattern> excluded;

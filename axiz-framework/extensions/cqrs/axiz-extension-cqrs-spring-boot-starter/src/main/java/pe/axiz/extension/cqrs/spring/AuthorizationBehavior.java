@@ -24,7 +24,7 @@ import pe.axiz.extension.cqrs.RequiresAuthority;
  * caller lacks it), then every matching {@code AccessPolicy} (object-level checks). It runs before
  * idempotency, so a stored result is never returned to a caller who may no longer send the request.
  */
-public class AuthorizationBehavior implements PipelineBehavior {
+public final class AuthorizationBehavior implements PipelineBehavior {
 
   private final AccessPolicies policies;
 

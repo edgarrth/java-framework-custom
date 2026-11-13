@@ -1,5 +1,6 @@
 package pe.axiz.adapter.outbox.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -26,6 +27,12 @@ public final class JdbcOutboxPreflight {
       boolean pendingSuccessors) {}
 
   /** Streams the canonical SQL report without changing statuses or retaining all rows in memory. */
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   public static long report(Connection connection, String table, Consumer<Failure> result)
       throws SQLException {
     String identifier = SqlIdentifiers.require(table);

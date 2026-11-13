@@ -1,5 +1,6 @@
 package pe.axiz.spring.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
@@ -12,6 +13,12 @@ import software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhanced
 
 /** Cold, cancellable Reactor facade. An absent item completes empty; failures remain failures. */
 public final class ReactiveDynamoRepository<T> {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoAsyncRepository<T> is a borrowed collaborator; sharing its identity "
+              + "preserves lifecycle, transactions or instrumentation. The field is not an owned "
+              + "mutable value.")
   private final DynamoAsyncRepository<T> repository;
 
   public ReactiveDynamoRepository(DynamoAsyncRepository<T> repository) {

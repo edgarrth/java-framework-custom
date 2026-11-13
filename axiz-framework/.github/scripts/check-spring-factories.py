@@ -2,7 +2,7 @@
 """spring.factories holds only what Spring Boot cannot load from AutoConfiguration.imports.
 
 Auto-configurations are declared in META-INF/spring/...AutoConfiguration.imports; spring.factories
-is kept for the environment post-processors, which Spring Boot only discovers there. This check
+is kept for Boot SPI extensions (environment, config data, import filters and lifecycle). This check
 fails if a spring.factories declares another key (an auto-configuration there would be ignored by
 Boot 4) or names a class that does not exist in the module or does not implement the interface.
 
@@ -12,7 +12,13 @@ import os
 import re
 import sys
 
-ALLOWED = {'org.springframework.boot.EnvironmentPostProcessor': 'EnvironmentPostProcessor'}
+ALLOWED = {
+    'org.springframework.boot.EnvironmentPostProcessor': 'EnvironmentPostProcessor',
+    'org.springframework.boot.autoconfigure.AutoConfigurationImportFilter': 'AutoConfigurationImportFilter',
+    'org.springframework.boot.context.config.ConfigDataLocationResolver': 'ConfigDataLocationResolver',
+    'org.springframework.boot.context.config.ConfigDataLoader': 'ConfigDataLoader',
+    'org.springframework.boot.SpringApplicationRunListener': 'SpringApplicationRunListener',
+}
 
 
 def entries(path):

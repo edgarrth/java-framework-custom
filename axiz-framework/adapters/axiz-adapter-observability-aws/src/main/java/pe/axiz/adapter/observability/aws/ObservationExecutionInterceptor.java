@@ -1,5 +1,6 @@
 package pe.axiz.adapter.observability.aws;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Scope;
 import io.micrometer.observation.ObservationRegistry;
@@ -34,6 +35,11 @@ public final class ObservationExecutionInterceptor implements ExecutionIntercept
   private static final ExecutionAttribute<Active> ACTIVE =
       new ExecutionAttribute<>("axiz.observation");
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry registry;
 
   public ObservationExecutionInterceptor(ObservationRegistry registry) {

@@ -1,5 +1,6 @@
 package pe.axiz.adapter.crypto.kms;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.DataKeyProvider;
@@ -15,7 +16,13 @@ public final class KmsDataKeyProvider implements DataKeyProvider {
 
   static final String CONTEXT_KEY = "axiz-context";
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "KmsClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final KmsClient kms;
+
   private final KmsRequests requests;
 
   public KmsDataKeyProvider(KmsClient kms, String keyId) {

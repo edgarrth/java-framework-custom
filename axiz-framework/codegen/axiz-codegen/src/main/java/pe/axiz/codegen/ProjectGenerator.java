@@ -1,5 +1,6 @@
 package pe.axiz.codegen;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,7 +35,13 @@ import pe.axiz.codegen.render.YamlProperties;
  */
 public final class ProjectGenerator {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Catalog owns defensive snapshots and exposes no mutator; SpotBugs does not infer "
+              + "its immutability.")
   private final Catalog catalog;
+
   private final RequestValidator validator;
 
   public ProjectGenerator(Catalog catalog) {
@@ -272,9 +279,12 @@ public final class ProjectGenerator {
       }
     }
     if ((r.structure() == Structure.HEXAGONAL) && contract != null) {
-      c.put("applicationModels", ApplicationModels.records(contract, r.basePackage()));
+      c.put("applicationModels", ApplicationModels.records(contract));
     }
     c.put("operations", operations);
+    c.put(
+        "hasProtectedOperations",
+        operations.stream().anyMatch(op -> !Boolean.TRUE.equals(op.get("publicEndpoint"))));
     List<Map<String, Object>> tags = new ArrayList<>();
     byTag.forEach(
         (tag, ops) -> {
@@ -665,10 +675,13 @@ public final class ProjectGenerator {
     Map<String, Object> local = new LinkedHashMap<>();
     local.put("axiz.logging.json", false);
     local.put("axiz.config.environment", "local");
+    local.put("axiz.transport.allow-insecure-data-stores", true);
     if (caps.stream().anyMatch(cap -> cap.name().equals("jpa"))) {
       local.put(
           "spring.datasource.url", "jdbc:postgresql://localhost:5432/" + Names.snake(r.name()));
       local.put("spring.datasource.username", "app");
+      local.put("spring.datasource.hikari.data-source-properties.sslmode", "disable");
+      local.put("spring.flyway.jdbc-properties.sslmode", "disable");
     }
     if (caps.stream().anyMatch(cap -> cap.name().equals("r2dbc"))) {
       local.put("spring.r2dbc.url", "r2dbc:postgresql://localhost:5432/" + Names.snake(r.name()));
@@ -677,6 +690,10 @@ public final class ProjectGenerator {
       local.put("spring.r2dbc.properties.sslMode", "disable");
     }
     caps.forEach(cap -> local.putAll(cap.localProperties()));
+    if (caps.stream().anyMatch(cap -> cap.name().equals("messaging-kafka")))
+      local.put("spring.kafka.security.protocol", "PLAINTEXT");
+    if (caps.stream().anyMatch(cap -> cap.name().endsWith("redis")))
+      local.put("spring.data.redis.ssl.enabled", false);
     var auditResources = auditResources(caps);
     String auditQueue = "http://localhost:4566/000000000000/" + r.name() + "-audit";
     if (Boolean.TRUE.equals(auditResources.get("sqsSink")))
@@ -755,6 +772,12 @@ public final class ProjectGenerator {
     o.put("requiresScopes", op.access() == ApiOperation.Access.SCOPED);
     o.put("authenticatedAccess", op.access() == ApiOperation.Access.AUTHENTICATED);
     o.put("publicEndpoint", op.access() == ApiOperation.Access.PUBLIC);
+    o.put(
+        "requiredAuthorities",
+        op.scopes().stream()
+            .map(scope -> "\"SCOPE_" + scope + "\"")
+            .collect(Collectors.joining(", ")));
+    o.put("policyRequestType", className + (op.readOnly() ? "Query" : "Command"));
     o.put(
         "partialAuthority",
         op.scopes().size() > 1 ? "SCOPE_" + op.scopes().getFirst() : "SCOPE_unrelated");
@@ -847,9 +870,7 @@ public final class ProjectGenerator {
               : basePackage + ".application.model." + request;
       hexagonalArguments.set(
           hexagonalArguments.size() - 1,
-          "mapper.convertValue(body, new tools.jackson.core.type.TypeReference<"
-              + applicationType
-              + ">() {})");
+          "mapper.convertValue(body, new TypeReference<" + applicationType + ">() {})");
     }
     o.put("hexagonalArguments", String.join(", ", hexagonalArguments));
     o.put("hasInput", !components.isEmpty());

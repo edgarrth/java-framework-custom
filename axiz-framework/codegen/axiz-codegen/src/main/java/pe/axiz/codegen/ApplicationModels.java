@@ -3,6 +3,8 @@ package pe.axiz.codegen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.lang.model.SourceVersion;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.openapi.OpenApiDocument;
@@ -11,13 +13,13 @@ import pe.axiz.codegen.openapi.OpenApiDocument;
 final class ApplicationModels {
   private ApplicationModels() {}
 
-  static List<Map<String, Object>> records(OpenApiDocument contract, String basePackage) {
+  static List<Map<String, Object>> records(OpenApiDocument contract) {
     Map<?, ?> schemas = mapping(mapping(contract.raw().get("components")).get("schemas"));
-    return recordsForPackage(schemas, basePackage + ".application.model", true);
+    return recordsForPackage(schemas, true);
   }
 
   static List<Map<String, Object>> recordsForPackage(
-      Map<?, ?> schemas, String namespace, boolean nullableAnnotations) {
+      Map<?, ?> schemas, boolean nullableAnnotations) {
     List<Map<String, Object>> result = new ArrayList<>();
     for (var entry : schemas.entrySet()) {
       String name = Names.pascal(entry.getKey().toString());
@@ -54,6 +56,7 @@ final class ApplicationModels {
       }
       List<String> fields = new ArrayList<>();
       List<String> copies = new ArrayList<>();
+      Set<String> imports = new TreeSet<>();
       for (var property : mapping(schema.get("properties")).entrySet()) {
         String propertyName = property.getKey().toString();
         if (!SourceVersion.isIdentifier(propertyName) || SourceVersion.isKeyword(propertyName)) {
@@ -65,15 +68,18 @@ final class ApplicationModels {
             schema.get("required") instanceof List<?> names && names.contains(propertyName);
         boolean nullable =
             propertySchema.get("type") instanceof List<?> types && types.contains("null");
-        String javaType = type(propertySchema, namespace);
+        String javaType = imported(type(propertySchema), schemas, imports);
         String copy = null;
-        if (javaType.startsWith("java.util.List<")) {
-          copy = "java.util.List.copyOf(" + propertyName + ")";
-        } else if (javaType.startsWith("java.util.Map<")) {
+        if (javaType.startsWith("java.util.List<") || javaType.startsWith("List<")) {
+          copy = imported("java.util.List.copyOf(" + propertyName + ")", schemas, imports);
+        } else if (javaType.startsWith("java.util.Map<") || javaType.startsWith("Map<")) {
           copy =
-              "java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>("
-                  + propertyName
-                  + "))";
+              imported(
+                  "java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>("
+                      + propertyName
+                      + "))",
+                  schemas,
+                  imports);
         }
         if (copy != null) {
           copies.add(
@@ -96,6 +102,8 @@ final class ApplicationModels {
           Map.of(
               "name",
               name,
+              "imports",
+              String.join("\n", imports.stream().map(value -> "import " + value + ";").toList()),
               "declaration",
               "public record "
                   + name
@@ -114,18 +122,41 @@ final class ApplicationModels {
     return result;
   }
 
+  private static String imported(String value, Map<?, ?> schemas, Set<String> imports) {
+    String result = value;
+    for (String qualified :
+        List.of(
+            "java.math.BigDecimal",
+            "java.time.LocalDate",
+            "java.time.OffsetDateTime",
+            "java.util.UUID",
+            "java.util.List",
+            "java.util.Map",
+            "java.util.Collections",
+            "java.util.LinkedHashMap")) {
+      String simple = qualified.substring(qualified.lastIndexOf('.') + 1);
+      if (result.contains(qualified)
+          && schemas.keySet().stream()
+              .noneMatch(key -> Names.pascal(key.toString()).equals(simple))) {
+        imports.add(qualified);
+        result = result.replace(qualified, simple);
+      }
+    }
+    return result;
+  }
+
   private static Map<?, ?> mapping(@Nullable Object value) {
     return value instanceof Map<?, ?> map ? map : Map.of();
   }
 
-  private static String type(Map<?, ?> schema, String namespace) {
+  private static String type(Map<?, ?> schema) {
     Object ref = schema.get("$ref");
     if (ref instanceof String text) {
       if (!text.startsWith("#/components/schemas/")) {
         throw new IllegalArgumentException(
             "Application models require local schema references: " + text);
       }
-      return namespace + "." + Names.pascal(text.substring(text.lastIndexOf('/') + 1));
+      return Names.pascal(text.substring(text.lastIndexOf('/') + 1));
     }
     Object declared = schema.get("type");
     String kind =
@@ -147,7 +178,7 @@ final class ApplicationModels {
       case "integer" -> "int64".equals(schema.get("format")) ? "Long" : "Integer";
       case "number" -> "java.math.BigDecimal";
       case "boolean" -> "Boolean";
-      case "array" -> "java.util.List<" + type(mapping(schema.get("items")), namespace) + ">";
+      case "array" -> "java.util.List<" + type(mapping(schema.get("items"))) + ">";
       default -> "java.util.Map<String, Object>";
     };
   }

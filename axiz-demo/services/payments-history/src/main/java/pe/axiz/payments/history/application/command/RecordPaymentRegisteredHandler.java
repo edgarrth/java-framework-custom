@@ -22,7 +22,7 @@ public class RecordPaymentRegisteredHandler
         new PaymentHistory.Registration(
             c.operationNumber(),
             c.creditorCci(),
-            Money.ofExact(c.amount(), c.currency()),
+            Money.of(c.amount(), c.currency()),
             c.processingDate());
     return histories
         .apply(

@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.sensitive.ObjectMasker;
 
@@ -83,7 +84,8 @@ class SoapProtocolTest {
         Duration.ofSeconds(2),
         null,
         ObjectMasker.defaults(),
-        Clock.fixed(NOW, ZoneOffset.UTC));
+        Clock.fixed(NOW, ZoneOffset.UTC),
+        new TransportSecurityPolicy("test", true));
   }
 
   @Test
@@ -164,6 +166,9 @@ class SoapProtocolTest {
     String created = "2026-11-09T00:00:00Z";
     for (String text : new String[] {"", "páss\uD83D\uDD10漢字", "bad\uD800"}) {
       char[] password = text.toCharArray();
+      // SOAP WS-Security SHA-1 digest interoperability fixture; production requires explicit
+      // LEGACY_SHA1_DIGEST mode.
+      // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
       var reference = MessageDigest.getInstance("SHA-1");
       reference.update(nonce);
       reference.update(created.getBytes(StandardCharsets.UTF_8));
@@ -190,6 +195,9 @@ class SoapProtocolTest {
     String created = one(doc, WsSecurity.WSU, "Created").getTextContent();
     assertEquals("2026-10-24T10:15:30Z", created, "whole seconds");
 
+    // SOAP WS-Security SHA-1 digest interoperability fixture; production requires explicit
+    // LEGACY_SHA1_DIGEST mode.
+    // nosemgrep: java.lang.security.audit.crypto.use-of-sha1.use-of-sha1
     MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
     sha1.update(nonceBytes);
     sha1.update(created.getBytes(StandardCharsets.UTF_8));

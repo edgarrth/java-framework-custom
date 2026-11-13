@@ -19,7 +19,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizEdaAutoConfiguration` | Event-driven style: transactional handlers (business writes, inbox and outbox commit together) and choreography through `Reactions`, or for reactive services non-blocking handlers in a reactive transaction with `ReactiveReactions`. |
-| `AxizEdaProperties` | EDA style settings (`axiz.eda.*`). |
 | `Reactions` | Emits events in reaction to a consumed one (choreography) through the outbox, inside the handler transaction. |
 | `ReactiveEventHandlerPostProcessor` | Wraps every `ReactiveTypedEventHandler` bean in `ReactiveTransactionalEventHandler`: a reactive transaction when a reactive transaction manager exists (R2DBC), the request context and the handler timeout in every case. |
 | `ReactiveReactions` | Reactive `Reactions`: emits events in reaction to a consumed one through the R2DBC outbox, inside the reactive transaction of the handler. |
@@ -30,3 +29,5 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/eda/axiz-structure-eda-spring-boot-starter verify`.
+
+The starter reuses `axiz.messaging.*` settings and core messaging contracts. EDA has no separate API artifact.

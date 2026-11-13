@@ -31,6 +31,9 @@
        classes and sources only from compile, runtime and provided dependencies; a test
        dependency would add its execution data and nothing to measure it against. -->
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kafka-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-redis-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-sequence-r2dbc</artifactId><version>${project.version}</version><scope>provided</scope></dependency>
@@ -506,12 +509,6 @@
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-extension-cqrs-spring-boot-starter</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-structure-eda-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

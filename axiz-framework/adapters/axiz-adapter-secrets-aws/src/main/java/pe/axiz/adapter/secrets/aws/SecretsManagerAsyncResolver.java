@@ -1,5 +1,6 @@
 package pe.axiz.adapter.secrets.aws;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
@@ -14,7 +15,13 @@ import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundExce
  * Native Secrets Manager lookups. Only a missing secret becomes absence; outages remain failures.
  */
 public final class SecretsManagerAsyncResolver implements AsyncSecretResolver {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Native SDK clients are likewise borrowed, thread-safe resources. Adapters neither "
+              + "expose nor close the supplied clients.")
   private final SecretsManagerAsyncClient client;
+
   private final String prefix;
 
   public SecretsManagerAsyncResolver(SecretsManagerAsyncClient client, String prefix) {

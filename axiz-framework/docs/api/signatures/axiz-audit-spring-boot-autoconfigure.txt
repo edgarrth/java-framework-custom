@@ -126,7 +126,7 @@ public int getOrder();
 public pe.axiz.spring.audit.HttpAuditFilter(pe.axiz.core.audit.AuditTrail, pe.axiz.spring.audit.AuditContextResolver, pe.axiz.spring.audit.AxizAuditProperties$Http);
 }
 
-public class pe.axiz.spring.audit.HttpAuditWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
+public final class pe.axiz.spring.audit.HttpAuditWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
 public int getOrder();
 public pe.axiz.spring.audit.HttpAuditWebFilter(pe.axiz.core.audit.AuditTrail, pe.axiz.spring.audit.AuditContextResolver, pe.axiz.spring.audit.AxizAuditProperties$Http);
 public pe.axiz.spring.audit.HttpAuditWebFilter(pe.axiz.spring.audit.ReactiveAuditTrail, pe.axiz.spring.audit.AuditContextResolver, pe.axiz.spring.audit.AxizAuditProperties$Http);
@@ -165,7 +165,7 @@ public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.adapter.
 public reactor.core.publisher.Mono<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
 }
 
-public class pe.axiz.spring.audit.TransactionalAuditPublisher implements pe.axiz.core.audit.AuditPublisher,java.lang.AutoCloseable {
+public final class pe.axiz.spring.audit.TransactionalAuditPublisher implements pe.axiz.core.audit.AuditPublisher,java.lang.AutoCloseable {
 public long notConfirmedCount();
 public pe.axiz.core.audit.AuditPublisher fallback();
 public pe.axiz.spring.audit.TransactionalAuditPublisher(pe.axiz.core.outbox.OutboxWriter, java.lang.String, pe.axiz.core.audit.AuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction);

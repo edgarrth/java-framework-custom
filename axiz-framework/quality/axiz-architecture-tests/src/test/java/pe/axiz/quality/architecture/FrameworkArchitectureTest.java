@@ -217,7 +217,8 @@ class FrameworkArchitectureTest {
 
   /**
    * A capability starter only uses its own package and the shared foundation adapters; capabilities
-   * talk to each other through core ports.
+   * talk to each other through core ports. Audit and messaging may share the Kafka transport
+   * validator, which contains no capability or business behavior.
    */
   @ArchTest
   static final ArchRule STARTERS_ARE_ISOLATED =
@@ -277,6 +278,9 @@ class FrameworkArchitectureTest {
               target.isPrimitive()
                   || name.startsWith("java.")
                   || name.startsWith("org.jspecify.")
+                  // Compile-only static-analysis metadata, including the annotation's enum default.
+                  || name.equals("edu.umd.cs.findbugs.annotations.SuppressFBWarnings")
+                  || name.equals("edu.umd.cs.findbugs.annotations.SuppressMatchType")
                   || name.startsWith("org.slf4j.")
                   || name.startsWith("io.micrometer.")
                   || name.startsWith("org.reactivestreams.")
@@ -446,7 +450,11 @@ class FrameworkArchitectureTest {
                   String target = d.getTargetClass().getPackageName();
                   if (target.startsWith("pe.axiz.spring.")) {
                     String other = capability(target);
-                    if (!other.equals(own) && !other.equals("foundation")) {
+                    boolean sharedKafkaTransport =
+                        other.equals("kafka") && Set.of("audit", "messaging").contains(own);
+                    if (!other.equals(own)
+                        && !other.equals("foundation")
+                        && !sharedKafkaTransport) {
                       events.add(SimpleConditionEvent.violated(d, d.getDescription()));
                     }
                   }

@@ -10,9 +10,16 @@ import pe.axiz.core.commons.AsyncLoadingCache;
 /** Bounded TTL cache, coalesced native loads and cancellation without caching missing secrets. */
 public final class CachingAsyncSecretResolver implements AsyncSecretResolver {
   private final AsyncSecretResolver delegate;
+  private final SecretCacheInstrumentation instrumentation;
   private final AsyncLoadingCache<Optional<SecretValue>> cache;
 
   public CachingAsyncSecretResolver(AsyncSecretResolver delegate, Duration ttl, Clock clock) {
+    this(delegate, ttl, clock, SecretCacheObserver.NONE);
+  }
+
+  public CachingAsyncSecretResolver(
+      AsyncSecretResolver delegate, Duration ttl, Clock clock, SecretCacheObserver observer) {
+    instrumentation = new SecretCacheInstrumentation(observer);
     this.delegate = Objects.requireNonNull(delegate);
     cache =
         new AsyncLoadingCache<>(
@@ -25,7 +32,8 @@ public final class CachingAsyncSecretResolver implements AsyncSecretResolver {
 
   @Override
   public CompletionStage<Optional<SecretValue>> resolve(String name) {
-    return cache.get(name, () -> delegate.resolve(name));
+    return cache.get(
+        name, () -> instrumentation.load(() -> delegate.resolve(name)), instrumentation::lookup);
   }
 
   public void evict(String name) {

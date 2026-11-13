@@ -44,6 +44,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.Stages;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalServiceException;
 
 class AsyncClientCredentialsTest {
@@ -120,7 +121,8 @@ class AsyncClientCredentialsTest {
         "core",
         Duration.ofSeconds(60),
         timeout,
-        clock);
+        clock,
+        new TransportSecurityPolicy("test", true));
   }
 
   private AccessToken await(CompletionStage<AccessToken> result) throws Exception {
@@ -292,7 +294,8 @@ class AsyncClientCredentialsTest {
                   null,
                   Duration.ZERO,
                   Duration.ofSeconds(2),
-                  clock));
+                  clock,
+                  new TransportSecurityPolicy("test", true)));
     }
     assertThrows(
         IllegalArgumentException.class,
@@ -315,7 +318,8 @@ class AsyncClientCredentialsTest {
                 null,
                 Duration.ofSeconds(-1),
                 Duration.ofSeconds(2),
-                clock));
+                clock,
+                new TransportSecurityPolicy("test", true)));
     assertFalse(
         new AsyncHttpExchange.Response(200, null, "sensitive-body")
             .toString()

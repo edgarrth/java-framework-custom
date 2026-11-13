@@ -1,5 +1,6 @@
 package pe.axiz.core.money;
 
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.util.Currency;
 import java.util.Map;
@@ -17,15 +18,20 @@ public final class CurrencyConverter {
     this.clock = Objects.requireNonNull(clock);
   }
 
-  public Money convert(Money money, Currency target) {
+  public Money convert(Money money, Currency target, RoundingMode rounding) {
+    Objects.requireNonNull(rounding, "rounding");
     if (money.currency().equals(target)) {
       return money;
     }
     var now = clock.instant();
     return provider
         .rate(money.currency(), target, now)
-        .or(() -> provider.rate(target, money.currency(), now).map(ExchangeRate::inverse))
-        .map(rate -> rate.convert(money))
+        .map(rate -> rate.convert(money, rounding))
+        .or(
+            () ->
+                provider
+                    .rate(target, money.currency(), now)
+                    .map(rate -> rate.convertInverse(money, rounding)))
         .orElseThrow(
             () ->
                 new BusinessException(

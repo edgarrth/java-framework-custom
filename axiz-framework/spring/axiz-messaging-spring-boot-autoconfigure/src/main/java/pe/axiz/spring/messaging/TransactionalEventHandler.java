@@ -1,5 +1,6 @@
 package pe.axiz.spring.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -17,7 +18,14 @@ import pe.axiz.spring.foundation.InboxCompletion;
 public final class TransactionalEventHandler<T> implements CompletesInTransaction<T> {
 
   private final EventHandler<T> delegate;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "TransactionTemplate is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final TransactionTemplate transaction;
+
   private final @Nullable InboxCompletion completion;
 
   public TransactionalEventHandler(EventHandler<T> delegate, TransactionTemplate transaction) {

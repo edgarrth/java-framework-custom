@@ -119,7 +119,6 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
           Map.entry("SE", 24),
           Map.entry("SV", 28));
 
-  /** Card brand detected from the issuer identification number (first digits). */
   /**
    * Card schemes. Which one a card belongs to is decided by a {@link CardSchemeResolver}: in
    * production an {@link IinRangeTable} loaded from the governed IIN/BIN table, never from ranges

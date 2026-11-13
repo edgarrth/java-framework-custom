@@ -69,23 +69,23 @@ class StorageTest {
     s3.withPropertyValues(
             "axiz.storage.bucket=files",
             "axiz.storage.kms-key-id=alias/files",
-            "axiz.aws.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:4566")
         .run(
             ctx -> {
               S3Client client = ctx.getBean(S3Client.class);
               assertEquals(
-                  URI.create("http://localhost:4566"),
+                  URI.create("https://localhost:4566"),
                   client.serviceClientConfiguration().endpointOverride().orElseThrow());
               assertThat(ctx.getBean(ObjectStorage.class)).isInstanceOf(S3ObjectStorage.class);
             });
     s3.withPropertyValues(
             "axiz.storage.bucket=files",
             "axiz.storage.kms-key-id= ",
-            "axiz.aws.s3.endpoint=http://localhost:9000")
+            "axiz.aws.s3.endpoint=https://localhost:9000")
         .run(
             ctx ->
                 assertEquals(
-                    URI.create("http://localhost:9000"),
+                    URI.create("https://localhost:9000"),
                     ctx.getBean(S3Client.class)
                         .serviceClientConfiguration()
                         .endpointOverride()
@@ -100,8 +100,8 @@ class StorageTest {
         .withBean(S3Client.class, () -> S3Client.builder().region(Region.US_EAST_1).build())
         .withPropertyValues(
             "axiz.aws.region=us-east-1",
-            "axiz.aws.endpoint=http://localhost:1",
-            "axiz.aws.s3.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:1",
+            "axiz.aws.s3.endpoint=https://localhost:4566")
         .run(ctx -> assertThat(ctx).hasNotFailed().hasSingleBean(S3Presigner.class));
   }
 

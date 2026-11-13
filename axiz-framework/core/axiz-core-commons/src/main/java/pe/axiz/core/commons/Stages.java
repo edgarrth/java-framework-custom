@@ -39,6 +39,8 @@ public final class Stages {
   }
 
   /** Registers a completion with its caller's context and reports context failures to its owner. */
+  @SuppressWarnings(
+      "FutureReturnValueIgnored") // Callback and scope failures are explicitly routed to the owner.
   public static <T extends @Nullable Object> void observe(
       CompletionStage<T> source,
       BiConsumer<? super T, ? super Throwable> callback,
@@ -51,16 +53,15 @@ public final class Stages {
       failure.accept(error);
       return;
     }
-    var _ =
-        source.whenComplete(
-            (value, error) -> {
-              try (var values = Objects.requireNonNull(snapshot.get());
-                  RequestContext.Scope binding = provider == null ? () -> {} : context(provider)) {
-                callback.accept(value, error);
-              } catch (RuntimeException | Error problem) {
-                failure.accept(problem);
-              }
-            });
+    source.whenComplete(
+        (value, error) -> {
+          try (var values = Objects.requireNonNull(snapshot.get());
+              RequestContext.Scope binding = provider == null ? () -> {} : context(provider)) {
+            callback.accept(value, error);
+          } catch (RuntimeException | Error problem) {
+            failure.accept(problem);
+          }
+        });
   }
 
   /** Invokes native asynchronous I/O, turning synchronous submission failures into the stage. */

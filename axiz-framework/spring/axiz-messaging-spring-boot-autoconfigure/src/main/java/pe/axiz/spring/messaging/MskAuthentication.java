@@ -15,7 +15,7 @@ final class MskAuthentication {
 
   static void validate(String servers, boolean iam) {
     if (iam) return;
-    for (String server : servers.split(",")) {
+    for (String server : servers.split(",", -1)) {
       if (IAM_LISTENER.matcher(server.trim().toLowerCase(Locale.ROOT)).matches()) {
         throw new IllegalArgumentException(
             "An MSK IAM listener requires axiz.messaging.kafka.iam=true; use the listener"

@@ -1,8 +1,8 @@
 site_name: axiz
 site_description: Plataforma backend para microservicios Java 25 sobre Spring Boot 4.1, EKS y AWS
 site_url: https://docs.axiz.internal/
-repo_url: https://github.com/axiz/axiz-docs
-edit_uri: edit/main/docs/
+repo_url: https://github.com/edgarrth/java-framework-custom
+edit_uri: edit/main/axiz-docs/docs/
 copyright: axiz, equipo de plataforma
 strict: true
 validation:

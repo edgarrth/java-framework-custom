@@ -2,7 +2,6 @@ package pe.axiz.spring.httpclient;
 
 import java.util.Objects;
 import java.util.function.Supplier;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.HttpComponentsClientHttpRequestFactoryBuilder;
 import org.springframework.http.HttpStatusCode;
@@ -15,7 +14,7 @@ import pe.axiz.core.http.ClientSettings;
  * translation and the axiz interceptor. Used by the HTTP service group configurer and available for
  * programmatic clients.
  */
-public class AxizHttpClients {
+public final class AxizHttpClients {
 
   private final HttpClientRegistry registry;
   private final Supplier<RestClient.Builder> builders;
@@ -41,7 +40,8 @@ public class AxizHttpClients {
         ClientHttpRequestFactoryBuilder.httpComponents()
             // retries belong to the axiz interceptor, which only repeats idempotent calls. Apache
             // HttpClient would otherwise resend any request answered with 429 or 503, POST included
-            .withHttpClientCustomizer(HttpClientBuilder::disableAutomaticRetries)
+            .withHttpClientCustomizer(
+                http -> http.disableAutomaticRetries().disableRedirectHandling())
             .withConnectionManagerCustomizer(
                 cm ->
                     cm.setMaxConnTotal(s.maxConnections()).setMaxConnPerRoute(s.maxConnections()));

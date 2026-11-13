@@ -114,6 +114,11 @@
       <artifactId>axiz-adapter-cache-redis</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-adapter-security-redis</artifactId>
+      <scope>runtime</scope>
+    </dependency>
 
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->
     <dependency>

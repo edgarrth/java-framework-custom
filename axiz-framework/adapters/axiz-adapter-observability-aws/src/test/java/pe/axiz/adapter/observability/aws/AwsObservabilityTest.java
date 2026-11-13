@@ -10,6 +10,7 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.interceptor.ExecutionInterceptor;
@@ -50,7 +51,8 @@ class AwsObservabilityTest {
             new AsyncAwsClients(
                 AwsCredentialSource.borrowed(() -> AwsBasicCredentials.create("test", "test")),
                 Clock.systemUTC(),
-                Duration.ofDays(1));
+                Duration.ofDays(1),
+                AsyncAwsTransportSettings.defaults());
         var client =
             AwsObservability.configured(
                 owner,

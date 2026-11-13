@@ -13,7 +13,7 @@ import pe.axiz.core.errors.ValidationException;
 import reactor.core.publisher.Mono;
 
 /** Reactive tenant binding through the Reactor context ({@link TenantContextAccessor#KEY}). */
-public class TenantWebFilter implements WebFilter {
+public final class TenantWebFilter implements WebFilter {
 
   private final TenantFilterSupport support;
 

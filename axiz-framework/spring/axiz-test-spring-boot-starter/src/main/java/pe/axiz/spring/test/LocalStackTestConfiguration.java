@@ -30,13 +30,13 @@ public class LocalStackTestConfiguration {
   @Bean
   DynamicPropertyRegistrar axizLocalStackProperties(LocalStackContainer localstack) {
     return registry -> {
+      registry.add("axiz.config.environment", () -> "test");
+      registry.add("axiz.transport.allow-plain-http", () -> "true");
       registry.add("axiz.aws.endpoint", () -> localstack.getEndpoint().toString());
       registry.add("axiz.aws.region", localstack::getRegion);
-      // Spring Cloud AWS starters (DynamoDB, S3, Parameter Store) build their own clients
+      // The Cloud AWS Parameter Store integration borrows the explicit context-global bean.
       registry.add("spring.cloud.aws.endpoint", () -> localstack.getEndpoint().toString());
       registry.add("spring.cloud.aws.region.static", localstack::getRegion);
-      registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
-      registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
     };
   }
 }

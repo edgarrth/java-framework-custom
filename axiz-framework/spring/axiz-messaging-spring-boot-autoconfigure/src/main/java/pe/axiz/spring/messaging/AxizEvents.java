@@ -13,7 +13,7 @@ import pe.axiz.core.messaging.PublishResult;
  * publishes it, confirming the broker acknowledgement or failing visibly. For publication in the
  * same transaction as a database change use the outbox starter.
  */
-public class AxizEvents {
+public final class AxizEvents {
 
   private final EventFactory factory;
   private final EventPublisher publisher;

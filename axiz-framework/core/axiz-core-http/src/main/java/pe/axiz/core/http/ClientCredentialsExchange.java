@@ -16,6 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.commons.json.JsonReader;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ExternalErrorDetail;
@@ -34,8 +35,10 @@ final class ClientCredentialsExchange {
       String clientId,
       List<String> scopes,
       @Nullable String audience,
-      Duration timeout) {
+      Duration timeout,
+      TransportSecurityPolicy transportSecurity) {
     this.tokenUri = Objects.requireNonNull(tokenUri);
+    Objects.requireNonNull(transportSecurity).validate(tokenUri, "OAuth token-uri");
     if ((!"http".equalsIgnoreCase(tokenUri.getScheme())
             && !"https".equalsIgnoreCase(tokenUri.getScheme()))
         || tokenUri.getHost() == null

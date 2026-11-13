@@ -28,7 +28,8 @@ public final class TenantResolver {
   public Optional<String> resolve(
       @Nullable String tokenTenant, Function<String, @Nullable String> headers) {
     // explicit null checks: the null analysis (NullAway) does not look inside isValid
-    if (tokenTenant != null && TenantContext.isValid(tokenTenant)) {
+    if (tokenTenant != null) {
+      if (!TenantContext.isValid(tokenTenant)) throw new InvalidTenantException();
       return Optional.of(tokenTenant);
     }
     if (trustHeader) {

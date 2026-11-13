@@ -1,0 +1,9 @@
+{
+  "name": "axiz-release-version-test",
+  "private": true,
+  "description": "Runs the release-please version calculation of the generated projects (the library release-please-action 4.x uses) against a local fixture",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "release-please": "17.3.0"
+  }
+}

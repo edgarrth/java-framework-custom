@@ -1,5 +1,6 @@
 package pe.axiz.core.soap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -76,6 +77,11 @@ public final class WsSecurity {
     return security;
   }
 
+  @SuppressFBWarnings(
+      value = "WEAK_MESSAGE_DIGEST_SHA1",
+      justification =
+          "Explicit opt-in WS-Security UsernameToken interoperability requires SHA-1; TLS "
+              + "remains mandatory outside the documented local exception.")
   static String digest(byte[] nonce, String created, char[] password) {
     try {
       // Required by the explicitly selected legacy WS-Security UsernameToken digest protocol.

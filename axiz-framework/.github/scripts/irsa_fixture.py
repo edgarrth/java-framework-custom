@@ -1,6 +1,7 @@
 """Owned loopback STS/IMDS fixture for JVM/ELF acceptance; never calls AWS."""
 import datetime
 import http.server
+import json
 import os
 import tempfile
 import threading
@@ -10,6 +11,8 @@ from pathlib import Path
 class IrsaFixture:
     def __init__(self):
         self.sts_calls = 0
+        self.ssm_calls = 0
+        self.ssm_paths = []
         self.imds_calls = 0
         self.succeed = True
         self.invalid_requests = 0
@@ -31,6 +34,22 @@ class IrsaFixture:
 
             def do_POST(self):
                 request = self.rfile.read(int(self.headers.get("Content-Length", "0"))).decode()
+                if self.headers.get("X-Amz-Target", "").endswith("GetParametersByPath"):
+                    fixture.ssm_calls += 1
+                    if ("ASIAFIXTURE" not in self.headers.get("Authorization", "")
+                            or self.headers.get("X-Amz-Security-Token") != "fixture-session"):
+                        fixture.invalid_requests += 1
+                        self.send_error(403)
+                        return
+                    path = json.loads(request)["Path"]
+                    fixture.ssm_paths.append(path)
+                    body = json.dumps({"Parameters": [{"Name": path.rstrip("/") + "/loaded", "Type": "String", "Value": "ok"}]}).encode()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/x-amz-json-1.1")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
                 fixture.sts_calls += 1
                 if "AssumeRoleWithWebIdentity" not in request or "fixture-token" not in request:
                     fixture.invalid_requests += 1
@@ -57,11 +76,13 @@ class IrsaFixture:
         self.thread.start()
 
     def environment(self):
-        environment = {key: value for key, value in os.environ.items()
-                       if not key.startswith(("AWS_", "AXIZ_")) and key not in
-                       ("NEXUS_USERNAME", "NEXUS_PASSWORD", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS")}
+        # Only OS/runtime settings reach the executable under test. In particular no CI token,
+        # registry/Nexus password, Python import path or injected JVM option is inherited.
+        allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR",
+                   "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG", "LC_ALL"}
+        environment = {key: value for key, value in os.environ.items() if key in allowed}
         endpoint = f"http://127.0.0.1:{self.server.server_port}"
-        environment.update(AWS_REGION="us-east-1", AWS_CONFIG_FILE="/dev/null",
+        environment.update(AXIZ_CONFIG_ENVIRONMENT="test", AXIZ_TRANSPORT_ALLOW_PLAIN_HTTP="true", AWS_REGION="us-east-1", AWS_CONFIG_FILE="/dev/null",
                            AWS_SHARED_CREDENTIALS_FILE="/dev/null",
                            AWS_ROLE_ARN="arn:aws:iam::123456789012:role/fixture",
                            AWS_WEB_IDENTITY_TOKEN_FILE=str(self.token),

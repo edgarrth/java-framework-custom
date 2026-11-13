@@ -1,5 +1,6 @@
 package pe.axiz.adapter.sequence.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -53,6 +54,12 @@ public final class JdbcSequenceStore implements SequenceStore {
     }
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   private @Nullable Long tryUpdate(String name, String period, int increment) throws SQLException {
     Connection c = connections.get();
     try {
@@ -83,6 +90,12 @@ public final class JdbcSequenceStore implements SequenceStore {
     }
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   private boolean tryInsert(String name, String period, int increment) throws SQLException {
     Connection c = connections.get();
     try (PreparedStatement ps =

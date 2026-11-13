@@ -115,7 +115,12 @@ class GenerateReactiveNativeSample {
         public final class AwsContextIdentityProbe {
           private static Supplier<GenericApplicationContext> contexts =
               () -> new AnnotationConfigApplicationContext(AxizAwsIdentityAutoConfiguration.class);
+          private static Supplier<GenericApplicationContext> rejectedContexts =
+              () -> new AnnotationConfigApplicationContext(AxizAwsIdentityAutoConfiguration.class, ForeignAwsProviderConfiguration.class);
           private AwsContextIdentityProbe() {}
+          public static void installRejectedFactory(Supplier<GenericApplicationContext> factory) {
+            rejectedContexts = Objects.requireNonNull(factory);
+          }
           public static void installFactory(Supplier<GenericApplicationContext> factory) {
             contexts = Objects.requireNonNull(factory);
           }
@@ -131,7 +136,28 @@ class GenerateReactiveNativeSample {
               if (context.getBeansOfType(AwsIdentity.class).size() != 1)
                 throw new IllegalStateException("Expected one internal context identity");
             } finally { context.close(); }
+            try (var unexpected = rejectedContexts.get()) {
+              throw new AssertionError("Automatic provider was accepted as an application global");
+            } catch (RuntimeException failure) {
+              Throwable cause=failure;
+              while(cause.getCause()!=null)cause=cause.getCause();
+              if(!String.valueOf(cause.getMessage()).contains("auto-configuration provider is not an application global identity"))throw failure;
+              System.out.println("AXIZ_K1_AUTOMATIC_GLOBAL_REJECTED");
+            }
           }
+        }
+        """));
+    Files.writeString(output.resolve("src/main/java/pe/axiz/acceptance/ForeignAwsProviderConfiguration.java"),
+        JavaFormatter.format("""
+        package pe.axiz.acceptance;
+        import org.springframework.boot.autoconfigure.AutoConfiguration;
+        import org.springframework.context.annotation.Bean;
+        import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+        import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+        /** Included only in the isolated negative graph; never imported by the sample service. */
+        @AutoConfiguration
+        public class ForeignAwsProviderConfiguration {
+          @Bean AwsCredentialsProvider automaticProvider() { return () -> AwsBasicCredentials.create("foreign-fixture", "fixture"); }
         }
         """));
     // Prepare the isolated acceptance context at build time, using the same Spring AOT API as
@@ -170,6 +196,16 @@ class GenerateReactiveNativeSample {
                 initializer = new ApplicationContextAotGenerator()
                     .processAheadOfTime(isolated, isolatedGeneration);
               }
+              var rejectedGeneration = new DefaultGenerationContext(
+                  new ClassNameGenerator(ClassName.get(AwsContextIdentityProbe.class), "RejectedIdentityAcceptance"),
+                  generation.getGeneratedFiles(), generation.getRuntimeHints());
+              ClassName rejectedInitializer;
+              try(var rejected=new AnnotationConfigApplicationContext()) {
+                rejected.setClassLoader(beans.getBeanClassLoader());
+                rejected.register(AxizAwsIdentityAutoConfiguration.class,ForeignAwsProviderConfiguration.class);
+                rejectedInitializer=new ApplicationContextAotGenerator().processAheadOfTime(rejected,rejectedGeneration);
+              }
+              rejectedGeneration.writeGeneratedContent();
               var factory = isolatedGeneration.getGeneratedClasses().addForFeature(
                   "ContextFactory", type -> type.addModifiers(Modifier.PUBLIC));
               factory.getMethods().add("create", method -> method
@@ -180,10 +216,23 @@ class GenerateReactiveNativeSample {
                   .addStatement("new $T().initialize(context)", initializer)
                   .addStatement("context.refresh()")
                   .addStatement("return context"));
+              factory.getMethods().add("createRejected",method -> method
+                  .addModifiers(Modifier.PUBLIC,Modifier.STATIC)
+                  .returns(GenericApplicationContext.class)
+                  .addStatement("$T context = new $T()",GenericApplicationContext.class,GenericApplicationContext.class)
+                  .beginControlFlow("try")
+                  .addStatement("new $T().initialize(context)",rejectedInitializer)
+                  .addStatement("context.refresh()")
+                  .addStatement("return context")
+                  .nextControlFlow("catch ($T | $T failure)",RuntimeException.class,Error.class)
+                  .addStatement("context.close()")
+                  .addStatement("throw failure")
+                  .endControlFlow());
               isolatedGeneration.writeGeneratedContent();
               var install = initialization.getMethods().add("installIdentityProbeFactory", method -> method
                   .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                  .addStatement("$T.installFactory($T::create)", AwsContextIdentityProbe.class, factory.getName()));
+                  .addStatement("$T.installFactory($T::create)", AwsContextIdentityProbe.class, factory.getName())
+                  .addStatement("$T.installRejectedFactory($T::createRejected)",AwsContextIdentityProbe.class,factory.getName()));
               initialization.addInitializer(install.toMethodReference());
             };
           }

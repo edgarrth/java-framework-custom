@@ -17,7 +17,7 @@ Usage: check-dependency-governance.py [repository root ...]   (default: current 
 import glob
 import os
 import sys
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from collections import defaultdict
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}

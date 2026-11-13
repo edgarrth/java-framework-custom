@@ -1,5 +1,6 @@
 package pe.axiz.kit.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,9 +34,21 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 public class DynamoRepository<T> {
 
   private final DynamoDbEnhancedClient client;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Intentional access to the underlying AWS table for operations outside the "
+              + "convenience repository API.")
   private final DynamoDbTable<T> table;
+
   private final Supplier<CursorCodec> cursors;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public DynamoRepository(DynamoDbEnhancedClient client, String tableName, TableSchema<T> schema) {
     this(
         client,
@@ -46,6 +59,11 @@ public class DynamoRepository<T> {
         });
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Repository extension point borrows its SDK client and table facade; construction "
+              + "validates inputs and performs no remote I/O.")
   public DynamoRepository(
       DynamoDbEnhancedClient client,
       String tableName,

@@ -46,7 +46,7 @@ class ReactiveLockWiringTest {
   @Test
   void reactiveMemoryIsOnlyForSingleProcessAndPublishesNoBlockingFacade() {
     reactive()
-        .withPropertyValues("axiz.config.environment=test")
+        .withPropertyValues("axiz.config.environment=test", "axiz.lock.store=memory")
         .run(
             context -> {
               assertThat(context)
@@ -67,7 +67,7 @@ class ReactiveLockWiringTest {
                   .isEqualTo("ok");
             });
     reactive()
-        .withPropertyValues("axiz.config.environment=prod")
+        .withPropertyValues("axiz.config.environment=prod", "axiz.lock.store=memory")
         .run(
             context ->
                 assertThat(context)

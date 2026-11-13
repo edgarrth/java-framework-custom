@@ -1,5 +1,6 @@
 package pe.axiz.core.resilience;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -32,6 +33,11 @@ public record Backoff(Duration initialDelay, double multiplier, Duration maxDela
   }
 
   /** Delay before retry number {@code retry} (1 = first retry). */
+  @SuppressFBWarnings(
+      value = "PREDICTABLE_RANDOM",
+      justification =
+          "ThreadLocalRandom provides non-security retry jitter only; no credential, token or "
+              + "identifier is generated.")
   public Duration delay(int retry) {
     double base = (double) initialDelay.toMillis() * Math.pow(multiplier, Math.max(0, retry - 1));
     long capped = (long) Math.min(base, (double) maxDelay.toMillis());

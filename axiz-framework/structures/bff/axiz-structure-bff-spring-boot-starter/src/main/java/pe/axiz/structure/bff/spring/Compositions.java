@@ -1,5 +1,6 @@
 package pe.axiz.structure.bff.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.context.ContextSnapshot;
 import io.micrometer.context.ContextSnapshotFactory;
 import java.time.Duration;
@@ -10,9 +11,15 @@ import pe.axiz.structure.bff.Composer;
  * Creates {@link Composer}s whose parallel tasks carry the caller's context (request metadata,
  * tenant, MDC, trace) through Micrometer context-propagation.
  */
-public class Compositions {
+public final class Compositions {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ContextSnapshotFactory is an injected collaborator whose identity and lifecycle "
+              + "must be shared, not copied.")
   private final ContextSnapshotFactory snapshots;
+
   private final Duration defaultTimeout;
 
   public Compositions(ContextSnapshotFactory snapshots, Duration defaultTimeout) {

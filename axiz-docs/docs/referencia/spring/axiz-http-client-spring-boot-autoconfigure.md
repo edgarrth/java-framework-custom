@@ -53,3 +53,13 @@ imperative API. CPU-only authentication remains usable without optional reactive
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-http-client-spring-boot-autoconfigure verify`.
+
+## Destination security and resource completion
+
+Named clients require HTTPS at startup. HTTP needs `axiz.transport.allow-plain-http=true` and
+`axiz.config.environment=local`, `test` or `ci`. Authenticated clients cannot change origin through
+an absolute URL. Managed transports never follow automatic redirects; SSL bundles retain
+certificate and hostname verification. OAuth token destinations follow the same policy.
+
+Each acquired resilience permit terminates once, including transport/status/notification failures
+and cancellation. Responses that are not delivered are released before retry or error propagation.

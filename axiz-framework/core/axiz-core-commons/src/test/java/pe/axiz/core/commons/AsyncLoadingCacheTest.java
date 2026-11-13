@@ -3,6 +3,7 @@ package pe.axiz.core.commons;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,6 +21,37 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 
 class AsyncLoadingCacheTest {
+  @Test
+  void aContextCaptureFailureDoesNotStartIoOrLeakTheOnlyAdmissionSlot() {
+    var cache = new AsyncLoadingCache<String>(Duration.ofMinutes(1), 10, 1, Clock.systemUTC());
+    var calls = new AtomicInteger();
+    var failure = new IllegalStateException("context unavailable");
+    try (var scope =
+        Stages.context(
+            () -> {
+              throw failure;
+            })) {
+      var result =
+          cache
+              .get(
+                  "failed",
+                  () -> {
+                    calls.incrementAndGet();
+                    return CompletableFuture.completedFuture("unexpected");
+                  })
+              .toCompletableFuture();
+      var observed = assertThrows(CompletionException.class, result::join);
+      assertSame(failure, observed.getCause());
+    }
+    assertEquals(0, calls.get());
+    assertEquals(
+        "recovered",
+        cache
+            .get("next", () -> CompletableFuture.completedFuture("recovered"))
+            .toCompletableFuture()
+            .join());
+  }
+
   @Test
   void coalescesPendingCallsAndCancelsOnlyAfterTheLastCallerLeaves() {
     var cache = new AsyncLoadingCache<String>(Duration.ofMinutes(1), 10, 2, Clock.systemUTC());

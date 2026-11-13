@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
 import pe.axiz.adapter.aws.identity.AwsCredentialsPlugin;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.awscore.AwsServiceClientConfiguration;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
@@ -36,6 +37,15 @@ public final class AwsClients {
       @Nullable String region,
       @Nullable String endpoint,
       @Nullable Duration apiCallTimeout) {
+    return build(builder, region, endpoint, apiCallTimeout, TransportSecurityPolicy.system());
+  }
+
+  private static <B extends AwsClientBuilder<B, C>, C> C build(
+      B builder,
+      @Nullable String region,
+      @Nullable String endpoint,
+      @Nullable Duration apiCallTimeout,
+      TransportSecurityPolicy transportSecurity) {
     try {
       if (apiCallTimeout != null && !apiCallTimeout.isPositive())
         throw new IllegalArgumentException("apiCallTimeout must be positive");
@@ -49,10 +59,12 @@ public final class AwsClients {
         builder.region(Region.of(region));
       }
       if (endpoint != null && !endpoint.isBlank()) {
+        transportSecurity.validate(URI.create(endpoint), "AWS endpoint");
         builder.endpointOverride(URI.create(endpoint));
       }
       // A public SDK plugin sees the final provider, preserving explicit custom/static builders.
-      var policy = new CredentialPolicy();
+      AwsTransportSecurity.apply(builder, transportSecurity);
+      var policy = new CredentialPolicy(transportSecurity);
       builder.addPlugin(policy);
       return builder.build();
     } catch (SdkClientException e) {
@@ -84,13 +96,18 @@ public final class AwsClients {
 
   private static final class CredentialPolicy implements SdkPlugin {
     private @Nullable AwsCredentialSource source;
+    private final TransportSecurityPolicy transportSecurity;
+
+    private CredentialPolicy(TransportSecurityPolicy transportSecurity) {
+      this.transportSecurity = transportSecurity;
+    }
 
     @Override
     public void configureClient(SdkServiceClientConfiguration.Builder configuration) {
       if (configuration instanceof AwsServiceClientConfiguration.Builder aws
           && aws.credentialsProvider() instanceof DefaultCredentialsProvider
           && AwsCredentialSources.irsaDeclared()) {
-        source = AwsCredentialSources.create();
+        source = AwsCredentialSources.create(transportSecurity);
         new AwsCredentialsPlugin(source).configureClient(aws);
       }
     }
@@ -123,11 +140,14 @@ public final class AwsClients {
     try {
       var settings =
           AwsClientSettings.resolve(properties, service, AwsClientSettings.RegionPolicy.SDK_CHAIN);
+      var region = settings.region();
+      var endpoint = settings.endpoint();
       return build(
           builder,
-          settings.region() == null ? null : settings.region().id(),
-          settings.endpoint() == null ? null : settings.endpoint().toString(),
-          timeout);
+          region == null ? null : region.id(),
+          endpoint == null ? null : endpoint.toString(),
+          timeout,
+          settings.transportSecurity());
     } catch (RuntimeException | Error failure) {
       closeCredentials(builder, failure);
       throw failure;

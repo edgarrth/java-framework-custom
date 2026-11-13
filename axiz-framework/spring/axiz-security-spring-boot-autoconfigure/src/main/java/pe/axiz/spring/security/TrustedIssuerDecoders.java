@@ -1,5 +1,6 @@
 package pe.axiz.spring.security;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -34,6 +35,11 @@ public class TrustedIssuerDecoders {
   private final Map<String, NimbusJwtDecoder> servlet = new ConcurrentHashMap<>();
   private final Map<String, NimbusReactiveJwtDecoder> reactive = new ConcurrentHashMap<>();
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public TrustedIssuerDecoders(IssuerPolicy policy, List<String> algorithms, Duration clockSkew) {
     this.policy = Objects.requireNonNull(policy);
     this.algorithms =

@@ -1,5 +1,6 @@
 package pe.axiz.spring.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.function.Supplier;
 import pe.axiz.kit.dynamodb.CursorCodec;
@@ -9,7 +10,14 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
 /** Creates native repositories and deferred Reactor facades using one borrowed transport. */
 public final class ReactiveDynamoRepositories {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient client;
+
   private final String tablePrefix;
   private final Supplier<CursorCodec> cursors;
 

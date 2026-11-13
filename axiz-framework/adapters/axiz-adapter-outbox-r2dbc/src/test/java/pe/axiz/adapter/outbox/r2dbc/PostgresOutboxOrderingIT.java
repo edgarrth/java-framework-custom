@@ -167,7 +167,7 @@ class PostgresOutboxOrderingIT {
           new R2dbcOutboxStore(new R2dbcSql(connections), "axiz_outbox", Duration.ofSeconds(20)),
           new R2dbcTransactionRunner(connections, Duration.ofSeconds(20)));
     var tx = new JdbcTransactions(source);
-    return new Backend(new JdbcOutboxStore(tx, "axiz_outbox", Dialect.POSTGRESQL), tx);
+    return new Backend(new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.POSTGRESQL), tx);
   }
 
   private static EventEnvelope event(String id, String aggregate) {
@@ -228,7 +228,7 @@ class PostgresOutboxOrderingIT {
             tx.release(connection.unwrap(Connection.class));
           }
         };
-    var store = new JdbcOutboxStore(observed, "axiz_outbox", Dialect.POSTGRESQL);
+    var store = new JdbcOutboxStore(observed, tx, "axiz_outbox", Dialect.POSTGRESQL);
     var claimed =
         tx.inTransaction(() -> store.claimDue(3, Duration.ofMinutes(1), "returning-owner"));
     assertEquals(3, claimed.size());

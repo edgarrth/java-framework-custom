@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.project.ProjectManifest;
@@ -118,7 +119,7 @@ class DoctorCommandTest {
 
     Files.writeString(
         p.resolve("src/main/resources/application.yaml"),
-        "\napi-key: k3y-12345-live\n",
+        "\napi-key: " + UUID.randomUUID() + "\n",
         StandardOpenOption.APPEND);
     CliHarness dirty = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, dirty.run("doctor", "--dir", p.toString()));
@@ -220,11 +221,45 @@ class DoctorCommandTest {
             + "client:\n  api-key-header: 'X-Credential'\n  password-mode: \"TEXT\"\n");
     assertFalse(
         any(messages(doctor().checks(project), DoctorCommand.Level.ERROR), "Possible secret"));
-    Files.writeString(metadata, "api-key-header: X-Api-Key\napi-key: k3y-12345-live\n");
+    Files.writeString(metadata, "api-key-header: X-Api-Key\napi-key: " + UUID.randomUUID() + "\n");
     assertTrue(
         any(
             messages(doctor().checks(project), DoctorCommand.Level.ERROR),
             "application-metadata.yaml:2"));
+  }
+
+  @Test
+  void literalCredentialsCannotMasqueradeAsReferencesOrEmptyBlocks(@TempDir Path tmp)
+      throws Exception {
+    Path project = CliHarness.service(tmp);
+    Path configuration = project.resolve("src/main/resources/application-credentials.yaml");
+    for (String content :
+        List.of(
+            "api-key: abcdefab-cdef-abcd-efab-cdefabcdefab\n",
+            "client-secret: alphabetic-only\n",
+            "api-key: payments-api-key-ref\n",
+            "private-key: |\n  synthetic-material\n",
+            "token: >\n  synthetic-material\n",
+            "password: local-only\n")) {
+      Files.writeString(configuration, content);
+      assertTrue(
+          any(
+              messages(doctor().checks(project), DoctorCommand.Level.ERROR),
+              "application-credentials.yaml:1"),
+          "Credential literal must be reported");
+    }
+    Files.writeString(
+        configuration, "client-secret-ref: payment-client-secret\npassword: '${DB_PASSWORD}'\n");
+    assertFalse(
+        any(messages(doctor().checks(project), DoctorCommand.Level.ERROR), "Possible secret"));
+    Files.delete(configuration);
+    Files.writeString(
+        project.resolve("src/main/resources/application-credentials.properties"),
+        "api-key=alphabetic-only\n");
+    assertTrue(
+        any(
+            messages(doctor().checks(project), DoctorCommand.Level.ERROR),
+            "application-credentials.properties:1"));
   }
 
   @Test
@@ -237,8 +272,8 @@ class DoctorCommandTest {
             "a-password: ${DB_PASSWORD}",
             "b-secret: # set by the platform",
             "c-token: |",
-            "d-api-key: payments-api-key-ref",
-            "e-private-key: local-only",
+            "d-api-key-ref: payments-api-key",
+            "e-private-key: ${LOCAL_PRIVATE_KEY}",
             "f-password:",
             ""));
     Path code = p.resolve("src/main/java/pe/axiz/orders/adapter/out/Notes.java");

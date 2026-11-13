@@ -17,7 +17,7 @@ networkPolicy:
   egress:
     cidrs: []
 externalSecret:
-  remotePrefix: dev/banking-core
+  remotePrefix: dev/payment-network-gateway
 config:
   axiz:
     config:

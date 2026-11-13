@@ -1,5 +1,6 @@
 package pe.axiz.spring.outbox;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
@@ -17,13 +18,26 @@ import pe.axiz.core.outbox.OutboxStore;
  * Background relay on a virtual thread: polls, publishes in batches while there is work, sleeps
  * otherwise, and purges published records periodically. Each run is an observation.
  */
-public class OutboxRelayRunner implements SmartLifecycle {
+public final class OutboxRelayRunner implements SmartLifecycle {
 
   private static final Logger LOG = LoggerFactory.getLogger(OutboxRelayRunner.class);
 
   private final OutboxRelay relay;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "OutboxStore is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final OutboxStore store;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry observations;
+
   private final AxizOutboxProperties.Relay settings;
   private final Clock clock;
   private volatile boolean running;

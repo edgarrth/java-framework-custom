@@ -1,0 +1,2 @@
+# The only exception is a proven local identity-provider incompatibility, scoped to one workload file.
+ignorefile: .trivyignore.yaml

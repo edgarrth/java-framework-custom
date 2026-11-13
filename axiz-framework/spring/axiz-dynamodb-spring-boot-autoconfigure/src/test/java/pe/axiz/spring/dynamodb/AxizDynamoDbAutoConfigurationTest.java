@@ -71,13 +71,13 @@ class AxizDynamoDbAutoConfigurationTest {
   void theClientsFollowTheAwsSettings() {
     runner
         .withPropertyValues(
-            "axiz.aws.endpoint=http://localhost:4566", "axiz.dynamodb.table-prefix=payments-dev-")
+            "axiz.aws.endpoint=https://localhost:4566", "axiz.dynamodb.table-prefix=payments-dev-")
         .run(
             ctx -> {
               DynamoDbClient client = ctx.getBean(DynamoDbClient.class);
               assertEquals(Region.US_EAST_1, client.serviceClientConfiguration().region());
               assertEquals(
-                  URI.create("http://localhost:4566"),
+                  URI.create("https://localhost:4566"),
                   client.serviceClientConfiguration().endpointOverride().orElseThrow());
               assertThat(ctx).hasSingleBean(DynamoDbEnhancedClient.class);
               DynamoRepositories repositories = ctx.getBean(DynamoRepositories.class);
@@ -96,12 +96,12 @@ class AxizDynamoDbAutoConfigurationTest {
   void aDynamoDbSpecificEndpointWinsOverTheGeneralOne() {
     runner
         .withPropertyValues(
-            "axiz.aws.endpoint=http://localhost:4566",
-            "axiz.aws.dynamodb.endpoint=http://localhost:8000")
+            "axiz.aws.endpoint=https://localhost:4566",
+            "axiz.aws.dynamodb.endpoint=https://localhost:8000")
         .run(
             ctx ->
                 assertEquals(
-                    URI.create("http://localhost:8000"),
+                    URI.create("https://localhost:8000"),
                     ctx.getBean(DynamoDbClient.class)
                         .serviceClientConfiguration()
                         .endpointOverride()

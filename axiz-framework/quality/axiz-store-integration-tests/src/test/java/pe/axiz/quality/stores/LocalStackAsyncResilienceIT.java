@@ -26,6 +26,7 @@ import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
 import pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore;
 import pe.axiz.adapter.inbox.dynamodb.DynamoDbAsyncInboxStore;
@@ -89,7 +90,8 @@ class LocalStackAsyncResilienceIT {
                     AwsBasicCredentials.create(
                         LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()))),
             Clock.systemUTC(),
-            Duration.ofSeconds(1));
+            Duration.ofSeconds(1),
+            AsyncAwsTransportSettings.defaults());
     var dynamo =
         own(
             AwsObservability.configured(
@@ -238,6 +240,8 @@ class LocalStackAsyncResilienceIT {
   private static String property(String key) {
     return switch (key) {
       case "axiz.aws.region" -> LOCALSTACK.getRegion();
+      case "axiz.config.environment" -> "test";
+      case "axiz.transport.allow-plain-http" -> "true";
       case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
       default -> null;
     };

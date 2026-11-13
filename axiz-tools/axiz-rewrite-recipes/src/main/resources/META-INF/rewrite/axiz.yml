@@ -1,9 +1,9 @@
-# Current development conventions; no migration from unpublished Axiz drafts.
+# Current Axiz development conventions.
 ---
 type: specs.openrewrite.org/v1beta/recipe
 name: pe.axiz.UpgradeToAxiz
 displayName: Apply current Axiz development conventions
-description: Updates Java and Spring conventions. Axiz v2 has no pre-v2 migration recipes.
+description: Updates Java and Spring conventions.
 recipeList:
   - org.openrewrite.java.migrate.UpgradeToJava25
   - org.openrewrite.java.spring.boot4.UpgradeSpringBoot_4_0

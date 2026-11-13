@@ -15,6 +15,7 @@ class AxizConfigEnvironmentPostProcessorTest {
 
   private static MockEnvironment cluster() {
     return new MockEnvironment()
+        .withProperty("axiz.config.environment", "dev")
         .withProperty("spring.application.name", "payments-business")
         .withProperty("KUBERNETES_SERVICE_HOST", "10.0.0.1")
         .withProperty("KUBERNETES_SERVICE_PORT", "443");
@@ -78,6 +79,7 @@ class AxizConfigEnvironmentPostProcessorTest {
   void theKubernetesPlatformCanBeDeclared() {
     MockEnvironment env =
         new MockEnvironment()
+            .withProperty("axiz.config.environment", "dev")
             .withProperty("spring.application.name", "payments-business")
             .withProperty("spring.main.cloud-platform", "kubernetes");
     epp.postProcessEnvironment(env, new SpringApplication());
@@ -97,13 +99,16 @@ class AxizConfigEnvironmentPostProcessorTest {
   }
 
   @Test
-  void localProfileAndOutsideClusterSkipTheConfigMaps() {
-    MockEnvironment local = cluster();
+  void onlyExplicitSingleProcessEnvironmentsAndOutsideClusterSkipConfigMaps() {
+    MockEnvironment local = cluster().withProperty("axiz.config.environment", "local");
     local.setActiveProfiles("local");
     epp.postProcessEnvironment(local, new SpringApplication());
     assertNull(local.getProperty("spring.config.import"));
 
-    MockEnvironment test = cluster().withProperty("spring.profiles.active", "dev, test");
+    MockEnvironment test =
+        cluster()
+            .withProperty("spring.profiles.active", "dev, test")
+            .withProperty("axiz.config.environment", "test");
     epp.postProcessEnvironment(test, new SpringApplication());
     assertNull(test.getProperty("spring.config.import"));
 
@@ -117,6 +122,7 @@ class AxizConfigEnvironmentPostProcessorTest {
     MockEnvironment env =
         cluster()
             .withProperty("axiz.config.parameter-store.enabled", "true")
+            .withProperty("axiz.config.parameter-store.application", "payments-business")
             .withProperty("axiz.config.environment", "QA");
     epp.postProcessEnvironment(env, new SpringApplication());
     assertEquals(
@@ -146,7 +152,11 @@ class AxizConfigEnvironmentPostProcessorTest {
     MockEnvironment enabled = cluster();
     epp.postProcessEnvironment(enabled, new SpringApplication());
     enabled.setProperty("axiz.config.parameter-store.enabled", "true");
-    assertEquals("true", enabled.getProperty("spring.cloud.aws.parameterstore.enabled"));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            new AxizConfigValidationEnvironmentPostProcessor()
+                .postProcessEnvironment(enabled, new SpringApplication()));
 
     MockEnvironment explicit =
         new MockEnvironment().withProperty("spring.cloud.aws.parameterstore.enabled", "true");

@@ -1,0 +1,53 @@
+package {{project.basePackage}}.config;
+
+import java.util.Set;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import pe.axiz.core.errors.AccessException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.extension.cqrs.Caller;
+{{#fw.reactiveHandlers}}
+import pe.axiz.extension.cqrs.ReactiveAccessPolicy;
+import reactor.core.publisher.Mono;
+{{/fw.reactiveHandlers}}
+{{^fw.reactiveHandlers}}
+import pe.axiz.extension.cqrs.AccessPolicy;
+{{/fw.reactiveHandlers}}
+{{#operations}}
+{{^publicEndpoint}}
+{{#write}}import {{project.basePackage}}.application.command.{{policyRequestType}};{{/write}}
+{{#readOnly}}import {{project.basePackage}}.application.query.{{policyRequestType}};{{/readOnly}}
+{{/publicEndpoint}}
+{{/operations}}
+
+/** Contract-level authorization; add object ownership policies for production business rules. */
+@Configuration(proxyBeanMethods = false)
+public class CqrsAuthorizationConfiguration {
+{{#operations}}
+{{^publicEndpoint}}
+  @Bean
+  {{#fw.reactiveHandlers}}ReactiveAccessPolicy{{/fw.reactiveHandlers}}{{^fw.reactiveHandlers}}AccessPolicy{{/fw.reactiveHandlers}}<{{policyRequestType}}> {{methodName}}Authorization() {
+    return policy({{policyRequestType}}.class, Set.of({{{requiredAuthorities}}}));
+  }
+{{/publicEndpoint}}
+{{/operations}}
+{{#hasProtectedOperations}}
+  private static <R> {{#fw.reactiveHandlers}}ReactiveAccessPolicy{{/fw.reactiveHandlers}}{{^fw.reactiveHandlers}}AccessPolicy{{/fw.reactiveHandlers}}<R> policy(Class<R> type, Set<String> required) {
+    return new {{#fw.reactiveHandlers}}ReactiveAccessPolicy{{/fw.reactiveHandlers}}{{^fw.reactiveHandlers}}AccessPolicy{{/fw.reactiveHandlers}}<>() {
+      @Override public Class<R> requestType() { return type; }
+{{#fw.reactiveHandlers}}
+      @Override public Mono<Void> check(R request, Caller caller) {
+        return Mono.defer(() -> caller.authenticated() && caller.authorities().containsAll(required)
+            ? Mono.empty() : Mono.error(new AccessException(CoreErrors.FORBIDDEN, "Missing contract authorization")));
+      }
+{{/fw.reactiveHandlers}}
+{{^fw.reactiveHandlers}}
+      @Override public void check(R request, Caller caller) {
+        if (!caller.authenticated() || !caller.authorities().containsAll(required))
+          throw new AccessException(CoreErrors.FORBIDDEN, "Missing contract authorization");
+      }
+{{/fw.reactiveHandlers}}
+    };
+  }
+{{/hasProtectedOperations}}
+}

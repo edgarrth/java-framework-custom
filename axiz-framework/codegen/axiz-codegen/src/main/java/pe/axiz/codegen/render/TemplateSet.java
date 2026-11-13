@@ -135,8 +135,14 @@ public final class TemplateSet {
     if (file.contains("..") || file.contains("\\")) {
       throw new IllegalArgumentException("Invalid template path " + file);
     }
-    String path =
-        file.startsWith("/") ? "axiz/templates" + file : "axiz/templates/" + set + "/" + file;
+    String path;
+    if (set.equals("service") && file.matches("partials/sql/[a-z][a-z0-9-]*\\.mustache")) {
+      String schema =
+          file.substring("partials/sql/".length(), file.length() - ".mustache".length());
+      path = "axiz/sql/" + schema + "-postgresql.sql";
+    } else {
+      path = file.startsWith("/") ? "axiz/templates" + file : "axiz/templates/" + set + "/" + file;
+    }
     InputStream in = TemplateSet.class.getClassLoader().getResourceAsStream(path);
     return Objects.requireNonNull(in, () -> "Missing template " + path);
   }

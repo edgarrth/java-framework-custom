@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.Set;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -20,6 +22,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
@@ -116,7 +119,10 @@ final class CapabilityAdapters {
       var output = new StringWriter();
       transformer.transform(new DOMSource(document), new StreamResult(output));
       return output.toString();
-    } catch (Exception failure) {
+    } catch (ParserConfigurationException
+        | SAXException
+        | TransformerException
+        | IllegalArgumentException failure) {
       throw new IOException("Cannot align the service's capability adapters", failure);
     }
   }

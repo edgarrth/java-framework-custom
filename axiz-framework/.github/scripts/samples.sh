@@ -27,7 +27,7 @@ if [ "$MODE" = defaults ]; then
   python3 -m venv "$validation_env"
   "$validation_env/bin/python" -m pip install --disable-pip-version-check --quiet \
     -r .github/scripts/requirements.txt
-  "$validation_env/bin/python" .github/scripts/check-sample-workflows.py \
+  "$validation_env/bin/python" .github/scripts/check-sample-workflows.py --workflows ../.github/workflows \
     --samples target/samples/modules.json
 fi
 cat target/samples/modules.json

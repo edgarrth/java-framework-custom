@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.Advisor;
@@ -37,6 +38,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySourcesPropertyResolver;
 import pe.axiz.core.audit.AsyncAuditPublisher;
 import pe.axiz.core.audit.AuditPublisher;
+import pe.axiz.core.audit.AuditQueueMetrics;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.audit.Auditable;
 import pe.axiz.core.audit.CompositeAuditPublisher;
@@ -78,7 +80,6 @@ public class AxizAuditAutoConfiguration {
   @Bean
   static BeanFactoryPostProcessor axizAuditConfigurationValidation(Environment environment) {
     return beans -> {
-      AuditModeSelection.rejectRemovedSelectors(environment);
       if (AuditModeSelection.managed(beans)) AuditModeSelection.requireExplicit(environment);
     };
   }
@@ -137,10 +138,12 @@ public class AxizAuditAutoConfiguration {
               ConfigurationPropertySources.get(configurable),
               value -> value instanceof String text ? resolver.resolvePlaceholders(text) : value);
       Map<String, String> destinations =
-          binder
-              .bind("axiz.messaging.destinations", Bindable.mapOf(String.class, String.class))
-              .orElse(Map.of());
-      resolved = destinations.getOrDefault(logical, logical);
+          Objects.requireNonNull(
+              binder
+                  .bind("axiz.messaging.destinations", Bindable.mapOf(String.class, String.class))
+                  .orElse(Map.of()));
+      String mapped = destinations.get(logical);
+      resolved = mapped == null ? logical : mapped;
     }
     return "DURABLE audit "
         + ConfigurationErrors.destination(logical, resolved)
@@ -237,24 +240,23 @@ public class AxizAuditAutoConfiguration {
       };
     }
 
-    static void bindQueue(MeterRegistry registry, @Nullable AsyncAuditPublisher async) {
+    static void bindQueue(MeterRegistry registry, @Nullable AuditQueueMetrics async) {
       if (async == null) {
         return;
       }
-      Gauge.builder("axiz.audit.pending", async, AsyncAuditPublisher::pending)
+      Gauge.builder("axiz.audit.pending", async, AuditQueueMetrics::pending)
           .description("Audit events waiting in the queue")
           .register(registry);
-      FunctionCounter.builder("axiz.audit.lost", async, AsyncAuditPublisher::lostCount)
+      FunctionCounter.builder("axiz.audit.lost", async, AuditQueueMetrics::lostCount)
           .description("Audit events lost: delegate and fallback both failed")
           .register(registry);
-      FunctionCounter.builder(
-              "axiz.audit.unconfirmed", async, AsyncAuditPublisher::unconfirmedCount)
+      FunctionCounter.builder("axiz.audit.unconfirmed", async, AuditQueueMetrics::unconfirmedCount)
           .description("Audit fallback acceptances without confirmation")
           .register(registry);
-      FunctionCounter.builder("axiz.audit.fallback", async, AsyncAuditPublisher::fallbackCount)
+      FunctionCounter.builder("axiz.audit.fallback", async, AuditQueueMetrics::fallbackCount)
           .description("Audit events written to the fallback publisher")
           .register(registry);
-      FunctionCounter.builder("axiz.audit.failures", async, AsyncAuditPublisher::failureCount)
+      FunctionCounter.builder("axiz.audit.failures", async, AuditQueueMetrics::failureCount)
           .description("Audit deliveries that failed")
           .register(registry);
       Gauge.builder("axiz.audit.worker.alive", async, a -> a.workerAlive() ? 1 : 0)

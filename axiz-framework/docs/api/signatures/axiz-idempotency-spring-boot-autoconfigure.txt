@@ -45,7 +45,7 @@ public pe.axiz.spring.idempotency.IdempotencyReplayHandler();
 public static final java.lang.String REPLAYED_HEADER = "Idempotent-Replayed";
 }
 
-public class pe.axiz.spring.idempotency.IdempotencyWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
+public final class pe.axiz.spring.idempotency.IdempotencyWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {
 public int getOrder();
 public pe.axiz.spring.idempotency.IdempotencyWebFilter(pe.axiz.core.idempotency.AsyncIdempotencyService, int, int);
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);

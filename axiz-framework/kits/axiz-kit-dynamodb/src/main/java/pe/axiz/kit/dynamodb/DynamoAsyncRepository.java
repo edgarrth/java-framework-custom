@@ -1,5 +1,6 @@
 package pe.axiz.kit.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +35,14 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
  * application owns the supplied client. SDK default optimistic locking remains enabled.
  */
 public final class DynamoAsyncRepository<T> {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient client;
+
   private final String tableName;
   private final TableSchema<T> schema;
   private final DynamoDbAsyncTable<T> table;
@@ -70,6 +78,11 @@ public final class DynamoAsyncRepository<T> {
   /**
    * SDK table for transaction descriptions or direct SDK use outside this repository's contract.
    */
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "Intentional SDK table facade for operations outside the convenience repository "
+              + "API; the application owns the borrowed transport.")
   public DynamoDbAsyncTable<T> table() {
     return table;
   }
@@ -217,12 +230,13 @@ public final class DynamoAsyncRepository<T> {
       this.limit = limit;
       this.cursors = cursors;
       this.binding = binding;
-      var _ =
-          result.whenComplete(
-              (value, failure) -> {
-                var current = subscription.get();
-                if (current != null) current.cancel();
-              });
+      Stages.observe(
+          result,
+          (value, failure) -> {
+            var current = subscription.get();
+            if (current != null) current.cancel();
+          },
+          result::completeExceptionally);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package pe.axiz.core.errors;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,14 +20,29 @@ public class AxizException extends RuntimeException {
   private final List<FieldViolation> violations;
   private final @Nullable ExternalErrorDetail external;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Exception extension point validates error metadata and takes defensive copies; no "
+              + "external resource or finalizer is involved.")
   public AxizException(ErrorDefinition definition, String logMessage) {
     this(definition, logMessage, Map.of(), List.of(), null, null);
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Exception extension point validates error metadata and takes defensive copies; no "
+              + "external resource or finalizer is involved.")
   public AxizException(ErrorDefinition definition, String logMessage, @Nullable Throwable cause) {
     this(definition, logMessage, Map.of(), List.of(), null, cause);
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Exception extension point validates error metadata and takes defensive copies; no "
+              + "external resource or finalizer is involved.")
   protected AxizException(
       ErrorDefinition definition,
       String logMessage,

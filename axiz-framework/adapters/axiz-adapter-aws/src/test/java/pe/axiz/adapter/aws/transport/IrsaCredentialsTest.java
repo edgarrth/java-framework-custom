@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Isolated;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
@@ -61,7 +62,7 @@ class IrsaCredentialsTest {
       System.clearProperty("aws.sessionToken");
       System.setProperty("aws.roleArn", "arn:aws:iam::123456789012:role/fixture");
       System.setProperty("aws.webIdentityTokenFile", "/nonexistent/fixture-token");
-      var source = AwsCredentialSources.create();
+      var source = AwsCredentialSources.create(TransportSecurityPolicy.system());
       try {
         assertThrows(UncheckedIOException.class, () -> source.provider().resolveCredentials());
       } finally {
@@ -75,12 +76,18 @@ class IrsaCredentialsTest {
                 client.serviceClientConfiguration().credentialsProvider().resolveIdentity().join());
       }
       System.clearProperty("aws.webIdentityTokenFile");
-      assertThrows(IllegalStateException.class, AwsCredentialSources::create);
+      assertThrows(
+          IllegalStateException.class,
+          () -> AwsCredentialSources.create(TransportSecurityPolicy.system()));
       System.setProperty("aws.webIdentityTokenFile", " ");
-      assertThrows(IllegalStateException.class, AwsCredentialSources::create);
+      assertThrows(
+          IllegalStateException.class,
+          () -> AwsCredentialSources.create(TransportSecurityPolicy.system()));
       System.setProperty("aws.webIdentityTokenFile", "/nonexistent/fixture-token");
       System.setProperty("aws.roleArn", " ");
-      assertThrows(IllegalStateException.class, AwsCredentialSources::create);
+      assertThrows(
+          IllegalStateException.class,
+          () -> AwsCredentialSources.create(TransportSecurityPolicy.system()));
     } finally {
       previous.forEach(
           (key, value) -> {
@@ -149,6 +156,8 @@ class IrsaCredentialsTest {
       var env = builder.environment();
       env.keySet().removeIf(key -> key.startsWith("AWS_") || key.startsWith("AXIZ_"));
       String endpoint = "http://127.0.0.1:" + server.getAddress().getPort();
+      env.put("AXIZ_CONFIG_ENVIRONMENT", "test");
+      env.put("AXIZ_TRANSPORT_ALLOW_PLAIN_HTTP", "true");
       env.put("AWS_REGION", "us-east-1");
       env.put("AWS_ROLE_ARN", "arn:aws:iam::123456789012:role/fixture");
       env.put("AWS_WEB_IDENTITY_TOKEN_FILE", token.toString());
@@ -188,7 +197,7 @@ class IrsaCredentialsTest {
       try {
         switch (args[0]) {
           case "default" -> {
-            var source = AwsCredentialSources.create();
+            var source = AwsCredentialSources.create(TransportSecurityPolicy.system());
             try {
               if (!source
                   .provider()
@@ -198,7 +207,7 @@ class IrsaCredentialsTest {
                 throw new AssertionError("Default SDK chain was changed without IRSA");
               System.clearProperty("aws.accessKeyId");
               System.clearProperty("aws.secretAccessKey");
-              var environmentSource = AwsCredentialSources.create();
+              var environmentSource = AwsCredentialSources.create(TransportSecurityPolicy.system());
               try {
                 if (!environmentSource
                     .provider()
@@ -215,7 +224,7 @@ class IrsaCredentialsTest {
             }
           }
           case "source" -> {
-            var source = AwsCredentialSources.create();
+            var source = AwsCredentialSources.create(TransportSecurityPolicy.system());
             try {
               check(source.provider().resolveCredentials());
             } finally {

@@ -18,13 +18,15 @@ public final class Snapshots {
   /** Copies nested containers, including null YAML values and mutable binary/date scalars. */
   public static Map<String, Object> properties(Map<String, Object> source) {
     Map<String, Object> copy = new LinkedHashMap<>();
-    Map<Object, Object> copies = new IdentityHashMap<>();
+    IdentityHashMap<Object, Object> copies = new IdentityHashMap<>();
     source.forEach((key, value) -> copy.put(key, value(value, 0, copies)));
     return Collections.unmodifiableMap(copy);
   }
 
+  @SuppressWarnings(
+      "JavaUtilDate") // SnakeYAML date scalars are mutable; copying preserves the YAML value.
   private static @Nullable Object value(
-      @Nullable Object source, int depth, Map<Object, Object> copies) {
+      @Nullable Object source, int depth, IdentityHashMap<Object, Object> copies) {
     if (depth > 64) {
       throw new IllegalArgumentException("Property tree is cyclic or exceeds 64 levels");
     }

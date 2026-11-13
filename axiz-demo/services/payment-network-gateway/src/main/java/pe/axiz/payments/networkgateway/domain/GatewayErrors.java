@@ -3,12 +3,12 @@ package pe.axiz.payments.networkgateway.domain;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
 
-/** Stable network error contract retained across the extraction from banking core. */
+/** Error catalog of payment-network-gateway (codes {@code PAYMENTS-NETWORKGATEWAY-NNNN}). */
 public final class GatewayErrors {
-  /** The legacy public code remains unchanged for callers during migration. */
+  /** The inter-bank network rejected the transfer. */
   public static final ErrorDefinition TRANSFER_REJECTED =
       ErrorDefinition.of(
-          "PAYMENTS-BANKINGCORE-0003", ErrorCategory.UNPROCESSABLE, "Transfer rejected");
+          "PAYMENTS-NETWORKGATEWAY-0001", ErrorCategory.UNPROCESSABLE, "Transfer rejected");
 
   private GatewayErrors() {}
 }

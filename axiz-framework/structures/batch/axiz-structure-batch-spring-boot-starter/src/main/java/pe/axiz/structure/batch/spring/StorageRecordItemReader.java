@@ -1,5 +1,6 @@
 package pe.axiz.structure.batch.spring;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.function.Function;
@@ -17,7 +18,13 @@ import pe.axiz.structure.batch.RecordReader;
  */
 public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamItemReader<T> {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObjectStorage is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final ObjectStorage storage;
+
   private final String key;
   private final Function<InputStream, RecordReader<T>> format;
   private @Nullable StoredObject object;
@@ -51,6 +58,11 @@ public class StorageRecordItemReader<T> extends AbstractItemCountingItemStreamIt
    * @param key object key
    * @param format builds the record reader for the stream (CSV, fixed width...)
    */
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public StorageRecordItemReader(
       ObjectStorage storage, String key, Function<InputStream, RecordReader<T>> format) {
     this.storage = Objects.requireNonNull(storage);

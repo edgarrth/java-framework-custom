@@ -1,5 +1,6 @@
 package pe.axiz.core.storage;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,15 @@ public record PresignedUpload(URI url, Map<String, List<String>> headers) {
             .collect(
                 Collectors.toUnmodifiableMap(
                     Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
+  }
+
+  @Override
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification =
+          "The constructor snapshots the map and each header list into unmodifiable containers.")
+  public Map<String, List<String>> headers() {
+    return headers;
   }
 
   /** Signed URLs and header values are credentials and must not appear in diagnostic strings. */

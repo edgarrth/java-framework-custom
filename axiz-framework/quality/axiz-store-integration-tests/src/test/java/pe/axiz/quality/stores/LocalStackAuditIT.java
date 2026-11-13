@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail.Context;
@@ -112,7 +113,8 @@ class LocalStackAuditIT {
                   return credentials.resolveCredentials();
                 }),
             Clock.systemUTC(),
-            Duration.ofMillis(25));
+            Duration.ofMillis(25),
+            AsyncAwsTransportSettings.defaults());
     client =
         AwsObservability.configured(
             resources,
@@ -121,6 +123,8 @@ class LocalStackAuditIT {
             key ->
                 switch (key) {
                   case "axiz.aws.region" -> LOCALSTACK.getRegion();
+                  case "axiz.config.environment" -> "test";
+                  case "axiz.transport.allow-plain-http" -> "true";
                   case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
                   case "axiz.aws.async.connection-ttl", "axiz.aws.async.max-idle-time" -> "100ms";
                   default -> null;

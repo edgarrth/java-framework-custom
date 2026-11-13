@@ -27,7 +27,7 @@ import pe.axiz.core.logging.ScopedMdc;
  * Applies {@link LogOperation}: entry and exit lines with duration and outcome. Reactive return
  * types are logged when they complete, not when the method returns.
  */
-public class LogOperationInterceptor implements MethodInterceptor {
+public final class LogOperationInterceptor implements MethodInterceptor {
 
   private static final boolean REACTOR = ClassUtils.isPresent("reactor.core.publisher.Mono", null);
 

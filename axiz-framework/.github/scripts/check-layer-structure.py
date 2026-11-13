@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """architecture contract: every module belongs to the reactor and its name/parent match its layer."""
 import sys
-import xml.etree.ElementTree as ET
+import re
+from defusedxml import ElementTree as ET
 from pathlib import Path
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
@@ -15,6 +16,7 @@ def value(element, path):
 def validate(directory):
     root = Path(directory).resolve()
     errors, reactor, artifacts, native = [], set(), {}, set()
+    module_names = {}
 
     def visit(pom):
         pom = pom.resolve()
@@ -44,6 +46,13 @@ def validate(directory):
         if value(project, "m:packaging") == "pom":
             continue
         layer = rel.parts[0]
+        module_name = value(project, "m:properties/m:axiz.module.name")
+        if not re.fullmatch(r"pe\.axiz(?:\.[a-z][a-z0-9]*)+", module_name):
+            errors.append(f"{rel}: internal JAR needs its own pe.axiz.* module name")
+        elif module_name in module_names:
+            errors.append(f"Duplicate module name {module_name}: {module_names[module_name]}, {rel}")
+        else:
+            module_names[module_name] = rel
         parent = value(project, "m:parent/m:artifactId")
         expected = None
         if layer == "core":

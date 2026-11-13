@@ -1,5 +1,6 @@
 package pe.axiz.core.time;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.LocalDate;
 import java.util.Objects;
 
@@ -18,6 +19,11 @@ public final class DueDates {
     PRECEDING
   }
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "BusinessCalendar owns defensive snapshots and exposes no mutator; SpotBugs does not "
+              + "infer its immutability.")
   private final BusinessCalendar calendar;
 
   public DueDates(BusinessCalendar calendar) {

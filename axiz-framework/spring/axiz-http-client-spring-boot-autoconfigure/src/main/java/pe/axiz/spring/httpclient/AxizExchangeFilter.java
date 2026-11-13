@@ -1,5 +1,6 @@
 package pe.axiz.spring.httpclient;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +23,7 @@ import pe.axiz.core.commons.StandardHeaders;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
+import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.http.ExternalErrorTranslator;
 import pe.axiz.spring.foundation.ReactiveStages;
@@ -33,11 +35,17 @@ import reactor.util.retry.Retry;
  * need I/O use native asynchronous ports, errors are translated from the response body and retries
  * use Reactor's backoff for idempotent calls only.
  */
-public class AxizExchangeFilter implements ExchangeFilterFunction {
+public final class AxizExchangeFilter implements ExchangeFilterFunction {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.http.client");
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ClientResilience is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final ClientResilience resilience;
+
   private final OutboundAuth auth;
   private final @Nullable String tenantHeader;
 
@@ -51,6 +59,13 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
   @Override
   public Mono<ClientResponse> filter(ClientRequest request, ExchangeFunction next) {
     ClientSettings settings = resilience.settings();
+    settings
+        .transportSecurity()
+        .validateTarget(
+            settings.baseUrl(),
+            request.url(),
+            settings.auth().type() != AuthType.NONE,
+            "HTTP client " + settings.name());
     // token relay: in a reactive service the inbound token lives in the Reactor context, not in a
     // thread-local, so it is read here, on the subscriber's context, before switching threads
     Mono<Optional<String>> relayed =
@@ -87,6 +102,22 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                 }));
   }
 
+  private static Mono<ClientResponse> releaseAbandoned(ClientResponse response, Throwable failure) {
+    try {
+      return response
+          .releaseBody()
+          .onErrorResume(
+              cleanup -> {
+                if (cleanup != failure) failure.addSuppressed(cleanup);
+                return Mono.empty();
+              })
+          .then(Mono.error(failure));
+    } catch (RuntimeException | Error cleanup) {
+      if (cleanup != failure) failure.addSuppressed(cleanup);
+      return Mono.error(failure);
+    }
+  }
+
   /** Spring Security access, isolated so the dependency stays optional. */
   static final class ReactiveRelay {
     private ReactiveRelay() {}
@@ -112,7 +143,16 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
               resilience.acquire();
               long start = System.nanoTime();
               var released = new AtomicBoolean();
-              return Mono.defer(() -> next.exchange(req))
+              return Mono.defer(
+                      () -> {
+                        try {
+                          return next.exchange(req);
+                        } catch (RuntimeException | Error failure) {
+                          if (released.compareAndSet(false, true))
+                            resilience.release(start, failure, -1);
+                          throw failure;
+                        }
+                      })
                   .switchIfEmpty(
                       Mono.error(
                           new IllegalStateException("HTTP exchange completed without a response")))
@@ -122,33 +162,39 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
                         if (released.compareAndSet(false, true))
                           resilience.release(start, new CancellationException("cancelled"), -1);
                       })
+                  .flatMap(
+                      res -> {
+                        try {
+                          int status = res.statusCode().value();
+                          if (released.compareAndSet(false, true))
+                            resilience.release(start, null, status);
+                          log(settings, method, req, status, start, attempt[0]);
+                          if (status >= 400) {
+                            return res.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(
+                                    body ->
+                                        Mono.<ClientResponse>error(
+                                            ExternalErrorTranslator.translate(
+                                                settings.name(),
+                                                status,
+                                                res.headers()
+                                                    .contentType()
+                                                    .map(Object::toString)
+                                                    .orElse(null),
+                                                body)));
+                          }
+                          return Mono.just(res);
+                        } catch (RuntimeException | Error failure) {
+                          if (released.compareAndSet(false, true))
+                            resilience.release(start, failure, -1);
+                          return releaseAbandoned(res, failure);
+                        }
+                      })
                   .doOnError(
                       e -> {
                         if (released.compareAndSet(false, true)) resilience.release(start, e, -1);
                         log(settings, method, req, -1, start, attempt[0]);
-                      })
-                  .flatMap(
-                      res -> {
-                        int status = res.statusCode().value();
-                        if (released.compareAndSet(false, true))
-                          resilience.release(start, null, status);
-                        log(settings, method, req, status, start, attempt[0]);
-                        if (status >= 400) {
-                          return res.bodyToMono(String.class)
-                              .defaultIfEmpty("")
-                              .flatMap(
-                                  body ->
-                                      Mono.<ClientResponse>error(
-                                          ExternalErrorTranslator.translate(
-                                              settings.name(),
-                                              status,
-                                              res.headers()
-                                                  .contentType()
-                                                  .map(Object::toString)
-                                                  .orElse(null),
-                                              body)));
-                        }
-                        return Mono.just(res);
                       });
             })
         .retryWhen(
@@ -180,7 +226,10 @@ public class AxizExchangeFilter implements ExchangeFilterFunction {
           "client={} method={} path={} status={} durationMs={} attempt={}",
           s.name(),
           method,
-          req.url().getRawPath(),
+          ClientLogRoute.of(
+              req.attributes()
+                  .get("org.springframework.web.reactive.function.client.WebClient.uriTemplate"),
+              s.baseUrl()),
           status,
           (System.nanoTime() - start) / 1_000_000,
           attempt);

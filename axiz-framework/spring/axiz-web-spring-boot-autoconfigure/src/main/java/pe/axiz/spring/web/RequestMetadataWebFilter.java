@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono;
  * context under {@link RequestContext#KEY}; context-propagation restores it as a thread-local where
  * needed, without global Reactor hooks of our own.
  */
-public class RequestMetadataWebFilter implements WebFilter, Ordered {
+public final class RequestMetadataWebFilter implements WebFilter, Ordered {
 
   private final RequestMetadataResolver resolver;
   private final @Nullable ProblemFactory problems;

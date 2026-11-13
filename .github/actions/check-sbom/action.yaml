@@ -1,0 +1,22 @@
+name: check-sbom
+description: Require a nonempty CycloneDX inventory and the direct reactor artifacts before scanning.
+inputs:
+  path:
+    description: Aggregate CycloneDX JSON file
+    default: target/bom.json
+  pom:
+    description: Aggregator POM whose direct jar modules must be inventoried
+    default: pom.xml
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        SBOM_PATH: ${{ inputs.path }}
+        SBOM_POM: ${{ inputs.pom }}
+      run: |
+        set -euo pipefail
+        verifier=$(mktemp -d "$RUNNER_TEMP/axiz-xml-policy.XXXXXXXX")
+        python3 -m venv "$verifier"
+        "$verifier/bin/pip" install --require-hashes --quiet -r "$GITHUB_ACTION_PATH/../check-workflow-security/requirements.txt"
+        "$verifier/bin/python" "$GITHUB_ACTION_PATH/check_sbom.py" "$SBOM_PATH" "$SBOM_POM"

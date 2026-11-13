@@ -15,7 +15,7 @@ import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
 
 /** Reactive rate limit; the limiter uses native asynchronous I/O. */
-public class RateLimitWebFilter implements WebFilter {
+public final class RateLimitWebFilter implements WebFilter {
 
   private final AsyncRateLimiter limiter;
   private final RateLimitRules rules;

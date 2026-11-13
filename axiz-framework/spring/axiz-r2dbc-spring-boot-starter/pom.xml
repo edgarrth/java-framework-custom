@@ -15,6 +15,7 @@
   <description>Aurora PostgreSQL for reactive services over R2DBC</description>
 
   <properties>
+    <axiz.module.name>pe.axiz.spring.r2dbc.starter</axiz.module.name>
     <!-- No Java classes: dependencies and scoped native initialization metadata only. -->
     <maven.jar.forceCreation>true</maven.jar.forceCreation>
   </properties>

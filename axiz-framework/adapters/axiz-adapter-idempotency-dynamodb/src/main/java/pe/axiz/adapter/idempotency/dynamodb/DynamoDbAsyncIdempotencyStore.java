@@ -1,12 +1,8 @@
 package pe.axiz.adapter.idempotency.dynamodb;
 
 import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.HELD_BY_OWNER;
-import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.item;
-import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.n;
-import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.names;
-import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.s;
-import static pe.axiz.adapter.idempotency.dynamodb.DynamoDbIdempotencyStore.values;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -27,9 +23,19 @@ import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.GetItemRequest;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 
-/** Native asynchronous DynamoDB idempotency, with the same durable records and fencing as 1.x. */
+/**
+ * Native asynchronous DynamoDB idempotency, with the same durable records and fencing as {@link
+ * DynamoDbIdempotencyStore}.
+ */
 public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStore {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbAsyncClient is a borrowed collaborator; sharing its identity preserves "
+              + "lifecycle, transactions or instrumentation. The field is not an owned mutable "
+              + "value.")
   private final DynamoDbAsyncClient dynamo;
+
   private final String table;
   private final Clock clock;
 
@@ -58,31 +64,31 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
           dynamo.deleteItem(
               DeleteItemRequest.builder()
                   .tableName(table)
-                  .key(Map.of("pk", s(expected.key())))
+                  .key(Map.of("pk", DynamoDbIdempotencyStore.s(expected.key())))
                   .conditionExpression(
                       "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
                   .expressionAttributeNames(Map.of("#data", "data"))
                   .expressionAttributeValues(
                       Map.of(
                           ":expected",
-                          s(StoredResponseCodec.write(expected)),
+                          DynamoDbIdempotencyStore.s(StoredResponseCodec.write(expected)),
                           ":now",
-                          n(clock.millis())))
+                          DynamoDbIdempotencyStore.n(clock.millis())))
                   .build()));
     return conditional(
         dynamo.putItem(
             PutItemRequest.builder()
                 .tableName(table)
-                .item(item(replacement))
+                .item(DynamoDbIdempotencyStore.item(replacement))
                 .conditionExpression(
                     "attribute_exists(pk) AND #data = :expected AND expiresAtMs > :now")
                 .expressionAttributeNames(Map.of("#data", "data"))
                 .expressionAttributeValues(
                     Map.of(
                         ":expected",
-                        s(StoredResponseCodec.write(expected)),
+                        DynamoDbIdempotencyStore.s(StoredResponseCodec.write(expected)),
                         ":now",
-                        n(clock.millis())))
+                        DynamoDbIdempotencyStore.n(clock.millis())))
                 .build()));
   }
 
@@ -92,9 +98,10 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
         dynamo.putItem(
             PutItemRequest.builder()
                 .tableName(table)
-                .item(item(record))
+                .item(DynamoDbIdempotencyStore.item(record))
                 .conditionExpression("attribute_not_exists(pk) OR expiresAtMs < :now")
-                .expressionAttributeValues(Map.of(":now", n(clock.millis())))
+                .expressionAttributeValues(
+                    Map.of(":now", DynamoDbIdempotencyStore.n(clock.millis())))
                 .build()));
   }
 
@@ -104,7 +111,7 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
         dynamo.getItem(
             GetItemRequest.builder()
                 .tableName(table)
-                .key(Map.of("pk", s(key)))
+                .key(Map.of("pk", DynamoDbIdempotencyStore.s(key)))
                 .consistentRead(true)
                 .build()),
         answer -> {
@@ -144,10 +151,10 @@ public final class DynamoDbAsyncIdempotencyStore implements AsyncIdempotencyStor
         dynamo.deleteItem(
             DeleteItemRequest.builder()
                 .tableName(table)
-                .key(Map.of("pk", s(key)))
+                .key(Map.of("pk", DynamoDbIdempotencyStore.s(key)))
                 .conditionExpression(HELD_BY_OWNER)
-                .expressionAttributeNames(names())
-                .expressionAttributeValues(values(owner))
+                .expressionAttributeNames(DynamoDbIdempotencyStore.names())
+                .expressionAttributeValues(DynamoDbIdempotencyStore.values(owner))
                 .build()));
   }
 }

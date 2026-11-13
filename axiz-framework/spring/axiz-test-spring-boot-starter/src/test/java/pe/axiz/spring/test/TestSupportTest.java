@@ -27,6 +27,20 @@ import org.testcontainers.localstack.LocalStackContainer;
 import pe.axiz.core.commons.RequestContext;
 
 class TestSupportTest {
+  @Test
+  void containerFixturesSupplyTheirNativeTransportWithoutGrantingAnInsecureEnvironment() {
+    Map<String, Supplier<Object>> properties = new HashMap<>();
+    new PostgresTestConfiguration().axizPostgresTransport().accept(properties::put);
+    new RedisTestConfiguration().axizRedisTransport().accept(properties::put);
+    assertEquals("disable", properties.get("spring.r2dbc.properties.sslMode").get());
+    assertEquals(
+        "disable", properties.get("spring.datasource.hikari.data-source-properties.sslmode").get());
+    assertEquals("disable", properties.get("spring.flyway.jdbc-properties.sslmode").get());
+    assertEquals("false", properties.get("spring.data.redis.ssl.enabled").get());
+    assertTrue(
+        properties.keySet().stream().noneMatch(key -> key.startsWith("axiz.")),
+        "Container imports must not choose the environment or authorize insecure transport");
+  }
 
   @Test
   void ephemeralKeysAreIndependent256BitValuesAndRegisterTheirDirectory() throws Exception {
@@ -120,8 +134,6 @@ class TestSupportTest {
         properties.get("spring.cloud.aws.endpoint").get());
     assertEquals("us-east-1", properties.get("axiz.aws.region").get());
     assertEquals("us-east-1", properties.get("spring.cloud.aws.region.static").get());
-    assertEquals("test-access", properties.get("spring.cloud.aws.credentials.access-key").get());
-    assertEquals("test-secret", properties.get("spring.cloud.aws.credentials.secret-key").get());
     var credentials =
         new LocalStackTestConfiguration()
             .axizLocalStackCredentialsProvider(localstack)

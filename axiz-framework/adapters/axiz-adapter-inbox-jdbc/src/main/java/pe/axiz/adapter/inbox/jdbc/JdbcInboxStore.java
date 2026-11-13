@@ -1,5 +1,6 @@
 package pe.axiz.adapter.inbox.jdbc;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,6 +34,12 @@ public final class JdbcInboxStore implements InboxStore {
     this.table = SqlIdentifiers.require(table);
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   @Override
   public Acquisition tryAcquire(
       String consumer,
@@ -134,6 +141,12 @@ public final class JdbcInboxStore implements InboxStore {
     return update("DELETE FROM " + table + " WHERE expires_at < ?", now, null, null, null);
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   private int update(
       String sql,
       @Nullable Instant at,
@@ -162,6 +175,12 @@ public final class JdbcInboxStore implements InboxStore {
     }
   }
 
+  @SuppressFBWarnings(
+      value = "SQL_INJECTION_JDBC",
+      justification =
+          "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
+              + "values use PreparedStatement bindings. This private SQL path accepts no "
+              + "caller-provided SQL.")
   @Override
   public void verifySchema() {
     Connection c = null;

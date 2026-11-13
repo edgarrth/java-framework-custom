@@ -2,7 +2,7 @@ package pe.axiz.codegen.model;
 
 import java.util.regex.Pattern;
 
-/** Framework coordinates start with the first Axiz release, 2.0.0; no pre-v2 generator mode. */
+/** Framework coordinates start with 2.0.0, the first Axiz release. */
 public final class FrameworkVersions {
   private static final Pattern RELEASE = Pattern.compile("(?:[2-9]|[1-9][0-9]+)\\.[0-9]+\\.[0-9]+");
   private static final Pattern SUFFIX = Pattern.compile("[A-Za-z0-9.]+");

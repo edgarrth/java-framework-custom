@@ -1,5 +1,6 @@
 package pe.axiz.spring.httpclient;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import java.time.Clock;
@@ -11,14 +12,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.http.client.HttpClientSettings;
+import org.springframework.boot.http.client.HttpRedirects;
 import org.springframework.boot.ssl.SslBundles;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
 
 /** Validated settings and shared per-client components (resilience, credentials, transport). */
-public class HttpClientRegistry implements AutoCloseable {
+public final class HttpClientRegistry implements AutoCloseable {
 
   private final Map<String, ClientSettings> settings = new LinkedHashMap<>();
   private final Map<String, AxizHttpClientProperties.Client> raw;
@@ -28,47 +31,17 @@ public class HttpClientRegistry implements AutoCloseable {
   private final AtomicBoolean closed = new AtomicBoolean();
   private final CircuitBreakerRegistry circuitBreakers;
   private final @Nullable SecretResolver secrets;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SslBundles is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final @Nullable SslBundles sslBundles;
+
   private final AxizHttpClientProperties properties;
   private final Clock clock;
   private final @Nullable String tenantHeader;
-
-  public HttpClientRegistry(
-      AxizHttpClientProperties properties,
-      CircuitBreakerRegistry circuitBreakers,
-      @Nullable SecretResolver secrets,
-      @Nullable SslBundles sslBundles,
-      Clock clock,
-      @Nullable String tenantHeader) {
-    this(
-        properties,
-        circuitBreakers,
-        secrets,
-        null,
-        sslBundles,
-        clock,
-        tenantHeader,
-        ObservationRegistry.NOOP);
-  }
-
-  public HttpClientRegistry(
-      AxizHttpClientProperties properties,
-      CircuitBreakerRegistry circuitBreakers,
-      @Nullable SecretResolver secrets,
-      @Nullable AsyncSecretResolver asyncSecrets,
-      @Nullable SslBundles sslBundles,
-      Clock clock,
-      @Nullable String tenantHeader) {
-    this(
-        properties,
-        circuitBreakers,
-        secrets,
-        asyncSecrets,
-        sslBundles,
-        clock,
-        tenantHeader,
-        ObservationRegistry.NOOP);
-  }
 
   public HttpClientRegistry(
       AxizHttpClientProperties properties,
@@ -78,7 +51,8 @@ public class HttpClientRegistry implements AutoCloseable {
       @Nullable SslBundles sslBundles,
       Clock clock,
       @Nullable String tenantHeader,
-      ObservationRegistry observations) {
+      ObservationRegistry observations,
+      TransportSecurityPolicy transportSecurity) {
     this.properties = properties;
     this.raw = properties.clients();
     this.circuitBreakers = circuitBreakers;
@@ -87,7 +61,7 @@ public class HttpClientRegistry implements AutoCloseable {
     this.clock = clock;
     this.tenantHeader = tenantHeader;
     // fail fast at startup on invalid client settings
-    raw.forEach((name, c) -> settings.put(name, c.toSettings(name)));
+    raw.forEach((name, c) -> settings.put(name, c.toSettings(name, transportSecurity)));
     try {
       settings.forEach(
           (name, client) -> {
@@ -148,7 +122,9 @@ public class HttpClientRegistry implements AutoCloseable {
 
   public HttpClientSettings transport(ClientSettings s) {
     HttpClientSettings t =
-        HttpClientSettings.defaults().withTimeouts(s.timeouts().connect(), s.timeouts().read());
+        HttpClientSettings.defaults()
+            .withRedirects(HttpRedirects.DONT_FOLLOW)
+            .withTimeouts(s.timeouts().connect(), s.timeouts().read());
     String bundle =
         Objects.requireNonNull(raw.get(s.name()), "Unknown HTTP client " + s.name()).sslBundle();
     if (bundle != null) {

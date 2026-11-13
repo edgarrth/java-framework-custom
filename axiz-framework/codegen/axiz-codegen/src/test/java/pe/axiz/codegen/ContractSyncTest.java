@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.openapi.ContractDiff;
@@ -44,6 +45,40 @@ class ContractSyncTest {
             Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of()))
         .writeTo(dir, false);
     return dir;
+  }
+
+  @Test
+  void cqrsSyncProposesSecurityPoliciesAndTestsWithoutReplacingAuthoredCode(@TempDir Path tmp)
+      throws Exception {
+    generator
+        .generate(
+            Fixtures.request(
+                "business",
+                Structure.HEXAGONAL,
+                Stack.SERVLET,
+                "aurora",
+                List.of(),
+                Extension.CQRS))
+        .writeTo(tmp, false);
+    Path configuration =
+        tmp.resolve(
+            "src/main/java/pe/axiz/orders/orders/config/CqrsAuthorizationConfiguration.java");
+    String authored =
+        Files.readString(configuration) + "\n// Application ownership rules stay here.\n";
+    Files.writeString(configuration, authored);
+    Path contract = tmp.resolve("src/main/openapi/openapi.yaml");
+    Files.writeString(
+        contract,
+        Files.readString(contract).replace("components:\n", NEW_OPERATION + "components:\n"));
+    var result = sync.sync(tmp, false);
+    assertTrue(result.applied(), result.toString());
+    assertEquals(authored, Files.readString(configuration));
+    String proposal =
+        Files.readString(configuration.resolveSibling(configuration.getFileName() + ".axiz-new"));
+    assertTrue(proposal.contains("refundOrderAuthorization"), proposal);
+    assertTrue(
+        result.proposed().stream()
+            .anyMatch(path -> path.endsWith("CqrsAuthorizationTest.java.axiz-new")));
   }
 
   @Test

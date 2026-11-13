@@ -1,5 +1,6 @@
 package pe.axiz.spring.soap;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
@@ -13,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.core.secrets.SecretNotFoundException;
@@ -33,21 +35,42 @@ public class SoapClients {
   private final AxizSoapProperties properties;
   private final @Nullable SecretResolver secrets;
   private final ObjectMasker masker;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry observations;
+
   private final Clock clock;
+  private final TransportSecurityPolicy transportSecurity;
   private final Map<String, SoapClient> clients = new ConcurrentHashMap<>();
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "SOAP factory extension point validates endpoint policy before creating clients; "
+              + "constructor acquires no external resources.")
   public SoapClients(
       AxizSoapProperties properties,
       @Nullable SecretResolver secrets,
       ObjectMasker masker,
       ObservationRegistry observations,
-      Clock clock) {
+      Clock clock,
+      TransportSecurityPolicy transportSecurity) {
     this.properties = Objects.requireNonNull(properties);
     this.secrets = secrets;
     this.masker = Objects.requireNonNull(masker);
     this.observations = Objects.requireNonNull(observations);
     this.clock = Objects.requireNonNull(clock);
+    this.transportSecurity = Objects.requireNonNull(transportSecurity);
+    properties
+        .clients()
+        .forEach(
+            (name, cfg) ->
+                transportSecurity.validate(
+                    cfg.endpoint(), "axiz.soap.clients." + name + ".endpoint"));
   }
 
   /** Calls an operation of a configured client and returns the response payload element. */
@@ -76,13 +99,6 @@ public class SoapClients {
                 + "password-mode is required with a username: TEXT (over TLS) or"
                 + " LEGACY_SHA1_DIGEST (only when the counterparty demands it)");
       }
-      if (!"https".equalsIgnoreCase(cfg.endpoint().getScheme()) && !cfg.allowPlainHttp()) {
-        throw new IllegalStateException(
-            prefix
-                + "endpoint must be https:// to send WS-Security credentials ("
-                + cfg.endpoint()
-                + "); allow-plain-http is only for local stand-ins");
-      }
       if (mode == WsSecurity.Mode.LEGACY_SHA1_DIGEST) {
         LOG.warn(
             "SOAP client {} uses the legacy WS-Security SHA-1 password digest required by its"
@@ -105,6 +121,14 @@ public class SoapClients {
     }
     HttpClient http = HttpClient.newBuilder().connectTimeout(cfg.connectTimeout()).build();
     return new SoapClient(
-        name, http, cfg.endpoint(), cfg.version(), cfg.timeout(), credentials, masker, clock);
+        name,
+        http,
+        cfg.endpoint(),
+        cfg.version(),
+        cfg.timeout(),
+        credentials,
+        masker,
+        clock,
+        transportSecurity);
   }
 }

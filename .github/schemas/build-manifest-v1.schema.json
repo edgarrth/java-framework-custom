@@ -1,0 +1,709 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/edgarrth/java-framework-custom/schemas/build-manifest-v1.schema.json",
+  "title": "Axiz immutable build manifest v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "axiz.build-manifest/v1"
+        },
+        "kind": {
+          "const": "maven-library"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "candidate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "sha": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          },
+          "required": [
+            "repository",
+            "sha"
+          ],
+          "unevaluatedProperties": false
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "workflow": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "const": "edgarrth/java-framework-custom"
+                },
+                "path": {
+                  "enum": [
+                    ".github/workflows/lib-build.yaml",
+                    ".github/workflows/service-build.yaml"
+                  ]
+                },
+                "ref": {
+                  "type": "string",
+                  "pattern": "^refs/tags/axiz-workflows-v[0-9]+\\.[0-9]+\\.[0-9]+$"
+                },
+                "sha": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                }
+              },
+              "required": [
+                "repository",
+                "path",
+                "ref",
+                "sha"
+              ],
+              "unevaluatedProperties": false
+            },
+            "run_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "run_attempt": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "workflow",
+            "run_id",
+            "run_attempt"
+          ],
+          "unevaluatedProperties": false
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "jdk": {
+              "type": "string",
+              "pattern": "^[0-9]+(?:\\.[0-9]+)*$"
+            },
+            "profiles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            },
+            "maven_args": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            },
+            "modules": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "native": {
+              "type": "object",
+              "properties": {
+                "module": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "binary": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+                },
+                "platforms": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "linux-x64",
+                      "macos-arm64",
+                      "windows-x64"
+                    ]
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "module",
+                "binary",
+                "platforms"
+              ],
+              "unevaluatedProperties": false
+            },
+            "project_directory": {
+              "type": "string",
+              "pattern": "^(?:\\.|[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*)$"
+            }
+          },
+          "required": [
+            "jdk",
+            "profiles",
+            "maven_args",
+            "modules",
+            "project_directory"
+          ],
+          "unevaluatedProperties": false
+        },
+        "parameters_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "const": "passed"
+              },
+              "evidence": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                },
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "unevaluatedProperties": false
+              }
+            },
+            "required": [
+              "name",
+              "result",
+              "evidence"
+            ],
+            "unevaluatedProperties": false
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sbom": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "unevaluatedProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "unevaluatedProperties": false
+        },
+        "artifacts": {
+          "type": "object",
+          "properties": {
+            "maven": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "groupId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+$"
+                  },
+                  "artifactId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.-]+$"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+                  },
+                  "extension": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9.]+$"
+                  },
+                  "classifier": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                },
+                "required": [
+                  "groupId",
+                  "artifactId",
+                  "version",
+                  "extension",
+                  "path",
+                  "sha256"
+                ],
+                "unevaluatedProperties": false
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "maven"
+          ],
+          "unevaluatedProperties": false
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "axiz_version": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+            },
+            "axiz_build": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+                },
+                "run_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "run_attempt": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "manifest_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "repository",
+                "run_id",
+                "run_attempt",
+                "manifest_sha256"
+              ],
+              "unevaluatedProperties": false
+            }
+          },
+          "required": [],
+          "unevaluatedProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "version",
+        "source",
+        "build",
+        "parameters",
+        "parameters_sha256",
+        "gates",
+        "sbom",
+        "provenance",
+        "artifacts"
+      ],
+      "unevaluatedProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "axiz.build-manifest/v1"
+        },
+        "kind": {
+          "const": "service"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+        },
+        "candidate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "repository": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "sha": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          },
+          "required": [
+            "repository",
+            "sha"
+          ],
+          "unevaluatedProperties": false
+        },
+        "build": {
+          "type": "object",
+          "properties": {
+            "workflow": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "const": "edgarrth/java-framework-custom"
+                },
+                "path": {
+                  "enum": [
+                    ".github/workflows/lib-build.yaml",
+                    ".github/workflows/service-build.yaml"
+                  ]
+                },
+                "ref": {
+                  "type": "string",
+                  "pattern": "^refs/tags/axiz-workflows-v[0-9]+\\.[0-9]+\\.[0-9]+$"
+                },
+                "sha": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{40}$"
+                }
+              },
+              "required": [
+                "repository",
+                "path",
+                "ref",
+                "sha"
+              ],
+              "unevaluatedProperties": false
+            },
+            "run_id": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "run_attempt": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "workflow",
+            "run_id",
+            "run_attempt"
+          ],
+          "unevaluatedProperties": false
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "service": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "module": {
+              "type": "string",
+              "minLength": 1
+            },
+            "jdk": {
+              "type": "string",
+              "pattern": "^[0-9]+(?:\\.[0-9]+)*$"
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^linux/(amd64|arm64)$"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "variant": {
+              "enum": [
+                "jvm",
+                "native"
+              ]
+            },
+            "chart": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "service",
+            "module",
+            "jdk",
+            "platforms",
+            "variant",
+            "chart"
+          ],
+          "unevaluatedProperties": false
+        },
+        "parameters_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "const": "passed"
+              },
+              "evidence": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  }
+                },
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "unevaluatedProperties": false
+              }
+            },
+            "required": [
+              "name",
+              "result",
+              "evidence"
+            ],
+            "unevaluatedProperties": false
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sbom": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "unevaluatedProperties": false
+        },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "unevaluatedProperties": false
+        },
+        "artifacts": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "tag": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "platforms": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              },
+              "required": [
+                "repository",
+                "digest",
+                "tag"
+              ],
+              "unevaluatedProperties": false
+            },
+            "chart": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "string",
+                  "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+                },
+                "oci": {
+                  "type": "string",
+                  "pattern": "^oci://[^ ]+$"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "name",
+                "version",
+                "oci",
+                "digest"
+              ],
+              "unevaluatedProperties": false
+            }
+          },
+          "required": [
+            "image",
+            "chart"
+          ],
+          "unevaluatedProperties": false
+        },
+        "dependencies": {
+          "type": "object",
+          "properties": {
+            "axiz_version": {
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"
+            },
+            "base_image": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                {
+                  "const": "scratch"
+                }
+              ]
+            },
+            "axiz_build": {
+              "type": "object",
+              "properties": {
+                "repository": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+                },
+                "run_id": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "run_attempt": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "manifest_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "repository",
+                "run_id",
+                "run_attempt",
+                "manifest_sha256"
+              ],
+              "unevaluatedProperties": false
+            }
+          },
+          "required": [
+            "axiz_version",
+            "base_image"
+          ],
+          "unevaluatedProperties": false
+        }
+      },
+      "required": [
+        "schema",
+        "kind",
+        "version",
+        "source",
+        "build",
+        "parameters",
+        "parameters_sha256",
+        "gates",
+        "sbom",
+        "provenance",
+        "artifacts",
+        "dependencies"
+      ],
+      "unevaluatedProperties": false
+    }
+  ]
+}

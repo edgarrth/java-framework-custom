@@ -53,7 +53,7 @@ containers:
     env:
       - name: JAVA_TOOL_OPTIONS
         value: {{ $values.javaOpts | quote }}
-      - name: AXIZ_ENVIRONMENT
+      - name: AXIZ_CONFIG_ENVIRONMENT
         value: {{ $values.environment | quote }}
       - name: OTEL_SERVICE_NAME
         value: {{ include "service.name" $root }}

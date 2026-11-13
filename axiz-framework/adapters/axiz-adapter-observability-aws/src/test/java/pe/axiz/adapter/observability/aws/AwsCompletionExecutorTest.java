@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.aws.transport.CompletionPool;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 
@@ -145,7 +146,8 @@ class AwsCompletionExecutorTest {
                 Clock.systemUTC(),
                 Duration.ofDays(1),
                 1,
-                1)) {
+                1,
+                AsyncAwsTransportSettings.defaults())) {
       AwsCompletionMetrics.bind(owner, "application-only", registry);
       assertNotNull(
           registry.find("axiz.transport.pending").tag("transport", "application-only").gauge());

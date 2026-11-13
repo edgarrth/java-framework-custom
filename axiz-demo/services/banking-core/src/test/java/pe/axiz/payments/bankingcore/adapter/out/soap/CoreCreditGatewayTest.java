@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.money.Money;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.soap.SafeXml;
@@ -32,7 +33,8 @@ class CoreCreditGatewayTest {
           null,
           ObjectMasker.defaults(),
           ObservationRegistry.NOOP,
-          Clock.systemUTC());
+          Clock.systemUTC(),
+          TransportSecurityPolicy.secure());
     }
 
     @Override

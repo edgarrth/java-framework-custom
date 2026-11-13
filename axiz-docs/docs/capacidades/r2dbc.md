@@ -21,7 +21,7 @@ Valores por defecto seguros en `application.yaml`; los valores de cada ambiente 
 ```yaml
 spring.r2dbc.url: ${DB_R2DBC_URL:r2dbc:postgresql://localhost:5432/app}
 spring.r2dbc.username: ${DB_USERNAME:app}
-spring.r2dbc.properties.sslMode: ${DB_SSL_MODE:require}
+spring.r2dbc.properties.sslMode: ${DB_SSL_MODE:verify-full}
 spring.flyway.enabled: true
 axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:false}
 ```

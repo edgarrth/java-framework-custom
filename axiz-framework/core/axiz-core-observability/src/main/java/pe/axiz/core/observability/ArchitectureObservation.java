@@ -1,5 +1,6 @@
 package pe.axiz.core.observability;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.common.KeyValue;
 import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation;
@@ -18,7 +19,13 @@ import org.jspecify.annotations.Nullable;
  */
 public final class ArchitectureObservation {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry registry;
+
   private final Function<Throwable, Boolean> rejectionClassifier;
   private final AttributeSanitizer sanitizer;
 

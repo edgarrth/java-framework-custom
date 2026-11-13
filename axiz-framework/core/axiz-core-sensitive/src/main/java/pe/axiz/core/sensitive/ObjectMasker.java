@@ -49,7 +49,6 @@ public final class ObjectMasker {
     return describe(value, channel, 0);
   }
 
-  /** Masks a single value by its key name (headers, map entries, query parameters). */
   /**
    * Whether the values of a key are masked on the channel; a structured value (an array or an
    * object in JSON) under such a key is hidden whole.

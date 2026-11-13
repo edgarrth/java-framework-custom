@@ -1,7 +1,7 @@
 # axiz-framework
 
 Corporate backend framework for Java 25 microservices on Spring Boot 4.1, Kubernetes (EKS) and AWS.
-Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for the whole repository.
+Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for framework artifacts. Tools, documentation and workflows have independent versions in the monorepo.
 
 ## Layers
 

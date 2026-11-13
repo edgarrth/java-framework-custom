@@ -4,38 +4,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class AsyncAwsClientSettingsTest {
   @Test
-  void connectionLifetimesAreExplicitPositiveAndSupportStandardDurationNotations() {
-    assertEquals(
-        Duration.ofMinutes(5), AsyncAwsClients.duration(key -> null, "ttl", Duration.ofMinutes(5)));
-    for (var entry :
-        Map.of(
-                "PT0.1S",
-                Duration.ofMillis(100),
-                "100ms",
-                Duration.ofMillis(100),
-                "2s",
-                Duration.ofSeconds(2),
-                "3m",
-                Duration.ofMinutes(3),
-                "1h",
-                Duration.ofHours(1))
-            .entrySet()) {
-      assertEquals(
-          entry.getValue(),
-          AsyncAwsClients.duration(key -> entry.getKey(), "ttl", Duration.ofMinutes(5)));
-    }
-    for (String value :
-        new String[] {
-          "0ms", "PT0S", "-1s", "PT0.000000001S", "not-a-duration", "999999999999999999999h"
-        }) {
+  void transportReceivesPositiveTypedDurations() {
+    assertEquals(Duration.ofMinutes(5), AsyncAwsTransportSettings.defaults().connectionTtl());
+    assertEquals(Duration.ofSeconds(30), AsyncAwsTransportSettings.defaults().maxIdleTime());
+    for (Duration value :
+        new Duration[] {Duration.ZERO, Duration.ofNanos(1), Duration.ofSeconds(-1)}) {
       assertThrows(
           IllegalArgumentException.class,
-          () -> AsyncAwsClients.duration(key -> value, "ttl", Duration.ofMinutes(5)));
+          () -> new AsyncAwsTransportSettings(value, Duration.ofSeconds(1)));
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new AsyncAwsTransportSettings(Duration.ofSeconds(1), value));
     }
+    assertEquals(
+        Duration.ofMillis(1),
+        new AsyncAwsTransportSettings(Duration.ofMillis(1), Duration.ofSeconds(1)).connectionTtl());
   }
 }

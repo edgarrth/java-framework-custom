@@ -1,5 +1,6 @@
 package pe.axiz.spring.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
@@ -24,14 +25,31 @@ import pe.axiz.spring.foundation.DispatchBoundary;
 public class ObservedDispatcher {
 
   private final EventDispatcher dispatcher;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "ObservationRegistry is an injected collaborator whose identity and lifecycle must "
+              + "be shared, not copied.")
   private final ObservationRegistry registry;
+
   private final Clock clock;
   private final DispatchBoundary boundary;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public ObservedDispatcher(EventDispatcher dispatcher, ObservationRegistry registry, Clock clock) {
     this(dispatcher, registry, clock, () -> () -> {});
   }
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Observation extension point validates borrowed collaborators; construction "
+              + "acquires no external resources.")
   public ObservedDispatcher(
       EventDispatcher dispatcher,
       ObservationRegistry registry,

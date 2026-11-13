@@ -24,7 +24,6 @@ import reactor.core.publisher.Mono;
  */
 public final class R2dbcOutboxStore implements OutboxStore {
 
-  private static final int MAX_ERROR = 1000;
   private static final String COLUMNS =
       "id, destination, aggregate_type, aggregate_id, event_type, envelope, status, "
           + "attempts, created_at, next_attempt_at, last_error, aggregate_seq, lease_owner, "

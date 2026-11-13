@@ -1,4 +1,7 @@
 axiz:
+  transport:
+    allow-insecure-data-stores: true
+    allow-plain-http: true
   logging:
     json: false
   config:
@@ -8,3 +11,10 @@ axiz:
     - issuer: http://localhost:8180/realms/axiz
       audiences:
       - local-services
+
+# Explicit transport settings for local containers without TLS.
+spring.datasource.hikari.data-source-properties.sslmode: disable
+spring.flyway.jdbc-properties.sslmode: disable
+spring.r2dbc.properties.sslMode: disable
+spring.kafka.security.protocol: PLAINTEXT
+spring.data.redis.ssl.enabled: false

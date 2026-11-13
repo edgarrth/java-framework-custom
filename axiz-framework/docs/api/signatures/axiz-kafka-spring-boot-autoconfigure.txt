@@ -1,0 +1,25 @@
+public class pe.axiz.spring.kafka.AxizKafkaTransportAutoConfiguration {
+public pe.axiz.spring.kafka.AxizKafkaTransportAutoConfiguration();
+}
+
+public final class pe.axiz.spring.kafka.AxizKafkaTransportEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.kafka.AxizKafkaTransportEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
+public final class pe.axiz.spring.kafka.KafkaConnectionProperties {
+public static java.util.Map<java.lang.String, java.lang.Object> properties(org.springframework.core.env.Environment, org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails, pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind);
+}
+
+public final class pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind extends java.lang.Enum<pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind> {
+public static final pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind ADMIN;
+public static final pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind CONSUMER;
+public static final pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind PRODUCER;
+public static pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind valueOf(java.lang.String);
+public static pe.axiz.spring.kafka.KafkaConnectionProperties$ClientKind[] values();
+}
+
+public final class pe.axiz.spring.kafka.KafkaTransportSecurity {
+public static void validate(java.util.Map<java.lang.String, ?>, pe.axiz.core.commons.net.DataTransportSecurityPolicy);
+}

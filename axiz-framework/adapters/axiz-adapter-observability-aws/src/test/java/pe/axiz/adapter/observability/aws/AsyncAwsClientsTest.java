@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
+import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
@@ -68,7 +69,9 @@ class AsyncAwsClientsTest {
   @Test
   void explicitTransportRegionEndpointsAndTimeoutsAreOwnedByFramework() {
     Source source = new Source();
-    try (var clients = new AsyncAwsClients(source.resource(), CLOCK, Duration.ofDays(1))) {
+    try (var clients =
+        new AsyncAwsClients(
+            source.resource(), CLOCK, Duration.ofDays(1), AsyncAwsTransportSettings.defaults())) {
       try (var client =
           AwsObservability.configured(
               clients,
@@ -78,14 +81,14 @@ class AsyncAwsClientsTest {
                       "axiz.aws.region",
                       "us-east-1",
                       "axiz.aws.endpoint",
-                      "http://localhost:4566",
+                      "https://localhost:4566",
                       "axiz.aws.dynamodb.endpoint",
-                      "http://localhost:9324")
+                      "https://localhost:9324")
                   ::get,
               "dynamodb")) {
         assertEquals(Region.US_EAST_1, client.serviceClientConfiguration().region());
         assertEquals(
-            URI.create("http://localhost:9324"),
+            URI.create("https://localhost:9324"),
             client.serviceClientConfiguration().endpointOverride().orElseThrow());
         var settings = client.serviceClientConfiguration().overrideConfiguration();
         assertEquals(Duration.ofSeconds(60), settings.apiCallTimeout().orElseThrow());
@@ -107,11 +110,11 @@ class AsyncAwsClientsTest {
                       "axiz.aws.dynamodb.endpoint",
                       " ",
                       "axiz.aws.endpoint",
-                      "http://localhost:4566")
+                      "https://localhost:4566")
                   ::get,
               "dynamodb")) {
         assertEquals(
-            URI.create("http://localhost:4566"),
+            URI.create("https://localhost:4566"),
             client.serviceClientConfiguration().endpointOverride().orElseThrow());
       }
       try (var client =
@@ -132,7 +135,12 @@ class AsyncAwsClientsTest {
   @Test
   void missingExplicitRegionFailsRatherThanStartingInstanceMetadataLookup() {
     Assumptions.assumeTrue(System.getenv("AWS_REGION") == null);
-    try (var clients = new AsyncAwsClients(new Source().resource(), CLOCK, Duration.ofDays(1))) {
+    try (var clients =
+        new AsyncAwsClients(
+            new Source().resource(),
+            CLOCK,
+            Duration.ofDays(1),
+            AsyncAwsTransportSettings.defaults())) {
       assertThrows(
           IllegalStateException.class,
           () ->

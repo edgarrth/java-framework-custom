@@ -1,6 +1,7 @@
 # CI/CD
 
-Los pipelines viven como **workflows reutilizables** en `axiz-workflows`; cada repositorio solo los
+Los pipelines viven como **workflows reutilizables** en `.github/workflows` del monorepo
+`edgarrth/java-framework-custom`; cada consumidor los
 invoca con una referencia versionada y un mapa explícito de los secretos declarados por el
 workflow. Las actualizaciones llegan mediante una nueva release y su adopción en cada consumidor.
 
@@ -9,12 +10,11 @@ workflow. Las actualizaciones llegan mediante una nueva release y su adopción e
 | `pr.yaml` | pull request | título Conventional Commits, gitleaks sobre los commits del PR, guardia de nombres, dependency review (licencias y vulnerabilidades), Semgrep (reglas públicas y de axiz), Trivy de filesystem (SARIF a code scanning), actionlint |
 | `lib-build.yaml` | PR y push | `verify -Pquality` (Spotless, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs, ArchUnit, JaCoCo, PIT), informe de OpenRewrite en PRs, SonarQube con quality gate, SBOM CycloneDX y su escaneo; con `stage` guarda los artefactos que pasaron todos los controles (repositorio de staging con manifiesto SHA-256) |
 | `lib-deploy.yaml` | ejecución independiente con aprobación de environment | verifica el run productor, la firma y el hash externo del manifiesto; publica los bytes ya construidos en Nexus releases sin recompilar |
-| `service-build.yaml` | PR y push de un servicio | lo mismo, más lint de OpenAPI y AsyncAPI (Spectral), cambios incompatibles (oasdiff), chart (helm lint, kubeconform y kube-linter por ambiente); en `main` y tags la imagen con Jib (y nativa si aplica), su escaneo, firma con cosign (llave en AWS KMS) y atestación del SBOM |
+| `service-build.yaml` | PR y push de un servicio | lo mismo, más lint de OpenAPI y AsyncAPI (Spectral), cambios incompatibles (oasdiff), chart (helm lint, kubeconform y kube-linter por ambiente); en `main` y tags la imagen con Jib (y nativa si aplica), su escaneo, firma sin llave con cosign, OIDC, Fulcio y Rekor y atestación del SBOM |
 | `service-deploy.yaml` | después de la imagen | despliegue GitOps del commit construido (ver [Despliegue](despliegue.md)) |
 | `release.yaml` | push a `main` | release-please: PR de release con versión y changelog; al hacer merge, tag y release |
 | `native.yaml` | tags de herramientas | binarios nativos de la CLI para Linux, macOS y Windows con smoke test |
 | `native-nightly.yaml` | nocturno | compilación y pruebas nativas del demo y de un servicio generado por arquetipo |
-| `infra.yaml` | cambios en la infraestructura del servicio | Terraform: fmt, validate, Trivy config, plan en el PR, apply con aprobación |
 | Renovate | programado | PRs de dependencias y del parent de axiz (con la nota de `axiz upgrade`) |
 
 El repositorio del framework tiene además `samples-matrix.yaml` (nocturno): genera todas las
@@ -66,16 +66,25 @@ son distintas. Una candidata ausente o expirada falla y nunca provoca una recomp
   se prefiere fijarlas por SHA cuando la release publicada sea accesible.
 - `check-encapsulation`, después del build de calidad, rechaza hallazgos de `EI_EXPOSE_REP`,
   `EI_EXPOSE_REP2` y `CT_CONSTRUCTOR_THROW` también cuando su prioridad es media. Sus excepciones
-  deben identificar clase y campo o constructor exactos; no se admiten exclusiones globales.
+  se justifican con `@SuppressFBWarnings` en el miembro exacto; no se admiten exclusiones globales.
 - Toda herramienta que un workflow descarga (actionlint, kubeconform, kube-linter) tiene versión y
   SHA-256 fijados y se verifica antes de ejecutarse; la espera de Argo CD usa su API REST con
   `curl`, sin descargar su CLI.
 - Firma obligatoria de imágenes, procedencia SLSA de imágenes y de releases de librerías (firmada
-  con la llave de KMS y adjunta a la release de GitHub), SBOM en cada build.
+  sin llave con OIDC, Fulcio y Rekor, y adjunta a la release de GitHub), SBOM en cada build.
 - El wrapper de Maven verifica la distribución contra el SHA-512 fijado en
   `maven-wrapper.properties` antes de ejecutarla.
-- Jobs que necesitan la red privada (Nexus, Argo CD) aceptan un `runner` (Actions Runner Controller
-  en EKS).
+- Firmadores y promociones usan un runner hospedado fijo `ubuntu-24.04`; no aceptan un runner
+  aportado por el consumidor. Un runner privado requiere un contrato revisado por separado.
+- El worker de Maven/Jib/GraalVM no recibe OIDC. El firmador empieza en otro job, sin checkout del
+  producto ni cachés del worker. Solo ejecuta herramientas centrales de una referencia inmutable.
+  Consulta la API de Actions para comprobar repositorio, SHA, run, intento, job, pasos y artefacto;
+  verifica el digest del ZIP, los hashes de sus datos y regenera la procedencia antes de firmar.
+- Los jobs privilegiados tienen un contrato positivo versionado en
+  `.github/policies/privileged-jobs-v2.json`. Agregar pasos, acciones, comandos, variables, cachés
+  o permisos fuera de ese contrato bloquea la validación.
+- `security.yaml` ejecuta Gitleaks, Semgrep y Trivy en PR, push a main y semanalmente; conserva
+  SARIF durante 90 días. El job que publica SARIF tiene permisos separados de los escáneres.
 
 ## Ramas y versiones
 
@@ -110,6 +119,14 @@ plantilla (`.github/scripts/release-version`).
 | Secreto | `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY` | GitHub App de release-please (sus tags disparan la publicación) |
 | Secreto (opcional) | `ARGOCD_AUTH_TOKEN` | token de solo lectura del proyecto de Argo CD |
 | Variable | `GITOPS_REPOSITORY`, `ARGOCD_SERVER` | despliegue |
-| Variable | `COSIGN_KMS_KEY`, `COSIGN_ROLE_ARN`, `AWS_REGION` | firma de imágenes y atestaciones (SBOM, procedencia SLSA); obligatorias |
 | Variable (repositorio) | `AXIZ_API_BASELINE` | versión v2 publicada para comparación; la primera 2.0.0 usa inventario de firmas aprobado y verifica que aún no exista en el repositorio final |
-| Variable por environment | `TERRAFORM_ROLE_ARN`, `AWS_REGION` | infraestructura |
+
+## Componentes del monorepo
+
+`edgarrth/java-framework-custom` contiene framework, herramientas, documentación y workflows.
+La configuración central de Release Please está en la raíz; el estado inicial es un manifiesto
+vacío y `initial-version: 2.0.0` por componente. Las versiones son independientes y sus tags son
+`axiz-framework-vX.Y.Z`, `axiz-tools-vX.Y.Z`, `axiz-docs-vX.Y.Z` y `axiz-workflows-vX.Y.Z`.
+El límite inicial de historial es un SHA fijo y alcanzable, documentado en `RELEASING.md`.
+El build de una librería incluye `project_directory` en sus parámetros canónicos y en su hash.
+Los proyectos consumidores generados mantienen su propio historial y versión de aplicación.

@@ -14,7 +14,7 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 | [`config`](config.md) | ConfigMaps mounted as files (axiz-common, &lt;app&gt;, &lt;app&gt;-errors; no Kubernetes API access), Parameter Store, required keys check | business, core, gateway, ux, support, event-processor, batch |
 | [`i18n`](i18n.md) | Localized messages and problem details (es-PE by default) from messages*.properties | business, core, ux, support |
 | [`sensitive`](sensitive.md) | Masking of sensitive fields in responses, logs and audit by sensitivity level | business, core, gateway, ux, support, event-processor, batch |
-| [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | business, core, gateway, ux, support |
+| [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | business, core, gateway, ux, support, event-processor |
 | [`http-client`](http-client.md) | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation | core, gateway, ux |
 | [`resilience`](resilience.md) | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name | core, gateway, ux |
 | [`soap`](soap.md) | SOAP 1.1/1.2 clients with WS-Security, timeouts and observations | – |

@@ -551,7 +551,7 @@ g_integration() {
   expect "reversal of an unknown movement (404)" 404
   call POST "$GATEWAY/v1/transfers" -H "Authorization: Bearer $M2M" "${JSON[@]}" -H "Idempotency-Key: $(key)" \
     -d "{\"creditorCci\":\"$CCI_CLOSED\",\"amount\":10,\"currency\":\"PEN\",\"reference\":\"SCN-$RANDOM\"}"
-  expect "transfer to a closed account: rejected by the network (422)" 422 '.code == "PAYMENTS-BANKINGCORE-0003"'
+  expect "transfer to a closed account: rejected by the network (422)" 422 '.code == "PAYMENTS-NETWORKGATEWAY-0001"'
 }
 
 g_events() {
@@ -643,10 +643,11 @@ g_audit() {
 }
 
 grafana() {
-  local out
+  local out credentials
+  credentials=$(printf '%s' "${GRAFANA_USERNAME:-admin}:${GRAFANA_PASSWORD:-admin}" | base64 | tr -d '\n')
   out=$(curl -s -w '\n%{http_code}' "$GRAFANA$1")
   # anonymous access first (otel-lgtm), then the default admin account
-  if [ "${out##*$'\n'}" != 200 ]; then out=$(curl -s -w '\n%{http_code}' -u admin:admin "$GRAFANA$1"); fi
+  if [ "${out##*$'\n'}" != 200 ]; then out=$(printf 'header = "Authorization: Basic %s"\n' "$credentials" | curl --config - -s -w '\n%{http_code}' "$GRAFANA$1"); fi
   printf '%s' "${out%$'\n'*}"
 }
 promql() {
@@ -661,8 +662,14 @@ traceql() {
 }
 # log_trace SERVICE REGEX: trace ID of the last line of .run/SERVICE.log matching REGEX (the log
 # pattern prints [traceId-spanId] of the current span; empty when the line ran outside a trace)
+log_text() {
+  # Local runs use text logs; the same services in kind use structured JSON logs.
+  jq -Rr '. as $raw | try (fromjson |
+    "[\(.trace_id // .traceId // "")-\(.span_id // .spanId // "")] \(.logger_name // "") : \(.message // "")") catch $raw' \
+    "$root/.run/$1.log" 2>/dev/null
+}
 log_trace() {
-  grep -E "$2" "$root/.run/$1.log" 2>/dev/null | grep -oE '\[[0-9a-f]{32}-[0-9a-f]{16}\]' | tail -1 | cut -c2-33
+  log_text "$1" | grep -E "$2" | grep -oE '\[[0-9a-f]{32}-[0-9a-f]{16}\]' | tail -1 | cut -c2-33
 }
 # trace_services TRACE-ID: service names of the spans Tempo holds for that trace
 trace_services() {
@@ -705,7 +712,7 @@ g_observability() {
   if [ -z "$t" ]; then
     bad "payment-process calls banking-core inside a trace" \
       "no 'client=banking-core' line with trace $PAY_TRACE of completed payment $PAY"
-  elif ! grep -q "\[$t-" "$root/.run/banking-core.log"; then
+  elif ! log_text banking-core | grep "\[$t-" >/dev/null; then
     bad "banking-core continues the trace of payment-process (HTTP traceparent)" \
       "trace $t of payment-process is not in .run/banking-core.log; its last request line:
 $(grep -E 'axiz.http .*path=/v1/' "$root/.run/banking-core.log" | tail -1 | cut -c1-400)"

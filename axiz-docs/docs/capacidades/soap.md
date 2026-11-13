@@ -19,7 +19,7 @@ axiz add soap
 Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
 
 ```yaml
-axiz.soap.clients.example.endpoint: ${EXAMPLE_SOAP_ENDPOINT:http://localhost:8089/soap}
+axiz.soap.clients.example.endpoint: ${EXAMPLE_SOAP_ENDPOINT:https://example.invalid/soap}
 ```
 
 ## Llaves del ConfigMap por ambiente

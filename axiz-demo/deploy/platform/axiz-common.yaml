@@ -6,9 +6,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: axiz-common
+  name: axiz-common-2-0-0
   labels:
     app.kubernetes.io/part-of: axiz-demo
+immutable: true
 data:
   application.yaml: |
     axiz.foundation.zone: America/Lima

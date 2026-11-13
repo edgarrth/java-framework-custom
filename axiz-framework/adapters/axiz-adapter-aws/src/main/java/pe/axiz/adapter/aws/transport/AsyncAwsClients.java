@@ -9,7 +9,6 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.stream.XMLInputFactory;
@@ -17,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
 import pe.axiz.adapter.aws.identity.WarmedAwsCredentials;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.signer.Aws4Signer;
 import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
@@ -34,17 +34,26 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
  */
 public final class AsyncAwsClients implements SdkAutoCloseable {
   private final WarmedAwsCredentials credentials;
+  private final AsyncAwsTransportSettings transportSettings;
   private final BoundedCompletionExecutor completions;
   private CompletionObserver observer = CompletionObserver.NOOP;
   private boolean closed;
 
   public AsyncAwsClients() {
-    this(AwsCredentialSources.create(), Clock.systemUTC(), Duration.ofSeconds(15));
+    this(
+        AwsCredentialSources.create(TransportSecurityPolicy.system()),
+        Clock.systemUTC(),
+        Duration.ofSeconds(15),
+        AsyncAwsTransportSettings.defaults());
   }
 
   /** Owns the provided credential source, warming it before any native asynchronous call. */
-  public AsyncAwsClients(AwsCredentialSource source, Clock clock, Duration refreshInterval) {
-    this(source, clock, refreshInterval, 2, 256);
+  public AsyncAwsClients(
+      AwsCredentialSource source,
+      Clock clock,
+      Duration refreshInterval,
+      AsyncAwsTransportSettings transportSettings) {
+    this(source, clock, refreshInterval, 2, 256, transportSettings);
   }
 
   /** Owns credentials, bounded callback execution and the attached observer. */
@@ -53,8 +62,10 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       Clock clock,
       Duration refreshInterval,
       int workers,
-      int queueCapacity) {
+      int queueCapacity,
+      AsyncAwsTransportSettings transportSettings) {
     try {
+      this.transportSettings = Objects.requireNonNull(transportSettings);
       BoundedCompletionExecutor.validWorkers(workers, queueCapacity);
     } catch (RuntimeException | Error failure) {
       source.close();
@@ -87,7 +98,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
 
                   @Override
                   public int getQueueSize() {
-                    return completions.getQueue().size();
+                    return completions.getQueueSize();
                   }
                 }));
     completions.observe(observer);
@@ -113,7 +124,9 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       throw new IllegalArgumentException("apiCallTimeout must be positive");
     // The SDK creates per-thread XML parsers on network workers. Discover the provider and
     // load the JDK XML policy files now, while configuring the client on the startup thread.
-    XMLInputFactory.newFactory();
+    var xmlFactory = XMLInputFactory.newFactory();
+    xmlFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    xmlFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
     var settings =
         AwsClientSettings.resolve(properties, service, AwsClientSettings.RegionPolicy.EXPLICIT);
     // EXPLICIT always resolves a region before configuring the non-blocking transport.
@@ -121,6 +134,7 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
         .region(Objects.requireNonNull(settings.region()))
         .credentialsProvider(credentialsProvider());
     if (settings.endpoint() != null) builder.endpointOverride(settings.endpoint());
+    AwsTransportSecurity.apply(builder, settings.transportSecurity());
     builder.httpClientBuilder(
         NettyNioAsyncHttpClient.builder()
             .maxConcurrency(64)
@@ -132,10 +146,8 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
             .connectionTimeout(Duration.ofSeconds(3))
             .connectionAcquisitionTimeout(Duration.ofSeconds(5))
             .tlsNegotiationTimeout(Duration.ofSeconds(5))
-            .connectionTimeToLive(
-                duration(properties, "axiz.aws.async.connection-ttl", Duration.ofMinutes(5)))
-            .connectionMaxIdleTime(
-                duration(properties, "axiz.aws.async.max-idle-time", Duration.ofSeconds(30)))
+            .connectionTimeToLive(transportSettings.connectionTtl())
+            .connectionMaxIdleTime(transportSettings.maxIdleTime())
             .useIdleConnectionReaper(true)
             .readTimeout(Duration.ofSeconds(30))
             .writeTimeout(Duration.ofSeconds(30)));
@@ -159,10 +171,17 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
       // These services marshal finite in-memory payloads. The SDK's standard SigV4 signer uses
       // per-thread SHA-256 rather than the new signer's blocking shared digest pool (AWS #6590).
       // Keep streaming S3 on its native signer; never disable payload signing or use reflection.
-      overrides.putAdvancedOption(SdkAdvancedClientOption.SIGNER, Aws4Signer.create());
+      useFinitePayloadSigner(overrides);
     }
     builder.overrideConfiguration(overrides.build());
     return builder.build();
+  }
+
+  // The replacement signer currently acquires a shared digest pool lock (AWS SDK #6590).
+  // Restrict the SDK-supported option to finite payload services until the SDK fixes that path.
+  @SuppressWarnings("deprecation")
+  private static void useFinitePayloadSigner(ClientOverrideConfiguration.Builder overrides) {
+    overrides.putAdvancedOption(SdkAdvancedClientOption.SIGNER, Aws4Signer.create());
   }
 
   private static TlsTrustManagersProvider warmedTrustManagers() {
@@ -174,33 +193,6 @@ public final class AsyncAwsClients implements SdkAutoCloseable {
     } catch (GeneralSecurityException failure) {
       throw new IllegalStateException(
           "Cannot initialize AWS TLS trust managers at startup", failure);
-    }
-  }
-
-  static Duration duration(
-      Function<String, @Nullable String> properties, String key, Duration fallback) {
-    String raw = properties.apply(key);
-    if (raw == null || raw.isBlank()) return fallback;
-    try {
-      Duration parsed;
-      if (raw.startsWith("P")) parsed = Duration.parse(raw);
-      else {
-        var match = Pattern.compile("([0-9]+)(ms|s|m|h)").matcher(raw);
-        if (!match.matches()) throw new IllegalArgumentException("Invalid duration");
-        long value = Long.parseLong(match.group(1));
-        parsed =
-            switch (match.group(2)) {
-              case "ms" -> Duration.ofMillis(value);
-              case "s" -> Duration.ofSeconds(value);
-              case "m" -> Duration.ofMinutes(value);
-              default -> Duration.ofHours(value);
-            };
-      }
-      if (!parsed.isPositive() || parsed.toMillis() < 1)
-        throw new IllegalArgumentException("Duration must be positive");
-      return parsed;
-    } catch (RuntimeException failure) {
-      throw new IllegalArgumentException("Invalid positive duration for " + key);
     }
   }
 

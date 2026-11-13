@@ -1,5 +1,6 @@
 package pe.axiz.adapter.secrets.aws;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
@@ -16,7 +17,13 @@ import software.amazon.awssdk.services.ssm.model.ParameterNotFoundException;
  */
 public final class ParameterStoreResolver implements SecretResolver {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "SsmClient is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final SsmClient client;
+
   private final String path;
 
   public ParameterStoreResolver(SsmClient client, String path) {

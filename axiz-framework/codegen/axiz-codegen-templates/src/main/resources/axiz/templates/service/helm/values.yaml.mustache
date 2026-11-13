@@ -1,6 +1,6 @@
 # Defaults of the {{project.name}} chart; values-<env>.yaml override them per environment.
 nameOverride: ""
-environment: dev
+environment: ""
 
 image:
   repository: nexus-docker.axiz.internal/axiz/{{project.name}}
@@ -18,10 +18,16 @@ serviceAccount:
   automountToken: false
 
 # shared configuration of the namespace (optional ConfigMap, mounted before the service's own)
-sharedConfigMap: axiz-common
+sharedConfigMap: ""
 
 javaOpts: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom"
 env: []
+# Select imports before application.yaml and mounted ConfigMaps are loaded.
+configBootstrap:
+  parameterStore:
+    enabled: false
+    application: ""
+    prefix: /axiz
 
 resources:
   requests:

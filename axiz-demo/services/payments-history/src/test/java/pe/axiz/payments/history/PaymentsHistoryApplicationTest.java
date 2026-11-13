@@ -43,7 +43,12 @@ import reactor.util.retry.Retry;
  * payment end to end: events on Kafka, R2DBC inbox, reactive command pipeline, projection with
  * encrypted and money columns on PostgreSQL, reactive query. Needs Docker.
  */
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true"
+    })
 @AutoConfigureWebTestClient
 @Import({
   PostgresTestConfiguration.class,

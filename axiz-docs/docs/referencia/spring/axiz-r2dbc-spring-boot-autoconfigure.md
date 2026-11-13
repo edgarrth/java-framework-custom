@@ -44,3 +44,9 @@ it onto minimal consumers.
 An enabled IAM configuration without its adapter or a custom provider fails with an actionable
 message. IAM reader pools use separate host-specific token providers and require the adapter.
 Ordinary password authentication, including password-based reader pools, works without it.
+
+The writer and reader validate their final connection options. The reader is also checked after
+its decorators. PostgreSQL uses `sslMode=verify-full` (or native `ssl=true` without an overriding
+mode). Opaque TLS context, engine, parameter or hostname-verifier callbacks are rejected by this
+validator because their later behavior cannot be inferred from the mode. Configure the native
+CA option for each destination instead of installing a callback that replaces peer validation.

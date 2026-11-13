@@ -6,7 +6,7 @@ public static org.w3c.dom.Document parse(java.lang.String);
 
 public final class pe.axiz.core.soap.SoapClient {
 public org.w3c.dom.Element call(java.lang.String, java.lang.String);
-public pe.axiz.core.soap.SoapClient(java.lang.String, java.net.http.HttpClient, java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, pe.axiz.core.soap.SoapEnvelope$Credentials, pe.axiz.core.sensitive.ObjectMasker, java.time.Clock);
+public pe.axiz.core.soap.SoapClient(java.lang.String, java.net.http.HttpClient, java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, pe.axiz.core.soap.SoapEnvelope$Credentials, pe.axiz.core.sensitive.ObjectMasker, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
 }
 
 public final class pe.axiz.core.soap.SoapEnvelope {

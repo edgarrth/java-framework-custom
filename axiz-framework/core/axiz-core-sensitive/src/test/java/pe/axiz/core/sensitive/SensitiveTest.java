@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,7 +27,7 @@ class SensitiveTest {
   record Card(String pan, BigDecimal limit) {}
 
   static class Legacy {
-    private final String token = "abc.def.ghi";
+    private final String token = UUID.randomUUID().toString();
     private final String note = "hello";
   }
 
@@ -196,7 +197,7 @@ class SensitiveTest {
 
   @Test
   void textThatIsNotOneCompleteJsonValueIsNeverReturned() {
-    String secret = "SECRET-123";
+    String secret = UUID.randomUUID().toString();
     for (String text :
         List.of(
             "{\"password\":\"" + secret,

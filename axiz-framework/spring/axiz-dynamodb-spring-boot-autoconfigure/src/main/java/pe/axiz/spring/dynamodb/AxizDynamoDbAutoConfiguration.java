@@ -15,6 +15,7 @@ import org.springframework.core.env.Environment;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.kit.dynamodb.CursorCodec;
+import pe.axiz.spring.foundation.AxizAwsAsyncTransportProperties;
 import pe.axiz.spring.foundation.AxizAwsCompletionProperties;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import pe.axiz.spring.foundation.aws.AwsAsyncResources;
@@ -74,7 +75,8 @@ public class AxizDynamoDbAutoConfiguration {
     AsyncAwsClients axizRepositoryAsyncAwsResources(
         AxizAwsCompletionProperties completion,
         ObjectProvider<MeterRegistry> registries,
-        AwsIdentity identity) {
+        AwsIdentity identity,
+        AxizAwsAsyncTransportProperties transport) {
       return AwsAsyncResources.create(
           "axizRepositoryAsyncAwsResources",
           completion.workers(),
@@ -82,7 +84,8 @@ public class AxizDynamoDbAutoConfiguration {
           registries.getIfAvailable(),
           identity,
           AwsService.DYNAMODB,
-          AwsCapability.DYNAMODB);
+          AwsCapability.DYNAMODB,
+          transport.toSettings());
     }
 
     @Bean(destroyMethod = "close")

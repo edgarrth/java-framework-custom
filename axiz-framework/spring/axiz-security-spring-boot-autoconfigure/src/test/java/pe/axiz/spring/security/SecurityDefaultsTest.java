@@ -179,11 +179,15 @@ class SecurityDefaultsTest {
     servlet
         .withPropertyValues(
             "axiz.security.rate-limit.enabled=true",
+            "axiz.security.rate-limit.store=memory",
+            "axiz.config.environment=test",
             "axiz.security.rate-limit.rules[0].name=payments")
         .run(ctx -> assertThat(ctx).hasFailed());
     reactive
         .withPropertyValues(
             "axiz.security.rate-limit.enabled=true",
+            "axiz.security.rate-limit.store=memory",
+            "axiz.config.environment=test",
             "axiz.security.rate-limit.rules[0].name=payments")
         .run(ctx -> assertThat(ctx).hasFailed());
   }
@@ -193,6 +197,8 @@ class SecurityDefaultsTest {
     servlet
         .withPropertyValues(
             "axiz.security.rate-limit.enabled=true",
+            "axiz.security.rate-limit.store=memory",
+            "axiz.config.environment=test",
             "axiz.security.rate-limit.rules[0].name=payments",
             "axiz.security.rate-limit.rules[0].paths[0]=/payments/**",
             "axiz.security.rate-limit.rules[0].fail-open=false")
@@ -537,5 +543,44 @@ class SecurityDefaultsTest {
     } finally {
       SecurityContextHolder.clearContext();
     }
+  }
+
+  @Test
+  void selectedRateLimitStoreFailsClosedOnBothStacks() {
+    String[] base = {
+      "axiz.security.rate-limit.enabled=true",
+      "axiz.security.rate-limit.rules[0].name=payments",
+      "axiz.security.rate-limit.rules[0].fail-open=false"
+    };
+    for (String store : new String[] {"memory", "redis"}) {
+      servlet
+          .withPropertyValues(base)
+          .withPropertyValues(
+              "axiz.security.rate-limit.store=" + store,
+              "axiz.config.environment=prod",
+              "spring.profiles.active=local")
+          .run(ctx -> assertThat(ctx).hasFailed());
+      reactive
+          .withPropertyValues(base)
+          .withPropertyValues(
+              "axiz.security.rate-limit.store=" + store,
+              "axiz.config.environment=prod",
+              "spring.profiles.active=local")
+          .run(ctx -> assertThat(ctx).hasFailed());
+    }
+    for (String environment : new String[] {"local", "test", "ci"}) {
+      servlet
+          .withPropertyValues(base)
+          .withPropertyValues(
+              "axiz.security.rate-limit.store=memory", "axiz.config.environment=" + environment)
+          .run(ctx -> assertThat(ctx).hasSingleBean(RateLimiter.class));
+      reactive
+          .withPropertyValues(base)
+          .withPropertyValues(
+              "axiz.security.rate-limit.store=memory", "axiz.config.environment=" + environment)
+          .run(ctx -> assertThat(ctx).hasSingleBean(pe.axiz.core.security.AsyncRateLimiter.class));
+    }
+    servlet.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
+    reactive.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
   }
 }

@@ -1,10 +1,10 @@
-public class pe.axiz.spring.i18n.AcceptLanguageLocaleContextResolver implements org.springframework.web.server.i18n.LocaleContextResolver {
+public final class pe.axiz.spring.i18n.AcceptLanguageLocaleContextResolver implements org.springframework.web.server.i18n.LocaleContextResolver {
 public org.springframework.context.i18n.LocaleContext resolveLocaleContext(org.springframework.web.server.ServerWebExchange);
 public pe.axiz.spring.i18n.AcceptLanguageLocaleContextResolver(pe.axiz.core.i18n.LocaleResolver);
 public void setLocaleContext(org.springframework.web.server.ServerWebExchange, org.springframework.context.i18n.LocaleContext);
 }
 
-public class pe.axiz.spring.i18n.AcceptLanguageLocaleResolver implements org.springframework.web.servlet.LocaleResolver {
+public final class pe.axiz.spring.i18n.AcceptLanguageLocaleResolver implements org.springframework.web.servlet.LocaleResolver {
 public java.util.Locale resolveLocale(jakarta.servlet.http.HttpServletRequest);
 public pe.axiz.spring.i18n.AcceptLanguageLocaleResolver(pe.axiz.core.i18n.LocaleResolver);
 public void setLocale(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, java.util.Locale);

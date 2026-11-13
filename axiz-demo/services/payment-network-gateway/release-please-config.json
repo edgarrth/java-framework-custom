@@ -6,7 +6,7 @@
   "extra-files": [
     {"type": "xml", "path": "pom.xml", "xpath": "/*[local-name()='project']/*[local-name()='version']"}
   ],
-  "initial-version": "0.1.0",
+  "initial-version": "2.0.0",
   "include-component-in-tag": false,
   "include-v-in-tag": true,
   "changelog-sections": [

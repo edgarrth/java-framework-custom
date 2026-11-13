@@ -19,7 +19,7 @@ axiz add http-client
 Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
 
 ```yaml
-axiz.http-client.clients.example.base-url: ${EXAMPLE_BASE_URL:http://localhost:8089}
+axiz.http-client.clients.example.base-url: ${EXAMPLE_BASE_URL:https://example.invalid}
 ```
 
 ## Llaves del ConfigMap por ambiente

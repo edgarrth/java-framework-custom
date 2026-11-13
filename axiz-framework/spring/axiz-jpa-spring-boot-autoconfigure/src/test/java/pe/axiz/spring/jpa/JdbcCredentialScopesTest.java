@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.identity.AwsCredentialSources;
+import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
@@ -178,7 +179,7 @@ class JdbcCredentialScopesTest {
               org.mockito.Mockito.withSettings().extraInterfaces(SdkAutoCloseable.class));
       try (var defaults = mockStatic(AwsCredentialSources.class)) {
         defaults
-            .when(AwsCredentialSources::create)
+            .when(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()))
             .thenAnswer(
                 call ->
                     AwsCredentialSource.owned(source, () -> ((SdkAutoCloseable) source).close()));
@@ -219,7 +220,9 @@ class JdbcCredentialScopesTest {
               .close();
           beans.destroySingletons();
         }
-        defaults.verify(AwsCredentialSources::create, org.mockito.Mockito.times(1));
+        defaults.verify(
+            () -> AwsCredentialSources.create(TransportSecurityPolicy.system()),
+            org.mockito.Mockito.times(1));
         org.mockito.Mockito.verify((SdkAutoCloseable) source, org.mockito.Mockito.times(1)).close();
         assertNotNull(id.get());
         assertNull(JdbcIamCredentialScopes.find(id.get()));
@@ -246,7 +249,7 @@ class JdbcCredentialScopesTest {
     var closedAfterPool = new AtomicBoolean();
     try (var defaults = mockStatic(AwsCredentialSources.class)) {
       defaults
-          .when(AwsCredentialSources::create)
+          .when(() -> AwsCredentialSources.create(TransportSecurityPolicy.system()))
           .thenAnswer(
               call ->
                   AwsCredentialSource.owned(

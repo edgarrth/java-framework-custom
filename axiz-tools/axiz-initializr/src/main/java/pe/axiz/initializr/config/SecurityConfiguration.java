@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 /**
@@ -92,11 +93,7 @@ public class SecurityConfiguration {
         .headers(
             h ->
                 h.contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
-                    .referrerPolicy(
-                        r ->
-                            r.policy(
-                                org.springframework.security.web.header.writers
-                                    .ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)));
+                    .referrerPolicy(r -> r.policy(ReferrerPolicy.NO_REFERRER)));
     return http.build();
   }
 

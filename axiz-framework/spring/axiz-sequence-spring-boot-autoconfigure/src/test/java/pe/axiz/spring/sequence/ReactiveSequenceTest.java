@@ -130,7 +130,7 @@ class ReactiveSequenceTest {
                     .withPropertyValues(
                         "axiz.sequence.store=dynamodb",
                         "axiz.aws.region=us-east-1",
-                        "axiz.aws.endpoint=http://localhost:4566")
+                        "axiz.aws.endpoint=https://localhost:4566")
                     .run(
                         context -> {
                           assertThat(context)
@@ -144,7 +144,7 @@ class ReactiveSequenceTest {
                                       .getBean(DynamoDbAsyncClient.class)
                                       .serviceClientConfiguration()
                                       .endpointOverride())
-                              .hasValue(URI.create("http://localhost:4566"));
+                              .hasValue(URI.create("https://localhost:4566"));
                         }));
   }
 

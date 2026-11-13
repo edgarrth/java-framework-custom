@@ -13,14 +13,6 @@ axiz add config
 | Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | business, core, gateway, ux, support, event-processor, batch |
 
-## Propiedades que agrega
-
-Valores por defecto seguros en `application.yaml`; los valores de cada ambiente van en el ConfigMap del servicio y los secretos en el secret store.
-
-```yaml
-axiz.config.environment: ${AXIZ_ENVIRONMENT:local}
-```
-
 ## Uso
 
 ```java

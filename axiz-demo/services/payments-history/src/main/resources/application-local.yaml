@@ -2,6 +2,9 @@
 # AWS services run in LocalStack: export AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test (LocalStack
 # accepts any value; they are not credentials).
 axiz:
+  transport:
+    allow-insecure-data-stores: true
+    allow-plain-http: true
   logging:
     json: false
   config:
@@ -25,3 +28,10 @@ spring:
 
 # The local Kafka container has no IAM listener.
 axiz.messaging.kafka.iam: false
+
+# Explicit transport settings for local containers without TLS.
+spring.datasource.hikari.data-source-properties.sslmode: disable
+spring.flyway.jdbc-properties.sslmode: disable
+spring.r2dbc.properties.sslMode: disable
+spring.kafka.security.protocol: PLAINTEXT
+spring.data.redis.ssl.enabled: false

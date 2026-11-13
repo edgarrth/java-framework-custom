@@ -35,7 +35,12 @@ import pe.axiz.spring.test.PostgresTestConfiguration;
  * Regression: with 10,000 already used under a 30,000 limit, concurrent orders of 15,000 must not
  * both pass. Runs against PostgreSQL in a container (Docker).
  */
-@SpringBootTest
+@SpringBootTest(
+    properties = {
+      "axiz.config.environment=test",
+      "axiz.transport.allow-plain-http=true",
+      "axiz.transport.allow-insecure-data-stores=true"
+    })
 @Import({
   PostgresTestConfiguration.class,
   KafkaTestConfiguration.class,

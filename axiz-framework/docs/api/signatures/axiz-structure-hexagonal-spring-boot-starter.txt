@@ -1,4 +1,4 @@
-public class pe.axiz.structure.hexagonal.spring.ApplicationEventDomainEventSink implements pe.axiz.structure.hexagonal.DomainEventSink {
+public final class pe.axiz.structure.hexagonal.spring.ApplicationEventDomainEventSink implements pe.axiz.structure.hexagonal.DomainEventSink {
 public pe.axiz.structure.hexagonal.spring.ApplicationEventDomainEventSink(org.springframework.context.ApplicationEventPublisher);
 public void publish(java.util.List<pe.axiz.core.domain.DomainEvent>);
 }
@@ -29,7 +29,7 @@ public class pe.axiz.structure.hexagonal.spring.AxizReactiveHexagonalAutoConfigu
 public pe.axiz.structure.hexagonal.spring.AxizReactiveHexagonalAutoConfiguration();
 }
 
-public class pe.axiz.structure.hexagonal.spring.OutboxDomainEventSink implements pe.axiz.structure.hexagonal.DomainEventSink {
+public final class pe.axiz.structure.hexagonal.spring.OutboxDomainEventSink implements pe.axiz.structure.hexagonal.DomainEventSink {
 public boolean transactional();
 public pe.axiz.structure.hexagonal.spring.OutboxDomainEventSink(pe.axiz.spring.outbox.TransactionalEvents, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, java.lang.String);
 public void publish(java.util.List<pe.axiz.core.domain.DomainEvent>);
@@ -46,7 +46,7 @@ public java.lang.Object invoke(org.aopalliance.intercept.MethodInvocation);
 public pe.axiz.structure.hexagonal.spring.ReactiveUseCaseInterceptor(java.util.function.Supplier<org.springframework.transaction.ReactiveTransactionManager>, io.micrometer.observation.ObservationRegistry);
 }
 
-public class pe.axiz.structure.hexagonal.spring.SpringUseCaseTransaction implements pe.axiz.structure.hexagonal.UseCaseTransaction {
+public final class pe.axiz.structure.hexagonal.spring.SpringUseCaseTransaction implements pe.axiz.structure.hexagonal.UseCaseTransaction {
 public <T> T execute(boolean, java.util.function.Supplier<T>);
 public pe.axiz.structure.hexagonal.spring.SpringUseCaseTransaction(org.springframework.transaction.PlatformTransactionManager);
 }

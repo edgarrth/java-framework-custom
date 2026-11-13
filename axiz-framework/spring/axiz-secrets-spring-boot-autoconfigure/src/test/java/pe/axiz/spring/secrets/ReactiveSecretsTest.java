@@ -43,7 +43,7 @@ class ReactiveSecretsTest {
             "axiz.secrets.secrets-manager.enabled=true",
             "axiz.secrets.parameter-store.enabled=true",
             "axiz.secrets.parameter-store.path=/payments/",
-            "axiz.aws.endpoint=http://localhost:4566")
+            "axiz.aws.endpoint=https://localhost:4566")
         .run(
             ctx -> {
               assertThat(ctx).hasNotFailed();
@@ -176,7 +176,7 @@ class ReactiveSecretsTest {
                         "axiz.secrets.secrets-manager.enabled=true",
                         "axiz.secrets.parameter-store.enabled=true",
                         "axiz.secrets.parameter-store.path=/payments/",
-                        "axiz.aws.endpoint=http://localhost:4566")
+                        "axiz.aws.endpoint=https://localhost:4566")
                     .run(
                         ctx ->
                             assertThat(ctx)

@@ -1,5 +1,6 @@
 package pe.axiz.spring.security;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -22,6 +23,11 @@ public class ProblemAuthenticationEntryPoint
 
   private final SecurityProblems problems;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public ProblemAuthenticationEntryPoint(SecurityProblems problems) {
     this.problems = Objects.requireNonNull(problems);
   }
@@ -50,9 +56,15 @@ public class ProblemAuthenticationEntryPoint
         problems.forbidden(LocaleContextHolder.getLocale(), request.getRequestURI()));
   }
 
+  @SuppressFBWarnings(
+      value = "XSS_SERVLET",
+      justification =
+          "SecurityProblems serializes JSON-escaped Problem data with "
+              + "application/problem+json and nosniff, not an HTML document.")
   static void write(HttpServletResponse response, int status, String body) throws IOException {
     response.setStatus(status);
     response.setContentType(Problem.MEDIA_TYPE);
+    response.setHeader("X-Content-Type-Options", "nosniff");
     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
     response.getWriter().write(body);
   }

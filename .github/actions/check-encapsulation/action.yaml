@@ -1,0 +1,12 @@
+name: check-encapsulation
+description: Reject encapsulation regressions at every SpotBugs priority and broad exclusions.
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -euo pipefail
+        verifier=$(mktemp -d "$RUNNER_TEMP/axiz-xml-policy.XXXXXXXX")
+        python3 -m venv "$verifier"
+        "$verifier/bin/pip" install --require-hashes --quiet -r "$GITHUB_ACTION_PATH/../check-workflow-security/requirements.txt"
+        "$verifier/bin/python" "$GITHUB_ACTION_PATH/check_encapsulation.py" .

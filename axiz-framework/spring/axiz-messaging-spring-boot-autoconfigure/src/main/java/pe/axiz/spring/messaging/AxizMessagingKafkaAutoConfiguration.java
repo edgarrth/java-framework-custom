@@ -3,7 +3,7 @@ package pe.axiz.spring.messaging;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
@@ -24,13 +24,20 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
+import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
+import org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails;
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -44,6 +51,7 @@ import pe.axiz.adapter.messaging.kafka.KafkaEventPublisher;
 import pe.axiz.adapter.messaging.kafka.KafkaEventRecords;
 import pe.axiz.adapter.messaging.kafka.MskIam;
 import pe.axiz.adapter.messaging.kafka.aws.AxizIamClientCallbackHandler;
+import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
@@ -53,17 +61,22 @@ import pe.axiz.spring.foundation.BoundedAsyncDispatcher;
 import pe.axiz.spring.foundation.aws.AwsCapability;
 import pe.axiz.spring.foundation.aws.AwsIdentity;
 import pe.axiz.spring.foundation.aws.AwsService;
+import pe.axiz.spring.kafka.KafkaConnectionProperties;
+import pe.axiz.spring.kafka.KafkaConnectionProperties.ClientKind;
+import pe.axiz.spring.kafka.KafkaTransportSecurity;
 
 /**
  * Amazon MSK: IAM-authenticated idempotent producer for {@code kafka:} destinations, and listener
  * containers for {@code axiz.messaging.kafka.topics} with exponential redelivery and a dead-letter
  * topic. Enabled when bootstrap servers are configured.
  */
-@AutoConfiguration
+@AutoConfiguration(
+    beforeName = "org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration")
 @ConditionalOnClass(
     name = {
       "pe.axiz.adapter.messaging.kafka.KafkaEventPublisher",
-      "org.springframework.kafka.core.KafkaTemplate"
+      "org.springframework.kafka.core.KafkaTemplate",
+      "org.springframework.boot.kafka.autoconfigure.KafkaConnectionDetails"
     })
 @ConditionalOnExpression(
     "'${axiz.messaging.kafka.bootstrap-servers:${spring.kafka.bootstrap-servers:}}' != ''")
@@ -72,12 +85,21 @@ import pe.axiz.spring.foundation.aws.AwsService;
 public class AxizMessagingKafkaAutoConfiguration {
 
   static Map<String, Object> common(
-      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
-    Map<String, Object> props = new HashMap<>();
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details,
+      ClientKind kind) {
+    Map<String, Object> props = KafkaConnectionProperties.properties(env, details, kind);
+    String selected = p.kafka().bootstrapServers();
     String servers =
-        p.kafka().bootstrapServers() != null
-            ? p.kafka().bootstrapServers()
-            : env.getProperty("spring.kafka.bootstrap-servers");
+        selected != null
+            ? selected
+            : String.join(
+                ",",
+                servers(
+                    Objects.requireNonNull(
+                        props.get("bootstrap.servers"), "Kafka bootstrap servers are required")));
     MskAuthentication.validate(Objects.requireNonNull(servers), p.kafka().iam());
     props.put("bootstrap.servers", servers);
     props.put("client.id", env.getProperty("spring.application.name", "application"));
@@ -90,10 +112,59 @@ public class AxizMessagingKafkaAutoConfiguration {
     return props;
   }
 
+  private static List<String> servers(Object value) {
+    if (value instanceof List<?> list) return list.stream().map(Object::toString).toList();
+    return List.of(
+        Objects.requireNonNull(value, "Kafka bootstrap servers are required").toString());
+  }
+
+  @Bean
+  DefaultKafkaProducerFactoryCustomizer axizKafkaProducerIdentity(
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details) {
+    return factory -> factory.updateConfigs(common(p, env, identity, details, ClientKind.PRODUCER));
+  }
+
+  @Bean
+  DefaultKafkaConsumerFactoryCustomizer axizKafkaConsumerIdentity(
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details) {
+    return factory -> factory.updateConfigs(common(p, env, identity, details, ClientKind.CONSUMER));
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(KafkaAdmin.class)
+  KafkaAdmin axizKafkaAdmin(
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details) {
+    var properties = common(p, env, identity, details, ClientKind.ADMIN);
+    KafkaTransportSecurity.validate(properties, DataTransportSecurityPolicy.from(env::getProperty));
+    var admin = new KafkaAdmin(properties);
+    var settings = Binder.get(env).bindOrCreate("spring.kafka", KafkaProperties.class).getAdmin();
+    var closeTimeout = settings.getCloseTimeout();
+    var operationTimeout = settings.getOperationTimeout();
+    if (closeTimeout != null) admin.setCloseTimeout(Math.toIntExact(closeTimeout.toSeconds()));
+    if (operationTimeout != null)
+      admin.setOperationTimeout(Math.toIntExact(operationTimeout.toSeconds()));
+    admin.setFatalIfBrokerNotAvailable(settings.isFailFast());
+    admin.setModifyTopicConfigs(settings.isModifyTopicConfigs());
+    admin.setAutoCreate(settings.isAutoCreate());
+    return admin;
+  }
+
   @Bean
   Map<String, Object> axizKafkaProducerProperties(
-      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
-    Map<String, Object> props = common(p, env, identity);
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details) {
+    Map<String, Object> props = common(p, env, identity, details, ClientKind.PRODUCER);
     props.putAll(MskIam.reliableProducer());
     props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
     props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -103,7 +174,8 @@ public class AxizMessagingKafkaAutoConfiguration {
 
   @Bean(destroyMethod = "close")
   KafkaProducer<String, byte[]> axizKafkaProducer(
-      @Qualifier("axizKafkaProducerProperties") Map<String, Object> properties) {
+      @Qualifier("axizKafkaProducerProperties") Map<String, Object> properties, Environment env) {
+    KafkaTransportSecurity.validate(properties, DataTransportSecurityPolicy.from(env::getProperty));
     return new KafkaProducer<>(properties);
   }
 
@@ -171,11 +243,15 @@ public class AxizMessagingKafkaAutoConfiguration {
   @Bean(destroyMethod = "destroy")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   KafkaTemplate<String, byte[]> axizAsyncKafkaTemplate(
-      AxizMessagingProperties p, Environment env, AwsIdentity identity) {
-    Map<String, Object> props = common(p, env, identity);
+      AxizMessagingProperties p,
+      Environment env,
+      AwsIdentity identity,
+      @Nullable KafkaConnectionDetails details) {
+    Map<String, Object> props = common(p, env, identity, details, ClientKind.PRODUCER);
     props.putAll(MskIam.reliableProducer());
     props.put(ProducerConfig.CLIENT_ID_CONFIG, props.get("client.id") + "-reactive");
     props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, p.kafka().sendTimeout().toMillis());
+    KafkaTransportSecurity.validate(props, DataTransportSecurityPolicy.from(env::getProperty));
     var factory =
         new DefaultKafkaProducerFactory<String, byte[]>(
             props, new StringSerializer(), new ByteArraySerializer());
@@ -201,8 +277,9 @@ public class AxizMessagingKafkaAutoConfiguration {
         AxizMessagingProperties p,
         Environment env,
         ObservedDispatcher dispatcher,
-        AwsIdentity identity) {
-      Map<String, Object> consumer = common(p, env, identity);
+        AwsIdentity identity,
+        @Nullable KafkaConnectionDetails details) {
+      Map<String, Object> consumer = common(p, env, identity, details, ClientKind.CONSUMER);
       consumer.put(
           ConsumerConfig.GROUP_ID_CONFIG,
           p.kafka().groupId() != null
@@ -211,11 +288,13 @@ public class AxizMessagingKafkaAutoConfiguration {
       consumer.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
       consumer.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
       consumer.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
+      KafkaTransportSecurity.validate(consumer, DataTransportSecurityPolicy.from(env::getProperty));
       DefaultKafkaConsumerFactory<String, byte[]> consumers =
           new DefaultKafkaConsumerFactory<>(
               consumer, new StringDeserializer(), new ByteArrayDeserializer());
-      Map<String, Object> producer = common(p, env, identity);
+      Map<String, Object> producer = common(p, env, identity, details, ClientKind.PRODUCER);
       producer.putAll(MskIam.reliableProducer());
+      KafkaTransportSecurity.validate(producer, DataTransportSecurityPolicy.from(env::getProperty));
       KafkaTemplate<String, byte[]> dlqTemplate =
           new KafkaTemplate<>(
               new DefaultKafkaProducerFactory<>(

@@ -116,8 +116,10 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   private Context bind(Context ctx, Connection connection) {
-    Map<ConnectionFactory, Connection> existing = ctx.getOrDefault(CONNECTION_KEY, Map.of());
-    Map<ConnectionFactory, Connection> scoped = new IdentityHashMap<>(existing);
+    Map<ConnectionFactory, Connection> existing =
+        Objects.requireNonNull(ctx.getOrDefault(CONNECTION_KEY, Map.of()));
+    IdentityHashMap<ConnectionFactory, Connection> scoped = new IdentityHashMap<>();
+    existing.forEach(scoped::put);
     scoped.put(connections, connection);
     return ctx.put(CONNECTION_KEY, Collections.unmodifiableMap(scoped));
   }

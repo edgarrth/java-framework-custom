@@ -1,5 +1,6 @@
 package pe.axiz.adapter.storage.s3;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
@@ -31,7 +32,13 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
  */
 public final class S3ObjectStorage implements ObjectStorage {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "S3Client is an injected collaborator whose identity and lifecycle must be shared, "
+              + "not copied.")
   private final S3Client s3;
+
   private final S3Requests requests;
 
   public S3ObjectStorage(

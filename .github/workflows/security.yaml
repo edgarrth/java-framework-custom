@@ -1,0 +1,108 @@
+name: security
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 6 * * 1'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Gitleaks 8.30.1 on the complete checkout
+        run: |
+          set -euo pipefail
+          mkdir -p security-reports
+          docker run --rm --network none -v "$PWD:/scan:ro" -v "$PWD/security-reports:/reports" \
+            -w /scan ghcr.io/gitleaks/gitleaks:v8.30.1 dir . --config /scan/.gitleaks.toml \
+            --redact --report-format sarif --report-path /reports/gitleaks.sarif
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-secrets-${{ github.run_id }}-${{ github.run_attempt }}
+          path: security-reports/*.sarif
+          if-no-files-found: error
+          retention-days: 90
+  sast:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Semgrep 1.180.0 including production and tests
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/semgrep"
+          "$RUNNER_TEMP/semgrep/bin/pip" install 'semgrep==1.180.0'
+          mkdir -p security-reports
+          "$RUNNER_TEMP/semgrep/bin/semgrep" scan --jobs 4 --timeout 30 --error --metrics=off \
+            --disable-version-check --config p/java --config p/python --config p/github-actions \
+            --config p/owasp-top-ten --config p/secrets \
+            --config axiz-framework/quality/axiz-code-standards/src/main/resources/axiz/semgrep/axiz-rules.yaml \
+            --sarif --output security-reports/semgrep.sarif .
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-sast-${{ github.run_id }}-${{ github.run_attempt }}
+          path: security-reports/*.sarif
+          if-no-files-found: error
+          retention-days: 90
+  filesystem:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - name: Trivy 0.70.0 on the complete checkout
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          version: v0.70.0
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy.sarif
+          exit-code: '1'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: security-filesystem-${{ github.run_id }}-${{ github.run_attempt }}
+          path: trivy.sarif
+          if-no-files-found: error
+          retention-days: 90
+  publish-sarif:
+    needs: [secrets, sast, filesystem]
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          pattern: security-*-${{ github.run_id }}-${{ github.run_attempt }}
+          path: security-sarif
+      - uses: github/codeql-action/upload-sarif@9f759ee644a3e7c15c1390abf49868036c00067b
+        with:
+          sarif_file: security-sarif
+          category: monorepo-security

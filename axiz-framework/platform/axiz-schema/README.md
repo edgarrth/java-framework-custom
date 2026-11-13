@@ -1,0 +1,6 @@
+# axiz-schema
+
+Canonical SQL resources for Axiz tables, under `axiz/sql/`. This JAR contains resources only: no drivers, runtime or startup migration runner. JDBC adapters and project generation consume the same bytes.
+
+The application owns execution of its initial Flyway migrations. Select the fragments for enabled capabilities, review them and execute using an account with DDL privileges. Runtime accounts need only their operation privileges. Resources are outside Flyway's default `db/migration` path and never run automatically.
+

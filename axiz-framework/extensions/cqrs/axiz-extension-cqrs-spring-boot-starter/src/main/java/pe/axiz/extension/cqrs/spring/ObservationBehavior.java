@@ -8,7 +8,7 @@ import pe.axiz.extension.cqrs.Invocation;
 import pe.axiz.extension.cqrs.PipelineBehavior;
 
 /** Outermost step: a span {@code axiz.command} or {@code axiz.query} around the whole pipeline. */
-public class ObservationBehavior implements PipelineBehavior {
+public final class ObservationBehavior implements PipelineBehavior {
 
   private final ArchitectureObservation observation;
 

@@ -171,6 +171,12 @@ public record AxizSecurityProperties(
     }
   }
 
+  /** Explicit implementation selected for rate limiting. */
+  public enum RateLimitStore {
+    REDIS,
+    MEMORY
+  }
+
   /**
    * Rate limiting. The key always comes from the validated token (client or subject), never from a
    * client-controlled header.
@@ -178,9 +184,15 @@ public record AxizSecurityProperties(
    * @param enabled whether limits are enforced
    * @param rules limits by route group
    */
-  public record RateLimit(@DefaultValue("false") boolean enabled, @DefaultValue List<Rule> rules) {
+  public record RateLimit(
+      @DefaultValue("false") boolean enabled,
+      @Nullable RateLimitStore store,
+      @DefaultValue List<Rule> rules) {
     public RateLimit {
       rules = List.copyOf(rules);
+      if (enabled && store == null)
+        throw new IllegalArgumentException(
+            "axiz.security.rate-limit.store is required (redis; memory only in local, test or ci)");
       if (enabled && rules.stream().anyMatch(rule -> rule.failOpen() == null)) {
         throw new IllegalArgumentException(
             "axiz.security.rate-limit: each rule must explicitly declare fail-open");

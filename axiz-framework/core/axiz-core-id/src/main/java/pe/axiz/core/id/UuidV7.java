@@ -4,7 +4,7 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Time-ordered UUID version 7 (RFC 9562). Within the same millisecond a 12-bit counter in {@code
@@ -21,9 +21,8 @@ public final class UuidV7 implements IdGenerator {
   private static final UuidV7 DEFAULT = new UuidV7(Clock.systemUTC());
 
   private final Clock clock;
-  private final ReentrantLock lock = new ReentrantLock();
-  private long lastMillis = -1L;
-  private int counter;
+  // Timestamp (48 bits) and monotonic counter (12 bits) are reserved in one CAS operation.
+  private final AtomicLong sequence = new AtomicLong(-1L);
 
   private UuidV7(Clock clock) {
     this.clock = clock;
@@ -39,27 +38,22 @@ public final class UuidV7 implements IdGenerator {
 
   /** Next UUIDv7 of this generator. */
   public UUID next() {
-    long millis;
-    int seq;
-    lock.lock();
-    try {
-      millis = clock.millis();
-      if (millis <= lastMillis) {
-        millis = lastMillis;
-        counter++;
-        if (counter > COUNTER_MAX) {
-          // counter exhausted: borrow the next millisecond to stay monotonic
-          millis = ++lastMillis;
-          counter = RANDOM.nextInt(0x400);
-        }
-      } else {
-        lastMillis = millis;
-        counter = RANDOM.nextInt(0x400);
-      }
-      seq = counter;
-    } finally {
-      lock.unlock();
-    }
+    long now = clock.millis();
+    if (now < 0 || now > 0xFFFF_FFFF_FFFFL)
+      throw new IllegalArgumentException("UUIDv7 requires a 48-bit Unix millisecond timestamp");
+    long previous;
+    long reserved;
+    do {
+      previous = sequence.get();
+      if (previous == 0x0FFF_FFFF_FFFF_FFFFL)
+        throw new IllegalStateException("UUIDv7 timestamp range exhausted");
+      reserved =
+          previous < 0 || now > (previous >>> 12)
+              ? (now << 12) | RANDOM.nextInt(0x400)
+              : previous + 1; // Counter overflow borrows the next millisecond, without waiting.
+    } while (!sequence.compareAndSet(previous, reserved));
+    long millis = reserved >>> 12;
+    int seq = (int) (reserved & COUNTER_MAX);
     long msb = (millis & 0xFFFF_FFFF_FFFFL) << 16;
     msb |= 0x7000L; // version 7
     msb |= seq & COUNTER_MAX;

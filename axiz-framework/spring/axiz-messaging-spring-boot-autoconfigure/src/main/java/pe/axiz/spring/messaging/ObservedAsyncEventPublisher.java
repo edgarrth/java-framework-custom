@@ -1,5 +1,6 @@
 package pe.axiz.spring.messaging;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
@@ -26,7 +27,15 @@ import pe.axiz.core.observability.AxizObservations;
  */
 public final class ObservedAsyncEventPublisher implements AsyncEventPublisher {
   private final AsyncEventPublisher delegate;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Native producer borrows the application's live ObservationRegistry. "
+              + "Identity/lifecycle and tracing handlers are intentionally shared, just like "
+              + "ObservedEventPublisher; there is no getter.")
   private final ObservationRegistry registry;
+
   private final AxizMessagingProperties properties;
 
   public ObservedAsyncEventPublisher(

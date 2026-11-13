@@ -26,12 +26,12 @@ class SchedulingDynamoDbTest {
         .withPropertyValues(
             "axiz.scheduling.store=dynamodb",
             "axiz.aws.region=us-east-1",
-            "axiz.aws.dynamodb.endpoint=http://localhost:8000")
+            "axiz.aws.dynamodb.endpoint=https://localhost:8000")
         .run(
             ctx -> {
               assertThat(ctx.getBean(LockProvider.class)).isInstanceOf(DynamoDBLockProvider.class);
               assertEquals(
-                  URI.create("http://localhost:8000"),
+                  URI.create("https://localhost:8000"),
                   ctx.getBean(DynamoDbClient.class)
                       .serviceClientConfiguration()
                       .endpointOverride()

@@ -9,6 +9,10 @@ import java.util.List;
 {{#item.usesNullable}}
 import org.jspecify.annotations.Nullable;
 {{/item.usesNullable}}
+{{#fw.hasApplicationModels}}
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
+{{/fw.hasApplicationModels}}
 import org.springframework.http.ResponseEntity;
 {{#caps.security}}
 {{#item.hasScopedOperations}}
@@ -107,7 +111,7 @@ import {{project.basePackage}}.composition.{{item.className}}Composition;
 @RestController
 public class {{item.className}}Controller {
 {{#fw.hasApplicationModels}}
-  private final tools.jackson.databind.json.JsonMapper mapper = tools.jackson.databind.json.JsonMapper.builder().build();
+  private final JsonMapper mapper = JsonMapper.builder().build();
 {{/fw.hasApplicationModels}}
 
 {{#item.fields}}

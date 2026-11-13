@@ -18,7 +18,19 @@ public final class R2dbcUrls {
   public record Endpoint(String host, int port, String database) {}
 
   private static final Map<String, String> JDBC_PARAMETERS =
-      Map.of("sslmode", "sslmode", "applicationname", "ApplicationName");
+      Map.of(
+          "sslmode",
+          "sslmode",
+          "applicationname",
+          "ApplicationName",
+          "sslrootcert",
+          "sslrootcert",
+          "sslcert",
+          "sslcert",
+          "sslkey",
+          "sslkey",
+          "sslpassword",
+          "sslpassword");
 
   private R2dbcUrls() {}
 

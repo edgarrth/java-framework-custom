@@ -156,8 +156,8 @@ class AuditDeliveryModesTest {
       assertTrue(publisher.publish(event()).toCompletableFuture().isDone());
       assertTrue(entered.await(3, TimeUnit.SECONDS));
       assertTrue(publisher.publish(event()).toCompletableFuture().isDone());
-      assertEquals(1, publisher.queue().pending());
-      assertEquals(0, publisher.queue().lostCount());
+      assertEquals(1, publisher.pending());
+      assertEquals(0, publisher.lostCount());
       ack.complete(null);
     }
   }
@@ -172,8 +172,8 @@ class AuditDeliveryModesTest {
       publisher.publish(event());
       assertTrue(fallback.await(3, TimeUnit.SECONDS));
       assertTrue(ack.isCancelled());
-      assertEquals(1, publisher.queue().failureCount());
-      assertEquals(0, publisher.queue().lostCount());
+      assertEquals(1, publisher.failureCount());
+      assertEquals(0, publisher.lostCount());
     }
   }
 

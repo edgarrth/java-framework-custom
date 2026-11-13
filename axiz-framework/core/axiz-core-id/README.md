@@ -26,4 +26,11 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 ## Tests
 
+UUIDv7 and ULID reserve their monotonic state with atomic compare-and-set operations. Concurrent
+callers do not acquire a generator lock; clock rollback preserves ordering. UUIDv7 counter
+overflow borrows the next millisecond. Timestamps outside the unsigned 48-bit range are rejected.
+Random components still come from `SecureRandom`; the JDK provider controls its entropy source.
+The identifiers are resource identities, not authorization credentials, as specified by
+[RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html#section-8).
+
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-id verify`.

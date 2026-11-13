@@ -18,6 +18,6 @@ public record PaymentOrderPage(
     @Nullable Integer size,
     @Nullable Long totalElements) {
   public PaymentOrderPage {
-    items = items == null ? null : java.util.List.copyOf(items);
+    items = items == null ? null : List.copyOf(items);
   }
 }

@@ -1,5 +1,6 @@
 package pe.axiz.spring.saga;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Locale;
 import java.util.Objects;
@@ -11,8 +12,13 @@ import pe.axiz.core.saga.SagaStatus;
  * Saga metrics: completed steps, compensations, steps left in doubt (alert on {@code
  * axiz.saga.in_doubt}) and finished sagas by status.
  */
-public class MeteredSagaListener implements SagaListener {
+public final class MeteredSagaListener implements SagaListener {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "MeterRegistry is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final MeterRegistry registry;
 
   public MeteredSagaListener(MeterRegistry registry) {

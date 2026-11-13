@@ -2,7 +2,7 @@ public class pe.axiz.structure.bff.spring.AxizBffAutoConfiguration {
 public pe.axiz.structure.bff.spring.AxizBffAutoConfiguration();
 }
 
-public class pe.axiz.structure.bff.spring.Compositions {
+public final class pe.axiz.structure.bff.spring.Compositions {
 public pe.axiz.structure.bff.Composer compose();
 public pe.axiz.structure.bff.Composer compose(java.time.Duration);
 public pe.axiz.structure.bff.spring.Compositions(io.micrometer.context.ContextSnapshotFactory, java.time.Duration);

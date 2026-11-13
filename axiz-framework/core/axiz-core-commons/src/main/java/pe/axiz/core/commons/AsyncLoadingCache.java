@@ -12,6 +12,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -51,7 +52,25 @@ public final class AsyncLoadingCache<V> {
 
   /** Values must be immutable. Rejected submissions and load failures complete exceptionally. */
   public CompletionStage<V> get(String id, Supplier<CompletionStage<V>> loader) {
-    return Stages.call(() -> find(Objects.requireNonNull(id), Objects.requireNonNull(loader)));
+    return get(id, loader, hit -> {});
+  }
+
+  /** Observes each lookup outside the bookkeeping lock; observer failures cannot change results. */
+  public CompletionStage<V> get(
+      String id, Supplier<CompletionStage<V>> loader, Consumer<Boolean> lookup) {
+    boolean[] hit = {false};
+    return Stages.call(
+        () -> {
+          try {
+            return find(Objects.requireNonNull(id), Objects.requireNonNull(loader), hit);
+          } finally {
+            try {
+              lookup.accept(hit[0]);
+            } catch (RuntimeException ignored) {
+              // Diagnostics must not change cache correctness or cancellation.
+            }
+          }
+        });
   }
 
   /**
@@ -63,7 +82,7 @@ public final class AsyncLoadingCache<V> {
     }
   }
 
-  private CompletionStage<V> find(String id, Supplier<CompletionStage<V>> loader) {
+  private CompletionStage<V> find(String id, Supplier<CompletionStage<V>> loader, boolean[] hit) {
     Slot selected;
     boolean start;
     synchronized (entries) {
@@ -74,6 +93,7 @@ public final class AsyncLoadingCache<V> {
           && ready != null
           && clock.instant().isBefore(ready.created().plus(maxAge))) {
         existing.uses++;
+        hit[0] = true;
         return CompletableFuture.completedFuture(ready.value());
       }
       if (existing != null && ready == null && existing.uses < maxUses && existing.retain()) {
@@ -121,18 +141,24 @@ public final class AsyncLoadingCache<V> {
 
     private CompletableFuture<V> listener() {
       CompletableFuture<V> listener = new CompletableFuture<>();
-      var _ =
-          listener.whenComplete(
-              (ignored, error) -> {
-                if (callers.decrementAndGet() == 0 && !result.isDone()) {
-                  synchronized (entries) {
-                    entries.remove(id, this);
-                  }
-                  result.cancel(true);
-                  var active = nativeCall;
-                  if (active != null) active.cancel(true);
-                }
-              });
+      Stages.observe(
+          listener,
+          (ignored, error) -> {
+            if (callers.decrementAndGet() == 0 && !result.isDone()) {
+              synchronized (entries) {
+                entries.remove(id, this);
+              }
+              result.cancel(true);
+              var active = nativeCall;
+              if (active != null) active.cancel(true);
+            }
+          },
+          failure -> {
+            listener.completeExceptionally(failure);
+            finish(null, failure);
+            var active = nativeCall;
+            if (active != null) active.cancel(true);
+          });
       Stages.observe(
           result,
           (value, error) -> {
@@ -144,7 +170,7 @@ public final class AsyncLoadingCache<V> {
     }
 
     private void start(Supplier<CompletionStage<V>> loader) {
-      if (result.isCancelled()) {
+      if (result.isDone()) {
         finish(null, new CancellationException());
         return;
       }

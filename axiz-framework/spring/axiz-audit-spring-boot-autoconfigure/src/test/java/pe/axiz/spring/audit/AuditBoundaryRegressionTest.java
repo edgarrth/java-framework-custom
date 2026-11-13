@@ -45,6 +45,7 @@ import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.spring.foundation.DispatchBoundary;
 import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
 
 /** Real commits and rollbacks with one connection expose publication at the wrong boundary. */
 @Timeout(20)
@@ -109,7 +110,10 @@ class AuditBoundaryRegressionTest {
             () ->
                 new OutboxWriter(
                     new JdbcOutboxStore(
-                        new SpringConnectionProvider(source), "axiz_outbox", Dialect.H2),
+                        new SpringConnectionProvider(source),
+                        new SpringTransactionRunner(new DataSourceTransactionManager(source)),
+                        "axiz_outbox",
+                        Dialect.H2),
                     Clock.systemUTC()));
   }
 

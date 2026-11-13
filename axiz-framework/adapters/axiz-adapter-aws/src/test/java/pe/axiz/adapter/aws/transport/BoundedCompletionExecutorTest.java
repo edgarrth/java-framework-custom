@@ -40,7 +40,7 @@ class BoundedCompletionExecutorTest {
               finished.countDown();
             });
       assertThrows(RejectedExecutionException.class, () -> executor.execute(() -> {}));
-      assertEquals(256, executor.getQueue().size());
+      assertEquals(256, executor.getQueueSize());
       release.countDown();
       assertTrue(finished.await(3, TimeUnit.SECONDS));
       assertEquals(258, count.get());

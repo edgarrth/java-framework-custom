@@ -22,9 +22,6 @@ import pe.axiz.core.errors.BusinessException;
  */
 public final class Money implements Comparable<Money> {
 
-  /** Default rounding: banker's rounding, unbiased for accumulated amounts. */
-  public static final RoundingMode DEFAULT_ROUNDING = RoundingMode.HALF_EVEN;
-
   /** Most digits accepted before the decimal point (far above any real amount). */
   public static final int MAX_INTEGER_DIGITS = 30;
 
@@ -43,10 +40,6 @@ public final class Money implements Comparable<Money> {
     this.currency = currency;
   }
 
-  public static Money of(BigDecimal amount, Currency currency) {
-    return of(amount, currency, DEFAULT_ROUNDING);
-  }
-
   /**
    * Creates an amount rounded to the currency scale with the given rounding mode.
    *
@@ -55,10 +48,11 @@ public final class Money implements Comparable<Money> {
    * @param rounding rounding mode
    * @return the money
    */
-  public static Money of(BigDecimal amount, Currency currency, RoundingMode rounding) {
+  public static Money rounded(BigDecimal amount, Currency currency, RoundingMode rounding) {
     Objects.requireNonNull(amount, "amount");
     Objects.requireNonNull(currency, "currency");
     requireBounded(amount);
+    Objects.requireNonNull(rounding, "rounding");
     int scale = scaleOf(currency);
     return new Money(amount.setScale(scale, rounding), currency);
   }
@@ -74,12 +68,12 @@ public final class Money implements Comparable<Money> {
    * @throws BusinessException {@link MoneyErrors#INVALID_AMOUNT} when the amount has more decimals
    *     than the currency or is out of range
    */
-  public static Money ofExact(BigDecimal amount, String currencyCode) {
-    return ofExact(amount, currency(currencyCode));
+  public static Money of(BigDecimal amount, String currencyCode) {
+    return of(amount, currency(currencyCode));
   }
 
-  /** Same as {@link #ofExact(BigDecimal, String)} with a currency. */
-  public static Money ofExact(BigDecimal amount, Currency currency) {
+  /** Same as {@link #of(BigDecimal, String)} with a currency. */
+  public static Money of(BigDecimal amount, Currency currency) {
     Objects.requireNonNull(amount, "amount");
     Objects.requireNonNull(currency, "currency");
     requireBounded(amount);
@@ -93,9 +87,9 @@ public final class Money implements Comparable<Money> {
     }
   }
 
-  /** Same as {@link #ofExact(BigDecimal, String)} from text. */
-  public static Money ofExact(String amount, String currencyCode) {
-    return ofExact(parseAmount(amount), currencyCode);
+  /** Same as {@link #of(BigDecimal, String)} from text. */
+  public static Money of(String amount, String currencyCode) {
+    return of(parseAmount(amount), currencyCode);
   }
 
   /**
@@ -103,7 +97,7 @@ public final class Money implements Comparable<Money> {
    * 1e99999999} or {@code 1e-99999999} needs a power of ten with that many digits and would keep a
    * thread busy for minutes. The limits leave room for intermediate results (rates, percentages).
    */
-  private static void requireBounded(BigDecimal amount) {
+  static void requireBounded(BigDecimal amount) {
     int scale = amount.scale();
     if (scale > MAX_SCALE || scale < -MAX_INTEGER_DIGITS) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
@@ -111,14 +105,6 @@ public final class Money implements Comparable<Money> {
     if (amount.signum() != 0 && amount.precision() - scale > MAX_INTEGER_DIGITS) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
     }
-  }
-
-  public static Money of(String amount, String currencyCode) {
-    return of(parseAmount(amount), currency(currencyCode));
-  }
-
-  public static Money of(BigDecimal amount, String currencyCode) {
-    return of(amount, currency(currencyCode));
   }
 
   public static Money zero(Currency currency) {
@@ -137,8 +123,8 @@ public final class Money implements Comparable<Money> {
 
   /**
    * Parses {@code "PEN 150.00"} (the text form produced by {@link #toString()}). The amount must
-   * fit the currency scale, as in {@link #ofExact(BigDecimal, String)}: text comes from outside
-   * (JSON, stored values) and is never rounded.
+   * fit the currency scale, as in {@link #of(BigDecimal, String)}: text comes from outside (JSON,
+   * stored values) and is never rounded.
    *
    * @param text text form
    * @return the money
@@ -149,7 +135,7 @@ public final class Money implements Comparable<Money> {
     if (parts.length != 2) {
       throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "unparseable money");
     }
-    return ofExact(parts[1], parts[0]);
+    return of(parts[1], parts[0]);
   }
 
   private static BigDecimal parseAmount(@Nullable String amount) {
@@ -179,7 +165,7 @@ public final class Money implements Comparable<Money> {
     }
   }
 
-  private static int scaleOf(Currency currency) {
+  static int scaleOf(Currency currency) {
     int digits = currency.getDefaultFractionDigits();
     return digits < 0 ? 2 : digits;
   }
@@ -211,12 +197,10 @@ public final class Money implements Comparable<Money> {
     return new Money(amount.subtract(other.amount), currency);
   }
 
-  public Money multiply(BigDecimal factor) {
-    return multiply(factor, DEFAULT_ROUNDING);
-  }
-
   public Money multiply(BigDecimal factor, RoundingMode rounding) {
-    return of(amount.multiply(factor), currency, rounding);
+    Objects.requireNonNull(rounding, "rounding");
+    requireBounded(Objects.requireNonNull(factor, "factor"));
+    return rounded(amount.multiply(factor), currency, rounding);
   }
 
   public Money divide(BigDecimal divisor, RoundingMode rounding) {
@@ -225,10 +209,10 @@ public final class Money implements Comparable<Money> {
     return new Money(amount.divide(divisor, amount.scale(), rounding), currency);
   }
 
-  /** Applies a percentage, e.g. {@code percentage(new BigDecimal("18"))} for 18 %. */
-  public Money percentage(BigDecimal percent) {
+  /** Applies a percentage with the caller's rounding policy, e.g. 18 for 18 %. */
+  public Money percentage(BigDecimal percent, RoundingMode rounding) {
     requireBounded(Objects.requireNonNull(percent, "percent"));
-    return multiply(percent.movePointLeft(2));
+    return multiply(percent.movePointLeft(2), rounding);
   }
 
   public Money negate() {

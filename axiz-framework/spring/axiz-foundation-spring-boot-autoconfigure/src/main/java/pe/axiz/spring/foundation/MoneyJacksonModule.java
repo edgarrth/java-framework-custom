@@ -90,7 +90,7 @@ public final class MoneyJacksonModule extends SimpleModule {
       if (p.currentToken() != JsonToken.END_OBJECT || amount == null || currency == null) {
         return ctxt.reportInputMismatch(Money.class, "Money needs 'amount' and 'currency'");
       }
-      return Money.ofExact(amount, currency);
+      return Money.of(amount, currency);
     }
   }
 }

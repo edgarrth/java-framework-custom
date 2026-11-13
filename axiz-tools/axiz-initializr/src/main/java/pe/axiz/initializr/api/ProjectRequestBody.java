@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Archetype;
 import pe.axiz.codegen.model.Catalog;
+import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.ProjectRequest;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
@@ -46,7 +47,7 @@ public record ProjectRequestBody(
     @Nullable @Size(max = 1) List<String> extensions) {
   public ProjectRequestBody {
     extensions = extensions == null ? List.of() : List.copyOf(extensions);
-    capabilities = capabilities == null ? null : java.util.List.copyOf(capabilities);
+    capabilities = capabilities == null ? null : List.copyOf(capabilities);
   }
 
   /** The engine request, defaults resolved from the archetype. */
@@ -72,7 +73,6 @@ public record ProjectRequestBody(
         openApi,
         asyncApi,
         frameworkVersion == null ? defaultVersion : frameworkVersion,
-        (extensions == null ? List.<String>of() : extensions)
-            .stream().map(pe.axiz.codegen.model.Extension::of).toList());
+        (extensions == null ? List.<String>of() : extensions).stream().map(Extension::of).toList());
   }
 }

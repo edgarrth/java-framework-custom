@@ -121,7 +121,7 @@ public final class ProjectLayout {
                   ? SafeYaml.create(1_000_000).load(Files.readString(metadata))
                   : null;
           if (SafePaths.fileName(chart).equals(name)
-              || doc instanceof Map<?, ?> values && name.equals(values.get("name")))
+              || (doc instanceof Map<?, ?> values && name.equals(values.get("name"))))
             result.add(chart);
         }
       }

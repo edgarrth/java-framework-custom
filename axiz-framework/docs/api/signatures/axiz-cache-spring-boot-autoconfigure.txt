@@ -54,7 +54,7 @@ public pe.axiz.spring.cache.AxizCacheableInterceptor(java.util.function.Supplier
 public static final int ORDER = 700;
 }
 
-public class pe.axiz.spring.cache.AxizCaches {
+public final class pe.axiz.spring.cache.AxizCaches {
 public java.time.Duration ttl(java.lang.String);
 public pe.axiz.core.cache.AxizCache cache(java.lang.String);
 public pe.axiz.spring.cache.AxizCaches(java.lang.String, pe.axiz.core.cache.ByteCache, pe.axiz.core.cache.ValueCodec, pe.axiz.spring.cache.AxizCacheProperties);
@@ -77,7 +77,7 @@ public java.lang.String identity(org.springframework.security.core.Authenticatio
 public pe.axiz.spring.cache.DefaultCacheCallerResolver();
 }
 
-public class pe.axiz.spring.cache.JacksonValueCodec implements pe.axiz.core.cache.ValueCodec {
+public final class pe.axiz.spring.cache.JacksonValueCodec implements pe.axiz.core.cache.ValueCodec {
 public <T> T decode(byte[], java.lang.Class<T>);
 public byte[] encode(java.lang.Object);
 public pe.axiz.spring.cache.JacksonValueCodec(tools.jackson.databind.json.JsonMapper);

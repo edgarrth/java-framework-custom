@@ -45,10 +45,12 @@ public class AxizInboxR2dbcAutoConfiguration {
     if (resource == null) return null;
     Clock clock = clocks.getIfAvailable(Clock::systemUTC);
     return new ReactiveInboxCompletion() {
+      @Override
       public Object transactionResource() {
         return resource;
       }
 
+      @Override
       public Mono<Boolean> complete(String consumer, String key, String owner) {
         return store.markProcessed(consumer, key, owner, clock.instant());
       }

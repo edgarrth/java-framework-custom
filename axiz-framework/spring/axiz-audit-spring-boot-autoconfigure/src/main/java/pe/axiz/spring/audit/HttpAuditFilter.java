@@ -1,5 +1,6 @@
 package pe.axiz.spring.audit;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,11 @@ public class HttpAuditFilter extends OncePerRequestFilter implements Ordered {
   private final AuditContextResolver context;
   private final HttpAuditRules rules;
 
+  @SuppressFBWarnings(
+      value = "CT_CONSTRUCTOR_THROW",
+      justification =
+          "Rejects invalid construction; no finalizer or publication of this. The overridable "
+              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public HttpAuditFilter(
       AuditTrail trail, AuditContextResolver context, AxizAuditProperties.Http http) {
     this.trail = Objects.requireNonNull(trail);

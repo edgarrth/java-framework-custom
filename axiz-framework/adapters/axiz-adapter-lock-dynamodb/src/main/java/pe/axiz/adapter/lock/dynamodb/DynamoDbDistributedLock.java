@@ -1,5 +1,6 @@
 package pe.axiz.adapter.lock.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Map;
@@ -21,7 +22,13 @@ import software.amazon.awssdk.services.dynamodb.model.UpdateItemRequest;
  */
 public final class DynamoDbDistributedLock implements DistributedLock {
 
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "DynamoDbClient is an injected collaborator whose identity and lifecycle must be "
+              + "shared, not copied.")
   private final DynamoDbClient dynamo;
+
   private final String table;
   private final Clock clock;
 

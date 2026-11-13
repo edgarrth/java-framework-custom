@@ -60,7 +60,7 @@ public final class RequestBodyLimitWebFilter implements WebFilter, Ordered {
   private static Mono<Void> reject(ServerWebExchange exchange) {
     if (exchange.getResponse().isCommitted())
       return Mono.error(new RequestBodyLimits.BodyTooLarge());
-    exchange.getResponse().setStatusCode(HttpStatus.PAYLOAD_TOO_LARGE);
+    exchange.getResponse().setStatusCode(HttpStatus.CONTENT_TOO_LARGE);
     exchange
         .getResponse()
         .getHeaders()

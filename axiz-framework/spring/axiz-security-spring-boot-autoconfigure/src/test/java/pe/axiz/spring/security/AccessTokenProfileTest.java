@@ -134,7 +134,9 @@ class AccessTokenProfileTest {
         reactive
             ? decoders.reactive(ISSUER).decode(missingClient).block(T)
             : decoders.servlet(ISSUER).decode(missingClient);
-    assertThrows(AccessException.class, () -> converter.convert(jwt));
+    assertThrows(
+        org.springframework.security.oauth2.server.resource.InvalidBearerTokenException.class,
+        () -> converter.convert(jwt));
   }
 
   private static void rejected(boolean reactive, String token, @Nullable String reason) {

@@ -1,0 +1,388 @@
+name: service-build
+on:
+  workflow_call:
+    inputs:
+      version: {type: string, required: true}
+      source-sha: {type: string, required: true}
+      service: {type: string, required: true}
+      module: {type: string, default: '.'}
+      chart: {type: string, required: true}
+      axiz-version: {type: string, required: true}
+      variant: {type: string, default: jvm}
+      platforms: {type: string, default: '["linux/amd64"]'}
+      base-image:
+        description: Base registry reference pinned by digest, or scratch for a static native binary
+        type: string
+        required: true
+      candidate-repository: {type: string, default: ''}
+      candidate-build-run-id: {type: string, default: ''}
+      candidate-build-run-attempt: {type: string, default: ''}
+      candidate-manifest-sha256: {type: string, default: ''}
+      runner: {type: string, default: ubuntu-24.04}
+    secrets:
+      AXIZ_WORKFLOWS_READ_TOKEN: {required: false}
+      CANDIDATE_READ_TOKEN: {required: false}
+      NEXUS_URL: {required: true}
+      NEXUS_READ_USERNAME: {required: true}
+      NEXUS_READ_PASSWORD: {required: true}
+      BUILD_DESTINATION: {required: true}
+      REGISTRY_BUILD_USERNAME: {required: true}
+      REGISTRY_BUILD_PASSWORD: {required: true}
+    outputs:
+      manifest-sha256:
+        description: Trusted external identity for an independent deployment
+        value: ${{ jobs.sign.outputs.manifest-sha256 }}
+      build-run-id:
+        description: Producer execution
+        value: ${{ github.run_id }}
+      build-run-attempt:
+        description: Producer attempt
+        value: ${{ github.run_attempt }}
+
+permissions: {}
+
+jobs:
+  axiz-workflows-trust:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Verify immutable Axiz workflow release
+        env:
+          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+          GH_HOST: github.com
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
+          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
+
+  build:
+    name: service:${{ inputs.service }}:${{ inputs.variant }}
+    permissions:
+      contents: read
+      actions: read
+    needs: axiz-workflows-trust
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 120
+    env:
+      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
+      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+    steps:
+      - name: Isolate build registry credentials
+        run: |
+          echo "DOCKER_CONFIG=$RUNNER_TEMP/axiz-build-docker" >> "$GITHUB_ENV"
+          echo "HELM_REGISTRY_CONFIG=$RUNNER_TEMP/axiz-build-helm/config.json" >> "$GITHUB_ENV"
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ inputs.source-sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/consume-build@axiz-workflows-v2.0.0 # x-release-please-version
+        id: candidate
+        if: inputs.candidate-manifest-sha256 != '' || inputs.candidate-repository != '' || inputs.candidate-build-run-id != '' || inputs.candidate-build-run-attempt != ''
+        with:
+          repository: ${{ inputs.candidate-repository }}
+          build-run-id: ${{ inputs.candidate-build-run-id }}
+          build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
+          manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          kind: maven-library
+          token: ${{ secrets.CANDIDATE_READ_TOKEN || github.token }}
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/build-inputs@axiz-workflows-v2.0.0 # x-release-please-version
+        id: inputs
+        with:
+          kind: service
+          version: ${{ inputs.version }}
+          source-sha: ${{ inputs.source-sha }}
+          service: ${{ inputs.service }}
+          module: ${{ inputs.module }}
+          chart: ${{ inputs.chart }}
+          variant: ${{ inputs.variant }}
+          platforms: ${{ inputs.platforms }}
+          base-image: ${{ inputs.base-image }}
+          axiz-version: ${{ inputs.axiz-version }}
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+      # Immutable internal release: axiz-workflows-trust must succeed first.
+      # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+      - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+        with:
+          distribution: ${{ inputs.variant == 'native' && 'graalvm' || 'temurin' }}
+          nexus-url: ${{ secrets.NEXUS_URL }}
+          candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
+          candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+          candidate-source-repository: ${{ inputs.candidate-repository }}
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+        with:
+          version: v3.19.0
+      - name: Source contracts and generated snapshots
+        id: contracts
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+          CONTRACT_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/build-reports
+          base=()
+          if [[ -n "$CONTRACT_BASE_SHA" && "$CONTRACT_BASE_SHA" != 0000000000000000000000000000000000000000 ]]; then
+            base=(--base-sha "$CONTRACT_BASE_SHA")
+          fi
+          "$PYTHON" "$TOOLS/contracts.py" "${base[@]}" --metadata "$METADATA" --rules "$RUNNER_TEMP/axiz-spectral-rules" \
+            2>&1 | tee target/build-reports/contracts.log
+      - name: OpenAPI compatibility against the pull request target
+        if: github.event_name == 'pull_request' && steps.contracts.outputs.openapi != ''
+        uses: oasdiff/oasdiff-action/breaking@1c611ffb1253a72924624aa4fb662e302b3565d3 # v0.0.21
+        with:
+          base: origin/${{ github.base_ref }}:${{ steps.contracts.outputs.openapi }}
+          revision: HEAD:${{ steps.contracts.outputs.openapi }}
+          fail-on: ERR
+      - name: Final version, quality, tests and native verification
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+          MODULE: ${{ inputs.module }}
+          VARIANT: ${{ inputs.variant }}
+          PLATFORMS: ${{ inputs.platforms }}
+          BASE_IMAGE: ${{ inputs.base-image }}
+          SERVICE: ${{ inputs.service }}
+        run: |
+          set -euo pipefail
+          mkdir -p target/build-reports
+          "$PYTHON" "$TOOLS/service.py" set-version --metadata "$METADATA"
+          profiles=quality
+          if [[ "$VARIANT" == native ]]; then
+            case "$(uname -m)" in
+              x86_64) platform=linux/amd64 ;;
+              aarch64) platform=linux/arm64 ;;
+              *) exit 1 ;;
+            esac
+            jq -e --arg platform "$platform" '. == [$platform]' <<< "$PLATFORMS" >/dev/null
+            profiles=quality,native
+          fi
+          # Build required sibling modules from this checkout. Install only into this job's
+          # isolated local repository so the later Jib invocation resolves those same bytes.
+          mvn -B -ntp -f pom.xml -pl "$MODULE" -am "-P$profiles" install 2>&1 | tee target/build-reports/verify.log
+          if [[ "$VARIANT" == native ]]; then
+            # Reuse the verified package/AOT outputs; forking package again imports generated proxies into architecture tests.
+            mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" native:compile-no-fork native:test 2>&1 | tee -a target/build-reports/verify.log
+          fi
+          if [[ "$BASE_IMAGE" == scratch ]]; then
+            # A dynamically linked native executable cannot run in an empty filesystem.
+            readelf -l "$MODULE/target/$SERVICE" > target/build-reports/native-elf.txt
+            if grep -q INTERP target/build-reports/native-elf.txt; then
+              echo '::error::scratch requires a statically linked native executable'; exit 1
+            fi
+          fi
+          "$PYTHON" "$TOOLS/../check-mutations/check_mutations.py" . 2>&1 | tee target/build-reports/mutation.log
+          "$PYTHON" "$TOOLS/../check-encapsulation/check_encapsulation.py" . 2>&1 | tee target/build-reports/encapsulation.log
+          mvn -B -ntp -f "$MODULE/pom.xml" org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
+            -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false
+          "$PYTHON" "$TOOLS/../check-sbom/check_sbom.py" "$MODULE/target/bom.json" "$MODULE/pom.xml"
+          cp "$MODULE/target/bom.json" target/build-reports/bom.json
+      - name: Authenticate only to the build artifact registry
+        env:
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          SERVICE: ${{ inputs.service }}
+          VARIANT: ${{ inputs.variant }}
+          USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
+          PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/build_destination.py" coordinates > "$RUNNER_TEMP/build-destination.env"
+          source "$RUNNER_TEMP/build-destination.env"
+          REGISTRY="$REGISTRY_AUTHORITY"
+          mkdir -p "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
+          chmod 700 "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
+          printf '%s' "$PASSWORD" | docker login "$REGISTRY" --username "$USERNAME" --password-stdin
+          printf '%s' "$PASSWORD" | helm registry login "$REGISTRY" --username "$USERNAME" --password-stdin
+          docker buildx version
+      - name: Package the previously verified image and chart once
+        id: product
+        env:
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
+          MODULE: ${{ inputs.module }}
+          CHART: ${{ inputs.chart }}
+          SERVICE: ${{ inputs.service }}
+          VERSION: ${{ inputs.version }}
+          VARIANT: ${{ inputs.variant }}
+          PLATFORMS: ${{ inputs.platforms }}
+          BASE_IMAGE: ${{ inputs.base-image }}
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          "$PYTHON" "$TOOLS/build_destination.py" coordinates > "$RUNNER_TEMP/build-destination.env"
+          source "$RUNNER_TEMP/build-destination.env"
+          image="$IMAGE_REPOSITORY"
+          tag="$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$VARIANT"
+          profiles=quality
+          if [[ "$VARIANT" == native ]]; then profiles=quality,native; fi
+          platforms=$(jq -r 'join(",")' <<< "$PLATFORMS")
+          # No package/compile/skipTests: Jib consumes the outputs of the successful verify above.
+          mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" jib:build \
+            "-Djib.to.image=$image:$tag" "-Djib.from.image=$BASE_IMAGE" "-Djib.from.platforms=$platforms"
+          image_digest=$(cat "$MODULE/target/jib-image.digest")
+          [[ "$image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          validation_tools="$RUNNER_TEMP/axiz-chart-validation"
+          mkdir -p "$validation_tools"
+          case "$(uname -m)" in
+            x86_64)
+              conform_asset=kubeconform-linux-amd64.tar.gz
+              conform_hash=c31518ddd122663b3f3aa874cfe8178cb0988de944f29c74a0b9260920d115d3
+              linter_asset=kube-linter-linux.tar.gz
+              linter_hash=cb6128997162b8b7e6962284313635643434421b4e9b4f86545af7a4976e0139 ;;
+            aarch64)
+              conform_asset=kubeconform-linux-arm64.tar.gz
+              conform_hash=cc907ccf9e3c34523f0f32b69745265e0a6908ca85b92f41931d4537860eb83c
+              linter_asset=kube-linter-linux_arm64.tar.gz
+              linter_hash=76817b3b27961db04f6680958d8470d0aa1e82d7be9be8886c53f79c7f48c4cd ;;
+            *) echo '::error::Unsupported chart validation runner architecture'; exit 1 ;;
+          esac
+          curl -fsSL -o "$validation_tools/kubeconform.tar.gz" "https://github.com/yannh/kubeconform/releases/download/v0.7.0/$conform_asset"
+          echo "$conform_hash  $validation_tools/kubeconform.tar.gz" | sha256sum -c -
+          tar xzf "$validation_tools/kubeconform.tar.gz" -C "$validation_tools" kubeconform
+          curl -fsSL -o "$validation_tools/kube-linter.tar.gz" "https://github.com/stackrox/kube-linter/releases/download/v0.7.6/$linter_asset"
+          echo "$linter_hash  $validation_tools/kube-linter.tar.gz" | sha256sum -c -
+          tar xzf "$validation_tools/kube-linter.tar.gz" -C "$validation_tools" kube-linter
+          {
+            for values in "$CHART"/values.yaml "$CHART"/values-*.yaml; do
+              [[ -f "$values" ]] || continue
+              echo "Validating $values"
+              image_values=(--set-string "image.repository=$image" --set-string "image.digest=$image_digest")
+              helm lint "$CHART" -f "$values" "${image_values[@]}"
+              helm template "$SERVICE" "$CHART" -f "$values" "${image_values[@]}" > "$validation_tools/rendered.yaml"
+              "$PYTHON" "$TOOLS/check_render.py" "$validation_tools/rendered.yaml" --service "$SERVICE" --repository "$image" --digest "$image_digest"
+              "$validation_tools/kubeconform" -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 "$validation_tools/rendered.yaml"
+              config=()
+              if [[ -f "$CHART/.kube-linter.yaml" ]]; then config=(--config "$CHART/.kube-linter.yaml"); fi
+              "$validation_tools/kube-linter" lint "${config[@]}" "$validation_tools/rendered.yaml"
+            done
+          } 2>&1 | tee target/build-reports/chart.log
+          mkdir -p target/chart-package
+          helm package "$CHART" --version "$VERSION" --app-version "$VERSION" --destination target/chart-package
+          chart_store="$CHART_STORE"
+          helm push "target/chart-package/$SERVICE-$VERSION.tgz" "$chart_store" 2>&1 | tee target/build-reports/chart-push.log
+          chart_digest=$(sed -n 's/^Digest: \(sha256:[0-9a-f]\{64\}\)$/\1/p' target/build-reports/chart-push.log)
+          [[ "$chart_digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          "$PYTHON" "$TOOLS/service.py" artifacts --metadata "$METADATA" --image-repository "$image" \
+            --image-tag "$tag" --image-digest "$image_digest" --chart-oci "$chart_store/$SERVICE" \
+            --chart-digest "$chart_digest"
+          echo "image=$image@$image_digest" >> "$GITHUB_OUTPUT"
+      - name: Scan source, dependency bytes and configuration
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.70.0
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          format: json
+          output: target/build-reports/source-scan.json
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+      - name: Scan every platform of the exact image digest
+        env:
+          IMAGE: ${{ steps.product.outputs.image }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+          TRIVY_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Trivy was installed by the preceding SHA-pinned source scan action.
+          mapfile -t platforms < <(jq -r '.parameters.platforms[]' "$METADATA")
+          [[ "${#platforms[@]}" -gt 0 ]]
+          reports=()
+          for platform in "${platforms[@]}"; do
+            report="target/build-reports/image-${platform//\//-}.json"
+            trivy image --platform "$platform" --exit-code 1 --severity HIGH,CRITICAL --format json \
+              --output "$report" "$IMAGE"
+            reports+=("$report")
+          done
+          jq -s . "${reports[@]}" > target/build-reports/image-scan.json
+      - name: Record service content, platform digests and evidence
+        id: bundle
+        env:
+          PYTHON: ${{ steps.inputs.outputs.python }}
+          TOOLS: ${{ steps.inputs.outputs.tools }}
+          METADATA: ${{ steps.inputs.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          jq -s '{source:.[0],image:.[1]}' target/build-reports/source-scan.json target/build-reports/image-scan.json > target/build-reports/scan.json
+          "$PYTHON" "$TOOLS/build_bundle.py" --metadata "$METADATA" --reports target/build-reports \
+            --bundle target/build-bundle --complete
+      - name: Retain unsigned service product
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: unsigned-service-${{ inputs.service }}-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: target/build-bundle
+          retention-days: 90
+          if-no-files-found: error
+      - name: Remove registry credentials
+        if: always()
+        run: |
+          rm -rf -- "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
+
+  sign:
+    needs: [axiz-workflows-trust, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    outputs:
+      manifest-sha256: ${{ steps.sign.outputs.manifest-sha256 }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          repository: edgarrth/java-framework-custom
+          ref: axiz-workflows-v2.0.0 # x-release-please-version
+          path: .axiz-trusted-workflows
+          persist-credentials: false
+          token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5
+      - name: Verify producer authority and sign exact product data
+        id: sign
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_HOST: github.com
+          BUILD_INPUTS_JSON: ${{ toJSON(inputs) }}
+          DOCKER_CONFIG: ${{ runner.temp }}/axiz-signer-registry
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/axiz-signer-python"
+          python="$RUNNER_TEMP/axiz-signer-python/bin/python"
+          tools="$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest"
+          "$python" -m pip install --require-hashes --quiet -r "$tools/requirements.txt"
+          "$python" "$tools/sign_product.py" --kind service --output "$RUNNER_TEMP/signed-product"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-bundle-${{ steps.sign.outputs.manifest-sha256 }}
+          path: ${{ runner.temp }}/signed-product
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: service-build-proof-${{ inputs.service }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/service-build-proof
+          retention-days: 90
+          if-no-files-found: error
+      - name: Remove signer registry credentials
+        if: always()
+        run: rm -rf -- "$RUNNER_TEMP/axiz-signer-registry"
