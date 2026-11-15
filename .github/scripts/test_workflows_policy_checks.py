@@ -83,7 +83,7 @@ class WorkflowExecutorTest(unittest.TestCase):
                 run.return_value.returncode=0
                 executor.execute(source,output,tools)
                 env=run.call_args.kwargs['env']
-                self.assertEqual(str(Path(executor.sys.executable).resolve().parent),env['PATH'].split(os.pathsep)[0])
+                self.assertEqual(str(Path(executor.sys.executable).parent),env['PATH'].split(os.pathsep)[0])
 
     def test_ci_keeps_control_logs_available_after_failure(self):
         workflow=yaml.safe_load((ROOT/'.github/workflows/workflows-ci.yaml').read_text())
@@ -93,3 +93,20 @@ class WorkflowExecutorTest(unittest.TestCase):
         self.assertIn('/policy-results/*.log',upload['with']['path'])
         self.assertIn('/lifecycle-results/result.json',upload['with']['path'])
         self.assertEqual(7,upload['with']['retention-days'])
+
+    def test_console_tools_resolve_from_the_python_environment_without_activation(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-path-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            binary=Path(folder)/'venv/bin';binary.mkdir(parents=True)
+            (binary/'python').symlink_to(Path(executor.sys.executable).resolve())
+            console=binary/'fixture-console'
+            console.write_text('#!/bin/sh\necho "Environment console resolved"\n')
+            console.chmod(0o755)
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',[
+                    ('console-tool',['fixture-console'])]),patch.object(executor.sys,'executable',str(binary/'python')),patch.dict(os.environ,{
+                    'PATH':'/usr/bin:/bin','AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture'}),redirect_stdout(io.StringIO()):
+                result=executor.execute(source,output,tools)
+            self.assertTrue(result['passed'])
+            self.assertEqual('Environment console resolved\n',(output/'console-tool.log').read_text())
