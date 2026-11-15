@@ -212,7 +212,7 @@ class ProjectGeneratorTest {
                       .anyMatch(ref::contains);
                 }),
         "the producer run must never invoke deployment");
-    assertTrue(ci.contains("service-build.yaml@axiz-workflows-v2.0.0"), ci);
+    assertTrue(ci.contains("service-build.yaml@" + WorkflowRelease.expected()), ci);
     assertTrue(ci.contains("source-sha: ${{ github.sha }}"), ci);
     assertTrue(ci.contains("version: ${{ needs.parameters.outputs.version }}"), ci);
     assertTrue(ci.contains("base-image:"), ci);
@@ -220,7 +220,8 @@ class ProjectGeneratorTest {
     assertSeparatedDeployment(p, "service-deploy");
     assertFalse(p.files().containsKey(".github/workflows/cd.yaml"));
     assertTrue(
-        p.text(".github/workflows/release.yaml").contains("release.yaml@axiz-workflows-v2.0.0"));
+        p.text(".github/workflows/release.yaml")
+            .contains("release.yaml@" + WorkflowRelease.expected()));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
     // nothing released yet; the first release is the version the pom targets (release-please
@@ -540,7 +541,8 @@ class ProjectGeneratorTest {
     assertTrue(lib.text("pom.xml").contains("<artifactId>axiz-parent-core</artifactId>"));
     assertSeparatedDeployment(lib, "lib-deploy");
     assertTrue(
-        lib.text(".github/workflows/ci.yaml").contains("lib-build.yaml@axiz-workflows-v2.0.0"));
+        lib.text(".github/workflows/ci.yaml")
+            .contains("lib-build.yaml@" + WorkflowRelease.expected()));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -647,6 +649,7 @@ class ProjectGeneratorTest {
   }
 
   private static void assertSeparatedDeployment(GeneratedProject project, String reusable) {
+    WorkflowRelease.assertProject(project);
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -654,7 +657,7 @@ class ProjectGeneratorTest {
             .get("force-tag-creation"));
     String deploy = project.text(".github/workflows/deploy.yaml");
     assertTrue(deploy.contains("workflow_dispatch"));
-    assertTrue(deploy.contains("/" + reusable + ".yaml@axiz-workflows-v2.0.0"));
+    assertTrue(deploy.contains("/" + reusable + ".yaml@" + WorkflowRelease.expected()));
     assertFalse(deploy.contains("image-tag:"));
     assertFalse(deploy.contains("mvnw"));
     assertFalse(deploy.contains("/setup-maven@"));
@@ -686,7 +689,8 @@ class ProjectGeneratorTest {
       assertEquals(Map.of("contents", "read", "actions", "read"), automatic.get("permissions"));
       Map<?, ?> step = (Map<?, ?>) ((List<?>) automatic.get("steps")).getFirst();
       assertEquals(
-          "edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2.0.0",
+          "edgarrth/java-framework-custom/.github/actions/resolve-service-build@"
+              + WorkflowRelease.expected(),
           step.get("uses"));
       assertEquals("dev", ((Map<?, ?>) step.get("with")).get("environment"));
       assertTrue(job.get("if").toString().contains("needs.automatic.result == 'success'"));

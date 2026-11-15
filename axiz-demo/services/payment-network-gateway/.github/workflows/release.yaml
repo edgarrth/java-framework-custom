@@ -24,7 +24,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
         shell: bash
         run: |
           set -euo pipefail
@@ -34,11 +34,10 @@ jobs:
   release:
     permissions:
       contents: write
-      pull-requests: write
     needs: axiz-workflows-trust
     # Immutable internal release: axiz-workflows-trust must succeed first.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     uses: edgarrth/java-framework-custom/.github/workflows/release.yaml@axiz-workflows-v2.0.0
     secrets:
-      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
+      RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
       RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}

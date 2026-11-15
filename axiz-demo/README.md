@@ -78,11 +78,11 @@ holds it (a kind cluster on 8080 is the usual case).
 
 | | |
 |---|---|
-| Channel API | http://localhost:8080 (payments-ux) |
+| Channel API | <http://localhost:8080> (payments-ux) |
 | Services | payment-orders 8081 / beneficiaries 8082 / banking-core 8083 / process 8084 / notifications 8085 / history 8086 / payment-network-gateway 8087 |
-| Keycloak | http://localhost:8180 (realm `axiz`, users `ana` / `luis`, passwords `local-only-<user>`) |
-| Grafana | http://localhost:3000 (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz: services* and *axiz: payments*) |
-| WireMock | http://localhost:8089 (core banking REST + SOAP, token endpoint, payment network) |
+| Keycloak | <http://localhost:8180> (realm `axiz`, users `ana` / `luis`, passwords `local-only-<user>`) |
+| Grafana | <http://localhost:3000> (base dashboards *events*, *RED*, *messaging*, *dependencies*, plus *axiz: services* and *axiz: payments*) |
+| WireMock | <http://localhost:8089> (core banking REST + SOAP, token endpoint, payment network) |
 
 Each service runs with the profiles `local,platform`, so it can also be started from the IDE and
 debugged, or with Maven through `scripts/run.sh <service>` (stop the copy that `demo.sh up`

@@ -15,7 +15,7 @@ class SignProductTest(unittest.TestCase):
         environment = {"GITHUB_SHA": "a" * 40, "GITHUB_REPOSITORY": "example/framework",
                        "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "2"}
         claims = {"sha": "a" * 40, "repository": "example/framework", "run_id": "123", "run_attempt": "2",
-                  "job_workflow_ref": "edgarrth/java-framework-custom/.github/workflows/" + workflow + ".yaml@refs/tags/axiz-workflows-v2.0.0",
+                  "job_workflow_ref": "edgarrth/java-framework-custom/.github/workflows/" + workflow + ".yaml@refs/tags/" + sign_product.TAG,
                   "job_workflow_sha": "b" * 40}
         return public, environment, claims
 

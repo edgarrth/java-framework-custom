@@ -20,7 +20,7 @@ Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for fram
 `axiz-adapter-aws` is the shared AWS identity/transport base; it has no Spring or Micrometer
 dependency. Spring owns context composition and the optional observability adapter adds telemetry.
 
-candidate. Source changes do not imply that 2.0 has been published.
+The [architecture guide](docs/architecture/README.md) describes service boundaries, execution models and dependency rules. The [capability catalog](../axiz-docs/docs/capacidades/index.md) lists starters, configuration and examples.
 
 ## Build
 
@@ -54,6 +54,7 @@ Each module has its own README with its public types.
 - Every package is `@NullMarked` (JSpecify); NullAway checks it at compile time.
 - Formatting is owned by Spotless (google-java-format); Checkstyle only checks naming, imports,
   Javadoc of the public API and forbidden APIs.
+- The module README documents configuration, contracts and usage examples.
 
 ## Responsibility boundaries
 

@@ -65,16 +65,16 @@ class PrepareBuildTest(unittest.TestCase):
     def test_oidc_binds_the_reusable_workflow_and_actual_source(self):
         claims = {"job_workflow_ref": "edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@refs/tags/axiz-workflows-v2.0.0",
                   "job_workflow_sha": "b" * 40, "repository": "axiz/framework", "sha": "a" * 40}
-        self.assertEqual("b" * 40, prepare.workflow_identity(claims, "axiz/framework", "a" * 40, "b" * 40)["sha"])
+        self.assertEqual("b" * 40, prepare.workflow_identity(claims, "axiz/framework", "a" * 40, "b" * 40, tag="axiz-workflows-v2.0.0")["sha"])
         for key in claims:
             wrong = dict(claims, **{key: "wrong"})
             with self.subTest(key=key), self.assertRaises(ValueError):
-                prepare.workflow_identity(wrong, "axiz/framework", "a" * 40, "b" * 40)
+                prepare.workflow_identity(wrong, "axiz/framework", "a" * 40, "b" * 40, tag="axiz-workflows-v2.0.0")
 
     def test_worker_preparation_never_requests_oidc(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            environment = {"BUILD_VERSION": "2.0.0", "SOURCE_SHA": "a" * 40,
+            environment = {"WORKFLOWS_TAG": "axiz-workflows-v2.0.0", "BUILD_VERSION": "2.0.0", "SOURCE_SHA": "a" * 40,
                            "GITHUB_SHA": "a" * 40, "GITHUB_REPOSITORY": "example/framework",
                            "GITHUB_WORKSPACE": temporary, "GITHUB_RUN_ID": "123", "GITHUB_RUN_ATTEMPT": "1"}
             import os
@@ -125,3 +125,11 @@ class PrepareBuildTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExplicitWorkflowTagTest(unittest.TestCase):
+    def test_tag_is_required_and_validated_before_claims(self):
+        args = ({}, 'example/repository', 'a' * 40, 'b' * 40)
+        with self.assertRaises(TypeError):prepare.workflow_identity(*args)
+        for tag in ('', None, 'main', 'axiz-workflows-v1.0.0', 'axiz-workflows-v2.01.0', 'axiz-tools-v2.0.0'):
+            with self.subTest(tag=tag), self.assertRaises(ValueError):prepare.workflow_identity(*args, tag=tag)

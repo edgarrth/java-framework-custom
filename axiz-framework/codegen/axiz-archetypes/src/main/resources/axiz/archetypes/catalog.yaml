@@ -1,4 +1,4 @@
-# architecture contract: closed service roles; the first entry is the default.
+# Layer contracts: closed service roles; the first entry is the default.
 archetypes:
 - name: business
   role: Owner of domain business rules

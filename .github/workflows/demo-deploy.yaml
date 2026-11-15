@@ -41,7 +41,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -53,7 +53,7 @@ jobs:
       actions: read
       id-token: write
     needs: axiz-workflows-trust
-    uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2.0.0
     with:
       build-run-id: ${{ inputs.build-run-id }}
       build-run-attempt: ${{ inputs.build-run-attempt }}
@@ -62,10 +62,11 @@ jobs:
       previous-manifest-sha256: ${{ inputs.previous-manifest-sha256 }}
       values-revision: ${{ inputs.values-revision }}
     secrets:
+      BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
       REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
       REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
-      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
       GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
       ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

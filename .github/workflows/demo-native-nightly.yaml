@@ -15,7 +15,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -26,7 +26,7 @@ jobs:
       contents: read
       actions: read
     needs: axiz-workflows-trust
-    uses: edgarrth/java-framework-custom/.github/workflows/native-nightly.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    uses: edgarrth/java-framework-custom/.github/workflows/native-nightly.yaml@axiz-workflows-v2.0.0
     with:
       project-directory: axiz-demo
       modules: |-

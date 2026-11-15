@@ -55,3 +55,4 @@ framework-neutral contracts and orchestration. `TransactionRunner` remains in
 [`axiz-core-lang`](../axiz-core-lang/README.md), package `pe.axiz.core.lang`. A domain that only
 needs these helpers should depend directly on that JDK-only module. This module retains
 `LeaseTiming` (the shared monotonic lease deadline), `SqlIdentifiers` (textual identifier validation)
+and the operational contracts above. Language utilities remain independent of capability implementations.

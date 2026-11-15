@@ -62,6 +62,7 @@ que defina `axiz.initializr.audience`); un token del mismo SSO para otra API rec
 
 Revisa la instalación (Java 25 y herramientas en el PATH), el manifiesto `.axiz/project.yaml` y sus
 capacidades, el contrato (existe, lint, diferencias con el código, propuestas de `contract sync`
+sin resolver), que exista `ArchitectureTest`, valores con
 forma de secreto en la configuración (`password`, `secret`, `token`, `api-key`... con valor
 literal) y anti-patrones conocidos en el código. Termina con el total de errores y avisos y
 devuelve código distinto de cero si hay errores, así que sirve en CI.

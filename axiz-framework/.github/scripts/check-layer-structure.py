@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""architecture contract: every module belongs to the reactor and its name/parent match its layer."""
+"""Layer contracts: every module belongs to the reactor and its name/parent match its layer."""
 import sys
 import re
 from defusedxml import ElementTree as ET

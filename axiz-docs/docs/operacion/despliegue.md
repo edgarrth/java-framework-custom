@@ -79,7 +79,10 @@ garantía declarada se degrade sin dejar rastro:
 | Rate limit en memoria | Solo se admite con store explícito `memory` y entorno `local`, `test` o `ci`. En despliegues compartidos se exige `redis`. |
 
 Las plantillas GitOps se renderizan antes de aplicarse usando la misma configuración JSON
-`BUILD_DESTINATION` del build y del firmador. Esta define autoridad del registro, namespace,
+`BUILD_DESTINATION` del build, firmador, resolver y deploy. Esta define autoridad del registro, namespace,
 repositorios exactos y servicios permitidos. Deploy, rollback y ApplicationSet comparten la ruta
-`environments/<ambiente>/<servicio>.yaml` desde la raíz del repositorio GitOps. Véase
+`environments/<ambiente>/<servicio>.yaml` desde la raíz del repositorio GitOps y la rama `main`,
+sin variables o entradas alternativas. Las políticas se validan con Kyverno **1.17.0**,
+separando Pods/controladores del subrecurso de efímeros. La matriz offline verifica admisión
+de imágenes y digest; las firmas se comprueban como configuración, sin acceso al registro. Véase
 [la configuración de destinos](https://github.com/edgarrth/java-framework-custom/blob/main/.github/gitops/README.md).

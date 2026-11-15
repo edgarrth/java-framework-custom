@@ -58,3 +58,25 @@ class PrivilegedJobsTest(unittest.TestCase):
         document = self.workflow()
         document["env"] = {"BASH_ENV": "uploaded/bootstrap.sh"}
         self.assertTrue(validate(document))
+
+
+class AllPrivilegedRolesTest(unittest.TestCase):
+    def test_docs_sarif_and_release_are_closed_in_their_complete_workflow_context(self):
+        for file in ['docs-docs','security','pr','release','release-self']:
+            document=yaml.safe_load((ROOT/'workflows'/(file+'.yaml')).read_text())
+            with self.subTest(workflow=file):
+                self.assertEqual([],validate(document))
+                for name,job in document['jobs'].items():
+                    if 'write' not in job.get('permissions',{}).values():continue
+                    changed=copy.deepcopy(document)
+                    if 'steps' in job:changed['jobs'][name]['steps'].append({'run':'python downloaded/arbitrary.py'})
+                    else:changed['jobs'][name]['uses']='./.github/workflows/unreviewed.yaml'
+                    self.assertTrue(validate(changed))
+                changed=copy.deepcopy(document);changed['name']='counterfeit-context'
+                self.assertTrue(validate(changed))
+    def test_a_sarif_uploader_does_not_authorize_arbitrary_code_or_an_app_token(self):
+        for permissions,step in [({'contents':'write'},{'run':'echo arbitrary'}),
+                                  ({'security-events':'write'},{'uses':'github/codeql-action/upload-sarif@'+'a'*40}),
+                                  ({},{'uses':'actions/create-github-app-token@'+'a'*40})]:
+            document={'permissions':{},'jobs':{'unknown':{'runs-on':'ubuntu-24.04','permissions':permissions,'steps':[step]}}}
+            self.assertTrue(validate(document))

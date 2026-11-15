@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** architecture contract service archetype. */
+/** Service archetype. */
 public enum Archetype {
   BUSINESS,
   CORE,

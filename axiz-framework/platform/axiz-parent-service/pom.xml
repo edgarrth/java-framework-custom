@@ -243,7 +243,7 @@
                   <generatorName>spring</generatorName>
                   <apiPackage>${axiz.openapi.api-package}</apiPackage>
                   <modelPackage>${axiz.openapi.model-package}</modelPackage>
-                  <!-- models only: controllers are generated once as versioned skeletons (architecture contract) -->
+                  <!-- models only: controllers are generated once as versioned skeletons  -->
                   <generateApis>false</generateApis>
                   <generateModels>true</generateModels>
                   <generateSupportingFiles>false</generateSupportingFiles>

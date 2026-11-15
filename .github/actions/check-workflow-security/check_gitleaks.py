@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-IMAGE = "ghcr.io/gitleaks/gitleaks:v8.30.1"
+IMAGE = "ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 
 
 def check(configuration):
@@ -20,12 +20,8 @@ def check(configuration):
         # Synthetic random data, never a real account credential. Reports are always redacted.
         canary = secrets.token_urlsafe(32)
         api.write_text('"keySha256": "' + digest + '"\n'
-                       '"api_key": "' + canary + '"\n')
-        evidence = root / "docs/evidence/canary/source-files.json"
-        evidence.parent.mkdir(parents=True)
-        evidence.write_text('"core/api-key.java": "' + digest + '"\n'
-                            '"keySha256": "' + digest + '", "api_key": "' + canary + '"\n'
-                            '"api_key": "' + canary + '"\n')
+                       '"api_key": "' + canary + '"\n'
+                       '"keySha256": "' + digest + '", "api_key": "' + canary + '"\n')
         outside = root / "outside.json"
         outside.write_text('"api_key": "' + canary + '"\n')
         result = subprocess.run([
@@ -40,13 +36,11 @@ def check(configuration):
         findings = json.loads(report.read_text())
         locations = {(item["File"].removeprefix("./"), item["StartLine"]) for item in findings}
         required = {("docs/api/public-api.json", 2),
-                    ("docs/evidence/canary/source-files.json", 2),
-                    ("docs/evidence/canary/source-files.json", 3),
+                    ("docs/api/public-api.json", 3),
                     ("outside.json", 1)}
         if not required.issubset(locations):
             raise RuntimeError("The effective gitleaks configuration hid a secret canary")
-        forbidden = {("docs/api/public-api.json", 1),
-                     ("docs/evidence/canary/source-files.json", 1)}
+        forbidden = {("docs/api/public-api.json", 1)}
         if forbidden.intersection(locations):
             raise RuntimeError("A canonical metadata digest was not narrowly recognized")
         print("gitleaks canaries passed: digests allowed; secrets in, beside and outside metadata detected")

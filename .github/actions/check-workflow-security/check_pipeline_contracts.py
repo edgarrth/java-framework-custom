@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from internal_contracts import TAG, validate_call, workflow_call
 
 BUILD_CALL = re.compile(r"/(?:lib-build|service-build|native)\.yaml@")
 DEPLOY_CALL = re.compile(r"/(?:lib-deploy|service-deploy)\.yaml@")
@@ -16,11 +17,6 @@ def calls(workflow):
     for job in workflow.get("jobs", {}).values():
         yield job
         yield from job.get("steps", [])
-
-
-def workflow_call(workflow):
-    # PyYAML's YAML 1.1 reader treats the unquoted GitHub key 'on' as True.
-    return workflow.get("on", workflow.get(True, {})).get("workflow_call", {})
 
 
 def validate(build, deploy):
@@ -64,26 +60,11 @@ def validate_consumer(document, workflows, phase):
         reference = job.get("uses", "")
         if not reference.startswith("edgarrth/java-framework-custom/.github/workflows/"):
             continue
-        path, separator, revision = reference.rpartition("@")
-        filename = path.rsplit("/", 1)[-1]
-        if not separator or not re.fullmatch(r"axiz-workflows-v2\.[0-9]+\.[0-9]+", revision):
+        _, separator, revision = reference.rpartition("@")
+        if not separator or not TAG.fullmatch(revision):
             errors.append(f"{name}: consumer must use an exact v2 workflow release")
             continue
-        target = Path(workflows) / filename
-        if not target.is_file():
-            errors.append(f"{name}: unknown workflow {filename}")
-            continue
-        contract = workflow_call(yaml.safe_load(target.read_text()))
-        for category, supplied in (("inputs", job.get("with", {})), ("secrets", job.get("secrets", {}))):
-            if not isinstance(supplied, dict):
-                errors.append(f"{name}: {category} must be explicit")
-                continue
-            declared = contract.get(category, {})
-            for key in sorted(set(supplied) - set(declared)):
-                errors.append(f"{name}: unknown {category} entry {key}")
-            for key, definition in declared.items():
-                if definition.get("required") and key not in supplied and "default" not in definition:
-                    errors.append(f"{name}: required {category} entry {key} is missing")
+        errors.extend(f"{name}: {error}" for error in validate_call(job, Path(workflows).parent.parent))
     for call in calls(document):
         reference = call.get("uses", "")
         command = call.get("run", "")

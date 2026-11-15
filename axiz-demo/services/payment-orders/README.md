@@ -153,7 +153,7 @@ Keys each environment must define:
 `deploy/helm/payment-orders` contains the chart: Deployment with probes, Service, HPA, PDB,
 ConfigMaps mounted as files, ExternalSecret, ServiceAccount and a NetworkPolicy. Pods do not
 require Kubernetes API permissions to read their mounted configuration.
-The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-v2.0.0`; Renovate pins its commit and proposes new releases):
+The pipelines in `.github/workflows` call the shared axiz workflows, pinned to an immutable release (`@axiz-workflows-vX.Y.Z`; Renovate proposes grouped updates to the next immutable release tag):
 
 - `ci.yaml`: pull requests run the shared checks and the build with every quality gate; `main`
   builds the image (Jib, signed with cosign) and deploys it to dev and then qa; a tag `v*` deploys
@@ -164,4 +164,3 @@ The pipelines in `.github/workflows` call the shared axiz workflows, pinned to a
   changelog; merging it creates the tag.
 
 ## Decisions
-

@@ -42,7 +42,12 @@ an approximate reciprocal before converting a payment. `ExchangeRate.convertInve
 that same operation directly. `ExchangeRate.inverse(scale, mode)` represents an approximate
 rate for display or storage; use `convertInverse` when converting an amount in the other direction.
 Rates are bounded by the same integer-digit and scale limits as monetary operands before any
-inverse division, so extreme exponents cannot trigger unbounded decimal expansion.
+inverse division, so extreme exponents cannot trigger unbounded decimal expansion. External
+operands keep the 100-decimal limit. Internal products allow up to 106 decimals (100 operand,
+4 currency and 2 percentage shift), with one rounding before the final amount bounds are checked.
+The supported currency scale is 0 through 4; pseudo-currencies retain the explicit 2-decimal
+fallback. Unsupported currency scales are rejected. These internal limits do not expand the
+public API or relax parsing and factory bounds.
 
 ## Tests
 

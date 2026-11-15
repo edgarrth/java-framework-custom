@@ -1,52 +1,54 @@
-"""Closed positive contracts for OIDC jobs, loaded from this immutable action's reviewed policy."""
+"""Closed reviewed roles: grants and App-token minting must match trusted workflow contracts."""
+import hashlib
 import json
 from pathlib import Path
 import re
 
-POLICY = Path(__file__).resolve().parents[2] / "policies/privileged-jobs-v2.json"
-BUILD = {"lib-build.yaml", "service-build.yaml", "native.yaml"}
-DEPLOY = {"lib-deploy.yaml", "service-deploy.yaml"}
+from internal_contracts import TAG, TAG_PATTERN
 
+POLICY=Path(__file__).resolve().parents[2]/'policies/privileged-jobs-v2.json'
+BUILD={'lib-build.yaml','service-build.yaml','native.yaml'}
+DEPLOY={'lib-deploy.yaml','service-deploy.yaml'}
+NORMALIZED='__IMMUTABLE_WORKFLOWS_RELEASE__'
+TOKEN=re.compile(r'(?<![A-Za-z0-9_.-])'+TAG_PATTERN+r'(?![A-Za-z0-9_.-])',re.ASCII)
+
+def fingerprint(value):
+    # JSON keys are strings in the normalized YAML representation (including the YAML 1.1 on key).
+    text=json.dumps(value,sort_keys=True,separators=(',',':'))
+    return hashlib.sha256(TOKEN.sub(NORMALIZED,text).encode()).hexdigest()
+
+def normalized_document(document):
+    return {str(key):value for key,value in document.items()}
+
+def privileged(job):
+    permissions=job.get('permissions',{})
+    return (isinstance(permissions,dict) and 'write' in permissions.values()
+            or any('create-github-app-token@' in step.get('uses','') for step in job.get('steps',[])))
 
 def validate(document):
-    errors = []
-    if document.get("permissions") != {}:
-        errors.append("workflow permissions must start empty; grant rights per job")
-    policy = json.loads(POLICY.read_text())
-    guard = document.get("jobs", {}).get("axiz-workflows-trust", {})
-    steps = guard.get("steps", [])
-    version = steps[0].get("env", {}).get("AXIZ_WORKFLOWS_VERSION", "") if steps else ""
-    for name, job in document.get("jobs", {}).items():
-        permissions = job.get("permissions", {})
-        if permissions == "write-all" or not isinstance(permissions, dict):
-            errors.append(name + ": permissions must be an explicit least-privilege map")
-            continue
-        if permissions.get("security-events") == "write":
-            calls = [job, *job.get("steps", [])]
-            if not any("github/codeql-action/upload-sarif@" in call.get("uses", "")
-                       or "/.github/workflows/pr.yaml@" in call.get("uses", "") for call in calls):
-                errors.append(name + ": security-events write belongs only to SARIF publishers")
-        if permissions.get("id-token") != "write":
-            continue
-        ref = job.get("uses")
-        if ref:
-            match = re.fullmatch(r"edgarrth/java-framework-custom/\.github/workflows/([a-z-]+\.yaml)@axiz-workflows-v2\.\d+\.\d+", ref)
-            if not match or match.group(1) not in BUILD | DEPLOY:
-                errors.append(name + ": OIDC may only be delegated to reviewed build/sign or promotion workflows")
-                continue
-            wanted = {"contents": "write" if match.group(1) in DEPLOY else "read", "actions": "read", "id-token": "write"}
-            if permissions != wanted:
-                errors.append(name + ": delegated OIDC permissions differ from the called role contract")
-            continue
-        if "env" in document or "defaults" in document:
-            errors.append(name + ": privileged jobs cannot inherit ambient environment or command defaults")
-        if job.get("runs-on") != "ubuntu-24.04":
-            errors.append(name + ": privileged runner must be literal ubuntu-24.04")
-        if not re.fullmatch(r"axiz-workflows-v2\.\d+\.\d+", version):
-            errors.append(name + ": privileged job lacks an exact immutable workflow release guard")
-            continue
-        normalized = json.loads(json.dumps(job).replace(version, "__IMMUTABLE_WORKFLOWS_RELEASE__"))
-        roles = [value for key, value in policy.items() if (key in BUILD) == (name == "sign")]
-        if name not in {"sign", "deploy"} or normalized not in roles:
-            errors.append(name + ": privileged actions, scripts, arguments, paths, environment or dependencies differ from the closed role contract")
+    errors=[]
+    if document.get('permissions')!={}:errors.append('workflow permissions must start empty; grant rights per job')
+    policy=json.loads(POLICY.read_text())
+    if set(policy)!={'schema','roles'} or policy['schema']!=2:raise ValueError('Unreviewed privileged role policy')
+    workflow_hash=fingerprint(normalized_document(document))
+    for name,job in document.get('jobs',{}).items():
+        permissions=job.get('permissions',{})
+        if not isinstance(permissions,dict):
+            errors.append(name+': permissions must be an explicit least-privilege map');continue
+        if not privileged(job):continue
+        ref=job.get('uses','')
+        match=re.fullmatch(r'edgarrth/java-framework-custom/\.github/workflows/([a-z-]+\.yaml)@('+TAG_PATTERN+r')',ref,re.ASCII)
+        if match:
+            target=match.group(1)
+            delegated={**{key:{'contents':'read','actions':'read','id-token':'write'} for key in BUILD},
+                       **{key:{'contents':'write','actions':'read','id-token':'write'} for key in DEPLOY},
+                       'pr.yaml':{'contents':'read','pull-requests':'read','actions':'read','security-events':'write'},
+                       'release.yaml':{'contents':'write'}}
+            if target in delegated and permissions==delegated[target]:continue
+            errors.append(name+': delegated permissions differ from the reviewed reusable role');continue
+        if 'env' in document or 'defaults' in document:
+            errors.append(name+': privileged jobs cannot inherit ambient environment or command defaults')
+        wanted=[role for role in policy['roles'] if role['job']==name and role['workflowSha256']==workflow_hash and role['jobSha256']==fingerprint(job)]
+        if len(wanted)!=1:
+            errors.append(name+': privileged actions, scripts, arguments, paths, environment, dependencies or workflow context differ from the closed role contract')
     return errors

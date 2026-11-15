@@ -1,5 +1,4 @@
 # Generated local validation and build artifacts
-/audit-*/
 *.log
 **/target/
 **/.flattened-pom.xml

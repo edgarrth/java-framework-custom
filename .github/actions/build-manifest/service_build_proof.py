@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 import rfc8785
 
-from build_destination import GITOPS_STATE_ROOT
+from build_destination import GITOPS_STATE_ROOT, from_environment
 from manifest import read_json, safe_file, verify
 from prepare import resolve_workflow
 import asyncapi_contract
@@ -121,7 +121,7 @@ def download_proof(repository, run_id, attempt, service, destination):
     return True
 
 
-def verify_proof(directory, repository, source_sha, run_id, attempt, service, module, tag="axiz-workflows-v2.0.0"):
+def verify_proof(directory, repository, source_sha, run_id, attempt, service, module, tag):
     identity(repository, service, module)
     positive(run_id)
     positive(attempt)
@@ -211,11 +211,10 @@ def main():
     produce.add_argument("--repository", required=True)
     produce.add_argument("--output", type=Path, required=True)
     consume = sub.add_parser("resolve")
-    for name in ("repository", "service", "module", "gitops-repository"):
+    for name in ("repository", "service", "module"):
         consume.add_argument("--" + name, required=True)
     consume.add_argument("--environment", default="dev", choices=["dev", "qa", "prod"])
-    consume.add_argument("--gitops-branch", default="main")
-    consume.add_argument("--workflows-tag", default="axiz-workflows-v2.0.0")
+    consume.add_argument("--workflows-tag", required=True)
     consume.add_argument("--directory", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "create":
@@ -224,6 +223,7 @@ def main():
         (args.output / PROOF).write_bytes(rfc8785.dumps(data))
         return
     identity(args.repository, args.service, args.module)
+    destination = from_environment().deployment(args.repository, args.service)
     event = read_json(os.environ["GITHUB_EVENT_PATH"])
     run = event.get("workflow_run", {})
     if event.get("action") != "completed" or event.get("repository", {}).get("full_name") != args.repository:
@@ -240,7 +240,7 @@ def main():
     token = os.environ.get("GITOPS_READ_TOKEN", "")
     if not token:
         raise ValueError("Automatic deployment requires a read-only GitOps credential")
-    previous = predecessor(args.gitops_repository, args.gitops_branch, args.service, args.environment, token)
+    previous = predecessor(destination["repository"], destination["branch"], args.service, args.environment, token)
     for name, value in {"eligible": "true", "manifest-sha256": expected, "build-run-id": run_id,
                         "build-run-attempt": attempt, "values-revision": authority["head_sha"],
                         "previous-manifest-sha256": previous, "environment": args.environment}.items():

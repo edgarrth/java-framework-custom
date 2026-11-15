@@ -13,7 +13,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -26,10 +26,27 @@ jobs:
       security-events: write
       actions: read
     needs: axiz-workflows-trust
-    uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       NEXUS_URL: ${{ secrets.NEXUS_URL }}
       NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
+  docs-pr-check:
+    name: axiz-docs-pr
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [axiz-workflows-trust, pr]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Require every pull request job
+        shell: bash
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          SKIPPABLE: '[]'
+        run: |
+          jq -e --argjson skippable "$SKIPPABLE" 'length > 0 and all(to_entries[];
+            .value.result == "success"
+            or (.value.result == "skipped" and (.key | IN($skippable[]))))' <<< "$NEEDS" >/dev/null

@@ -11,11 +11,8 @@ on:
       manifest-file:
         type: string
         default: .release-please-manifest.json
-      runner:
-        type: string
-        default: ubuntu-24.04
     secrets:
-      RELEASE_APP_ID:
+      RELEASE_APP_CLIENT_ID:
         required: true
       RELEASE_APP_PRIVATE_KEY:
         required: true
@@ -33,20 +30,22 @@ jobs:
   release:
     permissions:
       contents: write
-    runs-on: ${{ inputs.runner }}
+    runs-on: ubuntu-24.04
     outputs:
       released: ${{ steps.please.outputs.releases_created }}
       paths-released: ${{ steps.please.outputs.paths_released }}
     steps:
       - name: Token (GitHub App, short-lived)
         id: token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
-          app-id: ${{ secrets.RELEASE_APP_ID }}
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          permission-contents: write
+          permission-pull-requests: write
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - name: Release pull request or release
         id: please
-        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.token.outputs.token }}
           config-file: ${{ inputs.config-file }}

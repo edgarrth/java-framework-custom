@@ -5,6 +5,8 @@ Thank you for improving the axiz developer tools (CLI, web initializr, OpenRewri
 ## Before you start
 
 - Discuss new capabilities, breaking changes and new third-party dependencies in an issue first.
+  Public API changes and new dependencies require code-owner review, updated usage documentation
+  and the corresponding compatibility and integration checks.
 - Never commit secrets, real customer data or production endpoints. Local examples use the
   placeholders of the local environment only. gitleaks runs on every pull request.
 - Do not add deprecated libraries, or APIs and versions that are not yet released.
@@ -34,6 +36,4 @@ Thank you for improving the axiz developer tools (CLI, web initializr, OpenRewri
 
 ## Compatibility
 
-Public APIs and SPIs follow semantic versioning. From 1.0.0 the `api-compat` profile
-(`./mvnw -Papi-compat verify -Daxiz.api.baseline=<last release>`) must pass; an intentional break
-automated.
+Public APIs and SPIs follow semantic versioning. The first release is 2.0.0. Later releases compare against the published baseline with the API compatibility gate. Document changes in the module README and upgrade guide, and provide an OpenRewrite recipe when the transformation can be automated.

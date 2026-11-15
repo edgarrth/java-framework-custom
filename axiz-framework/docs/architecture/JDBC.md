@@ -1,10 +1,10 @@
-# JDBC boundaries in v2
+# Límites JDBC
 
-Core keeps business ports and orchestration without java.sql or javax.sql dependencies.
-`axiz-kit-jdbc` owns ConnectionProvider, JdbcTransactions and SqlStates. JDBC outbox, inbox,
-saga and sequence implementations live in their corresponding adapters. Services declare adapters
-at runtime and own versioned Flyway schema migrations. The BOM manages every current module.
+Core conserva los puertos y la orquestación sin dependencias de `java.sql` o `javax.sql`.
+`axiz-kit-jdbc` contiene `ConnectionProvider`, `JdbcTransactions` y `SqlStates`. Las
+implementaciones JDBC de outbox, inbox, saga y secuencias pertenecen a sus adaptadores.
+Los servicios declaran esos adaptadores en runtime y administran sus migraciones Flyway.
 
-Core transactions use `pe.axiz.core.commons.tx.TransactionRunner`. Outbox claims and completion
-updates always carry an owner. No unfenced compatibility methods or old-coordinate mappings are
-retained. Schema preflight remains diagnostic and read-only; it does not silently skip evidence.
+Las transacciones core usan `pe.axiz.core.commons.tx.TransactionRunner`. La adquisición y
+finalización del outbox incluyen el propietario del lease. El preflight del esquema es
+diagnóstico y de solo lectura; informa las tablas y columnas que faltan sin ejecutar DDL.

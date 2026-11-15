@@ -36,6 +36,7 @@ solo trabajo de CPU. La autoconfiguración reactiva no crea repositorios ni clie
 
 `ReactiveInbox` utiliza `AsyncInboxStore` con DynamoDB y `ReactiveInboxStore` con R2DBC. Este
 último conserva el contexto de la transacción, incluso al cambiar de hilo. Las variantes
+síncronas del inbox permanecen en los hilos de poll/purga dedicados a esas tareas; comparten las
 reglas de propiedad y lease con las variantes nativas. Deshabilitar inbox evita inicializar
 tanto sus recursos nativos como los de poll.
 

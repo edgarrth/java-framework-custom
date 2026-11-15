@@ -1,6 +1,6 @@
 # Guía operativa opcional de promoción y rollback
 
-comprobar una instalación real en dev y QA cuando sus operadores lo necesiten.
+Esta guía describe la promoción y el rollback de builds verificados entre dev y QA.
 Los builds de origen ya deben haber terminado y pasado sus gates; no se recompila en deploy.
 No se usan credenciales productivas para el ensayo ni se provoca un rollback en producción.
 

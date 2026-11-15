@@ -1,441 +1,82 @@
 {
-  "lib-build.yaml": {
-    "needs": [
-      "axiz-workflows-trust",
-      "build"
-    ],
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
-    "permissions": {
-      "contents": "read",
-      "actions": "read",
-      "id-token": "write"
+  "schema": 2,
+  "roles": [
+    {
+      "workflow": "lib-build.yaml",
+      "job": "sign",
+      "workflowSha256": "9cdeacd6ec2e5de81d14ddd8637e10598776cec69c91d56c3838d6e29c81cf40",
+      "jobSha256": "225140b0688d23e04a3990a8739ebd6af13e644481961a5319be73c72023e997",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "outputs": {
-      "manifest-sha256": "${{ steps.sign.outputs.manifest-sha256 }}"
+    {
+      "workflow": "service-build.yaml",
+      "job": "sign",
+      "workflowSha256": "5c44790afb45ab4219bffbb5cf747e0a26621f79e109419cba3274b41efe3754",
+      "jobSha256": "0a8bef3cf2edf6f3a1cb8f47f36463c3b6b46e24549269d808494ea3259a7012",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "steps": [
-      {
-        "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
-        "with": {
-          "repository": "edgarrth/java-framework-custom",
-          "ref": "__IMMUTABLE_WORKFLOWS_RELEASE__",
-          "path": ".axiz-trusted-workflows",
-          "persist-credentials": false,
-          "token": "${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}"
-        }
-      },
-      {
-        "uses": "sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5"
-      },
-      {
-        "name": "Verify producer authority and sign exact product data",
-        "id": "sign",
-        "shell": "bash",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "GH_HOST": "github.com",
-          "BUILD_INPUTS_JSON": "${{ toJSON(inputs) }}"
-        },
-        "run": "set -euo pipefail\npython3 -m venv \"$RUNNER_TEMP/axiz-signer-python\"\npython=\"$RUNNER_TEMP/axiz-signer-python/bin/python\"\ntools=\"$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest\"\n\"$python\" -m pip install --require-hashes --quiet -r \"$tools/requirements.txt\"\n\"$python\" \"$tools/sign_product.py\" --kind maven-library --output \"$RUNNER_TEMP/signed-product\"\n"
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "build-bundle-${{ steps.sign.outputs.manifest-sha256 }}",
-          "path": "${{ runner.temp }}/signed-product",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      }
-    ]
-  },
-  "service-build.yaml": {
-    "needs": [
-      "axiz-workflows-trust",
-      "build"
-    ],
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
-    "permissions": {
-      "contents": "read",
-      "actions": "read",
-      "id-token": "write"
+    {
+      "workflow": "native.yaml",
+      "job": "sign",
+      "workflowSha256": "5f3cd9afca691e7c0a19351b9a5fdc2dfdec941676ec76b7ced93575e0978245",
+      "jobSha256": "7893604759b4293179e0718dc5fea2ae68625b898ca045caca9808b9b9b4fa49",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "outputs": {
-      "manifest-sha256": "${{ steps.sign.outputs.manifest-sha256 }}"
+    {
+      "workflow": "lib-deploy.yaml",
+      "job": "deploy",
+      "workflowSha256": "f8ba8703d109adb2ac7d8e8b3f1a66c63f59671b26dc9e3de11f695e3ffd3580",
+      "jobSha256": "4477632dc1d50b928d47e592bb91b3dfe813bf1ff844b64561fb40808e6552a1",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "steps": [
-      {
-        "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
-        "with": {
-          "repository": "edgarrth/java-framework-custom",
-          "ref": "__IMMUTABLE_WORKFLOWS_RELEASE__",
-          "path": ".axiz-trusted-workflows",
-          "persist-credentials": false,
-          "token": "${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}"
-        }
-      },
-      {
-        "uses": "sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5"
-      },
-      {
-        "name": "Verify producer authority and sign exact product data",
-        "id": "sign",
-        "shell": "bash",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "GH_HOST": "github.com",
-          "BUILD_INPUTS_JSON": "${{ toJSON(inputs) }}",
-          "DOCKER_CONFIG": "${{ runner.temp }}/axiz-signer-registry",
-          "BUILD_DESTINATION": "${{ secrets.BUILD_DESTINATION }}",
-          "REGISTRY_USERNAME": "${{ secrets.REGISTRY_BUILD_USERNAME }}",
-          "REGISTRY_PASSWORD": "${{ secrets.REGISTRY_BUILD_PASSWORD }}"
-        },
-        "run": "set -euo pipefail\npython3 -m venv \"$RUNNER_TEMP/axiz-signer-python\"\npython=\"$RUNNER_TEMP/axiz-signer-python/bin/python\"\ntools=\"$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest\"\n\"$python\" -m pip install --require-hashes --quiet -r \"$tools/requirements.txt\"\n\"$python\" \"$tools/sign_product.py\" --kind service --output \"$RUNNER_TEMP/signed-product\"\n"
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "build-bundle-${{ steps.sign.outputs.manifest-sha256 }}",
-          "path": "${{ runner.temp }}/signed-product",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "service-build-proof-${{ inputs.service }}-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/service-build-proof",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      },
-      {
-        "name": "Remove signer registry credentials",
-        "if": "always()",
-        "run": "rm -rf -- \"$RUNNER_TEMP/axiz-signer-registry\""
-      }
-    ]
-  },
-  "native.yaml": {
-    "needs": [
-      "axiz-workflows-trust",
-      "build"
-    ],
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
-    "permissions": {
-      "contents": "read",
-      "actions": "read",
-      "id-token": "write"
+    {
+      "workflow": "service-deploy.yaml",
+      "job": "deploy",
+      "workflowSha256": "d4081dbe60509ce7e3d142b715bf5a1c686d7b3cdb94218bbc4d2e188f810cb0",
+      "jobSha256": "f49d72327e52c667c1e347baac8460bde0157c08ce5e1e62f43024207c27c5f6",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "steps": [
-      {
-        "uses": "actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
-        "with": {
-          "repository": "edgarrth/java-framework-custom",
-          "ref": "__IMMUTABLE_WORKFLOWS_RELEASE__",
-          "path": ".axiz-trusted-workflows",
-          "persist-credentials": false,
-          "token": "${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}"
-        }
-      },
-      {
-        "uses": "sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5"
-      },
-      {
-        "name": "Verify producer authority and sign exact product data",
-        "id": "sign",
-        "shell": "bash",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "GH_HOST": "github.com",
-          "BUILD_INPUTS_JSON": "${{ toJSON(inputs) }}"
-        },
-        "run": "set -euo pipefail\npython3 -m venv \"$RUNNER_TEMP/axiz-signer-python\"\npython=\"$RUNNER_TEMP/axiz-signer-python/bin/python\"\ntools=\"$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest\"\n\"$python\" -m pip install --require-hashes --quiet -r \"$tools/requirements.txt\"\n\"$python\" \"$tools/sign_product.py\" --kind native-component --output \"$RUNNER_TEMP/signed-product\"\n"
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "native-component-${{ github.run_attempt }}-linux-x64",
-          "path": "${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-linux-x64",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "native-component-${{ github.run_attempt }}-macos-arm64",
-          "path": "${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-macos-arm64",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "with": {
-          "name": "native-component-${{ github.run_attempt }}-windows-x64",
-          "path": "${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-windows-x64",
-          "retention-days": 90,
-          "if-no-files-found": "error"
-        }
-      }
-    ]
-  },
-  "lib-deploy.yaml": {
-    "permissions": {
-      "contents": "write",
-      "actions": "read",
-      "id-token": "write"
+    {
+      "workflow": "docs-docs.yaml",
+      "job": "publish",
+      "workflowSha256": "fe03a48460302883a36b960db6ac15d736f2ea70f22aae1bdbab676be46655eb",
+      "jobSha256": "2fd255a08bb6c65f856a5db9f1bc9ef3964f17d1942274ee33fc90aeda477dfc",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "needs": [
-      "axiz-workflows-trust",
-      "destination"
-    ],
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 30,
-    "environment": "${{ inputs.environment }}",
-    "steps": [
-      {
-        "uses": "edgarrth/java-framework-custom/.github/actions/consume-build@__IMMUTABLE_WORKFLOWS_RELEASE__",
-        "id": "build",
-        "with": {
-          "repository": "${{ github.repository }}",
-          "build-run-id": "${{ inputs.build-run-id }}",
-          "build-run-attempt": "${{ inputs.build-run-attempt }}",
-          "manifest-sha256": "${{ inputs.manifest-sha256 }}",
-          "kind": "maven-library",
-          "token": "${{ secrets.BUILD_READ_TOKEN || github.token }}"
-        }
-      },
-      {
-        "name": "Validate approval, final tag and durable manifest destination",
-        "id": "preflight",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "GH_HOST": "github.com",
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "EXPECTED_HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "NEXUS_URL": "${{ secrets.NEXUS_URL }}"
-        },
-        "run": "set -euo pipefail\nversion=$(jq -r .version \"$BUNDLE/build-manifest.json\")\n[[ \"$version\" =~ ^[0-9]+\\.[0-9]+\\.[0-9]+$ ]]\ntag=$(\"$PYTHON\" \"$TOOLS/release_tag.py\" --manifest \"$BUNDLE/build-manifest.json\")\nsource_sha=$(jq -r .source.sha \"$BUNDLE/build-manifest.json\")\nobject=$(gh api \"repos/$GITHUB_REPOSITORY/git/ref/tags/$tag\" --jq .object)\nfor _ in {1..10}; do\n  [[ $(jq -r .type <<< \"$object\") == tag ]] || break\n  object=$(gh api \"repos/$GITHUB_REPOSITORY/git/tags/$(jq -r .sha <<< \"$object\")\" --jq .object)\ndone\n[[ $(jq -r .type <<< \"$object\") == commit && $(jq -r .sha <<< \"$object\") == \"$source_sha\" ]]\ngh api \"repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals\" > \"$RUNNER_TEMP/approvals.json\"\njq -n --arg environment \"$ENVIRONMENT\" '[\n  {name:\"nexus-username\",ref:(\"environment:\"+$environment+\"/NEXUS_PUBLISH_USERNAME\")},\n  {name:\"nexus-password\",ref:(\"environment:\"+$environment+\"/NEXUS_PUBLISH_PASSWORD\")}\n]' > \"$RUNNER_TEMP/deploy-configuration.json\"\n\"$PYTHON\" \"$TOOLS/deploy_record.py\" --bundle \"$BUNDLE\" --manifest-sha256 \"$EXPECTED_HASH\" \\\n  --repository \"$GITHUB_REPOSITORY\" --environment \"$ENVIRONMENT\" \\\n  --destination \"$NEXUS_URL/repository/maven-releases\" --previous-manifest \"$PREVIOUS\" \\\n  --approvals \"$RUNNER_TEMP/approvals.json\" --configuration \"$RUNNER_TEMP/deploy-configuration.json\" \\\n  --result failed --output \"$RUNNER_TEMP/deploy-record.json\"\n\"$PYTHON\" \"$TOOLS/release_manifest.py\" --repository \"$GITHUB_REPOSITORY\" --tag \"$tag\" \\\n  --manifest-sha256 \"$EXPECTED_HASH\" --bundle \"$BUNDLE\"\necho \"tag=$tag\" >> \"$GITHUB_OUTPUT\"\n"
-      },
-      {
-        "name": "Promote exactly the verified Maven files",
-        "id": "promote",
-        "env": {
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "EXPECTED_HASH": "${{ inputs.manifest-sha256 }}",
-          "NEXUS_URL": "${{ secrets.NEXUS_URL }}",
-          "NEXUS_USERNAME": "${{ secrets.NEXUS_PUBLISH_USERNAME }}",
-          "NEXUS_PASSWORD": "${{ secrets.NEXUS_PUBLISH_PASSWORD }}"
-        },
-        "run": "set -euo pipefail\n\"$PYTHON\" \"$TOOLS/promote_maven.py\" --bundle \"$BUNDLE\" \\\n  --manifest-sha256 \"$EXPECTED_HASH\" --repository \"$GITHUB_REPOSITORY\"\n"
-      },
-      {
-        "name": "Retain the signed build manifest before publishing the final release",
-        "id": "retain",
-        "if": "steps.preflight.outputs.draft == 'true'",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "TAG": "${{ steps.preflight.outputs.tag }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}"
-        },
-        "run": "set -euo pipefail\n\"$PYTHON\" \"$TOOLS/release_manifest.py\" --repository \"$GITHUB_REPOSITORY\" --tag \"$TAG\" \\\n  --manifest-sha256 \"$HASH\" --bundle \"$BUNDLE\" --publish\n"
-      },
-      {
-        "name": "Signed deployment outcome from the approved build",
-        "id": "record",
-        "if": "${{ always() && steps.preflight.outcome == 'success' }}",
-        "env": {
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "EXPECTED_HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "NEXUS_URL": "${{ secrets.NEXUS_URL }}",
-          "PROMOTION": "${{ steps.promote.outcome }}",
-          "RETENTION": "${{ steps.retain.outcome }}"
-        },
-        "run": "set -euo pipefail\nresult=failed\nif [[ \"$PROMOTION\" == success && (\"$RETENTION\" == success || \"$RETENTION\" == skipped) ]]; then result=succeeded; fi\n\"$PYTHON\" \"$TOOLS/deploy_record.py\" --bundle \"$BUNDLE\" --manifest-sha256 \"$EXPECTED_HASH\" \\\n  --repository \"$GITHUB_REPOSITORY\" --environment \"$ENVIRONMENT\" \\\n  --destination \"$NEXUS_URL/repository/maven-releases\" --previous-manifest \"$PREVIOUS\" \\\n  --approvals \"$RUNNER_TEMP/approvals.json\" --configuration \"$RUNNER_TEMP/deploy-configuration.json\" \\\n  --result \"$result\" --output \"$RUNNER_TEMP/deploy-record.json\"\ncosign sign-blob --yes --bundle \"$RUNNER_TEMP/deploy-record.sigstore.json\" \"$RUNNER_TEMP/deploy-record.json\"\n"
-      },
-      {
-        "name": "Durable deployment audit",
-        "if": "${{ always() && steps.record.outcome == 'success' }}",
-        "env": {
-          "GH_TOKEN": "${{ github.token }}",
-          "SOURCE_SHA": "${{ steps.build.outputs.source-sha }}",
-          "HASH": "${{ inputs.manifest-sha256 }}"
-        },
-        "run": "set -euo pipefail\nprintf 'Build manifest: %s\\nProducer commit: %s\\n' \"$HASH\" \"$SOURCE_SHA\" > \"$RUNNER_TEMP/deploy-notes.txt\"\ngh release create \"deploy/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT\" \\\n  \"$RUNNER_TEMP/deploy-record.json\" \"$RUNNER_TEMP/deploy-record.sigstore.json\" \\\n  --repo \"$GITHUB_REPOSITORY\" --target \"$SOURCE_SHA\" --prerelease --latest=false \\\n  --title \"Deployment $GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT\" --notes-file \"$RUNNER_TEMP/deploy-notes.txt\"\n"
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "if": "${{ always() && steps.record.outcome == 'success' }}",
-        "with": {
-          "name": "deploy-record-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/deploy-record.json\n${{ runner.temp }}/deploy-record.sigstore.json\n",
-          "if-no-files-found": "error",
-          "retention-days": 90
-        }
-      }
-    ]
-  },
-  "service-deploy.yaml": {
-    "permissions": {
-      "contents": "write",
-      "actions": "read",
-      "id-token": "write"
+    {
+      "workflow": "docs-docs.yaml",
+      "job": "deploy-pages",
+      "workflowSha256": "fe03a48460302883a36b960db6ac15d736f2ea70f22aae1bdbab676be46655eb",
+      "jobSha256": "dabdcd50faccd161b9dbd485d3bf8f34b4e0062415a91caa78a59e9ee7ac5fdd",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
-    "needs": [
-      "axiz-workflows-trust",
-      "destination"
-    ],
-    "runs-on": "ubuntu-24.04",
-    "timeout-minutes": 40,
-    "environment": "${{ inputs.environment }}",
-    "steps": [
-      {
-        "name": "Isolate registry read credentials",
-        "run": "echo \"DOCKER_CONFIG=$RUNNER_TEMP/axiz-deploy-docker\" >> \"$GITHUB_ENV\"\necho \"HELM_REGISTRY_CONFIG=$RUNNER_TEMP/axiz-deploy-helm/config.json\" >> \"$GITHUB_ENV\"\n"
-      },
-      {
-        "uses": "edgarrth/java-framework-custom/.github/actions/consume-build@__IMMUTABLE_WORKFLOWS_RELEASE__",
-        "id": "build",
-        "with": {
-          "repository": "${{ github.repository }}",
-          "build-run-id": "${{ inputs.build-run-id }}",
-          "build-run-attempt": "${{ inputs.build-run-attempt }}",
-          "manifest-sha256": "${{ inputs.manifest-sha256 }}",
-          "kind": "service",
-          "token": "${{ secrets.BUILD_READ_TOKEN || github.token }}"
-        }
-      },
-      {
-        "uses": "azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4",
-        "with": {
-          "version": "v3.19.0"
-        }
-      },
-      {
-        "name": "Verify immutable registry content, values and environment approval",
-        "id": "preflight",
-        "env": {
-          "GH_TOKEN": "${{ secrets.BUILD_READ_TOKEN || github.token }}",
-          "GH_HOST": "github.com",
-          "EXPECTED_GITOPS": "${{ inputs.expected-gitops-repository }}",
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "VALUES_REVISION": "${{ inputs.values-revision }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "GITOPS": "${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}",
-          "BRANCH": "${{ inputs.gitops-branch }}",
-          "USERNAME": "${{ secrets.REGISTRY_READ_USERNAME }}",
-          "PASSWORD": "${{ secrets.REGISTRY_READ_PASSWORD }}"
-        },
-        "run": "set -euo pipefail\nif [[ -n \"$EXPECTED_GITOPS\" && \"$EXPECTED_GITOPS\" != \"$GITOPS\" ]]; then\n  echo \"GitOps destination differs from the predecessor observed before promotion\" >&2\n  exit 1\nfi\nmkdir -p \"$DOCKER_CONFIG\" \"$(dirname \"$HELM_REGISTRY_CONFIG\")\"\nchmod 700 \"$DOCKER_CONFIG\" \"$(dirname \"$HELM_REGISTRY_CONFIG\")\"\nmapfile -t registries < <(jq -r '[.artifacts.image.repository,.artifacts.chart.oci|sub(\"^oci://\";\"\")|split(\"/\")[0]]|unique[]' \"$BUNDLE/build-manifest.json\")\nfor registry in \"${registries[@]}\"; do\n  printf '%s' \"$PASSWORD\" | docker login \"$registry\" --username \"$USERNAME\" --password-stdin\n  printf '%s' \"$PASSWORD\" | helm registry login \"$registry\" --username \"$USERNAME\" --password-stdin\ndone\n\"$PYTHON\" \"$TOOLS/service_deploy.py\" --bundle \"$BUNDLE\" --manifest-sha256 \"$HASH\" \\\n  --repository \"$GITHUB_REPOSITORY\" --environment \"$ENVIRONMENT\" --values-revision \"$VALUES_REVISION\" \\\n  --output \"$RUNNER_TEMP/prepared-deployment.json\" --configuration \"$RUNNER_TEMP/values-refs.json\"\njq --arg environment \"$ENVIRONMENT\" --arg gitops \"$GITOPS\" --arg branch \"$BRANCH\" '. + [\n  {name:\"gitops-destination\",ref:(\"https://github.com/\"+$gitops+\"/tree/\"+$branch)},\n  {name:\"gitops-app\",ref:(\"environment:\"+$environment+\"/GITOPS_APP_ID\")},\n  {name:\"gitops-app-key\",ref:(\"environment:\"+$environment+\"/GITOPS_APP_PRIVATE_KEY\")},\n  {name:\"argocd-read-token\",ref:(\"environment:\"+$environment+\"/ARGOCD_AUTH_TOKEN\")}\n]' \"$RUNNER_TEMP/values-refs.json\" > \"$RUNNER_TEMP/deploy-configuration.json\"\ngh api \"repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals\" > \"$RUNNER_TEMP/approvals.json\"\n\"$PYTHON\" \"$TOOLS/deploy_record.py\" --bundle \"$BUNDLE\" --manifest-sha256 \"$HASH\" \\\n  --repository \"$GITHUB_REPOSITORY\" --environment \"$ENVIRONMENT\" --destination \"https://github.com/$GITOPS\" \\\n  --previous-manifest \"$PREVIOUS\" --approvals \"$RUNNER_TEMP/approvals.json\" \\\n  --configuration \"$RUNNER_TEMP/deploy-configuration.json\" --result requested --output \"$RUNNER_TEMP/deploy-request.json\"\ncosign sign-blob --yes --bundle \"$RUNNER_TEMP/deploy-request.sigstore.json\" \"$RUNNER_TEMP/deploy-request.json\"\necho \"request-sha256=$(sha256sum \"$RUNNER_TEMP/deploy-request.json\" | cut -d' ' -f1)\" >> \"$GITHUB_OUTPUT\"\n"
-      },
-      {
-        "uses": "actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349",
-        "id": "token",
-        "with": {
-          "app-id": "${{ secrets.GITOPS_APP_ID }}",
-          "private-key": "${{ secrets.GITOPS_APP_PRIVATE_KEY }}",
-          "owner": "${{ github.repository_owner }}",
-          "repositories": "${{ vars.GITOPS_REPOSITORY }}"
-        }
-      },
-      {
-        "name": "Commit approved digests and signed request to GitOps",
-        "id": "gitops",
-        "env": {
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "GITOPS": "${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}",
-          "BRANCH": "${{ inputs.gitops-branch }}",
-          "GITOPS_TOKEN": "${{ steps.token.outputs.token }}"
-        },
-        "run": "set -euo pipefail\n\"$PYTHON\" \"$TOOLS/gitops.py\" --repository \"$GITOPS\" --branch \"$BRANCH\" \\\n  --prepared \"$RUNNER_TEMP/prepared-deployment.json\" --manifest-sha256 \"$HASH\" \\\n  --environment \"$ENVIRONMENT\" --previous-manifest \"$PREVIOUS\" \\\n  --record \"$RUNNER_TEMP/deploy-request.json\" --signature \"$RUNNER_TEMP/deploy-request.sigstore.json\"\n"
-      },
-      {
-        "name": "Confirm Argo CD applied the approved immutable sources",
-        "id": "health",
-        "env": {
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "RECORD": "${{ steps.preflight.outputs.request-sha256 }}",
-          "ARGOCD_SERVER": "${{ vars.ARGOCD_SERVER }}",
-          "ARGOCD_AUTH_TOKEN": "${{ secrets.ARGOCD_AUTH_TOKEN }}"
-        },
-        "run": "\"$PYTHON\" \"$TOOLS/wait_service.py\" --prepared \"$RUNNER_TEMP/prepared-deployment.json\" \\\n  --manifest-sha256 \"$HASH\" --environment \"$ENVIRONMENT\" --record-sha256 \"$RECORD\" --server \"$ARGOCD_SERVER\"\n"
-      },
-      {
-        "name": "Sign deployment outcome",
-        "id": "record",
-        "if": "${{ always() && steps.preflight.outcome == 'success' }}",
-        "env": {
-          "BUNDLE": "${{ steps.build.outputs.bundle-path }}",
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "GITOPS": "${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}",
-          "HEALTH": "${{ steps.health.outcome }}"
-        },
-        "run": "set -euo pipefail\nresult=failed\nif [[ \"$HEALTH\" == success ]]; then result=succeeded; fi\n\"$PYTHON\" \"$TOOLS/deploy_record.py\" --bundle \"$BUNDLE\" --manifest-sha256 \"$HASH\" \\\n  --repository \"$GITHUB_REPOSITORY\" --environment \"$ENVIRONMENT\" --destination \"https://github.com/$GITOPS\" \\\n  --previous-manifest \"$PREVIOUS\" --approvals \"$RUNNER_TEMP/approvals.json\" \\\n  --configuration \"$RUNNER_TEMP/deploy-configuration.json\" --result \"$result\" --output \"$RUNNER_TEMP/deploy-record.json\"\ncosign sign-blob --yes --bundle \"$RUNNER_TEMP/deploy-record.sigstore.json\" \"$RUNNER_TEMP/deploy-record.json\"\n"
-      },
-      {
-        "name": "Retain signed outcome in GitOps audit",
-        "if": "${{ always() && steps.gitops.outcome == 'success' && steps.record.outcome == 'success' }}",
-        "env": {
-          "PYTHON": "${{ steps.build.outputs.python }}",
-          "TOOLS": "${{ steps.build.outputs.tools-path }}",
-          "HASH": "${{ inputs.manifest-sha256 }}",
-          "ENVIRONMENT": "${{ inputs.environment }}",
-          "PREVIOUS": "${{ inputs.previous-manifest-sha256 }}",
-          "GITOPS": "${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}",
-          "BRANCH": "${{ inputs.gitops-branch }}",
-          "GITOPS_TOKEN": "${{ steps.token.outputs.token }}"
-        },
-        "run": "\"$PYTHON\" \"$TOOLS/gitops.py\" --repository \"$GITOPS\" --branch \"$BRANCH\" \\\n  --prepared \"$RUNNER_TEMP/prepared-deployment.json\" --manifest-sha256 \"$HASH\" \\\n  --environment \"$ENVIRONMENT\" --previous-manifest \"$PREVIOUS\" --outcome \\\n  --record \"$RUNNER_TEMP/deploy-record.json\" --signature \"$RUNNER_TEMP/deploy-record.sigstore.json\"\n"
-      },
-      {
-        "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
-        "if": "${{ always() && steps.record.outcome == 'success' }}",
-        "with": {
-          "name": "deploy-record-${{ github.run_attempt }}",
-          "path": "${{ runner.temp }}/deploy-request.json\n${{ runner.temp }}/deploy-request.sigstore.json\n${{ runner.temp }}/deploy-record.json\n${{ runner.temp }}/deploy-record.sigstore.json\n",
-          "if-no-files-found": "error",
-          "retention-days": 90
-        }
-      },
-      {
-        "name": "Remove registry read credentials",
-        "if": "always()",
-        "run": "rm -rf \"$DOCKER_CONFIG\" \"$(dirname \"$HELM_REGISTRY_CONFIG\")\""
-      }
-    ]
-  }
+    {
+      "workflow": "security.yaml",
+      "job": "publish-sarif",
+      "workflowSha256": "dc94d842d8765f654c5da47c03d708230d0c7d690613967a8761c34e9b4da1e2",
+      "jobSha256": "11a839b992e2dfcca5169389ef703820ee16abda9149f721afc91ebb6c7b671b",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
+    },
+    {
+      "workflow": "pr.yaml",
+      "job": "publish-sarif",
+      "workflowSha256": "f4e31233e890a950c4fd8d1d4fd05de0f5b5790dab38576b36e4d5c445c5335c",
+      "jobSha256": "c7c3353cb2c28bb5eac233191ad0a89c95c083d32ec4d0580b6119ed3f0d35f1",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
+    },
+    {
+      "workflow": "release.yaml",
+      "job": "release",
+      "workflowSha256": "93ac3e8cead5015b5cfa5fd86811bb787c1ad0bb16927df5be4913a0b9eb0651",
+      "jobSha256": "9bbbf97aa9c89d557dd8b2b10aa2843a3112ad84422f4bac49e78747b26f6f3d",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
+    },
+    {
+      "workflow": "release-self.yaml",
+      "job": "release",
+      "workflowSha256": "65d215b747d1f85259af6ac47a13c1c957c6f0cc70dca8f302090731c6441828",
+      "jobSha256": "3d002833241e43a799d3affbfa7759324e338b558eb8eb3db9f161b240f37249",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
+    }
+  ]
 }

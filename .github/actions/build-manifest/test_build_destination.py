@@ -61,7 +61,11 @@ class BuildDestinationTest(unittest.TestCase):
         self.assertEqual(expected_identity, verification['attestations'][0]['conditions'][0]['all'][0]['value'])
         sources = documents['argocd/project']['spec']['sourceRepos']
         foreach = policy[1]['validate']['foreach']
-        self.assertEqual(3, len(foreach), 'regular, init and ephemeral containers are covered')
+        self.assertEqual(2, len(foreach), 'Pod and controller rules cover regular and init containers')
+        ephemeral = documents['policies/verify-ephemeral-images']['spec']['rules']
+        self.assertEqual(['Pod/ephemeralcontainers'], ephemeral[0]['match']['any'][0]['resources']['kinds'])
+        self.assertEqual(policy[0]['verifyImages'], ephemeral[0]['verifyImages'])
+        self.assertEqual('request.object.spec.ephemeralContainers || `[]`', ephemeral[1]['validate']['foreach'][0]['list'])
         for service in self.value['services']:
             image = self.destination.image(self.repository, service) + '@sha256:' + 'a' * 64
             self.assertTrue(any(fnmatch.fnmatchcase(image, allowed) for allowed in signed))
@@ -95,3 +99,22 @@ class BuildDestinationTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     sign_product.service_signatures(mutated, {'service': 'payment-orders'}, Path('.'))
                 run.assert_not_called()
+
+    def test_deploy_and_applicationset_share_exact_repository_branch_and_path(self):
+        value = dict(self.value, gitops_repository='other-bank/platform-state')
+        destination = BuildDestination.parse(json.dumps(value))
+        deployed = destination.deployment(self.repository, 'payment-orders')
+        self.assertEqual('other-bank', deployed['owner'])
+        self.assertEqual('platform-state', deployed['name'])
+        with tempfile.TemporaryDirectory() as directory:
+            documents = destination.render(ROOT / 'gitops', Path(directory))
+        generator = documents['argocd/applicationset']['spec']['generators'][0]['git']
+        self.assertEqual('https://github.com/' + deployed['repository'], generator['repoURL'])
+        self.assertEqual(deployed['branch'], generator['revision'])
+        self.assertEqual(deployed['state-root'] + '/*/*.yaml', generator['files'][0]['path'])
+        self.assertNotEqual('https://github.com/foreign/state', generator['repoURL'])
+        self.assertNotEqual('release', generator['revision'])
+        with self.assertRaises(ValueError):
+            destination.deployment('foreign/source', 'payment-orders')
+        with self.assertRaises(ValueError):
+            destination.deployment(self.repository, 'foreign-service')

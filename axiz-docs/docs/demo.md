@@ -1,92 +1,50 @@
-# Demo: procesador de pagos
+# Demo de pagos
 
-`axiz-demo` es un procesador de pagos de **ocho servicios**, generados con `axiz new` y crecidos
-con `axiz add` / `axiz generate`, que juntos usan **todas las capacidades del catálogo** (una prueba
-de cobertura lo garantiza). Flujo de negocio: un cliente paga a un beneficiario frecuente desde la
-web o la app; el pago se debita de su cuenta en el core bancario, se envía a la red interbancaria,
-se notifica, se audita y se concilia con el archivo diario de liquidación.
+La demo reúne nueve servicios que consumen el framework. El flujo crea una orden desde el
+canal, consulta al beneficiario, debita la cuenta en el core bancario, envía la transferencia
+a la red de pagos y publica los estados para notificaciones, historial y liquidación.
+Los nombres, cuentas y contratos externos son ficticios.
 
-Todos los nombres, cuentas y datos son ficticios.
+## Servicios
 
-| Servicio | Arquetipo / estilo / stack | Persistencia | Qué muestra |
+| Service | Role / structure + extensions / stack | Persistence | What it shows |
 |---|---|---|---|
-| `payments-experience` | experience / bff / reactivo | – | API de canal, composición con partes opcionales, token relay, caché e idempotencia en Redis, feature flags, enmascarado, traducción de errores |
-| `payments-business` | business / cqrs / servlet | Aurora | reglas de dominio, calendario y corte, secuencias, cifrado de campos con blind index, outbox, auditoría a MSK |
-| `beneficiaries-crud` | crud / layered / servlet | DynamoDB | paginación por cursor, borrado lógico, bloqueo optimista, caché, idempotencia en DynamoDB |
-| `core-integration` | integration / hexagonal / servlet | – | capa anticorrupción: REST con client credentials, SOAP con WS-Security, API key desde secretos, locks en Redis, auditoría a SQS |
-| `payment-process` | process / hexagonal / servlet | Aurora | saga con compensaciones y recuperación, consumidor Kafka, ShedLock, tenancy |
-| `notifications-processor` | event-processor / eda | DynamoDB | handlers de Kafka y SQS, inbox, notificaciones a SNS, archivo de auditoría en S3 con locks en DynamoDB |
-| `settlement-batch` | batch / batch / CronJob | Aurora | Spring Batch sobre un archivo de ancho fijo en S3, totales de control, carga idempotente, códigos de salida |
-| `payments-history` | business / cqrs / reactivo | Aurora (R2DBC) | modelo de lectura alimentado por Kafka: buses CQRS reactivos, transacciones reactivas sobre R2DBC, Spring Data R2DBC con auditoría y columnas cifradas y de dinero, inbox R2DBC |
+| `payments-ux` | ux / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
+| `payment-orders` | business / hexagonal + cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
+| `beneficiaries` | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
+| `banking-core` | core / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
+| `payment-network-gateway` | gateway / hexagonal / servlet | – | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
+| `payment-process` | business / hexagonal + saga / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
+| `notifications-processor` | event-processor / eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
+| `settlement-batch` | batch / batch / CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
+| `payments-history` | business / hexagonal + cqrs / reactive | Aurora (R2DBC) | Read model fed by Kafka: reactive command and query buses, reactive transactions on R2DBC, Spring Data R2DBC with auditing, encrypted and money columns, R2DBC inbox |
 
 ## Flujos
 
-`docs/architecture.drawio` tiene un diagrama C4 de contenedores por flujo (el que inicia a la
-izquierda, flechas hacia la derecha):
+1. `payments-ux` compone la entrada del canal con `beneficiaries` y `payment-orders`.
+2. `payment-orders` publica eventos mediante outbox; `payment-process` coordina la saga.
+3. `banking-core` adapta el sistema de cuentas y `payment-network-gateway` adapta la red externa.
+4. `notifications-processor` procesa estados, notifica y archiva auditoría de negocio.
+5. `payments-history` mantiene el modelo de lectura reactivo y `settlement-batch` procesa
+   el archivo de liquidación.
 
-1. **Pago desde el canal**: app → payments-experience → beneficiaries-crud y payments-business.
-2. **Ejecución del pago**: payments-business → MSK → payment-process (saga) → core-integration →
-   core bancario y red de pagos.
-3. **Cierre, notificación y auditoría**: los cambios de estado y la auditoría llegan a
-   notifications-processor (SNS, S3).
-4. **Liquidación diaria**: archivo de la red en S3 → settlement-batch → Aurora y resumen en S3.
-5. **Historial de pagos**: payments-business → MSK → payments-history → Aurora por R2DBC; los
-   consumidores del API lo leen sin bloquear hilos (eventualmente consistente).
+## Ejecución local
 
-La saga de `payment-process`:
-
-| Paso | Acción | Compensación |
-|---|---|---|
-| `processing` | orden → PROCESSING | orden → REJECTED |
-| `debit` | débito en el core | reversa del débito |
-| `transfer` | transferencia a la red (pivote) | – |
-| `complete` | orden → COMPLETED (nunca hace fallar la saga; la conciliación la completa) | – |
-
-## Correrlo
+Desde `axiz-demo`:
 
 ```bash
-scripts/demo.sh up       # verifica Docker, JDK y puertos; levanta todo y espera 7/7 UP
-scripts/demo.sh status   # estado de cada servicio
-scripts/demo.sh smoke    # paga un beneficiario por la API de canal y espera COMPLETED
-scripts/demo.sh scenarios   # todos los escenarios funcionales (unos 8 minutos)
+scripts/demo.sh up
+scripts/demo.sh status
+scripts/demo.sh smoke
+scripts/demo.sh scenarios
 scripts/demo.sh down
-kind/up.sh               # o todo dentro de Kubernetes con los charts reales (puertos 9080, 9180, 9300)
 ```
 
-| | |
-|---|---|
-| API de canal | <http://localhost:8080> |
-| Keycloak | <http://localhost:8180> (realm `axiz`, usuarios `ana` y `luis`) |
-| Grafana | <http://localhost:3000> (dashboards base y *axiz: payments*) |
-| WireMock | <http://localhost:8089> (core bancario REST y SOAP, red de pagos) |
+Docker Compose proporciona PostgreSQL, Valkey, Kafka, LocalStack, Keycloak, WireMock y
+observabilidad. `kind/up.sh` ejecuta los servicios con sus charts en Kubernetes local.
+Los secretos locales se generan para desarrollo; los entornos desplegados usan su proveedor
+de secretos configurado.
 
-El core simulado responde `CB-51` (fondos insuficientes) para la cuenta `1910099999999` y `CB-62`
-(cuenta bloqueada) para `1910088888888`; la red rechaza el CCI `00219100123456780052`, así se ven las
-compensaciones de punta a punta. La colección de **Bruno** (`bruno/`) cubre autenticación, el flujo
-de canal, llamadas máquina a máquina y casos de error.
-
-## Escenarios funcionales
-
-`scripts/demo.sh scenarios` verifica lo que el demo promete, más allá del pago del smoke: 87
-verificaciones en 14 grupos, cada una con `PASS` o `FAIL`. Una falla muestra el motivo y las últimas
-advertencias de los servicios del grupo.
-
-| Grupo | Qué prueba |
-|---|---|
-| `beneficiaries` | dígitos de control del CCI, un beneficiario activo por cuenta, renombrar, borrado lógico, idempotencia sobre DynamoDB, paginación por cursor, enmascaramiento |
-| `payment` | un pago de punta a punta: canal, saga, vista del proceso, historial, orden |
-| `idempotency` | reintento con la misma llave, misma llave con otro cuerpo, sin llave |
-| `rules` | duplicado, límite diario, feature flag de USD (mensajes en español e inglés), moneda distinta |
-| `saga` | sin fondos, cuenta bloqueada, destino cerrado (se revierte el débito), cuenta de otro cliente |
-| `security` | 401, datos de otro cliente (404/403), operaciones reservadas a payment-process, actuator |
-| `integration` | core-integration: titular, crédito SOAP, movimiento inexistente, rechazo de la red |
-| `events` | outbox, cifrado en la base, estados de las sagas, consumidores de Kafka al día, DLQ vacía, CloudEvents |
-| `notifications` | notificaciones en SNS de pagos completados y rechazados |
-| `audit` | auditoría por SQS archivada en S3 con su manifiesto, topic `audit`, DLQ de auditoría |
-| `observability` | métricas en Prometheus; trazas buscadas en Tempo por el trace ID de los logs: payment-process y core-integration en la misma traza, y una sola traza desde la request del canal hasta la saga |
-| `settlement` | el batch carga el archivo de ejemplo, no repite cargas, deja el resumen en S3 |
-| `dlq` | un mensaje malformado termina en `payments.dlq`, una vez por consumidor |
-| `recovery` | un débito con timeout deja la saga en `VERIFYING`; el job de recuperación la completa |
-
-`scripts/demo.sh scenarios saga security` ejecuta solo esos grupos, y
-`SCENARIOS_SKIP="recovery"` salta uno. Usan la infraestructura local, no kind.
+El [README de la demo](https://github.com/edgarrth/java-framework-custom/blob/main/axiz-demo/README.md)
+describe puertos, credenciales locales, contratos, colección Bruno, scripts y escenarios.
+Las [guías de capacidades](capacidades/index.md) explican las APIs usadas por cada servicio.

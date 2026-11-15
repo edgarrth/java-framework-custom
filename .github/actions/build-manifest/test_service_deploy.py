@@ -191,5 +191,37 @@ class GitOpsTest(unittest.TestCase):
         self.assertIn("Deploy-record-SHA256: " + hashlib.sha256(self.record.read_bytes()).hexdigest(), message)
 
 
+class ConfiguredGitOpsTest(unittest.TestCase):
+    def test_writer_uses_the_same_configuration_for_promotion_and_rollback(self):
+        import os
+        import sys
+        configuration = {'registry': 'registry.bank.test', 'namespace': 'bank', 'repository': 'example/payments',
+                         'gitops_repository': 'another-bank/approved-state', 'services': ['payments']}
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prepared = root / 'prepared.json'
+            prepared.write_text(json.dumps({'manifest': fixture('service'), 'values': {}}))
+            argv = ['gitops.py', '--prepared', str(prepared), '--manifest-sha256', 'f' * 64,
+                    '--environment', 'qa', '--previous-manifest', 'initial-deployment',
+                    '--record', str(root / 'record'), '--signature', str(root / 'signature')]
+            environment = {'BUILD_DESTINATION': json.dumps(configuration), 'GITHUB_REPOSITORY': 'example/payments',
+                           'GITHUB_RUN_ID': '1', 'GITHUB_RUN_ATTEMPT': '1', 'GITOPS_TOKEN': 'fixture-only'}
+            for outcome in ([], ['--outcome']):
+                with patch.dict(os.environ, environment), patch.object(sys, 'argv', argv + outcome), \
+                        patch.object(gitops, 'publish', return_value='a' * 40) as publish:
+                    gitops.main()
+                    self.assertEqual(('another-bank/approved-state', 'main'), publish.call_args.args[:2])
+            for selectors in (['--repository', 'other-bank/wrong-state'], ['--branch', 'unobserved']):
+                with patch.object(sys, 'argv', argv + selectors), patch.object(gitops, 'publish') as publish, \
+                        patch('sys.stderr'), self.assertRaises(SystemExit):
+                    gitops.main()
+                publish.assert_not_called()
+            environment['BUILD_DESTINATION'] = '{}'
+            with patch.dict(os.environ, environment), patch.object(sys, 'argv', argv), \
+                    patch.object(gitops, 'publish') as publish, self.assertRaises(ValueError):
+                gitops.main()
+            publish.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

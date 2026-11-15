@@ -24,7 +24,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
         shell: bash
         run: |
           set -euo pipefail
@@ -50,15 +50,14 @@ jobs:
     steps:
       # Immutable internal release: axiz-workflows-trust must succeed first.
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-      - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2.0.0 # x-release-please-version
+      - uses: edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2.0.0
         id: build
         with:
           repository: ${{ github.repository }}
           service: payment-process
           module: '.'
           environment: dev
-          gitops-repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
-          gitops-branch: ${{ vars.GITOPS_BRANCH || 'main' }}
+          build-destination: ${{ secrets.BUILD_DESTINATION }}
           token: ${{ secrets.BUILD_READ_TOKEN || github.token }}
           gitops-read-token: ${{ secrets.GITOPS_READ_TOKEN }}
 
@@ -79,13 +78,12 @@ jobs:
       environment: ${{ inputs.environment || needs.automatic.outputs.environment }}
       previous-manifest-sha256: ${{ inputs.previous-manifest-sha256 || needs.automatic.outputs.previous-manifest-sha256 }}
       values-revision: ${{ inputs.values-revision || needs.automatic.outputs.values-revision }}
-      expected-gitops-repository: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
-      gitops-branch: ${{ vars.GITOPS_BRANCH || 'main' }}
     secrets:
+      BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
       REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
       REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
-      GITOPS_APP_ID: ${{ secrets.GITOPS_APP_ID }}
+      GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
       GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
       ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

@@ -2,5 +2,41 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>edgarrth/java-framework-custom//.github/renovate/platform#axiz-workflows-v2.0.0"
+  ],
+  "packageRules": [
+    {
+      "description": "Release Please owns Axiz product self references; no Renovate update or release-age policy applies to these disabled dependencies",
+      "matchPackageNames": [
+        "edgarrth/java-framework-custom",
+        "edgarrth/java-framework-custom/**"
+      ],
+      "matchFileNames": [
+        ".github/workflows/native-nightly.yaml",
+        ".github/workflows/native.yaml",
+        ".github/workflows/pr.yaml",
+        ".github/workflows/lib-build.yaml",
+        ".github/workflows/lib-deploy.yaml",
+        ".github/workflows/service-build.yaml",
+        ".github/workflows/service-deploy.yaml",
+        ".github/actions/build-inputs/action.yaml",
+        ".github/actions/consume-build/action.yaml",
+        ".github/gitops/policies/verify-images.yaml.template",
+        ".github/actions/resolve-service-build/action.yaml",
+        ".github/actions/build-manifest/sign_product.py"
+      ],
+      "enabled": false,
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "Review Renovate engine upgrades because the offline tests use its internal modules",
+      "matchFileNames": [
+        ".github/scripts/release-version/package.json"
+      ],
+      "matchPackageNames": [
+        "renovate"
+      ],
+      "dependencyDashboardApproval": true,
+      "minimumReleaseAge": "7 days"
+    }
   ]
 }

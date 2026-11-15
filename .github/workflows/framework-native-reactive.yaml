@@ -22,7 +22,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -39,12 +39,12 @@ jobs:
       NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
       NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
     steps:
-    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         persist-credentials: false
     # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
         distribution: graalvm
         nexus-url: ${{ secrets.NEXUS_URL }}
@@ -53,7 +53,7 @@ jobs:
       working-directory: axiz-framework
     - name: Retain acceptance diagnostics
       if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: reactive-native-acceptance
         path: |-

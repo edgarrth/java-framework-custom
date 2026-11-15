@@ -30,6 +30,7 @@ las referencian: un servicio no copia archivos de configuración.
 | Licencias | dependency review con licencias denegadas (AGPL, GPL-3.0, SSPL) | falla el PR |
 | Otros linters | Spectral (OpenAPI, AsyncAPI), actionlint, kubeconform y kube-linter, markdownlint (docs), título Conventional Commits | falla el PR |
 | Neutralidad de origen | guardia de nombres con la lista de identificadores prohibidos (secreto de la organización) | cero coincidencias |
+| Documentación | README obligatorio por módulo (enforcer), metadata de propiedades y ejemplos de uso | falla el build si falta el README |
 
 ## Librerías de terceros
 

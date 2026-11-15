@@ -5,6 +5,8 @@ Thank you for improving the axiz framework (core libraries, Spring Boot starters
 ## Before you start
 
 - Discuss new capabilities, breaking changes and new third-party dependencies in an issue first.
+  Public API changes and new dependencies require code-owner review, updated usage documentation
+  and the corresponding compatibility and integration checks.
 - Never commit secrets, real customer data or production endpoints. Local examples use the
   placeholders of the local environment only. gitleaks runs on every pull request.
 - Do not add deprecated libraries, or APIs and versions that are not yet released.

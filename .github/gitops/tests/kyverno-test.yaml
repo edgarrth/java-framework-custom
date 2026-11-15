@@ -1,0 +1,69 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: pod-and-controller-admission
+policies:
+- ../policies/verify-images.yaml
+resources:
+- resources.yaml
+results:
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - pod-approved
+  kind: Pod
+  result: pass
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - pod-foreign
+  kind: Pod
+  result: fail
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - pod-no-digest
+  kind: Pod
+  result: fail
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - init-approved
+  kind: Pod
+  result: pass
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - init-foreign
+  kind: Pod
+  result: fail
+- policy: axiz-verify-images
+  rule: only-build-registry
+  resources:
+  - init-no-digest
+  kind: Pod
+  result: fail
+- policy: axiz-verify-images
+  rule: autogen-only-build-registry
+  resources:
+  - deployment-approved
+  kind: Deployment
+  result: pass
+- policy: axiz-verify-images
+  rule: autogen-only-build-registry
+  resources:
+  - deployment-foreign
+  kind: Deployment
+  result: fail
+- policy: axiz-verify-images
+  rule: autogen-cronjob-only-build-registry
+  resources:
+  - cronjob-approved
+  kind: CronJob
+  result: pass
+- policy: axiz-verify-images
+  rule: autogen-cronjob-only-build-registry
+  resources:
+  - cronjob-foreign
+  kind: CronJob
+  result: fail

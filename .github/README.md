@@ -1,107 +1,68 @@
-# axiz-workflows
+# Workflows y entrega
 
-Reusable build and deploy workflows, composite actions, Renovate presets and GitOps references
-for Axiz 2.0. The complete artifact, approval and promotion contract is documented in
-[Pipelines 2.0](docs/pipelines-v2.md).
+Workflows reutilizables, acciones, políticas y configuración GitOps de Axiz.
+Los proyectos del monorepo y los consumidores generados usan contratos de build y deploy
+independientes. El detalle de parámetros y artefactos está en [pipelines](docs/pipelines-v2.md).
 
-| Workflow | Purpose |
+## Workflows reutilizables
+
+| Archivo | Responsabilidad |
 |---|---|
-| `lib-build.yaml` | Verify the Maven reactor, quality, mutation, encapsulation, SBOM and scan; retain local staging and a signed manifest |
-| `lib-deploy.yaml` | Independently verify a completed build and promote its exact Maven files, retain the original signed manifest and record deployment evidence |
-| `service-build.yaml` | Verify a service, contracts and chart; publish build images and chart by digest, with SBOM, provenance and signed manifest |
-| `service-deploy.yaml` | Independently verify an existing service build and promote or roll back through GitOps and Argo CD |
-| `native.yaml` | Build, smoke and sign CLI components for Linux x64, macOS arm64 and Windows x64; `lib-build` verifies and incorporates them into one Maven product |
-| `pr.yaml` | PR title, secrets, dependencies, static security, filesystem scan and workflow checks |
-| `release.yaml` | Prepare release PRs, versions, changelogs and tags with release-please |
-| `native-nightly.yaml` | Compile and test demo and generated services with GraalVM |
+| `pr.yaml` | Título de PR, secretos, dependencias, análisis estático y contratos |
+| `lib-build.yaml` | Construcción Maven, calidad, contratos, SBOM y manifiesto firmado |
+| `lib-deploy.yaml` | Promoción de los artefactos Maven verificados y publicación de la release |
+| `service-build.yaml` | Construcción de imagen y chart, contratos y manifiesto firmado |
+| `service-deploy.yaml` | Promoción o rollback de un build existente mediante GitOps y Argo CD |
+| `native.yaml` | Componentes nativos Linux x64, macOS arm64 y Windows x64 |
+| `native-nightly.yaml` | Compilación y pruebas de servicios con GraalVM |
+| `release.yaml` | PR y tags de release de los proyectos consumidores |
 
-Framework, tools, demo and generated consumers use these workflows.
+`release-self.yaml` publica los componentes del monorepo mediante un rol propio. Los
+workflows `framework-*`, `tools-*`, `demo-*` y `docs-*` componen los reutilizables para cada
+producto. `workflows-ci.yaml` valida las acciones, contratos y configuración compartida.
 
-## Immutable workflow references
+## Referencias y permisos
 
-Third-party actions are pinned by full commit SHA. Internal references use an exact release
-(`@axiz-workflows-v2.0.0`) with a direct `axiz-workflows-trust` dependency. The guard checks the release-by-tag
-API for the expected tag, `immutable: true` and `draft: false`. Custom job conditions must also
-require guard success. A private repository requires `AXIZ_WORKFLOWS_READ_TOKEN` with read
-access only to `edgarrth/java-framework-custom`. Missing access or an unavailable release stops the job.
+Las acciones externas se fijan por SHA completo. Las referencias internas usan un tag exacto
+de release y dependen directamente de `axiz-workflows-trust`, que consulta la release y exige
+que sea inmutable y no sea borrador. Un repositorio privado utiliza
+`AXIZ_WORKFLOWS_READ_TOKEN` de solo lectura.
 
-Enable [immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)
-and publish the new release before updating remote consumers. These local changes do not
-configure GitHub settings or constitute a remote release. Release-please updates internal
-references and guard versions together through `# x-release-please-version`.
+Los jobs comienzan sin permisos globales y declaran los necesarios. Build no recibe credenciales
+de promoción; los jobs de firma y publicación tienen roles cerrados. Los tokens de GitHub App
+son efímeros y solicitan solo los permisos de su rol. Consultar la
+[matriz de permisos](../RELEASING.md#permisos-de-las-github-apps).
 
-## Build and deploy
+## Artefactos y promoción
 
-A build accepts an exact source SHA, version and public parameters. It has read-only dependency
-credentials and, for services, write access to the build registry. It produces a signed
-`build-manifest.json` and `build-bundle-<manifest-sha256>`. It has no release-publication or
-GitOps credentials.
+El build genera un bundle identificado por el hash del manifiesto. Deploy comprueba la
+finalización del productor, intento, firmas, hashes y predecesor. Promueve los mismos bytes;
+los artefactos descargados no pueden aportar scripts o controles de ejecución al rol protegido.
+Los cambios de ambiente y rollback conservan la revisión de values y la identidad del build.
 
-A separate deploy receives the completed producer run, attempt, externally approved manifest
-hash, destination, environment and predecessor. Service deploy also requires a full values
-commit. It verifies the entire producer run succeeded, signatures, hashes and evidence. It
-never builds or repackages product bytes. Promotions and rollbacks select an existing verified
-build; they do not take an arbitrary image tag.
+La [configuración GitOps](gitops/README.md) fija repositorios y servicios autorizados.
+[Promoción y rollback](docs/promotion-rollback.md) describe la operación sobre builds verificados.
 
-Maven deployment currently supports final coordinates in `maven-releases`. This release contract publishes final coordinates only. Draft library releases create the tag through `force-tag-creation`; independent
-promotion retains the manifest and native assets before publishing the draft. See the detailed
-contract for protected environments, credentials and retry behavior.
+## Validaciones
 
-## Actions and validation
+`python .github/scripts/workflows_policy_checks.py --output <directorio>` ejecuta el
+inventario común con las herramientas preparadas por CI. Comprueba contratos de workflows,
+roles, versiones, documentación, esquemas, acciones, presets y los motores reales de release
+y adopción. `release_entrypoints.py` ejecuta los mismos controles en copias Git aisladas.
 
-- `build-inputs`: validates public parameters, source checkout and the optional framework candidate without OIDC.
-  The isolated signer reconstructs identity from its own context, OIDC and Actions API evidence.
-- `build-manifest`: inventories and validates build bytes, evidence, provenance and native components.
-- `consume-build`: verifies a completed successful producer and its signed immutable bundle.
-- `setup-maven`: configures JDK 25, Nexus and isolated verified framework candidates; credentials
-  remain environment references. Candidate files never enter a shared Maven cache.
-- `check-encapsulation`, `check-mutations`, `check-sbom`: enforce the corresponding quality gates.
-- `check-workflow-security`: checks exact references and secret contracts; `check_pipeline_contracts.py`
-  checks reusable workflows and actual consumer inputs, required secrets and phase boundaries.
-- `test-report`: summarizes Surefire and Failsafe reports.
+Las acciones y scripts incluyen pruebas de corrupción, límites, aislamiento y concurrencia.
+Los controles de secretos verifican también que las excepciones de hashes no oculten secretos.
+Los reportes de build y seguridad se generan durante la ejecución de CI y se conservan como
+artefactos del run correspondiente.
 
-`self-check.yaml` runs syntax, security, contract and integrity regressions. The manifest tests
-include native platform/signature mismatches, corrupted files, HTTP promotion retries, and
-GitOps concurrency with a real local Git repository. Local tests do not prove a remote
-GitHub/Nexus promotion or Kubernetes admission.
+## Mantenimiento
 
-## GitOps references
+- `policies/action-pins-v2.json` fija versiones y commits de acciones externas.
+- `policies/release-action-v2.json` vincula Release Please con sus planificadores de desarrollo.
+- `policies/privileged-jobs-v2.json` registra los contratos de jobs privilegiados.
+- `policies/required-checks-v2.json` declara veredictos y omisiones permitidas.
+- `scripts/renovate-presets` y `renovate/default.json` son las fuentes de los presets publicados.
 
-`gitops/argocd/` pins the OCI chart digest and values source commit. The application reports the
-expected image, both sources and requested deployment before success is recorded. Kyverno in
-`gitops/policies/` verifies keyless service-build identity and provenance. Render the templates
-from the same explicit `BUILD_DESTINATION` JSON supplied to the producer and isolated signer;
-see [GitOps destination configuration](gitops/README.md). Unconfigured templates cannot be used
-as deployment manifests.
-
-Los servicios generados admiten además `workflow_run` para promover automáticamente a `dev` desde
-un comprobante del productor firmado por el workflow inmutable. El resolver sólo lee Actions y
-GitOps; el deploy independiente vuelve a verificar el bundle completo y su predecesor. Requiere
-`GITOPS_READ_TOKEN` de solo lectura y `main` protegido; los contratos y la configuración están en
-[Deploy automático independiente](docs/pipelines-v2.md).
-
-## Monorepo source and versions
-
-This directory is the `axiz-workflows` component of `edgarrth/java-framework-custom`.
-Reusable workflows and executable product pipelines are in `.github/workflows` at the repository
-root. Central Release Please configuration and state are also at the repository root; workflow
-releases use independent tags `axiz-workflows-vX.Y.Z`. See [RELEASING.md](../RELEASING.md).
-
-## Privileged job contracts
-
-Workflows start with `permissions: {}`. Compilation workers have no OIDC rights. Only a fresh
-`ubuntu-24.04` signer and protected promotion jobs receive `id-token: write`; reusable callers
-delegate those rights to the reviewed workflow. SARIF writers have their own permission scope.
-
-The signer checks out only the immutable workflow release. Producer files are bounded data:
-Actions SHA/run/attempt, successful job steps, artifact timestamps and the server's archive digest
-are checked before extraction. Uploaded scripts and executables are never executed. The signed
-manifest includes `producer-authority`; unsigned worker reports cannot substitute for this gate.
-Native smoke evidence retains the authoritative producer receipt without changing the component
-format. Image, provenance, SBOM, manifest and automatic service proof signatures originate here.
-
-`policies/privileged-jobs-v2.json` is the closed positive contract for signer and promotion jobs.
-Changes to executable steps, actions, arguments, environment, runner or dependencies require an
-explicit policy review; arbitrary commands, consumer checkouts and caches are rejected. Exact
-workflow release pins are normalized only after checking their immutable-release guard. Consumers
-use the policy from the immutable action release, not a policy uploaded by their build.
+Las actualizaciones requieren revisión y regeneración de sus fuentes. CI comprueba que el
+resultado coincida; no amplía permisos ni modifica contratos por su cuenta.
+El procedimiento completo está en [RELEASING.md](../RELEASING.md).

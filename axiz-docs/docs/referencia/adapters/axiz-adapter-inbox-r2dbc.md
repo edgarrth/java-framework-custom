@@ -23,6 +23,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `R2dbcReactiveInboxStore` | Deferred statements with owner fencing, bounded purge counts and cancellable I/O. |
 
 Application flows use `ReactiveInboxStore`. `R2dbcInboxStore` shares that implementation and
+waits with a deadline only at the dedicated poll/purge worker boundary for poll and purge workers.
 No synchronous statement runs on an event loop. Both variants use the existing inbox schema.
 
 ## Tests

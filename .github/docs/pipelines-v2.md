@@ -1,3 +1,4 @@
+# Pipelines de build y deploy
 
 El contrato nuevo consta de cuatro workflows reutilizables: `lib-build.yaml`, `lib-deploy.yaml`,
 `service-build.yaml` y `service-deploy.yaml`. Build y deploy tienen ejecuciones independientes.
@@ -61,7 +62,7 @@ El CLI usa `-march=compatibility` para evitar depender de las instrucciones part
 El consumidor debe esperar a que terminen **todos** los componentes antes de llamar a
 `lib-build`, pasando `native-module`, `native-binary` y los tres `native-platforms`. El builder
 solo descarga componentes de su ejecución e intento actuales; verifica firmas de
-`native.yaml@axiz-workflows-v2.0.0`, commit, revisión de workflows, parámetros, candidata y dependencia Axiz.
+`native.yaml@axiz-workflows-vX.Y.Z`, commit, revisión de workflows, parámetros, candidata y dependencia Axiz.
 No permite mezclar intentos, omitir plataformas o sobrescribir artefactos/evidencias. Al reintentar
 un productor con nativos deben ejecutarse todos sus jobs; los componentes de intentos anteriores
 no se reutilizan.
@@ -118,17 +119,21 @@ Ni el deploy ni el rollback ejecutan Maven, Jib, `docker build` o `helm package`
 |---|---|
 | Build | `NEXUS_READ_USERNAME/PASSWORD`; en servicios, `BUILD_DESTINATION` y `REGISTRY_BUILD_USERNAME/PASSWORD`, con escritura solo en el almacén de builds |
 | Deploy Maven | `NEXUS_PUBLISH_USERNAME/PASSWORD`, con escritura solo en el destino |
-| Deploy servicio | `REGISTRY_READ_USERNAME/PASSWORD`, solo lectura; `GITOPS_APP_ID/PRIVATE_KEY`, limitados al repositorio GitOps; `ARGOCD_AUTH_TOKEN`, solo lectura |
+| Deploy servicio | `BUILD_DESTINATION` compartido; `REGISTRY_READ_USERNAME/PASSWORD`, solo lectura; `GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`, limitados al repositorio GitOps; `ARGOCD_AUTH_TOKEN`, solo lectura |
 | Lectura de builds | `BUILD_READ_TOKEN` o `CANDIDATE_READ_TOKEN` cuando el token de GitHub no accede al repositorio productor |
-| Variables de deploy | `GITOPS_REPOSITORY` (nombre dentro de la organización) y `ARGOCD_SERVER` (hostname HTTPS, sin esquema) |
+| Variables de deploy | `ARGOCD_SERVER` (hostname HTTPS, sin esquema). Repositorio GitOps desde `BUILD_DESTINATION`; rama `main` compartida y sin selector alternativo |
 | Autorización | Environments `dev`, `qa`, `prod` con revisión registrada; verificación de release inmutable de workflows |
 
 El ApplicationSet requiere el soporte OCI nativo de Argo CD (3.1 o posterior). La referencia usa
-`oci://` con digest para el chart y otro source Git con SHA para los values. Configurar el prefijo
-exacto del registro autorizado tanto en AppProject como en Kyverno. Las referencias usan
-`ghcr.io/axiz` como ejemplo; no ampliar la lista a registros arbitrarios. Kyverno comprueba la
-identidad keyless exacta de `service-build@v2.0.0`, Rekor y el builder SLSA. Al adoptar otra versión,
-actualizar la identidad de la política junto con los consumidores.
+`oci://` con digest para el chart y otro source Git con SHA para los values. ApplicationSet,
+AppProject y las políticas Kyverno se generan desde `BUILD_DESTINATION`; no se editan a mano
+los prefijos de registro. Kyverno **1.17.0** es la versión validada y fijada con SHA-256 en
+`gitops/kyverno.json`. Sus políticas separan Pods/controladores del subrecurso de contenedores
+efímeros y conservan la identidad keyless exacta del tag `axiz-workflows-vX.Y.Z` de
+`service-build.yaml`, Rekor y el builder SLSA. La identidad se actualiza con la versión de workflows.
+La matriz del CLI ejecuta las restricciones de imágenes y digest sin registro remoto; las
+firmas y la procedencia se comprueban como configuración renderizada, sin acreditar una
+verificación criptográfica ni la instalación de webhooks en un clúster.
 
 Referencias: [OCI en Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/),
 [sources múltiples](https://argo-cd.readthedocs.io/en/stable/user-guide/multiple_sources/),
@@ -171,10 +176,11 @@ entradas adicionales, enlaces ni expansión excesiva.
 La resolución usa `BUILD_READ_TOKEN` (o el token de Actions con lectura) y el nuevo secreto de
 repositorio `GITOPS_READ_TOKEN`, limitado a **Contents: read** en el repositorio GitOps. Este último
 permite observar el predecesor en un commit inmutable antes de solicitar la promoción; el GitHub
-App con escritura sólo se utiliza en el deploy protegido. `GITOPS_REPOSITORY` identifica el nombre
-del repositorio GitOps dentro de la organización; `GITOPS_BRANCH` es opcional y vale `main` por
-defecto. El deploy compara el destino efectivo del ambiente con el observado por el resolver
-(`expected-gitops-repository`) y rechaza un override que cambie de repositorio.
+App con escritura sólo se utiliza en el deploy protegido. El resolver y deploy reciben el
+mismo `BUILD_DESTINATION` del productor y del renderizador. El repositorio GitOps completo,
+incluido su owner, se deriva de ese JSON validado. La rama `main` y la raíz `environments/` se
+comparten desde el mismo módulo; no hay variables ni entradas alternativas para seleccionarlas.
+La GitHub App recibe el owner y repositorio exactos después de validar la configuración.
 
 La lectura de predecesor distingue un archivo ausente de un fallo de permisos/API, rechaza enlaces
 y árboles truncados y comprueba servicio, ambiente y hash. La escritura vuelve a comprobar ese
@@ -187,7 +193,7 @@ las firmas de estas pruebas se simulan. La aceptación de OIDC, permisos reales 
 se realiza con el release inmutable publicado y los repositorios/ambientes configurados.
 
 La guía operativa opcional de promoción dev → QA y rollback se documenta en
-[acceptance-2.0.md](acceptance-2.0.md).
+[promotion-rollback.md](promotion-rollback.md).
 
 ## Destino OCI explícito y compartido
 

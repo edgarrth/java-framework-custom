@@ -1,49 +1,103 @@
-# java-framework-custom
+# Axiz
 
-Monorepo de Axiz para desarrollar servicios backend financieros en Java 25 y Spring Boot 4.1.
-Repositorio: `edgarrth/java-framework-custom`. La primera versión pública del framework es 2.0.0.
+Framework para desarrollar servicios backend en Java 25 y Spring Boot 4.1. Proporciona
+contratos de dominio, integración con tecnologías, configuración de infraestructura,
+generación de proyectos y controles de calidad para aplicaciones financieras.
 
-## Componentes
+## Proyectos del repositorio
 
-| Directorio | Responsabilidad |
+| Proyecto | Contenido | Documentación |
+|---|---|---|
+| [axiz-framework](axiz-framework/README.md) | SDK Java, puertos, adaptadores, persistencia, starters, estructuras, generador y reglas de arquitectura | [Capas y dependencias](axiz-framework/docs/architecture/README.md), [referencia de capacidades](axiz-docs/docs/capacidades/index.md) |
+| [axiz-tools](axiz-tools/README.md) | CLI `axiz`, Initializr y recetas OpenRewrite | [CLI](axiz-tools/axiz-cli/README.md), [Initializr](axiz-tools/axiz-initializr/README.md), [recetas](axiz-tools/axiz-rewrite-recipes/README.md) |
+| [axiz-demo](axiz-demo/README.md) | Nueve servicios que muestran un flujo de pagos con las capacidades del framework | [Servicios y ejecución local](axiz-demo/README.md), [contratos](axiz-demo/contracts) |
+| [axiz-docs](axiz-docs/README.md) | Guías de uso, referencia de módulos y sitio MkDocs para GitHub Pages | [Inicio](axiz-docs/docs/index.md), [primer servicio](axiz-docs/docs/empezar/index.md) |
+| [.github](.github/README.md) | Workflows de build, deploy y publicación, acciones reutilizables y configuración GitOps | [Pipelines](.github/docs/pipelines-v2.md), [destinos GitOps](.github/gitops/README.md) |
+
+Los componentes comparten repositorio. Framework, herramientas, documentación y workflows
+se versionan de forma independiente. El procedimiento de publicación está en
+[RELEASING.md](RELEASING.md).
+
+## Organización del framework
+
+| Capa | Responsabilidad |
 |---|---|
-| [axiz-framework](axiz-framework) | Contratos, algoritmos, adaptadores, kits de persistencia, integración Spring, estructuras, generación y calidad |
-| [axiz-tools](axiz-tools) | CLI, Initializr y recetas de actualización |
-| [axiz-demo](axiz-demo) | Demostración de pagos y su infraestructura local |
-| [.github](.github) | Workflows ejecutables, acciones compartidas, reglas de entrega y configuración de actualizaciones |
-| [axiz-docs](axiz-docs) | Guías y sitio de documentación |
+| [Platform](axiz-framework/platform/README.md) | Parents Maven, BOM, versiones, esquema SQL y configuración del build |
+| [Core](axiz-framework/core/README.md) | Tipos, puertos y algoritmos independientes de Spring y clientes tecnológicos |
+| [Adapters](axiz-framework/adapters/README.md) | Implementaciones de puertos con Redis, Kafka, AWS y bases de datos |
+| [Kits](axiz-framework/kits/README.md) | APIs de persistencia JDBC, JPA, R2DBC y DynamoDB |
+| [Spring](axiz-framework/spring/README.md) | Autoconfiguración, propiedades tipadas, ciclo de vida e integración servlet/reactiva |
+| [Structures](axiz-framework/structures/README.md) | Organización layered, hexagonal, EDA, BFF y batch |
+| [Extensions](axiz-framework/extensions/README.md) | Extensiones estructurales como CQRS |
+| [Codegen](axiz-framework/codegen/README.md) | Motor compartido, catálogos y plantillas de generación |
+| [Quality](axiz-framework/quality/README.md) | Reglas ArchUnit, pruebas de contratos y estándares de código |
 
-Las carpetas son componentes del mismo repositorio. Las releases de framework, herramientas, documentación y workflows tienen versiones independientes y tags por componente (`axiz-framework-v2.0.0`, `axiz-tools-v2.0.0`, `axiz-docs-v2.0.0`, `axiz-workflows-v2.0.0`). Release Please se configura una sola vez en la raíz.
+En un servicio hexagonal, el dominio usa Java y los contratos de Axiz; los detalles de Spring,
+HTTP, mensajería y persistencia permanecen en los adaptadores y en la composición de la
+aplicación. Las capacidades incluyen dinero y redondeo explícito, seguridad, secretos,
+auditoría de negocio, observabilidad, HTTP/SOAP, eventos, outbox/inbox, idempotencia, locks,
+secuencias, almacenamiento, notificaciones y sagas.
 
-## Arquitectura del framework
+## Requisitos
 
-- Platform gobierna dependencias y builds; `axiz-schema` distribuye el DDL canónico como recursos.
-- Core contiene los contratos y algoritmos, sin Spring ni clientes de tecnología.
-- Adapters implementa los puertos con clientes nativos; kits expone deliberadamente los tipos de persistencia.
-- Spring configura lifecycle, transacciones, seguridad y las fachadas servlet/reactivas.
-- Structures define la organización del servicio; extensions agrega capacidades de estructura opcionales.
-- Codegen y quality generan proyectos y verifican sus contratos.
+- JDK 25 y los wrappers Maven incluidos en cada proyecto.
+- Docker activo para dependencias locales y pruebas de integración.
+- Python 3 y Node, en las versiones y locks indicados por los workflows, para documentación y CI.
+- GraalVM 25 cuando se construyan ejecutables nativos.
 
+Los comandos siguientes funcionan en Linux y Fedora WSL. Las dependencias Maven se obtienen
+del repositorio configurado en `settings.xml`; las credenciales se suministran desde el entorno
+o el gestor de secretos.
 
-## Compilar y validar
+## Compilar desde las fuentes
 
-Entorno de validación: Fedora WSL, JDK 25, Maven wrapper y Docker activo para integraciones. Los detalles y comandos de cada build están en los README de sus componentes.
+Ejecutar desde la raíz del repositorio:
 
 ```bash
-cd axiz-framework
-./mvnw --bootstrap clean install -Pquality -Daxiz.it.requireDocker=true
-cd ../axiz-tools
-./mvnw clean verify -Pquality
-cd ../axiz-demo
-./mvnw clean verify -Pquality
+(cd axiz-framework && ./mvnw --bootstrap clean install -Pquality -Daxiz.it.requireDocker=true)
+(cd axiz-tools && ./mvnw clean verify -Pquality)
+(cd axiz-demo && ./mvnw clean verify -Pquality)
 ```
 
-Los builds de herramientas y demo consumen el framework previamente instalado o un candidato verificado. El staging de release, sus hashes y su procedencia se verifican antes de promover. Build y deploy son workflows independientes; deploy consume artefactos ya construidos.
+El bootstrap instala los BOM y parents antes de resolver el reactor. Herramientas y demo
+consumen el framework instalado o los artefactos publicados en Maven. Cada README de proyecto
+detalla los perfiles de calidad, integración y compilación nativa.
 
-## Ejecutar el demo
+## Crear un servicio
 
-Seguir el [README del demo](axiz-demo/README.md) para Docker Compose, escenarios, Bruno y kind. Las pruebas no deben borrar volúmenes existentes del desarrollador.
+Con la CLI instalada, consultar el catálogo y generar desde un contrato OpenAPI:
 
-## Publicación y documentación
+```bash
+axiz catalog archetypes
+axiz new payment-orders --archetype business --structure hexagonal \
+  --persistence aurora --openapi payments.yaml -c outbox
+cd payment-orders
+axiz doctor
+./mvnw verify
+```
 
-El procedimiento de primera publicación y los tags inmutables se documentan en [RELEASING.md](RELEASING.md). La documentación de capacidades está en [axiz-docs](axiz-docs). Los reportes de revisión distinguen implementación local, pruebas verificadas y publicación remota.
+`axiz new -i` permite seleccionar los parámetros interactivamente. `axiz add` incorpora
+capacidades y `axiz generate` crea componentes dentro de un proyecto. CLI e Initializr usan
+el mismo motor y validan las combinaciones del catálogo. Consultar la
+[guía de creación](axiz-docs/docs/empezar/index.md) y el
+[catálogo completo](axiz-docs/docs/arquetipos/catalogo.md).
+
+## Ejecutar y operar
+
+La [demo](axiz-demo/README.md) incluye PostgreSQL, Valkey, Kafka, LocalStack, Keycloak,
+WireMock y observabilidad mediante Docker Compose, además de ejemplos para kind.
+Usa datos ficticios y configuración local; los entornos desplegados obtienen secretos desde
+su proveedor configurado.
+
+Build y deploy son procesos independientes. Build produce artefactos, SBOM, manifiestos y
+firmas; deploy verifica y promueve esos mismos bytes por hash, sin recompilar. La documentación
+de [CI/CD](.github/docs/pipelines-v2.md) describe parámetros, identidades y credenciales.
+
+## Guías
+
+- [Arquitectura y organización](axiz-framework/docs/architecture/README.md).
+- [Capacidades y configuración](axiz-docs/docs/capacidades/index.md).
+- [Persistencia](axiz-docs/docs/guias/persistencia.md) y [eventos](axiz-docs/docs/guias/eventos.md).
+- [Seguridad](axiz-docs/docs/guias/seguridad.md) y [datos sensibles](axiz-docs/docs/guias/datos-sensibles.md).
+- [Pruebas](axiz-docs/docs/guias/pruebas.md) y [reglas de arquitectura](axiz-docs/docs/calidad/arquitectura.md).
+- [Publicación de versiones](RELEASING.md) y [documentación en GitHub Pages](axiz-docs/README.md).

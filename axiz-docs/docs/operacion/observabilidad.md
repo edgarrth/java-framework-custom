@@ -1,6 +1,7 @@
 # Observabilidad
 
 Trazas y métricas con **OpenTelemetry a través de Micrometer** (OTLP), sin agente de Java
+([capas y ejecución](../arquitectura/capas.md)); logs JSON correlacionados con la traza. En
 EKS los servicios envían al OpenTelemetry Collector; las métricas terminan en Prometheus, los
 dashboards en Grafana y las trazas y logs en el backend OTLP de plataforma. En local, todo va al
 contenedor `otel-lgtm` (Grafana, Prometheus, Tempo y Loki).

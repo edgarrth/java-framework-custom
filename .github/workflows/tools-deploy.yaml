@@ -42,7 +42,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -54,7 +54,7 @@ jobs:
       actions: read
       id-token: write
     needs: axiz-workflows-trust
-    uses: edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    uses: edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0
     with:
       build-run-id: ${{ inputs.build-run-id }}
       build-run-attempt: ${{ inputs.build-run-attempt }}

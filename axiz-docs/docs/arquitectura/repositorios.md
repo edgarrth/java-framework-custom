@@ -6,6 +6,7 @@
 | `axiz-workflows` | Workflows reutilizables, acciones compuestas, presets de Renovate, referencias GitOps | Tags SemVer y el tag mayor móvil (`v1`) |
 | `axiz-tools` | `axiz-initializr`, `axiz-cli`, recetas de OpenRewrite | Propia; declara qué versiones del framework soporta |
 | `axiz-demo` | Servicios demo de todos los arquetipos y su entorno local | Sigue la última versión del framework |
+| `axiz-docs` | Este sitio, guías de uso y actualización, dashboards de Grafana | Publicado por versión |
 
 Las herramientas y el demo consumen el BOM publicado, igual que un servicio real.
 

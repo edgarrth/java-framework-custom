@@ -220,7 +220,7 @@ jobs:
           output: ${{ inputs.project-directory }}/target/build-reports/scan.json
           severity: HIGH,CRITICAL
           exit-code: '1'
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         if: inputs.native-module != ''
         with:
           pattern: native-component-${{ github.run_attempt }}-*
@@ -248,7 +248,7 @@ jobs:
           "$PYTHON" "$TOOLS/build_bundle.py" --metadata "$METADATA" --staging target/staging-repo \
             --reports target/build-reports --bundle target/build-bundle --complete
       - name: Retain unsigned Maven product
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unsigned-maven-${{ github.run_attempt }}
           path: ${{ inputs.project-directory }}/target/build-bundle
@@ -266,14 +266,14 @@ jobs:
     outputs:
       manifest-sha256: ${{ steps.sign.outputs.manifest-sha256 }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: edgarrth/java-framework-custom
           ref: axiz-workflows-v2.0.0 # x-release-please-version
           path: .axiz-trusted-workflows
           persist-credentials: false
           token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
       - name: Verify producer authority and sign exact product data
         id: sign
         shell: bash
@@ -288,7 +288,7 @@ jobs:
           tools="$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest"
           "$python" -m pip install --require-hashes --quiet -r "$tools/requirements.txt"
           "$python" "$tools/sign_product.py" --kind maven-library --output "$RUNNER_TEMP/signed-product"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: build-bundle-${{ steps.sign.outputs.manifest-sha256 }}
           path: ${{ runner.temp }}/signed-product

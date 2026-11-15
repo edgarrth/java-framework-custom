@@ -163,7 +163,13 @@ class ExchangeRateRoundingTest {
   @Test
   void conversionsAgreeWithIntegerRationalOracleAcrossScalesSignsAndMoneyBounds() {
     Random random = new Random(20261113L);
-    Currency[] currencies = {USD, PEN, Currency.getInstance("JPY"), Currency.getInstance("BHD")};
+    Currency[] currencies = {
+      USD,
+      PEN,
+      Currency.getInstance("JPY"),
+      Currency.getInstance("BHD"),
+      Currency.getInstance("CLF")
+    };
     for (int run = 0; run < 900; run++) {
       Currency source = currencies[run % currencies.length];
       Currency target = currencies[(run + 1) % currencies.length];
@@ -174,7 +180,9 @@ class ExchangeRateRoundingTest {
       if (random.nextBoolean()) minor = minor.negate();
       Money amount = Money.of(new BigDecimal(minor, sourceScale), source);
       BigDecimal quote =
-          new BigDecimal(BigInteger.valueOf(1 + random.nextInt(999999)), random.nextInt(9) - 2);
+          new BigDecimal(
+              BigInteger.valueOf(1 + random.nextInt(999999)),
+              run % 3 == 0 ? Money.MAX_SCALE - random.nextInt(5) : random.nextInt(9) - 2);
       for (boolean inverse : new boolean[] {false, true}) {
         ExchangeRate rate =
             inverse

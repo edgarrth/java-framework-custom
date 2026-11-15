@@ -7,7 +7,6 @@ the help of the axiz CLI), so the documentation of each version matches the code
 Writes (and overwrites) only generated files, all marked with GENERATED:
     docs/capacidades/index.md, docs/capacidades/<capability>.md
     docs/arquetipos/catalogo.md
-    docs/index.md, docs/<adr>.md
     docs/arquitectura/jdbc.md
     docs/referencia/index.md, docs/referencia/<layer>/<module>.md
     docs/herramientas/cli-referencia.md          (with --cli-help)
@@ -18,6 +17,8 @@ import os
 import re
 import shutil
 import sys
+from pathlib import Path
+from urllib.parse import quote, unquote, urlsplit
 
 import yaml
 
@@ -172,28 +173,48 @@ def archetype_catalog(archetypes, out):
     write(os.path.join(out, 'arquetipos', 'catalogo.md'), '\n'.join(parts))
 
 
-def adrs(framework, out):
-    src = os.path.join(framework, 'docs', 'adr')
-    dst = os.path.join(out, 'adr')
-    rows = []
-    for f in sorted(os.listdir(src)):
-        if not re.match(r'\d{4}-.*\.md$', f):
-            continue
-        text = open(os.path.join(src, f), encoding='utf-8').read()
-        title = next((l[2:].strip() for l in text.splitlines() if l.startswith('# ')), f)
-        status = re.search(r'(?im)^\W*(?:status|estado)\W*:?\W*(\w+)', text)
-        rows.append([f'[{title}]({f})', status.group(1) if status else '–'])
-        write(os.path.join(dst, f), text)
-    write(os.path.join(dst, 'index.md'), '# Decisiones de arquitectura\n\n' +
-          table(rows, ['Decisión', 'Estado']) + '\n')
+def jdbc_reference(framework, out):
     jdbc = os.path.join(framework, 'docs', 'architecture', 'JDBC.md')
     if os.path.isfile(jdbc):
         with open(jdbc, encoding='utf-8') as source:
             write(os.path.join(out, 'arquitectura', 'jdbc.md'), source.read())
 
 
-def reference(modules, out):
+def reference(modules, out, framework):
     dst = os.path.join(out, 'referencia')
+    framework = Path(framework).resolve()
+    repository = framework.parent
+    site_source = repository / 'axiz-docs/docs'
+    locations = {}
+    for layer, _ in LAYERS:
+        for directory, children, filenames in os.walk(framework / layer):
+            children[:] = [name for name in children if name not in {'src', 'target', 'node_modules'}]
+            if 'README.md' in filenames and Path(directory).name in modules.get(layer, {}):
+                source = (Path(directory) / 'README.md').resolve()
+                locations[source] = Path(dst).resolve() / layer / (Path(directory).name + '.md')
+
+    def links(text, source, destination):
+        def replace(match):
+            parsed = urlsplit(match['url'])
+            if parsed.scheme or parsed.netloc or not parsed.path:
+                return match[0]
+            target = (source.parent / unquote(parsed.path)).resolve()
+            if target in locations:
+                rewritten = os.path.relpath(locations[target], destination.parent)
+            elif target.is_relative_to(site_source):
+                rewritten = os.path.relpath(Path(out).resolve() / target.relative_to(site_source), destination.parent)
+            elif target == framework / 'docs/architecture/JDBC.md':
+                rewritten = os.path.relpath(Path(out).resolve() / 'arquitectura/jdbc.md', destination.parent)
+            elif target == framework / 'docs/architecture/README.md':
+                rewritten = os.path.relpath(Path(out).resolve() / 'arquitectura/capas.md', destination.parent)
+            elif target.is_relative_to(repository) and target.exists():
+                view = 'tree' if target.is_dir() else 'blob'
+                rewritten = 'https://github.com/edgarrth/java-framework-custom/' + view + '/main/' + quote(target.relative_to(repository).as_posix())
+            else:
+                return match[0]
+            suffix = ('?' + parsed.query if parsed.query else '') + ('#' + parsed.fragment if parsed.fragment else '')
+            return match['label'] + rewritten + suffix + ')'
+        return re.sub(r'(?P<label>!?\[[^\]]*\]\()(?P<url>[^)\s]+)\)', replace, text)
     if os.path.isdir(dst):
         for layer, _ in LAYERS:
             shutil.rmtree(os.path.join(dst, layer), ignore_errors=True)
@@ -209,12 +230,9 @@ def reference(modules, out):
         for name, text in sorted(mods.items()):
             first = next((l for l in text.splitlines()[1:] if l.strip() and not l.startswith('#')), '')
             rows.append([f'[`{name}`]({layer}/{name}.md)', first.strip()])
-            write(os.path.join(dst, layer, name + '.md'),
-                  re.sub(r'\.\./(axiz-[\w-]+)/README\.md',
-                         lambda match: match.group(1) + '.md'
-                         if match.group(1) in modules.get(layer, {}) else match.group(0),
-                         text.replace('../../docs/architecture/JDBC.md', '../../arquitectura/jdbc.md')
-                         .replace('../../docs/', '../../adr/')))
+            destination = Path(dst).resolve() / layer / (name + '.md')
+            source = next(path for path, target in locations.items() if target == destination)
+            write(destination, links(text, source, destination))
         parts.append(table(rows, ['Módulo', 'Descripción']) + '\n')
     write(os.path.join(dst, 'index.md'), '\n'.join(parts))
 
@@ -262,9 +280,9 @@ def main():
     modules = module_readmes(a.framework)
     _, archetypes = capabilities(a.framework, a.docs, modules)
     archetype_catalog(archetypes, a.docs)
-    adrs(a.framework, a.docs)
+    jdbc_reference(a.framework, a.docs)
     prune_reference(modules, a.docs)
-    reference(modules, a.docs)
+    reference(modules, a.docs, a.framework)
     if a.cli_help:
         cli_reference(a.cli_help, a.docs)
     print('reference pages generated in', os.path.normpath(a.docs))

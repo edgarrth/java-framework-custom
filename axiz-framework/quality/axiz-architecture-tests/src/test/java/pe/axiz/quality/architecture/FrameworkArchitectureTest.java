@@ -150,7 +150,7 @@ class FrameworkArchitectureTest {
                 }
               })
           .because(
-              "architecture contract requires native asynchronous I/O, including CQRS and outbound"
+              "The reactive execution model requires native asynchronous I/O, including CQRS and outbound"
                   + " authentication");
 
   @ArchTest

@@ -2,6 +2,7 @@
 
 La CLI, el initializr web y el pipeline del framework usan el **mismo motor de generación**
 (`pe.axiz:axiz-codegen`) y las mismas plantillas, versionadas con el structure: un proyecto creado
+por cualquier vía es idéntico ([capas y ejecución](../arquitectura/capas.md)).
 
 - [CLI](cli.md): crear, hacer crecer, diagnosticar y actualizar servicios.
 - [Referencia de la CLI](cli-referencia.md): la ayuda de cada comando.

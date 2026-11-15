@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "pattern": "axiz-workflows-v2\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)",
+  "normalization": {
+    "token": "@AXIZ_WORKFLOWS_RELEASE@",
+    "prefix": "(?<![A-Za-z0-9_.-])",
+    "suffix": "(?![A-Za-z0-9_.-])"
+  }
+}

@@ -40,7 +40,7 @@ class ServiceBuildProofTest(unittest.TestCase):
         (self.directory / proof.PROOF).write_bytes(rfc8785.dumps(statement))
 
     def verify(self):
-        return proof.verify_proof(self.directory, "example/payments", "a" * 40, 123, 1, "payments", ".")
+        return proof.verify_proof(self.directory, "example/payments", "a" * 40, 123, 1, "payments", ".", tag="axiz-workflows-v2.0.0")
 
     def test_reference_authenticates_the_external_hash_with_the_exact_producer_certificate(self):
         with patch.object(proof, "resolve_workflow", return_value="b" * 40), patch.object(proof.subprocess, "run") as run:
@@ -77,7 +77,7 @@ class ServiceBuildProofTest(unittest.TestCase):
             with self.assertRaises(subprocess.CalledProcessError):
                 self.verify()
         with self.assertRaisesRegex(ValueError, "immutable"):
-            proof.verify_proof(self.directory, "example/payments", "HEAD", 123, 1, "payments", ".")
+            proof.verify_proof(self.directory, "example/payments", "HEAD", 123, 1, "payments", ".", tag="axiz-workflows-v2.0.0")
 
     def test_creation_requires_full_manifest_hash_and_evidence_integrity(self):
         with self.assertRaisesRegex(ValueError, "externally supplied"):
@@ -163,8 +163,11 @@ class ServiceBuildProofTest(unittest.TestCase):
                 return self.artifacts()
             return authority(path)
         argv = ["service_build_proof.py", "resolve", "--repository", "example/payments", "--service", "payments",
-                "--module", ".", "--gitops-repository", "example/gitops", "--directory", str(self.root / "resolved")]
-        env = {"GITHUB_EVENT_PATH": str(event_path), "GITHUB_OUTPUT": str(output), "GITOPS_READ_TOKEN": "read-only-fixture"}
+                "--module", ".", "--workflows-tag", "axiz-workflows-v2.0.0", "--directory", str(self.root / "resolved")]
+        destination = {"registry": "registry.bank.test", "namespace": "bank", "repository": "example/payments",
+                       "gitops_repository": "example/gitops", "services": ["payments"]}
+        env = {"GITHUB_EVENT_PATH": str(event_path), "GITHUB_OUTPUT": str(output), "GITOPS_READ_TOKEN": "read-only-fixture",
+               "BUILD_DESTINATION": json.dumps(destination)}
         with patch.dict(os.environ, env), patch("sys.argv", argv), patch.object(proof, "api", side_effect=api), \
                 patch.object(proof.subprocess, "check_output", return_value=self.archive()), \
                 patch.object(proof.subprocess, "run"), patch.object(proof, "resolve_workflow", return_value="b" * 40), \

@@ -154,62 +154,11 @@
         {
           "type": "generic",
           "path": "actions/build-manifest/sign_product.py"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/framework-deploy.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/framework-native-reactive.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/tools-deploy.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/tools-ci.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/demo-deploy.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/framework-samples-matrix.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/framework-ci.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/demo-native-nightly.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/framework-native-nightly.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/demo-ci.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/docs-pr.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/tools-deploy-initializr.yaml"
-        },
-        {
-          "type": "generic",
-          "path": "workflows/demo-e2e.yaml"
         }
       ],
       "component": "axiz-workflows",
       "draft": false
     }
-  }
+  },
+  "separate-pull-requests": true
 }

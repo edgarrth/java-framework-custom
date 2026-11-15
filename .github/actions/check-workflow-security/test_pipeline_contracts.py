@@ -52,7 +52,7 @@ class PipelineContractsTest(unittest.TestCase):
         workflows = Path(__file__).resolve().parents[2] / "workflows"
         target = yaml.safe_load((workflows / filename).read_text())
         contract = target[True]["workflow_call"]
-        job = {"uses": "edgarrth/java-framework-custom/.github/workflows/" + filename + "@axiz-workflows-v2.0.0",
+        job = {"uses": "edgarrth/java-framework-custom/.github/workflows/" + filename + "@axiz-workflows-v" + (workflows.parent / "version.txt").read_text().strip(),
                "with": {key: "explicit" for key, value in contract["inputs"].items() if value.get("required")},
                "secrets": {key: "explicit" for key, value in contract.get("secrets", {}).items() if value.get("required")}}
         return {"jobs": {"product": job}}, workflows

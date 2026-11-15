@@ -14,17 +14,13 @@ on:
         description: Current deployed manifest hash or initial-deployment, checked before writing
         type: string
         required: true
-      expected-gitops-repository:
-        description: Optional full destination observed by an automatic resolver; reject environment overrides that change it
-        type: string
-        default: ''
-      gitops-branch: {type: string, default: main}
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: {required: false}
       BUILD_READ_TOKEN: {required: false}
+      BUILD_DESTINATION: {required: true}
       REGISTRY_READ_USERNAME: {required: true}
       REGISTRY_READ_PASSWORD: {required: true}
-      GITOPS_APP_ID: {required: true}
+      GITOPS_APP_CLIENT_ID: {required: true}
       GITOPS_APP_PRIVATE_KEY: {required: true}
       ARGOCD_AUTH_TOKEN: {required: true}
 
@@ -62,13 +58,11 @@ jobs:
         env:
           ENVIRONMENT: ${{ inputs.environment }}
           VALUES_REVISION: ${{ inputs.values-revision }}
-          GITOPS_REPOSITORY: ${{ vars.GITOPS_REPOSITORY }}
           ARGOCD_SERVER: ${{ vars.ARGOCD_SERVER }}
         run: |
           set -euo pipefail
           [[ "$ENVIRONMENT" == dev || "$ENVIRONMENT" == qa || "$ENVIRONMENT" == prod ]]
           [[ "$VALUES_REVISION" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$GITOPS_REPOSITORY" =~ ^[A-Za-z0-9_.-]+$ ]]
           [[ "$ARGOCD_SERVER" =~ ^[A-Za-z0-9][A-Za-z0-9.:-]*$ ]]
 
   deploy:
@@ -96,7 +90,19 @@ jobs:
           manifest-sha256: ${{ inputs.manifest-sha256 }}
           kind: service
           token: ${{ secrets.BUILD_READ_TOKEN || github.token }}
-      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+      - name: Resolve trusted deployment destination before credentials
+        id: destination
+        env:
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
+          PYTHON: ${{ steps.build.outputs.python }}
+          TOOLS: ${{ steps.build.outputs.tools-path }}
+          BUNDLE: ${{ steps.build.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          export SERVICE
+          SERVICE=$(jq -er '.parameters.service' "$BUNDLE/build-manifest.json")
+          "$PYTHON" "$TOOLS/build_destination.py" deployment >> "$GITHUB_OUTPUT"
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
         with:
           version: v3.19.0
       - name: Verify immutable registry content, values and environment approval
@@ -104,7 +110,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BUILD_READ_TOKEN || github.token }}
           GH_HOST: github.com
-          EXPECTED_GITOPS: ${{ inputs.expected-gitops-repository }}
           BUNDLE: ${{ steps.build.outputs.bundle-path }}
           PYTHON: ${{ steps.build.outputs.python }}
           TOOLS: ${{ steps.build.outputs.tools-path }}
@@ -112,16 +117,12 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
           VALUES_REVISION: ${{ inputs.values-revision }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
-          BRANCH: ${{ inputs.gitops-branch }}
+          GITOPS: ${{ steps.destination.outputs.repository }}
+          BRANCH: ${{ steps.destination.outputs.branch }}
           USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
           PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
         run: |
           set -euo pipefail
-          if [[ -n "$EXPECTED_GITOPS" && "$EXPECTED_GITOPS" != "$GITOPS" ]]; then
-            echo "GitOps destination differs from the predecessor observed before promotion" >&2
-            exit 1
-          fi
           mkdir -p "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
           chmod 700 "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
           mapfile -t registries < <(jq -r '[.artifacts.image.repository,.artifacts.chart.oci|sub("^oci://";"")|split("/")[0]]|unique[]' "$BUNDLE/build-manifest.json")
@@ -134,7 +135,7 @@ jobs:
             --output "$RUNNER_TEMP/prepared-deployment.json" --configuration "$RUNNER_TEMP/values-refs.json"
           jq --arg environment "$ENVIRONMENT" --arg gitops "$GITOPS" --arg branch "$BRANCH" '. + [
             {name:"gitops-destination",ref:("https://github.com/"+$gitops+"/tree/"+$branch)},
-            {name:"gitops-app",ref:("environment:"+$environment+"/GITOPS_APP_ID")},
+            {name:"gitops-app",ref:("environment:"+$environment+"/GITOPS_APP_CLIENT_ID")},
             {name:"gitops-app-key",ref:("environment:"+$environment+"/GITOPS_APP_PRIVATE_KEY")},
             {name:"argocd-read-token",ref:("environment:"+$environment+"/ARGOCD_AUTH_TOKEN")}
           ]' "$RUNNER_TEMP/values-refs.json" > "$RUNNER_TEMP/deploy-configuration.json"
@@ -145,13 +146,14 @@ jobs:
             --configuration "$RUNNER_TEMP/deploy-configuration.json" --result requested --output "$RUNNER_TEMP/deploy-request.json"
           cosign sign-blob --yes --bundle "$RUNNER_TEMP/deploy-request.sigstore.json" "$RUNNER_TEMP/deploy-request.json"
           echo "request-sha256=$(sha256sum "$RUNNER_TEMP/deploy-request.json" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-      - uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: token
         with:
-          app-id: ${{ secrets.GITOPS_APP_ID }}
+          client-id: ${{ secrets.GITOPS_APP_CLIENT_ID }}
+          permission-contents: write
           private-key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ vars.GITOPS_REPOSITORY }}
+          owner: ${{ steps.destination.outputs.owner }}
+          repositories: ${{ steps.destination.outputs.name }}
       - name: Commit approved digests and signed request to GitOps
         id: gitops
         env:
@@ -160,12 +162,11 @@ jobs:
           HASH: ${{ inputs.manifest-sha256 }}
           ENVIRONMENT: ${{ inputs.environment }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
-          BRANCH: ${{ inputs.gitops-branch }}
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           GITOPS_TOKEN: ${{ steps.token.outputs.token }}
         run: |
           set -euo pipefail
-          "$PYTHON" "$TOOLS/gitops.py" --repository "$GITOPS" --branch "$BRANCH" \
+          "$PYTHON" "$TOOLS/gitops.py" \
             --prepared "$RUNNER_TEMP/prepared-deployment.json" --manifest-sha256 "$HASH" \
             --environment "$ENVIRONMENT" --previous-manifest "$PREVIOUS" \
             --record "$RUNNER_TEMP/deploy-request.json" --signature "$RUNNER_TEMP/deploy-request.sigstore.json"
@@ -192,7 +193,7 @@ jobs:
           HASH: ${{ inputs.manifest-sha256 }}
           ENVIRONMENT: ${{ inputs.environment }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
+          GITOPS: ${{ steps.destination.outputs.repository }}
           HEALTH: ${{ steps.health.outcome }}
         run: |
           set -euo pipefail
@@ -211,15 +212,14 @@ jobs:
           HASH: ${{ inputs.manifest-sha256 }}
           ENVIRONMENT: ${{ inputs.environment }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          GITOPS: ${{ github.repository_owner }}/${{ vars.GITOPS_REPOSITORY }}
-          BRANCH: ${{ inputs.gitops-branch }}
+          BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           GITOPS_TOKEN: ${{ steps.token.outputs.token }}
         run: |
-          "$PYTHON" "$TOOLS/gitops.py" --repository "$GITOPS" --branch "$BRANCH" \
+          "$PYTHON" "$TOOLS/gitops.py" \
             --prepared "$RUNNER_TEMP/prepared-deployment.json" --manifest-sha256 "$HASH" \
             --environment "$ENVIRONMENT" --previous-manifest "$PREVIOUS" --outcome \
             --record "$RUNNER_TEMP/deploy-record.json" --signature "$RUNNER_TEMP/deploy-record.sigstore.json"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ always() && steps.record.outcome == 'success' }}
         with:
           name: deploy-record-${{ github.run_attempt }}

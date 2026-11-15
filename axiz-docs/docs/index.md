@@ -50,4 +50,5 @@ cd payments-business && local/dev-secrets.sh && docker compose up -d
 
 !!! info "Versión de esta documentación"
     El selector de versión del encabezado muestra la documentación de cada versión publicada del
+    framework. Las páginas de referencia (capacidades, arquetipos y módulos) se generan desde el
     código de esa versión.

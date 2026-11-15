@@ -335,11 +335,11 @@ class NativeComponentsTest(unittest.TestCase):
     def test_native_producer_oidc_identity_cannot_be_substituted_by_a_library_build(self):
         claims = {'job_workflow_ref': 'edgarrth/java-framework-custom/.github/workflows/native.yaml@refs/tags/axiz-workflows-v2.0.0',
                   'job_workflow_sha': 'b' * 40, 'repository': 'example/payments', 'sha': 'a' * 40}
-        self.assertEqual('.github/workflows/native.yaml', prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40, kind='native-component')['path'])
+        self.assertEqual('.github/workflows/native.yaml', prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40, kind='native-component', tag='axiz-workflows-v2.0.0')['path'])
         with self.assertRaises(ValueError):
-            prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40)
+            prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40, tag='axiz-workflows-v2.0.0')
         with self.assertRaises(ValueError):
-            prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40, kind='anything')
+            prepare.workflow_identity(claims, 'example/payments', 'a' * 40, 'b' * 40, kind='anything', tag='axiz-workflows-v2.0.0')
 
 
 if __name__ == '__main__':

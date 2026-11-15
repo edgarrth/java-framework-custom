@@ -302,7 +302,7 @@ class DoctorCommandTest {
   }
 
   @Test
-  void pendingProposalsMissingArchitectureTestsAndProposedAdrs(@TempDir Path tmp) throws Exception {
+  void pendingProposalsAndMissingArchitectureTests(@TempDir Path tmp) throws Exception {
     Path p = CliHarness.service(tmp);
     Files.writeString(p.resolve("src/main/resources/application.yaml.axiz-new"), "x: 1\n");
     try (var tests = Files.walk(p.resolve("src/test"))) {
@@ -310,17 +310,10 @@ class DoctorCommandTest {
         Files.delete(t);
       }
     }
-    Path adr = Files.createDirectories(p.resolve("docs"));
-    Files.writeString(adr.resolve("0042-queues.md"), "# Queues\n\n- Status: Proposed\n");
-    Files.writeString(adr.resolve("0043-cache.md"), "# Cache\n\n- Status: Accepted\n");
-    Files.writeString(adr.resolve("template.md"), "- Status: Proposed\n");
 
     List<String> warnings = messages(doctor().checks(p), DoctorCommand.Level.WARN);
 
     assertTrue(any(warnings, "Pending proposal src/main/resources/application.yaml.axiz-new"));
     assertTrue(any(warnings, "No ArchitectureTest"), warnings.toString());
-    assertTrue(any(warnings, "architecture contract still proposed: docs/0042-queues.md"), warnings.toString());
-    assertFalse(any(warnings, "0043-cache.md"));
-    assertFalse(any(warnings, "template.md"), "the template is not an architecture contract");
   }
 }

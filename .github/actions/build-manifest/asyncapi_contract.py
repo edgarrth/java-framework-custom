@@ -1,4 +1,4 @@
-"""Conservative, offline AsyncAPI 3 compatibility for versioned CloudEvents (architecture contract §6.2)."""
+"""Conservative, offline AsyncAPI 3 compatibility for versioned CloudEvents."""
 import re
 
 import yaml
@@ -122,7 +122,7 @@ def events(root):
             message = expand(root, resolve(root, item), budget=expansion_budget)
             name = message.get("name")
             if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*\.v[1-9][0-9]*", name):
-                raise ValueError("Message name must end in a CloudEvents .vN type")
+                raise ValueError("Message name must end in a CloudEvents.vN type")
             if "traits" in message or mapping(message.get("payload")).get("type") != "object":
                 raise ValueError("Flatten message traits and declare an explicit JSON object payload")
             message.setdefault("contentType", root.get("defaultContentType", "application/json"))

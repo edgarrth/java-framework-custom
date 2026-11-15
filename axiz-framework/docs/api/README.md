@@ -1,16 +1,6 @@
 # Public API policy
 
-2.0.0 is the first published framework version. No compatibility layer or migration from
-unpublished Axiz drafts is supported. Imperative/native capabilities and external protocol
-versions remain current functionality.
-
-The 2.0.0 inventory includes the shared JDBC, Kafka and Redis transport guards and canonical
-SQL resources. The empty EDA API artifact is removed. Intentional contract changes include
-exact money construction, explicit rounding, the outbox transaction runner, audit queue metrics,
-explicit rate-limit storage and removal of HTTP body logging. Closed implementations are final;
-the supported extension contracts remain available. These signatures describe the first release,
-without compatibility aliases for unpublished drafts. Updating this inventory prepares review;
-it does not prove publication eligibility or replace the mandatory Nexus check.
+The public API inventory records the public and protected signatures and constants of every published JAR. CI compares each build with this inventory and applies the publication mode selected in `release-policy.json`. The initial framework release is 2.0.0.
 
 `release-policy.json` explicitly selects one of two modes:
 
@@ -48,4 +38,4 @@ python3 .github/scripts/check-api-compatibility.py
 After the first immutable publication, change the policy to `published-baseline`, advance the
 target version and set baseline to the actual published 2.0.0. Keep its published artifacts
 immutable. Builds produce signed candidates; deploy independently promotes those exact bytes
-without rebuilding. Signature checks do not change that separation or require remote rehearsals.
+without rebuilding. Signature checks preserve the separation between building and promoting artifacts.

@@ -5,9 +5,8 @@ inputs:
   service: {description: Expected service capability name, required: true}
   module: {description: Expected source module, default: '.'}
   token: {description: Read-only Actions credential for the producer repository, required: true}
-  gitops-repository: {description: Expected GitOps owner/repository, required: true}
+  build-destination: {description: Shared validated build and GitOps destination JSON, required: true}
   gitops-read-token: {description: Read-only GitOps contents credential, required: true}
-  gitops-branch: {description: Authorized GitOps branch, default: main}
   environment: {description: Automatic promotion environment, default: dev}
   workflows-tag:
     description: Allowed immutable workflow release
@@ -23,6 +22,18 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Require the shared build destination before credentials
+      id: destination-input
+      shell: bash
+      env:
+        BUILD_DESTINATION: ${{ inputs.build-destination }}
+      run: |
+        set -euo pipefail
+        destination=${BUILD_DESTINATION:-}
+        if [[ -z "${destination//[[:space:]]/}" ]]; then
+          echo 'build-destination must contain the shared destination configuration' >&2
+          exit 1
+        fi
     - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
     - name: Verify producer proof and read the GitOps predecessor
       id: resolve
@@ -34,8 +45,7 @@ runs:
         SOURCE_REPOSITORY: ${{ inputs.repository }}
         SERVICE: ${{ inputs.service }}
         MODULE: ${{ inputs.module }}
-        GITOPS_REPOSITORY: ${{ inputs.gitops-repository }}
-        GITOPS_BRANCH: ${{ inputs.gitops-branch }}
+        BUILD_DESTINATION: ${{ inputs.build-destination }}
         ENVIRONMENT: ${{ inputs.environment }}
         WORKFLOWS_TAG: ${{ inputs.workflows-tag }}
       run: |
@@ -47,5 +57,4 @@ runs:
         "$python" -m pip install --require-hashes --quiet -r "$GITHUB_ACTION_PATH/../build-manifest/requirements.txt"
         "$python" "$GITHUB_ACTION_PATH/../build-manifest/service_build_proof.py" resolve \
           --repository "$SOURCE_REPOSITORY" --service "$SERVICE" --module "$MODULE" \
-          --gitops-repository "$GITOPS_REPOSITORY" --gitops-branch "$GITOPS_BRANCH" \
           --environment "$ENVIRONMENT" --workflows-tag "$WORKFLOWS_TAG" --directory "$work/proof"

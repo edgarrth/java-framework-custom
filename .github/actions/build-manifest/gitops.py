@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-from build_destination import GITOPS_STATE_ROOT
+from build_destination import GITOPS_STATE_ROOT, from_environment
 from manifest import read_json, safe_file
 from service_deploy import desired
 
@@ -109,8 +109,6 @@ def publish(remote, branch, prepared, manifest_hash, environment, previous, reco
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repository", required=True)
-    parser.add_argument("--branch", required=True)
     parser.add_argument("--prepared", type=Path, required=True)
     parser.add_argument("--manifest-sha256", required=True)
     parser.add_argument("--environment", required=True)
@@ -119,7 +117,12 @@ def main():
     parser.add_argument("--signature", type=Path, required=True)
     parser.add_argument("--outcome", action="store_true")
     args = parser.parse_args()
-    commit = publish(args.repository, args.branch, read_json(args.prepared), args.manifest_sha256, args.environment,
+    prepared = read_json(args.prepared)
+    data = prepared["manifest"]
+    destination = from_environment().deployment(os.environ["GITHUB_REPOSITORY"], data["parameters"]["service"])
+    if data["source"]["repository"] != os.environ["GITHUB_REPOSITORY"]:
+        raise ValueError("Deployment source differs from the trusted source repository")
+    commit = publish(destination["repository"], destination["branch"], prepared, args.manifest_sha256, args.environment,
                      args.previous_manifest, args.record, args.signature, int(os.environ["GITHUB_RUN_ID"]),
                      int(os.environ["GITHUB_RUN_ATTEMPT"]), os.environ["GITOPS_TOKEN"], args.outcome)
     if "GITHUB_OUTPUT" in os.environ:

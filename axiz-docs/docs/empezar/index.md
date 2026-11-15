@@ -1,139 +1,71 @@
-# Crear un servicio
+# Crear el primer servicio
 
-Esta guía lleva un servicio nuevo desde su contrato hasta correr en tu máquina con sus pruebas en
-verde. Toma unos minutos; el resultado es el mismo que produce el initializr web.
+Instalar JDK 25, Docker y la CLI `axiz`. El servicio se genera desde un contrato y el catálogo
+de la versión instalada; `axiz catalog archetypes` y `axiz catalog capabilities` muestran las
+combinaciones disponibles.
 
-## Requisitos
+## Contrato y generación
 
-- JDK 25 (Maven viene con el wrapper `./mvnw` de cada proyecto).
-- Docker, para el entorno local (`compose.yaml`) y las pruebas con Testcontainers.
-- La CLI `axiz` (binario nativo de la página de releases de `axiz-tools`, o `java -jar axiz-cli.jar`).
-- Acceso al Nexus corporativo en `~/.m2/settings.xml` (mirror y credenciales; nunca en el proyecto).
+Los roles que exponen REST necesitan un contrato OpenAPI. Validarlo antes de generar:
 
 ```bash
-axiz --version
-axiz catalog            # arquetipos y capacidades disponibles en esta versión
+axiz contract lint payments.yaml
+axiz new payment-orders --archetype business --structure hexagonal \
+  --persistence aurora --openapi payments.yaml -c outbox -c sequence
+cd payment-orders
+axiz doctor
 ```
 
-## 1. Escribir el contrato
+`axiz new -i` permite la selección interactiva. CQRS se selecciona con `--extension cqrs`
+sobre hexagonal; es una extensión, no una estructura independiente. El
+[catálogo de arquetipos](../arquetipos/catalogo.md) indica estructuras, stacks y persistencias
+admitidos para cada rol: business, core, gateway, ux, support, event-processor y batch.
+También permite crear library y starter.
 
-Los arquetipos que exponen REST (`experience`, `business`, `process`, `integration`, `crud`)
-requieren un contrato **OpenAPI 3.1**. Revísalo antes de generar:
-
-```bash
-axiz contract lint payments-business.yaml
-```
-
-Las reglas de axiz (las mismas del ruleset de Spectral que corre en CI) piden `operationId` en
-lowerCamelCase (nombra el caso de uso generado), rutas en kebab-case con versión (`/v1/...`),
-errores 4xx/5xx en `application/problem+json`, ejemplos en los cuerpos (se usan en las pruebas de
-contrato), `page` y `size` en las colecciones, `Idempotency-Key` en los POST no idempotentes y
-ningún número de documento o tarjeta como query parameter. Los eventos se describen en AsyncAPI 3
-(`--asyncapi`).
-
-## 2. Generar el proyecto
-
-```bash
-axiz new payments-business \
-  --archetype business \
-  --structure hexagonal \
-  --persistence aurora \
-  --openapi payments-business.yaml \
-  -c outbox -c sequence
-```
-
-O `axiz new -i` para que pregunte cada valor. Cuando no indicas estilo, stack o persistencia se
-usa el primero de cada lista del [catálogo de arquetipos](../arquetipos/catalogo.md). El
-generador valida la combinación y el contrato antes de escribir nada.
-
-| Opción | Valores |
+| Parámetro | Uso |
 |---|---|
-| `--archetype` | `experience`, `business`, `process`, `integration`, `event-processor`, `batch`, `crud`, `library`, `starter` |
-| `--structure` | `layered`, `hexagonal`, `cqrs`, `eda`, `bff`, `batch` (según el arquetipo) |
-| `--stack` | `servlet` (virtual threads, por defecto) o `reactive` (WebFlux) |
-| `--persistence` | `none`, `aurora` (JPA en servlet, R2DBC en reactivo), `dynamodb` |
-| `-c` | capacidades extra (repetible), ver [Capacidades](../capacidades/index.md) |
+| `--archetype` | Rol del proyecto según el catálogo |
+| `--structure` | Organización layered, hexagonal, EDA, BFF o batch admitida por el rol |
+| `--extension` | Extensiones opcionales admitidas por la estructura |
+| `--stack` | Servlet o reactive cuando el rol lo permita |
+| `--persistence` | none, aurora o dynamodb según el catálogo; Aurora usa JPA/JDBC en servlet y R2DBC en reactive |
+| `-c` | Capacidad adicional, repetible |
+| `--group`, `--package` | Coordenadas Maven y paquete base |
 
-## 3. Qué se generó
+## Contenido del proyecto
 
-```text
-payments-business/
-├── pom.xml                         hereda axiz-parent-service (versiones y gates)
-├── mvnw, .mvn/                     wrapper de Maven
-├── .axiz/project.yaml              manifiesto: arquetipo, estilo, capacidades, versión de axiz
-├── src/main/openapi/openapi.yaml   contrato (fuente de verdad)
-├── src/main/java/…                 paquetes del estilo, controladores esqueleto (501)
-├── src/main/resources/             application.yaml (solo valores por defecto), mensajes, migraciones
-├── src/test/java/…                 ArchitectureTest, prueba de contexto, ejemplos del contrato
-├── compose.yaml, local/            dependencias locales y secretos de desarrollo
-├── deploy/helm/payments-business/  chart con values-dev/qa/prod, ExternalSecret, RBAC, NetworkPolicy
-├── .github/workflows/              ci.yaml, cd.yaml y release.yaml sobre axiz-workflows
-```
+El README generado describe las opciones y capacidades activadas. `axiz.yaml` conserva la
+configuración del proyecto; `contracts` contiene los contratos; `src/main` contiene el código
+y la configuración; `src/test` incluye pruebas de arquitectura e integración. El chart de
+`deploy/helm` y los workflows de `.github/workflows` separan construcción y despliegue.
 
-Los modelos de request y response se generan al compilar desde el contrato y nunca se versionan;
-los controladores se generan **una vez** como esqueletos que responden `501 Not Implemented` hasta
-que implementas cada operación (ver [Contrato primero](../herramientas/contratos.md)).
+En hexagonal, las reglas viven en `domain`, los casos de uso y puertos en `application`, y
+las entradas y tecnologías en `adapter`. El dominio puede usar contratos de Axiz sin importar
+Spring, clientes de tecnología o tipos de persistencia. Consultar
+[capas](../arquitectura/capas.md) y [reglas de arquitectura](../calidad/arquitectura.md).
 
-## 4. Compilar y probar
+## Compilar y ejecutar
 
 ```bash
 ./mvnw verify
-```
-
-`verify` corre las pruebas unitarias, las reglas de arquitectura
-del estilo (`ArchitectureTest`) y la prueba de arranque contra dependencias reales en
-contenedores. `./mvnw -Pquality verify` agrega formato (Spotless), convenciones (Checkstyle), errores y nulos
-(Error Prone + NullAway), SpotBugs/FindSecBugs y los umbrales de cobertura: es el gate que corre
-CI en cada PR.
-
-## 5. Correr en local
-
-```bash
-local/dev-secrets.sh                 # secretos aleatorios solo de desarrollo en local/secrets
-docker compose up -d                 # o: axiz local up
+./mvnw -Pquality verify
+local/dev-secrets.sh
+docker compose up -d
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-Detalles del entorno (Keycloak, LocalStack, Grafana, WireMock) en [Entorno local](entorno-local.md).
+Los secretos generados son solo de desarrollo. Los entornos desplegados utilizan el gestor
+de secretos configurado. Ver [entorno local](entorno-local.md). Las operaciones REST generan
+modelos durante el build y esqueletos de controlador que deben implementarse; consultar
+[contrato primero](../herramientas/contratos.md).
 
-## 6. Implementar la primera operación
+## Incorporar capacidades
 
-En el estilo hexagonal cada operación del contrato tiene su caso de uso en
-`application/usecase`. Implementa la regla de negocio en el dominio, el caso de uso orquesta y el
-controlador solo adapta:
-
-```java
-import pe.axiz.structure.hexagonal.annotation.UseCase;
-
-@UseCase
-public class CreatePaymentOrderUseCase
-    implements pe.axiz.structure.hexagonal.UseCase<CreatePaymentOrderUseCase.Input, PaymentOrder> {
-
-  public record Input(CreatePaymentOrderRequest body) {}
-
-  private final PaymentOrders orders;   // puerto de salida, implementado en adapter/out
-
-  public CreatePaymentOrderUseCase(PaymentOrders orders) {
-    this.orders = orders;
-  }
-
-  @Override
-  public PaymentOrder execute(Input input) {
-    PaymentOrder order = PaymentOrder.create(input.body());   // reglas en el dominio
-    return orders.save(order);
-  }
-}
+```bash
+axiz add cache
+axiz generate usecase FindPayment
+axiz doctor
 ```
 
-El caso de uso corre en una transacción con su span; los eventos de dominio que registre el
-agregado se publican al confirmar (o se encolan en el outbox dentro de la misma transacción).
-
-Los errores de negocio se lanzan con una definición del catálogo del servicio
-(`axiz generate error-code limit-exceeded`) y salen como `application/problem+json`
-(ver [Errores](../guias/errores.md)).
-
-## 7. Subirlo
-
-Al abrir el pull request corren los checks compartidos y el build con todos los gates. Al hacer
-merge a `main` se construye la imagen firmada y se despliega a dev y qa; un tag `v*` (creado por el
-PR de release) despliega a producción con aprobación. Ver [CI/CD](../operacion/ci-cd.md).
+Revisar la [guía de evolución](evolucionar.md), el [catálogo de capacidades](../capacidades/index.md)
+y las [pruebas](../guias/pruebas.md) para integrar comportamiento y validar el servicio.

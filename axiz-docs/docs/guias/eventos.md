@@ -74,6 +74,7 @@ transactionalEvents.enqueue(
   la edad del evento más antiguo y `axiz.outbox.pending`. No muevas la publicación fuera de la
   transacción sin diseñar antes la recuperación de reservas vencidas.
 
+El outbox persiste los eventos dentro de la transacción de negocio y los publica con reintentos desde un worker independiente.
 
 ## Consumir
 

@@ -1,53 +1,144 @@
-# Publicación del monorepo
+# Publicación de Axiz
 
-Repositorio: `edgarrth/java-framework-custom`. Las fuentes, acciones reutilizables y
-configuraciones se mantienen en este único historial Git.
+El repositorio `edgarrth/java-framework-custom` publica cuatro componentes con versiones
+independientes. La demo es un consumidor del framework y no se publica como SDK.
 
-## Componentes y versiones
-
-| Directorio | Componente | Ejemplo de tag |
+| Directorio | Componente | Formato del tag |
 |---|---|---|
-| `axiz-framework` | Framework Java | `axiz-framework-v2.0.0` |
-| `axiz-tools` | Herramientas | `axiz-tools-v2.0.0` |
-| `axiz-docs` | Documentación | `axiz-docs-v2.0.0` |
-| `.github` | Workflows y acciones | `axiz-workflows-v2.0.0` |
+| `axiz-framework` | Framework y motor de generación | `axiz-framework-vX.Y.Z` |
+| `axiz-tools` | CLI, Initializr y recetas | `axiz-tools-vX.Y.Z` |
+| `axiz-docs` | Sitio de documentación | `axiz-docs-vX.Y.Z` |
+| `.github` | Workflows, acciones y políticas | `axiz-workflows-vX.Y.Z` |
 
-Las versiones evolucionan de forma independiente. Los consumidores fijan una release
-inmutable de workflows; no se mantienen tags móviles ni selectores Axiz 1.x.
-La demo demuestra el consumo del framework y no es un producto publicable del SDK.
+## Configuración del repositorio
 
-## Primera release
+La rama de publicación es `main`. Configurar releases inmutables, protección de ramas,
+CODEOWNERS, entornos protegidos y los secretos usados por cada workflow. Las credenciales
+se suministran desde GitHub y los gestores de secretos, nunca desde archivos versionados.
 
-`release-please-config.json` y `.release-please-manifest.json` en la raíz gobiernan los
-cuatro componentes. El manifiesto comienza vacío: no afirma que ya existan releases.
-Cada componente usa `initial-version: 2.0.0`. Framework y herramientas crean un tag de build y
-una release borrador que su deploy completa con los artefactos verificados. Workflows y
-documentación publican su release al crearla; los consumidores requieren workflows ya inmutables.
+`release-please-config.json` y `.release-please-manifest.json` son el estado de publicación.
+`bootstrap-sha` fija el límite exclusivo del historial usado para la primera versión.
+Los mensajes Conventional Commits determinan las siguientes versiones. La publicación inicial
+del framework usa 2.0.0 y la política de [API pública](axiz-framework/docs/api/README.md).
 
-El límite exclusivo del historial inicial es el commit real
-`64b138e185332e4148dc1e2c96eab8cf32236604`. Incluye como cambios iniciales los commits
-posteriores; no se recalcula con `HEAD`. Tras la primera release, Release Please utiliza
-sus tags y manifiesto para determinar el historial de cada componente.
+## Permisos de las GitHub Apps
 
-La App de GitHub configurada en `RELEASE_APP_ID` y `RELEASE_APP_PRIVATE_KEY` crea los PR
-y releases desde `main`. Se requiere una release de workflows inmutable antes de ejecutar
-los consumidores que la fijan. Crear estos archivos no crea tags ni publica artefactos.
+| Rol | Workflow que solicita el token | Permisos de repositorio |
+|---|---|---|
+| Release del monorepo | `.github/workflows/release-self.yaml` | Contents, Pull requests y Workflows: escritura |
+| Release de consumidores | `.github/workflows/release.yaml` | Contents y Pull requests: escritura |
+| GitOps | `.github/workflows/service-deploy.yaml` | Contents: escritura, restringido al repositorio destino |
+
+Metadata de lectura es implícito. La instalación debe conceder los permisos que solicita
+cada token; los tokens efímeros se limitan al rol y repositorio de destino. Los secretos de
+release son `RELEASE_APP_CLIENT_ID` y `RELEASE_APP_PRIVATE_KEY`; GitOps usa
+`GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`.
+
+El monorepo necesita Workflows porque Release Please actualiza siete workflows publicados.
+Los consumidores no reciben ese permiso ni un input para ampliarlo. `permission-workflows`
+es un input de `create-github-app-token`, no un permiso de `GITHUB_TOKEN`. Las operaciones de
+comentarios y etiquetas del release utilizan Pull requests: escritura; no necesitan Issues:
+escritura. GitOps recibe owner y repositorio desde la configuración validada del destino.
+
+`release_permissions.py` comprueba permisos y destinos explícitos. `extra-files` propios
+reemplazan los heredados, incluso con una lista vacía; las rutas se resuelven desde el paquete
+o la raíz. El contrato no admite `glob: true`. Las rutas de workflows declaradas se contrastan
+con todas las actualizaciones del planificador real, aunque su contenido no cambie todavía.
+Una divergencia bloquea el control; los permisos no se amplían automáticamente.
+
+## Primera publicación
+
+1. Configurar Nexus, el registro OCI, las GitHub Apps, los entornos protegidos y GitHub Pages
+   según los productos que se publiquen.
+2. Exigir inicialmente `axiz-workflows-policy`, `axiz-security-pr` y `axiz-docs-site-pr`.
+3. Crear y publicar primero la release inmutable de `axiz-workflows`. El manifiesto vacío
+   representa componentes sin publicaciones previas.
+4. Verificar que el guard `axiz-workflows-trust` acepta esa release. Activar los checks de
+   framework, herramientas, demo y documentación.
+5. Publicar el framework antes de las herramientas que necesitan resolver sus artefactos.
+   Publicar después herramientas y documentación mediante sus PR de release independientes.
+
+Los guards consultan la API de releases y exigen tag exacto, `immutable: true` y `draft: false`.
+Un tag local no sustituye una release inmutable publicada. Para repositorios privados,
+`AXIZ_WORKFLOWS_READ_TOKEN` concede solo lectura al repositorio de workflows.
 
 ## Build y deploy
 
-El build compila, prueba y produce artefactos identificados por el commit de origen,
-los parámetros y sus hashes. El deploy consume los artefactos verificados y su identidad;
-no debe compilarlos otra vez. Ambos procesos son independientes.
+Build recibe commit, versión y parámetros verificables, ejecuta sus controles y produce
+artefactos, SBOM, manifiesto y firmas. Deploy recibe la ejecución y el intento productores,
+un hash externo aprobado, ambiente, destino y predecesor. Verifica y promueve esos mismos
+bytes; no recompila ni vuelve a empaquetar el producto.
 
-Las credenciales de lectura, firma y publicación se asignan al job que las necesita.
-La identidad esperada de una firma utiliza el repositorio y la ruta del workflow en
-`.github/workflows` junto con el tag inmutable `axiz-workflows-vX.Y.Z`.
+Framework y herramientas preparan releases borrador. Sus deploys promueven el producto Maven
+verificado y publican la release con los assets correspondientes. Initializr promueve su imagen
+y chart por un deploy independiente. Servicios y rollback usan el manifiesto firmado de un
+build existente y una revisión completa de values.
 
-## Estado de implementación
+El [contrato de pipelines](.github/docs/pipelines-v2.md) detalla entradas, salidas, retención,
+firmas y separación de credenciales. La [guía de GitOps](.github/gitops/README.md) describe los
+destinos y la [operación de rollback](.github/docs/promotion-rollback.md) explica la secuencia.
 
-La migración y sus pruebas continúan en
-No se considera validado el pipeline remoto por ejecutar verificaciones locales.
+## Publicación y adopción de workflows
 
-Los candidatos del monorepo también tienen namespace: `candidate/axiz-framework/2.0.0/1` o
-`candidate/axiz-tools/2.0.0/1`. El manifiesto conserva la etiqueta canónica `2.0.0/1` dentro del
-componente; cada pipeline filtra y valida su propio prefijo.
+Release Please actualiza únicamente las autorreferencias del producto marcadas con
+`# x-release-please-version`. Los consumidores conservan la versión anterior durante el PR
+de producto y la ventana posterior a su publicación.
+
+Renovate propone después un único PR `axiz workflows` que actualiza `uses:`, guards, checkouts,
+plantillas y presets consumidores. Todas las referencias consumidoras adoptan la misma versión.
+Los tags publicados no se mueven ni reutilizan: una corrección produce una versión nueva.
+
+## Checks requeridos
+
+| Check | Activación |
+|---|---|
+| `axiz-workflows-policy` | Desde el arranque |
+| `axiz-security-pr` | Desde el arranque |
+| `axiz-docs-site-pr` | Desde el arranque |
+| `axiz-framework-pr` | Tras publicar la primera release de workflows |
+| `axiz-tools-pr` | Tras publicar la primera release de workflows |
+| `axiz-demo-pr` | Tras publicar la primera release de workflows |
+| `axiz-docs-pr` | Tras publicar la primera release de workflows |
+
+Los veredictos agregados rechazan fallos, cancelaciones y omisiones no declaradas.
+`.github/policies/required-checks-v2.json` registra jobs y excepciones exactas. Los checks
+se vinculan a GitHub Actions y a la revisión de CODEOWNERS. Si se habilita merge queue,
+los workflows requeridos deben atender también `merge_group`.
+
+## Controles locales
+
+El inventario común está en `.github/scripts/workflows_policy_checks.py`. Usa el Node fijado
+en `.github/scripts/release-version/.node-version`, los locks npm y Python y esquemas CRD
+verificados por hash. Instalar las herramientas con `npm ci --include=dev --ignore-scripts`
+y `pip install --require-hashes` según los workflows.
+
+CI prepara los informes de los tres locks npm y la metadata de Release Please. Las variables
+`AXIZ_NPM_AUDIT_INPUT` y `AXIZ_RELEASE_ACTION_CACHE` apuntan a esas entradas verificadas.
+El inventario ejecuta comprobaciones offline y conserva los resultados en el directorio de
+salida indicado. `release_entrypoints.py` valida el ciclo en copias Git aisladas: PR de
+producto, ventana posterior al tag y adopción. El checkout de origen permanece intacto.
+
+Los contratos de jobs privilegiados se actualizan explícitamente con
+`record_privileged_roles.py --write` después de revisar el cambio. CI verifica el registro,
+sin aprobarlo o modificarlo automáticamente.
+
+## Mantenimiento de versiones
+
+El preset común es `.github/renovate/default.json`; las variantes publicadas se generan con
+`python .github/scripts/build_renovate_presets.py --write`. Los gestores de acciones de terceros
+comparten el filtro de tags completos del gestor nativo. Las pruebas usan la búsqueda real
+de Renovate antes de reemplazar referencias y regenerar archivos.
+
+Los pins documentales se obtienen de `.github/policies/action-pins-v2.json`. Después de revisar
+una actualización, verificar SHA, tag, metadata e inputs; ejecutar `check_action_pins.py --refresh`
+y `render_docs_controls.py`. La regeneración debe conservar la versión nueva.
+
+Ambos roles de release usan el mismo SHA de Release Please. Para actualizarlo, ejecutar
+`release_action.py refresh --cache <directorio>` con el Node fijado y revisar el registro y
+los dos locks. El grupo `release planner toolchain` mantiene esas dependencias coordinadas.
+
+## Documentación publicada
+
+GitHub Pages se construye desde `axiz-docs`. El build y la preparación tienen solo lectura;
+un publicador protegido verifica el bundle y otro rol despliega Pages. La documentación
+[del sitio](axiz-docs/README.md) explica generación, configuración y recuperación.

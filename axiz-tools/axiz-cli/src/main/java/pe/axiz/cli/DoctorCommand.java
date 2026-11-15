@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -432,25 +431,6 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       }
     }
 
-    Path adr = dir.resolve("docs");
-    if (Files.isDirectory(adr)) {
-      try (Stream<Path> files = Files.list(adr)) {
-        for (Path p :
-            files
-                .filter(
-                    f ->
-                        f.toString().endsWith(".md")
-                            && !SafePaths.fileName(f).equals("template.md"))
-                .sorted()
-                .toList()) {
-          if (Files.readString(p, StandardCharsets.UTF_8)
-              .lines()
-              .anyMatch(l -> l.toLowerCase(Locale.ROOT).matches("- status: proposed.*"))) {
-            out.add(new Check(Level.WARN, "architecture contract still proposed: " + dir.relativize(p)));
-          }
-        }
-      }
-    }
     return out;
   }
 

@@ -16,9 +16,16 @@ ROOT = Path(__file__).resolve().parents[2]
 class PolicyTest(unittest.TestCase):
     def setUp(self):
         self.document = yaml.safe_load((ROOT / 'workflows/lib-build.yaml').read_text())
+        # This is an unprivileged caller fixture; closed signer roles are tested separately.
+        del self.document['jobs']['sign']
         self.document['jobs']['consumer'] = {
-            'needs': GUARD, 'uses': 'edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@axiz-workflows-v2.0.0',
+            'needs': GUARD, 'uses': 'edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@axiz-workflows-v' + (ROOT / 'version.txt').read_text().strip(),
             'secrets': {'NEXUS_URL': '${{ secrets.NEXUS_URL }}'}}
+        contract = self.document.get('on', self.document.get(True))['workflow_call']
+        self.document['jobs']['consumer']['with'] = {
+            key: 'explicit' for key, value in contract.get('inputs', {}).items() if value.get('required')}
+        self.document['jobs']['consumer']['secrets'] = {
+            key: '${{ secrets.' + key + ' }}' for key, value in contract.get('secrets', {}).items() if value.get('required')}
 
     def test_current_workflow(self):
         self.assertEqual([], validate(self.document))
@@ -83,20 +90,20 @@ class ReleaseVerificationTest(unittest.TestCase):
             root = Path(directory)
             (root / 'response.json').write_text(response)
             gh = root / 'gh'
-            gh.write_text('#!/bin/bash\nset -eu\n[[ "$*" == "api repos/edgarrth/java-framework-custom/releases/tags/v1.0.0" ]] || exit 99\ncat "$FIXTURE/response.json"\nexit "$GH_EXIT"\n')
+            gh.write_text('#!/bin/bash\nset -eu\n[[ "$*" == "api repos/edgarrth/java-framework-custom/releases/tags/axiz-workflows-v2.0.0" ]] || exit 99\ncat "$FIXTURE/response.json"\nexit "$GH_EXIT"\n')
             gh.chmod(0o700)
             env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH'], FIXTURE=directory,
-                       GH_EXIT=str(exit_code), AXIZ_WORKFLOWS_VERSION='v1.0.0')
+                       GH_EXIT=str(exit_code), AXIZ_WORKFLOWS_VERSION='axiz-workflows-v2.0.0')
             return subprocess.run(['bash', '-c', VERIFY], env=env, capture_output=True).returncode
 
     def test_only_published_immutable_exact_release_passes(self):
-        valid = {'tag_name': 'v1.0.0', 'immutable': True, 'draft': False}
+        valid = {'tag_name': 'axiz-workflows-v2.0.0', 'immutable': True, 'draft': False}
         self.assertEqual(0, self.run_guard(json.dumps(valid)))
         for mutation in [{'immutable': False}, {'immutable': 'true'}, {'immutable': None},
-                         {'draft': True}, {'tag_name': 'v2.0.0'}]:
+                         {'draft': True}, {'tag_name': 'axiz-workflows-v2.0.1'}]:
             with self.subTest(mutation=mutation):
                 self.assertNotEqual(0, self.run_guard(json.dumps(valid | mutation)))
-        self.assertNotEqual(0, self.run_guard(json.dumps({'tag_name': 'v1.0.0'})))
+        self.assertNotEqual(0, self.run_guard(json.dumps({'tag_name': 'axiz-workflows-v2.0.0'})))
         self.assertNotEqual(0, self.run_guard('invalid json'))
         self.assertNotEqual(0, self.run_guard(json.dumps(valid), 1))
         self.assertNotEqual(0, self.run_guard(''))

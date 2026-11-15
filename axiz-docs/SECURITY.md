@@ -1,5 +1,6 @@
 # Security policy
 
+This policy covers the axiz documentation site, architecture decision records and dashboards.
 
 ## Reporting a vulnerability
 
@@ -32,6 +33,7 @@ Do not open a public issue, pull request or chat thread for a suspected vulnerab
 
 ## Scope and priorities
 
+Areas reviewed with priority in this repository: docs/arquitectura/, docs/guias/seguridad.md.
 
 Dependency vulnerabilities are tracked automatically (Trivy on the SBOM, dependency review on pull
 requests, Renovate security updates outside the weekly schedule); report them here only when the

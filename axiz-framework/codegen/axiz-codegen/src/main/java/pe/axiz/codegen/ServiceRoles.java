@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
-/** Closed naming and synchronous communication matrix from architecture contract. */
+/** Closed naming and synchronous communication matrix for supported service roles. */
 public final class ServiceRoles {
   private ServiceRoles() {}
 
@@ -23,7 +23,11 @@ public final class ServiceRoles {
   public static void requireCall(String from, String to) {
     if (!CALLS.getOrDefault(from, Set.of()).contains(to))
       throw new IllegalArgumentException(
-          "Synchronous call from " + from + " to " + to + " is forbidden by architecture contract");
+          "Synchronous call from "
+              + from
+              + " to "
+              + to
+              + " is forbidden by the service communication matrix");
   }
 
   public static boolean validName(String role, String name) {

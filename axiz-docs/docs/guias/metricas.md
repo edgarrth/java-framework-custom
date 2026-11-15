@@ -3,6 +3,7 @@
 El framework no define métricas por tipo de negocio: expone **siete instrumentos genéricos** y el
 tipo de evento llega como el tag `event`. Un servicio mide logins, pagos o cualquier evento nuevo
 sin modificar la librería, y un solo dashboard filtra por evento
+([capas y ejecución](../arquitectura/capas.md)).
 
 | Operación | Instrumento (OTel) | En Prometheus | Para qué |
 |---|---|---|---|

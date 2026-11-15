@@ -31,6 +31,10 @@ public final class Money implements Comparable<Money> {
   /** Maximum external text length, checked before normalization or decimal parsing. */
   public static final int MAX_TEXT_LENGTH = 256;
 
+  static final int MAX_CURRENCY_SCALE = 4;
+  static final int PERCENTAGE_SHIFT = 2;
+  static final int MAX_PRODUCT_SCALE = MAX_SCALE + MAX_CURRENCY_SCALE + PERCENTAGE_SHIFT;
+
   private final BigDecimal amount;
   private final Currency currency;
 
@@ -166,8 +170,17 @@ public final class Money implements Comparable<Money> {
   }
 
   static int scaleOf(Currency currency) {
-    int digits = currency.getDefaultFractionDigits();
-    return digits < 0 ? 2 : digits;
+    return checkedCurrencyScale(currency.getDefaultFractionDigits());
+  }
+
+  static int checkedCurrencyScale(int digits) {
+    if (digits == -1) {
+      return 2;
+    }
+    if (digits < 0 || digits > MAX_CURRENCY_SCALE) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "unsupported currency scale");
+    }
+    return digits;
   }
 
   public BigDecimal amount() {
@@ -198,9 +211,27 @@ public final class Money implements Comparable<Money> {
   }
 
   public Money multiply(BigDecimal factor, RoundingMode rounding) {
+    return multiplyTo(factor, currency, rounding);
+  }
+
+  Money multiplyTo(BigDecimal factor, Currency target, RoundingMode rounding) {
+    return scaledProduct(factor, target, rounding, 0);
+  }
+
+  private Money scaledProduct(
+      BigDecimal operand, Currency target, RoundingMode rounding, int decimalShift) {
     Objects.requireNonNull(rounding, "rounding");
-    requireBounded(Objects.requireNonNull(factor, "factor"));
-    return rounded(amount.multiply(factor), currency, rounding);
+    requireBounded(Objects.requireNonNull(operand, "operand"));
+    scaleOf(Objects.requireNonNull(target, "target"));
+    return roundedProduct(amount.multiply(operand.movePointLeft(decimalShift)), target, rounding);
+  }
+
+  /** Rounds only internal products whose external operands have already been bounded. */
+  static Money roundedProduct(BigDecimal product, Currency currency, RoundingMode rounding) {
+    if (product.scale() > MAX_PRODUCT_SCALE || product.scale() < -MAX_INTEGER_DIGITS) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "amount out of range");
+    }
+    return new Money(product.setScale(scaleOf(currency), rounding), currency);
   }
 
   public Money divide(BigDecimal divisor, RoundingMode rounding) {
@@ -211,8 +242,7 @@ public final class Money implements Comparable<Money> {
 
   /** Applies a percentage with the caller's rounding policy, e.g. 18 for 18 %. */
   public Money percentage(BigDecimal percent, RoundingMode rounding) {
-    requireBounded(Objects.requireNonNull(percent, "percent"));
-    return multiply(percent.movePointLeft(2), rounding);
+    return scaledProduct(percent, currency, rounding, PERCENTAGE_SHIFT);
   }
 
   public Money negate() {

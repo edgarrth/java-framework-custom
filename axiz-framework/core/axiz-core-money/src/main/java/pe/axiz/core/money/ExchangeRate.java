@@ -40,7 +40,7 @@ public record ExchangeRate(Currency from, Currency to, BigDecimal rate, Instant 
     if (!money.currency().equals(from)) {
       throw new BusinessException(MoneyErrors.CURRENCY_MISMATCH, "rate does not apply");
     }
-    return Money.rounded(money.amount().multiply(rate), to, rounding);
+    return money.multiplyTo(rate, to, rounding);
   }
 
   /**

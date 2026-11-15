@@ -22,6 +22,18 @@ combinaciones que ofrece el generador (arquetipo, estructura, extensión, stack 
 y construye cada proyecto con su wrapper sin ninguna configuración de AWS en el entorno. El job
 `samples` de cada pull request construye solo los valores por defecto de cada arquetipo.
 
+## Publicación de workflows y adopción
+
+El monorepo publica primero el producto `axiz-workflows` mediante su PR independiente. Ese PR
+no cambia los pins consumidores. Después Renovate propone una adopción agrupada de la release
+inmutable disponible, incluyendo los guards, checkouts, presets y plantillas. El CI revisa los
+contratos de la release realmente fijada y exige los checks estables de los cuatro componentes.
+
+La excepción es el arranque de 2.0.0: se exige primero `axiz-workflows-policy`; los checks de
+componentes pasan a ser obligatorios tras comprobar la primera release real. Los requisitos
+remotos y la evidencia de aceptación local se distinguen en la
+guía `RELEASING.md` de la raíz del repositorio.
+
 ## El pipeline de un servicio
 
 ```mermaid
@@ -49,7 +61,7 @@ son distintas. Una candidata ausente o expirada falla y nunca provoca una recomp
   environment, nunca en archivos.
 - Environments `dev`, `qa` y `prod` con revisores obligatorios en `prod`; protección de ramas y
   revisión obligatoria.
-- Acciones de terceros **fijadas por SHA** (lo verifica `self-check` y Renovate las mantiene);
+- Acciones de terceros **fijadas por SHA** (lo verifica `workflows-ci` y Renovate las mantiene);
   permisos mínimos por job.
 - Las referencias internas usan SHA completo o una versión exacta con el requisito
   `axiz-workflows-trust`. Antes de ejecutar los jobs dependientes se consulta la release en GitHub:
@@ -115,10 +127,11 @@ plantilla (`.github/scripts/release-version`).
 | Secreto | `NEXUS_URL`, `NEXUS_READ_USERNAME`, `NEXUS_READ_PASSWORD`, `NEXUS_PUBLISH_USERNAME`, `NEXUS_PUBLISH_PASSWORD`, `NEXUS_DOCKER_REGISTRY` | builds e imágenes |
 | Secreto (opcional) | `SONAR_HOST_URL`, `SONAR_TOKEN` | análisis y quality gate |
 | Secreto | `AXIZ_NAMING_GUARD` | identificadores prohibidos, uno por línea (fuera de todo repositorio); `pr.yaml` falla si falta, salvo `AXIZ_NAMING_GUARD_OPTIONAL=true` |
-| Secreto | `GITOPS_APP_ID`, `GITOPS_APP_PRIVATE_KEY` | GitHub App que solo puede escribir en el repositorio GitOps |
-| Secreto | `RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY` | GitHub App de release-please (sus tags disparan la publicación) |
+| Secreto | `GITOPS_APP_CLIENT_ID`, `GITOPS_APP_PRIVATE_KEY` | GitHub App que solo puede escribir en el repositorio GitOps |
+| Secreto | `RELEASE_APP_CLIENT_ID`, `RELEASE_APP_PRIVATE_KEY` | GitHub App de release-please (sus tags disparan la publicación) |
 | Secreto (opcional) | `ARGOCD_AUTH_TOKEN` | token de solo lectura del proyecto de Argo CD |
-| Variable | `GITOPS_REPOSITORY`, `ARGOCD_SERVER` | despliegue |
+| Secreto | `BUILD_DESTINATION` | configuración compartida de build, resolución y despliegue |
+| Variable | `ARGOCD_SERVER` | despliegue; GitOps deriva su repositorio del JSON y usa `main` |
 | Variable (repositorio) | `AXIZ_API_BASELINE` | versión v2 publicada para comparación; la primera 2.0.0 usa inventario de firmas aprobado y verifica que aún no exista en el repositorio final |
 
 ## Componentes del monorepo

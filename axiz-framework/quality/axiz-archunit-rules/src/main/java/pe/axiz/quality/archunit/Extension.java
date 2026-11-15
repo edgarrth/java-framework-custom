@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** architecture contract service extension. */
+/** Service extension. */
 public enum Extension {
   CQRS;
 

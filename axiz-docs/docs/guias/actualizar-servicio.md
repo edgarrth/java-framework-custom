@@ -13,6 +13,7 @@ El renombre mediante `--rename` conserva identidades persistentes: fuente y cons
 group-id Kafka, rutas de configuración y recursos de datos. Los cambios de nombre operativos
 se coordinan con sus consumidores v2; no se mantienen consumidores de una línea anterior de Axiz.
 
+Las reglas de capas están en [capas y ejecución](../arquitectura/capas.md).
 La primera publicación valida firmas aprobadas; las evoluciones posteriores comparan contra una
 versión v2 realmente publicada. La publicación usa los artefactos exactos del build validado,
 con pipelines independientes de build y deploy.

@@ -1,0 +1,64 @@
+{
+  "platform": {
+    "description": "axiz framework and tools: third-party versions live in axiz-dependencies",
+    "packageRules": [
+      {
+        "description": "Spring and AWS trains move together",
+        "matchPackageNames": [
+          "org.springframework.boot:**",
+          "org.springframework.cloud:**",
+          "io.awspring.cloud:**"
+        ],
+        "groupName": "spring"
+      },
+      {
+        "matchPackageNames": [
+          "software.amazon.awssdk:**"
+        ],
+        "groupName": "aws sdk"
+      },
+      {
+        "description": "Major versions require compatibility checks and passing integration tests",
+        "matchUpdateTypes": [
+          "major"
+        ],
+        "dependencyDashboardApproval": true
+      }
+    ]
+  },
+  "service": {
+    "description": "axiz services: versions come from the axiz parent; only the parent is updated (axiz upgrade applies its recipes)",
+    "packageRules": [
+      {
+        "description": "Versions are managed by the axiz BOM: do not bump them one by one",
+        "matchManagers": [
+          "maven"
+        ],
+        "matchPackageNames": [
+          "!pe.axiz:axiz-parent-service"
+        ],
+        "enabled": false
+      },
+      {
+        "description": "New axiz versions: one PR, then run `axiz upgrade` locally for the recipes",
+        "matchPackageNames": [
+          "pe.axiz:axiz-parent-service"
+        ],
+        "groupName": "axiz",
+        "labels": [
+          "axiz-upgrade"
+        ],
+        "prBodyNotes": [
+          "Run `axiz upgrade --to {{newVersion}}` to update the Axiz parents and apply the current conventions."
+        ]
+      },
+      {
+        "description": "Container images of the local environment (compose.yaml)",
+        "matchManagers": [
+          "docker-compose"
+        ],
+        "groupName": "local environment images"
+      }
+    ]
+  }
+}

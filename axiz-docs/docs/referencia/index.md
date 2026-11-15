@@ -54,12 +54,13 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-storage`](core/axiz-core-storage.md) | Object storage port with streaming, presigned URLs and metadata; in-memory implementation. |
 | [`axiz-core-tenancy`](core/axiz-core-tenancy.md) | Tenant context, resolution and propagation. |
 | [`axiz-core-time`](core/axiz-core-time.md) | Injectable clock, business calendar, holidays, cut-off times and due dates. |
-| [`core`](core/core.md) | Plain Java capabilities (`axiz-core-<capability>[-<technology>]`): JDK, SLF4J, JSpecify and |
+| [`core`](core/core.md) | Contratos y algoritmos `axiz-core-<capacidad>`, independientes de Spring y de los clientes de |
 
 ## Capa 2: adaptadores tecnológicos
 
 | Módulo | Descripción |
 |---|---|
+| [`adapters`](adapters/adapters.md) | Technology adapters implement core ports or the documented technology contracts. Services select them at runtime; their code imports ports and persistence kits instead of adapter implementations. |
 | [`axiz-adapter-audit-kafka`](adapters/axiz-adapter-audit-kafka.md) | Audit publisher for Amazon MSK (Kafka). |
 | [`axiz-adapter-audit-sqs`](adapters/axiz-adapter-audit-sqs.md) | Audit publisher for Amazon SQS. |
 | [`axiz-adapter-aws`](adapters/axiz-adapter-aws.md) | AWS identity and transport infrastructure without Micrometer or Spring dependencies. |
@@ -170,7 +171,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-test-spring-boot-starter`](spring/axiz-test-spring-boot-starter.md) | Test support: Testcontainers (PostgreSQL, LocalStack, Kafka, Redis), WireMock, ArchUnit rules, BlockHound and fixtures. |
 | [`axiz-web-spring-boot-autoconfigure`](spring/axiz-web-spring-boot-autoconfigure.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata (auto-configuration). |
 | [`axiz-web-spring-boot-starter`](spring/axiz-web-spring-boot-starter.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata. |
-| [`spring`](spring/spring.md) | Spring Boot 4.1 auto-configuration and integration adapters for each capability: `axiz-<capability>-spring-boot-autoconfigure` (beans |
+| [`spring`](spring/spring.md) | Integración Spring Boot 4.1 para las capacidades del framework. |
 
 ## Capa 4: estructuras
 
@@ -202,7 +203,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-archetypes`](codegen/axiz-archetypes.md) | Archetype definitions: role, default framework, stack, starters, persistence and deployment of each service type. |
 | [`axiz-codegen`](codegen/axiz-codegen.md) | Generation engine shared by axiz-initializr and axiz-cli: OpenAPI model and lint, compatibility rules, templates and safe output. |
 | [`axiz-codegen-templates`](codegen/axiz-codegen-templates.md) | Mustache templates of generated services, versioned with the framework. |
-| [`codegen`](codegen/codegen.md) | The generation engine shared by `axiz-initializr`, `axiz-cli` and CI: `axiz-codegen` (engine, |
+| [`codegen`](codegen/codegen.md) | CLI e Initializr usan el mismo motor para producir proyectos coherentes con el framework. |
 
 ## Calidad
 
@@ -215,4 +216,4 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-store-contract-tests`](quality/axiz-store-contract-tests.md) | Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests. |
 | [`axiz-store-integration-tests`](quality/axiz-store-integration-tests.md) | Internal module, never published: it is not a dependency for services. |
 | [`axiz-test-support`](quality/axiz-test-support.md) | Test fixtures for layer 1: mutable clock, recording publisher, metric assertions and an in-memory R2DBC fake. |
-| [`quality`](quality/quality.md) | Machine-checked rules: `axiz-code-standards` (Checkstyle, SpotBugs, Spotless, Semgrep, Spectral and |
+| [`quality`](quality/quality.md) | Los parents Maven aplican los estándares comunes; los servicios incorporan las reglas de |

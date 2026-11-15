@@ -14,6 +14,7 @@ eventos. El código se deriva de él, nunca al revés.
 
 Los controladores esqueleto delegan en lo que manda el estilo y responden `501 Not Implemented`
 hasta que implementas la operación. Por qué no se generan interfaces y delegates en cada build:
+[capas y ejecución](../arquitectura/capas.md).
 
 ## Reglas del contrato
 

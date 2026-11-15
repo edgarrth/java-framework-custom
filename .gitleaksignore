@@ -1,0 +1,6 @@
+# Synthetic test inputs and local Grafana defaults; exact findings only.
+11fea09138b2c3c0f7d02601baba1332106490a9:axiz-framework/core/axiz-core-idempotency/src/test/java/pe/axiz/core/idempotency/IdempotencyTest.java:generic-api-key:30
+23fd79245e61f3c7cf8e49df0b05b8f6191d3457:axiz-framework/core/axiz-core-idempotency/src/test/java/pe/axiz/core/idempotency/AsyncIdempotencyServiceTest.java:generic-api-key:22
+5c02402c9d6e2888d2669fd0f8edc9e037a43abd:axiz-demo/scripts/scenarios.sh:curl-auth-user:634
+ed1edca2be2124d7e900bca72c00f35005432bc6:axiz-tools/axiz-cli/src/test/java/pe/axiz/cli/DoctorCommandTest.java:generic-api-key:214
+fb88455a6836abbe8081941b45b98f3bd91154a8:axiz-tools/axiz-cli/src/test/java/pe/axiz/cli/DoctorCommandTest.java:generic-api-key:74

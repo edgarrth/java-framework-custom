@@ -25,3 +25,4 @@ BOM. Other combinations are not supported.
   behavior.
 - Security issues: never in an issue; follow `SECURITY.md`.
 
+This repository covers the axiz documentation site, architecture decision records and dashboards.

@@ -144,7 +144,7 @@
     },
     "axiz-codegen-templates": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "c175ef564e8a92c3af6902bb1a45d5c7ee8ab6f1f4f8603f5a4f1556dc95cb34"
+      "jarSha256": "ba36e852606a8bd0b2b9ba7fff04cdd69420fe1699fa1a040b14a1ffa2787b83"
     },
     "axiz-config-spring-boot-autoconfigure": {
       "apiSha256": "e7df62c5b3cdc0b7097f8906f264edeb5a447c17015854f1916c733a38b72ed1",
@@ -232,7 +232,7 @@
     },
     "axiz-core-money": {
       "apiSha256": "17a2a6c35d6f84683c083daac7e24954875e8b9595bee4f72e991a6a7e691dc0",
-      "jarSha256": "af7a2950a8618b463a56f9cb393768844fb037e277646f4f1bc9089b7325acc3"
+      "jarSha256": "a22c9ffdc6fc8585d23149da7b98f36b2291de1371c74d6b5e5e6fd556c4d075"
     },
     "axiz-core-notification": {
       "apiSha256": "a9f65546141786a6ba4df77d60d74fcb5458207a48dfb89bdcc5291bd885afa6",

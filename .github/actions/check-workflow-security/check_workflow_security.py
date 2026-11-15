@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate explicit secrets and the narrowly scoped immutable Axiz release exception."""
 import argparse
+import json
 from pathlib import Path
 import re
 import sys
@@ -8,6 +9,10 @@ import sys
 import yaml
 
 from privileged_jobs import validate as privileged_errors
+from internal_contracts import ROOT, TAG, validate_call
+from workflow_sources import executable_files, read_document, workflow_files
+from workflow_pins import product_files, validate_pins
+from required_checks import token_permissions
 
 GUARD = "axiz-workflows-trust"
 PREFIX = "edgarrth/java-framework-custom/"
@@ -22,10 +27,10 @@ CONTRACTS = {
     "lib-build.yaml": READ | {"NEXUS_URL", "NEXUS_READ_USERNAME", "NEXUS_READ_PASSWORD", "SONAR_HOST_URL", "SONAR_TOKEN", "CANDIDATE_READ_TOKEN"},
     "lib-deploy.yaml": READ | {"BUILD_READ_TOKEN", "NEXUS_URL", "NEXUS_PUBLISH_USERNAME", "NEXUS_PUBLISH_PASSWORD"},
     "service-build.yaml": READ | {"CANDIDATE_READ_TOKEN", "NEXUS_URL", "NEXUS_READ_USERNAME", "NEXUS_READ_PASSWORD", "BUILD_DESTINATION", "REGISTRY_BUILD_USERNAME", "REGISTRY_BUILD_PASSWORD"},
-    "service-deploy.yaml": READ | {"BUILD_READ_TOKEN", "REGISTRY_READ_USERNAME", "REGISTRY_READ_PASSWORD", "GITOPS_APP_ID", "GITOPS_APP_PRIVATE_KEY", "ARGOCD_AUTH_TOKEN"},
+    "service-deploy.yaml": READ | {"BUILD_READ_TOKEN", "BUILD_DESTINATION", "REGISTRY_READ_USERNAME", "REGISTRY_READ_PASSWORD", "GITOPS_APP_CLIENT_ID", "GITOPS_APP_PRIVATE_KEY", "ARGOCD_AUTH_TOKEN"},
     "native.yaml": READ | {"NEXUS_URL", "NEXUS_READ_USERNAME", "NEXUS_READ_PASSWORD", "CANDIDATE_READ_TOKEN"},
     "native-nightly.yaml": NEXUS | READ,
-    "release.yaml": {"RELEASE_APP_ID", "RELEASE_APP_PRIVATE_KEY"},
+    "release.yaml": {"RELEASE_APP_CLIENT_ID", "RELEASE_APP_PRIVATE_KEY"},
 }
 
 
@@ -48,8 +53,8 @@ def guarded_condition(condition):
     return depth == 0 and not quoted
 
 
-def validate(document):
-    errors = privileged_errors(document)
+def validate(document, contracts_root=ROOT, *, snapshot=True, permission_exceptions=()):
+    errors = privileged_errors(document) + token_permissions(document, permission_exceptions)
     jobs = document.get("jobs", {})
     guard = jobs.get(GUARD)
     for name, job in jobs.items():
@@ -57,6 +62,7 @@ def validate(document):
         if secrets == "inherit":
             errors.append(f"{name}: inherited secrets are forbidden")
         for call in [job, *job.get("steps", [])]:
+            errors.extend(f"{name}: {error}" for error in validate_call(call, contracts_root, snapshot=snapshot))
             ref = call.get("uses", "")
             if not ref or ref.startswith("./"):
                 continue
@@ -73,7 +79,7 @@ def validate(document):
                     errors.append(f"{name}: secrets exceed the called workflow contract")
             if re.fullmatch(r"[a-f0-9]{40}", version):
                 continue
-            if not internal or not re.fullmatch(r"axiz-workflows-v\d+\.\d+\.\d+", version):
+            if not internal or not TAG.fullmatch(version):
                 errors.append(f"{name}: pin external actions by SHA and internal releases by exact version")
                 continue
             needs = job.get("needs", [])
@@ -96,15 +102,45 @@ def validate(document):
     return sorted(set(errors))
 
 
-def validate_monorepo_file(path, document, version):
+def checkout_reference_errors(text, expected):
+    errors = []
+    lines = text.splitlines()
+    visited = set()
+    def walk(node):
+        if id(node) in visited:
+            return
+        visited.add(id(node))
+        if isinstance(node, yaml.MappingNode):
+            fields = {key.value: value for key, value in node.value if isinstance(key, yaml.ScalarNode)}
+            uses, options = fields.get("uses"), fields.get("with")
+            if isinstance(uses, yaml.ScalarNode) and uses.value.startswith("actions/checkout@") and isinstance(options, yaml.MappingNode):
+                values = {key.value: value for key, value in options.value if isinstance(key, yaml.ScalarNode)}
+                repository, ref = values.get("repository"), values.get("ref")
+                internal = repository is None or repository.value in {
+                    "edgarrth/java-framework-custom", "${{ github.repository }}"}
+                if internal and isinstance(ref, yaml.ScalarNode) and ref.value.startswith("axiz-workflows-"):
+                    if ref.value != expected or "# x-release-please-version" not in lines[ref.start_mark.line]:
+                        errors.append("internal checkout refs must use " + expected + " # x-release-please-version")
+            for _, value in node.value:
+                walk(value)
+        elif isinstance(node, yaml.SequenceNode):
+            for value in node.value:
+                walk(value)
+    walk(yaml.compose(text))
+    return errors
+
+
+def validate_monorepo_file(path, document, version, managed=True):
     """File-specific release boundaries supplement the reusable-workflow security policy."""
     errors = []
     text = path.read_text()
     expected = "axiz-workflows-v" + version
-    for line in text.splitlines():
+    for line in text.splitlines() if managed else []:
         match = re.search(r"uses:\s*(" + re.escape(PREFIX) + r"[^\s]+)", line)
         if match and (match[1].rsplit("@", 1)[-1] != expected or "# x-release-please-version" not in line):
             errors.append("internal references must use " + expected + " # x-release-please-version")
+    if managed:
+        errors.extend(checkout_reference_errors(text, expected))
     trigger = document.get("on", document.get(True, {})) or {}
     push = trigger.get("push", {}) or {} if isinstance(trigger, dict) else {}
     tags = push.get("tags", []) if isinstance(push, dict) else []
@@ -116,43 +152,62 @@ def validate_monorepo_file(path, document, version):
     return errors
 
 
-def workflow_files(root):
-    for path in root.rglob("*"):
-        if not path.is_file() or any(p in {"target", ".git", "node_modules", ".venv"} for p in path.parts):
+def check_tree(root, contracts_root=ROOT, *, scope="all"):
+    root, contracts_root = Path(root).resolve(), Path(contracts_root).resolve()
+    managed = product_files(root)
+    if scope not in {"all", "executable"}:
+        raise ValueError("scope must be all or executable")
+    selected, diagnostics = executable_files(root)
+    if scope == "all":
+        selected = sorted(set(selected) | set(workflow_files(root)))
+    pin_errors, bootstrap = validate_pins(root, contracts_root,
+                                        paths=None if scope == "all" else selected,
+                                        require_history=scope == "all")
+    diagnostics.extend(pin_errors)
+    permission_policy = contracts_root / '.github/policies/required-checks-v2.json'
+    permission_records = json.loads(permission_policy.read_text())['permissionExceptions'] if permission_policy.is_file() else []
+    checked = 0
+    internal_calls = 0
+    version = (root / ".github/version.txt").read_text().strip() if (root / ".github/version.txt").is_file() else None
+    for path in selected:
+        if not path.resolve().is_relative_to(root):
+            diagnostics.append(str(path.relative_to(root)) + ": workflow source escapes the checkout")
             continue
-        if path.name.endswith((".yaml", ".yml", ".yaml.mustache", ".yml.mustache")):
-            if ".github/workflows" in str(path) or "templates" in path.parts or path.name in {"action.yaml", "action.yml"}:
-                yield path
+        try:
+            text = path.read_text()
+            if "jobs:" not in text and "runs:" not in text:
+                continue
+            document = read_document(path)
+            evaluated = {"permissions": {}, "jobs": {"composite": {"steps": document["runs"].get("steps", [])}}} if "runs" in document else document
+            for job in evaluated.get("jobs", {}).values():
+                internal_calls += sum(call.get("uses", "").startswith(PREFIX)
+                                      for call in [job, *job.get("steps", [])])
+            errors = validate(evaluated, contracts_root,
+                              permission_exceptions={(row['scope'], row['permission']) for row in permission_records if row['path'] == str(path.relative_to(root)) and row.get('reason')},
+                              snapshot=not managed or scope == "executable" or path.resolve() in managed or bootstrap)
+            if version and managed and root / ".github" in path.parents:
+                errors.extend(validate_monorepo_file(path, document, version, path.resolve() in managed))
+        except (OSError, yaml.YAMLError, AttributeError, TypeError) as exc:
+            errors = [f"invalid workflow: {exc}"]
+        checked += 1
+        for error in errors:
+            diagnostics.append(f"{path.relative_to(root)}: {error}")
+    return diagnostics, checked, internal_calls
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("root", type=Path, nargs="?", default=Path("."))
+    parser.add_argument("root", type=Path, nargs="?", default=Path("."), help="Source tree to scan")
+    parser.add_argument("--contracts-root", type=Path, default=ROOT,
+                        help="Trusted Axiz contracts and Git history (default: this script's release)")
+    parser.add_argument("--scope", choices=["all", "executable"], required=True,
+                        help="Full monorepo including templates, or root execution and its local calls")
     args = parser.parse_args()
-    failed = False
-    checked = 0
-    version = (args.root / ".github/version.txt").read_text().strip() if (args.root / ".github/version.txt").is_file() else None
-    for path in workflow_files(args.root):
-        text = path.read_text()
-        if ("jobs:" not in text and "runs:" not in text) or "uses:" not in text:
-            continue
-        # Mustache workflows switch delimiters; GitHub expressions remain literal YAML values.
-        text = re.sub(r"^\{\{=<% %>=\}\}\s*", "", text)
-        text = re.sub(r"^\s*<%[#/^][^\n]+%>\s*$", "", text, flags=re.M)
-        try:
-            document = yaml.safe_load(text)
-            evaluated = {"permissions": {}, "jobs": {"composite": {"steps": document["runs"].get("steps", [])}}} if "runs" in document else document
-            errors = validate(evaluated)
-            if version and args.root / ".github" in path.parents:
-                errors.extend(validate_monorepo_file(path, document, version))
-        except (yaml.YAMLError, AttributeError, TypeError) as exc:
-            errors = [f"invalid workflow: {exc}"]
-        checked += 1
-        for error in errors:
-            print(f"{path}: {error}", file=sys.stderr)
-            failed = True
-    print(f"Checked workflow security in {checked} files")
-    return int(failed)
+    errors, checked, internal_calls = check_tree(args.root, args.contracts_root, scope=args.scope)
+    for error in errors:
+        print(error, file=sys.stderr)
+    print(f"Checked workflow security in {checked} files ({internal_calls} internal call contracts)")
+    return int(bool(errors))
 
 
 if __name__ == "__main__":

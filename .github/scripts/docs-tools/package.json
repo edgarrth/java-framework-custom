@@ -1,0 +1,8 @@
+{
+  "name": "axiz-docs-tools",
+  "private": true,
+  "description": "Exact development-only Markdown validation toolchain",
+  "devDependencies": {
+    "markdownlint-cli2": "0.24.1"
+  }
+}

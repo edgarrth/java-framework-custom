@@ -9,6 +9,10 @@ import subprocess
 import urllib.parse
 import urllib.request
 from pathlib import Path
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from workflow_release import TAG
 
 from manifest import validate_maven_arguments, verify, read_json
 
@@ -38,7 +42,9 @@ def inputs(version, source_sha, repository, maven_args, axiz_version="", candida
     return data
 
 
-def workflow_identity(claims, repository, source_sha, workflow_sha, kind="maven-library", tag="axiz-workflows-v2.0.0"):
+def workflow_identity(claims, repository, source_sha, workflow_sha, kind="maven-library", *, tag):
+    if not isinstance(tag, str) or not TAG.fullmatch(tag):
+        raise ValueError("Expected an explicit immutable v2 workflow release")
     producers = {"maven-library": "lib-build", "service": "service-build", "native-component": "native"}
     if kind not in producers:
         raise ValueError("Unknown build producer")
@@ -70,7 +76,7 @@ def api(path):
 
 
 def resolve_workflow(tag):
-    if not re.fullmatch(r"axiz-workflows-v2\.[0-9]+\.[0-9]+", tag):
+    if not TAG.fullmatch(tag):
         raise ValueError("Expected immutable v2 workflow release")
     release = api("repos/edgarrth/java-framework-custom/releases/tags/" + tag)
     if release.get("tag_name") != tag or release.get("immutable") is not True or release.get("draft") is not False:
@@ -139,7 +145,7 @@ def main():
     if candidate and Path("platform/axiz-dependencies/pom.xml").is_file():
         raise ValueError("A framework source build cannot consume another framework candidate")
     bind_candidate(data, candidate, candidate_hash)
-    tag = os.environ.get("WORKFLOWS_TAG", "axiz-workflows-v2.0.0")
+    tag = os.environ["WORKFLOWS_TAG"]
     # Worker preparation is unprivileged. This is unsigned metadata, not an OIDC attestation.
     # A separate signer must establish the identity and gates from its own trusted context.
     paths = {"maven-library": "lib-build", "service": "service-build", "native-component": "native"}

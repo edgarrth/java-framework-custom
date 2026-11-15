@@ -14,8 +14,24 @@ jobs:
   release:
     permissions:
       contents: write
-      pull-requests: write
-    uses: ./.github/workflows/release.yaml
-    secrets:
-      RELEASE_APP_ID: ${{ secrets.RELEASE_APP_ID }}
-      RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Token (monorepo release role)
+        id: token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+      - name: Release pull request or release
+        id: please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+      - name: Summary
+        if: steps.please.outputs.releases_created == 'true'
+        run: echo "Released components are recorded in the Release Please outputs" >> "$GITHUB_STEP_SUMMARY"

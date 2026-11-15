@@ -146,7 +146,7 @@ The workflows use the immutable Axiz 2.0.0 contracts:
   and waits for Argo CD; deployment never rebuilds. Protected environments provide approval.
 - Build credentials are `NEXUS_READ_USERNAME/PASSWORD`, `BUILD_DESTINATION` and
   `REGISTRY_BUILD_USERNAME/PASSWORD`. Deploy uses registry read credentials plus the GitOps App
-  and Argo read token. Configure `GITOPS_REPOSITORY` and `ARGOCD_SERVER` as repository variables.
+  and Argo read token. Use the same `BUILD_DESTINATION` for build, automatic resolution and deploy; configure `ARGOCD_SERVER` as a repository variable.
 - `release.yaml`: release-please keeps a release pull request with the next version and the
   changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
   the last released version (`0.0.0`: nothing released yet); the pom holds the next one
@@ -154,4 +154,3 @@ The workflows use the immutable Axiz 2.0.0 contracts:
   `release-please-config.json`); later ones follow Conventional Commits.
 
 ## Decisions
-

@@ -9,8 +9,8 @@ import pe.axiz.kit.r2dbc.ReactiveSql;
 import reactor.core.publisher.Mono;
 
 /**
- * Bounded synchronous boundary for the dedicated poll/purge worker threads (architecture contract section 5.4).
- * Reactive application flows use {@link ReactiveInboxStore}; SQL and ownership rules are shared.
+ * Bounded synchronous boundary for the dedicated poll/purge worker threads. Reactive application
+ * flows use {@link ReactiveInboxStore}; SQL and ownership rules are shared.
  */
 public final class R2dbcInboxStore implements InboxStore {
   private final ReactiveInboxStore nativeStore;

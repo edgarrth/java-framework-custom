@@ -94,7 +94,7 @@ jobs:
             suffix: windows-x64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           ref: ${{ inputs.source-sha }}
           fetch-depth: 0
@@ -159,7 +159,7 @@ jobs:
             --module "$NATIVE_MODULE" --binary "$NATIVE_BINARY" --platform "$NATIVE_PLATFORM" \
             --output target/native-component
       - name: Retain unsigned native component
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: unsigned-native-${{ github.run_attempt }}-${{ matrix.suffix }}
           path: ${{ inputs.project-directory }}/target/native-component
@@ -175,14 +175,14 @@ jobs:
       actions: read
       id-token: write
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           repository: edgarrth/java-framework-custom
           ref: axiz-workflows-v2.0.0 # x-release-please-version
           path: .axiz-trusted-workflows
           persist-credentials: false
           token: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5
+      - uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
       - name: Verify producer authority and sign exact product data
         id: sign
         shell: bash
@@ -197,19 +197,19 @@ jobs:
           tools="$GITHUB_WORKSPACE/.axiz-trusted-workflows/.github/actions/build-manifest"
           "$python" -m pip install --require-hashes --quiet -r "$tools/requirements.txt"
           "$python" "$tools/sign_product.py" --kind native-component --output "$RUNNER_TEMP/signed-product"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-component-${{ github.run_attempt }}-linux-x64
           path: ${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-linux-x64
           retention-days: 90
           if-no-files-found: error
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-component-${{ github.run_attempt }}-macos-arm64
           path: ${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-macos-arm64
           retention-days: 90
           if-no-files-found: error
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-component-${{ github.run_attempt }}-windows-x64
           path: ${{ runner.temp }}/signed-product/native-component-${{ github.run_attempt }}-windows-x64

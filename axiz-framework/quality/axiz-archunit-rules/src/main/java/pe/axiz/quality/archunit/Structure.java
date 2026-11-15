@@ -2,7 +2,7 @@ package pe.axiz.quality.archunit;
 
 import java.util.Locale;
 
-/** architecture contract service structure. */
+/** Service structure. */
 public enum Structure {
   LAYERED,
   HEXAGONAL,

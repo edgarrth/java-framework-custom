@@ -15,7 +15,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
         GH_HOST: github.com
-        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0 # x-release-please-version
+        AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
       shell: bash
       run: |
         set -euo pipefail
@@ -29,16 +29,16 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
     # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
+    - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
         nexus-url: ${{ secrets.NEXUS_URL }}
-    - uses: helm/kind-action@a1b0e391336a6ee6713a0583f8c6240d70863de3
+    - uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
       with:
         install_only: true
-    - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4
+    - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
     - name: Deploy the demo
       env:
         NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
