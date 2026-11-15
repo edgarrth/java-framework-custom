@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One offline command inventory for CI and each isolated release/adoption state."""
 import argparse
+from collections import deque
 import json
 import os
 from pathlib import Path
@@ -55,7 +56,8 @@ def execute(root,output,tools):
     verify_schemas(root,tools['schemas'])
     values={'npm_audit_input':os.environ.get('AXIZ_NPM_AUDIT_INPUT'),'release_action_cache':os.environ.get('AXIZ_RELEASE_ACTION_CACHE'),**tools,'python':sys.executable,'output':str(output),'schemas':str(Path(tools['schemas']).resolve()),'renovate':str(root/'.github/scripts/release-version/node_modules/.bin/renovate-config-validator')}
     if any(not value for value in values.values()):raise ValueError('Prepare all pinned tools and schemas before offline checks')
-    env={**os.environ,'AXIZ_POLICY_PYTHON':sys.executable,'PYTHONDONTWRITEBYTECODE':'1','GIT_CEILING_DIRECTORIES':str(root.parent),'SEMGREP_ENABLE_VERSION_CHECK':'0'}
+    env={**os.environ,'PATH':str(Path(sys.executable).parent)+os.pathsep+os.environ.get('PATH',''),
+         'AXIZ_POLICY_PYTHON':sys.executable,'PYTHONDONTWRITEBYTECODE':'1','GIT_CEILING_DIRECTORIES':str(root.parent),'SEMGREP_ENABLE_VERSION_CHECK':'0'}
     results=[]
     for name,command in COMMANDS:
         argv=[]
@@ -66,7 +68,12 @@ def execute(root,output,tools):
             result=subprocess.run(argv,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
         results.append({'name':name,'passed':result.returncode==0,'exitCode':result.returncode,'log':name+'.log'})
         print(('PASS ' if result.returncode==0 else 'FAIL ')+name,flush=True)
-        if result.returncode:break
+        if result.returncode:
+            print('::group::'+name+' diagnostics ('+str(output/(name+'.log'))+')',flush=True)
+            with (output/(name+'.log')).open(errors='replace') as log:
+                print(''.join(deque(log,maxlen=100)),end='',flush=True)
+            print('\n::endgroup::',flush=True)
+            break
     summary={'passed':len(results)==len(COMMANDS) and all(row['passed'] for row in results),'checks':results}
     (output/'result.json').write_text(json.dumps(summary,indent=2)+'\n')
     return summary

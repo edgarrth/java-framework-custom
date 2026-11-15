@@ -74,8 +74,8 @@
     {
       "workflow": "release-self.yaml",
       "job": "release",
-      "workflowSha256": "65d215b747d1f85259af6ac47a13c1c957c6f0cc70dca8f302090731c6441828",
-      "jobSha256": "3d002833241e43a799d3affbfa7759324e338b558eb8eb3db9f161b240f37249",
+      "workflowSha256": "48bf9f0e2ade418221b3320df00ccd8dfcd8654b849661f634b566dc2a717f67",
+      "jobSha256": "b9f76cee4c86dd7b5fbba4e28a1529108063790408c36b2f673686e6ce50010d",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     }
   ]

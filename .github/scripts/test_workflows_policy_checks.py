@@ -1,9 +1,15 @@
 from pathlib import Path
+from contextlib import redirect_stdout
+import io
 import json
+import os
 import re
+import tempfile
 import unittest
+from unittest.mock import patch
 import yaml
 
+import workflows_policy_checks as executor
 from workflows_policy_checks import COMMANDS
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -46,3 +52,61 @@ class WorkflowExecutorTest(unittest.TestCase):
         self.assertIn('literals',{name for name,_ in COMMANDS})
         self.assertIn('release-permissions',{name for name,_ in COMMANDS})
         self.assertIn('documentation',{name for name,_ in COMMANDS})
+
+    def test_a_failed_control_preserves_and_prints_its_diagnostic_before_stopping(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-diagnostic-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            commands=[('failing-check',['{python}','-c','print("Fixture failure details"); raise SystemExit(1)']),
+                      ('must-not-run',['{python}','-c','raise SystemExit(99)'])]
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            console=io.StringIO()
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',commands),patch.dict(os.environ,{
+                    'AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture'}),redirect_stdout(console):
+                result=executor.execute(source,output,tools)
+            self.assertFalse(result['passed'])
+            self.assertEqual(['failing-check'],[row['name'] for row in result['checks']])
+            self.assertIn('Fixture failure details',console.getvalue())
+            self.assertIn('::group::failing-check diagnostics',console.getvalue())
+            self.assertEqual('Fixture failure details\n',(output/'failing-check.log').read_text())
+            self.assertFalse((output/'must-not-run.log').exists())
+            self.assertFalse(json.loads((output/'result.json').read_text())['passed'])
+
+    def test_execute_prefixes_policy_python_bin_into_path(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-path-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            commands=[('path-check',['{python}','-c','raise SystemExit(0)'])]
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',commands),patch.dict(os.environ,{
+                    'AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture','PATH':'/usr/bin'}),patch('workflows_policy_checks.subprocess.run') as run:
+                run.return_value.returncode=0
+                executor.execute(source,output,tools)
+                env=run.call_args.kwargs['env']
+                self.assertEqual(str(Path(executor.sys.executable).parent),env['PATH'].split(os.pathsep)[0])
+
+    def test_ci_keeps_control_logs_available_after_failure(self):
+        workflow=yaml.safe_load((ROOT/'.github/workflows/workflows-ci.yaml').read_text())
+        upload=next(step for step in workflow['jobs']['contracts']['steps']
+                    if step.get('uses','').startswith('actions/upload-artifact@'))
+        self.assertEqual('always()',upload['if'])
+        self.assertIn('/policy-results/*.log',upload['with']['path'])
+        self.assertIn('/lifecycle-results/result.json',upload['with']['path'])
+        self.assertEqual(7,upload['with']['retention-days'])
+
+    def test_console_tools_resolve_from_the_python_environment_without_activation(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-path-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            binary=Path(folder)/'venv/bin';binary.mkdir(parents=True)
+            (binary/'python').symlink_to(Path(executor.sys.executable).resolve())
+            console=binary/'fixture-console'
+            console.write_text('#!/bin/sh\necho "Environment console resolved"\n')
+            console.chmod(0o755)
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',[
+                    ('console-tool',['fixture-console'])]),patch.object(executor.sys,'executable',str(binary/'python')),patch.dict(os.environ,{
+                    'PATH':'/usr/bin:/bin','AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture'}),redirect_stdout(io.StringIO()):
+                result=executor.execute(source,output,tools)
+            self.assertTrue(result['passed'])
+            self.assertEqual('Environment console resolved\n',(output/'console-tool.log').read_text())

@@ -1,13 +1,46 @@
 import copy
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
 import tempfile
 import unittest
 
 import yaml
 
 import release_permissions as policy
+
+
+class ReleaseSetupTest(unittest.TestCase):
+    def setUp(self):
+        self.workflow=yaml.safe_load((policy.ROOT/'.github/workflows/release-self.yaml').read_text())
+        self.job=self.workflow['jobs']['release']
+
+    def test_manual_retry_is_available_only_from_main(self):
+        events=self.workflow.get('on',self.workflow.get(True))
+        self.assertIn('workflow_dispatch',events)
+        self.assertEqual(['main'],events['push']['branches'])
+        self.assertEqual("github.ref == 'refs/heads/main'",self.job['if'])
+
+    def test_app_id_variable_or_secret_is_used_consistently(self):
+        preflight=self.job['steps'][0]
+        token=next(step for step in self.job['steps']
+                   if step.get('uses','').startswith('actions/create-github-app-token@'))
+        expected='${{ vars.RELEASE_APP_CLIENT_ID || secrets.RELEASE_APP_CLIENT_ID }}'
+        self.assertEqual(expected,preflight['env']['RELEASE_APP_CLIENT_ID'])
+        self.assertEqual(expected,token['with']['client-id'])
+        self.assertEqual('${{ secrets.RELEASE_APP_PRIVATE_KEY }}',token['with']['private-key'])
+
+    def test_missing_or_partial_configuration_fails_without_exposing_values(self):
+        script=self.job['steps'][0]['run']
+        for client_id,key,expected in [('', '',1),('fixture','',1),('','fixture',1),('fixture','fixture',0)]:
+            with self.subTest(client_id=bool(client_id),private_key=bool(key)):
+                env={**os.environ,'RELEASE_APP_CLIENT_ID':client_id,'RELEASE_APP_PRIVATE_KEY':key}
+                result=subprocess.run(['bash','-c',script],env=env,capture_output=True,text=True)
+                self.assertEqual(expected,result.returncode,result.stderr)
+                self.assertNotIn('fixture',result.stdout+result.stderr)
+                if expected:self.assertIn('Configure RELEASE_APP_CLIENT_ID',result.stdout)
 
 
 class ReleaseDestinationTest(unittest.TestCase):
