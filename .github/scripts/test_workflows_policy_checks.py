@@ -72,6 +72,19 @@ class WorkflowExecutorTest(unittest.TestCase):
             self.assertFalse((output/'must-not-run.log').exists())
             self.assertFalse(json.loads((output/'result.json').read_text())['passed'])
 
+    def test_execute_prefixes_policy_python_bin_into_path(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-path-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            commands=[('path-check',['{python}','-c','raise SystemExit(0)'])]
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',commands),patch.dict(os.environ,{
+                    'AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture','PATH':'/usr/bin'}),patch('workflows_policy_checks.subprocess.run') as run:
+                run.return_value.returncode=0
+                executor.execute(source,output,tools)
+                env=run.call_args.kwargs['env']
+                self.assertEqual(str(Path(executor.sys.executable).resolve().parent),env['PATH'].split(os.pathsep)[0])
+
     def test_ci_keeps_control_logs_available_after_failure(self):
         workflow=yaml.safe_load((ROOT/'.github/workflows/workflows-ci.yaml').read_text())
         upload=next(step for step in workflow['jobs']['contracts']['steps']

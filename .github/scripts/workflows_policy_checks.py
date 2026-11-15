@@ -56,7 +56,8 @@ def execute(root,output,tools):
     verify_schemas(root,tools['schemas'])
     values={'npm_audit_input':os.environ.get('AXIZ_NPM_AUDIT_INPUT'),'release_action_cache':os.environ.get('AXIZ_RELEASE_ACTION_CACHE'),**tools,'python':sys.executable,'output':str(output),'schemas':str(Path(tools['schemas']).resolve()),'renovate':str(root/'.github/scripts/release-version/node_modules/.bin/renovate-config-validator')}
     if any(not value for value in values.values()):raise ValueError('Prepare all pinned tools and schemas before offline checks')
-    env={**os.environ,'AXIZ_POLICY_PYTHON':sys.executable,'PYTHONDONTWRITEBYTECODE':'1','GIT_CEILING_DIRECTORIES':str(root.parent),'SEMGREP_ENABLE_VERSION_CHECK':'0'}
+    path=[str(Path(sys.executable).resolve().parent),os.environ.get('PATH','')]
+    env={**os.environ,'PATH':os.pathsep.join(item for item in path if item),'AXIZ_POLICY_PYTHON':sys.executable,'PYTHONDONTWRITEBYTECODE':'1','GIT_CEILING_DIRECTORIES':str(root.parent),'SEMGREP_ENABLE_VERSION_CHECK':'0'}
     results=[]
     for name,command in COMMANDS:
         argv=[]
