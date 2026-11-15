@@ -20,7 +20,7 @@ Root package `pe.axiz`, groupId `pe.axiz`, single version `${revision}` for fram
 `axiz-adapter-aws` is the shared AWS identity/transport base; it has no Spring or Micrometer
 dependency. Spring owns context composition and the optional observability adapter adds telemetry.
 
-The [architecture guide](docs/architecture/README.md) describes service boundaries, execution models and dependency rules. The [capability catalog](../axiz-docs/docs/capacidades/index.md) lists starters, configuration and examples.
+The [architecture guide](../axiz-docs/docs/arquitectura/capas.md) describes service boundaries, execution models and dependency rules. The [capability catalog](../axiz-docs/docs/capacidades/index.md) lists starters, configuration and examples.
 
 ## Build
 
@@ -88,5 +88,3 @@ domain may depend on Axiz domain contracts while remaining independent of third-
 CLI and Initializr share `axiz-codegen`. Templates and archetype metadata are generation assets,
 not alternative runtime implementations. Demo, documentation and workflows are maintained parts
 of the distribution, even though they are not runtime layers.
-
-Preparation and validation limits for the first release: [2.0.0 release notes](docs/releases/2.0.0.md).

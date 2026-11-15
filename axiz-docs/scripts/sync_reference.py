@@ -205,8 +205,6 @@ def reference(modules, out, framework):
                 rewritten = os.path.relpath(Path(out).resolve() / target.relative_to(site_source), destination.parent)
             elif target == framework / 'docs/architecture/JDBC.md':
                 rewritten = os.path.relpath(Path(out).resolve() / 'arquitectura/jdbc.md', destination.parent)
-            elif target == framework / 'docs/architecture/README.md':
-                rewritten = os.path.relpath(Path(out).resolve() / 'arquitectura/capas.md', destination.parent)
             elif target.is_relative_to(repository) and target.exists():
                 view = 'tree' if target.is_dir() else 'blob'
                 rewritten = 'https://github.com/edgarrth/java-framework-custom/' + view + '/main/' + quote(target.relative_to(repository).as_posix())

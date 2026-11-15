@@ -1,6 +1,6 @@
 # Capas del framework
 
-Axiz 2.0 separa contratos, tecnología, integración con Spring y organización del servicio.
+Axiz separa contratos, tecnología, integración con Spring y organización del servicio.
 Los arquetipos describen el rol del servicio y no son capas de ejecución.
 
 | Capa | Carpeta | Artefactos | Parent y responsabilidad |

@@ -83,7 +83,7 @@ and omits the unrelated EDA example. `AsyncContractSync` preserves implementatio
 records, writes `.axiz-new` proposals and advances the generation snapshot only after compatibility
 and destination checks. `AsyncApiSubscriptions` checks base configuration and explicit profile
 overrides without bootstrapping Spring or resolving secrets. CLI integration and the build gate
-are documented in `axiz-tools/axiz-cli` and `.github/docs/pipelines-v2.md`.
+are documented in `axiz-tools/axiz-cli` and `.github/docs/pipelines.md`.
 
 `EventAdapters` generates typed consumer skeletons and per-payload Spring AOT binding configurations
 outside the owned payload package. The stack selects the imperative or reactive handler base;

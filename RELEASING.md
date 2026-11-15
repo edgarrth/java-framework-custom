@@ -74,9 +74,9 @@ verificado y publican la release con los assets correspondientes. Initializr pro
 y chart por un deploy independiente. Servicios y rollback usan el manifiesto firmado de un
 build existente y una revisión completa de values.
 
-El [contrato de pipelines](.github/docs/pipelines-v2.md) detalla entradas, salidas, retención,
-firmas y separación de credenciales. La [guía de GitOps](.github/gitops/README.md) describe los
-destinos y la [operación de rollback](.github/docs/promotion-rollback.md) explica la secuencia.
+El [contrato de pipelines](.github/docs/pipelines.md) detalla entradas, salidas, retención,
+firmas, separación de credenciales, promoción y rollback. La
+[guía de GitOps](.github/gitops/README.md) describe los destinos.
 
 ## Publicación y adopción de workflows
 

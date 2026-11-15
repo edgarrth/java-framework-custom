@@ -46,8 +46,6 @@ efímeros en otra política específica de `Pod/ephemeralcontainers`.
 
 La validación usa `foreach` y `anyPattern` según la [documentación de Kyverno](https://kyverno.io/docs/policy-types/cluster-policy/validate/).
 El formato del namespace de GHCR está documentado por [GitHub](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
-Las pruebas locales de renderizado y esquema no acreditan permisos reales de publicación ni una
-admisión ejecutada en un clúster remoto.
 
 ## Pruebas de admisión locales
 
@@ -69,4 +67,4 @@ Los contenedores normales ya admitidos no se reevalúan bajo la lista de imágen
 
 Esta matriz es offline: no consulta registros ni verifica firmas criptográficamente. La
 configuración de identidad, procedencia, digest y firmas se verifica por las pruebas del
-renderizador. El CLI no acredita los webhooks ni permisos de un clúster remoto.
+renderizador.

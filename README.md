@@ -8,11 +8,11 @@ generación de proyectos y controles de calidad para aplicaciones financieras.
 
 | Proyecto | Contenido | Documentación |
 |---|---|---|
-| [axiz-framework](axiz-framework/README.md) | SDK Java, puertos, adaptadores, persistencia, starters, estructuras, generador y reglas de arquitectura | [Capas y dependencias](axiz-framework/docs/architecture/README.md), [referencia de capacidades](axiz-docs/docs/capacidades/index.md) |
+| [axiz-framework](axiz-framework/README.md) | SDK Java, puertos, adaptadores, persistencia, starters, estructuras, generador y reglas de arquitectura | [Capas y dependencias](axiz-docs/docs/arquitectura/capas.md), [referencia de capacidades](axiz-docs/docs/capacidades/index.md) |
 | [axiz-tools](axiz-tools/README.md) | CLI `axiz`, Initializr y recetas OpenRewrite | [CLI](axiz-tools/axiz-cli/README.md), [Initializr](axiz-tools/axiz-initializr/README.md), [recetas](axiz-tools/axiz-rewrite-recipes/README.md) |
 | [axiz-demo](axiz-demo/README.md) | Nueve servicios que muestran un flujo de pagos con las capacidades del framework | [Servicios y ejecución local](axiz-demo/README.md), [contratos](axiz-demo/contracts) |
 | [axiz-docs](axiz-docs/README.md) | Guías de uso, referencia de módulos y sitio MkDocs para GitHub Pages | [Inicio](axiz-docs/docs/index.md), [primer servicio](axiz-docs/docs/empezar/index.md) |
-| [.github](.github/WORKFLOWS.md) | Workflows de build, deploy y publicación, acciones reutilizables y configuración GitOps | [Pipelines](.github/docs/pipelines-v2.md), [destinos GitOps](.github/gitops/README.md) |
+| [.github](.github/WORKFLOWS.md) | Workflows de build, deploy y publicación, acciones reutilizables y configuración GitOps | [Pipelines](.github/docs/pipelines.md), [destinos GitOps](.github/gitops/README.md) |
 
 Los componentes comparten repositorio. Framework, herramientas, documentación y workflows
 se versionan de forma independiente. El procedimiento de publicación está en
@@ -91,11 +91,11 @@ su proveedor configurado.
 
 Build y deploy son procesos independientes. Build produce artefactos, SBOM, manifiestos y
 firmas; deploy verifica y promueve esos mismos bytes por hash, sin recompilar. La documentación
-de [CI/CD](.github/docs/pipelines-v2.md) describe parámetros, identidades y credenciales.
+de [CI/CD](.github/docs/pipelines.md) describe parámetros, identidades y credenciales.
 
 ## Guías
 
-- [Arquitectura y organización](axiz-framework/docs/architecture/README.md).
+- [Arquitectura y organización](axiz-docs/docs/arquitectura/index.md).
 - [Capacidades y configuración](axiz-docs/docs/capacidades/index.md).
 - [Persistencia](axiz-docs/docs/guias/persistencia.md) y [eventos](axiz-docs/docs/guias/eventos.md).
 - [Seguridad](axiz-docs/docs/guias/seguridad.md) y [datos sensibles](axiz-docs/docs/guias/datos-sensibles.md).

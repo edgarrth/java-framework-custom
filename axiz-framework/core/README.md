@@ -9,5 +9,5 @@ Los puertos síncronos usan tipos Java; los puertos asíncronos usan `Completion
 un framework tercero. Las implementaciones tecnológicas se encuentran en `adapters`.
 
 Cada módulo documenta sus tipos y ejemplos en su README. Consultar
-[las reglas de capas](../docs/architecture/README.md) y el
+[las reglas de capas](../../axiz-docs/docs/arquitectura/capas.md) y el
 [catálogo de capacidades](../../axiz-docs/docs/capacidades/index.md).

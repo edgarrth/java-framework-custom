@@ -2,7 +2,7 @@
 
 Workflows reutilizables, acciones, políticas y configuración GitOps de Axiz.
 Los proyectos del monorepo y los consumidores generados usan contratos de build y deploy
-independientes. El detalle de parámetros y artefactos está en [pipelines](docs/pipelines-v2.md).
+independientes. El detalle de parámetros y artefactos está en [pipelines](docs/pipelines.md).
 
 ## Workflows reutilizables
 
@@ -41,7 +41,6 @@ los artefactos descargados no pueden aportar scripts o controles de ejecución a
 Los cambios de ambiente y rollback conservan la revisión de values y la identidad del build.
 
 La [configuración GitOps](gitops/README.md) fija repositorios y servicios autorizados.
-[Promoción y rollback](docs/promotion-rollback.md) describe la operación sobre builds verificados.
 
 ## Validaciones
 

@@ -29,10 +29,9 @@ no cambia los pins consumidores. Después Renovate propone una adopción agrupad
 inmutable disponible, incluyendo los guards, checkouts, presets y plantillas. El CI revisa los
 contratos de la release realmente fijada y exige los checks estables de los cuatro componentes.
 
-La excepción es el arranque de 2.0.0: se exige primero `axiz-workflows-policy`; los checks de
-componentes pasan a ser obligatorios tras comprobar la primera release real. Los requisitos
-remotos y la evidencia de aceptación local se distinguen en la
-guía `RELEASING.md` de la raíz del repositorio.
+Antes de la primera release de workflows solo se exigen los checks de arranque; los checks de
+componentes pasan a ser obligatorios después de publicarla. El procedimiento está en
+`RELEASING.md`, en la raíz del repositorio.
 
 ## El pipeline de un servicio
 

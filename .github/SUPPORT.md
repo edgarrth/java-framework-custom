@@ -4,7 +4,7 @@
 
 | Version | Status | Security fixes | Bug fixes |
 |---|---|---|---|
-| 2.0.x | current (first release line, in preparation) | yes | yes |
+| 2.0.x | current | yes | yes |
 
 Support policy:
 
@@ -25,4 +25,5 @@ BOM. Other combinations are not supported.
   behavior.
 - Security issues: never in an issue; follow `SECURITY.md`.
 
-This repository covers the shared CI/CD workflows, composite actions, Renovate presets and GitOps references.
+This policy covers the framework, the developer tools, the documentation site, the payments demo
+and the shared CI/CD workflows.

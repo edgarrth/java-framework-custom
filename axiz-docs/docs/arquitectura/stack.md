@@ -45,11 +45,10 @@ esperar al handler con timeout para decidir acknowledgement, reintentos y DLQ. E
 su I/O mantienen el modelo reactive; esta excepción del hilo de poll no habilita bloqueos en
 una petición HTTP.
 
-## Condiciones de aceptación
+## Requisitos de las capacidades reactive
 
 Cada capacidad marcada reactive necesita contratos e integración con BlockHound, incluyendo
-cancelación, errores, reconexión y renovación de credenciales. El catálogo no sustituye esa
-evidencia de aceptación.
+cancelación, errores, reconexión y renovación de credenciales.
 Las pruebas de servicios reactive habilitan la autodetección de extensiones de JUnit:
 
 ```properties

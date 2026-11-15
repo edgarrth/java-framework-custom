@@ -1,3 +1,0 @@
-# The platform team owns the tools; the initializr is internet facing and needs security review.
-*                         @axiz-pe/platform
-/axiz-initializr/         @axiz-pe/platform @axiz-pe/security

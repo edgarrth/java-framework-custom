@@ -1,19 +1,19 @@
-# Actualizar y renombrar servicios v2
+# Actualizar y renombrar servicios
 
-Axiz 2.0.0 es la primera versión del framework. Los servicios usan el manifiesto schema 2,
-los parents actuales y las estructuras del catálogo. Los prototipos que no tengan ese contrato
-se regeneran desde sus contratos y conservan únicamente la lógica de negocio apropiada.
+Los servicios usan el manifiesto schema 2, los parents del framework y las estructuras del
+catálogo. Un proyecto sin ese manifiesto se regenera desde sus contratos y conserva únicamente
+su lógica de negocio.
 
-Para evolucionar un servicio v2, actualiza su parent/BOM con una versión aprobada mediante
-`axiz upgrade --to <version-v2> --dry-run`, revisa el diff y ejecuta el comando sin `--dry-run`.
+Para actualizar un servicio, cambia su parent/BOM a una versión aprobada mediante
+`axiz upgrade --to <version> --dry-run`, revisa el diff y ejecuta el comando sin `--dry-run`.
 Prueba compilación, arquitectura, contratos e integraciones antes de desplegar. La versión del
 servicio y la versión de sus eventos son independientes de la versión del framework.
 
 El renombre mediante `--rename` conserva identidades persistentes: fuente y consumidor de eventos,
 group-id Kafka, rutas de configuración y recursos de datos. Los cambios de nombre operativos
-se coordinan con sus consumidores v2; no se mantienen consumidores de una línea anterior de Axiz.
+se coordinan con sus consumidores.
 
 Las reglas de capas están en [capas y ejecución](../arquitectura/capas.md).
-La primera publicación valida firmas aprobadas; las evoluciones posteriores comparan contra una
-versión v2 realmente publicada. La publicación usa los artefactos exactos del build validado,
+La publicación valida las firmas aprobadas de la API pública y la compara con la versión
+publicada anterior. Se publican los artefactos exactos del build validado,
 con pipelines independientes de build y deploy.

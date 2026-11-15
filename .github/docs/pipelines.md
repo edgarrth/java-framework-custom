@@ -1,12 +1,9 @@
 # Pipelines de build y deploy
 
-El contrato nuevo consta de cuatro workflows reutilizables: `lib-build.yaml`, `lib-deploy.yaml`,
+El contrato consta de cuatro workflows reutilizables: `lib-build.yaml`, `lib-deploy.yaml`,
 `service-build.yaml` y `service-deploy.yaml`. Build y deploy tienen ejecuciones independientes.
-El consumidor del framework ya usa `ci.yaml` para construir y `deploy.yaml` para publicar.
-Las plantillas de servicios, librerías y starters generan los dos consumidores independientes.
-Tools y los consumidores actuales de la demo ya usan esos contratos; los cuatro exports
-anteriores se retiraron en 2.0. La reestructuración de servicios de la demo continúa por separado. No se ha publicado esta versión ni probado
-su ejecución remota en GitHub.
+Cada producto usa `ci.yaml` para construir y `deploy.yaml` para publicar; las plantillas de
+servicios, librerías y starters generan esos dos consumidores.
 
 ## Identidad del build
 
@@ -113,6 +110,10 @@ La promoción conserva los digests del build. Un rollback invoca el mismo contra
 anterior verificado, el hash que está desplegado actualmente y los values autorizados.
 Ni el deploy ni el rollback ejecutan Maven, Jib, `docker build` o `helm package`.
 
+Una promoción o un rollback manual se dispara con `gh workflow run deploy.yaml` y los inputs
+`build-run-id`, `build-run-attempt`, `manifest-sha256`, `environment`,
+`previous-manifest-sha256` y `values-revision`.
+
 ## Configuración de la plataforma
 
 | Ámbito | Credenciales y configuración |
@@ -132,8 +133,7 @@ los prefijos de registro. Kyverno **1.17.0** es la versión validada y fijada co
 efímeros y conservan la identidad keyless exacta del tag `axiz-workflows-vX.Y.Z` de
 `service-build.yaml`, Rekor y el builder SLSA. La identidad se actualiza con la versión de workflows.
 La matriz del CLI ejecuta las restricciones de imágenes y digest sin registro remoto; las
-firmas y la procedencia se comprueban como configuración renderizada, sin acreditar una
-verificación criptográfica ni la instalación de webhooks en un clúster.
+firmas y la procedencia se comprueban sobre la configuración renderizada.
 
 Referencias: [OCI en Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/oci/),
 [sources múltiples](https://argo-cd.readthedocs.io/en/stable/user-guide/multiple_sources/),
@@ -144,12 +144,10 @@ Referencias: [OCI en Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guid
 Los tests de `actions/build-manifest` incluyen corrupción, aislamiento, promoción HTTP local,
 auditoría y concurrencia con un repositorio Git bare real. `integration_service_registry.py`
 prueba Docker buildx y Helm contra un registro efímero en loopback: imagen amd64, índice
-amd64/arm64, chart y recuperación por digest. Esa prueba usa imágenes de fixture sin aplicación;
-no acredita la aceptación JVM/native de los servicios, que se valida por separado.
+amd64/arm64, chart y recuperación por digest.
 
 `check_pipeline_contracts.py` verifica la separación y las credenciales de ambos pares. Actionlint
-valida los workflows y kubeconform valida las referencias GitOps. Estas pruebas locales no
-equivalen a una promoción real en Nexus ni a una prueba de admisión en un clúster.
+valida los workflows y kubeconform valida las referencias GitOps.
 
 ## Deploy automático independiente de servicios
 
@@ -173,7 +171,7 @@ antigua requiere promoción manual. Un CI sin build de producto no tiene comprob
 deploy. Los ZIPs del comprobante se limitan antes de extraerlos: dos archivos concretos, sin
 entradas adicionales, enlaces ni expansión excesiva.
 
-La resolución usa `BUILD_READ_TOKEN` (o el token de Actions con lectura) y el nuevo secreto de
+La resolución usa `BUILD_READ_TOKEN` (o el token de Actions con lectura) y el secreto de
 repositorio `GITOPS_READ_TOKEN`, limitado a **Contents: read** en el repositorio GitOps. Este último
 permite observar el predecesor en un commit inmutable antes de solicitar la promoción; el GitHub
 App con escritura sólo se utiliza en el deploy protegido. El resolver y deploy reciben el
@@ -188,19 +186,11 @@ predecesor mediante el CAS existente: si otro deploy lo cambió durante la esper
 falla en lugar de sobrescribirlo. `values-revision` se fija al commit autenticado del build, nunca
 al commit de la ejecución de deploy. Se mantienen las protecciones y revisiones de cada ambiente.
 
-La validación local cubre los algoritmos con archivos y ZIPs reales y respuestas API controladas;
-las firmas de estas pruebas se simulan. La aceptación de OIDC, permisos reales y despliegue en Argo
-se realiza con el release inmutable publicado y los repositorios/ambientes configurados.
-
-La guía operativa opcional de promoción dev → QA y rollback se documenta en
-[promotion-rollback.md](promotion-rollback.md).
-
 ## Destino OCI explícito y compartido
 
 `BUILD_DESTINATION` contiene la configuración JSON validada de host, namespace, repositorio
 productor, repositorio GitOps y servicios permitidos. Deploy, rollback y ApplicationSet comparten
-la ruta `environments/<ambiente>/<servicio>.yaml`. Sustituye el selector de host aislado;
-no existe un fallback. Docker y Helm autentican contra el host, mientras los artefactos usan
+la ruta `environments/<ambiente>/<servicio>.yaml`; no existe un destino alternativo. Docker y Helm autentican contra el host, mientras los artefactos usan
 el namespace completo. El firmador deriva y vuelve a comprobar los destinos desde ese mismo
 JSON. ApplicationSet, AppProject y Kyverno se generan mediante el
 [renderizador de GitOps](../gitops/README.md), sin comodines de organización.

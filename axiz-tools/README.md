@@ -77,8 +77,7 @@ or registry-read/GitOps credentials. Configure `AXIZ_JVM_BASE_IMAGE` and `AXIZ_N
 as digest-pinned repository variables. Optional framework candidates are passed to the JVM,
 native and Initializr builders through the same repository/run/attempt/hash inputs.
 
-The complete contract and current limitations are in
-[the pipeline documentation](../.github/docs/pipelines-v2.md).
+The complete contract is in [the pipeline documentation](../.github/docs/pipelines.md).
 
 `deploy-initializr.yaml` también recibe `workflow_run` del CI y resuelve un comprobante firmado
 específico de `axiz-initializr`. El modo automático promueve a dev desde el HEAD protegido de main;

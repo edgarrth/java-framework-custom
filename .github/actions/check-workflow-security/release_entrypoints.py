@@ -62,7 +62,7 @@ def clone_workspace(source,target):
     exclude=target/'.git/info/exclude'
     exclude.write_text(exclude.read_text()+'\n/.github/scripts/release-version/node_modules\n')
     if git(target,'check-ignore',str(modules.relative_to(target))).returncode:raise ValueError('Toolchain link must never enter the fixture Git history')
-    readme=target/'.github/README.md';readme.write_text(readme.read_text()+'\n<!-- Local release lifecycle snapshot -->\n')
+    readme=target/'.github/WORKFLOWS.md';readme.write_text(readme.read_text()+'\n<!-- Local release lifecycle snapshot -->\n')
     snapshot(target,'fix: snapshot current workflow lifecycle')
 
 
@@ -83,7 +83,7 @@ class ReleaseEntrypointTest(unittest.TestCase):
             cls.apply_plan(repo,'bootstrap-plan')
             first='axiz-workflows-v'+(repo/'.github/version.txt').read_text().strip()
             snapshot(repo,'chore: initial workflow release');git(repo,'tag',first)
-            path=repo/'.github/README.md';path.write_text(path.read_text()+'\n<!-- Next local patch -->\n');snapshot(repo,'fix: exercise a real workflow patch')
+            path=repo/'.github/WORKFLOWS.md';path.write_text(path.read_text()+'\n<!-- Next local patch -->\n');snapshot(repo,'fix: exercise a real workflow patch')
         cls.previous={row['version'] for row in inventory(repo) if row['owner']=='renovate'}
         if len(cls.previous)!=1:raise ValueError('The lifecycle starts from one adopted workflow release')
         cls.previous=next(iter(cls.previous))

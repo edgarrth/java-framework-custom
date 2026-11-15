@@ -1,6 +1,7 @@
 # Security policy
 
-This policy covers the shared CI/CD workflows, composite actions, Renovate presets and GitOps references.
+This policy covers every component of this repository: the framework, the developer tools, the
+documentation site, the payments demo and the shared CI/CD workflows.
 
 ## Reporting a vulnerability
 
@@ -33,7 +34,12 @@ Do not open a public issue, pull request or chat thread for a suspected vulnerab
 
 ## Scope and priorities
 
-Areas reviewed with priority in this repository: .github/workflows/, gitops/policies/.
+Areas reviewed with priority:
+
+- `axiz-framework`: `core/**/*crypto*`, `core/**/*security*`, `spring/axiz-security-*`, `quality/`.
+- `axiz-tools`: `axiz-initializr/` (internet facing) and `axiz-cli/`.
+- `axiz-demo`: `services/*/src/main/java/**/security` and `deploy/`.
+- `.github`: `workflows/`, `actions/` and `gitops/policies/`.
 
 Dependency vulnerabilities are tracked automatically (Trivy on the SBOM, dependency review on pull
 requests, Renovate security updates outside the weekly schedule); report them here only when the
