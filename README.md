@@ -12,7 +12,7 @@ generación de proyectos y controles de calidad para aplicaciones financieras.
 | [axiz-tools](axiz-tools/README.md) | CLI `axiz`, Initializr y recetas OpenRewrite | [CLI](axiz-tools/axiz-cli/README.md), [Initializr](axiz-tools/axiz-initializr/README.md), [recetas](axiz-tools/axiz-rewrite-recipes/README.md) |
 | [axiz-demo](axiz-demo/README.md) | Nueve servicios que muestran un flujo de pagos con las capacidades del framework | [Servicios y ejecución local](axiz-demo/README.md), [contratos](axiz-demo/contracts) |
 | [axiz-docs](axiz-docs/README.md) | Guías de uso, referencia de módulos y sitio MkDocs para GitHub Pages | [Inicio](axiz-docs/docs/index.md), [primer servicio](axiz-docs/docs/empezar/index.md) |
-| [.github](.github/README.md) | Workflows de build, deploy y publicación, acciones reutilizables y configuración GitOps | [Pipelines](.github/docs/pipelines-v2.md), [destinos GitOps](.github/gitops/README.md) |
+| [.github](.github/WORKFLOWS.md) | Workflows de build, deploy y publicación, acciones reutilizables y configuración GitOps | [Pipelines](.github/docs/pipelines-v2.md), [destinos GitOps](.github/gitops/README.md) |
 
 Los componentes comparten repositorio. Framework, herramientas, documentación y workflows
 se versionan de forma independiente. El procedimiento de publicación está en
