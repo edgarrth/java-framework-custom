@@ -71,8 +71,8 @@ Los guards consultan la API de releases y exigen tag exacto, `immutable: true` y
 Un tag local no sustituye una release inmutable publicada. Para repositorios privados,
 `AXIZ_WORKFLOWS_READ_TOKEN` concede solo lectura al repositorio de workflows.
 
-Antes de esa primera publicación, GitHub no puede resolver las llamadas a
-`axiz-workflows-v2.0.0` de framework, tools y demo: valida las referencias antes de ejecutar los
+Antes de esa primera publicación, GitHub no puede resolver las llamadas a la release de
+workflows de framework, tools y demo: valida las referencias antes de ejecutar los
 jobs, incluso si tienen una condición `if`. Completar primero los controles independientes
 `workflows-ci`, `security` y `docs-docs`, publicar los workflows y después ejecutar los CI de los
 productos. Un tag vacío o una referencia a `main` no cumple el contrato de publicación.
