@@ -34,6 +34,12 @@ cada token; los tokens efímeros se limitan al rol y repositorio de destino. Los
 release son `RELEASE_APP_CLIENT_ID` y `RELEASE_APP_PRIVATE_KEY`; GitOps usa
 `GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`.
 
+En Settings → Secrets and variables → Actions, guardar `RELEASE_APP_CLIENT_ID` como variable
+de repositorio y `RELEASE_APP_PRIVATE_KEY` como secreto. El Client ID también puede guardarse
+como secreto. La App debe estar instalada en este repositorio y su instalación debe tener los
+permisos de la tabla. `release-self` comprueba ambos valores antes de solicitar un token; nunca
+usa el token automático de Actions como sustituto de la App.
+
 El monorepo necesita Workflows porque Release Please actualiza siete workflows publicados.
 Los consumidores no reciben ese permiso ni un input para ampliarlo. `permission-workflows`
 es un input de `create-github-app-token`, no un permiso de `GITHUB_TOKEN`. Las operaciones de
@@ -51,8 +57,11 @@ Una divergencia bloquea el control; los permisos no se amplían automáticamente
 1. Configurar Nexus, el registro OCI, las GitHub Apps, los entornos protegidos y GitHub Pages
    según los productos que se publiquen.
 2. Exigir inicialmente `axiz-workflows-policy`, `axiz-security-pr` y `axiz-docs-site-pr`.
-3. Crear y publicar primero la release inmutable de `axiz-workflows`. El manifiesto vacío
-   representa componentes sin publicaciones previas.
+3. En Actions → release-self → Run workflow, seleccionar `main`. Esto también permite reintentar
+   después de configurar las credenciales, sin crear un commit vacío. Revisar y fusionar primero
+   el PR de release de `axiz-workflows`; la siguiente ejecución de `release-self` publica su tag
+   y release. Habilitar previamente las releases inmutables en Settings → General → Releases.
+   El manifiesto vacío representa componentes sin publicaciones previas.
 4. Verificar que el guard `axiz-workflows-trust` acepta esa release. Activar los checks de
    framework, herramientas, demo y documentación.
 5. Publicar el framework antes de las herramientas que necesitan resolver sus artefactos.
@@ -61,6 +70,17 @@ Una divergencia bloquea el control; los permisos no se amplían automáticamente
 Los guards consultan la API de releases y exigen tag exacto, `immutable: true` y `draft: false`.
 Un tag local no sustituye una release inmutable publicada. Para repositorios privados,
 `AXIZ_WORKFLOWS_READ_TOKEN` concede solo lectura al repositorio de workflows.
+
+Antes de esa primera publicación, GitHub no puede resolver las llamadas a
+`axiz-workflows-v2.0.0` de framework, tools y demo: valida las referencias antes de ejecutar los
+jobs, incluso si tienen una condición `if`. Completar primero los controles independientes
+`workflows-ci`, `security` y `docs-docs`, publicar los workflows y después ejecutar los CI de los
+productos. Un tag vacío o una referencia a `main` no cumple el contrato de publicación.
+
+Los scripts se ejecutan por rutas locales. GitHub también admite llamadas locales entre
+workflows del mismo commit; se usan para controles internos. Los builds y deploys firmados
+consumen la release inmutable de workflows porque el manifiesto y sus verificadores exigen
+esa identidad. Cambiar esas llamadas requiere adaptar y validar también el contrato de firma.
 
 ## Build y deploy
 

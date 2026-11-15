@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One offline command inventory for CI and each isolated release/adoption state."""
 import argparse
+from collections import deque
 import json
 import os
 from pathlib import Path
@@ -66,7 +67,12 @@ def execute(root,output,tools):
             result=subprocess.run(argv,cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
         results.append({'name':name,'passed':result.returncode==0,'exitCode':result.returncode,'log':name+'.log'})
         print(('PASS ' if result.returncode==0 else 'FAIL ')+name,flush=True)
-        if result.returncode:break
+        if result.returncode:
+            print('::group::'+name+' diagnostics ('+str(output/(name+'.log'))+')',flush=True)
+            with (output/(name+'.log')).open(errors='replace') as log:
+                print(''.join(deque(log,maxlen=100)),end='',flush=True)
+            print('\n::endgroup::',flush=True)
+            break
     summary={'passed':len(results)==len(COMMANDS) and all(row['passed'] for row in results),'checks':results}
     (output/'result.json').write_text(json.dumps(summary,indent=2)+'\n')
     return summary

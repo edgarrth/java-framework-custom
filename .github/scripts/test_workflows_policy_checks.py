@@ -1,9 +1,15 @@
 from pathlib import Path
+from contextlib import redirect_stdout
+import io
 import json
+import os
 import re
+import tempfile
 import unittest
+from unittest.mock import patch
 import yaml
 
+import workflows_policy_checks as executor
 from workflows_policy_checks import COMMANDS
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -46,3 +52,31 @@ class WorkflowExecutorTest(unittest.TestCase):
         self.assertIn('literals',{name for name,_ in COMMANDS})
         self.assertIn('release-permissions',{name for name,_ in COMMANDS})
         self.assertIn('documentation',{name for name,_ in COMMANDS})
+
+    def test_a_failed_control_preserves_and_prints_its_diagnostic_before_stopping(self):
+        with tempfile.TemporaryDirectory(prefix='axiz-control-diagnostic-') as folder:
+            source=Path(folder)/'source';source.mkdir()
+            output=Path(folder)/'results'
+            commands=[('failing-check',['{python}','-c','print("Fixture failure details"); raise SystemExit(1)']),
+                      ('must-not-run',['{python}','-c','raise SystemExit(99)'])]
+            tools={'actionlint':'unused','kyverno':'unused','kubeconform':'unused','schemas':str(source/'schemas')}
+            console=io.StringIO()
+            with patch.object(executor,'verify_schemas'),patch.object(executor,'COMMANDS',commands),patch.dict(os.environ,{
+                    'AXIZ_NPM_AUDIT_INPUT':'fixture','AXIZ_RELEASE_ACTION_CACHE':'fixture'}),redirect_stdout(console):
+                result=executor.execute(source,output,tools)
+            self.assertFalse(result['passed'])
+            self.assertEqual(['failing-check'],[row['name'] for row in result['checks']])
+            self.assertIn('Fixture failure details',console.getvalue())
+            self.assertIn('::group::failing-check diagnostics',console.getvalue())
+            self.assertEqual('Fixture failure details\n',(output/'failing-check.log').read_text())
+            self.assertFalse((output/'must-not-run.log').exists())
+            self.assertFalse(json.loads((output/'result.json').read_text())['passed'])
+
+    def test_ci_keeps_control_logs_available_after_failure(self):
+        workflow=yaml.safe_load((ROOT/'.github/workflows/workflows-ci.yaml').read_text())
+        upload=next(step for step in workflow['jobs']['contracts']['steps']
+                    if step.get('uses','').startswith('actions/upload-artifact@'))
+        self.assertEqual('always()',upload['if'])
+        self.assertIn('/policy-results/*.log',upload['with']['path'])
+        self.assertIn('/lifecycle-results/result.json',upload['with']['path'])
+        self.assertEqual(7,upload['with']['retention-days'])
