@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /** Owned renewal lifetime. Async I/O is composed; only the virtual timer sleeps. */
 public final class IdempotencyLease implements AutoCloseable {

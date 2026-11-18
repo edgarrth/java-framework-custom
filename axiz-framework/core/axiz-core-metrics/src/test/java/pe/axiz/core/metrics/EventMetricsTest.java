@@ -166,6 +166,36 @@ class EventMetricsTest {
       keySets.add(keys);
     }
     assertEquals(1, keySets.size());
+    var tagged = registry.get(MetricNames.COUNT).tag("event", "b").counter();
+    assertEquals("kyc", tagged.getId().getTag("stage"));
+    assertEquals("t1", tagged.getId().getTag("tenant"));
+    assertEquals("web", tagged.getId().getTag("channel"));
+    assertEquals("s1", tagged.getId().getTag("segment"));
+  }
+
+  @Test
+  void catalogCategoriesTakePrecedenceAndUncataloguedEventsKeepExplicitCategories() {
+    metrics.record(MetricEvent.of("payment").category("reconciliation"));
+    assertEquals(
+        "payment",
+        registry
+            .get(MetricNames.COUNT)
+            .tag("event", "payment")
+            .counter()
+            .getId()
+            .getTag("category"));
+    metrics.record(MetricEvent.of("uncatalogued").category("reconciliation"));
+    assertEquals(
+        "reconciliation",
+        registry
+            .get(MetricNames.COUNT)
+            .tag("event", "uncatalogued")
+            .counter()
+            .getId()
+            .getTag("category"));
+    var classification = metrics.classify(new IllegalStateException("private detail"));
+    assertEquals(Outcome.ERROR, classification.outcome());
+    assertEquals("illegal-state-exception", classification.reason());
   }
 
   @Test

@@ -25,6 +25,12 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
@@ -102,7 +108,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-idempotency-redis</artifactId>
+      <artifactId>axiz-idempotency-redis-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -111,12 +117,12 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-cache-redis</artifactId>
+      <artifactId>axiz-cache-redis-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-security-redis</artifactId>
+      <artifactId>axiz-security-redis-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
 

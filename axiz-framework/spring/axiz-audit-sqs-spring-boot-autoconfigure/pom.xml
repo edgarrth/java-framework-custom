@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
+  <artifactId>axiz-audit-sqs-spring-boot-autoconfigure</artifactId>
+  <name>axiz :: audit :: sqs :: spring :: boot :: autoconfigure</name>
+  <description>SQS audit destination with native synchronous and reactive publication</description>
+  <properties><axiz.module.name>pe.axiz.spring.audit.sqs</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies>
+<dependency><groupId>software.amazon.awssdk</groupId><artifactId>sqs</artifactId></dependency>
+<dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+<dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId></dependency>
+<dependency><groupId>io.micrometer</groupId><artifactId>micrometer-observation</artifactId></dependency>
+<dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
+<dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-observability-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-aws-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-audit-sqs</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-audit-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

@@ -33,5 +33,10 @@
     <module>axiz-adapter-security-redis</module>
     <module>axiz-adapter-sequence-dynamodb</module>
     <module>axiz-adapter-storage-s3</module>
+    <module>axiz-adapter-secrets-file</module>
+    <module>axiz-adapter-http-jdk</module>
+    <module>axiz-adapter-kafka-msk</module>
+    <module>axiz-adapter-tokenization-dynamodb</module>
+    <module>axiz-adapter-tokenization-redis</module>
   </modules>
 </project>

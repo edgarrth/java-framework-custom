@@ -144,6 +144,47 @@ class CacheTest {
   }
 
   @Test
+  void evictionReachesBothTiersAndPrefixCountsDoNotIncludeOtherNamespaces() {
+    var clock = new MutableClock();
+    var local = new InMemoryByteCache(10, clock);
+    var remote = new FlakyCache(clock);
+    var cache = new TwoLevelCache(local, remote, Duration.ofMinutes(1));
+    for (String key : List.of("group:one", "group:two", "other"))
+      cache.put(key, new byte[] {1}, Duration.ofMinutes(1));
+    cache.evict("group:one");
+    assertTrue(local.get("group:one").isEmpty());
+    assertTrue(remote.get("group:one").isEmpty());
+    assertEquals(2, cache.evictByPrefix("group:"));
+    assertTrue(local.get("group:two").isEmpty());
+    assertTrue(remote.get("group:two").isEmpty());
+    assertTrue(local.get("other").isPresent());
+    assertTrue(remote.get("other").isPresent());
+    remote.down = true;
+    assertEquals(1, cache.evictByPrefix("other"));
+    assertTrue(local.get("other").isEmpty());
+  }
+
+  @Test
+  void typedEvictionPreservesTheOtherCacheAndCacheHitsNeverInvokeTheLoader() {
+    var bytes = new InMemoryByteCache(10, Clock.systemUTC());
+    var first = new AxizCache("payments", "first", bytes, new TextCodec(), Duration.ofMinutes(1));
+    var second = new AxizCache("payments", "second", bytes, new TextCodec(), Duration.ofMinutes(1));
+    first.put("key", "first-value");
+    second.put("key", "second-value");
+    assertEquals(
+        "first-value",
+        first.getOrLoad(
+            "key",
+            String.class,
+            () -> {
+              throw new AssertionError("A hit must not call the origin");
+            }));
+    first.evict("key");
+    assertTrue(first.get("key", String.class).isEmpty());
+    assertEquals("second-value", second.get("key", String.class).orElseThrow());
+  }
+
+  @Test
   void inMemoryTtlAndBound() {
     MutableClock clock = new MutableClock();
     InMemoryByteCache c = new InMemoryByteCache(2, clock);

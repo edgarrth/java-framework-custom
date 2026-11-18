@@ -1,0 +1,62 @@
+# axiz-audit-kafka-spring-boot-autoconfigure
+
+KAFKA audit destination with native synchronous and reactive publication.
+
+This module owns the `pe.axiz.spring.audit.kafka` API.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-audit-kafka-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The paired starter selects this provider. Application code uses the capability ports; do not
+import auto-configuration classes into controllers, application services or domain models.
+
+## Types
+
+Public types declared by this module:
+
+- `AxizAuditKafkaAutoConfiguration`
+- `AxizAuditKafkaProperties`
+
+## Configuration
+
+Owned property prefixes: `axiz.audit.kafka.*`.
+
+## Catalog usage
+
+```bash
+axiz add audit-kafka
+```
+
+Required capabilities: `audit`, `messaging-kafka`.
+
+The catalog supplies the following properties. Environment placeholders must resolve in the
+service configuration; they are not credentials or provisioned infrastructure.
+
+```yaml
+axiz.audit.kafka.topic: ${AXIZ_AUDIT_TOPIC:audit}
+```
+
+## Operations
+
+Provision topics and broker access with TLS/SASL, bounded transport timeouts and durability
+settings suited to the event contract. Delivery may be repeated; consumers use stable event
+IDs and inbox deduplication. A producer acknowledgement is not a business transaction commit.
+
+## Verification
+
+From `axiz-framework`:
+
+```bash
+./mvnw -pl spring/axiz-audit-kafka-spring-boot-autoconfigure -am test
+```
+
+The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.

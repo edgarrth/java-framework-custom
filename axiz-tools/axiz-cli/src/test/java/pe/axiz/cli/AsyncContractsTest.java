@@ -26,20 +26,21 @@ class AsyncContractsTest {
           new String(java.util.Objects.requireNonNull(in).readAllBytes(), StandardCharsets.UTF_8));
     }
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            "pe.axiz",
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            m.openapi(),
-            "src/main/asyncapi/asyncapi.yaml",
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId("pe.axiz")
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(m.openapi())
+        .asyncapi("src/main/asyncapi/asyncapi.yaml")
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     CapabilityAdder.mergeYaml(
         directory.resolve("src/main/resources/application.yaml"),
@@ -133,20 +134,21 @@ class AsyncContractsTest {
         </project>
         """);
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            "application/" + m.openapi(),
-            "application/" + m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi("application/" + m.openapi())
+        .asyncapi("application/" + m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     var errors =
         DoctorCommandTest.messages(
@@ -291,20 +293,21 @@ class AsyncContractsTest {
   void asyncOnlyProjectsDoNotRequireTheTypeSwitch(@TempDir Path temporary) throws Exception {
     Path directory = service(temporary);
     ProjectManifest m = ProjectManifest.read(directory);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            null,
-            m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(null)
+        .asyncapi(m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(directory);
     assertEquals(0, new CliHarness().run("contract", "sync", "--dir", directory.toString()));
     assertEquals(0, new CliHarness().run("contract", "lint", "--dir", directory.toString()));

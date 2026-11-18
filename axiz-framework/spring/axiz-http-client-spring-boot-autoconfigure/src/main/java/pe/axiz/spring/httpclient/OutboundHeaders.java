@@ -4,8 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.http.HeaderPropagation;
 

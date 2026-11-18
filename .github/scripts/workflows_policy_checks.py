@@ -29,7 +29,7 @@ COMMANDS = [
     ('literals', ['{python}', '.github/scripts/workflow_release_literals.py', '.']),
     ('library-contracts', ['{python}', '.github/actions/check-workflow-security/check_pipeline_contracts.py', '--build', '.github/workflows/lib-build.yaml', '--deploy', '.github/workflows/lib-deploy.yaml']),
     ('service-contracts', ['{python}', '.github/actions/check-workflow-security/check_pipeline_contracts.py', '--build', '.github/workflows/service-build.yaml', '--deploy', '.github/workflows/service-deploy.yaml']),
-    *[(name+'-tests',['{python}','-m','unittest','discover','-s','.github/actions/'+name,'-p','test_*.py']) for name in ('setup-maven','check-encapsulation','check-sbom','check-mutations')],
+    *[(name+'-tests',['{python}','-m','unittest','discover','-s','.github/actions/'+name,'-p','test_*.py']) for name in ('setup-maven','check-encapsulation','check-sbom','check-mutations','check-vulnerabilities')],
     ('actionlint', ['{actionlint}']),
     ('kyverno', ['{python}', '.github/scripts/test_gitops_policies.py', '--kyverno', '{kyverno}', '--output', '{output}/kyverno']),
     ('kubeconform', ['{kubeconform}', '-strict', '-summary', '-schema-location', '{schemas}/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json', '{output}/kyverno/rendered/argocd', '{output}/kyverno/rendered/policies']),

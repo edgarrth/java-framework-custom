@@ -21,12 +21,12 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.reactive.BindingContext;
 import org.springframework.web.server.ServerWebExchange;
-import pe.axiz.core.commons.HeaderCatalog;
-import pe.axiz.core.commons.HeaderDefinition;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.HeaderCatalog;
+import pe.axiz.core.api.HeaderDefinition;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ValidationException;
 
 class WebTest {
@@ -48,7 +48,9 @@ class WebTest {
     assertThrows(ValidationException.class, () -> parser.parse("x", "500", List.of(), null));
     // malformed sort expressions are the client's error: 400 with a violation on "sort", as the
     // audit reproduced over HTTP (sort=name;drop table, sort=$invalid answered 500 before)
-    for (String sort : List.of("name;drop table", "$invalid", "a b,desc")) {
+    for (String sort :
+        List.of(
+            "name;drop table", "$invalid", "a b,desc", "name,wrong", "name,", "name,asc,desc")) {
       ValidationException e =
           assertThrows(
               ValidationException.class, () -> parser.parse("0", "10", List.of(sort), null));

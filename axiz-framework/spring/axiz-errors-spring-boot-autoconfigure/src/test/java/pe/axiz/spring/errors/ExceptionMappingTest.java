@@ -186,7 +186,7 @@ class ExceptionMappingTest {
               ExternalServiceException.from(
                   new ExternalErrorDetail("ledger", -1, "ConnectException", null, ""),
                   new IllegalStateException(new ConnectException())));
-          // a technical failure of this service keeps its cause
+          // diagnostics retain the classification, never provider text or causes
           problem(
               responder,
               new AxizException(
@@ -205,11 +205,17 @@ class ExceptionMappingTest {
           }
         });
     assertThat(output.getOut())
-        .contains("path=/transfers error=Call to core-banking")
-        .contains("cause=-")
-        .contains("cause=ConnectException")
-        .contains("ERROR")
-        .contains("error=ledger posting failed");
+        .contains(
+            "WARN", "status=503", "exceptionType=pe.axiz.core.errors.ExternalServiceException")
+        .contains("ERROR", "status=500", "exceptionType=pe.axiz.core.errors.AxizException")
+        .contains("correlationId=corr-12345678")
+        .doesNotContain(
+            "path=/transfers",
+            "Call to core-banking",
+            "cause=",
+            "ConnectException",
+            "ledger posting failed",
+            "IllegalStateException: db");
   }
 
   @Test

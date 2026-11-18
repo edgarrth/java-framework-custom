@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
 import pe.axiz.core.errors.Problem;
 
 /** Converts every exception raised by MVC handlers into an RFC 9457 response. */
@@ -35,6 +35,7 @@ public class ProblemControllerAdvice {
         .headers(
             headers -> {
               if (effectiveFailure != failure) headers.set("WWW-Authenticate", "Bearer");
+              responder.headers(headers, problem, effectiveFailure);
             })
         .contentType(MediaType.parseMediaType(ProblemResponder.MEDIA_TYPE))
         .body(responder.json(problem));

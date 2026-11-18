@@ -2,8 +2,8 @@ package pe.axiz.spring.web;
 
 import io.micrometer.context.ThreadLocalAccessor;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 
 /**
  * Bridges {@link RequestContext} with Micrometer context-propagation, so the metadata follows

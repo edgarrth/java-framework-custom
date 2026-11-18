@@ -374,7 +374,16 @@ class CacheScopeTest {
 
   private static TestingAuthenticationToken axiz(String issuer, String subject) {
     AxizPrincipal principal =
-        new AxizPrincipal(subject, "app", issuer, List.of(), Set.of(), Set.of(), null, Map.of());
+        AxizPrincipal.builder()
+            .subject(subject)
+            .clientId("app")
+            .issuer(issuer)
+            .audience(List.of())
+            .scopes(Set.of())
+            .roles(Set.of())
+            .tenantId(null)
+            .attributes(Map.of())
+            .build();
     TestingAuthenticationToken token = new TestingAuthenticationToken(principal, "n/a", "R");
     token.setAuthenticated(true);
     return token;

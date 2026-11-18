@@ -48,4 +48,6 @@ String next = cursors.encode(lastKey, "table/index/filter/tenant");
 ## Módulos
 
 - [`axiz-dynamodb-spring-boot-autoconfigure`](../referencia/spring/axiz-dynamodb-spring-boot-autoconfigure.md)
+- [`axiz-core-api`](../referencia/core/axiz-core-api.md)
+- [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
 - [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)

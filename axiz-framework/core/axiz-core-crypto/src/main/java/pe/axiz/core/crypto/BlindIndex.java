@@ -1,38 +1,70 @@
 package pe.axiz.core.crypto;
 
-import java.nio.charset.StandardCharsets;
-import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
-import java.util.Locale;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Blind index for searching encrypted columns by equality: HMAC-SHA256 of the normalized value with
- * a dedicated key (never the encryption key), truncated to limit leakage.
+ * Versioned equality indexes using a dedicated HMAC key, explicit scope and lossless framing.
+ * Canonicalization belongs to the field profile; this primitive never modifies the supplied value.
  */
-public final class BlindIndex {
+public final class BlindIndex implements AutoCloseable {
 
-  private final byte[] key;
-  private final int bytes;
+  private final Map<String, byte[]> keys;
+  private final String currentKeyId;
+  private boolean closed;
 
-  public BlindIndex(byte[] key, int bytes) {
-    if (key.length < 32) {
-      throw new CryptoException("Blind index keys must have at least 256 bits");
-    }
-    if (bytes < 8 || bytes > 32) {
-      throw new CryptoException("Blind index size must be between 8 and 32 bytes");
-    }
-    this.key = key.clone();
-    this.bytes = bytes;
+  public BlindIndex(Map<String, byte[]> keys, String currentKeyId) {
+    if (keys.isEmpty() || keys.size() > 16 || !keys.containsKey(currentKeyId))
+      throw new CryptoException("Index read keys must include the write key");
+    Map<String, byte[]> snapshot = new LinkedHashMap<>();
+    keys.forEach(
+        (id, key) -> {
+          if (!id.matches("[A-Za-z0-9_-]{1,32}") || key.length < 32 || key.length > 1024)
+            throw new CryptoException("Invalid index key configuration");
+        });
+    keys.forEach((id, key) -> snapshot.put(id, key.clone()));
+    this.keys = Map.copyOf(snapshot);
+    this.currentKeyId = currentKeyId;
   }
 
-  public String index(String value, String context) {
-    String normalized =
-        Normalizer.normalize(value.strip(), Normalizer.Form.NFKC)
-            .toUpperCase(Locale.ROOT)
-            .replaceAll("[\\s-]", "");
-    byte[] mac =
-        Hashing.hmacSha256(key, (context + "|" + normalized).getBytes(StandardCharsets.UTF_8));
-    return Base64.getUrlEncoder().withoutPadding().encodeToString(Arrays.copyOf(mac, bytes));
+  public KeyedHash index(String canonicalValue, IndexScope scope) {
+    return index(canonicalValue, scope, currentKeyId);
+  }
+
+  public synchronized KeyedHash index(String canonicalValue, IndexScope scope, String keyId) {
+    if (closed) throw new CryptoException("Index keyring has been closed");
+    byte[] key = keys.get(keyId);
+    if (key == null) throw new CryptoException("Required index key is unavailable");
+    byte[] preimage = IndexPreimage.of(canonicalValue, scope, keyId);
+    try {
+      return new KeyedHash(keyId, scope, Hashing.hmacSha256(key, preimage));
+    } finally {
+      Arrays.fill(preimage, (byte) 0);
+    }
+  }
+
+  /** The configured map contains active read keys only; the write key is returned first. */
+  public List<KeyedHash> candidates(String canonicalValue, IndexScope scope) {
+    List<KeyedHash> result = new ArrayList<>();
+    result.add(index(canonicalValue, scope));
+    keys.keySet().stream()
+        .filter(id -> !id.equals(currentKeyId))
+        .sorted()
+        .forEach(id -> result.add(index(canonicalValue, scope, id)));
+    return List.copyOf(result);
+  }
+
+  public Set<String> keyIds() {
+    return keys.keySet();
+  }
+
+  @Override
+  public synchronized void close() {
+    keys.values().forEach(key -> Arrays.fill(key, (byte) 0));
+    closed = true;
   }
 }

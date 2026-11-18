@@ -9,10 +9,9 @@ axiz add audit-kafka
 
 |  |  |
 |---|---|
-| Starter | `pe.axiz:axiz-audit-spring-boot-starter` |
+| Starter | `pe.axiz:axiz-audit-kafka-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
 | Agrega también | [`audit`](audit.md), [`messaging-kafka`](messaging-kafka.md) |
-| Dependencias | `pe.axiz:axiz-adapter-audit-kafka` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -35,7 +34,6 @@ axiz.audit.kafka.topic: audit
 
 ## Módulos
 
-- [`axiz-audit-spring-boot-autoconfigure`](../referencia/spring/axiz-audit-spring-boot-autoconfigure.md)
+- [`axiz-audit-kafka-spring-boot-autoconfigure`](../referencia/spring/axiz-audit-kafka-spring-boot-autoconfigure.md)
 - [`axiz-core-audit`](../referencia/core/axiz-core-audit.md)
-- [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
-- [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)

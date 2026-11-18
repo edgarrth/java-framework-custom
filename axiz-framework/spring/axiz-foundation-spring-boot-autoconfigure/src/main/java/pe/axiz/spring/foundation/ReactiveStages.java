@@ -2,13 +2,17 @@ package pe.axiz.spring.foundation;
 
 import io.micrometer.context.ContextSnapshotFactory;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscription;
 import org.springframework.util.ClassUtils;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.context.RequestContext;
 import reactor.core.CoreSubscriber;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,6 +46,57 @@ public final class ReactiveStages {
     Objects.requireNonNull(work);
     return Flux.deferContextual(
         context -> CONTEXT_AVAILABLE ? Micrometer.flux(context, work) : Flux.from(work.get()));
+  }
+
+  /**
+   * Transfers an owned result to a future with no ambient security context. Both discarded Reactor
+   * signals and a value arriving after cancellation are released; the disposer must not throw.
+   */
+  public static <T> CompletableFuture<T> toOwnedFuture(
+      Mono<T> source, Class<T> type, Consumer<? super T> discard) {
+    Objects.requireNonNull(source);
+    Objects.requireNonNull(type);
+    Objects.requireNonNull(discard);
+    var subscription = new AtomicReference<@Nullable Subscription>();
+    var result =
+        new CompletableFuture<T>() {
+          @Override
+          public boolean cancel(boolean interrupt) {
+            boolean cancelled = super.cancel(interrupt);
+            var current = subscription.get();
+            if (cancelled && current != null) current.cancel();
+            return cancelled;
+          }
+        };
+    source
+        .doOnDiscard(type, discard)
+        .subscribe(
+            new CoreSubscriber<T>() {
+              @Override
+              public void onSubscribe(Subscription current) {
+                if (!subscription.compareAndSet(null, current) || result.isCancelled())
+                  current.cancel();
+                else current.request(1);
+              }
+
+              @Override
+              public void onNext(T value) {
+                if (!result.complete(value)) discard.accept(value);
+              }
+
+              @Override
+              public void onError(Throwable failure) {
+                result.completeExceptionally(failure);
+              }
+
+              @Override
+              public void onComplete() {
+                if (!result.isDone())
+                  result.completeExceptionally(
+                      new IllegalStateException("Owned reactive source completed empty"));
+              }
+            });
+    return result;
   }
 
   private static final class Micrometer {

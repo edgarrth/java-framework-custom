@@ -42,6 +42,9 @@ public final class CoreErrors {
       ErrorDefinition.of("AXZ-EXT-0502", ErrorCategory.BAD_GATEWAY, "Dependency failure");
   public static final ErrorDefinition EXTERNAL_TIMEOUT =
       ErrorDefinition.of("AXZ-EXT-0504", ErrorCategory.GATEWAY_TIMEOUT, "Dependency timeout");
+  public static final ErrorDefinition OUTCOME_UNKNOWN =
+      ErrorDefinition.of(
+          "AXZ-CORE-0504", ErrorCategory.OUTCOME_UNKNOWN, "Operation outcome uncertain");
 
   private CoreErrors() {}
 
@@ -64,7 +67,8 @@ public final class CoreErrors {
         NOT_IMPLEMENTED,
         UNAVAILABLE,
         EXTERNAL_ERROR,
-        EXTERNAL_TIMEOUT);
+        EXTERNAL_TIMEOUT,
+        OUTCOME_UNKNOWN);
   }
 
   /** Default framework definition for a category. */
@@ -85,6 +89,7 @@ public final class CoreErrors {
       case BAD_GATEWAY -> EXTERNAL_ERROR;
       case SERVICE_UNAVAILABLE -> UNAVAILABLE;
       case GATEWAY_TIMEOUT -> EXTERNAL_TIMEOUT;
+      case OUTCOME_UNKNOWN -> OUTCOME_UNKNOWN;
     };
   }
 }

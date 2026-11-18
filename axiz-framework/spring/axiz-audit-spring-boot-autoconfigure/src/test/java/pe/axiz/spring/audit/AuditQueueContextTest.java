@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.audit.AsyncAuditPublisher;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditRecord;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.sensitive.ObjectMasker;
 

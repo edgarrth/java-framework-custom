@@ -108,7 +108,7 @@ public void close();
 }
 
 public final class pe.axiz.spring.httpclient.OutboundHeaders {
-public static java.util.Map<java.lang.String, java.lang.String> of(pe.axiz.core.commons.RequestMetadata, pe.axiz.core.http.ClientSettings, java.lang.String);
+public static java.util.Map<java.lang.String, java.lang.String> of(pe.axiz.core.context.RequestMetadata, pe.axiz.core.http.ClientSettings, java.lang.String);
 }
 
 public class pe.axiz.spring.httpclient.ReactiveClientNameObservationConvention extends org.springframework.web.reactive.function.client.DefaultClientRequestObservationConvention {

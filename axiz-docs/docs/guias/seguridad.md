@@ -12,6 +12,7 @@ axiz:
     issuers:
       - issuer: https://sso.axiz.internal/realms/axiz
         audiences: [payments-business]
+        profile: compatible   # strict exige access tokens con typ=at+jwt
         # jwk-set-uri opcional: si falta, se descubre de /.well-known/openid-configuration
     algorithms: [RS256, PS256, ES256]
     clock-skew: 30s
@@ -28,6 +29,21 @@ Además de la firma (solo los algoritmos de `algorithms`), el emisor y la audien
 traer **`exp`** (RFC 9068 la exige en un access token): sin ella se rechaza, en servlet y en
 reactivo, porque un token sin vencimiento valdría para siempre. `exp` y `nbf` se comparan con el
 reloj con la tolerancia de `clock-skew`. La Initializr aplica la misma regla a sus tokens.
+
+El perfil se fija por emisor mediante `axiz.security.issuers[].profile`. `compatible`, el valor
+predeterminado, acepta `typ=JWT` o un encabezado sin `typ`. `strict` acepta exclusivamente
+`typ=at+jwt` o `typ=application/at+jwt`, exige `iat` y los claims textuales no vacíos `sub`,
+`client_id` y `jti`, y excluye RS256 de los algoritmos habilitados. La aplicación no arranca si
+un emisor estricto queda sin algoritmos. PS256 y ES256 están disponibles de forma predeterminada.
+No hay reintento con otro perfil cuando un token falla: cada emisor tiene un único contrato y
+los tipos admitidos por ambos perfiles son excluyentes. `id_token` se rechaza en ambos.
+
+Los tipos y claims del perfil estricto siguen el
+[perfil de access tokens de RFC 9068](https://www.rfc-editor.org/rfc/rfc9068.html#section-4).
+Excluir RS256 es una política de endurecimiento de Axiz, no una exigencia de esa RFC ni una
+declaración de conformidad completa. Antes de activar `strict`, configura el proveedor de
+identidad para emitir el tipo, los claims y un algoritmo admitido. Las URLs y claves que un
+token incluya en `jku` o `jwk` nunca sustituyen al JWKS del emisor configurado.
 
 El token se convierte en un `AxizPrincipal` (sujeto, client id, scopes, roles, tenant y atributos)
 según `axiz.security.claims`, que mapea rutas de claims (`realm_access.roles`, `tid`...). Un token
@@ -109,13 +125,41 @@ axiz:
           limit: 100
           window: 1m
           key: client
-          fail-open: false       # mover dinero: si el limitador no responde, se rechaza (429)
+          fail-open: false       # mover dinero: si el almacén no responde, se rechaza (503)
 ```
 
 Cada regla debe declarar su propia política ante una caída del almacén del limitador. Las rutas de
 consulta suelen preferir disponibilidad (`fail-open: true`); las que mueven dinero o reciben
 callbacks de terceros deben fallar cerrado (`fail-open: false`), porque perder el límite abre la
 puerta a abuso o fraude justo cuando la plataforma está degradada.
+
+Servlet y WebFlux aplican el limitador después de la autorización HTTP. La identidad del emisor
+se codifica con SHA-256 para que emisores con el mismo `String.hashCode()` no compartan cuota.
+
+Para rutas públicas del gateway puede declararse otra regla con `key: anonymous-ip`; es optativa
+y solo corresponde a llamadas sin identidad Axiz. Requiere la misma selección de almacén y
+política `fail-open` explícita. Se usa la dirección de conexión y no se leen `X-Forwarded-For` ni
+`Forwarded` en el limitador. Si un proxy o el servidor reescribe esa dirección, la aplicación
+debe aceptar esa reescritura únicamente desde proxies de confianza; en otro caso la cuota será
+por proxy. Una dirección no disponible impide aplicar la cuota y produce `503`.
+
+```yaml
+axiz:
+  security:
+    rate-limit:
+      enabled: true
+      store: redis
+      rules:
+        - name: public-gateway
+          paths: [/public/**]
+          key: anonymous-ip
+          limit: 30
+          window: 1m
+          fail-open: false
+```
+
+La regla no hace pública una ruta: su autorización se configura por separado. Las reglas de
+llamantes autenticados y anónimos pueden cubrir la misma ruta sin ocultarse entre sí.
 
 ## Autorización por recurso
 
@@ -184,7 +228,7 @@ eso, la propiedad de la cuenta se controla en el sistema de registro y no solo e
 Fuera de `local`/`test`, la auditoría administrada por Axiz exige una elección explícita:
 `axiz.audit.mode: ASYNC`, `DURABLE` o `SYNC`. Solo en desarrollo se permite ASYNC implícito:
 puede perder eventos si el proceso cae antes de enviarlos. Los selectores booleanos heredados
-siguen aceptados con aviso de deprecación. Los publicadores propios definen su política.
+`durable.enabled` y `async.enabled` se rechazan. Los publicadores propios definen su política.
 
 Con `DURABLE`, el evento se escribe en el outbox dentro de la misma transacción del cambio:
 se confirman los dos o ninguno. El negocio y el outbox deben compartir recurso transaccional;
@@ -205,14 +249,33 @@ axiz:
   El cierre de la cola conserva un presupuesto separado de 10 s. La cancelación imperativa es
   cooperativa: el transporte también necesita timeouts y un delegado que ignore la interrupción
   puede completar tarde. ASYNC y su fallback no equivalen a persistencia durable.
-- Los eventos de fallo (acceso denegado, validación) no tienen transacción de negocio que
-  confirmar, porque esta se revierte. Por eso van por el publicador asíncrono.
+- En modo DURABLE, los fallos se registran después del rollback mediante una transacción corta
+  independiente. La persistencia tiene timeout y concurrencia acotados. Si no se confirma,
+  el evento lleva `NOT_CONFIRMED` y se conserva el error de negocio; el fallback no se presenta
+  como evidencia durable. `transactionOutcome` y `operationOutcome` son ejes distintos: un rollback
+  local no demuestra ausencia de efectos en sistemas externos.
 - Si un evento se emite fuera de una transacción, `async` lo envía por el publicador asíncrono y
   `fail` lanza `AuditPublishException`. `fail` sirve para detectar en pruebas qué código audita sin
   transacción.
 - Métricas: `axiz.audit.pending`, `axiz.audit.lost`, `axiz.audit.fallback`, `axiz.audit.failures`
   y `axiz.audit.worker.alive`. Alerta si `lost` es mayor que 0 o si `worker.alive` vale 0 (ver
   [Observabilidad](../operacion/observabilidad.md#alertas-sugeridas)).
+
+Los eventos se sellan por defecto con `axiz.audit.integrity.mode=HASH`. Para autenticidad usa
+`HMAC`, una referencia de secreto independiente en `integrity.hmac-secret` y un identificador
+de rotación `integrity.hmac-key-id`. Un hash sin clave no impide que quien pueda reescribir la
+evidencia recalcule la cadena. Los detalles quedan congelados y saneados antes del sellado.
+
+La vía `axiz.audit.strict.enabled=true` proporciona puertos explícitos de publicación confirmada:
+`strict.mode=DIRECT` exige un destino durable atestado y `DURABLE` un commit independiente de
+outbox. No sustituye silenciosamente el destino por cola o log. Sus errores se propagan y no
+deshacen efectos de negocio ya confirmados. La bóveda usa esta vía para su evidencia obligatoria.
+
+Con una vía estricta disponible, las cadenas en memoria emiten checkpoints confirmados cada
+`strict.checkpoint-interval` (1 minuto por defecto). `AuditChainVerifier` informa integridad y
+completitud por separado. Sin un checkpoint confiable, la completitud es `NOT_ASSESSED`; con él
+solo se prueba hasta su secuencia. Conserva checkpoints y claves de verificación fuera del
+control del escritor. Una métrica local o un enqueue exitoso no acredita recepción completa.
 
 ## Llamadas salientes
 
@@ -289,3 +352,34 @@ manipulado nunca coincide, pide actualización y no consume CPU sin límite.
 Obtener el JWKS a partir del `iss` del token sin lista blanca, `TestingAuthenticationToken` en
 código productivo, todos los usuarios con el mismo rol, llaves de AWS de larga duración. Ver
 [Anti-patrones](../calidad/anti-patrones.md).
+
+## Descubrimiento y disponibilidad de claves JWT
+
+`axiz.security.jwks.connect-timeout` vale `2s` y `read-timeout` vale `3s` por defecto.
+Ambos deben estar entre `1ms` y `10s`. El transporte nativo JDK limita la conexión y el tiempo
+completo de cada descarga a la suma de ambos plazos, incluidos headers y cuerpo parcial.
+Los documentos se limitan a 128 KiB, UTF-8/JSON válidos, sin redirecciones; JWKS admite hasta
+100 claves. Servlet espera ese futuro acotado; WebFlux se suscribe al transporte asíncrono,
+sin envolver I/O bloqueante en un executor. Los recursos se cierran con el contexto.
+
+El descubrimiento consulta únicamente emisores configurados y exige coincidencia exacta del
+campo `issuer`. El `jwks_uri` descubierto también se valida. Un `iss` desconocido no produce
+tráfico saliente. Los endpoints requieren HTTPS; `local`, `test` y `ci` permiten HTTP para
+fixtures. Fuera de esos entornos se necesita `axiz.security.allow-http-jwks-in-cluster=true`
+para la excepción explícita de HTTP; el valor por defecto es `false`.
+
+Cada endpoint admite una llamada saliente en curso. Tras fallo o documento inválido, la espera
+crece de 1 a 60 segundos; las peticiones durante esa espera fallan cerradas. El arranque resuelve
+metadatos en segundo plano y reintenta con esa misma espera, sin impedir iniciar el proceso.
+Eso no indica que autenticación esté disponible: un token que necesita un emisor caído recibe
+503, `Retry-After` y `Cache-Control: no-store`. No recibe una identidad sin verificar.
+Las claves que Nimbus ya tiene en caché siguen verificando tokens localmente.
+
+Una descarga correcta de JWKS se reutiliza al menos durante un segundo, incluso ante distintos
+`kid` desconocidos, para acotar las actualizaciones forzadas por tokens forjados. Un cambio de
+clave puede tardar ese intervalo en aparecer. Un token inválido con claves disponibles sigue
+produciendo 401; indisponibilidad del emisor y credenciales inválidas son casos distintos.
+
+`JwksAvailabilityTest` prueba red real de loopback, descubrimiento/keys, cuerpo parcial,
+redirecciones, tamaño, emisor incoherente, recuperación y cadenas servlet/reactiva. El test
+`NativeJwksTest` exige además BlockHound en descubrimiento y primera verificación.

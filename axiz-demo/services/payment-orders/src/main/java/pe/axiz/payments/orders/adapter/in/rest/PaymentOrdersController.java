@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.extension.cqrs.CommandBus;
 import pe.axiz.extension.cqrs.QueryBus;
 import pe.axiz.payments.orders.api.model.PaymentOrder;

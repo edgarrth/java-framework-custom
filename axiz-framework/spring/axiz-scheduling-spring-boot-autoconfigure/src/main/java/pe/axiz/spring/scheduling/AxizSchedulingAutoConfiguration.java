@@ -1,21 +1,14 @@
 package pe.axiz.spring.scheduling;
 
-import javax.sql.DataSource;
 import net.javacrumbs.shedlock.core.LockProvider;
-import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
 /**
  * {@code @Scheduled} with ShedLock: annotate tasks with {@code @SchedulerLock(name = ...)} so only
@@ -23,8 +16,9 @@ import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
  */
 @AutoConfiguration(
     afterName = {
-      "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
-      "pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration"
+      "pe.axiz.spring.scheduling.jdbc.AxizSchedulingJdbcAutoConfiguration",
+      "pe.axiz.spring.scheduling.r2dbc.AxizSchedulingR2dbcAutoConfiguration",
+      "pe.axiz.spring.scheduling.dynamodb.AxizSchedulingDynamoDbAutoConfiguration"
     },
     // @EnableScheduling must be seen before Boot decides whether to create its TaskScheduler
     // (virtual threads, graceful shutdown); otherwise Spring falls back to a private
@@ -36,31 +30,12 @@ import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 @EnableSchedulerLock(defaultLockAtMostFor = "${axiz.scheduling.default-lock-at-most-for:PT10M}")
 public class AxizSchedulingAutoConfiguration {
 
-  @Configuration(proxyBeanMethods = false)
-  @ConditionalOnClass(
-      name = "net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider")
-  @ConditionalOnBean(DataSource.class)
-  @ConditionalOnProperty(
-      name = "axiz.scheduling.store",
-      havingValue = "jdbc",
-      matchIfMissing = true)
-  static class JdbcConfiguration {
-
-    @Bean
-    SchemaInitializer axizShedlockSchema(DataSource dataSource, AxizSchedulingProperties p) {
-      return new SchemaInitializer(dataSource, "shedlock", p.initializeSchema());
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    LockProvider axizJdbcLockProvider(
-        DataSource dataSource, AxizSchedulingProperties p, SchemaInitializer axizShedlockSchema) {
-      return new JdbcTemplateLockProvider(
-          JdbcTemplateLockProvider.Configuration.builder()
-              .withJdbcTemplate(new JdbcTemplate(dataSource))
-              .withTableName(p.table())
-              .usingDbTime()
-              .build());
-    }
+  @Bean
+  SmartInitializingSingleton axizSchedulingProviderCheck(ObjectProvider<LockProvider> providers) {
+    return () -> {
+      if (providers.getIfAvailable() == null)
+        throw new IllegalStateException(
+            "Scheduling requires its selected storage integration or a LockProvider bean");
+    };
   }
 }

@@ -76,15 +76,16 @@ public final class ClaimsMapper {
         attributes.put(path, v);
       }
     }
-    return new AxizPrincipal(
-        subject,
-        clientId,
-        issuer,
-        strings(claims.get("aud")),
-        firstSet(claims, mapping.scopes()),
-        firstSet(claims, mapping.roles()),
-        tenant,
-        attributes);
+    return AxizPrincipal.builder()
+        .subject(subject)
+        .clientId(clientId)
+        .issuer(issuer)
+        .audience(strings(claims.get("aud")))
+        .scopes(firstSet(claims, mapping.scopes()))
+        .roles(firstSet(claims, mapping.roles()))
+        .tenantId(tenant)
+        .attributes(attributes)
+        .build();
   }
 
   private @Nullable String tenant(Map<String, Object> claims) {

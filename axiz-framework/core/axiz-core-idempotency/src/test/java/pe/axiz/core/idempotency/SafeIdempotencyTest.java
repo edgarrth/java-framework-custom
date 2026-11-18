@@ -26,10 +26,19 @@ class SafeIdempotencyTest {
   private static final String KEY = "request-123456789";
 
   @Test
+  void aProvenNoEffectFailureReleasesOnlyTheCurrentOwner() {
+    var first = (IdempotencyService.Proceed) service.begin("payment", KEY, "fp");
+    assertTrue(service.releaseWithoutEffect(first));
+    var second = (IdempotencyService.Proceed) service.begin("payment", KEY, "fp");
+    assertFalse(service.releaseWithoutEffect(first));
+    assertTrue(service.releaseWithoutEffect(second));
+  }
+
+  @Test
   void anUncertainFailureDoesNotAuthorizeAnotherExecution() {
     var first =
         assertInstanceOf(IdempotencyService.Proceed.class, service.begin("payment", KEY, "fp"));
-    service.fail(first);
+    assertTrue(service.fail(first));
     var failure = assertThrows(BusinessException.class, () -> service.begin("payment", KEY, "fp"));
     assertEquals(409, failure.category().httpStatus());
   }
@@ -155,16 +164,13 @@ class SafeIdempotencyTest {
     var store = new InMemoryAsyncIdempotencyStore(clock);
     var now = clock.instant();
     var record =
-        new IdempotencyRecord(
-            "scoped",
-            "fp",
-            IdempotencyRecord.Status.IN_PROGRESS,
-            "owner",
-            null,
-            now.plusSeconds(30),
-            now.plusSeconds(3600),
-            0,
-            null);
+        IdempotencyRecord.builder("scoped", "fp", now.plusSeconds(30), now.plusSeconds(3600))
+            .status(IdempotencyRecord.Status.IN_PROGRESS)
+            .owner("owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     assertTrue(store.tryStart(record).toCompletableFuture().join());
     var response = new StoredResponse(201, Map.of("Location", "/payments/p1"), new byte[] {1, 2});
     assertFalse(

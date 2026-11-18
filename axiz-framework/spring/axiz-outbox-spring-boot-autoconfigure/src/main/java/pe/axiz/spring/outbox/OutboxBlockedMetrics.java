@@ -17,7 +17,7 @@ import pe.axiz.core.outbox.OutboxStore;
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.outbox.AxizOutboxAutoConfiguration",
-      "pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration"
+      "pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration"
     })
 @ConditionalOnBean(OutboxStore.class)
 @ConditionalOnClass(name = "io.micrometer.core.instrument.MeterRegistry")

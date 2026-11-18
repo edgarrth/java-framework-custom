@@ -15,7 +15,7 @@ import org.springframework.batch.core.step.StepContribution;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonWriter;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricEvent;
 import pe.axiz.core.metrics.Outcome;

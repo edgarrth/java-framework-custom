@@ -14,7 +14,7 @@ public java.lang.Object update(java.lang.Object, java.lang.Object);
 public java.lang.String resourceName();
 public java.util.Optional find(java.lang.Object);
 public java.util.Optional<T> find(I);
-public pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
 public pe.axiz.structure.layered.InMemoryCrudService(java.lang.String, java.util.function.Function<T, I>, java.util.function.BiFunction<I, T, T>);
 public void delete(I);
 public void delete(java.lang.Object);
@@ -23,6 +23,6 @@ public void delete(java.lang.Object);
 public interface pe.axiz.structure.layered.QueryService<T, I> {
 public abstract java.lang.String resourceName();
 public abstract java.util.Optional<T> find(I);
-public abstract pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public abstract pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
 public default T get(I);
 }

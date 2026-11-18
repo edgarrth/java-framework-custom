@@ -1,7 +1,7 @@
 package pe.axiz.payments.orders.application.query;
 
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.extension.cqrs.Query;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 

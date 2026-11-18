@@ -16,6 +16,7 @@ import pe.axiz.codegen.openapi.SafeYaml;
 import pe.axiz.codegen.output.SafePaths;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
+import pe.axiz.core.json.JsonWriter;
 
 /** Safely updates current workflow bindings when a service is renamed. */
 final class WorkflowBindings {

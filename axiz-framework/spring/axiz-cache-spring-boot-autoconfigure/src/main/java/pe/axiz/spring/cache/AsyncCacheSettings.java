@@ -31,7 +31,8 @@ public class AsyncCacheSettings {
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP",
       justification =
-          "The accessor returns the configured borrowed cache collaborator; it does not transfer ownership.")
+          "The accessor returns the configured borrowed cache collaborator; it does not transfer"
+              + " ownership.")
   public AsyncByteCache store() {
     return store;
   }

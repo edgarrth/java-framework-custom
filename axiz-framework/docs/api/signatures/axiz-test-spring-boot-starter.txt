@@ -62,5 +62,5 @@ public pe.axiz.spring.test.RedisTestConfiguration();
 }
 
 public final class pe.axiz.spring.test.RequestContexts {
-public static pe.axiz.core.commons.RequestContext$Scope open(java.lang.String, java.lang.String, java.lang.String);
+public static pe.axiz.core.context.RequestContext$Scope open(java.lang.String, java.lang.String, java.lang.String);
 }

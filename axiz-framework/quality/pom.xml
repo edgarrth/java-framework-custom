@@ -21,6 +21,7 @@
   </properties>
 
   <modules>
+    <module>axiz-test-containers</module>
     <module>axiz-test-support</module>
     <module>axiz-store-contract-tests</module>
     <module>axiz-architecture-tests</module>

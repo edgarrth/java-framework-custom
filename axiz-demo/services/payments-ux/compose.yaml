@@ -6,26 +6,29 @@ services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
   otel-lgtm:
     image: grafana/otel-lgtm:0.11.10
-    ports: ["3000:3000", "4317:4317", "4318:4318"]
+    ports: ["127.0.0.1:3000:3000", "127.0.0.1:4317:4317", "127.0.0.1:4318:4318"]
 
   redis:
-    image: valkey/valkey:8.1-alpine
-    ports: ["6379:6379"]
+    image: axiz-local/valkey:8.1.8-r1
+    build: {context: ../../local/images/valkey}
+    ports: ["127.0.0.1:6379:6379"]
 
   # OIDC provider for local tokens (realm axiz, client local-client)
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4
+    image: axiz-local/keycloak:26.8.2-r1
+    build: {context: ../../local/images/keycloak}
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-only
-    ports: ["8180:8080"]
+    ports: ["127.0.0.1:8180:8080"]
     volumes:
       - ./local/keycloak:/opt/keycloak/data/import:ro
 
   # Stubs of downstream HTTP/SOAP services (local/wiremock/mappings)
   wiremock:
-    image: wiremock/wiremock:3.13.1
-    ports: ["8089:8080"]
+    image: axiz-local/wiremock:3.13.2-r1
+    build: {context: ../../local/images/wiremock}
+    ports: ["127.0.0.1:8089:8080"]
     volumes:
       - ./local/wiremock:/home/wiremock:ro

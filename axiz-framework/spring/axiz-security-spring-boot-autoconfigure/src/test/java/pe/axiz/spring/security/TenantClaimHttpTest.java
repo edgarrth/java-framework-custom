@@ -1,7 +1,10 @@
 package pe.axiz.spring.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.nimbusds.jose.JWSAlgorithm;
@@ -96,28 +99,17 @@ class TenantClaimHttpTest {
 
   private static TrustedIssuerDecoders decoders() {
     var trusted = new TrustedIssuer(ISSUER, null, List.of("tenant-api"));
-    return new TrustedIssuerDecoders(
-        new IssuerPolicy(List.of(trusted)), List.of("RS256"), Duration.ofSeconds(30)) {
-      private final NimbusJwtDecoder mvc =
-          NimbusJwtDecoder.withPublicKey((RSAPublicKey) KEY.getPublic()).build();
-      private final NimbusReactiveJwtDecoder flux =
-          NimbusReactiveJwtDecoder.withPublicKey((RSAPublicKey) KEY.getPublic()).build();
-
-      {
-        mvc.setJwtValidator(validator(trusted));
-        flux.setJwtValidator(validator(trusted));
-      }
-
-      @Override
-      public NimbusJwtDecoder servlet(String issuer) {
-        return ISSUER.equals(issuer) ? mvc : null;
-      }
-
-      @Override
-      public NimbusReactiveJwtDecoder reactive(String issuer) {
-        return ISSUER.equals(issuer) ? flux : null;
-      }
-    };
+    var mvc = NimbusJwtDecoder.withPublicKey((RSAPublicKey) KEY.getPublic()).build();
+    var flux = NimbusReactiveJwtDecoder.withPublicKey((RSAPublicKey) KEY.getPublic()).build();
+    var decoders =
+        spy(
+            new TrustedIssuerDecoders(
+                new IssuerPolicy(List.of(trusted)), List.of("RS256"), Duration.ofSeconds(30)));
+    mvc.setJwtValidator(decoders.validator(trusted));
+    flux.setJwtValidator(decoders.validator(trusted));
+    doReturn(mvc).when(decoders).servlet(ISSUER);
+    doReturn(flux).when(decoders).reactive(ISSUER);
+    return decoders;
   }
 
   private static String[] settings(boolean optionalTenancy) {
@@ -183,13 +175,15 @@ class TenantClaimHttpTest {
                         get("/tenant-contract")
                             .header("Authorization", "Bearer " + token(false, null))
                             .header("X-Tenant-Id", "trusted-header"))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"));
                 client
                     .perform(
                         get("/tenant-contract")
                             .header("Authorization", "Bearer " + token(true, "bank-a"))
                             .header("X-Tenant-Id", "trusted-header"))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Cross-Origin-Resource-Policy", "same-origin"));
               });
     }
   }
@@ -224,7 +218,9 @@ class TenantClaimHttpTest {
                     .header("X-Tenant-Id", "trusted-header")
                     .exchange()
                     .expectStatus()
-                    .isOk();
+                    .isOk()
+                    .expectHeader()
+                    .valueEquals("Cross-Origin-Resource-Policy", "same-origin");
                 client
                     .get()
                     .uri("/tenant-contract")
@@ -232,7 +228,9 @@ class TenantClaimHttpTest {
                     .header("X-Tenant-Id", "trusted-header")
                     .exchange()
                     .expectStatus()
-                    .isOk();
+                    .isOk()
+                    .expectHeader()
+                    .valueEquals("Cross-Origin-Resource-Policy", "same-origin");
               });
     }
   }

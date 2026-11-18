@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
@@ -82,7 +83,7 @@ class ReactiveIdempotencyFilterTest {
             () -> service));
     return WebTestClient.bindToController(factory.getProxy())
         .controllerAdvice(new IdempotencyReplayHandler(), new Errors())
-        .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize))
+        .webFilter(new IdempotencyWebFilter(service, 1024, maxResponseSize, List.of()))
         .build();
   }
 
@@ -164,7 +165,7 @@ class ReactiveIdempotencyFilterTest {
         .value(status -> assertThat(status).isGreaterThanOrEqualTo(400));
     assertEquals(
         1, api.executions.get(), "a required key that is missing never runs the operation");
-    assertThat(new IdempotencyWebFilter(service, 1, 1).getOrder())
+    assertThat(new IdempotencyWebFilter(service, 1, 1, List.of()).getOrder())
         .isEqualTo(IdempotencyWebFilter.ORDER);
   }
 }

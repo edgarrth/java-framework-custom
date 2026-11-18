@@ -16,12 +16,23 @@ import pe.axiz.codegen.project.ProjectManifest;
 
 class CapabilityAdaptersTest {
   @ParameterizedTest
-  @CsvSource({"servlet, axiz-adapter-outbox-jdbc", "reactive, axiz-adapter-database-auth-aws"})
+  @CsvSource({
+    "servlet, axiz-outbox-jdbc-spring-boot-starter",
+    "reactive, axiz-outbox-r2dbc-spring-boot-starter"
+  })
   void currentVersionUpgradeAddsTheMissingRuntimeAdapterAndTheNextUpgradeIsANoop(
       String stack, String adapter, @TempDir Path directory) throws Exception {
     Path project =
         CliHarness.service(
-            directory, "--stack", stack, "--persistence", "aurora", "--capability", "outbox");
+            directory,
+            "--stack",
+            stack,
+            "--persistence",
+            "aurora",
+            "--capability",
+            "outbox",
+            "--capability",
+            "messaging-kafka");
     Path file = project.resolve("pom.xml");
     String pom = Files.readString(file);
     String missing =
@@ -39,9 +50,7 @@ class CapabilityAdaptersTest {
         upgrade.run("upgrade", "--to", "2.0.0", "--skip-rewrite", "--dir", project.toString()),
         upgrade.output());
     String aligned = Files.readString(file);
-    assertTrue(
-        aligned.contains("<artifactId>" + adapter + "</artifactId>\n      <scope>runtime</scope>"),
-        aligned);
+    assertTrue(aligned.contains("<artifactId>" + adapter + "</artifactId>"), aligned);
     var again = new CliHarness();
     assertEquals(
         0, again.run("upgrade", "--to", "2.0.0", "--dir", project.toString()), again.output());
@@ -54,27 +63,34 @@ class CapabilityAdaptersTest {
   void projectAdaptersAreCorrectedWithoutChangingProfilesOrPureCoreDependencies(
       @TempDir Path directory) throws Exception {
     Path project =
-        CliHarness.service(directory, "--persistence", "aurora", "--capability", "outbox");
+        CliHarness.service(
+            directory,
+            "--persistence",
+            "aurora",
+            "--capability",
+            "outbox",
+            "--capability",
+            "messaging-kafka");
     var manifest = ProjectManifest.read(project);
     String input =
         """
         <project xmlns="http://maven.apache.org/POM/4.0.0">
           <dependencies>
             <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId></dependency>
-            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId>
-              <scope>compile</scope></dependency>
+            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-jdbc-spring-boot-starter</artifactId>
+              <scope>runtime</scope></dependency>
           </dependencies>
           <profiles><profile><id>custom</id><dependencies>
-            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId>
+            <dependency><groupId>pe.axiz</groupId><artifactId>axiz-outbox-jdbc-spring-boot-starter</artifactId>
               <scope>test</scope></dependency>
           </dependencies></profile></profiles>
         </project>
         """;
     String output = CapabilityAdapters.align(input, manifest);
     assertTrue(output.contains("<artifactId>axiz-core-commons</artifactId>"));
-    assertTrue(output.contains("<scope>runtime</scope>"));
+    assertTrue(output.contains("<scope>compile</scope>"));
     assertTrue(output.contains("<scope>test</scope>"));
-    assertFalse(output.contains("<scope>compile</scope>"));
+    assertFalse(output.contains("<scope>runtime</scope>"));
     assertEquals(output, CapabilityAdapters.align(output, manifest));
     assertThrows(
         IOException.class,

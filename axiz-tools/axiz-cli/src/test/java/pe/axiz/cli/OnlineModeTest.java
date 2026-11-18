@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.codegen.openapi.Json;
 
 /**
  * {@code axiz new --server}: the request the CLI sends to the initializr (JSON body, the user's
@@ -161,8 +162,7 @@ class OnlineModeTest {
 
   @Test
   void escapesEveryControlCharacter() {
-    assertEquals("\"q\\\"b\\\\s\\nn\\rr\\tt\\u0001\"", JsonWriter.write("q\"b\\s\nn\rr\tt\u0001"));
-    assertEquals(
-        "[1.5,false,\"x\"]", JsonWriter.write(List.of(1.5, false, new StringBuilder("x"))));
+    assertEquals("\"q\\\"b\\\\s\\nn\\rr\\tt\\u0001\"", Json.write("q\"b\\s\nn\rr\tt\u0001"));
+    assertEquals("[1.5,false,\"x\"]", Json.write(List.of(1.5, false, new StringBuilder("x"))));
   }
 }

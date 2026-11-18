@@ -9,9 +9,9 @@ axiz add messaging-sqs
 
 |  |  |
 |---|---|
-| Starter | `pe.axiz:axiz-messaging-spring-boot-starter` |
+| Starter | `pe.axiz:axiz-messaging-sqs-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Dependencias | `pe.axiz:axiz-adapter-messaging-sqs`<br>`software.amazon.awssdk:sqs`<br>`pe.axiz:axiz-adapter-observability-aws` |
+| Agrega también | [`messaging`](messaging.md) |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -41,8 +41,7 @@ axiz.messaging.sqs.queues: [https://sqs.<region>.amazonaws.com/<account>/orders]
 
 ## Módulos
 
-- [`axiz-messaging-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-spring-boot-autoconfigure.md)
+- [`axiz-messaging-sqs-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-sqs-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
-- [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
-- [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
+- [`axiz-core-resilience`](../referencia/core/axiz-core-resilience.md)

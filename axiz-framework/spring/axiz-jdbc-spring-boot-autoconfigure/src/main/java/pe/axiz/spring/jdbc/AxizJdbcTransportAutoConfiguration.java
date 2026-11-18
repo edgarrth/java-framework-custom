@@ -84,7 +84,8 @@ public class AxizJdbcTransportAutoConfiguration {
           validators.orderedStream().filter(candidate -> candidate.supports(source)).findFirst();
       if (validator.isEmpty())
         throw new IllegalStateException(
-            "Custom DataSource requires a JdbcDataSourceTlsValidator and pre-construction validation: "
+            "Custom DataSource requires a JdbcDataSourceTlsValidator and pre-construction"
+                + " validation: "
                 + source.getClass().getName());
       validator.get().validate(source, policy);
       checked.add(source);

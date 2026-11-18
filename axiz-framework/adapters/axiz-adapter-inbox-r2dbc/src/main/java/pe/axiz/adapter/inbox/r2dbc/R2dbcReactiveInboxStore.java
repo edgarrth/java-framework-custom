@@ -4,11 +4,11 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore.Acquisition;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Mono;
 
 /** Nonblocking PostgreSQL inbox with atomic owner-checked updates and cancellable R2DBC I/O. */

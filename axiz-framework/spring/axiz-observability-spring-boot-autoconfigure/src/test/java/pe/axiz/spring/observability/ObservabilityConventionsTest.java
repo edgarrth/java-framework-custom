@@ -22,8 +22,8 @@ import org.springframework.http.server.reactive.observation.ServerRequestObserva
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;

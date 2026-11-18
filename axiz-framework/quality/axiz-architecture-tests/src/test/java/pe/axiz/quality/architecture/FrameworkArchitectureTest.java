@@ -32,7 +32,7 @@ class FrameworkArchitectureTest {
   static final ArchRule AWS_IDENTITY_API_DOES_NOT_EXPOSE_CONTAINER =
       ArchRuleDefinition.classes()
           .that()
-          .resideInAPackage("pe.axiz.spring.foundation.aws..")
+          .resideInAPackage("pe.axiz.spring.aws..")
           .should(
               new ArchCondition<>("keep the Spring container out of the public identity API") {
                 @Override
@@ -70,7 +70,7 @@ class FrameworkArchitectureTest {
   static final ArchRule AWS_IDENTITY_HAS_NO_RUNTIME_DEFINITIONS_OR_CREATION_SWEEPS =
       noClasses()
           .that()
-          .resideInAPackage("pe.axiz.spring.foundation.aws..")
+          .resideInAPackage("pe.axiz.spring.aws..")
           .should()
           .callMethodWhere(
               new DescribedPredicate<>(
@@ -150,8 +150,8 @@ class FrameworkArchitectureTest {
                 }
               })
           .because(
-              "The reactive execution model requires native asynchronous I/O, including CQRS and outbound"
-                  + " authentication");
+              "The reactive execution model requires native asynchronous I/O, including CQRS and"
+                  + " outbound authentication");
 
   @ArchTest
   static final ArchRule LANGUAGE_KERNEL_HAS_NO_FRAMEWORK_DEPENDENCIES =
@@ -199,6 +199,39 @@ class FrameworkArchitectureTest {
           .should()
           .dependOnClassesThat()
           .resideInAnyPackage("pe.axiz.adapter..", "pe.axiz.kit..");
+
+  /** Core may classify transport exceptions, but it must never implement network or file I/O. */
+  @ArchTest
+  static final ArchRule CORE_DOES_NOT_PERFORM_IO =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAPackage("pe.axiz.core..")
+          .should(
+              new ArchCondition<>("delegate network and filesystem access to adapters") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  for (var dependency : item.getDirectDependenciesFromSelf()) {
+                    String target = dependency.getTargetClass().getBaseComponentType().getName();
+                    boolean forbidden =
+                        target.startsWith("java.net.http.")
+                            || target.startsWith("java.nio.file.")
+                            || target.equals("java.net.Socket")
+                            || target.equals("java.net.ServerSocket")
+                            || target.startsWith("java.nio.channels.Socket")
+                            || target.startsWith("java.nio.channels.ServerSocket")
+                            || target.startsWith("java.io.File");
+                    boolean classification =
+                        target.equals("java.net.http.HttpTimeoutException")
+                            && Set.of(
+                                    "pe.axiz.core.errors.ExternalServiceException",
+                                    "pe.axiz.core.resilience.RetryDecider")
+                                .contains(item.getName());
+                    if (forbidden && !classification)
+                      events.add(
+                          SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+                  }
+                }
+              });
 
   /** Spring wiring never depends on application structures or extensions. */
   @ArchTest
@@ -251,9 +284,7 @@ class FrameworkArchitectureTest {
                 if (!name.startsWith("pe.axiz.")) return SliceIdentifier.ignore();
                 String[] parts = name.substring("pe.axiz.".length()).split("\\.");
                 if (parts.length < 2 || !layers.contains(parts[0])) return SliceIdentifier.ignore();
-                String module = parts[0] + "." + parts[1];
-                if (parts[0].equals("adapter") && parts.length > 2) module += "." + parts[2];
-                return SliceIdentifier.of(module);
+                return SliceIdentifier.of(FrameworkModules.module(name));
               }
 
               @Override
@@ -355,7 +386,7 @@ class FrameworkArchitectureTest {
               new ArchCondition<>("keep Reactor in native R2DBC and RS in SDK interoperability") {
                 @Override
                 public void check(JavaClass item, ConditionEvents events) {
-                  if (r2dbc(item) || !publiclyVisible(item)) return;
+                  if (r2dbc(item) || reactorOutboxContract(item) || !publiclyVisible(item)) return;
                   item.getDirectDependenciesFromSelf()
                       .forEach(
                           d -> {
@@ -379,7 +410,7 @@ class FrameworkArchitectureTest {
               new ArchCondition<>("expose port types in public signatures") {
                 @Override
                 public void check(JavaClass item, ConditionEvents events) {
-                  if (r2dbc(item) || !publiclyVisible(item)) return;
+                  if (r2dbc(item) || reactorOutboxContract(item) || !publiclyVisible(item)) return;
                   item.getMethods().stream()
                       .filter(m -> m.getModifiers().contains(JavaModifier.PUBLIC))
                       .forEach(
@@ -413,10 +444,20 @@ class FrameworkArchitectureTest {
   }
 
   private static boolean aws(JavaClass type) {
-    return type.getPackageName().equals("pe.axiz.adapter.aws")
+    return type.getName().equals("pe.axiz.adapter.kafka.msk.AxizIamClientCallbackHandler")
+        || type.getPackageName().equals("pe.axiz.adapter.aws")
         || type.getPackageName().startsWith("pe.axiz.adapter.aws.")
         || type.getPackageName()
             .matches("pe\\.axiz\\.adapter\\..*\\.(aws|dynamodb|s3|sqs|sns|kms)(\\..*)?");
+  }
+
+  // This single port preserves the transaction's subscriber context without a database dependency.
+  // No other public Reactor API is admitted by this exception.
+  private static boolean reactorOutboxContract(JavaClass type) {
+    return Set.of(
+            "pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter",
+            "pe.axiz.kit.reactor.audit.ReactiveAuditChainState")
+        .contains(type.getName());
   }
 
   private static boolean r2dbc(JavaClass type) {
@@ -440,21 +481,16 @@ class FrameworkArchitectureTest {
   }
 
   static ArchCondition<JavaClass> onlyUseOwnCapabilityOrFoundation() {
-    return new ArchCondition<>("only depend on their own capability or the foundation starter") {
+    return new ArchCondition<>(
+        "only depend on their module, capability base or approved shared support") {
       @Override
       public void check(JavaClass item, ConditionEvents events) {
-        String own = capability(item.getPackageName());
         item.getDirectDependenciesFromSelf()
             .forEach(
                 d -> {
                   String target = d.getTargetClass().getPackageName();
                   if (target.startsWith("pe.axiz.spring.")) {
-                    String other = capability(target);
-                    boolean sharedKafkaTransport =
-                        other.equals("kafka") && Set.of("audit", "messaging").contains(own);
-                    if (!other.equals(own)
-                        && !other.equals("foundation")
-                        && !sharedKafkaTransport) {
+                    if (!FrameworkModules.allowedSpringDependency(item.getPackageName(), target)) {
                       events.add(SimpleConditionEvent.violated(d, d.getDescription()));
                     }
                   }
@@ -462,4 +498,32 @@ class FrameworkArchitectureTest {
       }
     };
   }
+
+  @ArchTest
+  static final ArchRule NEUTRAL_CAPABILITIES_HAVE_NO_PROVIDERS =
+      ArchRuleDefinition.classes()
+          .that()
+          .resideInAPackage("pe.axiz.spring..")
+          .should(
+              new ArchCondition<>(
+                  "keep SDKs, concrete adapters and provider modules outside neutral bases") {
+                @Override
+                public void check(JavaClass item, ConditionEvents events) {
+                  if (!FrameworkModules.neutral(item.getPackageName())) return;
+                  for (var dependency : item.getDirectDependenciesFromSelf()) {
+                    String target =
+                        dependency.getTargetClass().getBaseComponentType().getPackageName();
+                    if (target.startsWith("pe.axiz.adapter.")
+                        || target.startsWith("software.amazon.")
+                        || target.startsWith("com.amazonaws.")
+                        || target.startsWith("io.awspring.")
+                        || target.startsWith("org.apache.kafka.")
+                        || target.startsWith("org.springframework.kafka.")
+                        || target.startsWith("org.springframework.data.redis.")
+                        || target.startsWith("io.lettuce."))
+                      events.add(
+                          SimpleConditionEvent.violated(dependency, dependency.getDescription()));
+                  }
+                }
+              });
 }

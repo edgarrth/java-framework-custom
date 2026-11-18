@@ -15,9 +15,14 @@ class IrsaPackagedProbe {
     }
     AwsCredentialsProvider source;
     SdkAutoCloseable resource;
-    Object handle = Class.forName("pe.axiz.adapter.aws.identity.AwsCredentialSources")
-        .getMethod("create", Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy"))
-        .invoke(null, Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy").getMethod("system").invoke(null));
+    Object handle =
+        Class.forName("pe.axiz.adapter.aws.identity.AwsCredentialSources")
+            .getMethod("create", Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy"))
+            .invoke(
+                null,
+                Class.forName("pe.axiz.core.commons.net.TransportSecurityPolicy")
+                    .getMethod("system")
+                    .invoke(null));
     resource = (SdkAutoCloseable) handle;
     source = (AwsCredentialsProvider) handle.getClass().getMethod("provider").invoke(handle);
     try {

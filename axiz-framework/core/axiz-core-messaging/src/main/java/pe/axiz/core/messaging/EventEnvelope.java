@@ -48,24 +48,17 @@ public final class EventEnvelope {
   /**
    * Creates an envelope.
    *
-   * @param id event id, also used for deduplication (FIFO, inbox)
-   * @param source URI identifying the producer, e.g. {@code urn:axiz:payments-business}
-   * @param type event type, e.g. {@code pe.axiz.payments.order-placed.v1}
-   * @param time occurrence time
-   * @param subject subject (aggregate id), used as partition / group key
-   * @param dataContentType content type of {@code data}
-   * @param data encoded payload
-   * @param extensions CloudEvents extensions (lowercase alphanumeric names)
+   * @param builder named construction state
    */
-  public EventEnvelope(
-      String id,
-      String source,
-      String type,
-      Instant time,
-      @Nullable String subject,
-      String dataContentType,
-      byte[] data,
-      Map<String, String> extensions) {
+  private EventEnvelope(Builder builder) {
+    String id = Objects.requireNonNull(builder.id, "id");
+    String source = Objects.requireNonNull(builder.source, "source");
+    String type = Objects.requireNonNull(builder.type, "type");
+    Instant time = Objects.requireNonNull(builder.time, "time");
+    @Nullable String subject = builder.subject;
+    String dataContentType = Objects.requireNonNull(builder.dataContentType, "dataContentType");
+    byte[] data = Objects.requireNonNull(builder.data, "data");
+    Map<String, String> extensions = Objects.requireNonNull(builder.extensions, "extensions");
     this.id = Objects.requireNonNull(id, "id");
     this.source = Objects.requireNonNull(source, "source");
     this.type = Objects.requireNonNull(type, "type");
@@ -127,7 +120,16 @@ public final class EventEnvelope {
   public EventEnvelope withExtension(String name, String value) {
     Map<String, String> ext = new LinkedHashMap<>(extensions);
     ext.put(name.toLowerCase(Locale.ROOT), value);
-    return new EventEnvelope(id, source, type, time, subject, dataContentType, data, ext);
+    return EventEnvelope.builder()
+        .id(id)
+        .source(source)
+        .type(type)
+        .time(time)
+        .subject(subject)
+        .dataContentType(dataContentType)
+        .data(data)
+        .extensions(ext)
+        .build();
   }
 
   /** Copy without the given extensions. */
@@ -138,7 +140,16 @@ public final class EventEnvelope {
     }
     return ext.size() == extensions.size()
         ? this
-        : new EventEnvelope(id, source, type, time, subject, dataContentType, data, ext);
+        : EventEnvelope.builder()
+            .id(id)
+            .source(source)
+            .type(type)
+            .time(time)
+            .subject(subject)
+            .dataContentType(dataContentType)
+            .data(data)
+            .extensions(ext)
+            .build();
   }
 
   @Override
@@ -162,5 +173,68 @@ public final class EventEnvelope {
         + ", subject="
         + subject
         + "]";
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable String id = null;
+    private @Nullable String source = null;
+    private @Nullable String type = null;
+    private @Nullable Instant time = null;
+    private @Nullable String subject = null;
+    private @Nullable String dataContentType = null;
+    private byte @Nullable [] data = null;
+    private @Nullable Map<String, String> extensions = Map.of();
+
+    private Builder() {}
+
+    public Builder id(String value) {
+      this.id = value;
+      return this;
+    }
+
+    public Builder source(String value) {
+      this.source = value;
+      return this;
+    }
+
+    public Builder type(String value) {
+      this.type = value;
+      return this;
+    }
+
+    public Builder time(Instant value) {
+      this.time = value;
+      return this;
+    }
+
+    public Builder subject(@Nullable String value) {
+      this.subject = value;
+      return this;
+    }
+
+    public Builder dataContentType(String value) {
+      this.dataContentType = value;
+      return this;
+    }
+
+    public Builder data(byte[] value) {
+      this.data = value.clone();
+      return this;
+    }
+
+    public Builder extensions(Map<String, String> value) {
+      this.extensions = Map.copyOf(value);
+      return this;
+    }
+
+    public EventEnvelope build() {
+      return new EventEnvelope(this);
+    }
   }
 }

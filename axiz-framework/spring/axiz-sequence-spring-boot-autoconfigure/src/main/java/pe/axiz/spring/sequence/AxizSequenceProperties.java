@@ -7,23 +7,17 @@ import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import pe.axiz.core.sequence.ResetPolicy;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
 /**
  * Business sequences ({@code axiz.sequence.*}), e.g. operation numbers {@code OP-2026-00001234}.
  *
  * @param store {@code jdbc} (Aurora; native R2DBC in a reactive service), {@code r2dbc}, or {@code
  *     dynamodb}
- * @param table counters table
- * @param initializeSchema when the JDBC table is created by the starter
  * @param sequences sequences by name
  */
 @ConfigurationProperties("axiz.sequence")
 public record AxizSequenceProperties(
-    @DefaultValue("jdbc") String store,
-    @DefaultValue("axiz_sequence") String table,
-    @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
-    @DefaultValue Map<String, Spec> sequences) {
+    @DefaultValue("jdbc") String store, @DefaultValue Map<String, Spec> sequences) {
   public AxizSequenceProperties {
     sequences = Collections.unmodifiableMap(new LinkedHashMap<>(sequences));
   }

@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.sensitive.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables sensitive auto-configuration."
+    }
+  ]
+}

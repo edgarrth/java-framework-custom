@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -43,37 +44,40 @@ public final class Catalog {
     Map<String, Archetype> archetypes = new LinkedHashMap<>();
     for (Map<String, Object> a : list(read(cl, "axiz/archetypes/catalog.yaml").get("archetypes"))) {
       Archetype archetype =
-          new Archetype(
-              str(a, "name"),
-              str(a, "role"),
-              strings(a.get("structures")).stream().map(Structure::of).toList(),
-              strings(a.get("stacks")).stream().map(Stack::of).toList(),
-              strings(a.get("persistence")),
-              strings(a.get("starters")),
-              str(a, "deployment"),
-              Boolean.TRUE.equals(a.get("rest")),
-              str(a, "kind"),
-              map(a.get("properties")),
-              strings(a.get("extensions")).stream().map(Extension::of).toList());
+          Archetype.builder()
+              .name(str(a, "name"))
+              .role(str(a, "role"))
+              .structures(strings(a.get("structures")).stream().map(Structure::of).toList())
+              .stacks(strings(a.get("stacks")).stream().map(Stack::of).toList())
+              .persistence(strings(a.get("persistence")))
+              .starters(strings(a.get("starters")))
+              .deployment(str(a, "deployment"))
+              .rest(Boolean.TRUE.equals(a.get("rest")))
+              .kind(str(a, "kind"))
+              .properties(map(a.get("properties")))
+              .extensions(strings(a.get("extensions")).stream().map(Extension::of).toList())
+              .build();
       archetypes.put(archetype.name(), archetype);
     }
     Map<String, Object> capabilityDoc = read(cl, "axiz/archetypes/capabilities.yaml");
     Map<String, Capability> capabilities = new LinkedHashMap<>();
     for (Map<String, Object> c : list(capabilityDoc.get("capabilities"))) {
       Capability cap =
-          new Capability(
-              str(c, "name"),
-              str(c, "starter"),
-              str(c, "description"),
-              strings(c.get("dependencies")),
-              strings(c.get("requires")),
-              map(c.get("properties")),
-              map(c.get("local")),
-              strings(c.get("configMapKeys")),
-              strings(c.get("secrets")),
-              String.valueOf(c.getOrDefault("example", "")).strip(),
-              stores(c.get("persistence")),
-              strings(c.get("stacks")).stream().map(Stack::of).toList());
+          Capability.builder()
+              .name(str(c, "name"))
+              .starter(str(c, "starter"))
+              .description(str(c, "description"))
+              .dependencies(strings(c.get("dependencies")))
+              .requires(strings(c.get("requires")))
+              .requiresAnyOf(strings(c.get("requiresAnyOf")))
+              .properties(map(c.get("properties")))
+              .localProperties(map(c.get("local")))
+              .configMapKeys(strings(c.get("configMapKeys")))
+              .secrets(strings(c.get("secrets")))
+              .example(String.valueOf(c.getOrDefault("example", "")).strip())
+              .persistence(stores(c.get("persistence")))
+              .stacks(strings(c.get("stacks")).stream().map(Stack::of).toList())
+              .build();
       capabilities.put(cap.name(), cap);
     }
     Map<Structure, Style> styles = new LinkedHashMap<>();
@@ -81,9 +85,7 @@ public final class Catalog {
         .forEach(
             (id, v) -> {
               Map<String, Object> m = map(v);
-              styles.put(
-                  Structure.of(id),
-                  new Style(strings(m.get("capabilities")), strings(m.get("jdbc-tables"))));
+              styles.put(Structure.of(id), new Style(strings(m.get("capabilities"))));
             });
     Catalog catalog = new Catalog(archetypes, capabilities, styles);
     catalog.check();
@@ -114,6 +116,7 @@ public final class Catalog {
   void check() {
     for (Capability c : capabilities.values()) {
       List<String> requires = new ArrayList<>(c.requires());
+      requires.addAll(c.requiresAnyOf());
       c.persistence()
           .forEach(
               (store, s) -> {
@@ -141,12 +144,6 @@ public final class Catalog {
             if (!capabilities.containsKey(c)) {
               throw new IllegalStateException(
                   "Style " + structure.id() + " brings unknown capability " + c);
-            }
-          }
-          for (String t : style.jdbcTables()) {
-            if (!Style.TABLES.contains(t)) {
-              throw new IllegalStateException(
-                  "Style " + structure.id() + " declares unknown table " + t);
             }
           }
         });
@@ -182,6 +179,35 @@ public final class Catalog {
       add(n, store, out, new ArrayList<>());
     }
     return List.copyOf(out.values());
+  }
+
+  /**
+   * Incomplete or conflicting compositions, shared by new, add and doctor. Does not choose a
+   * provider or invent a production policy.
+   */
+  public List<String> missingAlternatives(Collection<Capability> resolved) {
+    var names = resolved.stream().map(Capability::name).collect(Collectors.toSet());
+    List<String> problems = new ArrayList<>();
+    if (names.contains("tokenization-vault")) {
+      if (names.contains("tokenization"))
+        problems.add("Select the remote tokenization consumer or the vault server, not both");
+      for (String provider : List.of("tokenization-vault-dynamodb", "tokenization-vault-redis")) {
+        if (!names.contains(provider)) problems.add("tokenization-vault requires " + provider);
+      }
+    }
+    problems.addAll(
+        resolved.stream()
+            .filter(
+                capability ->
+                    !capability.requiresAnyOf().isEmpty()
+                        && capability.requiresAnyOf().stream().noneMatch(names::contains))
+            .map(
+                capability ->
+                    capability.name()
+                        + " requires one of "
+                        + String.join(", ", capability.requiresAnyOf()))
+            .toList());
+    return List.copyOf(problems);
   }
 
   private void add(String name, String store, Map<String, Capability> out, List<String> path) {

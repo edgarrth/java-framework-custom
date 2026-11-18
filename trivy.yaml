@@ -1,4 +1,4 @@
-# The only exception is a proven local identity-provider incompatibility, scoped to one workload file.
+# The only exception identifies a public synthetic WireMock token in its exact rendered ConfigMap.
 ignorefile: .trivyignore.yaml
 # Regression engines are private development tools; their vulnerabilities remain scanned.
 pkg:

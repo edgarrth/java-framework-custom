@@ -30,7 +30,8 @@ STORE_LABELS = {
 }
 LAYERS = [
     ('platform', 'Plataforma: parents y BOMs'),
-    ('core', 'Capa 1: core (Java puro)'),
+    ('core', 'Capa 1: núcleo y puertos sin I/O'),
+    ('commons', 'Utilidades de infraestructura compartidas'),
     ('adapters', 'Capa 2: adaptadores tecnológicos'),
     ('kits', 'Capa 2: kits de persistencia'),
     ('spring', 'Capa 3: Spring Boot'),
@@ -76,6 +77,19 @@ def table(rows, header):
     for r in rows:
         lines.append('| ' + ' | '.join(str(c).replace('|', '\\|') for c in r) + ' |')
     return '\n'.join(lines)
+
+
+def sensitive_classification(framework, out):
+    source = Path(framework) / 'core/axiz-core-sensitive/src/main/java/pe/axiz/core/sensitive/SensitiveKeys.java'
+    rows = re.findall(r'entry\("([a-z0-9]+)", SensitivityLevel\.([A-Z]+), MaskType\.([A-Z]+)\)',
+                      source.read_text(encoding='utf-8'))
+    if not rows or len({row[0] for row in rows}) != len(rows):
+        raise ValueError('SensitiveKeys classification could not be extracted unambiguously')
+    write(Path(out) / 'referencia/clasificacion-sensible.md',
+          '# Clasificación de claves sensibles\n\n'
+          'Extraída de `SensitiveKeys.java`; las anotaciones del modelo y los tipos con '
+          '`SelfMasking` complementan esta clasificación.\n\n'
+          + table(rows, ['Clave normalizada', 'Nivel', 'Máscara']) + '\n')
 
 
 def capabilities(framework, out, modules):
@@ -281,6 +295,7 @@ def main():
     jdbc_reference(a.framework, a.docs)
     prune_reference(modules, a.docs)
     reference(modules, a.docs, a.framework)
+    sensitive_classification(a.framework, a.docs)
     if a.cli_help:
         cli_reference(a.cli_help, a.docs)
     print('reference pages generated in', os.path.normpath(a.docs))

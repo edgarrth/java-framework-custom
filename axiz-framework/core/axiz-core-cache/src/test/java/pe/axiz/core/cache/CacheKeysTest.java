@@ -131,6 +131,8 @@ class CacheKeysTest {
     Set<String> a = new LinkedHashSet<>(List.of("x", "y", "z"));
     Set<String> b = new HashSet<>(List.of("z", "y", "x"));
     assertEquals(CacheKeys.of(a), CacheKeys.of(b));
+    assertEquals(CacheKeys.of(a), CacheKeys.of(new LinkedHashSet<>(List.of("z", "y", "x"))));
+    assertNotEquals(CacheKeys.of(a), CacheKeys.of(Set.of("x", "y")));
     Map<String, Integer> m1 = new LinkedHashMap<>();
     m1.put("b", 2);
     m1.put("a", 1);

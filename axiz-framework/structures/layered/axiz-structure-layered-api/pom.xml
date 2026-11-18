@@ -21,20 +21,26 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-domain</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId>
+        <executions><execution><id>check</id><configuration>
+          <!-- This enum has no user-written behavior: its only executable lines initialize
+               constants. CrudLayersTest and CrudAcceptanceIT exercise all actions in the
+               consumer. QueryService's default behavior remains subject to the full gate;
+               keep the enum visible in reports and aggregate integration coverage. -->
+          <excludes><exclude>pe/axiz/structure/layered/CrudAction.class</exclude></excludes>
+        </configuration></execution></executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

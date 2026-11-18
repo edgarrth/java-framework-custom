@@ -7,10 +7,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.function.LongSupplier;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.LeaseTiming;
 import pe.axiz.core.commons.tx.TransactionRunner;
+import pe.axiz.core.concurrent.LeaseTiming;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
@@ -30,6 +32,7 @@ public final class OutboxRelay {
   private static final Logger LOG = LoggerFactory.getLogger(OutboxRelay.class);
 
   private final OutboxStore store;
+  private final PayloadProtector protector;
 
   private final EventPublisher publisher;
   private final TransactionRunner transactions;
@@ -47,66 +50,94 @@ public final class OutboxRelay {
     return publisher.supports(destination);
   }
 
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        lease,
-        publishBudget,
-        OutboxRelayListener.NOOP);
+  /** Starts explicit construction; batch, retry and publication budgets must be supplied. */
+  public static Builder builder(
+      OutboxStore store, EventPublisher publisher, TransactionRunner transactions, Clock clock) {
+    return new Builder(store, publisher, transactions, clock);
   }
 
-  public OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget,
-      OutboxRelayListener listener) {
-    this(
-        store,
-        publisher,
-        transactions,
-        clock,
-        batchSize,
-        maxAttempts,
-        backoff,
-        lease,
-        publishBudget,
-        listener,
-        System::nanoTime);
+  /** Mutable construction state; build validates and creates an independent immutable value. */
+  public static final class Builder {
+    private final OutboxStore store;
+    private final EventPublisher publisher;
+    private final TransactionRunner transactions;
+    private final Clock clock;
+    private int batchSize = 0;
+    private int maxAttempts = 0;
+    private @Nullable Backoff backoff = null;
+    private @Nullable Duration lease = null;
+    private @Nullable Duration publishBudget = null;
+    private OutboxRelayListener listener = OutboxRelayListener.NOOP;
+    private LongSupplier nanoTime = System::nanoTime;
+    private PayloadProtector protector = PayloadProtector.NONE;
+
+    private Builder(
+        OutboxStore store, EventPublisher publisher, TransactionRunner transactions, Clock clock) {
+      this.store = Objects.requireNonNull(store);
+      this.publisher = Objects.requireNonNull(publisher);
+      this.transactions = Objects.requireNonNull(transactions);
+      this.clock = Objects.requireNonNull(clock);
+    }
+
+    public Builder batchSize(int value) {
+      this.batchSize = value;
+      return this;
+    }
+
+    public Builder maxAttempts(int value) {
+      this.maxAttempts = value;
+      return this;
+    }
+
+    public Builder backoff(Backoff value) {
+      this.backoff = value;
+      return this;
+    }
+
+    public Builder lease(Duration value) {
+      this.lease = value;
+      return this;
+    }
+
+    public Builder publishBudget(Duration value) {
+      this.publishBudget = value;
+      return this;
+    }
+
+    public Builder listener(OutboxRelayListener value) {
+      this.listener = value;
+      return this;
+    }
+
+    Builder ticker(LongSupplier value) {
+      this.nanoTime = value;
+      return this;
+    }
+
+    public Builder protector(PayloadProtector value) {
+      this.protector = value;
+      return this;
+    }
+
+    public OutboxRelay build() {
+      return new OutboxRelay(this);
+    }
   }
 
-  OutboxRelay(
-      OutboxStore store,
-      EventPublisher publisher,
-      TransactionRunner transactions,
-      Clock clock,
-      int batchSize,
-      int maxAttempts,
-      Backoff backoff,
-      Duration lease,
-      Duration publishBudget,
-      OutboxRelayListener listener,
-      LongSupplier nanoTime) {
+  private OutboxRelay(Builder builder) {
+    OutboxStore store = builder.store;
+    EventPublisher publisher = builder.publisher;
+    TransactionRunner transactions = builder.transactions;
+    Clock clock = builder.clock;
+    int batchSize = builder.batchSize;
+    int maxAttempts = builder.maxAttempts;
+    Backoff backoff = Objects.requireNonNull(builder.backoff, "backoff");
+    Duration lease = Objects.requireNonNull(builder.lease, "lease");
+    Duration publishBudget = Objects.requireNonNull(builder.publishBudget, "publishBudget");
+    OutboxRelayListener listener = builder.listener;
+    LongSupplier nanoTime = builder.nanoTime;
+    PayloadProtector protector = builder.protector;
+    this.protector = Objects.requireNonNull(protector);
     this.store = Objects.requireNonNull(store);
     this.publisher = Objects.requireNonNull(publisher);
     this.transactions = Objects.requireNonNull(transactions);
@@ -176,7 +207,12 @@ public final class OutboxRelay {
       }
       remaining--;
       try {
-        publisher.publish(r.destination(), r.event());
+        var event = r.event(protector);
+        if (deadline - nanoTime.getAsLong() < publishBudget.toNanos()) {
+          listener.onBudgetExhausted(remaining + 1);
+          break;
+        }
+        publisher.publish(r.destination(), event);
         if (transaction(() -> store.markPublished(r.id(), owner, clock.instant()))) published++;
       } catch (RuntimeException e) {
         int attempts = r.attempts() + 1;
@@ -185,16 +221,20 @@ public final class OutboxRelay {
         if (!transaction(
             () ->
                 store.markFailed(
-                    r.id(), owner, attempts, clock.instant().plus(delay), e.toString(), giveUp)))
-          continue;
+                    r.id(),
+                    owner,
+                    attempts,
+                    clock.instant().plus(delay),
+                    e.getClass().getSimpleName(),
+                    giveUp))) continue;
         if (giveUp) {
           failed++;
           LOG.error(
-              "Outbox entry {} ({}) failed permanently after {} attempts",
+              "Outbox entry {} ({}) failed permanently after {} attempts; failureType={}",
               r.id(),
               r.eventType(),
               attempts,
-              e);
+              e.getClass().getSimpleName());
         } else {
           retried++;
           LOG.warn(

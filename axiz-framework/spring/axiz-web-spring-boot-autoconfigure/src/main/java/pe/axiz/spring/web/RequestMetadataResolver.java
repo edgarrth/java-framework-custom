@@ -9,10 +9,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.PathContainer;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
-import pe.axiz.core.commons.HeaderCatalog;
-import pe.axiz.core.commons.HeaderDefinition;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.HeaderCatalog;
+import pe.axiz.core.api.HeaderDefinition;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.CorrelationIds;
 
 /**

@@ -26,11 +26,7 @@ public final class ArchetypeRules {
               .because("this role owns no domain persistence"));
     }
     if (archetype == Archetype.EVENT_PROCESSOR || archetype == Archetype.BATCH) {
-      rules.add(
-          noClasses()
-              .should()
-              .beAnnotatedWith("org.springframework.web.bind.annotation.RestController")
-              .because("event processors and batch have no public REST API"));
+      rules.addAll(PackageClosure.noHttpApi());
     }
     if (Set.of(Archetype.UX, Archetype.CORE, Archetype.GATEWAY).contains(archetype)) {
       rules.add(

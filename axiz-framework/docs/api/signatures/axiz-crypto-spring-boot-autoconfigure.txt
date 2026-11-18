@@ -2,8 +2,8 @@ public class pe.axiz.spring.crypto.AxizCryptoAutoConfiguration {
 public pe.axiz.spring.crypto.AxizCryptoAutoConfiguration();
 }
 
-public class pe.axiz.spring.crypto.AxizCryptoKmsAutoConfiguration {
-public pe.axiz.spring.crypto.AxizCryptoKmsAutoConfiguration();
+public class pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration {
+public pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration();
 }
 
 public final class pe.axiz.spring.crypto.AxizCryptoProperties extends java.lang.Record {

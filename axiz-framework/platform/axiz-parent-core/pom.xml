@@ -56,39 +56,19 @@
             <configuration>
               <rules>
                 <bannedDependencies>
-                  <message>Core contracts cannot depend on technology, reactive APIs, runtimes or upper layers</message>
+                  <message>Core allows the JDK, core modules, JSpecify and SLF4J; Micrometer is module-scoped</message>
                   <excludes>
-                    <exclude>org.springframework:*</exclude>
-                    <exclude>org.springframework.boot:*</exclude>
-                    <exclude>org.springframework.cloud:*</exclude>
-                    <exclude>io.awspring.cloud:*</exclude>
-                    <exclude>io.quarkus:*</exclude>
-                    <exclude>org.junit.jupiter:*:*:*:compile</exclude>
-                    <exclude>org.assertj:*:*:*:compile</exclude>
-                    <exclude>org.mockito:*:*:*:compile</exclude>
-                    <exclude>org.testcontainers:*:*:*:compile</exclude>
-
-                    <exclude>software.amazon.awssdk:*:*:*:compile</exclude>
-                    <exclude>software.amazon.awssdk:*:*:*:runtime</exclude>
-                    <exclude>io.lettuce:*:*:*:compile</exclude>
-                    <exclude>io.lettuce:*:*:*:runtime</exclude>
-                    <exclude>org.apache.kafka:*:*:*:compile</exclude>
-                    <exclude>org.apache.kafka:*:*:*:runtime</exclude>
-                    <exclude>io.r2dbc:*:*:*:compile</exclude>
-                    <exclude>io.r2dbc:*:*:*:runtime</exclude>
-                    <exclude>jakarta.persistence:*:*:*:compile</exclude>
-                    <exclude>jakarta.persistence:*:*:*:runtime</exclude>
-                    <exclude>com.nimbusds:*:*:*:compile</exclude>
-                    <exclude>com.nimbusds:*:*:*:runtime</exclude>
-                    <exclude>io.projectreactor:*:*:*:compile</exclude>
-                    <exclude>io.projectreactor:*:*:*:runtime</exclude>
-                    <exclude>org.reactivestreams:*:*:*:compile</exclude>
-                    <exclude>org.reactivestreams:*:*:*:runtime</exclude>
-                    <exclude>pe.axiz:axiz-adapter-*:*:*:compile</exclude>
-                    <exclude>pe.axiz:axiz-adapter-*:*:*:runtime</exclude>
-                    <exclude>pe.axiz:axiz-kit-*:*:*:compile</exclude>
-                    <exclude>pe.axiz:axiz-kit-*:*:*:runtime</exclude>
+                    <exclude>org.springframework:*</exclude><exclude>org.springframework.boot:*</exclude>
+                    <exclude>org.springframework.cloud:*</exclude><exclude>io.awspring.cloud:*</exclude><exclude>io.quarkus:*</exclude>
+                    <exclude>*:*:*:*:compile</exclude><exclude>*:*:*:*:runtime</exclude>
+                    <exclude>*:*:*:*:provided</exclude><exclude>*:*:*:*:system</exclude>
                   </excludes>
+                  <includes>
+                    <include>pe.axiz:axiz-core-*</include><include>org.jspecify:jspecify</include>
+                    <include>org.slf4j:slf4j-api</include>
+                    <include>com.github.spotbugs:spotbugs-annotations:*:*:provided</include>
+                    <include>com.google.code.findbugs:jsr305:*:*:provided</include>
+                  </includes>
                   <searchTransitive>true</searchTransitive>
                 </bannedDependencies>
               </rules>
@@ -115,6 +95,28 @@
       <id>quality</id>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <version>3.11.0</version>
+            <executions><execution><id>analyze-core-dependencies</id><phase>verify</phase>
+              <goals><goal>analyze-only</goal></goals>
+            </execution></executions>
+            <configuration>
+              <failOnWarning>true</failOnWarning>
+              <!-- JUnit's aggregate/launcher are the shared test harness; the bytecode
+                   analyzer cannot observe engine discovery or source-only analysis metadata. -->
+              <ignoredUnusedDeclaredDependencies>
+                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>org.junit.platform:junit-platform-launcher</ignoredUnusedDeclaredDependency>
+                <ignoredUnusedDeclaredDependency>com.github.spotbugs:spotbugs-annotations</ignoredUnusedDeclaredDependency>
+              </ignoredUnusedDeclaredDependencies>
+              <ignoredUsedUndeclaredDependencies>
+                <ignoredUsedUndeclaredDependency>org.junit.jupiter:junit-jupiter-api</ignoredUsedUndeclaredDependency>
+                <ignoredUsedUndeclaredDependency>org.junit.jupiter:junit-jupiter-params</ignoredUsedUndeclaredDependency>
+              </ignoredUsedUndeclaredDependencies>
+            </configuration>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>

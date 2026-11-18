@@ -13,7 +13,9 @@ class LockedToolchainsTest(unittest.TestCase):
             self.assertIn((tool,version),[(name.lower(),v) for name,v,_ in entries])
     def test_markdown_validator_has_exact_lock_integrity_and_shares_the_node_pin(self):
         path=ROOT/'.github/scripts/docs-tools';manifest=json.loads((path/'package.json').read_text());lock=json.loads((path/'package-lock.json').read_text())
-        self.assertTrue(manifest['private']);self.assertEqual({'markdownlint-cli2':'0.24.1'},manifest['devDependencies'])
+        self.assertTrue(manifest['private']);self.assertEqual({'markdownlint':'0.42.1','yaml':'2.9.1'},manifest['devDependencies'])
+        self.assertEqual(manifest['devDependencies'],lock['packages']['']['devDependencies'])
+        self.assertFalse(any(name.endswith('/picomatch') for name in lock['packages']))
         self.assertTrue(all(row.get('integrity') for name,row in lock['packages'].items() if name))
         docs=yaml.safe_load((ROOT/'.github/workflows/docs-docs.yaml').read_text())
         node=next(s for s in docs['jobs']['build']['steps'] if s.get('uses','').startswith('actions/setup-node@'))

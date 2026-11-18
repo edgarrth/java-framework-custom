@@ -6,24 +6,68 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import pe.axiz.core.audit.AuditSealer;
 
 /**
  * Audit settings ({@code axiz.audit.*}).
  *
  * @param async asynchronous publication with a bounded queue on a virtual thread
  * @param http audit of inbound HTTP requests
- * @param kafka publication to an MSK topic
- * @param sqs publication to an SQS queue
  * @param durable audit of business changes written to the outbox in their transaction
  */
 @ConfigurationProperties("axiz.audit")
 public record AxizAuditProperties(
     @DefaultValue Async async,
     @DefaultValue Http http,
-    @DefaultValue Kafka kafka,
-    @DefaultValue Sqs sqs,
     @DefaultValue Durable durable,
+    @DefaultValue Integrity integrity,
+    @DefaultValue Strict strict,
     @Nullable Mode mode) {
+  /** Hash chains by default; HMAC uses an independent Base64 secret and explicit rotation id. */
+  public record Integrity(
+      @DefaultValue("HASH") AuditSealer.Mode mode,
+      @Nullable String hmacSecret,
+      @Nullable String hmacKeyId) {
+    public Integrity {
+      if (mode == AuditSealer.Mode.HMAC) {
+        if (hmacSecret == null
+            || hmacSecret.isBlank()
+            || hmacSecret.contains("${")
+            || hmacKeyId == null
+            || !hmacKeyId.matches("[A-Za-z0-9_-]{1,64}"))
+          throw new IllegalArgumentException(
+              "Audit HMAC requires hmac-secret and a valid hmac-key-id");
+      } else if (hmacSecret != null || hmacKeyId != null) {
+        throw new IllegalArgumentException("Audit HMAC settings require integrity.mode=HMAC");
+      }
+    }
+  }
+
+  /** Independent confirmed path; it never reuses a queue or tolerant publication fallback. */
+  public record Strict(
+      @DefaultValue("false") boolean enabled,
+      @DefaultValue("DIRECT") StrictMode mode,
+      @DefaultValue("2s") Duration timeout,
+      @DefaultValue("4") int concurrency,
+      @DefaultValue("1m") Duration checkpointInterval) {
+    public Strict {
+      if (!timeout.isPositive()
+          || timeout.compareTo(Duration.ofMinutes(1)) > 0
+          || concurrency < 1
+          || concurrency > 64
+          || checkpointInterval.compareTo(Duration.ofSeconds(1)) < 0
+          || checkpointInterval.compareTo(Duration.ofDays(1)) > 0)
+        throw new IllegalArgumentException(
+            "Invalid strict audit deadline, concurrency or checkpoint interval");
+    }
+  }
+
+  /** DIRECT requires an attested destination; DURABLE requires an independent outbox commit. */
+  public enum StrictMode {
+    DIRECT,
+    DURABLE
+  }
+
   /** Delivery and persistence guarantee for audit events. */
   public enum Mode {
     ASYNC,
@@ -93,35 +137,6 @@ public record AxizAuditProperties(
       excludedPaths = List.copyOf(excludedPaths);
       includedPaths = List.copyOf(includedPaths);
       methods = List.copyOf(methods);
-    }
-  }
-
-  /**
-   * Kafka (MSK) sink.
-   *
-   * @param topic topic; the sink is active only when set
-   * @param timeout send acknowledgement timeout
-   */
-  public record Kafka(@Nullable String topic, @DefaultValue("5s") Duration timeout) {
-    public Kafka {
-      if (topic != null && (topic.isBlank() || topic.contains("${")))
-        throw new IllegalArgumentException(
-            "axiz.audit.kafka.topic must not be blank or unresolved when configured");
-      if (!timeout.isPositive())
-        throw new IllegalArgumentException("Audit Kafka timeout must be positive");
-    }
-  }
-
-  /**
-   * SQS sink.
-   *
-   * @param queueUrl queue URL; the sink is active only when set
-   */
-  public record Sqs(@Nullable String queueUrl) {
-    public Sqs {
-      if (queueUrl != null && (queueUrl.isBlank() || queueUrl.contains("${")))
-        throw new IllegalArgumentException(
-            "axiz.audit.sqs.queue-url must not be blank or unresolved when configured");
     }
   }
 }

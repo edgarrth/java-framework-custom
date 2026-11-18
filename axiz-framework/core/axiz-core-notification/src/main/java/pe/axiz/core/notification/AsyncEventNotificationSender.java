@@ -2,7 +2,7 @@ package pe.axiz.core.notification;
 
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.EventFactory;
 

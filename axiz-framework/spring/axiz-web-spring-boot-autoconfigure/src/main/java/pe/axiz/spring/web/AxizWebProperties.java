@@ -2,12 +2,13 @@ package pe.axiz.spring.web;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.util.unit.DataSize;
-import pe.axiz.core.commons.HeaderDefinition;
+import pe.axiz.core.api.HeaderDefinition;
 
 /**
  * Web conventions ({@code axiz.web.*}).
@@ -173,6 +174,84 @@ public record AxizWebProperties(
       allowedOrigins = List.copyOf(allowedOrigins);
       exposedHeaders = List.copyOf(exposedHeaders);
     }
+
+    /** Named construction; required values and invariants are checked by build. */
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    /** Mutable construction state; use one builder per operation, never as shared state. */
+    public static final class Builder {
+      private boolean enabled = false;
+      private @Nullable String pathPattern = null;
+      private @Nullable List<String> allowedOrigins = List.of();
+      private @Nullable List<String> allowedOriginPatterns = List.of();
+      private @Nullable List<String> allowedMethods = List.of();
+      private @Nullable List<String> allowedHeaders = List.of();
+      private @Nullable List<String> exposedHeaders = List.of();
+      private boolean allowCredentials = false;
+      private @Nullable Duration maxAge = null;
+
+      private Builder() {}
+
+      public Builder enabled(boolean value) {
+        this.enabled = value;
+        return this;
+      }
+
+      public Builder pathPattern(String value) {
+        this.pathPattern = value;
+        return this;
+      }
+
+      public Builder allowedOrigins(List<String> value) {
+        this.allowedOrigins = List.copyOf(value);
+        return this;
+      }
+
+      public Builder allowedOriginPatterns(List<String> value) {
+        this.allowedOriginPatterns = List.copyOf(value);
+        return this;
+      }
+
+      public Builder allowedMethods(List<String> value) {
+        this.allowedMethods = List.copyOf(value);
+        return this;
+      }
+
+      public Builder allowedHeaders(List<String> value) {
+        this.allowedHeaders = List.copyOf(value);
+        return this;
+      }
+
+      public Builder exposedHeaders(List<String> value) {
+        this.exposedHeaders = List.copyOf(value);
+        return this;
+      }
+
+      public Builder allowCredentials(boolean value) {
+        this.allowCredentials = value;
+        return this;
+      }
+
+      public Builder maxAge(Duration value) {
+        this.maxAge = value;
+        return this;
+      }
+
+      public Cors build() {
+        return new Cors(
+            enabled,
+            Objects.requireNonNull(pathPattern, "pathPattern"),
+            Objects.requireNonNull(allowedOrigins, "allowedOrigins"),
+            Objects.requireNonNull(allowedOriginPatterns, "allowedOriginPatterns"),
+            Objects.requireNonNull(allowedMethods, "allowedMethods"),
+            Objects.requireNonNull(allowedHeaders, "allowedHeaders"),
+            Objects.requireNonNull(exposedHeaders, "exposedHeaders"),
+            allowCredentials,
+            Objects.requireNonNull(maxAge, "maxAge"));
+      }
+    }
   }
 
   /**
@@ -206,23 +285,81 @@ public record AxizWebProperties(
     }
   }
 
-  public AxizWebProperties(
-      List<Header> headers,
-      List<String> excludedPaths,
-      String channelHeader,
-      Pagination pagination,
-      ApiVersion apiVersion,
-      Cors cors,
-      Json json) {
-    this(
-        headers,
-        excludedPaths,
-        channelHeader,
-        pagination,
-        apiVersion,
-        cors,
-        json,
-        DataSize.ofMegabytes(1),
-        List.of());
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable List<Header> headers = List.of();
+    private @Nullable List<String> excludedPaths = List.of();
+    private @Nullable String channelHeader = null;
+    private @Nullable Pagination pagination = null;
+    private @Nullable ApiVersion apiVersion = null;
+    private @Nullable Cors cors = null;
+    private @Nullable Json json = null;
+    private @Nullable DataSize maxRequestBody = null;
+    private @Nullable List<BodyLimit> bodyLimits = List.of();
+
+    private Builder() {}
+
+    public Builder headers(List<Header> value) {
+      this.headers = List.copyOf(value);
+      return this;
+    }
+
+    public Builder excludedPaths(List<String> value) {
+      this.excludedPaths = List.copyOf(value);
+      return this;
+    }
+
+    public Builder channelHeader(@Nullable String value) {
+      this.channelHeader = value;
+      return this;
+    }
+
+    public Builder pagination(Pagination value) {
+      this.pagination = value;
+      return this;
+    }
+
+    public Builder apiVersion(ApiVersion value) {
+      this.apiVersion = value;
+      return this;
+    }
+
+    public Builder cors(Cors value) {
+      this.cors = value;
+      return this;
+    }
+
+    public Builder json(Json value) {
+      this.json = value;
+      return this;
+    }
+
+    public Builder maxRequestBody(DataSize value) {
+      this.maxRequestBody = value;
+      return this;
+    }
+
+    public Builder bodyLimits(List<BodyLimit> value) {
+      this.bodyLimits = List.copyOf(value);
+      return this;
+    }
+
+    public AxizWebProperties build() {
+      return new AxizWebProperties(
+          Objects.requireNonNull(headers, "headers"),
+          Objects.requireNonNull(excludedPaths, "excludedPaths"),
+          channelHeader,
+          Objects.requireNonNull(pagination, "pagination"),
+          Objects.requireNonNull(apiVersion, "apiVersion"),
+          Objects.requireNonNull(cors, "cors"),
+          Objects.requireNonNull(json, "json"),
+          Objects.requireNonNull(maxRequestBody, "maxRequestBody"),
+          Objects.requireNonNull(bodyLimits, "bodyLimits"));
+    }
   }
 }

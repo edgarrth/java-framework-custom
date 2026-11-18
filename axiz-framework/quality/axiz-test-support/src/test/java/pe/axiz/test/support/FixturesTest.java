@@ -34,15 +34,16 @@ class FixturesTest {
   void recordingPublisher() {
     RecordingEventPublisher p = new RecordingEventPublisher();
     EventEnvelope e =
-        new EventEnvelope(
-            "1",
-            "s",
-            "t.v1",
-            Instant.EPOCH,
-            null,
-            "application/json",
-            "{}".getBytes(StandardCharsets.UTF_8),
-            Map.of());
+        EventEnvelope.builder()
+            .id("1")
+            .source("s")
+            .type("t.v1")
+            .time(Instant.EPOCH)
+            .subject(null)
+            .dataContentType("application/json")
+            .data("{}".getBytes(StandardCharsets.UTF_8))
+            .extensions(Map.of())
+            .build();
     p.publish("dest", e);
     assertEquals(1, p.eventsOfType("t.v1").size());
     p.failing(true);

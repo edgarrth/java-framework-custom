@@ -62,8 +62,10 @@ Core contracts and algorithms are independent of technology and runtime framewor
 Native asynchronous ports use `CompletionStage` or `Flow.Publisher`. Technology adapters
 implement these ports; persistence kits expose their technology types deliberately.
 
-Only `axiz-kit-r2dbc`, `axiz-adapter-inbox-r2dbc` and `axiz-adapter-outbox-r2dbc` expose Reactor
-as native technology contracts, preserving transaction context. AWS adapters may use Reactive
+The closed Reactor list contains four persistence integrations: `axiz-kit-r2dbc`,
+`axiz-adapter-inbox-r2dbc`, `axiz-adapter-outbox-r2dbc` and `axiz-adapter-sequence-r2dbc`.
+Two neutral kits, `axiz-kit-audit-reactor` and `axiz-kit-outbox-reactor`, expose the transaction
+contracts without bringing R2DBC drivers or a storage implementation. AWS adapters may use Reactive
 Streams internally for SDK interoperability without exposing it through their public API.
 
 Spring adds lifecycle, transactions, security and servlet/reactive facades. Filters and

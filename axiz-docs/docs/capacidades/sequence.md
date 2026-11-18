@@ -25,15 +25,19 @@ axiz.sequence.sequences.operation.prefix: OP
 
 ### Aurora en servlet (JDBC/JPA)
 
-- `pe.axiz:axiz-adapter-sequence-jdbc`
+- `pe.axiz:axiz-sequence-jdbc-spring-boot-starter`
 
 ### Aurora en reactivo (R2DBC)
 
-- `pe.axiz:axiz-adapter-sequence-r2dbc`
+- `pe.axiz:axiz-sequence-r2dbc-spring-boot-starter`
+
+```yaml
+axiz.sequence.store: r2dbc
+```
 
 ### DynamoDB
 
-- `pe.axiz:axiz-adapter-sequence-dynamodb`
+- `pe.axiz:axiz-sequence-dynamodb-spring-boot-starter`
 
 ```yaml
 axiz.sequence.store: dynamodb
@@ -49,4 +53,5 @@ sequences.next("operation"); // String with Sequences; Mono<String> with Reactiv
 ## Módulos
 
 - [`axiz-sequence-spring-boot-autoconfigure`](../referencia/spring/axiz-sequence-spring-boot-autoconfigure.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
 - [`axiz-core-sequence`](../referencia/core/axiz-core-sequence.md)

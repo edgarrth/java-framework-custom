@@ -158,7 +158,8 @@ class AxizFoundationAutoConfigurationTest {
 
   @Test
   void validatorUsesRegistry() {
-    IdentifierConstraintValidator v = new IdentifierConstraintValidator();
+    IdentifierConstraintValidator v =
+        new IdentifierConstraintValidator(IdentifierRegistry.withDiscoveredTypes());
     v.initialize(Holder.class.getRecordComponents()[0].getAnnotation(ValidIdentifier.class));
     assertTrue(v.isValid(null, null));
     assertTrue(v.isValid("12345678", null));
@@ -186,7 +187,9 @@ class AxizFoundationAutoConfigurationTest {
             ctx -> {
               assertTrue(
                   ctx.getBean(IdentifierRegistry.class).isValid("internal-account", "ac-123456"));
-              IdentifierConstraintValidator v = new IdentifierConstraintValidator();
+              IdentifierConstraintValidator v =
+                  ctx.getAutowireCapableBeanFactory()
+                      .createBean(IdentifierConstraintValidator.class);
               v.initialize(
                   Account.class.getRecordComponents()[0].getAnnotation(ValidIdentifier.class));
               assertTrue(v.isValid("AC123456", null));

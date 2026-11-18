@@ -1,11 +1,11 @@
 package pe.axiz.core.messaging;
 
 import java.time.Duration;
+import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.function.Predicate;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.resilience.Backoff;
-import pe.axiz.core.resilience.RetryDecider;
 
 /**
  * Consumer retry policy: transient failures are retried with backoff up to {@code maxAttempts};
@@ -34,13 +34,16 @@ public record ConsumerRetryPolicy(
   }
 
   static boolean isTransientDefault(Throwable t) {
-    if (t instanceof PayloadException) {
-      return false;
+    var seen = new IdentityHashMap<Throwable, Boolean>();
+    for (Throwable cause = t; cause != null; cause = cause.getCause()) {
+      if (seen.size() >= 64 || seen.put(cause, Boolean.TRUE) != null) return false;
+      if (cause instanceof PayloadException || cause instanceof IllegalArgumentException)
+        return false;
+      if (cause instanceof AxizException ax && !ax.category().retryable()) return false;
     }
-    if (t instanceof AxizException ax) {
-      return ax.category().retryable();
-    }
-    return RetryDecider.isTransient(t) || !(t instanceof IllegalArgumentException);
+    // Unknown failures keep the bounded delivery policy. Wrapping a known permanent/uncertain
+    // failure must never turn it into an automatic retry.
+    return true;
   }
 
   /** Decision after a failed delivery number {@code attempt} (1-based). */

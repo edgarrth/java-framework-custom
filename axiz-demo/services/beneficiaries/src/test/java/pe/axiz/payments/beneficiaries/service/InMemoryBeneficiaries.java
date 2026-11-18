@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageMetadata;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageMetadata;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 

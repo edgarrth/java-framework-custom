@@ -10,6 +10,7 @@ framework y sus implementaciones de persistencia.
 | [axiz-code-standards](axiz-code-standards.md) | Configuraciones compartidas de Spotless, Checkstyle, SpotBugs, Semgrep, Spectral y Gitleaks, referenciadas por los parents |
 | [axiz-archunit-rules](axiz-archunit-rules.md) | Reglas de arquitectura que ejecutan las pruebas de los servicios |
 | [axiz-test-support](axiz-test-support.md) | Reloj controlable, publicadores de prueba, fixtures y utilidades para probar capacidades |
+| [axiz-test-containers](axiz-test-containers.md) | Imágenes corregidas de infraestructura para pruebas, compartidas con los entornos locales generados |
 | [axiz-store-contract-tests](axiz-store-contract-tests.md) | Contratos reutilizables de propiedad, expiración y retención para stores de idempotencia e inbox |
 | [axiz-architecture-tests](axiz-architecture-tests.md) | Verificación interna de las capas y dependencias del framework |
 | [axiz-store-integration-tests](axiz-store-integration-tests.md) | Contratos contra PostgreSQL, Valkey y DynamoDB mediante Testcontainers; no se publica |

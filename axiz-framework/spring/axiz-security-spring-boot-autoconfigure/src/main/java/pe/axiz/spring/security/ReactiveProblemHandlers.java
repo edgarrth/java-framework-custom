@@ -26,6 +26,18 @@ public final class ReactiveProblemHandlers
 
   @Override
   public Mono<Void> commence(ServerWebExchange exchange, AuthenticationException ex) {
+    var unavailable = IssuerUnavailableException.find(ex);
+    if (unavailable != null) {
+      exchange
+          .getResponse()
+          .getHeaders()
+          .set(HttpHeaders.RETRY_AFTER, Long.toString(unavailable.retryAfterSeconds()));
+      exchange.getResponse().getHeaders().setCacheControl("no-store");
+      return write(
+          exchange,
+          HttpStatus.SERVICE_UNAVAILABLE,
+          problems.unavailable(locale(exchange), exchange.getRequest().getPath().value()));
+    }
     boolean hadToken =
         exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION) != null;
     exchange

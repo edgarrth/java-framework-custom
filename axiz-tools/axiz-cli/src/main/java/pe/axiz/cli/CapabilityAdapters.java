@@ -27,7 +27,9 @@ import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.project.ProjectLayout;
 import pe.axiz.codegen.project.ProjectManifest;
 
-/** Reconciles the selected service's runtime adapters without moving pure-core dependencies. */
+/**
+ * Reconciles the selected service's provider dependencies without moving pure-core dependencies.
+ */
 final class CapabilityAdapters {
   private CapabilityAdapters() {}
 
@@ -49,14 +51,16 @@ final class CapabilityAdapters {
     var catalog = Catalog.load();
     String store = Catalog.store(manifest.persistence(), manifest.stack());
     Set<String> adapters = new LinkedHashSet<>();
-    for (var capability : catalog.resolve(manifest.capabilities(), store))
+    Set<String> capabilities = new LinkedHashSet<>(manifest.capabilities());
+    for (String implied : catalog.style(manifest.structure()).capabilities())
+      if (catalog.capability(implied).map(capability -> capability.supports(store)).orElse(false))
+        capabilities.add(implied);
+    for (var capability : catalog.resolve(List.copyOf(capabilities), store))
       for (String coordinate : capability.dependencies(store))
-        if (coordinate.startsWith("pe.axiz:axiz-adapter-"))
+        if (coordinate.startsWith("pe.axiz:axiz-")
+            && (coordinate.startsWith("pe.axiz:axiz-adapter-")
+                || coordinate.endsWith("-spring-boot-starter")))
           adapters.add(coordinate.substring("pe.axiz:".length()));
-    if (Catalog.AURORA.equals(store))
-      for (String table : catalog.style(manifest.structure()).jdbcTables())
-        if (Set.of("outbox", "inbox", "saga", "sequence").contains(table))
-          adapters.add("axiz-adapter-" + table + "-jdbc");
     return adapters;
   }
 
@@ -97,11 +101,12 @@ final class CapabilityAdapters {
           changed = true;
         }
         Element scope = child(dependency, "scope");
-        if (scope == null) {
+        String requiredScope = artifact.startsWith("axiz-adapter-") ? "runtime" : "compile";
+        if (scope == null && requiredScope.equals("runtime")) {
           dependency.appendChild(element(document, "scope", "runtime"));
           changed = true;
-        } else if (!scope.getTextContent().strip().equals("runtime")) {
-          scope.setTextContent("runtime");
+        } else if (scope != null && !scope.getTextContent().strip().equals(requiredScope)) {
+          scope.setTextContent(requiredScope);
           changed = true;
         }
       }

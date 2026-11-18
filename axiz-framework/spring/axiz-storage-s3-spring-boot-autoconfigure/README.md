@@ -1,0 +1,63 @@
+# axiz-storage-s3-spring-boot-autoconfigure
+
+Amazon S3 integration for object storage.
+
+This module owns the `pe.axiz.spring.storage.s3` API. It has no application framework or provider dependency.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-storage-s3-spring-boot-starter</artifactId>
+</dependency>
+```
+
+The paired starter selects this provider. Application code uses the capability ports; do not
+import auto-configuration classes into controllers, application services or domain models.
+
+## Types
+
+Public types declared by this module:
+
+- `AxizStorageS3AutoConfiguration`
+- `AxizStorageS3Properties`
+
+## Configuration
+
+Owned property prefixes: `axiz.storage.*`.
+
+## Catalog usage
+
+```bash
+axiz add storage-s3
+```
+
+Required capabilities: `storage`.
+
+The catalog supplies the following properties. Environment placeholders must resolve in the
+service configuration; they are not credentials or provisioned infrastructure.
+
+```yaml
+axiz.storage.bucket: ${AXIZ_STORAGE_BUCKET:local-bucket}
+```
+
+## Operations
+
+Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
+resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
+LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
+Never place long-lived credentials in generated YAML.
+
+## Verification
+
+From `axiz-framework`:
+
+```bash
+./mvnw -pl spring/axiz-storage-s3-spring-boot-autoconfigure -am test
+```
+
+The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.

@@ -11,7 +11,7 @@ public long fallbackCount();
 public long lostCount();
 public long unconfirmedCount();
 public pe.axiz.core.audit.AsyncAuditPublisher$Shutdown shutdown();
-public pe.axiz.core.audit.AsyncAuditPublisher(pe.axiz.core.audit.AuditPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
+public pe.axiz.core.audit.AsyncAuditPublisher(pe.axiz.core.audit.AuditPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.core.concurrent.Stages$ContextProvider);
 public void close();
 public void publish(pe.axiz.core.audit.AuditEvent);
 public void publishWithoutWait(pe.axiz.core.audit.AuditEvent);
@@ -203,6 +203,6 @@ public long fallbackCount();
 public long lostCount();
 public long unconfirmedCount();
 public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration);
-public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, pe.axiz.core.commons.Stages$ContextProvider);
+public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, pe.axiz.core.concurrent.Stages$ContextProvider);
 public void close();
 }

@@ -57,18 +57,18 @@ class CryptoTest {
         new FieldEncryptor(StaticKeyProvider.fromBase64("k2", Map.of("k1", b1, "k2", b2)));
     assertEquals("12345678", v2.decrypt(stored, "customer.document"));
     assertTrue(v2.needsRotation(stored));
-    assertFalse(v2.needsRotation(v2.encrypt("x", "c")));
+    assertFalse(v2.needsRotation(v2.encrypt("x", "purpose:test")));
     assertThrows(CryptoException.class, () -> v2.decrypt(stored, "customer.email"));
-    assertThrows(CryptoException.class, () -> v2.decrypt("plain", "c"));
-    assertThrows(CryptoException.class, () -> v2.decrypt("axz1:k1:%%%", "c"));
-    assertNull(v2.encrypt(null, "c"));
-    assertNull(v2.decrypt(null, "c"));
+    assertThrows(CryptoException.class, () -> v2.decrypt("plain", "purpose:test"));
+    assertThrows(CryptoException.class, () -> v2.decrypt("axz1:k1:%%%", "purpose:test"));
+    assertNull(v2.encrypt(null, "purpose:test"));
+    assertNull(v2.decrypt(null, "purpose:test"));
     assertThrows(CryptoException.class, () -> StaticKeyProvider.fromBase64("k3", Map.of("k1", b1)));
     assertThrows(
         CryptoException.class,
         () -> new StaticKeyProvider("bad id", Map.of("bad id", AesGcm.newKey())));
     assertTrue(
-        v2.encrypt("x", "c") != null
+        v2.encrypt("x", "purpose:test") != null
             && new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())).find("z").isEmpty());
   }
 
@@ -119,6 +119,10 @@ class CryptoTest {
     assertThrows(CryptoException.class, () -> Rsa.decrypt(kp.getPrivate(), new byte[10]));
   }
 
+  private static IndexScope scope(String type) {
+    return new IndexScope("search", type, "tenant", "domain", "identity", 1);
+  }
+
   @Test
   void hashingAndBlindIndex() {
     assertEquals(
@@ -129,11 +133,11 @@ class CryptoTest {
     assertTrue(Hashing.verifyHmacSha256(key, DATA, mac));
     assertEquals(64, Hashing.hmacSha512(key, DATA).length);
     assertThrows(CryptoException.class, () -> Hashing.hmacSha256(new byte[4], DATA));
-    BlindIndex bi = new BlindIndex(key, 16);
-    assertEquals(bi.index(" 1234-5678 ", "doc"), bi.index("12345678", "doc"));
-    assertNotEquals(bi.index("12345678", "doc"), bi.index("12345678", "account"));
-    assertThrows(CryptoException.class, () -> new BlindIndex(key, 4));
-    assertThrows(CryptoException.class, () -> new BlindIndex(new byte[1], 16));
+    BlindIndex bi = new BlindIndex(Map.of("i1", key), "i1");
+    assertNotEquals(bi.index(" 1234-5678 ", scope("doc")), bi.index("12345678", scope("doc")));
+    assertNotEquals(bi.index("12345678", scope("doc")), bi.index("12345678", scope("account")));
+    assertThrows(CryptoException.class, () -> new BlindIndex(Map.of("i1", key), "missing"));
+    assertThrows(CryptoException.class, () -> new BlindIndex(Map.of("i1", new byte[1]), "i1"));
   }
 
   @Test

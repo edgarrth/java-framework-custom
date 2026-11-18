@@ -45,8 +45,8 @@ public reactor.core.publisher.Mono<java.lang.Void> delete(java.lang.String, java
 public reactor.core.publisher.Mono<java.lang.Void> insert(T, java.lang.String);
 public reactor.core.publisher.Mono<java.lang.Void> save(T);
 public reactor.core.publisher.Mono<java.lang.Void> transact(java.util.function.Consumer<software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest$Builder>);
-public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> query(java.lang.String, int, java.lang.String);
-public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> queryBeginsWith(java.lang.String, java.lang.String, int, java.lang.String);
-public reactor.core.publisher.Mono<pe.axiz.core.commons.Page<T>> queryIndex(java.lang.String, java.lang.String, int, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.api.Page<T>> query(java.lang.String, int, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.api.Page<T>> queryBeginsWith(java.lang.String, java.lang.String, int, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.api.Page<T>> queryIndex(java.lang.String, java.lang.String, int, java.lang.String);
 public software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable<T> table();
 }

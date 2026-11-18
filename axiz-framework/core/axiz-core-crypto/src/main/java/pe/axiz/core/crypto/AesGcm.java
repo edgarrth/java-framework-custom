@@ -20,9 +20,14 @@ public final class AesGcm {
   private static final int IV_BYTES = 12;
   private static final int TAG_BITS = 128;
   private static final String TRANSFORMATION = "AES/GCM/NoPadding";
-  private static final SecureRandom RANDOM = new SecureRandom();
+  private static final SecureRandom RANDOM = SecureRandoms.drbg("aes-gcm");
 
   private AesGcm() {}
+
+  /** Initializes entropy and JCA providers during startup, before an event-loop conversion. */
+  public static void initialize() {
+    encrypt(newKey(), new byte[0], new byte[0]);
+  }
 
   public static SecretKey newKey() {
     try {

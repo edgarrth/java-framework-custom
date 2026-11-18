@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -72,16 +71,8 @@ class EnvelopeKeyCacheTest {
   }
 
   private static byte[] envelope(byte[] wrapped, byte[] key, String value) {
-    byte[] ct =
-        AesGcm.encrypt(
-            AesGcm.key(key),
-            value.getBytes(StandardCharsets.UTF_8),
-            "account".getBytes(StandardCharsets.UTF_8));
-    return ByteBuffer.allocate(2 + wrapped.length + ct.length)
-        .putShort((short) wrapped.length)
-        .put(wrapped)
-        .put(ct)
-        .array();
+    return EnvelopePayload.seal(
+        value.getBytes(StandardCharsets.UTF_8), key.clone(), wrapped, "account");
   }
 
   @Test
@@ -106,8 +97,8 @@ class EnvelopeKeyCacheTest {
     assertEquals(2, kms.decrypted.get(), "and then served from the cache");
 
     byte[] substituted = a.clone();
-    substituted[2] = wrappedB[0];
-    substituted[3] = wrappedB[1];
+    substituted[3] = wrappedB[0];
+    substituted[4] = wrappedB[1];
     assertThrows(
         CryptoException.class,
         () -> env.decrypt(substituted, "account"),

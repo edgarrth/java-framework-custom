@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.lock.InMemoryDistributedLock;
 import pe.axiz.core.lock.LockTemplate;
+import pe.axiz.core.lock.LockObserver;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.payments.bankingcore.api.model.Movement;
@@ -66,7 +67,7 @@ class ControllersTest {
           new DebitAccountUseCase(
               core,
               new LockTemplate(
-                  new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(5)),
+                  new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(5), LockObserver.NONE),
               metrics),
           new ReverseDebitUseCase(core),
           new CreditAccountUseCase(core, metrics));

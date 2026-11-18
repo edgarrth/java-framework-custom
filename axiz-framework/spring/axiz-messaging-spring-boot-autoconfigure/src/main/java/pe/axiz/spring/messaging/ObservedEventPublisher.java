@@ -117,14 +117,15 @@ public final class ObservedEventPublisher implements EventPublisher, BoundedPubl
         ext.put(key, v);
       }
     }
-    return new EventEnvelope(
-        event.id(),
-        event.source(),
-        event.type(),
-        event.time(),
-        event.subject(),
-        event.dataContentType(),
-        event.data(),
-        ext);
+    return EventEnvelope.builder()
+        .id(event.id())
+        .source(event.source())
+        .type(event.type())
+        .time(event.time())
+        .subject(event.subject())
+        .dataContentType(event.dataContentType())
+        .data(event.data())
+        .extensions(ext)
+        .build();
   }
 }

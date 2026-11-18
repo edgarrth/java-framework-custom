@@ -16,6 +16,7 @@ import pe.axiz.core.sensitive.SensitivityLevel;
  * @param audit minimum level masked in audit events
  * @param fullMaskLevel from this level on, values are always fully masked
  * @param keys extra property or header names treated as sensitive, with their level and mask
+ * @param detectPan detect PAN candidates in logs and audit regardless of property name
  */
 @ConfigurationProperties("axiz.sensitive")
 public record AxizSensitiveProperties(
@@ -23,7 +24,8 @@ public record AxizSensitiveProperties(
     @DefaultValue("LOW") SensitivityLevel log,
     @DefaultValue("MEDIUM") SensitivityLevel audit,
     @DefaultValue("CRITICAL") SensitivityLevel fullMaskLevel,
-    @DefaultValue Map<String, Key> keys) {
+    @DefaultValue Map<String, Key> keys,
+    @DefaultValue("true") boolean detectPan) {
   public AxizSensitiveProperties {
     keys = Collections.unmodifiableMap(new LinkedHashMap<>(keys));
   }

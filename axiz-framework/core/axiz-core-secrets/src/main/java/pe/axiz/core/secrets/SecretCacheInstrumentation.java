@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /** Observes actual coalesced loads without wrapping or replacing their cancellation target. */
 final class SecretCacheInstrumentation {

@@ -113,17 +113,18 @@ public final class ProblemFactory {
         external.put("code", ext.code());
       }
     }
-    return new Problem(
-        typeUri(definition.code()),
-        definition.title(),
-        category.httpStatus(),
-        detail,
-        instance,
-        definition.code().value(),
-        correlationId,
-        clock.instant(),
-        ex.violations(),
-        external);
+    return Problem.builder()
+        .type(typeUri(definition.code()))
+        .title(definition.title())
+        .status(category.httpStatus())
+        .detail(detail)
+        .instance(instance)
+        .code(definition.code().value())
+        .correlationId(correlationId)
+        .timestamp(clock.instant())
+        .violations(ex.violations())
+        .external(external)
+        .build();
   }
 
   /**

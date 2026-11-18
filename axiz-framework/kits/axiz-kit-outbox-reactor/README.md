@@ -1,0 +1,33 @@
+# axiz-kit-outbox-reactor
+
+Provider-independent Reactor contract for transactional outbox writes.
+
+This module owns the `pe.axiz.kit.reactor.outbox` API.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-kit-outbox-reactor</artifactId>
+</dependency>
+```
+
+## Types
+
+Public types declared by this module:
+
+- `ReactiveOutboxWriter`
+
+## Verification
+
+From `axiz-framework`:
+
+```bash
+./mvnw -pl kits/axiz-kit-outbox-reactor -am test
+```
+
+The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.

@@ -93,7 +93,7 @@ public final class OutboxRelayRunner implements SmartLifecycle {
           sleep(settings.pollInterval());
         }
       } catch (RuntimeException e) {
-        LOG.warn("Outbox relay run failed: {}", e.toString());
+        LOG.warn("Outbox relay run failed; failureType={}", e.getClass().getSimpleName());
         sleep(settings.pollInterval().multipliedBy(5));
       }
     }

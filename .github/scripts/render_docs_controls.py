@@ -28,8 +28,9 @@ def render(root=ROOT):
     build={'permissions':{'contents':'read'},'runs-on':'ubuntu-24.04','timeout-minutes':20,'steps':[checkout,python,install,
         action('actions/setup-node',**{'with':{'node-version-file':'.github/scripts/release-version/.node-version'}}),
         {'name':'Install locked Markdown validator without scripts','run':'npm ci --prefix .github/scripts/docs-tools --include=dev --ignore-scripts --no-audit --no-fund'},
+        {'name':'Markdown validator rejects invalid input','run':'node --test .github/scripts/docs-tools/test-lint.mjs'},
         {'name':'Reference pages and dashboards are current','working-directory':'axiz-docs','run':'python scripts/sync_reference.py --framework ../axiz-framework --cli-help scripts/cli-help.txt\npython scripts/dashboards.py\nif [[ "$GITHUB_REF" != refs/tags/axiz-docs-v* ]]; then git diff --exit-code -- docs dashboards; fi\n'},
-        {'name':'Markdown lint','working-directory':'axiz-docs','run':'../.github/scripts/docs-tools/node_modules/.bin/markdownlint-cli2 "docs/**/*.md" "README.md"'},
+        {'name':'Markdown lint','working-directory':'axiz-docs','run':'node ../.github/scripts/docs-tools/lint.mjs .'},
         {'name':'Dashboards are valid JSON','working-directory':'axiz-docs','run':'for f in dashboards/*.json; do python -m json.tool "$f" > /dev/null; done'},
         {'name':'Strict documentation build','working-directory':'axiz-docs','run':'mkdocs build --strict'}]}
     prepare={'needs':'build','if':tag,'permissions':{'contents':'read'},'runs-on':'ubuntu-24.04','timeout-minutes':25,

@@ -24,6 +24,17 @@ final class AuditModeSelection {
                 "pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration"));
   }
 
+  static boolean strictManaged(ConfigurableListableBeanFactory beans) {
+    return owned(
+            beans,
+            "axizStrictAuditPublisher",
+            "pe.axiz.spring.audit.AxizStrictAuditAutoConfiguration")
+        || owned(
+            beans,
+            "axizAsyncStrictAuditPublisher",
+            "pe.axiz.spring.audit.AxizStrictAuditAutoConfiguration$NativeConfiguration");
+  }
+
   private static boolean owned(ConfigurableListableBeanFactory beans, String name, String owner) {
     if (!beans.containsBeanDefinition(name)) return false;
     String factory = beans.getMergedBeanDefinition(name).getFactoryBeanName();

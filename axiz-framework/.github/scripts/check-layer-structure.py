@@ -7,6 +7,8 @@ from pathlib import Path
 
 NS = {"m": "http://maven.apache.org/POM/4.0.0"}
 NATIVE_REACTIVE = {"axiz-kit-r2dbc", "axiz-adapter-inbox-r2dbc", "axiz-adapter-outbox-r2dbc", "axiz-adapter-sequence-r2dbc"}
+REACTIVE_CONTRACTS = {"axiz-kit-outbox-reactor": "axiz-core-messaging", "axiz-kit-audit-reactor": "axiz-core-audit"}
+REACTIVE_MODULES = NATIVE_REACTIVE | set(REACTIVE_CONTRACTS)
 
 
 def value(element, path):
@@ -75,10 +77,14 @@ def validate(directory):
             for dependency in project.findall("m:dependencies/m:dependency", NS):
                 group = value(dependency, "m:groupId")
                 if (group in {"io.projectreactor", "org.reactivestreams"}
-                        and value(dependency, "m:scope") != "test" and artifact not in NATIVE_REACTIVE):
-                    errors.append(f"{rel}: direct reactive dependency outside the closed R2DBC list")
-    if native != NATIVE_REACTIVE:
-        errors.append(f"Native reactive modules must be exactly {sorted(NATIVE_REACTIVE)}; found {sorted(native)}")
+                        and value(dependency, "m:scope") != "test" and artifact not in REACTIVE_MODULES):
+                    errors.append(f"{rel}: direct reactive dependency outside the closed technology list")
+                if artifact in REACTIVE_CONTRACTS and value(dependency, "m:scope") != "test":
+                    coordinate = (group, value(dependency, "m:artifactId"))
+                    if coordinate not in {("io.projectreactor", "reactor-core"), ("pe.axiz", REACTIVE_CONTRACTS[artifact])}:
+                        errors.append(f"{rel}: provider/extra dependency in neutral Reactor contract: {coordinate}")
+    if native != REACTIVE_MODULES:
+        errors.append(f"Reactive technology modules must be exactly {sorted(REACTIVE_MODULES)}; found {sorted(native)}")
     return errors, len(reactor)
 
 
@@ -87,5 +93,5 @@ if __name__ == "__main__":
     for finding in findings:
         print(f"::error::{finding}")
     if not findings:
-        print(f"Layer structure consistent ({count} reactor modules; closed R2DBC exception list)")
+        print(f"Layer structure consistent ({count} reactor modules; four R2DBC modules and two neutral Reactor contracts)")
     sys.exit(bool(findings))

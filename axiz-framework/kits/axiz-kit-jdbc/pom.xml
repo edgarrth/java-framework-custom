@@ -16,6 +16,8 @@
     <axiz.module.name>pe.axiz.kit.jdbc</axiz.module.name>
   </properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
     <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
     <dependency><groupId>com.zaxxer</groupId><artifactId>HikariCP</artifactId><scope>test</scope></dependency>
     <dependency>

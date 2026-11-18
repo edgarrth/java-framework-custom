@@ -4,7 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.messaging.AsyncEventPublisher;
 import pe.axiz.core.messaging.BoundedPublisher;
 import pe.axiz.core.messaging.EventEnvelope;

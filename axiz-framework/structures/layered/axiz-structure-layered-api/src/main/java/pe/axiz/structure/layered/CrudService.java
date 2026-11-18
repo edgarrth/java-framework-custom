@@ -1,9 +1,5 @@
 package pe.axiz.structure.layered;
 
-/**
- * Read and write operations of a simple resource (catalogs, parameters, maintenance tables).
- *
- * @param <T> resource type
- * @param <I> id type
- */
-public interface CrudService<T, I> extends QueryService<T, I>, CommandService<T, I> {}
+/** Maintenance-resource API. Business money movements use explicit domain commands instead. */
+public interface CrudService<RequestT, ResponseT, I>
+    extends QueryService<ResponseT, I>, CommandService<RequestT, ResponseT, I> {}

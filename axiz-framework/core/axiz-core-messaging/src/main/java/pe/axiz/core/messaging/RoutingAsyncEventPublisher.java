@@ -3,7 +3,7 @@ package pe.axiz.core.messaging;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Selects the first native publisher supporting a destination. A failed selected publisher never

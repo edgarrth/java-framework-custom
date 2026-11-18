@@ -81,6 +81,12 @@
     <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-test</artifactId><scope>test</scope></dependency>
 {{/caps.security}}
     <!-- tests (axiz-test-spring-boot-starter and the ArchUnit rules come from the parent) -->
+    <!-- The sensitive-data canary exercises audit sanitization even in a service without a publisher. -->
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-core-audit</artifactId>
+      <scope>test</scope>
+    </dependency>
 {{#caps.web}}
 {{#stack.servlet}}
     <dependency>

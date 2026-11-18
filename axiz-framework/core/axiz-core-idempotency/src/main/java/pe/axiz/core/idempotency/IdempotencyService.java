@@ -163,16 +163,14 @@ public final class IdempotencyService {
     String owner = UUID.randomUUID().toString();
     boolean started =
         store.tryStart(
-            new IdempotencyRecord(
-                key,
-                fingerprint,
-                IdempotencyRecord.Status.IN_PROGRESS,
-                owner,
-                null,
-                now.plus(inProgressTtl),
-                now.plus(retention),
-                0,
-                null));
+            IdempotencyRecord.builder(
+                    key, fingerprint, now.plus(inProgressTtl), now.plus(retention))
+                .status(IdempotencyRecord.Status.IN_PROGRESS)
+                .owner(owner)
+                .response(null)
+                .resolutionVersion(0)
+                .failure(null)
+                .build());
     return started ? Optional.of(new Proceed(key, owner)) : Optional.empty();
   }
 
@@ -189,7 +187,10 @@ public final class IdempotencyService {
   }
 
   /**
-   * Releases the key after a failure; server errors must not be replayed.
+   * Marks the outcome UNKNOWN after a failure; server errors are not replayed. A subsequent request
+   * receives a conflict until an {@link IdempotencyResolver} reconciles the effect. Use {@link
+   * #releaseWithoutEffect(Proceed)} only when the absence of any business effect is known, so a
+   * retry cannot duplicate a committed operation.
    *
    * @return {@code false} when this execution no longer holds the key
    */

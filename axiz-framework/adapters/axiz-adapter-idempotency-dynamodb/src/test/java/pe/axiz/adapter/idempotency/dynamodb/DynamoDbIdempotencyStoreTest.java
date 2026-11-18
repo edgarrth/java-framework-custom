@@ -111,7 +111,13 @@ class DynamoDbIdempotencyStoreTest {
   }
 
   private static IdempotencyRecord inProgress(String owner, Instant exp) {
-    return new IdempotencyRecord("k", "fp", IdempotencyRecord.Status.IN_PROGRESS, owner, null, exp);
+    return IdempotencyRecord.builder("k", "fp", exp, exp)
+        .status(IdempotencyRecord.Status.IN_PROGRESS)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(0)
+        .failure(null)
+        .build();
   }
 
   @Test

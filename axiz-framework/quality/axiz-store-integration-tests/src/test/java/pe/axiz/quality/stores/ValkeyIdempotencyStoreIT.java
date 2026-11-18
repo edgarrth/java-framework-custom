@@ -19,13 +19,13 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore;
 import pe.axiz.adapter.idempotency.redis.RedisIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.IdempotencyRecord.Status;
 import pe.axiz.core.idempotency.IdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.test.contracts.IdempotencyStoreContract;
 import pe.axiz.test.support.MutableClock;
 
@@ -36,7 +36,7 @@ class ValkeyIdempotencyStoreIT {
 
   @SuppressWarnings("resource")
   private static final GenericContainer<?> VALKEY =
-      new GenericContainer<>(DockerImageName.parse(Docker.VALKEY)).withExposedPorts(6379);
+      TestContainerImages.valkey().withExposedPorts(6379);
 
   private static RedisClient client;
   private static StatefulRedisConnection<String, String> connection;
@@ -64,8 +64,13 @@ class ValkeyIdempotencyStoreIT {
     String uri = "redis://" + VALKEY.getHost() + ":" + VALKEY.getMappedPort(6379);
     var now = Instant.now();
     var record =
-        new IdempotencyRecord(
-            key, "request-hash", Status.IN_PROGRESS, "original-owner", null, now.plusSeconds(300));
+        IdempotencyRecord.builder(key, "request-hash", now.plusSeconds(300), now.plusSeconds(300))
+            .status(Status.IN_PROGRESS)
+            .owner("original-owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     try (var before = client.connect()) {
       var store = new RedisIdempotencyStore(before.sync(), PREFIX);
       Assertions.assertTrue(store.tryStart(record));
@@ -96,6 +101,14 @@ class ValkeyIdempotencyStoreIT {
       Assertions.assertArrayEquals(
           new byte[] {0, 1, 127}, Objects.requireNonNull(done.response()).body());
     }
+  }
+
+  @Test
+  void protectedReplayAndConcurrentCasKeepTheSameCiphertext() {
+    ProtectedReplayChecks.verify(
+        new RedisIdempotencyStore(connection.sync(), PREFIX),
+        new RedisAsyncIdempotencyStore(connection.async(), PREFIX, Clock.systemUTC()),
+        key -> connection.sync().get(PREFIX + key));
   }
 
   @TestFactory

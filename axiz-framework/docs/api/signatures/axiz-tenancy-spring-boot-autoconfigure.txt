@@ -39,7 +39,7 @@ public pe.axiz.spring.tenancy.TenantFilter(pe.axiz.spring.tenancy.TenantFilterSu
 public final class pe.axiz.spring.tenancy.TenantFilterSupport {
 public boolean required();
 public boolean skip(java.lang.String);
-public java.util.Optional<java.lang.String> resolve(pe.axiz.core.commons.RequestMetadata, java.util.function.Function<java.lang.String, java.lang.String>);
+public java.util.Optional<java.lang.String> resolve(pe.axiz.core.context.RequestMetadata, java.util.function.Function<java.lang.String, java.lang.String>);
 public pe.axiz.spring.tenancy.TenantFilterSupport(pe.axiz.spring.tenancy.AxizTenancyProperties);
 }
 

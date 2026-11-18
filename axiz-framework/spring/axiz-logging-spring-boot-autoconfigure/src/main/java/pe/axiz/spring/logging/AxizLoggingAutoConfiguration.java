@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import pe.axiz.core.api.HttpPayloadPolicy;
 import pe.axiz.core.logging.HttpLogFormatter;
 import pe.axiz.core.logging.LogOperation;
 import pe.axiz.core.logging.OperationLogger;
@@ -72,8 +73,10 @@ public class AxizLoggingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     HttpLoggingFilter axizHttpLoggingFilter(
-        HttpLogFormatter formatter, AxizLoggingProperties properties) {
-      return new HttpLoggingFilter(formatter, properties.http());
+        HttpLogFormatter formatter,
+        AxizLoggingProperties properties,
+        ObjectProvider<HttpPayloadPolicy> policies) {
+      return new HttpLoggingFilter(formatter, properties.http(), policies.orderedStream().toList());
     }
   }
 

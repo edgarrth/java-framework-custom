@@ -24,5 +24,7 @@ notificationSender.send(new NotificationRequest(id, NotificationChannel.EMAIL, t
 
 - [`axiz-notification-spring-boot-autoconfigure`](../referencia/spring/axiz-notification-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-id`](../referencia/core/axiz-core-id.md)
+- [`axiz-core-json`](../referencia/core/axiz-core-json.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
 - [`axiz-core-notification`](../referencia/core/axiz-core-notification.md)

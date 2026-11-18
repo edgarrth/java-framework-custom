@@ -2,8 +2,8 @@ package pe.axiz.spring.r2dbc;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.ReactiveAuditorAware;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import reactor.core.publisher.Mono;
 
 /**

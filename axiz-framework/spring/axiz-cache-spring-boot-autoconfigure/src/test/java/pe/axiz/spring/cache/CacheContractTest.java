@@ -232,7 +232,7 @@ class CacheContractTest {
             });
     runner
         .withBean("axizL2Cache", ByteCache.class, () -> shared)
-        .withPropertyValues("axiz.cache.redis=false")
+        .withPropertyValues("axiz.cache.l2.enabled=false")
         .run(
             ctx ->
                 assertThat(ctx.getBean(AxizCaches.class).store())

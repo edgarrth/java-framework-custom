@@ -51,15 +51,16 @@ class SnsEventPublisherTest {
             public void close() {}
           };
       EventEnvelope e =
-          new EventEnvelope(
-              "e-1",
-              "urn:s",
-              "t.v1",
-              Instant.EPOCH,
-              null,
-              "application/json",
-              "{}".getBytes(StandardCharsets.UTF_8),
-              Map.of());
+          EventEnvelope.builder()
+              .id("e-1")
+              .source("urn:s")
+              .type("t.v1")
+              .time(Instant.EPOCH)
+              .subject(null)
+              .dataContentType("application/json")
+              .data("{}".getBytes(StandardCharsets.UTF_8))
+              .extensions(Map.of())
+              .build();
       EventPublisher p =
           nativeAsync
               ? new AsyncPublisherProbe(
@@ -99,15 +100,16 @@ class SnsEventPublisherTest {
             public void close() {}
           };
       EventEnvelope withSubject =
-          new EventEnvelope(
-              "e-2",
-              "urn:s",
-              "t.v1",
-              Instant.EPOCH,
-              "order-7",
-              "application/json",
-              "{}".getBytes(StandardCharsets.UTF_8),
-              Map.of());
+          EventEnvelope.builder()
+              .id("e-2")
+              .source("urn:s")
+              .type("t.v1")
+              .time(Instant.EPOCH)
+              .subject("order-7")
+              .dataContentType("application/json")
+              .data("{}".getBytes(StandardCharsets.UTF_8))
+              .extensions(Map.of())
+              .build();
       EventPublisher p =
           nativeAsync
               ? new AsyncPublisherProbe(

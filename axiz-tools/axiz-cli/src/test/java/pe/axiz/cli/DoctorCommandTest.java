@@ -45,19 +45,21 @@ class DoctorCommandTest {
 
   static ProjectManifest with(
       ProjectManifest m, String axizVersion, List<String> capabilities, List<String> operations) {
-    return new ProjectManifest(
-        m.name(),
-        m.groupId(),
-        m.basePackage(),
-        m.archetype(),
-        m.structure(),
-        m.stack(),
-        m.persistence(),
-        axizVersion,
-        m.openapi(),
-        m.asyncapi(),
-        capabilities,
-        operations);
+    return ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(axizVersion)
+        .openapi(m.openapi())
+        .asyncapi(m.asyncapi())
+        .capabilities(capabilities)
+        .operations(operations)
+        .extensions(List.of())
+        .build();
   }
 
   @Test
@@ -314,6 +316,9 @@ class DoctorCommandTest {
     List<String> warnings = messages(doctor().checks(p), DoctorCommand.Level.WARN);
 
     assertTrue(any(warnings, "Pending proposal src/main/resources/application.yaml.axiz-new"));
-    assertTrue(any(warnings, "No ArchitectureTest"), warnings.toString());
+    assertTrue(
+        any(
+            messages(doctor().checks(p), DoctorCommand.Level.ERROR),
+            "Missing required architecture test: ArchitectureTest.java"));
   }
 }

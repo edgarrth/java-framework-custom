@@ -37,38 +37,37 @@ class OutboxTraceRelayTest {
         null,
         "",
         Map.of("orders", "kafka:orders"),
-        new AxizMessagingProperties.Consumer(
-            null,
-            5,
-            Duration.ofSeconds(1),
-            Duration.ofMinutes(5),
-            false,
-            List.of(),
-            Duration.ofSeconds(10),
-            Duration.ofMinutes(10),
-            true,
-            Duration.ofSeconds(30)),
-        new AxizMessagingProperties.Kafka(
-            null, false, List.of(), null, 1, ".dlq", Duration.ofSeconds(10)),
-        new AxizMessagingProperties.Sqs(
-            List.of(), Map.of(), Duration.ofSeconds(20), 10, Duration.ofSeconds(60)),
+        AxizMessagingProperties.Consumer.builder()
+            .name(null)
+            .maxAttempts(5)
+            .initialDelay(Duration.ofSeconds(1))
+            .maxDelay(Duration.ofMinutes(5))
+            .ignoreUnknownTypes(false)
+            .subscriptions(List.of())
+            .deferInterval(Duration.ofSeconds(10))
+            .deferMaxWait(Duration.ofMinutes(10))
+            .transactional(true)
+            .handlerTimeout(Duration.ofSeconds(30))
+            .build(),
         new AxizMessagingProperties.Routes("domain-events", Map.of()));
   }
 
   private static EventEnvelope fromOutbox() {
-    return new EventEnvelope(
-        "e-1",
-        "urn:axiz:orders",
-        "pe.axiz.orders.order-placed.v1",
-        Instant.EPOCH,
-        "o-1",
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of(
-            EventEnvelope.OUTBOX_TRACEPARENT,
-            "00-" + WRITE_TRACE + "-" + WRITE_SPAN + "-01",
-            EventEnvelope.CORRELATION_ID,
-            "corr-1"));
+    return EventEnvelope.builder()
+        .id("e-1")
+        .source("urn:axiz:orders")
+        .type("pe.axiz.orders.order-placed.v1")
+        .time(Instant.EPOCH)
+        .subject("o-1")
+        .dataContentType("application/json")
+        .data("{}".getBytes(StandardCharsets.UTF_8))
+        .extensions(
+            Map.of(
+                EventEnvelope.OUTBOX_TRACEPARENT,
+                "00-" + WRITE_TRACE + "-" + WRITE_SPAN + "-01",
+                EventEnvelope.CORRELATION_ID,
+                "corr-1"))
+        .build();
   }
 
   @Test

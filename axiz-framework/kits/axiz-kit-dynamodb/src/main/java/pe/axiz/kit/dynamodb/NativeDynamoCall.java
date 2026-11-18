@@ -3,7 +3,7 @@ package pe.axiz.kit.dynamodb;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;

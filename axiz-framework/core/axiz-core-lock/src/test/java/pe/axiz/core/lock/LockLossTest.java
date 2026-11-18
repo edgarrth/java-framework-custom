@@ -24,6 +24,36 @@ class LockLossTest {
   private static final Duration LEASE = Duration.ofMillis(60);
 
   @Test
+  void lateAcquisitionIsExplicitlyReleasedWithoutRunningBusinessWork() {
+    ScriptedHandle handle = new ScriptedHandle(n -> true);
+    DistributedLock slow =
+        (resource, lease) -> {
+          try {
+            Thread.sleep(80);
+          } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(interrupted);
+          }
+          return Optional.of(handle);
+        };
+    var template = new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE);
+    var failure =
+        assertThrows(
+            BusinessException.class,
+            () ->
+                template.withLock(
+                    "late",
+                    Duration.ofMillis(20),
+                    Duration.ZERO,
+                    () -> {
+                      throw new AssertionError("Business ran with an expired acquisition");
+                    }));
+    assertEquals(LockErrors.BUSY, failure.definition());
+    assertTrue(handle.released.get(), "Do not wait for the remote TTL to release a late handle");
+    assertEquals(0, handle.renewals.get());
+  }
+
+  @Test
   void anInterruptedRenewerPreservesItsInterruptWithoutRenewing() throws Exception {
     ScriptedHandle handle = new ScriptedHandle(n -> true);
     var held = new LockTemplate.Lease(handle, Long.MAX_VALUE, Thread.currentThread());
@@ -80,7 +110,8 @@ class LockLossTest {
   }
 
   private static LockTemplate template(ScriptedHandle handle) {
-    return new LockTemplate((resource, lease) -> Optional.of(handle), Duration.ofMillis(1));
+    return new LockTemplate(
+        (resource, lease) -> Optional.of(handle), Duration.ofMillis(1), LockObserver.NONE);
   }
 
   @Test
@@ -249,7 +280,7 @@ class LockLossTest {
         assertThrows(
             BusinessException.class,
             () ->
-                new LockTemplate(slow, Duration.ofMillis(1))
+                new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE)
                     .withLock(
                         "account:A-1",
                         Duration.ofMillis(100),
@@ -280,7 +311,7 @@ class LockLossTest {
           return Optional.of(handle);
         };
     String result =
-        new LockTemplate(slow, Duration.ofMillis(1))
+        new LockTemplate(slow, Duration.ofMillis(1), LockObserver.NONE)
             .withLock(
                 "account:A-1",
                 Duration.ofMillis(200),

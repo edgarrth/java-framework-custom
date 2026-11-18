@@ -18,13 +18,38 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.id.IdGenerator;
 
 class MessagingTest {
+
+  @Test
+  void wrappedUncertainOrPermanentFailuresDoNotBecomeConsumerRetries() {
+    var policy = ConsumerRetryPolicy.defaults();
+    var uncertain =
+        new CompletionException(new BusinessException(CoreErrors.OUTCOME_UNKNOWN, "synthetic"));
+    assertEquals(DeliveryDecision.DEAD_LETTER, policy.onFailure(uncertain, 1));
+    assertEquals(
+        DeliveryDecision.DEAD_LETTER,
+        policy.onFailure(
+            new CompletionException(
+                new PayloadException("synthetic", new IllegalArgumentException())),
+            1));
+    assertEquals(
+        DeliveryDecision.RETRY,
+        policy.onFailure(
+            new CompletionException(new BusinessException(CoreErrors.UNAVAILABLE, "synthetic")),
+            1));
+    var first = new RuntimeException();
+    var second = new RuntimeException();
+    first.initCause(second);
+    second.initCause(first);
+    assertEquals(DeliveryDecision.DEAD_LETTER, policy.onFailure(first, 1));
+  }
 
   /** Test codec: payloads are strings. */
   static final class StringCodec implements PayloadCodec {
@@ -260,25 +285,27 @@ class MessagingTest {
             false);
     EventEnvelope base = event("from-a");
     EventEnvelope fromA =
-        new EventEnvelope(
-            "same-id",
-            "urn:source:A",
-            base.type(),
-            base.time(),
-            base.subject(),
-            base.dataContentType(),
-            "from-a".getBytes(StandardCharsets.UTF_8),
-            base.extensions());
+        EventEnvelope.builder()
+            .id("same-id")
+            .source("urn:source:A")
+            .type(base.type())
+            .time(base.time())
+            .subject(base.subject())
+            .dataContentType(base.dataContentType())
+            .data("from-a".getBytes(StandardCharsets.UTF_8))
+            .extensions(base.extensions())
+            .build();
     EventEnvelope fromB =
-        new EventEnvelope(
-            "same-id",
-            "urn:source:B",
-            base.type(),
-            base.time(),
-            base.subject(),
-            base.dataContentType(),
-            "from-b".getBytes(StandardCharsets.UTF_8),
-            base.extensions());
+        EventEnvelope.builder()
+            .id("same-id")
+            .source("urn:source:B")
+            .type(base.type())
+            .time(base.time())
+            .subject(base.subject())
+            .dataContentType(base.dataContentType())
+            .data("from-b".getBytes(StandardCharsets.UTF_8))
+            .extensions(base.extensions())
+            .build();
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromA, 1));
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromB, 1));
     assertEquals(DeliveryDecision.ACK, dispatcher.dispatch(fromA, 1));

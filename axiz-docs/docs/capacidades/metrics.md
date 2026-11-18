@@ -33,3 +33,4 @@ metrics.amount("order.created", order.total(), e -> e.channel(channel).outcome(O
 - [`axiz-metrics-spring-boot-autoconfigure`](../referencia/spring/axiz-metrics-spring-boot-autoconfigure.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-metrics`](../referencia/core/axiz-core-metrics.md)
+- [`axiz-core-money`](../referencia/core/axiz-core-money.md)

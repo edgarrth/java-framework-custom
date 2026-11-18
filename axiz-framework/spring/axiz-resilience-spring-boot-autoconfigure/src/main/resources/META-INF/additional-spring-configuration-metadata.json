@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "axiz.resilience.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables resilience auto-configuration."
+    },
+    {
+      "name": "axiz.resilience.methods.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables resilience methods auto-configuration."
+    }
+  ]
+}

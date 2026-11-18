@@ -3,7 +3,7 @@ package pe.axiz.core.audit;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Non-blocking enqueue over the shared bounded queue. Only its owned virtual worker awaits the

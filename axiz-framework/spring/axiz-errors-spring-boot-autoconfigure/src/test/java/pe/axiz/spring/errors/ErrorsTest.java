@@ -66,7 +66,7 @@ class ErrorsTest {
 
   @Test
   @ExtendWith(OutputCaptureExtension.class)
-  void failedDependencyIsAWarningWithItsCauseButNoStackTrace(CapturedOutput output) {
+  void failedDependencyLogsBoundedMetadataWithoutProviderTextOrStackTrace(CapturedOutput output) {
     runner.run(
         ctx -> {
           Problem timeout =
@@ -75,7 +75,8 @@ class ErrorsTest {
                       ExternalServiceException.from(
                           new ExternalErrorDetail(
                               "core-banking", -1, "SocketTimeoutException", null, ""),
-                          new SocketTimeoutException("Read timed out")),
+                          new SocketTimeoutException(
+                              "Read timed out synthetic-secret-4111111111111111")),
                       Locale.ENGLISH,
                       "/v1/debits",
                       null);
@@ -84,11 +85,12 @@ class ErrorsTest {
         });
     String log = output.getOut();
     assertTrue(log.contains("WARN"), log);
-    assertTrue(
-        log.contains(
-            "error=Call to core-banking got no response (SocketTimeoutException)"
-                + " cause=SocketTimeoutException: Read timed out"),
-        log);
+    assertTrue(log.contains("status=504 code=AXZ-EXT-0504"), log);
+    assertTrue(log.contains("exceptionType=pe.axiz.core.errors.ExternalServiceException"), log);
+    assertFalse(log.contains("core-banking"), log);
+    assertFalse(log.contains("Read timed out"), log);
+    assertFalse(log.contains("synthetic-secret-4111111111111111"), log);
+    assertFalse(log.contains("/v1/debits"), log);
     assertFalse(log.contains("ERROR"), log);
     assertFalse(log.contains("\tat "), log);
   }

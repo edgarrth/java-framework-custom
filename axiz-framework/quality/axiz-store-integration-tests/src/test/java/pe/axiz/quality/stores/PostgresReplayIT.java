@@ -32,6 +32,7 @@ import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.jdbc.JdbcTransactions;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.messaging.JacksonPayloadCodec;
 import pe.axiz.test.support.MutableClock;
 import tools.jackson.databind.json.JsonMapper;
@@ -40,7 +41,7 @@ import tools.jackson.databind.json.JsonMapper;
  * At-least-once redelivery after a lost ack preserves one business effect across recreated workers.
  */
 class PostgresReplayIT {
-  private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(Docker.POSTGRES);
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
 
   @BeforeAll
   static void start() throws Exception {
@@ -80,28 +81,26 @@ class PostgresReplayIT {
     var tx = new JdbcTransactions(source());
     var store = new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.POSTGRESQL);
     var event =
-        new EventEnvelope(
-            "payment-1",
-            "urn:axiz:payments",
-            "paid.v1",
-            clock.instant(),
-            "account-1",
-            "application/json",
-            "\"payment\"".getBytes(StandardCharsets.UTF_8),
-            Map.of());
+        EventEnvelope.builder()
+            .id("payment-1")
+            .source("urn:axiz:payments")
+            .type("paid.v1")
+            .time(clock.instant())
+            .subject("account-1")
+            .dataContentType("application/json")
+            .data("\"payment\"".getBytes(StandardCharsets.UTF_8))
+            .extensions(Map.of())
+            .build();
     new OutboxWriter(store, clock).write("kafka:payments", event, "payment");
     var deliveries = new ArrayList<String>();
     var before =
-        new OutboxRelay(
-            store,
-            consumer(clock, deliveries, true),
-            tx,
-            clock,
-            10,
-            3,
-            Backoff.fixed(Duration.ofHours(1)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(store, consumer(clock, deliveries, true), tx, clock)
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.fixed(Duration.ofHours(1)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     assertEquals(1, before.relayOnce().retried());
     assertEquals(1, store.countPending());
     assertEquals(1, effects());
@@ -111,16 +110,13 @@ class PostgresReplayIT {
     var restartedStore =
         new JdbcOutboxStore(restartedTx, restartedTx, "axiz_outbox", Dialect.POSTGRESQL);
     var restarted =
-        new OutboxRelay(
-            restartedStore,
-            consumer(clock, deliveries, false),
-            restartedTx,
-            clock,
-            10,
-            3,
-            Backoff.fixed(Duration.ofHours(1)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(restartedStore, consumer(clock, deliveries, false), restartedTx, clock)
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.fixed(Duration.ofHours(1)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     clock.advance(Duration.ofHours(1));
     assertEquals(
         0,

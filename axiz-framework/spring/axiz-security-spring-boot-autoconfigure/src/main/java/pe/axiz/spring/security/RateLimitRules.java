@@ -8,7 +8,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import pe.axiz.core.security.AxizPrincipal;
 import pe.axiz.core.security.RateLimitKeys;
 
-/** Resolves the rate-limit rule and key of a request; the key always comes from the token. */
+/** Resolves rules independently for authenticated callers and anonymous connection addresses. */
 public class RateLimitRules {
 
   private final List<Compiled> rules;
@@ -25,8 +25,13 @@ public class RateLimitRules {
   }
 
   public Optional<AxizSecurityProperties.Rule> match(String path) {
+    return match(path, false);
+  }
+
+  public Optional<AxizSecurityProperties.Rule> match(String path, boolean anonymous) {
     PathContainer p = PathContainer.parsePath(path);
     return rules.stream()
+        .filter(c -> "anonymous-ip".equals(c.rule().key()) == anonymous)
         .filter(c -> c.patterns().stream().anyMatch(x -> x.matches(p)))
         .map(Compiled::rule)
         .findFirst();

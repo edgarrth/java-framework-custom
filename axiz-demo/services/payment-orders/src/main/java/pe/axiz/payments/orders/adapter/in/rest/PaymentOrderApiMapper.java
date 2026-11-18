@@ -1,7 +1,7 @@
 package pe.axiz.payments.orders.adapter.in.rest;
 
 import java.time.ZoneOffset;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.payments.orders.api.model.PaymentOrder;
 import pe.axiz.payments.orders.api.model.PaymentOrderPage;
 import pe.axiz.payments.orders.api.model.PaymentStatus;

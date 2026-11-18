@@ -1,8 +1,8 @@
 package pe.axiz.spring.featureflags;
 
 import java.util.Map;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.featureflags.EvaluationContext;
 
 /**

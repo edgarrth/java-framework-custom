@@ -7,8 +7,8 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.json.JsonReader;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonReader;
+import pe.axiz.core.json.JsonWriter;
 
 /** Serializes records for key-value stores (Redis, DynamoDB string attribute). */
 public final class StoredResponseCodec {
@@ -51,16 +51,18 @@ public final class StoredResponseCodec {
               headers,
               body == null ? new byte[0] : Base64.getDecoder().decode(body.toString()));
     }
-    return new IdempotencyRecord(
-        key,
-        String.valueOf(m.get("fingerprint")),
-        IdempotencyRecord.Status.valueOf(String.valueOf(m.get("status"))),
-        m.get("owner") == null ? null : String.valueOf(m.get("owner")),
-        response,
-        Instant.parse(String.valueOf(m.getOrDefault("leaseUntil", m.get("expiresAt")))),
-        Instant.parse(String.valueOf(m.get("expiresAt"))),
-        m.get("resolutionVersion") instanceof BigDecimal version ? version.longValueExact() : 0,
-        m.get("failure") == null ? null : String.valueOf(m.get("failure")));
+    return IdempotencyRecord.builder(
+            key,
+            String.valueOf(m.get("fingerprint")),
+            Instant.parse(String.valueOf(m.getOrDefault("leaseUntil", m.get("expiresAt")))),
+            Instant.parse(String.valueOf(m.get("expiresAt"))))
+        .status(IdempotencyRecord.Status.valueOf(String.valueOf(m.get("status"))))
+        .owner(m.get("owner") == null ? null : String.valueOf(m.get("owner")))
+        .response(response)
+        .resolutionVersion(
+            m.get("resolutionVersion") instanceof BigDecimal version ? version.longValueExact() : 0)
+        .failure(m.get("failure") == null ? null : String.valueOf(m.get("failure")))
+        .build();
   }
 
   static String utf8(byte[] b) {

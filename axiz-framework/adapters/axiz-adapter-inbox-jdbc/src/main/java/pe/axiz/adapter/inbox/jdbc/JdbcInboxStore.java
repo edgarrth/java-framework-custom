@@ -9,11 +9,11 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.inbox.InboxException;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.SqlStates;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
  * JDBC inbox (Aurora PostgreSQL). Acquisition is an INSERT on the primary key; a duplicate key

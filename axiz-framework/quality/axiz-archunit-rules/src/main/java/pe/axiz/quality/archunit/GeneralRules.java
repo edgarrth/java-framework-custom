@@ -8,11 +8,12 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Hygiene rules every axiz service and module follows (section 16 of the definition). Annotation
@@ -29,6 +30,18 @@ public final class GeneralRules {
           "org.springframework.web.bind.annotation.RestController",
           "org.springframework.context.annotation.Configuration");
 
+  private static final DescribedPredicate<JavaClass> SINGLETON =
+      annotatedWithAny(SINGLETON_STEREOTYPES)
+          .or(
+              DescribedPredicate.describe(
+                  "returned by a bean method",
+                  type ->
+                      type.getMethodsWithReturnTypeOfSelf().stream()
+                          .anyMatch(
+                              method ->
+                                  method.isAnnotatedWith(
+                                      "org.springframework.context.annotation.Bean"))));
+
   /** Dependencies are injected through constructors only. */
   public static final ArchRule NO_FIELD_INJECTION =
       noFields()
@@ -44,12 +57,91 @@ public final class GeneralRules {
   public static final ArchRule NO_MUTABLE_STATE_IN_SINGLETONS =
       fields()
           .that()
-          .areDeclaredInClassesThat(annotatedWithAny(SINGLETON_STEREOTYPES))
+          .areDeclaredInClassesThat(SINGLETON)
           .and()
           .areNotStatic()
           .should()
           .beFinal()
           .because("request data must never be stored in singleton fields");
+
+  /** Review gate for shared mutable declared types, including injected collections. */
+  public static final ArchRule SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED =
+      fields()
+          .that()
+          .areDeclaredInClassesThat(SINGLETON)
+          .and()
+          .areNotStatic()
+          .and()
+          .haveRawType(ReviewedFields.MUTABLE)
+          .should(new ReviewedFields());
+
+  /** Binary floating point cannot model business money fields. */
+  public static final ArchRule NO_FLOATING_POINT_IN_BUSINESS_MODELS =
+      noFields()
+          .that()
+          .areDeclaredInClassesThat()
+          .resideInAnyPackage("..domain..", "..application..", "..model..", "..service..")
+          .should()
+          .haveRawType(
+              DescribedPredicate.describe(
+                  "binary floating point",
+                  type ->
+                      Set.of("float", "double", "java.lang.Float", "java.lang.Double")
+                          .contains(type.getName())));
+
+  public static final ArchRule NO_DOUBLE_DECIMAL_CONSTRUCTION =
+      noClasses()
+          .should()
+          .callConstructor(BigDecimal.class, double.class)
+          .orShould()
+          .callMethod(BigDecimal.class, "valueOf", double.class);
+
+  /** Ambient clocks prevent reproducible domain and application behavior. */
+  public static final ArchRule BUSINESS_USES_INJECTED_CLOCK =
+      noClasses()
+          .that()
+          .resideInAnyPackage(
+              "..domain..",
+              "..model..",
+              "..application..",
+              "..usecase..",
+              "..service..",
+              "..handler..",
+              "..job..")
+          .should()
+          .callMethodWhere(
+              DescribedPredicate.describe(
+                  "ambient clock",
+                  call -> {
+                    String owner = call.getTargetOwner().getName();
+                    return (owner.equals("java.lang.System")
+                            && call.getName().equals("currentTimeMillis"))
+                        || (Set.of(
+                                    "java.time.Instant",
+                                    "java.time.LocalDate",
+                                    "java.time.LocalDateTime",
+                                    "java.time.ZonedDateTime",
+                                    "java.time.OffsetDateTime",
+                                    "java.time.LocalTime")
+                                .contains(owner)
+                            && call.getName().equals("now")
+                            && call.getTarget().getRawParameterTypes().isEmpty());
+                  }));
+
+  public static final ArchRule NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_CLASSES =
+      noClasses()
+          .that()
+          .resideInAnyPackage("..domain..", "..controller..", "..adapter.in..")
+          .should()
+          .beMetaAnnotatedWith("org.springframework.transaction.annotation.Transactional");
+
+  public static final ArchRule NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_METHODS =
+      methods()
+          .that()
+          .areDeclaredInClassesThat()
+          .resideInAnyPackage("..domain..", "..controller..", "..adapter.in..")
+          .should()
+          .notBeMetaAnnotatedWith("org.springframework.transaction.annotation.Transactional");
 
   public static final ArchRule NO_SYSTEM_OUT =
       GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
@@ -185,6 +277,12 @@ public final class GeneralRules {
   /** Every general rule, for {@code @ArchTest} fields or manual checks. */
   public static List<ArchRule> all() {
     return List.of(
+        SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED,
+        NO_FLOATING_POINT_IN_BUSINESS_MODELS,
+        NO_DOUBLE_DECIMAL_CONSTRUCTION,
+        BUSINESS_USES_INJECTED_CLOCK,
+        NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_CLASSES,
+        NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_METHODS,
         NO_FIELD_INJECTION,
         NO_MUTABLE_STATE_IN_SINGLETONS,
         NO_SYSTEM_OUT,
@@ -211,9 +309,5 @@ public final class GeneralRules {
         c ->
             annotationNames.stream()
                 .anyMatch(a -> c.isAnnotatedWith(a) || c.isMetaAnnotatedWith(a)));
-  }
-
-  static DescribedPredicate<JavaField> named(String name) {
-    return DescribedPredicate.describe("named " + name, f -> f.getName().equals(name));
   }
 }

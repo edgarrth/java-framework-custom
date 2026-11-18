@@ -22,13 +22,14 @@ import org.postgresql.ds.PGSimpleDataSource;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.jdbc.TransactionOutcomeUnknownException;
+import pe.axiz.quality.containers.TestContainerImages;
 
 /**
  * Injects driver failures around a real PostgreSQL transaction and a one-connection Hikari pool.
  */
 @Timeout(60)
 class PostgresJdbcTransactionDisposalIT {
-  private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(Docker.POSTGRES);
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static PGSimpleDataSource database;
 
   @BeforeAll

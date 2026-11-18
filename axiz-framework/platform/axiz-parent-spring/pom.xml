@@ -21,6 +21,8 @@
   <description>Parent for Spring Boot starters and libraries (layers 3 and 4)</description>
 
   <properties>
+    <!-- Neutral bases opt in; integrations and test aggregators retain their declared SDKs. -->
+    <axiz.provider.boundaries.skip>true</axiz.provider.boundaries.skip>
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
   </properties>
 
@@ -70,6 +72,33 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
         <executions>
+          <execution>
+            <id>axiz-neutral-capability-boundary</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <skip>${axiz.provider.boundaries.skip}</skip>
+              <rules>
+                <bannedDependencies>
+                  <message>Neutral capability bases must compile and test without provider SDKs, adapters or transport modules</message>
+                  <searchTransitive>true</searchTransitive>
+                  <excludes>
+                    <exclude>software.amazon.awssdk:*</exclude>
+                    <exclude>software.amazon.jdbc:*</exclude>
+                    <exclude>com.amazonaws:*</exclude>
+                    <exclude>io.awspring.cloud:*</exclude>
+                    <exclude>io.lettuce:*</exclude>
+                    <exclude>org.apache.kafka:*</exclude>
+                    <exclude>org.springframework.kafka:*</exclude>
+                    <exclude>org.springframework.data:spring-data-redis</exclude>
+                    <exclude>pe.axiz:axiz-adapter-*</exclude>
+                    <exclude>pe.axiz:axiz-aws-spring-boot-*</exclude>
+                    <exclude>pe.axiz:axiz-redis-spring-boot-*</exclude>
+                    <exclude>pe.axiz:axiz-kafka-spring-boot-*</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
           <execution>
             <id>axiz-spring-layer-rules</id>
             <goals>

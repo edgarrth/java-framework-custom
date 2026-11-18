@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxStore;
@@ -13,6 +12,7 @@ import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.SqlParams;
 import pe.axiz.kit.r2dbc.SqlRow;
+import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,6 +32,11 @@ public final class R2dbcOutboxStore implements OutboxStore {
   private final ReactiveSql sql;
   private final String table;
   private final Duration timeout;
+
+  @Override
+  public @Nullable Object transactionResource() {
+    return sql.transactionResource();
+  }
 
   public R2dbcOutboxStore(ReactiveSql sql, String table, Duration timeout) {
     this.sql = Objects.requireNonNull(sql);
@@ -124,21 +129,20 @@ public final class R2dbcOutboxStore implements OutboxStore {
                     .single()
                     .map(
                         until ->
-                            new OutboxRecord(
-                                r.id(),
-                                r.destination(),
-                                r.aggregateType(),
-                                r.aggregateId(),
-                                r.eventType(),
-                                r.envelopeJson(),
-                                OutboxRecord.Status.IN_FLIGHT,
-                                r.attempts(),
-                                r.createdAt(),
-                                r.nextAttemptAt(),
-                                r.lastError(),
-                                r.aggregateSequence(),
-                                owner,
-                                until)))
+                            OutboxRecord.builder(
+                                    r.id(),
+                                    r.destination(),
+                                    r.eventType(),
+                                    r.envelopeJson(),
+                                    r.createdAt())
+                                .aggregate(r.aggregateType(), r.aggregateId())
+                                .status(OutboxRecord.Status.IN_FLIGHT)
+                                .attempts(r.attempts())
+                                .nextAttemptAt(r.nextAttemptAt())
+                                .lastError(r.lastError())
+                                .aggregateSequence(r.aggregateSequence())
+                                .lease(owner, until)
+                                .build()))
         .collectList();
   }
 
@@ -271,21 +275,21 @@ public final class R2dbcOutboxStore implements OutboxStore {
 
   static OutboxRecord record(SqlRow r) {
     Integer attempts = r.get("attempts", Integer.class);
-    return new OutboxRecord(
-        r.require("id", String.class),
-        r.require("destination", String.class),
-        r.get("aggregate_type", String.class),
-        r.get("aggregate_id", String.class),
-        r.require("event_type", String.class),
-        r.require("envelope", String.class),
-        OutboxRecord.Status.valueOf(r.require("status", String.class)),
-        attempts == null ? 0 : attempts,
-        r.require("created_at", Instant.class),
-        r.require("next_attempt_at", Instant.class),
-        r.get("last_error", String.class),
-        r.get("aggregate_seq", Long.class) == null ? 0 : r.require("aggregate_seq", Long.class),
-        r.get("lease_owner", String.class),
-        r.get("lease_until", Instant.class));
+    return OutboxRecord.builder(
+            r.require("id", String.class),
+            r.require("destination", String.class),
+            r.require("event_type", String.class),
+            r.require("envelope", String.class),
+            r.require("created_at", Instant.class))
+        .aggregate(r.get("aggregate_type", String.class), r.get("aggregate_id", String.class))
+        .status(OutboxRecord.Status.valueOf(r.require("status", String.class)))
+        .attempts(attempts == null ? 0 : attempts)
+        .nextAttemptAt(r.require("next_attempt_at", Instant.class))
+        .lastError(r.get("last_error", String.class))
+        .aggregateSequence(
+            r.get("aggregate_seq", Long.class) == null ? 0 : r.require("aggregate_seq", Long.class))
+        .lease(r.get("lease_owner", String.class), r.get("lease_until", Instant.class))
+        .build();
   }
 
   /** Waits for a statement that produces a value (row count, rows). */

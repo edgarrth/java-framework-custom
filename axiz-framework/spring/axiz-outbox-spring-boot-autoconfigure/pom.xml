@@ -14,14 +14,23 @@
   <name>axiz :: spring :: outbox :: autoconfigure</name>
   <description>Transactional outbox on Aurora PostgreSQL (JDBC or R2DBC) with background relay (auto-configuration)</description>
 
-  <properties>
+  <properties><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.outbox</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-outbox-jdbc</artifactId><version>${project.version}</version><optional>true</optional></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-messaging</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-resilience</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-outbox-reactor</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId>
@@ -38,16 +47,7 @@
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
-      <artifactId>spring-jdbc</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
       <artifactId>spring-tx</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-jdbc</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -58,28 +58,6 @@
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
       <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-outbox-r2dbc</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-r2dbc</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-test-support</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.h2database</groupId>
-      <artifactId>h2</artifactId>
-      <scope>test</scope>
     </dependency>
     <!-- real Micrometer tracing handlers (with a test tracer) for the trace through the outbox -->
     <dependency>

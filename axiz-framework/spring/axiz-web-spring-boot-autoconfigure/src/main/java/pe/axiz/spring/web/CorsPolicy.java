@@ -52,7 +52,8 @@ final class CorsPolicy {
         || uri.getPort() == 0
         || uri.getRawAuthority().endsWith(":")) {
       throw new IllegalArgumentException(
-          "Credentialed CORS requires an exact HTTP(S) origin without credentials, path, query or fragment");
+          "Credentialed CORS requires an exact HTTP(S) origin without credentials, path, query or"
+              + " fragment");
     }
     if (!local && !scheme.equalsIgnoreCase("https")) {
       throw new IllegalArgumentException("CORS origins require HTTPS outside local, test or ci");

@@ -2,8 +2,8 @@ public class pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration {
 public pe.axiz.spring.scheduling.AxizSchedulingAutoConfiguration();
 }
 
-public class pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration {
-public pe.axiz.spring.scheduling.AxizSchedulingDynamoDbAutoConfiguration();
+public class pe.axiz.spring.scheduling.dynamodb.AxizSchedulingDynamoDbAutoConfiguration {
+public pe.axiz.spring.scheduling.dynamodb.AxizSchedulingDynamoDbAutoConfiguration();
 }
 
 public final class pe.axiz.spring.scheduling.AxizSchedulingProperties extends java.lang.Record {
@@ -17,6 +17,6 @@ public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
 public pe.axiz.spring.scheduling.AxizSchedulingProperties(java.lang.String, java.lang.String, java.time.Duration, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
 }
 
-public class pe.axiz.spring.scheduling.AxizSchedulingR2dbcAutoConfiguration {
-public pe.axiz.spring.scheduling.AxizSchedulingR2dbcAutoConfiguration();
+public class pe.axiz.spring.scheduling.r2dbc.AxizSchedulingR2dbcAutoConfiguration {
+public pe.axiz.spring.scheduling.r2dbc.AxizSchedulingR2dbcAutoConfiguration();
 }

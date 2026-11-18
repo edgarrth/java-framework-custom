@@ -32,7 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.cache.redis.RedisAsyncByteCache;
 import pe.axiz.adapter.idempotency.redis.RedisAsyncIdempotencyStore;
 import pe.axiz.adapter.lock.redis.RedisAsyncDistributedLock;
@@ -41,6 +40,7 @@ import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
 import pe.axiz.core.idempotency.IdempotencyRecord;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.security.RateLimitUnavailableException;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -56,7 +56,7 @@ class ValkeyReactiveStoresIT {
 
   @SuppressWarnings("resource")
   private static final GenericContainer<?> VALKEY =
-      new GenericContainer<>(DockerImageName.parse(Docker.VALKEY)).withExposedPorts(6379);
+      TestContainerImages.valkey().withExposedPorts(6379);
 
   private static RedisClient client;
   private static StatefulRedisConnection<String, String> strings;
@@ -175,13 +175,13 @@ class ValkeyReactiveStoresIT {
         new RedisAsyncIdempotencyStore(strings.async(), "reactive:idem:", Clock.systemUTC());
     var now = Instant.now();
     var record =
-        new IdempotencyRecord(
-            "payment",
-            "hash",
-            IdempotencyRecord.Status.IN_PROGRESS,
-            "owner",
-            null,
-            now.plusSeconds(30));
+        IdempotencyRecord.builder("payment", "hash", now.plusSeconds(30), now.plusSeconds(30))
+            .status(IdempotencyRecord.Status.IN_PROGRESS)
+            .owner("owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     var response = new StoredResponse(201, Map.of("Location", "/payments/1"), new byte[] {0, 127});
     StepVerifier.create(
             call(() -> store.tryStart(record))

@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.logging.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables logging auto-configuration."
+    }
+  ]
+}

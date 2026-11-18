@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
 import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.ValidationException;
 
@@ -51,6 +51,17 @@ public final class PageRequestParser {
             : sort;
     Sort parsed;
     try {
+      for (String expression : expressions) {
+        for (String criterion : expression.split(";", -1)) {
+          String[] parts = criterion.strip().split(",", -1);
+          if (parts.length > 2
+              || (parts.length == 2
+                  && !"asc".equalsIgnoreCase(parts[1].strip())
+                  && !"desc".equalsIgnoreCase(parts[1].strip()))) {
+            throw new IllegalArgumentException("invalid sort direction");
+          }
+        }
+      }
       parsed = Sort.parse(expressions);
     } catch (IllegalArgumentException malformed) {
       // the core keeps rejecting malformed expressions; at the HTTP boundary they are the client's

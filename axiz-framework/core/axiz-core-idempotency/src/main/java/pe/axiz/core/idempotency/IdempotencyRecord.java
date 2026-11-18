@@ -40,17 +40,6 @@ public record IdempotencyRecord(
       throw new IllegalArgumentException("diagnostic too long");
   }
 
-  /** Constructor for existing integrations; new executions must separate lease and retention. */
-  public IdempotencyRecord(
-      String key,
-      String fingerprint,
-      Status status,
-      @Nullable String owner,
-      @Nullable StoredResponse response,
-      Instant expiresAt) {
-    this(key, fingerprint, status, owner, response, expiresAt, expiresAt, 0, null);
-  }
-
   /** Retention deadline; expiry never means an execution lease can be taken over. */
   public Instant expiresAt() {
     return retainUntil;
@@ -61,42 +50,38 @@ public record IdempotencyRecord(
   }
 
   public IdempotencyRecord completed(StoredResponse result, Instant until) {
-    return new IdempotencyRecord(
-        key,
-        fingerprint,
-        Status.COMPLETED,
-        owner,
-        result,
-        leaseUntil,
-        until.isAfter(retainUntil) ? until : retainUntil,
-        Math.addExact(resolutionVersion, 1),
-        null);
+    return IdempotencyRecord.builder(
+            key, fingerprint, leaseUntil, until.isAfter(retainUntil) ? until : retainUntil)
+        .status(Status.COMPLETED)
+        .owner(owner)
+        .response(result)
+        .resolutionVersion(Math.addExact(resolutionVersion, 1))
+        .failure(null)
+        .build();
   }
 
   public IdempotencyRecord renewed(Instant lease, Instant until) {
-    return new IdempotencyRecord(
-        key,
-        fingerprint,
-        status,
-        owner,
-        response,
-        lease.isAfter(leaseUntil) ? lease : leaseUntil,
-        until.isAfter(retainUntil) ? until : retainUntil,
-        Math.addExact(resolutionVersion, 1),
-        failure);
+    return IdempotencyRecord.builder(
+            key,
+            fingerprint,
+            lease.isAfter(leaseUntil) ? lease : leaseUntil,
+            until.isAfter(retainUntil) ? until : retainUntil)
+        .status(status)
+        .owner(owner)
+        .response(response)
+        .resolutionVersion(Math.addExact(resolutionVersion, 1))
+        .failure(failure)
+        .build();
   }
 
   public IdempotencyRecord unknown(String diagnostic) {
-    return new IdempotencyRecord(
-        key,
-        fingerprint,
-        Status.UNKNOWN,
-        owner,
-        null,
-        leaseUntil,
-        retainUntil,
-        Math.addExact(resolutionVersion, 1),
-        diagnostic);
+    return IdempotencyRecord.builder(key, fingerprint, leaseUntil, retainUntil)
+        .status(Status.UNKNOWN)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(Math.addExact(resolutionVersion, 1))
+        .failure(diagnostic)
+        .build();
   }
 
   /** {@code true} when {@code candidate} holds this in-progress record. */
@@ -109,5 +94,69 @@ public record IdempotencyRecord(
     IN_PROGRESS,
     COMPLETED,
     UNKNOWN
+  }
+
+  /** Named construction of a complete immutable stored snapshot. */
+  public static Builder builder(
+      String key, String fingerprint, Instant leaseUntil, Instant retainUntil) {
+    return new Builder(key, fingerprint, leaseUntil, retainUntil);
+  }
+
+  /** Mutable construction state; build validates and creates an independent immutable value. */
+  public static final class Builder {
+    private final String key;
+    private final String fingerprint;
+    private final Instant leaseUntil;
+    private final Instant retainUntil;
+    private Status status = Status.IN_PROGRESS;
+    private @Nullable String owner = null;
+    private @Nullable StoredResponse response = null;
+    private long resolutionVersion = 0;
+    private @Nullable String failure = null;
+
+    private Builder(String key, String fingerprint, Instant leaseUntil, Instant retainUntil) {
+      this.key = Objects.requireNonNull(key);
+      this.fingerprint = Objects.requireNonNull(fingerprint);
+      this.leaseUntil = Objects.requireNonNull(leaseUntil);
+      this.retainUntil = Objects.requireNonNull(retainUntil);
+    }
+
+    public Builder status(Status value) {
+      this.status = value;
+      return this;
+    }
+
+    public Builder owner(@Nullable String value) {
+      this.owner = value;
+      return this;
+    }
+
+    public Builder response(@Nullable StoredResponse value) {
+      this.response = value;
+      return this;
+    }
+
+    public Builder resolutionVersion(long value) {
+      this.resolutionVersion = value;
+      return this;
+    }
+
+    public Builder failure(@Nullable String value) {
+      this.failure = value;
+      return this;
+    }
+
+    public IdempotencyRecord build() {
+      return new IdempotencyRecord(
+          key,
+          fingerprint,
+          status,
+          owner,
+          response,
+          leaseUntil,
+          retainUntil,
+          resolutionVersion,
+          failure);
+    }
   }
 }

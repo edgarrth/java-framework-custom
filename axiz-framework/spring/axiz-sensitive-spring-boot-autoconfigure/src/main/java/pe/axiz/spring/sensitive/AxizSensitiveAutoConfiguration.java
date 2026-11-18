@@ -14,10 +14,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.codec.json.JacksonJsonEncoder;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import pe.axiz.core.commons.Environments;
 import pe.axiz.core.sensitive.MaskingPolicy;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
@@ -61,8 +63,19 @@ public class AxizSensitiveAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  ObjectMasker axizObjectMasker(MaskingPolicy policy, SensitiveKeys keys) {
-    return new ObjectMasker(policy, keys);
+  ObjectMasker axizObjectMasker(
+      MaskingPolicy policy,
+      SensitiveKeys keys,
+      AxizSensitiveProperties properties,
+      Environment environment) {
+    if (!properties.detectPan()) {
+      Environments.requireSingleProcess(
+          environment.getProperty("axiz.config.environment"),
+          "axiz.sensitive.detect-pan=false",
+          "PAN detection enabled",
+          "sensitive data detection cannot be disabled in a deployed environment");
+    }
+    return new ObjectMasker(policy, keys, properties.detectPan());
   }
 
   /**

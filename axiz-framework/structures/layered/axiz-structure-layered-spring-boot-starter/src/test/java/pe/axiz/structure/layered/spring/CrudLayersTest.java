@@ -2,130 +2,260 @@ package pe.axiz.structure.layered.spring;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.lang.reflect.Proxy;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.UUID;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.PageResponse;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
+import pe.axiz.core.errors.AccessException;
+import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.NotFoundException;
-import pe.axiz.structure.layered.InMemoryCrudService;
+import pe.axiz.core.errors.ValidationException;
+import pe.axiz.structure.layered.CrudAction;
 
-/** The JPA service and the REST controller of a layered CRUD resource. */
+/** Actual Hibernate persistence, object ownership, request allowlists and optimistic conflicts. */
 class CrudLayersTest {
-
-  /** A mutable entity, as JPA entities are. */
-  static final class Branch {
-    final String code;
+  @Entity(name = "MaintenanceBranch")
+  @Table(name = "maintenance_branch")
+  public static class Branch {
+    @Id String id;
+    @Version Long version;
+    String owner;
     String name;
 
-    Branch(String code, String name) {
-      this.code = code;
+    protected Branch() {}
+
+    Branch(String owner, String name) {
+      this.id = UUID.randomUUID().toString();
+      this.owner = owner;
       this.name = name;
     }
   }
 
-  /** A repository over a map: only the methods the service uses. */
-  @SuppressWarnings("unchecked")
-  private static JpaRepository<Branch, String> repository(Map<String, Branch> rows) {
-    return (JpaRepository<Branch, String>)
-        Proxy.newProxyInstance(
-            JpaRepository.class.getClassLoader(),
-            new Class<?>[] {JpaRepository.class},
-            (proxy, method, args) ->
-                switch (method.getName()) {
-                  case "findById" -> Optional.ofNullable(rows.get((String) args[0]));
-                  case "findAll" -> {
-                    Pageable pageable = (Pageable) args[0];
-                    List<Branch> all = List.copyOf(rows.values());
-                    yield new PageImpl<>(all, pageable, all.size());
-                  }
-                  case "save" -> {
-                    Branch b = (Branch) args[0];
-                    rows.put(b.code, b);
-                    yield b;
-                  }
-                  case "delete" -> {
-                    rows.remove(((Branch) args[0]).code);
-                    yield null;
-                  }
-                  case "hashCode" -> System.identityHashCode(proxy);
-                  case "equals" -> proxy == args[0];
-                  default -> throw new UnsupportedOperationException(method.getName());
-                });
+  @Entity(name = "UnversionedBranch")
+  public static class Unversioned {
+    @Id String id;
   }
 
-  static final class Branches extends JpaCrudService<Branch, String> {
-    Branches(JpaRepository<Branch, String> repository) {
-      super(repository, "branch");
+  record Change(String name, Long version) {}
+
+  record View(String id, String name, Long version) {}
+
+  static final class Branches extends JpaCrudService<Branch, Change, View, String> {
+    private final String caller;
+
+    Branches(EntityManager em, String caller) {
+      this(em, new SimpleJpaRepository<>(Branch.class, em), caller);
     }
 
-    @Override
-    protected void apply(Branch current, Branch changes) {
-      current.name = changes.name;
+    private Branches(EntityManager em, SimpleJpaRepository<Branch, String> repo, String caller) {
+      super(Branch.class, repo, repo, em, "branch");
+      this.caller = caller;
+    }
+
+    protected Branch newEntity(Change request) {
+      return new Branch(caller, request.name());
+    }
+
+    protected void apply(Branch current, Change request) {
+      current.name = request.name();
+    }
+
+    protected View toResponse(Branch entity) {
+      return new View(entity.id, entity.name, entity.version);
+    }
+
+    protected Object expectedVersion(Change request) {
+      return request.version();
+    }
+
+    protected void authorize(CrudAction action, @Nullable Branch entity) {
+      if (caller.isBlank() || (entity != null && !caller.equals(entity.owner)))
+        throw AccessException.forbidden("Caller cannot access this maintenance resource");
+    }
+
+    protected Specification<Branch> listScope() {
+      return (root, query, builder) -> builder.equal(root.get("owner"), caller);
+    }
+
+    protected Set<String> sortableFields() {
+      return Set.of("name");
+    }
+  }
+
+  static final class BranchController extends CrudController<Change, View, String> {
+    BranchController(Branches service) {
+      super(service, View::id);
+    }
+  }
+
+  private SessionFactory factory;
+
+  @BeforeEach
+  void start() {
+    factory =
+        new Configuration()
+            .addAnnotatedClass(Branch.class)
+            .addAnnotatedClass(Unversioned.class)
+            .setProperty("hibernate.connection.url", "jdbc:h2:mem:crud-" + UUID.randomUUID())
+            .setProperty("hibernate.hbm2ddl.auto", "create-drop")
+            .setProperty("hibernate.show_sql", "false")
+            .buildSessionFactory();
+  }
+
+  @AfterEach
+  void close() {
+    factory.close();
+  }
+
+  @Test
+  void onlyOwnedRowsAreVisibleAndEditableAndRequestsContainOnlyAllowedFields() {
+    try (var em = factory.createEntityManager()) {
+      em.getTransaction().begin();
+      var alice = new Branches(em, "alice");
+      var bob = new Branches(em, "bob");
+      View mine = alice.create(new Change("Lima", null));
+      View theirs = bob.create(new Change("Arequipa", null));
+      assertEquals("alice", em.find(Branch.class, mine.id()).owner);
+      assertThat(Change.class.getRecordComponents())
+          .extracting("name")
+          .containsExactly("name", "version");
+      assertFalse(alice.find(theirs.id()).isPresent());
+      assertThrows(NotFoundException.class, () -> alice.get(theirs.id()));
+      assertThrows(
+          NotFoundException.class,
+          () -> alice.update(theirs.id(), new Change("stolen", theirs.version())));
+      assertThrows(NotFoundException.class, () -> alice.delete(theirs.id()));
+      assertEquals(List.of(mine), alice.list(PageRequest.of(0, 10)).content());
+      assertThrows(
+          ValidationException.class,
+          () -> alice.list(new PageRequest(0, 10, Sort.parse(List.of("owner")))));
+      assertThrows(AccessException.class, () -> new Branches(em, "").create(new Change("x", null)));
+      View updated = alice.update(mine.id(), new Change("Lima Centro", mine.version()));
+      assertThrows(
+          ValidationException.class,
+          () -> alice.update(mine.id(), new Change("missing version", null)));
+      assertEquals(mine.version() + 1, updated.version());
+      var stale =
+          assertThrows(
+              BusinessException.class,
+              () -> alice.update(mine.id(), new Change("lost update", mine.version())));
+      assertEquals(CoreErrors.CONFLICT.code(), stale.code());
+      alice.delete(mine.id());
+      assertTrue(alice.find(mine.id()).isEmpty());
+      em.getTransaction().commit();
     }
   }
 
   @Test
-  void theJpaServiceReadsWritesAndNamesWhatItCannotFind() {
-    Map<String, Branch> rows = new ConcurrentHashMap<>();
-    Branches branches = new Branches(repository(rows));
-    assertEquals("branch", branches.resourceName());
-
-    branches.create(new Branch("LIM-01", "Lima Centro"));
-    assertEquals("Lima Centro", branches.find("LIM-01").orElseThrow().name);
-    Page<Branch> page = branches.list(PageRequest.of(0, 10));
-    assertEquals(1, page.content().size());
-
-    Branch renamed = branches.update("LIM-01", new Branch("ignored", "Lima Cercado"));
-    assertEquals("LIM-01", renamed.code, "the identity of the stored row is kept");
-    assertEquals("Lima Cercado", rows.get("LIM-01").name);
-
-    branches.delete("LIM-01");
-    assertThat(rows).isEmpty();
-    assertThrows(NotFoundException.class, () -> branches.update("LIM-01", renamed));
-    assertThrows(NotFoundException.class, () -> branches.delete("LIM-01"));
-  }
-
-  record Agency(String code, String name) {}
-
-  static final class Agencies extends CrudController<Agency, String> {
-    Agencies(InMemoryCrudService<Agency, String> service) {
-      super(service, Agency::code);
+  void concurrentTransactionsCannotOverwriteTheCommittedVersion() {
+    View created;
+    try (var em = factory.createEntityManager()) {
+      em.getTransaction().begin();
+      created = new Branches(em, "alice").create(new Change("original", null));
+      em.getTransaction().commit();
+    }
+    try (var first = factory.createEntityManager();
+        var second = factory.createEntityManager()) {
+      first.getTransaction().begin();
+      second.getTransaction().begin();
+      var a = new Branches(first, "alice");
+      var b = new Branches(second, "alice");
+      b.get(created.id()); // retains the old managed version before the other commit
+      a.update(created.id(), new Change("winner", created.version()));
+      first.getTransaction().commit();
+      assertThrows(
+          RuntimeException.class,
+          () -> b.update(created.id(), new Change("loser", created.version())));
+      second.getTransaction().rollback();
+    }
+    try (var em = factory.createEntityManager()) {
+      assertEquals("winner", em.find(Branch.class, created.id()).name);
     }
   }
 
   @Test
-  void theControllerAnswersWithTheRestConventions() {
-    InMemoryCrudService<Agency, String> service =
-        new InMemoryCrudService<>("agency", Agency::code, (id, a) -> new Agency(id, a.name()));
-    Agencies controller = new Agencies(service);
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/agencies");
-    RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
-    try {
-      ResponseEntity<Agency> created = controller.create(new Agency("A-1", "Miraflores"));
-      assertEquals(201, created.getStatusCode().value());
-      assertThat(created.getHeaders().getLocation()).hasToString("http://localhost/agencies/A-1");
-    } finally {
-      RequestContextHolder.resetRequestAttributes();
+  void unversionedEntitiesAreRejectedDuringConstruction() {
+    try (var em = factory.createEntityManager()) {
+      var repo = new SimpleJpaRepository<Unversioned, String>(Unversioned.class, em);
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              new JpaCrudService<Unversioned, Change, View, String>(
+                  Unversioned.class, repo, repo, em, "branch") {
+                protected Unversioned newEntity(Change request) {
+                  throw new AssertionError();
+                }
+
+                protected void apply(Unversioned entity, Change changes) {
+                  throw new AssertionError();
+                }
+
+                protected View toResponse(Unversioned entity) {
+                  throw new AssertionError();
+                }
+
+                protected Object expectedVersion(Change request) {
+                  throw new AssertionError();
+                }
+
+                protected void authorize(CrudAction action, @Nullable Unversioned entity) {
+                  throw new AssertionError();
+                }
+
+                protected Specification<Unversioned> listScope() {
+                  throw new AssertionError();
+                }
+
+                protected Set<String> sortableFields() {
+                  throw new AssertionError();
+                }
+              });
     }
-    assertEquals("Miraflores", controller.get("A-1").name());
-    PageResponse<Agency> list = controller.list(PageRequest.of(0, 20));
-    assertThat(list.items()).extracting(Agency::code).containsExactly("A-1");
-    assertEquals("San Isidro", controller.update("A-1", new Agency("x", "San Isidro")).name());
-    assertEquals(204, controller.delete("A-1").getStatusCode().value());
-    assertThrows(NotFoundException.class, () -> controller.get("A-1"));
+  }
+
+  @Test
+  void controllerUsesSeparateRepresentationsAndReturnsGeneratedLocation() {
+    try (var em = factory.createEntityManager()) {
+      em.getTransaction().begin();
+      var controller = new BranchController(new Branches(em, "alice"));
+      RequestContextHolder.setRequestAttributes(
+          new ServletRequestAttributes(new MockHttpServletRequest("POST", "/branches")));
+      try {
+        var response = controller.create(new Change("Lima", null));
+        assertEquals(201, response.getStatusCode().value());
+        View created = response.getBody();
+        assertThat(response.getHeaders().getLocation())
+            .hasToString("http://localhost/branches/" + created.id());
+        assertEquals(created, controller.get(created.id()));
+        assertEquals(
+            "New", controller.update(created.id(), new Change("New", created.version())).name());
+        assertEquals(204, controller.delete(created.id()).getStatusCode().value());
+      } finally {
+        RequestContextHolder.resetRequestAttributes();
+      }
+      em.getTransaction().commit();
+    }
   }
 }

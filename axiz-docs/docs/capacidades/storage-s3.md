@@ -9,9 +9,9 @@ axiz add storage-s3
 
 |  |  |
 |---|---|
-| Starter | `pe.axiz:axiz-storage-spring-boot-starter` |
+| Starter | `pe.axiz:axiz-storage-s3-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Dependencias | `pe.axiz:axiz-adapter-storage-s3`<br>`software.amazon.awssdk:s3` |
+| Agrega también | [`storage`](storage.md) |
 | Incluida por defecto en | batch |
 
 ## Propiedades que agrega
@@ -44,5 +44,5 @@ storage.put("in/file.txt", content, ObjectMetadata.of("text/plain", length));
 
 ## Módulos
 
-- [`axiz-storage-spring-boot-autoconfigure`](../referencia/spring/axiz-storage-spring-boot-autoconfigure.md)
+- [`axiz-storage-s3-spring-boot-autoconfigure`](../referencia/spring/axiz-storage-s3-spring-boot-autoconfigure.md)
 - [`axiz-core-storage`](../referencia/core/axiz-core-storage.md)

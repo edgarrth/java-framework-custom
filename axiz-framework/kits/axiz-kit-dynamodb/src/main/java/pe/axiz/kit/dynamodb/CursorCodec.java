@@ -13,10 +13,10 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.json.JsonReader;
-import pe.axiz.core.commons.json.JsonWriter;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.KeyProvider;
+import pe.axiz.core.json.JsonReader;
+import pe.axiz.core.json.JsonWriter;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 

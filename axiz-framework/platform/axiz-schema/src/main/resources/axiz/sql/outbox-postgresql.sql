@@ -28,3 +28,11 @@ CREATE TABLE IF NOT EXISTS axiz_outbox_aggregate (
 
 CREATE INDEX IF NOT EXISTS axiz_outbox_open ON axiz_outbox (aggregate_type, aggregate_id, aggregate_seq)
   WHERE status NOT IN ('PUBLISHED', 'SKIPPED');
+
+-- The audit chain head advances in the same transaction as its outbox records.
+CREATE TABLE IF NOT EXISTS axiz_audit_chain (
+    chain_id VARCHAR(256) PRIMARY KEY,
+    last_sequence BIGINT NOT NULL CHECK (last_sequence >= 0),
+    last_hash VARCHAR(64) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);

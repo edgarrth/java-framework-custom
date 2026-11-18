@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.PageResponse;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.PageResponse;
 import pe.axiz.structure.layered.CrudService;
 
 /**
@@ -20,32 +20,37 @@ import pe.axiz.structure.layered.CrudService;
  * {@code @RestController} and {@code @RequestMapping("/v1/<resources>")}; errors become RFC 9457
  * problems through the errors starter. Paging uses {@code page}, {@code size} and {@code sort}.
  *
- * @param <T> resource representation
+ * <p>Declare route authorization through axiz.security.authorization.rules; per-object checks
+ * belong to the service. Entity classes must never be used as request or response types.
+ *
+ * @param <RequestT> accepted request fields
+ * @param <ResponseT> public response
  * @param <I> id type
  */
-public abstract class CrudController<T, I> {
+public abstract class CrudController<RequestT, ResponseT, I> {
 
-  private final CrudService<T, I> service;
-  private final Function<T, I> idOf;
+  private final CrudService<RequestT, ResponseT, I> service;
+  private final Function<ResponseT, I> idOf;
 
-  protected CrudController(CrudService<T, I> service, Function<T, I> idOf) {
+  protected CrudController(
+      CrudService<RequestT, ResponseT, I> service, Function<ResponseT, I> idOf) {
     this.service = service;
     this.idOf = idOf;
   }
 
   @GetMapping("/{id}")
-  public T get(@PathVariable("id") I id) {
+  public ResponseT get(@PathVariable("id") I id) {
     return service.get(id);
   }
 
   @GetMapping
-  public PageResponse<T> list(PageRequest page) {
+  public PageResponse<ResponseT> list(PageRequest page) {
     return PageResponse.from(service.list(page));
   }
 
   @PostMapping
-  public ResponseEntity<T> create(@Valid @RequestBody T resource) {
-    T created = service.create(resource);
+  public ResponseEntity<ResponseT> create(@Valid @RequestBody RequestT resource) {
+    ResponseT created = service.create(resource);
     URI location =
         ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
@@ -55,7 +60,7 @@ public abstract class CrudController<T, I> {
   }
 
   @PutMapping("/{id}")
-  public T update(@PathVariable("id") I id, @Valid @RequestBody T resource) {
+  public ResponseT update(@PathVariable("id") I id, @Valid @RequestBody RequestT resource) {
     return service.update(id, resource);
   }
 

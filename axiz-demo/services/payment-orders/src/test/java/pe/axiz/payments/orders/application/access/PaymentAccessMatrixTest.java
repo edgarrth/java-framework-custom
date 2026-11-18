@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.money.Money;

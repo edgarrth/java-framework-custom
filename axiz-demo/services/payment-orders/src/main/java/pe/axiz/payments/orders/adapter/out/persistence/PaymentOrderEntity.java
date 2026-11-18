@@ -33,7 +33,7 @@ public class PaymentOrderEntity extends AuditableEntity {
   @Column(name = "creditor_cci", nullable = false, updatable = false, length = 200)
   private String creditorCci = "";
 
-  @Column(name = "creditor_cci_index", nullable = false, updatable = false, length = 64)
+  @Column(name = "creditor_cci_index", nullable = false, updatable = false, length = 256)
   private String creditorCciIndex = "";
 
   @Column(name = "amount", nullable = false, updatable = false, precision = 18, scale = 2)

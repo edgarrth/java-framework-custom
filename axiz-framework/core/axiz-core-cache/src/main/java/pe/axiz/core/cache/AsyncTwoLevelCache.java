@@ -9,7 +9,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.LongSupplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Native asynchronous L2 with CPU-only L1. Local copies discount the complete read duration in both

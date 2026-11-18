@@ -3,6 +3,8 @@ package {{project.basePackage}};
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.Archetype;
 import pe.axiz.quality.archunit.AxizArchitecture;
+import pe.axiz.quality.archunit.CardDataScope;
+import pe.axiz.quality.archunit.TokenizationScope;
 {{#hasExtensions}}
 import pe.axiz.quality.archunit.Extension;
 {{/hasExtensions}}
@@ -14,11 +16,16 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.of("{{project.basePackage}}")
+    architecture().verify();
+  }
+
+  static AxizArchitecture architecture() {
+    return AxizArchitecture.of("{{project.basePackage}}")
         .archetype(Archetype.{{archetype.enum}})
         .stack(Stack.{{#stack.reactive}}REACTIVE{{/stack.reactive}}{{#stack.servlet}}SERVLET{{/stack.servlet}})
         .structure(Structure.{{fw.enum}})
         {{#extensions}}.extensions(Extension.{{enum}}){{/extensions}}
-        .verify();
+        .cardData(CardDataScope.{{cardDataScope}})
+        .tokenization(TokenizationScope.{{tokenizationScope}});
   }
 }

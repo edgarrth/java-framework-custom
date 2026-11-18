@@ -1,14 +1,4 @@
 misconfigurations:
-  - id: KSV-0014
-    paths:
-      - axiz-demo/kind/deps/keycloak.yaml
-    expired_at: 2027-02-12
-    statement: >-
-      Only Deployment/keycloak, container/keycloak, in this single-workload file.
-      The local Keycloak 26.4 start-dev command rewrites its Quarkus runtime JARs;
-      a real non-root/read-only smoke fails with ReadOnlyFileSystemException.
-      runAsNonRoot, dropped capabilities, seccomp and no privilege escalation remain enforced.
-      Production consumers must build an optimized immutable identity-provider image.
   - id: KSV-0109
     paths:
       - axiz-demo/kind/rendered/wiremock-mappings.yaml

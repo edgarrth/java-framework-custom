@@ -5,9 +5,9 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent-core</artifactId>
+    <artifactId>axiz-parent-tooling</artifactId>
     <version>${revision}</version>
-    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath>
+    <relativePath>../../platform/axiz-parent-tooling/pom.xml</relativePath>
   </parent>
 
   <artifactId>axiz-codegen</artifactId>
@@ -36,6 +36,8 @@
   </build>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-json</artifactId><version>${project.version}</version></dependency>
+
     <!-- Generation entry points format their output; native consumers may omit the formatter. -->
     <dependency>
       <groupId>com.google.googlejavaformat</groupId>

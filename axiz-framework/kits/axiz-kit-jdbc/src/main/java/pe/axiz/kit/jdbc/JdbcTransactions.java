@@ -113,7 +113,8 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
     // Driver exception messages can contain SQL and values; log only the cleanup event.
     LoggerFactory.getLogger(JdbcTransactions.class)
         .warn(
-            "JDBC transaction cleanup failed; discard the connection; do not retry confirmed commits");
+            "JDBC transaction cleanup failed; discard the connection; do not retry confirmed"
+                + " commits");
   }
 
   @Override

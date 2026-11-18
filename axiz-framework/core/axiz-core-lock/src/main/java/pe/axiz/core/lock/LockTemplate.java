@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.LeaseTiming;
+import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 
 /**
@@ -45,9 +45,11 @@ public final class LockTemplate {
 
   private final DistributedLock lock;
   private final Duration pollInterval;
+  private final LockObserver observer;
 
-  public LockTemplate(DistributedLock lock, Duration pollInterval) {
+  public LockTemplate(DistributedLock lock, Duration pollInterval, LockObserver observer) {
     this.lock = Objects.requireNonNull(lock);
+    this.observer = Objects.requireNonNull(observer);
     this.pollInterval = Objects.requireNonNull(pollInterval);
   }
 
@@ -83,7 +85,8 @@ public final class LockTemplate {
       result = work.call(held);
     } catch (Exception | Error failure) {
       boolean lost = held.finish();
-      stop(done, renewer, handle);
+      RuntimeException release = stop(done, renewer, handle);
+      if (release != null && release != failure) failure.addSuppressed(release);
       if (lost && failure instanceof InterruptedException) {
         throw held.lost(failure);
       }
@@ -93,14 +96,27 @@ public final class LockTemplate {
       throw failure;
     }
     boolean lost = held.finish();
-    stop(done, renewer, handle);
+    RuntimeException release = stop(done, renewer, handle);
     if (lost) {
-      throw held.lost(null);
+      LockLostException failure = held.lost(null);
+      if (release != null) failure.addSuppressed(release);
+      throw failure;
+    }
+    if (release != null) {
+      LOG.warn(
+          "Lock release failed after completed work; the lease will expire (failure type {})",
+          release.getClass().getSimpleName());
+      try {
+        observer.releaseFailed(resource, release);
+      } catch (RuntimeException ignored) {
+        LOG.warn("Lock observer failed to record release failure");
+      }
     }
     return result;
   }
 
-  private static void stop(AtomicBoolean done, Thread renewer, LockHandle handle) {
+  private static @Nullable RuntimeException stop(
+      AtomicBoolean done, Thread renewer, LockHandle handle) {
     done.set(true);
     renewer.interrupt();
     try {
@@ -108,7 +124,12 @@ public final class LockTemplate {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
-    handle.release();
+    try {
+      handle.release();
+      return null;
+    } catch (RuntimeException failure) {
+      return failure;
+    }
   }
 
   /** A handle and the moment (monotonic nanos) its lease stops being trusted. */

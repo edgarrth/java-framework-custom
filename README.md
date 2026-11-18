@@ -70,7 +70,7 @@ Con la CLI instalada, consultar el catálogo y generar desde un contrato OpenAPI
 ```bash
 axiz catalog archetypes
 axiz new payment-orders --archetype business --structure hexagonal \
-  --persistence aurora --openapi payments.yaml -c outbox
+  --persistence aurora --openapi payments.yaml -c outbox -c messaging-kafka
 cd payment-orders
 axiz doctor
 ./mvnw verify

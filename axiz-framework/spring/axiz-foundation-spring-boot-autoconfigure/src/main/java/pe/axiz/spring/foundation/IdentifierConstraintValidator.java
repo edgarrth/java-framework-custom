@@ -2,13 +2,20 @@ package pe.axiz.spring.foundation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.identifiers.IdentifierRegistry;
 
 /** Validator of {@link ValidIdentifier} backed by the identifier registry. */
-public class IdentifierConstraintValidator
+public final class IdentifierConstraintValidator
     implements ConstraintValidator<ValidIdentifier, CharSequence> {
 
   private String type = "";
+  private final IdentifierRegistry registry;
+
+  public IdentifierConstraintValidator(IdentifierRegistry registry) {
+    this.registry = Objects.requireNonNull(registry);
+  }
 
   @Override
   public void initialize(ValidIdentifier annotation) {
@@ -17,6 +24,6 @@ public class IdentifierConstraintValidator
 
   @Override
   public boolean isValid(@Nullable CharSequence value, ConstraintValidatorContext context) {
-    return value == null || IdentifierValidation.registry().isValid(type, value.toString());
+    return value == null || registry.isValid(type, value.toString());
   }
 }

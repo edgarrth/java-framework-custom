@@ -71,7 +71,8 @@ public final class WarmedAwsCredentials implements AwsCredentialsProvider, SdkAu
         .filter(expiry -> !expiry.isAfter(clock.instant().plusSeconds(10)))
         .isPresent()) {
       throw SdkClientException.create(
-          "AWS credentials expired or near expiry; background refresh has not supplied a valid snapshot");
+          "AWS credentials expired or near expiry; background refresh has not supplied a valid"
+              + " snapshot");
     }
     return credentials;
   }

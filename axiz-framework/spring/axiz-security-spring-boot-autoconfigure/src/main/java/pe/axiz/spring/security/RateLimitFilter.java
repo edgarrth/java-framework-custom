@@ -12,6 +12,7 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
+import pe.axiz.core.security.RateLimitKeys;
 import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 
@@ -42,17 +43,20 @@ public class RateLimitFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
     String path = request.getRequestURI().substring(request.getContextPath().length());
-    Optional<AxizSecurityProperties.Rule> rule = rules.match(path);
-    if (!(auth instanceof AxizAuthentication a) || rule.isEmpty()) {
+    Optional<AxizSecurityProperties.Rule> rule =
+        rules.match(path, !(auth instanceof AxizAuthentication));
+    if (rule.isEmpty()) {
       chain.doFilter(request, response);
       return;
     }
     AxizSecurityProperties.Rule r = rule.get();
+    String key =
+        auth instanceof AxizAuthentication a
+            ? RateLimitRules.key(r, a.axizPrincipal())
+            : RateLimitKeys.forAnonymous(request.getRemoteAddr(), r.name());
     RateLimiter.Decision d;
     try {
-      d =
-          limiter.tryAcquire(
-              RateLimitRules.key(r, a.axizPrincipal()), r.limit(), r.window(), r.failurePolicy());
+      d = limiter.tryAcquire(key, r.limit(), r.window(), r.failurePolicy());
     } catch (RateLimitUnavailableException unavailable) {
       ProblemAuthenticationEntryPoint.write(
           response,

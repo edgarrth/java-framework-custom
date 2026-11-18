@@ -26,15 +26,16 @@ import reactor.core.publisher.Mono;
 class HandlerContractTest {
 
   static final EventEnvelope ENVELOPE =
-      new EventEnvelope(
-          "e-1",
-          "urn:test",
-          "pe.axiz.test.thing-happened.v1",
-          Instant.EPOCH,
-          null,
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("e-1")
+          .source("urn:test")
+          .type("pe.axiz.test.thing-happened.v1")
+          .time(Instant.EPOCH)
+          .subject(null)
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   @HandlesEvent("pe.axiz.test.thing-happened.v1")
   static class Recording extends TypedEventHandler<String> {

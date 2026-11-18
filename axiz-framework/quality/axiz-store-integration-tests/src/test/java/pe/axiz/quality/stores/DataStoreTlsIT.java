@@ -30,11 +30,11 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.r2dbc.core.DatabaseClient;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.quality.containers.TestContainerImages;
+import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.spring.jdbc.AxizJdbcTransportAutoConfiguration;
 import pe.axiz.spring.r2dbc.AxizR2dbcAutoConfiguration;
 import pe.axiz.spring.r2dbc.AxizR2dbcTransportAutoConfiguration;
@@ -60,7 +60,7 @@ class DataStoreTlsIT {
   }
 
   private PostgreSQLContainer postgres() throws Exception {
-    var postgres = material.copyTo(new PostgreSQLContainer(Docker.POSTGRES));
+    var postgres = material.copyTo(TestContainerImages.postgres());
     postgres.withCommand(
         "sh",
         "-c",
@@ -196,7 +196,7 @@ class DataStoreTlsIT {
   void lettuceUsesTlsAndRejectsUntrustedCertificatesAndWrongHosts() throws Exception {
     try (var redis =
         material
-            .copyTo(new GenericContainer<>(Docker.VALKEY))
+            .copyTo(TestContainerImages.valkey())
             .withExposedPorts(6379)
             .withCommand(
                 "valkey-server",

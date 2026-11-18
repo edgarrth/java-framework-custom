@@ -22,38 +22,41 @@ class EventAdaptersTest {
     var withMessaging =
         AsyncContractSyncTest.request(AsyncContractSyncTest.contract(), Structure.HEXAGONAL);
     var withoutMessaging =
-        new ProjectRequest(
-            withMessaging.name(),
-            withMessaging.groupId(),
-            withMessaging.basePackage(),
-            withMessaging.description(),
-            withMessaging.archetype(),
-            withMessaging.structure(),
-            withMessaging.stack(),
-            withMessaging.persistence(),
-            List.of(),
-            withMessaging.openApi(),
-            withMessaging.asyncApi(),
-            withMessaging.frameworkVersion(),
-            withMessaging.extensions());
+        ProjectRequest.builder()
+            .name(withMessaging.name())
+            .groupId(withMessaging.groupId())
+            .basePackage(withMessaging.basePackage())
+            .description(withMessaging.description())
+            .archetype(withMessaging.archetype())
+            .structure(withMessaging.structure())
+            .stack(withMessaging.stack())
+            .persistence(withMessaging.persistence())
+            .capabilities(List.of())
+            .openApi(withMessaging.openApi())
+            .asyncApi(withMessaging.asyncApi())
+            .frameworkVersion(withMessaging.frameworkVersion())
+            .extensions(withMessaging.extensions())
+            .build();
     var result = ProjectGenerator.withDefaults().validate(withoutMessaging);
     assertTrue(
         result.problems().stream()
             .anyMatch(problem -> problem.contains("requires a messaging capability")));
     var library =
-        new ProjectRequest(
-            "orders-library",
-            "pe.axiz",
-            "pe.axiz.orders",
-            "Library",
-            "library",
-            Structure.NONE,
-            Stack.SERVLET,
-            "none",
-            List.of(),
-            null,
-            withMessaging.asyncApi(),
-            "2.0.0");
+        ProjectRequest.builder()
+            .name("orders-library")
+            .groupId("pe.axiz")
+            .basePackage("pe.axiz.orders")
+            .description("Library")
+            .archetype("library")
+            .structure(Structure.NONE)
+            .stack(Stack.SERVLET)
+            .persistence("none")
+            .capabilities(List.of())
+            .openApi(null)
+            .asyncApi(withMessaging.asyncApi())
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     assertTrue(
         ProjectGenerator.withDefaults().validate(library).problems().stream()
             .anyMatch(problem -> problem.contains("services only")));

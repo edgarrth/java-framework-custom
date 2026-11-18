@@ -32,6 +32,7 @@ import org.springframework.mock.env.MockEnvironment;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.kafka.KafkaContainer;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.kafka.KafkaConnectionProperties;
 import pe.axiz.spring.kafka.KafkaTransportSecurity;
 
@@ -173,7 +174,8 @@ class KafkaTlsIT {
 
   private static final class TlsKafka extends KafkaContainer {
     TlsKafka() {
-      super("apache/kafka:4.1.0");
+      super("apache/kafka:4.2.2");
+      setImage(TestContainerImages.kafkaImage());
       withExposedPorts(9092, 9095);
       // Named TLS listener uses native PEM options; the image's SSL-named shortcut requires JKS
       // credential files.

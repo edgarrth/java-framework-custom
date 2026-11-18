@@ -9,9 +9,9 @@ axiz add messaging-sns
 
 |  |  |
 |---|---|
-| Starter | `pe.axiz:axiz-messaging-spring-boot-starter` |
+| Starter | `pe.axiz:axiz-messaging-sns-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Dependencias | `pe.axiz:axiz-adapter-messaging-sns`<br>`software.amazon.awssdk:sns`<br>`pe.axiz:axiz-adapter-observability-aws` |
+| Agrega también | [`messaging`](messaging.md) |
 | Incluida por defecto en | ningún arquetipo |
 
 Perfil `local` (`application-local.yaml`):
@@ -32,8 +32,6 @@ axiz.messaging.destinations.notifications: arn:aws:sns:<region>:<account>:notifi
 
 ## Módulos
 
-- [`axiz-messaging-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-spring-boot-autoconfigure.md)
+- [`axiz-messaging-sns-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-sns-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
-- [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
-- [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)

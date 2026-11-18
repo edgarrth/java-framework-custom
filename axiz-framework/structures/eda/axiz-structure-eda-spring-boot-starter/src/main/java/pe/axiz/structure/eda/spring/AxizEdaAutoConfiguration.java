@@ -19,13 +19,13 @@ import pe.axiz.spring.outbox.TransactionalEvents;
 @AutoConfiguration(
     afterName = {
       "pe.axiz.spring.outbox.AxizOutboxAutoConfiguration",
-      "pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration"
+      "pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration"
     })
 public class AxizEdaAutoConfiguration {
 
   /** Choreography over the R2DBC outbox. */
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnClass(name = "pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter")
+  @ConditionalOnClass(name = "pe.axiz.spring.outbox.ReactiveTransactionalEvents")
   static class ReactiveReactionsConfiguration {
 
     @Bean
@@ -37,10 +37,14 @@ public class AxizEdaAutoConfiguration {
     }
   }
 
-  @Bean
-  @ConditionalOnMissingBean
-  @ConditionalOnBean(TransactionalEvents.class)
-  Reactions axizReactions(TransactionalEvents events, EventRoutes routes) {
-    return new Reactions(events, routes);
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "pe.axiz.spring.outbox.TransactionalEvents")
+  static class ImperativeReactionsConfiguration {
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(TransactionalEvents.class)
+    Reactions axizReactions(TransactionalEvents events, EventRoutes routes) {
+      return new Reactions(events, routes);
+    }
   }
 }

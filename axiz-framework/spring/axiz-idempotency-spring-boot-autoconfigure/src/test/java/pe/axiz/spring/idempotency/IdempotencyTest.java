@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,8 +30,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.IdempotencyErrors;
@@ -114,7 +115,7 @@ class IdempotencyTest {
       @Nullable RequestMetadata caller,
       int maxResponseSize)
       throws Exception {
-    IdempotencyFilter filter = new IdempotencyFilter(service, 1024, maxResponseSize);
+    IdempotencyFilter filter = new IdempotencyFilter(service, 1024, maxResponseSize, List.of());
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/payments");
     request.setQueryString(query);
     request.addHeader("Idempotency-Key", key);

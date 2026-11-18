@@ -7,7 +7,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.convert.WritingConverter;
 import pe.axiz.core.crypto.EncryptionContext;
-import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.money.Money;
 import pe.axiz.kit.r2dbc.EncryptedText;
@@ -16,16 +15,11 @@ import pe.axiz.kit.r2dbc.EncryptedText;
  * Column converters of axiz types for Spring Data R2DBC: {@link EncryptedText} is stored as
  * AES-256-GCM ciphertext with an explicit field or shared purpose context and {@link Money} as its
  * text form ({@code PEN 150.00}). A service that declares its own {@code R2dbcCustomConversions}
- * includes {@link #all(String)} in it.
+ * includes {@link #all(Supplier, String)} in it.
  */
 public final class AxizR2dbcConverters {
 
   private AxizR2dbcConverters() {}
-
-  /** Converters using the field encryptor registered by the crypto starter. */
-  public static List<Object> all(String context) {
-    return all(EncryptionRegistry::encryptor, context);
-  }
 
   public static List<Object> all(Supplier<FieldEncryptor> encryptor, String context) {
     EncryptionContext.require(context);

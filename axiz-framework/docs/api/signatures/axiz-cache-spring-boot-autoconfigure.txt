@@ -42,8 +42,8 @@ public java.time.Duration maxTtl();
 public pe.axiz.spring.cache.AxizCacheProperties$L1(int, java.time.Duration);
 }
 
-public class pe.axiz.spring.cache.AxizCacheRedisAutoConfiguration {
-public pe.axiz.spring.cache.AxizCacheRedisAutoConfiguration();
+public class pe.axiz.spring.cache.redis.AxizCacheRedisAutoConfiguration {
+public pe.axiz.spring.cache.redis.AxizCacheRedisAutoConfiguration();
 }
 
 public class pe.axiz.spring.cache.AxizCacheableInterceptor implements org.aopalliance.intercept.MethodInterceptor {

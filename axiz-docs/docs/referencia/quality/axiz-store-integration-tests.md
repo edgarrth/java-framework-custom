@@ -13,3 +13,19 @@ and LocalStack DynamoDB for the DynamoDB idempotency and inbox stores.
 
 Without Docker the tests are skipped locally; CI passes `-Daxiz.it.requireDocker=true`, so a
 missing Docker fails the build instead.
+
+Additional acceptance fixtures include:
+
+- `CrudAcceptanceIT`: real Tomcat HTTP and signed JWTs, two maintenance resources and PostgreSQL;
+  object ownership, scoped lists, protected fields, optimistic versions and malformed input.
+- `VaultAcceptanceIT`: servlet/native Spring boundaries, signed JWTs, LocalStack DynamoDB/KMS/SQS,
+  authenticated Valkey budgets, strict sealed audit, tenant separation and failure after commit.
+- `LocalStackDynamoDbStoresIT` and `ValkeyIdempotencyStoreIT`: actual provider replay, protected
+  persisted bytes, concurrent CAS, request binding and rejection when protection is disabled.
+- PostgreSQL JDBC/R2DBC outbox and saga acceptance: transaction boundaries, ciphertext storage,
+  durable audit chain state and independent failure evidence.
+
+Use `-Dtest=CrudAcceptanceIT -Dsurefire.failIfNoSpecifiedTests=false` with the command above
+to focus one fixture. Full `-Pquality clean install -Daxiz.it.requireDocker=true` also runs the
+required verification and mutation/coverage gates. LocalStack does not prove deployed AWS IAM,
+TLS configuration, backup restoration or PCI DSS compliance.

@@ -2,8 +2,8 @@ public class pe.axiz.spring.sequence.AxizSequenceAutoConfiguration {
 public pe.axiz.spring.sequence.AxizSequenceAutoConfiguration();
 }
 
-public class pe.axiz.spring.sequence.AxizSequenceDynamoDbAutoConfiguration {
-public pe.axiz.spring.sequence.AxizSequenceDynamoDbAutoConfiguration();
+public class pe.axiz.spring.sequence.dynamodb.AxizSequenceDynamoDbAutoConfiguration {
+public pe.axiz.spring.sequence.dynamodb.AxizSequenceDynamoDbAutoConfiguration();
 }
 
 public final class pe.axiz.spring.sequence.AxizSequenceProperties extends java.lang.Record {
@@ -30,8 +30,8 @@ public pe.axiz.core.sequence.ResetPolicy reset();
 public pe.axiz.spring.sequence.AxizSequenceProperties$Spec(java.lang.String, int, pe.axiz.core.sequence.ResetPolicy, java.lang.String, java.time.ZoneId, int);
 }
 
-public class pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration {
-public pe.axiz.spring.sequence.AxizSequenceR2dbcAutoConfiguration();
+public class pe.axiz.spring.sequence.r2dbc.AxizSequenceR2dbcAutoConfiguration {
+public pe.axiz.spring.sequence.r2dbc.AxizSequenceR2dbcAutoConfiguration();
 }
 
 public final class pe.axiz.spring.sequence.ReactiveSequences {

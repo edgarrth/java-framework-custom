@@ -30,8 +30,8 @@ public java.time.Duration apiCallTimeout();
 public pe.axiz.spring.messaging.AxizMessagingAwsProperties(java.time.Duration);
 }
 
-public class pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration {
-public pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration();
+public class pe.axiz.spring.messaging.kafka.AxizMessagingKafkaAutoConfiguration {
+public pe.axiz.spring.messaging.kafka.AxizMessagingKafkaAutoConfiguration();
 }
 
 public final class pe.axiz.spring.messaging.AxizMessagingProperties extends java.lang.Record {
@@ -130,10 +130,10 @@ public java.lang.String contentType();
 public pe.axiz.spring.messaging.JacksonPayloadCodec(tools.jackson.databind.json.JsonMapper);
 }
 
-public class pe.axiz.spring.messaging.KafkaConsumers implements org.springframework.context.SmartLifecycle {
+public class pe.axiz.spring.messaging.kafka.KafkaConsumers implements org.springframework.context.SmartLifecycle {
 public boolean isRunning();
 public int getPhase();
-public pe.axiz.spring.messaging.KafkaConsumers(java.util.List<org.springframework.kafka.listener.ConcurrentMessageListenerContainer<java.lang.String, byte[]>>);
+public pe.axiz.spring.messaging.kafka.KafkaConsumers(java.util.List<org.springframework.kafka.listener.ConcurrentMessageListenerContainer<java.lang.String, byte[]>>);
 public void start();
 public void stop();
 }
@@ -195,10 +195,10 @@ public static final java.time.Duration DEFAULT_TIMEOUT;
 public static void await(org.reactivestreams.Publisher<?>, java.time.Duration) throws java.lang.Exception;
 }
 
-public final class pe.axiz.spring.messaging.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.messaging.sqs.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
 public boolean isRunning();
 public int getPhase();
-public pe.axiz.spring.messaging.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.AxizMessagingProperties$Sqs, pe.axiz.core.resilience.Backoff);
+public pe.axiz.spring.messaging.sqs.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.AxizMessagingProperties$Sqs, pe.axiz.core.resilience.Backoff);
 public void start();
 public void stop();
 }

@@ -35,6 +35,7 @@ Element reply = soapClients.call("example", "urn:getBalance", requestXml);
 ## Módulos
 
 - [`axiz-soap-spring-boot-autoconfigure`](../referencia/spring/axiz-soap-spring-boot-autoconfigure.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
 - [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)
 - [`axiz-core-soap`](../referencia/core/axiz-core-soap.md)

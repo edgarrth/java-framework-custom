@@ -23,7 +23,10 @@ public final class CompositeAuditPublisher implements AuditPublisher {
         p.publish(event);
       } catch (RuntimeException e) {
         LOG.error(
-            "Audit publisher {} failed for event {}", p.getClass().getSimpleName(), event.id(), e);
+            "Audit publisher {} failed for event {} type={}",
+            p.getClass().getSimpleName(),
+            event.id(),
+            e.getClass().getName());
         if (first == null) {
           first = e;
         }

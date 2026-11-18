@@ -70,11 +70,14 @@ class AccessTokenProfileTest {
         new TrustedIssuerDecoders(
             new IssuerPolicy(List.of(new TrustedIssuer(ISSUER, certs, List.of("payments-api")))),
             List.of("RS256"),
-            Duration.ofSeconds(30));
+            Duration.ofSeconds(30),
+            new AxizSecurityProperties.Jwks(Duration.ofSeconds(2), Duration.ofSeconds(3)),
+            true);
   }
 
   @AfterAll
   static void stop() {
+    decoders.close();
     jwks.stop(0);
   }
 

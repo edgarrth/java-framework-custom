@@ -1,8 +1,8 @@
 package pe.axiz.spring.jpa;
 
 import java.util.Optional;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.kit.jpa.AuditorProvider;
 
 /**

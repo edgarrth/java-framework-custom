@@ -16,12 +16,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
 import org.springframework.util.ClassUtils;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.http.AsyncAccessTokenProvider;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
 import pe.axiz.core.http.ClientCredentialsAsyncTokenProvider;
-import pe.axiz.core.http.ClientCredentialsTokenProvider;
 import pe.axiz.core.http.ClientSettings;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretNotFoundException;
@@ -82,17 +82,22 @@ public final class OutboundAuth implements AutoCloseable {
         ownedHttp = http;
         try {
           tokens =
-              new ClientCredentialsTokenProvider(
-                  http,
-                  Objects.requireNonNull(a.tokenUri()),
-                  Objects.requireNonNull(a.clientId()),
-                  () -> s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref)).reveal(),
-                  a.scopes(),
-                  a.audience(),
-                  renewBefore,
-                  client.timeouts().read(),
-                  clock,
-                  client.transportSecurity());
+              ClientCredentialsTokenProvider.builder()
+                  .http(http)
+                  .tokenUri(Objects.requireNonNull(a.tokenUri()))
+                  .clientId(Objects.requireNonNull(a.clientId()))
+                  .clientSecret(
+                      () ->
+                          s.resolve(ref)
+                              .orElseThrow(() -> new SecretNotFoundException(ref))
+                              .reveal())
+                  .scopes(a.scopes())
+                  .audience(a.audience())
+                  .renewBefore(renewBefore)
+                  .timeout(client.timeouts().read())
+                  .clock(clock)
+                  .transportSecurity(client.transportSecurity())
+                  .build();
         } catch (RuntimeException | Error failure) {
           try {
             http.close();
@@ -146,7 +151,8 @@ public final class OutboundAuth implements AutoCloseable {
         throw new IllegalStateException(
             "Native HTTP client "
                 + client.name()
-                + " requires AsyncSecretResolver; configure native secrets or provide that core port");
+                + " requires AsyncSecretResolver; configure native secrets or provide that core"
+                + " port");
       if (a.type() == AuthType.CLIENT_CREDENTIALS) {
         ReactiveInfrastructureBootstrap.initialize();
         var source = secrets;
@@ -154,20 +160,22 @@ public final class OutboundAuth implements AutoCloseable {
         nativeHttp = http;
         try {
           tokens =
-              new ClientCredentialsAsyncTokenProvider(
-                  http,
-                  Objects.requireNonNull(a.tokenUri()),
-                  Objects.requireNonNull(a.clientId()),
-                  () ->
-                      Stages.map(
-                          source.require(Objects.requireNonNull(a.clientSecretRef())),
-                          value -> value.reveal()),
-                  a.scopes(),
-                  a.audience(),
-                  renewBefore,
-                  client.timeouts().read(),
-                  clock,
-                  client.transportSecurity());
+              ClientCredentialsAsyncTokenProvider.builder()
+                  .http(http)
+                  .tokenUri(Objects.requireNonNull(a.tokenUri()))
+                  .clientId(Objects.requireNonNull(a.clientId()))
+                  .clientSecret(
+                      () ->
+                          Stages.map(
+                              source.require(Objects.requireNonNull(a.clientSecretRef())),
+                              value -> value.reveal()))
+                  .scopes(a.scopes())
+                  .audience(a.audience())
+                  .renewBefore(renewBefore)
+                  .timeout(client.timeouts().read())
+                  .clock(clock)
+                  .transportSecurity(client.transportSecurity())
+                  .build();
         } catch (RuntimeException | Error failure) {
           try {
             http.close();

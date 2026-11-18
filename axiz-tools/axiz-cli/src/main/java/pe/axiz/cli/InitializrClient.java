@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.codegen.openapi.Json;
 
 /**
  * Online mode: asks the axiz initializr to generate the project. Authentication uses the user's own
@@ -41,7 +42,7 @@ final class InitializrClient {
             .timeout(Duration.ofSeconds(60))
             .header("Content-Type", "application/json")
             .header("Accept", "application/zip, application/problem+json")
-            .POST(HttpRequest.BodyPublishers.ofString(JsonWriter.write(request)));
+            .POST(HttpRequest.BodyPublishers.ofString(Json.write(request)));
     if (token != null && !token.isBlank()) {
       b.header("Authorization", "Bearer " + token);
     }

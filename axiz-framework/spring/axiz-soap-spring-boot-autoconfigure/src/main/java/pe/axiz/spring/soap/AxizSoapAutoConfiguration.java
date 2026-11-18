@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretResolver;
-import pe.axiz.core.sensitive.ObjectMasker;
 
 /** SOAP clients with safe XML parsing, WS-Security, fault mapping, masking and observations. */
 @AutoConfiguration(
@@ -26,14 +25,12 @@ public class AxizSoapAutoConfiguration {
   SoapClients axizSoapClients(
       AxizSoapProperties p,
       ObjectProvider<SecretResolver> secrets,
-      ObjectProvider<ObjectMasker> masker,
       ObjectProvider<ObservationRegistry> observations,
       ObjectProvider<Clock> clock,
       Environment env) {
     return new SoapClients(
         p,
         secrets.getIfAvailable(),
-        masker.getIfAvailable(ObjectMasker::defaults),
         observations.getIfAvailable(() -> ObservationRegistry.NOOP),
         clock.getIfAvailable(Clock::systemUTC),
         TransportSecurityPolicy.from(env::getProperty));

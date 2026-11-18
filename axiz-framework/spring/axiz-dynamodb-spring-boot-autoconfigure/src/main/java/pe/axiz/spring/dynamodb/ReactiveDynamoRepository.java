@@ -4,7 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Objects;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.kit.dynamodb.DynamoAsyncRepository;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;

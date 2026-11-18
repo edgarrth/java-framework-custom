@@ -210,22 +210,26 @@ class LocalStackAsyncResilienceIT {
             "sqs-audit",
             () ->
                 audit.publish(
-                    new AuditEvent(
-                        UUID.randomUUID().toString(),
-                        Instant.now(),
-                        "svc",
-                        "pay",
-                        "account",
-                        "a-1",
-                        AuditEvent.Actor.system(),
-                        AuditEvent.Outcome.SUCCESS,
-                        null,
-                        "correlation",
-                        "test",
-                        null,
-                        Map.of(),
-                        TransactionOutcome.UNKNOWN,
-                        TransactionOutcome.UNKNOWN))));
+                    AuditEvent.builder()
+                        .id(UUID.randomUUID().toString())
+                        .occurredAt(Instant.now())
+                        .service("svc")
+                        .action("pay")
+                        .resourceType("account")
+                        .resourceId("a-1")
+                        .actor(AuditEvent.Actor.system())
+                        .outcome(AuditEvent.Outcome.SUCCESS)
+                        .errorCode(null)
+                        .correlationId("correlation")
+                        .channel("test")
+                        .tenant(null)
+                        .details(Map.of())
+                        .transactionOutcome(TransactionOutcome.UNKNOWN)
+                        .operationOutcome(TransactionOutcome.UNKNOWN)
+                        .persistence(null)
+                        .integrity(null)
+                        .detailsSanitized(0)
+                        .build())));
     OPERATIONS.add(
         new Operation("kms-key", () -> new KmsAsyncDataKeyProvider(kms, key).generate("context")));
     OPERATIONS.add(
@@ -253,15 +257,16 @@ class LocalStackAsyncResilienceIT {
   }
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        UUID.randomUUID().toString(),
-        "urn:test",
-        "payment.v1",
-        Instant.now(),
-        "account",
-        "application/json",
-        new byte[] {123, 125},
-        Map.of());
+    return EventEnvelope.builder()
+        .id(UUID.randomUUID().toString())
+        .source("urn:test")
+        .type("payment.v1")
+        .time(Instant.now())
+        .subject("account")
+        .dataContentType("application/json")
+        .data(new byte[] {123, 125})
+        .extensions(Map.of())
+        .build();
   }
 
   @TestFactory

@@ -18,7 +18,7 @@ public @interface LogOperation {
   /** Operation name; defaults to {@code Class.method}. */
   String value() default "";
 
-  boolean logArguments() default true;
+  boolean logArguments() default false;
 
   boolean logResult() default false;
 

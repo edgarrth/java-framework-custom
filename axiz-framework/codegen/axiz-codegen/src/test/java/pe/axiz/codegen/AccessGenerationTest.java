@@ -48,19 +48,21 @@ class AccessGenerationTest {
       """;
 
   private ProjectRequest request(String contract, Stack stack) {
-    return new ProjectRequest(
-        "policy-orders",
-        "pe.axiz.samples",
-        "pe.axiz.samples.policy",
-        "Access policy",
-        "business",
-        Structure.HEXAGONAL,
-        stack,
-        "aurora",
-        List.of(),
-        contract,
-        null,
-        "2.0.0");
+    return ProjectRequest.builder()
+        .name("policy-orders")
+        .groupId("pe.axiz.samples")
+        .basePackage("pe.axiz.samples.policy")
+        .description("Access policy")
+        .archetype("business")
+        .structure(Structure.HEXAGONAL)
+        .stack(stack)
+        .persistence("aurora")
+        .capabilities(List.of())
+        .openApi(contract)
+        .asyncApi(null)
+        .frameworkVersion("2.0.0")
+        .extensions(List.of())
+        .build();
   }
 
   @Test

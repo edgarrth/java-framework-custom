@@ -27,7 +27,7 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.transaction.ReactiveTransactionManager;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter;
 import pe.axiz.core.domain.DomainEvent;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventFactory;
@@ -162,8 +162,7 @@ class ReactiveUseCaseWiringTest {
     var events =
         new ReactiveTransactionalEvents(
             new EventFactory("urn:original", "", codec, IdGenerator.uuidV7(), Clock.systemUTC()),
-            new ReactiveOutboxWriter(
-                new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
+            new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC()));
     return runner()
         .withUserConfiguration(Cases.class)
         .withBean(ReactiveSql.class, () -> sql)

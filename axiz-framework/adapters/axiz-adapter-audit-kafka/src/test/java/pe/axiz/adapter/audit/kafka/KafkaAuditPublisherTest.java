@@ -17,22 +17,26 @@ import pe.axiz.core.commons.TransactionOutcome;
 class KafkaAuditPublisherTest {
 
   private static AuditEvent event(String resourceId) {
-    return new AuditEvent(
-        "e-1",
-        Instant.EPOCH,
-        "svc",
-        "order.create",
-        "order",
-        resourceId,
-        AuditEvent.Actor.system(),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        "c-1",
-        "web",
-        null,
-        Map.of("k", "v"),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id("e-1")
+        .occurredAt(Instant.EPOCH)
+        .service("svc")
+        .action("order.create")
+        .resourceType("order")
+        .resourceId(resourceId)
+        .actor(AuditEvent.Actor.system())
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId("c-1")
+        .channel("web")
+        .tenant(null)
+        .details(Map.of("k", "v"))
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 
   @Test

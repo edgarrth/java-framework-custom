@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import pe.axiz.core.cache.AxizCache;
 import pe.axiz.core.cache.CacheKeys;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.id.IdGenerator;

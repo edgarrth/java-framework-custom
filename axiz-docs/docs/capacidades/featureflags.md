@@ -35,4 +35,5 @@ if (featureFlags.isEnabled("new-pricing", context)) { ... }
 
 - [`axiz-featureflags-spring-boot-autoconfigure`](../referencia/spring/axiz-featureflags-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-featureflags`](../referencia/core/axiz-core-featureflags.md)

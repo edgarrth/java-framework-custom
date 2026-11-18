@@ -16,8 +16,8 @@ import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomize
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import pe.axiz.core.commons.HeaderCatalog;
-import pe.axiz.core.commons.HeaderDefinition;
+import pe.axiz.core.api.HeaderCatalog;
+import pe.axiz.core.api.HeaderDefinition;
 import pe.axiz.core.errors.ProblemFactory;
 import tools.jackson.core.StreamReadConstraints;
 

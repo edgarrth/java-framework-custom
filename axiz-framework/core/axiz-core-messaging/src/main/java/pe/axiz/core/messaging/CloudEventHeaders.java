@@ -69,15 +69,16 @@ public final class CloudEventHeaders {
         }
       }
     }
-    return new EventEnvelope(
-        id,
-        source,
-        type,
-        time,
-        headers.apply(PREFIX + "subject"),
-        contentType == null ? "application/json" : contentType,
-        body,
-        ext);
+    return EventEnvelope.builder()
+        .id(id)
+        .source(source)
+        .type(type)
+        .time(time)
+        .subject(headers.apply(PREFIX + "subject"))
+        .dataContentType(contentType == null ? "application/json" : contentType)
+        .data(body)
+        .extensions(ext)
+        .build();
   }
 
   private static String required(Function<String, @Nullable String> headers, String name) {

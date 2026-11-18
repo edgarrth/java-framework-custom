@@ -1,0 +1,14 @@
+{
+  "schema": 2,
+  "calendar": {
+    "weekend": [
+      6,
+      7
+    ],
+    "holidays": []
+  },
+  "authorizedOwners": [
+    "@edgarrth"
+  ],
+  "findings": []
+}

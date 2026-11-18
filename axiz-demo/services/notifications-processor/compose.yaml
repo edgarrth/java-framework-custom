@@ -6,11 +6,12 @@ services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
   otel-lgtm:
     image: grafana/otel-lgtm:0.11.10
-    ports: ["3000:3000", "4317:4317", "4318:4318"]
+    ports: ["127.0.0.1:3000:3000", "127.0.0.1:4317:4317", "127.0.0.1:4318:4318"]
 
   kafka:
-    image: apache/kafka-native:4.1.0
-    ports: ["9092:9092"]
+    image: axiz-local/kafka:4.2.2-r1
+    build: {context: ../../local/images/kafka}
+    ports: ["127.0.0.1:9092:9092"]
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -26,7 +27,7 @@ services:
 
   localstack:
     image: localstack/localstack:4.9
-    ports: ["4566:4566"]
+    ports: ["127.0.0.1:4566:4566"]
     environment:
       SERVICES: dynamodb,s3,sqs,sns
       AWS_DEFAULT_REGION: us-east-1

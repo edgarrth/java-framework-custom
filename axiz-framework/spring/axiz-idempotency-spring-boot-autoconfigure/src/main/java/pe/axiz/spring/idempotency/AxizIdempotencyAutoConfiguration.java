@@ -9,6 +9,7 @@ import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -22,7 +23,12 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Controller;
+import pe.axiz.core.api.HttpPayloadPolicy;
 import pe.axiz.core.commons.Environments;
+import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
+import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.idempotency.AsyncIdempotencyResolver;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
@@ -38,14 +44,13 @@ import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
  * {@code @Idempotent} operations with the {@code Idempotency-Key} header: responses stored in
  * ElastiCache (Redis) or DynamoDB and replayed; 400, 409 and 422 on misuse.
  */
-@AutoConfiguration(
-    afterName = {
-      "pe.axiz.spring.idempotency.AxizIdempotencyRedisAutoConfiguration",
-      "pe.axiz.spring.idempotency.AxizIdempotencyDynamoDbAutoConfiguration"
-    })
+@AutoConfiguration
 @ConditionalOnWebApplication
 @ConditionalOnBooleanProperty(name = "axiz.idempotency.enabled", matchIfMissing = true)
-@EnableConfigurationProperties(AxizIdempotencyProperties.class)
+@EnableConfigurationProperties({
+  AxizIdempotencyProperties.class,
+  AxizIdempotencyProtectionProperties.class
+})
 public class AxizIdempotencyAutoConfiguration {
 
   @Bean
@@ -98,7 +103,9 @@ public class AxizIdempotencyAutoConfiguration {
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
   static Advisor axizIdempotencyAdvisor(
       ObjectProvider<IdempotencyService> service,
-      ObjectProvider<AsyncIdempotencyService> asyncService) {
+      ObjectProvider<AsyncIdempotencyService> asyncService,
+      @Qualifier("axizIdempotencyPayloadProtector") ObjectProvider<PayloadProtector> protection,
+      @Qualifier("axizIdempotencyAsyncPayloadProtector") ObjectProvider<AsyncPayloadProtector> asyncProtection) {
     ClassFilter controllers = type -> AnnotatedElementUtils.hasAnnotation(type, Controller.class);
     Pointcut onClass =
         new ComposablePointcut(new AnnotationMatchingPointcut(Idempotent.class, true))
@@ -109,7 +116,11 @@ public class AxizIdempotencyAutoConfiguration {
     DefaultPointcutAdvisor advisor =
         new DefaultPointcutAdvisor(
             new ComposablePointcut(onClass).union(onMethod),
-            new IdempotencyMethodInterceptor(service::getObject, asyncService::getObject));
+            new IdempotencyMethodInterceptor(
+                service::getObject,
+                asyncService::getObject,
+                protection::getObject,
+                asyncProtection::getObject));
     advisor.setOrder(IdempotencyMethodInterceptor.ORDER);
     return advisor;
   }
@@ -124,11 +135,24 @@ public class AxizIdempotencyAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
   @ConditionalOnClass(name = "org.springframework.web.servlet.DispatcherServlet")
   static class ServletConfiguration {
+    @Bean
+    PayloadProtector axizIdempotencyPayloadProtector(
+        AxizIdempotencyProtectionProperties p, ObjectProvider<EnvelopeEncryptor> envelope) {
+      return p.responseProtection().create(envelope::getObject);
+    }
 
     @Bean
     IdempotencyFilter axizIdempotencyFilter(
-        IdempotencyService service, AxizIdempotencyProperties p) {
-      return new IdempotencyFilter(service, p.maxBodySize(), p.maxResponseSize());
+        IdempotencyService service,
+        AxizIdempotencyProperties p,
+        ObjectProvider<HttpPayloadPolicy> policies,
+        @Qualifier("axizIdempotencyPayloadProtector") PayloadProtector protection) {
+      return new IdempotencyFilter(
+          service,
+          p.maxBodySize(),
+          p.maxResponseSize(),
+          policies.orderedStream().toList(),
+          protection);
     }
   }
 
@@ -136,6 +160,11 @@ public class AxizIdempotencyAutoConfiguration {
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   @ConditionalOnClass(name = "org.springframework.web.reactive.DispatcherHandler")
   static class ReactiveConfiguration {
+    @Bean
+    AsyncPayloadProtector axizIdempotencyAsyncPayloadProtector(
+        AxizIdempotencyProtectionProperties p, ObjectProvider<AsyncEnvelopeEncryptor> envelope) {
+      return p.responseProtection().createAsync(envelope::getObject);
+    }
 
     @Bean
     @ConditionalOnMissingBean
@@ -168,8 +197,16 @@ public class AxizIdempotencyAutoConfiguration {
 
     @Bean
     IdempotencyWebFilter axizIdempotencyWebFilter(
-        AsyncIdempotencyService service, AxizIdempotencyProperties p) {
-      return new IdempotencyWebFilter(service, p.maxBodySize(), p.maxResponseSize());
+        AsyncIdempotencyService service,
+        AxizIdempotencyProperties p,
+        ObjectProvider<HttpPayloadPolicy> policies,
+        @Qualifier("axizIdempotencyAsyncPayloadProtector") AsyncPayloadProtector protection) {
+      return new IdempotencyWebFilter(
+          service,
+          p.maxBodySize(),
+          p.maxResponseSize(),
+          policies.orderedStream().toList(),
+          protection);
     }
   }
 }

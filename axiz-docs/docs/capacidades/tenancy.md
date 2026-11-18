@@ -31,5 +31,6 @@ String tenant = TenantContext.current().orElseThrow();
 
 - [`axiz-tenancy-spring-boot-autoconfigure`](../referencia/spring/axiz-tenancy-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-tenancy`](../referencia/core/axiz-core-tenancy.md)

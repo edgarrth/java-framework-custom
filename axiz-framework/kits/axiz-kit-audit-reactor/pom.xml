@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-technology</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-technology/pom.xml</relativePath></parent>
+  <artifactId>axiz-kit-audit-reactor</artifactId>
+  <name>axiz :: kit :: audit :: reactor</name>
+  <description>Provider-independent Reactor contract for transactional audit chain state</description>
+  <properties><axiz.technology.reactive-native>true</axiz.technology.reactive-native><axiz.module.name>pe.axiz.kit.reactor.audit</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies><dependency><groupId>io.projectreactor</groupId><artifactId>reactor-core</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version></dependency>
+</dependencies>
+</project>

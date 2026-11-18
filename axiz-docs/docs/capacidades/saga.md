@@ -12,7 +12,7 @@ axiz add saga
 | Starter | `pe.axiz:axiz-saga-spring-boot-starter` |
 | Stacks del catálogo | servlet |
 | Agrega también | [`jpa`](jpa.md) |
-| Dependencias | `pe.axiz:axiz-adapter-saga-jdbc` |
+| Dependencias | `pe.axiz:axiz-saga-jdbc-spring-boot-starter` |
 | Incluida por defecto en | ningún arquetipo |
 
 ## Propiedades que agrega
@@ -32,5 +32,6 @@ SagaResult<PaymentContext> result = orchestrator.start(PaymentSaga.DEFINITION, c
 ## Módulos
 
 - [`axiz-saga-spring-boot-autoconfigure`](../referencia/spring/axiz-saga-spring-boot-autoconfigure.md)
+- [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
 - [`axiz-core-resilience`](../referencia/core/axiz-core-resilience.md)
 - [`axiz-core-saga`](../referencia/core/axiz-core-saga.md)

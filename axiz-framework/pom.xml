@@ -38,6 +38,7 @@
     <module>platform/axiz-parent-core</module>
     <module>platform/axiz-parent-api</module>
     <module>platform/axiz-parent-test</module>
+    <module>platform/axiz-parent-tooling</module>
     <module>platform/axiz-parent-technology</module>
     <module>platform/axiz-parent-spring</module>
     <module>platform/axiz-parent-service</module>
@@ -92,7 +93,7 @@
     <!-- Quality gates (section 15 of the definition) -->
     <axiz.coverage.line>0.80</axiz.coverage.line>
     <axiz.coverage.branch>0.70</axiz.coverage.branch>
-    <axiz.mutation.threshold>60</axiz.mutation.threshold>
+    <axiz.mutation.threshold>81</axiz.mutation.threshold>
     <axiz.errorprone.fqn.severity>WARN</axiz.errorprone.fqn.severity>
     <!-- empty default so @{argLine} resolves when JaCoCo is not active -->
     <argLine />
@@ -569,19 +570,6 @@
                         <ignoreClass>module-info</ignoreClass>
                         <ignoreClass>META-INF.versions.*</ignoreClass>
                       </ignoreClasses>
-                      <dependencies>
-                        <!-- wiremock-standalone (the test starter) shades the JSpecify annotations
-                             without relocating them. They are the same four annotations as
-                             jspecify 1.0.1 and only matter at compile time; nothing else that
-                             jar shades overlaps with the platform. -->
-                        <dependency>
-                          <groupId>org.wiremock</groupId>
-                          <artifactId>wiremock-standalone</artifactId>
-                          <ignoreClasses>
-                            <ignoreClass>org.jspecify.annotations.*</ignoreClass>
-                          </ignoreClasses>
-                        </dependency>
-                      </dependencies>
                     </banDuplicateClasses>
                   </rules>
                 </configuration>

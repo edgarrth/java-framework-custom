@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.i18n.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables i18n auto-configuration."
+    }
+  ]
+}

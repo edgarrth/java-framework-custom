@@ -7,20 +7,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.CryptoException;
-import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 
 class EncryptionContextSafetyTest {
-  @AfterEach
-  void reset() {
-    EncryptionRegistry.reset();
-  }
-
   @Test
   void explicitPurposeCanBeReboundWithoutWaitingForKeyRotation() {
     var encryptor = new FieldEncryptor(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())));
@@ -38,9 +31,8 @@ class EncryptionContextSafetyTest {
         "a column must choose its context");
     FieldEncryptor encryptor =
         new FieldEncryptor(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())));
-    EncryptionRegistry.register(encryptor, null);
     EncryptedConverter generic =
-        new EncryptedConverter() {
+        new EncryptedConverter(encryptor) {
           protected String context() {
             return "axiz.field";
           }

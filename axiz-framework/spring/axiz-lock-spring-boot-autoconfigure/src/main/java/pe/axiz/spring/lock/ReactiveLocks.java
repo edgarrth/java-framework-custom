@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.reactivestreams.Publisher;
-import pe.axiz.core.commons.LeaseTiming;
+import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.lock.AsyncDistributedLock;
 import pe.axiz.core.lock.AsyncLockHandle;

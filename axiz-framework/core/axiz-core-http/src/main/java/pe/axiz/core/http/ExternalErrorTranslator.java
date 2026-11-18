@@ -3,9 +3,9 @@ package pe.axiz.core.http;
 import java.util.Locale;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.json.JsonReader;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
+import pe.axiz.core.json.JsonReader;
 
 /**
  * Translates an error response from a dependency into an {@link ExternalServiceException}. It

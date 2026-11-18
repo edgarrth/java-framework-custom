@@ -51,7 +51,7 @@ StsAssumeRoleCredentialsProvider storageIdentity(
 ```
 
 Import `AwsIdentityFor`, `AwsService` and `AwsCapability` from
-`pe.axiz.spring.foundation.aws`. The application configures the STS client and role permissions.
+`pe.axiz.spring.aws`. The application configures the STS client and role permissions.
 Declare exactly one of `service` or `capability`:
 `@AwsIdentityFor(capability = AwsCapability.AUDIT)` targets audit, for example.
 Selection order is capability → AWS service → unqualified global bean → context SDK source.

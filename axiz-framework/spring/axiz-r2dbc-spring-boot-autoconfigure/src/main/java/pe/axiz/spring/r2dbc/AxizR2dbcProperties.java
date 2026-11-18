@@ -1,6 +1,5 @@
 package pe.axiz.spring.r2dbc;
 
-import java.time.Duration;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
@@ -12,7 +11,6 @@ import pe.axiz.core.crypto.EncryptionContext;
  * standard {@code spring.r2dbc.*} properties (URL in the ConfigMap, password in the secret store or
  * an IAM token).
  *
- * @param iam IAM database authentication
  * @param reader optional reader endpoint for read-only queries
  * @param flywayFromR2dbc derive {@code spring.flyway.url/user/password} from {@code spring.r2dbc.*}
  *     when they are not set (Flyway migrates over JDBC)
@@ -20,7 +18,6 @@ import pe.axiz.core.crypto.EncryptionContext;
  */
 @ConfigurationProperties("axiz.r2dbc")
 public record AxizR2dbcProperties(
-    @DefaultValue Iam iam,
     @DefaultValue Reader reader,
     @DefaultValue("true") boolean flywayFromR2dbc,
     @DefaultValue Auditing auditing,
@@ -29,19 +26,6 @@ public record AxizR2dbcProperties(
   public AxizR2dbcProperties {
     if (encryptionContext != null) EncryptionContext.require(encryptionContext);
   }
-
-  /**
-   * IAM authentication: each new connection gets a token signed with the pod's credentials (IRSA or
-   * EKS Pod Identity) instead of a stored password.
-   *
-   * @param enabled whether IAM tokens replace {@code spring.r2dbc.password}
-   * @param region AWS region of the cluster (default: the SDK's region provider chain)
-   * @param refreshAfter how long a token is reused (tokens live 15 minutes)
-   */
-  public record Iam(
-      @DefaultValue("false") boolean enabled,
-      @Nullable String region,
-      @DefaultValue("10m") Duration refreshAfter) {}
 
   /**
    * Reader endpoint of the Aurora cluster for queries that tolerate replica lag (CQRS read side,

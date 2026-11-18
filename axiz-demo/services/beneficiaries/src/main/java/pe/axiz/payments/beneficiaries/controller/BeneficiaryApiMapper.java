@@ -1,6 +1,6 @@
 package pe.axiz.payments.beneficiaries.controller;
 
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;
 import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;

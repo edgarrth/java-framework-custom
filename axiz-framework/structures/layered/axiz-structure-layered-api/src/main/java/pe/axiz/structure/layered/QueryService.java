@@ -1,8 +1,8 @@
 package pe.axiz.structure.layered;
 
 import java.util.Optional;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 
 /**

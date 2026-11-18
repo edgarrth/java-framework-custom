@@ -10,12 +10,7 @@ import org.testcontainers.DockerClientFactory;
  */
 final class Docker {
 
-  /**
-   * Images of the approved infrastructure (same as the test starter); Renovate keeps them current.
-   */
-  static final String POSTGRES = "postgres:17.6-alpine";
-
-  static final String VALKEY = "valkey/valkey:8.1-alpine";
+  /** AWS emulator; PostgreSQL and Valkey use the shared TestContainerImages recipes. */
   static final String LOCALSTACK = "localstack/localstack:4.9";
 
   private Docker() {}

@@ -31,8 +31,8 @@ import org.springframework.security.oauth2.server.resource.authentication.Bearer
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
-import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -43,18 +43,21 @@ import reactor.core.publisher.Mono;
 class HttpClientTest {
 
   private static ClientSettings settings(int maxConcurrent) {
-    return new ClientSettings(
-        "bank",
-        URI.create("https://bank.example.com"),
-        new TimeoutSettings(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)),
-        AuthSettings.none(),
-        ClientSettings.RetryMode.IDEMPOTENT_ONLY,
-        3,
-        "default",
-        maxConcurrent,
-        List.of("X-Channel"),
-        10,
-        TransportSecurityPolicy.system());
+    return ClientSettings.builder()
+        .name("bank")
+        .baseUrl(URI.create("https://bank.example.com"))
+        .timeouts(
+            new TimeoutSettings(
+                Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)))
+        .auth(AuthSettings.none())
+        .retry(ClientSettings.RetryMode.IDEMPOTENT_ONLY)
+        .maxAttempts(3)
+        .circuitBreaker("default")
+        .maxConcurrentCalls(maxConcurrent)
+        .propagateHeaders(List.of("X-Channel"))
+        .maxConnections(10)
+        .transportSecurity(TransportSecurityPolicy.system())
+        .build();
   }
 
   @Test
@@ -103,19 +106,23 @@ class HttpClientTest {
   @Test
   void reactiveTokenRelaySendsTheInboundTokenFromTheReactorContext() {
     ClientSettings relay =
-        new ClientSettings(
-            "crud",
-            URI.create("https://crud.example.com"),
-            new TimeoutSettings(
-                Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)),
-            new AuthSettings(AuthType.TOKEN_RELAY, null, null, null, List.of(), null, null, null),
-            ClientSettings.RetryMode.IDEMPOTENT_ONLY,
-            3,
-            "default",
-            0,
-            List.of(),
-            10,
-            TransportSecurityPolicy.system());
+        ClientSettings.builder()
+            .name("crud")
+            .baseUrl(URI.create("https://crud.example.com"))
+            .timeouts(
+                new TimeoutSettings(
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)))
+            .auth(
+                new AuthSettings(
+                    AuthType.TOKEN_RELAY, null, null, null, List.of(), null, null, null))
+            .retry(ClientSettings.RetryMode.IDEMPOTENT_ONLY)
+            .maxAttempts(3)
+            .circuitBreaker("default")
+            .maxConcurrentCalls(0)
+            .propagateHeaders(List.of())
+            .maxConnections(10)
+            .transportSecurity(TransportSecurityPolicy.system())
+            .build();
     AxizExchangeFilter filter =
         new AxizExchangeFilter(
             new ClientResilience(relay, CircuitBreakerRegistry.ofDefaults()),

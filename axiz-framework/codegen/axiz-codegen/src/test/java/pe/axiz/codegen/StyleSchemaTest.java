@@ -54,15 +54,26 @@ class StyleSchemaTest {
   private final Catalog catalog = generator.catalog();
 
   @Test
-  void anEventProcessorOnAuroraCreatesItsInboxAndOutboxTables() {
+  void anEventProcessorOnAuroraCreatesOnlyTheSelectedStoreTables() {
     for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
       GeneratedProject p =
           generator.generate(
               Fixtures.request("event-processor", Structure.EDA, stack, "aurora", List.of()));
       String v1 = p.text(V1);
       assertTrue(v1.contains(TABLE_DDL.get("inbox")), stack + ": " + v1);
-      // the style starter wires the JDBC outbox (the R2DBC one comes with the outbox capability)
-      assertEquals(stack == Stack.SERVLET, v1.contains(TABLE_DDL.get("outbox")), stack.id());
+      assertFalse(v1.contains(TABLE_DDL.get("outbox")), stack.id());
+      assertTrue(
+          p.text("pom.xml")
+              .contains(
+                  "axiz-inbox-"
+                      + (stack == Stack.SERVLET ? "jdbc" : "r2dbc")
+                      + "-spring-boot-starter"));
+      assertFalse(p.text("pom.xml").contains("axiz-outbox"));
+      var withOutbox =
+          generator.generate(
+              Fixtures.request(
+                  "event-processor", Structure.EDA, stack, "aurora", List.of("outbox")));
+      assertTrue(withOutbox.text(V1).contains(TABLE_DDL.get("outbox")));
     }
   }
 
@@ -73,7 +84,9 @@ class StyleSchemaTest {
             Fixtures.request(
                 "event-processor", Structure.EDA, Stack.SERVLET, "dynamodb", List.of()));
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: dynamodb"));
-    assertTrue(p.text("pom.xml").contains("<artifactId>axiz-adapter-inbox-dynamodb</artifactId>"));
+    assertTrue(
+        p.text("pom.xml")
+            .contains("<artifactId>axiz-inbox-dynamodb-spring-boot-starter</artifactId>"));
     assertTrue(p.text("local/localstack/init.sh").contains("table axiz-inbox pk:S:HASH"));
   }
 
@@ -84,12 +97,15 @@ class StyleSchemaTest {
             Fixtures.request("event-processor", Structure.EDA, Stack.SERVLET, "none", List.of()));
     assertFalse(p.files().containsKey(V1));
     assertFalse(p.text("src/main/resources/application.yaml").contains("axiz:\n  inbox:"));
+    assertFalse(p.text("pom.xml").contains("axiz-inbox"));
+    assertFalse(p.text("pom.xml").contains("dynamodb"));
+    assertFalse(p.files().containsKey("local/localstack/init.sh"));
   }
 
   /** Every combination: a style store on a JDBC database means its table is in V1. */
   @Test
   void everyWiredStoreHasItsTableInEveryCombination() {
-    int checked = 0;
+    Set<Structure> checked = new TreeSet<>();
     for (Archetype a : catalog.archetypes()) {
       for (Structure f : a.structures()) {
         for (Stack s : a.stacks()) {
@@ -99,32 +115,38 @@ class StyleSchemaTest {
               continue;
             }
             String v1 = generator.generate(r).text(V1);
-            Set<String> expected = new TreeSet<>();
-            if (s == Stack.SERVLET) {
-              expected.addAll(catalog.style(f).jdbcTables());
+            var capabilities =
+                catalog
+                    .resolve(
+                        ProjectGenerator.capabilityNames(catalog, r, a),
+                        Catalog.store(persistence, s))
+                    .stream()
+                    .map(pe.axiz.codegen.model.Capability::name)
+                    .toList();
+            for (String table : Style.TABLES) {
+              String capability = table.equals("shedlock") ? "scheduling" : table;
+              assertEquals(
+                  capabilities.contains(capability),
+                  v1.contains(TABLE_DDL.get(table)),
+                  a.name() + "/" + f.id() + "/" + s + ": " + table);
             }
-            for (String c : catalog.style(f).capabilities()) {
-              if (Style.TABLES.contains(c)) {
-                expected.add(c);
-              }
-            }
-            for (String table : expected) {
-              assertTrue(v1.contains(TABLE_DDL.get(table)), a.name() + "/" + f.id() + ": " + table);
-              checked++;
-            }
+            checked.add(f);
           }
         }
       }
     }
-    assertTrue(checked >= 4, "checked " + checked);
+    assertTrue(
+        checked.containsAll(
+            Set.of(Structure.EDA, Structure.BATCH, Structure.HEXAGONAL, Structure.LAYERED)),
+        "checked " + checked);
   }
 
   /**
    * The model and the starters agree: every store starter a style starter declares is listed for
-   * that style, and every listed one is really declared (read from the reactor, next to codegen).
+   * that style. Optional store dependencies activate only through an explicit capability.
    */
   @Test
-  void stylesDeclareExactlyTheStoresTheirStartersCarry() throws IOException {
+  void stylesDeclareEveryMandatoryStoreTheirStartersCarry() throws IOException {
     Path structures = Path.of("../../structures").toAbsolutePath().normalize();
     Assumptions.assumeTrue(Files.isDirectory(structures), "structure reactor not next to codegen");
     Pattern artifact = Pattern.compile("<artifactId>([\\w.-]+)</artifactId>");
@@ -144,9 +166,13 @@ class StyleSchemaTest {
         }
       }
       Style style = catalog.style(f);
-      Set<String> declared = new TreeSet<>(style.jdbcTables());
-      style.capabilities().stream().filter(Style.TABLES::contains).forEach(declared::add);
-      assertEquals(carried, declared, f.id() + " starter carries " + carried);
+      Set<String> declared = new TreeSet<>();
+      style.capabilities().stream()
+          .map(name -> name.equals("scheduling") ? "shedlock" : name)
+          .filter(Style.TABLES::contains)
+          .forEach(declared::add);
+      assertTrue(
+          declared.containsAll(carried), f.id() + " has an undeclared mandatory store: " + carried);
     }
   }
 

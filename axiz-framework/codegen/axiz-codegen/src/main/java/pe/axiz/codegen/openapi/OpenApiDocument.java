@@ -183,23 +183,24 @@ public final class OpenApiDocument {
     List<String> scopes = scopes(security);
     ApiOperation.Access access = access(root, security, scopes);
     if (access != ApiOperation.Access.SCOPED) scopes = List.of();
-    return new ApiOperation(
-        operationId,
-        method,
-        path,
-        tag,
-        String.valueOf(op.getOrDefault("summary", operationId)),
-        requestSchema,
-        responseSchema,
-        success,
-        pathParams,
-        paged,
-        requestExample,
-        queryParams,
-        pagingParams,
-        headerParams,
-        scopes,
-        access);
+    return ApiOperation.builder()
+        .operationId(operationId)
+        .method(method)
+        .path(path)
+        .tag(tag)
+        .summary(String.valueOf(op.getOrDefault("summary", operationId)))
+        .requestSchema(requestSchema)
+        .responseSchema(responseSchema)
+        .successStatus(success)
+        .pathParams(pathParams)
+        .paged(paged)
+        .requestExample(requestExample)
+        .queryParams(queryParams)
+        .pagingParams(pagingParams)
+        .headerParams(headerParams)
+        .scopes(scopes)
+        .access(access)
+        .build();
   }
 
   private static ApiOperation.Access access(

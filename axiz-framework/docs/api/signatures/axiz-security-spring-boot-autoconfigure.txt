@@ -116,8 +116,8 @@ public long limit();
 public pe.axiz.spring.security.AxizSecurityProperties$Rule(java.lang.String, java.util.List<java.lang.String>, long, java.time.Duration, java.lang.String, java.lang.Boolean);
 }
 
-public class pe.axiz.spring.security.AxizSecurityRedisAutoConfiguration {
-public pe.axiz.spring.security.AxizSecurityRedisAutoConfiguration();
+public class pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration {
+public pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration();
 }
 
 public class pe.axiz.spring.security.CallerContextFilter extends org.springframework.web.filter.OncePerRequestFilter {

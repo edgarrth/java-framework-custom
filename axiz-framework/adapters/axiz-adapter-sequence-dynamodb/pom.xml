@@ -21,6 +21,8 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-concurrent</artifactId><version>${project.version}</version></dependency>
+
     <!-- how the framework builds this adapter's AWS client (endpoint, region, observation): the
          auto-configuration uses it, so it travels with the adapter -->
     <dependency>

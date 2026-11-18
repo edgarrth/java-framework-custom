@@ -1,8 +1,10 @@
 package pe.axiz.quality.archunit;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 
@@ -13,6 +15,32 @@ public final class LayeredRules {
 
   public static List<ArchRule> rules(String basePackage) {
     return List.of(
+        PackageClosure.rule(
+            basePackage, List.of("controller", "service", "repository", "model", "config")),
+        PackageClosure.bootstrapOnlyStarts(basePackage),
+        classes()
+            .that()
+            .haveSimpleNameEndingWith("Service")
+            .should()
+            .resideInAPackage(basePackage + ".service.."),
+        noClasses()
+            .that()
+            .resideInAPackage(basePackage + ".service..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAnyPackage(
+                "org.springframework.web..", "org.springframework.http..", "jakarta.servlet.."),
+        noClasses()
+            .that()
+            .resideInAPackage(basePackage + ".controller..")
+            .should()
+            .dependOnClassesThat(
+                DescribedPredicate.describe(
+                    "mapped persistent entities",
+                    type ->
+                        type.isAnnotatedWith("jakarta.persistence.Entity")
+                            || type.isAnnotatedWith(
+                                "software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean"))),
         layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
             .layer("Controller")

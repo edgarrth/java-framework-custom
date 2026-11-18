@@ -13,9 +13,30 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 class SecretCacheObservationTest {
+  @Test
+  void measuredDurationIsBoundedByTheActualLoadInterval() {
+    var measured = new AtomicReference<Duration>();
+    SecretCacheObserver observer =
+        new SecretCacheObserver() {
+          @Override
+          public void loaded(LoadOutcome outcome, Duration elapsed) {
+            assertEquals(LoadOutcome.ABSENT, outcome);
+            measured.set(elapsed);
+          }
+        };
+    long start = System.nanoTime();
+    var load = new CompletableFuture<Optional<SecretValue>>();
+    new SecretCacheInstrumentation(observer).load(() -> load);
+    load.complete(Optional.empty());
+    long elapsed = System.nanoTime() - start;
+    assertFalse(measured.get().isNegative());
+    assertTrue(measured.get().toNanos() <= elapsed);
+  }
+
   static final class Measurements implements SecretCacheObserver {
     final AtomicInteger hits = new AtomicInteger();
     final AtomicInteger misses = new AtomicInteger();

@@ -25,11 +25,11 @@ axiz.scheduling.default-lock-at-most-for: 10m
 
 ### Aurora en servlet (JDBC/JPA)
 
-- `net.javacrumbs.shedlock:shedlock-provider-jdbc-template`
+- `pe.axiz:axiz-scheduling-jdbc-spring-boot-starter`
 
 ### Aurora en reactivo (R2DBC)
 
-- `net.javacrumbs.shedlock:shedlock-provider-r2dbc`
+- `pe.axiz:axiz-scheduling-r2dbc-spring-boot-starter`
 
 ```yaml
 axiz.scheduling.store: r2dbc
@@ -37,7 +37,7 @@ axiz.scheduling.store: r2dbc
 
 ### DynamoDB
 
-- `net.javacrumbs.shedlock:shedlock-provider-dynamodb2`
+- `pe.axiz:axiz-scheduling-dynamodb-spring-boot-starter`
 
 ```yaml
 axiz.scheduling.store: dynamodb

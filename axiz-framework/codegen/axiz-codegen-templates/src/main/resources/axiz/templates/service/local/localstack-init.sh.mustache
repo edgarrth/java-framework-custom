@@ -26,9 +26,7 @@ table() { # name, then "attribute:type:KEYTYPE" for each key attribute
 }
 # Service tables: add one line per repository, e.g. table items id:S:HASH
 {{/caps.dynamodb}}
-{{#caps.technicalinboxdynamodb}}
-table axiz-inbox pk:S:HASH
-{{/caps.technicalinboxdynamodb}}
+
 {{#caps.idempotencydynamodb}}
 table axiz-idempotency pk:S:HASH
 {{/caps.idempotencydynamodb}}

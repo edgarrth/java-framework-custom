@@ -2,7 +2,10 @@ package pe.axiz.core.security;
 
 import java.time.Duration;
 
-/** Rate limiter port; the key always comes from the validated token, never from a client header. */
+/**
+ * Rate limiter port. Caller keys come from validated identities; explicitly configured anonymous
+ * quotas use the transport peer address. Client headers never supply either identity.
+ */
 public interface RateLimiter {
 
   /**

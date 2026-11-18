@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.http-client.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables http-client auto-configuration."
+    }
+  ]
+}

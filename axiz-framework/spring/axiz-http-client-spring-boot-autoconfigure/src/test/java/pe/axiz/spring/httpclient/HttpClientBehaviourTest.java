@@ -51,9 +51,9 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.http.AuthSettings;
 import pe.axiz.core.http.AuthType;
@@ -323,24 +323,36 @@ class HttpClientBehaviourTest {
 
   private static ClientSettings settings(
       String name, AuthSettings auth, @Nullable String circuitBreaker) {
-    return new ClientSettings(
-        name,
-        URI.create("https://bank.example.com"),
-        new TimeoutSettings(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)),
-        auth,
-        ClientSettings.RetryMode.IDEMPOTENT_ONLY,
-        3,
-        circuitBreaker,
-        0,
-        List.of(),
-        10,
-        TransportSecurityPolicy.system());
+    return ClientSettings.builder()
+        .name(name)
+        .baseUrl(URI.create("https://bank.example.com"))
+        .timeouts(
+            new TimeoutSettings(
+                Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)))
+        .auth(auth)
+        .retry(ClientSettings.RetryMode.IDEMPOTENT_ONLY)
+        .maxAttempts(3)
+        .circuitBreaker(circuitBreaker)
+        .maxConcurrentCalls(0)
+        .propagateHeaders(List.of())
+        .maxConnections(10)
+        .transportSecurity(TransportSecurityPolicy.system())
+        .build();
   }
 
   @Test
   void credentialsNeedTheSecretStoreAndAMissingSecretIsNamed() {
     AuthSettings apiKey =
-        new AuthSettings(AuthType.API_KEY, null, null, null, List.of(), null, "X-Api-Key", "nope");
+        AuthSettings.builder()
+            .type(AuthType.API_KEY)
+            .tokenUri(null)
+            .clientId(null)
+            .clientSecretRef(null)
+            .scopes(List.of())
+            .audience(null)
+            .apiKeyHeader("X-Api-Key")
+            .apiKeyRef("nope")
+            .build();
     IllegalStateException noStore =
         assertThrows(
             IllegalStateException.class,
@@ -364,7 +376,16 @@ class HttpClientBehaviourTest {
   @Test
   void servletTokenRelaySendsTheCallersBearerToken() {
     AuthSettings relay =
-        new AuthSettings(AuthType.TOKEN_RELAY, null, null, null, List.of(), null, null, null);
+        AuthSettings.builder()
+            .type(AuthType.TOKEN_RELAY)
+            .tokenUri(null)
+            .clientId(null)
+            .clientSecretRef(null)
+            .scopes(List.of())
+            .audience(null)
+            .apiKeyHeader(null)
+            .apiKeyRef(null)
+            .build();
     OutboundAuth auth =
         OutboundAuth.create(
             settings("crud", relay, "default"), null, Duration.ofSeconds(30), Clock.systemUTC());
@@ -423,19 +444,21 @@ class HttpClientBehaviourTest {
   @Test
   void aFullBulkheadRejectsAndRetriesStayWithinTheirRulesAndBudget() {
     ClientSettings oneAtATime =
-        new ClientSettings(
-            "ledger",
-            URI.create("https://ledger.example.com"),
-            new TimeoutSettings(
-                Duration.ofMillis(500), Duration.ofSeconds(1), Duration.ofSeconds(1)),
-            AuthSettings.none(),
-            ClientSettings.RetryMode.IDEMPOTENT_ONLY,
-            3,
-            "not-configured",
-            1,
-            List.of(),
-            10,
-            TransportSecurityPolicy.system());
+        ClientSettings.builder()
+            .name("ledger")
+            .baseUrl(URI.create("https://ledger.example.com"))
+            .timeouts(
+                new TimeoutSettings(
+                    Duration.ofMillis(500), Duration.ofSeconds(1), Duration.ofSeconds(1)))
+            .auth(AuthSettings.none())
+            .retry(ClientSettings.RetryMode.IDEMPOTENT_ONLY)
+            .maxAttempts(3)
+            .circuitBreaker("not-configured")
+            .maxConcurrentCalls(1)
+            .propagateHeaders(List.of())
+            .maxConnections(10)
+            .transportSecurity(TransportSecurityPolicy.system())
+            .build();
     ClientResilience ledger = new ClientResilience(oneAtATime, CircuitBreakerRegistry.ofDefaults());
     long start = System.nanoTime();
     ledger.acquire();
@@ -455,19 +478,21 @@ class HttpClientBehaviourTest {
         "no time left in the total budget");
 
     ClientSettings noRetries =
-        new ClientSettings(
-            "ledger",
-            URI.create("https://ledger.example.com"),
-            new TimeoutSettings(
-                Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)),
-            AuthSettings.none(),
-            ClientSettings.RetryMode.NONE,
-            3,
-            null,
-            0,
-            List.of(),
-            10,
-            TransportSecurityPolicy.system());
+        ClientSettings.builder()
+            .name("ledger")
+            .baseUrl(URI.create("https://ledger.example.com"))
+            .timeouts(
+                new TimeoutSettings(
+                    Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(10)))
+            .auth(AuthSettings.none())
+            .retry(ClientSettings.RetryMode.NONE)
+            .maxAttempts(3)
+            .circuitBreaker(null)
+            .maxConcurrentCalls(0)
+            .propagateHeaders(List.of())
+            .maxConnections(10)
+            .transportSecurity(TransportSecurityPolicy.system())
+            .build();
     assertFalse(
         new ClientResilience(noRetries, CircuitBreakerRegistry.ofDefaults())
             .retry("GET", null, null, 503, 1, System.nanoTime()));
@@ -539,30 +564,32 @@ class HttpClientBehaviourTest {
                         "axiz.http-client.clients.bank.ssl-bundle", "partner-mtls")))
             .bindOrCreate("axiz.http-client", AxizHttpClientProperties.class);
     HttpClientRegistry noBundles =
-        new HttpClientRegistry(
-            props,
-            CircuitBreakerRegistry.ofDefaults(),
-            null,
-            null,
-            null,
-            Clock.systemUTC(),
-            null,
-            ObservationRegistry.NOOP,
-            TransportSecurityPolicy.system());
+        HttpClientRegistry.builder()
+            .properties(props)
+            .circuitBreakers(CircuitBreakerRegistry.ofDefaults())
+            .secrets(null)
+            .asyncSecrets(null)
+            .sslBundles(null)
+            .clock(Clock.systemUTC())
+            .tenantHeader(null)
+            .observations(ObservationRegistry.NOOP)
+            .transportSecurity(TransportSecurityPolicy.system())
+            .build();
     ClientSettings bank = noBundles.find("bank").orElseThrow();
     assertThat(assertThrows(IllegalStateException.class, () -> noBundles.transport(bank)))
         .hasMessageContaining("partner-mtls");
     HttpClientRegistry emptyBundles =
-        new HttpClientRegistry(
-            props,
-            CircuitBreakerRegistry.ofDefaults(),
-            null,
-            null,
-            new DefaultSslBundleRegistry(),
-            Clock.systemUTC(),
-            null,
-            ObservationRegistry.NOOP,
-            TransportSecurityPolicy.system());
+        HttpClientRegistry.builder()
+            .properties(props)
+            .circuitBreakers(CircuitBreakerRegistry.ofDefaults())
+            .secrets(null)
+            .asyncSecrets(null)
+            .sslBundles(new DefaultSslBundleRegistry())
+            .clock(Clock.systemUTC())
+            .tenantHeader(null)
+            .observations(ObservationRegistry.NOOP)
+            .transportSecurity(TransportSecurityPolicy.system())
+            .build();
     assertThrows(NoSuchSslBundleException.class, () -> emptyBundles.transport(bank));
     assertEquals(1, noBundles.all().size());
   }

@@ -2,7 +2,7 @@ package pe.axiz.payments.ux.composition;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.payments.ux.api.model.BeneficiaryList;
 import reactor.core.publisher.Mono;
 

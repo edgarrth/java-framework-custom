@@ -35,7 +35,7 @@ class CompleteNpmAuditReportTest(unittest.TestCase):
             result=aggregate(data,root)
             self.assertEqual(3,len(result['locks']));self.assertEqual(3,result['affectedLockPackagePairs'])
             self.assertEqual(1,result['uniqueAffectedPackageNames']);self.assertEqual(1,result['uniqueAdvisoryCount'])
-            self.assertEqual([123,456],result['advisories'][0]['sourceIds']);self.assertTrue(result['passedHighCriticalThreshold'])
+            self.assertEqual([123,456],result['advisories'][0]['sourceIds']);self.assertFalse(result['passedMediumHighCriticalThreshold'])
     def test_missing_duplicate_extra_and_stale_lock_reports_are_rejected(self):
         import copy,tempfile
         from pathlib import Path
@@ -47,14 +47,25 @@ class CompleteNpmAuditReportTest(unittest.TestCase):
                 with self.assertRaises(ValueError):aggregate(changed,root)
             (root/data['locks'][0]['path']).write_text('{"changed":true}')
             with self.assertRaisesRegex(ValueError,'current lock'):aggregate(data,root)
-    def test_high_findings_in_any_lock_fail_the_threshold(self):
+    def test_medium_high_critical_findings_in_any_lock_fail_the_threshold(self):
         import tempfile
         from pathlib import Path
         from npm_audit_summary import aggregate
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);data=self.prepared(root)
-            row=data['locks'][2]['audit']['vulnerabilities']['shared'];row['severity']='high';row['via'][0]['severity']='high'
-            self.assertFalse(aggregate(data,root)['passedHighCriticalThreshold'])
+            for record in data['locks']:
+                record['audit']['vulnerabilities']={}
+            self.assertTrue(aggregate(data,root)['passedMediumHighCriticalThreshold'])
+            for record in data['locks']:
+                for severity in ('moderate','high','critical'):
+                    with self.subTest(path=record['path'], severity=severity):
+                        row={'via':[{'source':123,'url':'https://github.com/advisories/GHSA-example','severity':severity}],
+                             'severity':severity,'isDirect':False}
+                        record['audit']['vulnerabilities']={'shared':row}
+                        self.assertFalse(aggregate(data,root)['passedMediumHighCriticalThreshold'])
+                        row['severity']='low'
+                        self.assertFalse(aggregate(data,root)['passedMediumHighCriticalThreshold'])
+                        record['audit']['vulnerabilities']={}
     def test_collection_audits_all_locks_without_installation_or_lock_changes(self):
         import json,tempfile
         from pathlib import Path

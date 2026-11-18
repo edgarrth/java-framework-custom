@@ -16,4 +16,5 @@ axiz add storage
 ## Módulos
 
 - [`axiz-storage-spring-boot-autoconfigure`](../referencia/spring/axiz-storage-spring-boot-autoconfigure.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-storage`](../referencia/core/axiz-core-storage.md)

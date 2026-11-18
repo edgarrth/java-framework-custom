@@ -1,10 +1,12 @@
 package pe.axiz.core.sensitive;
 
+import pe.axiz.core.identifiers.IdentifierMasks;
+
 /** Masking functions. All of them are total: any input (even empty) gives a safe output. */
 public final class Masker {
 
   /** Fixed replacement for fully masked values; does not reveal the length. */
-  public static final String FULL_MASK = "****";
+  public static final String FULL_MASK = IdentifierMasks.FULL;
 
   private Masker() {}
 
@@ -25,16 +27,11 @@ public final class Masker {
   }
 
   static String keepLast(String value, int keep) {
-    if (value.length() <= keep) {
-      return "*".repeat(value.length());
-    }
-    return "*".repeat(value.length() - keep) + value.substring(value.length() - keep);
+    return IdentifierMasks.tail(value, keep);
   }
 
   static String partial(String value) {
-    if (value.length() <= 2) {
-      return "*".repeat(value.length());
-    }
+    if (value.length() < 8) return FULL_MASK;
     return value.charAt(0) + "*".repeat(value.length() - 2) + value.charAt(value.length() - 1);
   }
 
@@ -51,24 +48,15 @@ public final class Masker {
         wordStart = false;
       }
     }
-    return out.toString();
+    long shown = out.chars().filter(c -> c != '*').count();
+    return value.length() < 8 || shown > value.length() / 4 ? FULL_MASK : out.toString();
   }
 
   static String email(String value) {
-    int at = value.indexOf('@');
-    if (at <= 0) {
-      return partial(value);
-    }
-    return value.charAt(0) + "*".repeat(Math.max(at - 1, 1)) + value.substring(at);
+    return IdentifierMasks.email(value);
   }
 
   static String card(String value) {
-    String digits = value.replaceAll("\\D", "");
-    if (digits.length() < 13) {
-      return keepLast(digits, 4);
-    }
-    return digits.substring(0, 6)
-        + "*".repeat(digits.length() - 10)
-        + digits.substring(digits.length() - 4);
+    return IdentifierMasks.card(value);
   }
 }

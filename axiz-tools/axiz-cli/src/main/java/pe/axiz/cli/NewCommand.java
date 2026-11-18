@@ -188,20 +188,21 @@ class NewCommand extends BaseCommand implements Callable<Integer> {
     String asyncText = asyncapi == null ? null : read(asyncapi);
 
     ProjectRequest request =
-        new ProjectRequest(
-            projectName,
-            g,
-            pkg,
-            desc,
-            a.name(),
-            f,
-            st,
-            p,
-            capabilities,
-            openApiText,
-            asyncText,
-            axizVersion == null ? Version.axiz() : axizVersion,
-            extensions.stream().map(Extension::of).toList());
+        ProjectRequest.builder()
+            .name(projectName)
+            .groupId(g)
+            .basePackage(pkg)
+            .description(desc)
+            .archetype(a.name())
+            .structure(f)
+            .stack(st)
+            .persistence(p)
+            .capabilities(capabilities)
+            .openApi(openApiText)
+            .asyncApi(asyncText)
+            .frameworkVersion(axizVersion == null ? Version.axiz() : axizVersion)
+            .extensions(extensions.stream().map(Extension::of).toList())
+            .build();
     Path target = output.toAbsolutePath().normalize().resolve(projectName);
     if (Files.exists(target) && !force) {
       try (var entries = Files.list(target)) {

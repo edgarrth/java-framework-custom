@@ -22,6 +22,9 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-context</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><optional>true</optional></dependency>
     <dependency>
       <groupId>com.networknt</groupId>
@@ -72,7 +75,7 @@
     </dependency>
     <dependency>
       <groupId>org.wiremock</groupId>
-      <artifactId>wiremock-standalone</artifactId>
+      <artifactId>wiremock-jetty12</artifactId>
     </dependency>
     <dependency>
       <groupId>io.projectreactor.tools</groupId>

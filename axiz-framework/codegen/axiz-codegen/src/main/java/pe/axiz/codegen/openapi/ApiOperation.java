@@ -84,4 +84,131 @@ public record ApiOperation(
   public boolean readOnly() {
     return "GET".equals(method) || "HEAD".equals(method);
   }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable String operationId = null;
+    private @Nullable String method = null;
+    private @Nullable String path = null;
+    private @Nullable String tag = null;
+    private @Nullable String summary = null;
+    private @Nullable String requestSchema = null;
+    private @Nullable String responseSchema = null;
+    private int successStatus = 0;
+    private @Nullable List<String> pathParams = List.of();
+    private boolean paged = false;
+    private @Nullable String requestExample = null;
+    private @Nullable List<QueryParam> queryParams = List.of();
+    private @Nullable List<String> pagingParams = List.of();
+    private @Nullable List<QueryParam> headerParams = List.of();
+    private @Nullable List<String> scopes = List.of();
+    private @Nullable Access access = null;
+
+    private Builder() {}
+
+    public Builder operationId(String value) {
+      this.operationId = value;
+      return this;
+    }
+
+    public Builder method(String value) {
+      this.method = value;
+      return this;
+    }
+
+    public Builder path(String value) {
+      this.path = value;
+      return this;
+    }
+
+    public Builder tag(String value) {
+      this.tag = value;
+      return this;
+    }
+
+    public Builder summary(String value) {
+      this.summary = value;
+      return this;
+    }
+
+    public Builder requestSchema(@Nullable String value) {
+      this.requestSchema = value;
+      return this;
+    }
+
+    public Builder responseSchema(@Nullable String value) {
+      this.responseSchema = value;
+      return this;
+    }
+
+    public Builder successStatus(int value) {
+      this.successStatus = value;
+      return this;
+    }
+
+    public Builder pathParams(List<String> value) {
+      this.pathParams = List.copyOf(value);
+      return this;
+    }
+
+    public Builder paged(boolean value) {
+      this.paged = value;
+      return this;
+    }
+
+    public Builder requestExample(@Nullable String value) {
+      this.requestExample = value;
+      return this;
+    }
+
+    public Builder queryParams(List<QueryParam> value) {
+      this.queryParams = List.copyOf(value);
+      return this;
+    }
+
+    public Builder pagingParams(List<String> value) {
+      this.pagingParams = List.copyOf(value);
+      return this;
+    }
+
+    public Builder headerParams(List<QueryParam> value) {
+      this.headerParams = List.copyOf(value);
+      return this;
+    }
+
+    public Builder scopes(List<String> value) {
+      this.scopes = List.copyOf(value);
+      return this;
+    }
+
+    public Builder access(Access value) {
+      this.access = value;
+      return this;
+    }
+
+    public ApiOperation build() {
+      return new ApiOperation(
+          Objects.requireNonNull(operationId, "operationId"),
+          Objects.requireNonNull(method, "method"),
+          Objects.requireNonNull(path, "path"),
+          Objects.requireNonNull(tag, "tag"),
+          Objects.requireNonNull(summary, "summary"),
+          requestSchema,
+          responseSchema,
+          successStatus,
+          Objects.requireNonNull(pathParams, "pathParams"),
+          paged,
+          requestExample,
+          Objects.requireNonNull(queryParams, "queryParams"),
+          Objects.requireNonNull(pagingParams, "pagingParams"),
+          Objects.requireNonNull(headerParams, "headerParams"),
+          Objects.requireNonNull(scopes, "scopes"),
+          Objects.requireNonNull(access, "access"));
+    }
+  }
 }

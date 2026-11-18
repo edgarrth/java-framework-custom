@@ -280,13 +280,17 @@ class IdempotencyTest {
   @Test
   void codecRoundTrip() {
     IdempotencyRecord r =
-        new IdempotencyRecord(
-            "k",
-            "fp",
-            IdempotencyRecord.Status.COMPLETED,
-            "owner-1",
-            new StoredResponse(200, Map.of("Content-Type", "application/json"), body),
-            Instant.parse("2026-01-01T00:00:00Z"));
+        IdempotencyRecord.builder(
+                "k",
+                "fp",
+                Instant.parse("2026-01-01T00:00:00Z"),
+                Instant.parse("2026-01-01T00:00:00Z"))
+            .status(IdempotencyRecord.Status.COMPLETED)
+            .owner("owner-1")
+            .response(new StoredResponse(200, Map.of("Content-Type", "application/json"), body))
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     IdempotencyRecord back = StoredResponseCodec.read("k", StoredResponseCodec.write(r));
     assertEquals(r.fingerprint(), back.fingerprint());
     assertEquals(r.status(), back.status());
@@ -295,8 +299,13 @@ class IdempotencyTest {
     assertArrayEquals(body, back.response().body());
     assertEquals("application/json", back.response().headers().get("Content-Type"));
     IdempotencyRecord pending =
-        new IdempotencyRecord(
-            "k", "fp", IdempotencyRecord.Status.IN_PROGRESS, null, null, Instant.EPOCH);
+        IdempotencyRecord.builder("k", "fp", Instant.EPOCH, Instant.EPOCH)
+            .status(IdempotencyRecord.Status.IN_PROGRESS)
+            .owner(null)
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     assertEquals(
         null, StoredResponseCodec.read("k", StoredResponseCodec.write(pending)).response());
     assertEquals("x", StoredResponseCodec.utf8("x".getBytes(StandardCharsets.UTF_8)));

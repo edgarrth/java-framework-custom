@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.TransactionOutcome;
-import pe.axiz.core.commons.json.JsonWriter;
 import pe.axiz.core.id.IdGenerator;
+import pe.axiz.core.json.JsonWriter;
 import pe.axiz.core.sensitive.ObjectMasker;
 
 class AuditTest {
@@ -50,7 +50,7 @@ class AuditTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> request = (Map<String, Object>) e.details().get("request");
     assertEquals("****", request.get("password"));
-    assertEquals("a**@example.com", request.get("email"));
+    assertEquals("****@example.com", request.get("email"));
     assertEquals(10, request.get("amount"));
     String json = JsonWriter.write(e.toMap());
     assertTrue(json.contains("\"service\":\"orders-service\""));
@@ -236,21 +236,25 @@ class AuditTest {
   }
 
   private static AuditEvent sample() {
-    return new AuditEvent(
-        "1",
-        Instant.EPOCH,
-        "s",
-        "a",
-        "r",
-        null,
-        AuditEvent.Actor.system(),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        null,
-        null,
-        null,
-        Map.of(),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id("1")
+        .occurredAt(Instant.EPOCH)
+        .service("s")
+        .action("a")
+        .resourceType("r")
+        .resourceId(null)
+        .actor(AuditEvent.Actor.system())
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId(null)
+        .channel(null)
+        .tenant(null)
+        .details(Map.of())
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 }

@@ -17,6 +17,11 @@ public interface ReactiveSql {
     return null;
   }
 
+  /** Whether this SQL resource participates in the subscriber's active transaction. */
+  default Mono<Boolean> isTransactionActive() {
+    return Mono.just(false);
+  }
+
   /** Runs an INSERT, UPDATE or DELETE and emits the number of affected rows. */
   Mono<Long> update(String sql, SqlParams params);
 

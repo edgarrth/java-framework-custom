@@ -11,8 +11,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.http.client.HttpClientSettings;
-import org.springframework.boot.http.client.reactive.ClientHttpConnectorBuilder;
 import org.springframework.boot.ssl.SslBundles;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +23,7 @@ import org.springframework.web.service.registry.HttpServiceGroupConfigurer;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 import pe.axiz.core.secrets.SecretResolver;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Declarative HTTP clients ({@code @HttpExchange}) on Spring's HTTP service groups: every group
@@ -60,16 +59,17 @@ public class AxizHttpClientAutoConfiguration {
         env.getProperty("axiz.tenancy.enabled", Boolean.class, false)
             ? env.getProperty("axiz.tenancy.header", "X-Tenant-Id")
             : null;
-    return new HttpClientRegistry(
-        properties,
-        circuitBreakers.getIfAvailable(CircuitBreakerRegistry::ofDefaults),
-        secrets.getIfAvailable(),
-        asyncSecrets.getIfAvailable(),
-        ssl.getIfAvailable(),
-        clock.getIfAvailable(Clock::systemUTC),
-        tenantHeader,
-        observations.getIfAvailable(() -> ObservationRegistry.NOOP),
-        TransportSecurityPolicy.from(env::getProperty));
+    return HttpClientRegistry.builder()
+        .properties(properties)
+        .circuitBreakers(circuitBreakers.getIfAvailable(CircuitBreakerRegistry::ofDefaults))
+        .secrets(secrets.getIfAvailable())
+        .asyncSecrets(asyncSecrets.getIfAvailable())
+        .sslBundles(ssl.getIfAvailable())
+        .clock(clock.getIfAvailable(Clock::systemUTC))
+        .tenantHeader(tenantHeader)
+        .observations(observations.getIfAvailable(() -> ObservationRegistry.NOOP))
+        .transportSecurity(TransportSecurityPolicy.from(env::getProperty))
+        .build();
   }
 
   @Configuration(proxyBeanMethods = false)
@@ -95,14 +95,15 @@ public class AxizHttpClientAutoConfiguration {
     AxizHttpClients axizHttpClients(
         HttpClientRegistry registry,
         ObjectProvider<RestClient.Builder> builders,
+        ObjectProvider<JsonMapper> mappers,
         ObjectProvider<ObservationRegistry> observations) {
       return new AxizHttpClients(
           registry,
           () ->
               builders
                   .getIfAvailable(RestClient::builder)
-                  .observationRegistry(
-                      observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
+                  .observationRegistry(observations.getIfAvailable(() -> ObservationRegistry.NOOP)),
+          () -> mappers.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build()));
     }
 
     @Bean
@@ -127,12 +128,34 @@ public class AxizHttpClientAutoConfiguration {
 
   /** Reactive stack: {@code WebClient}, never blocking. */
   @Configuration(proxyBeanMethods = false)
-  @ConditionalOnClass(name = "org.springframework.web.reactive.function.client.WebClient")
+  @ConditionalOnClass(
+      name = {
+        "org.springframework.web.reactive.function.client.WebClient",
+        "reactor.netty.http.client.HttpClient"
+      })
   static class WebClientConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean
+    AxizWebClients axizWebClients(
+        HttpClientRegistry registry,
+        ObjectProvider<WebClient.Builder> builders,
+        ObjectProvider<JsonMapper> mappers,
+        ObjectProvider<ObservationRegistry> observations) {
+      return new AxizWebClients(
+          registry,
+          () ->
+              builders
+                  .getIfAvailable(WebClient::builder)
+                  .observationRegistry(observations.getIfAvailable(() -> ObservationRegistry.NOOP)),
+          () -> mappers.getIfAvailable(() -> JsonMapper.builder().findAndAddModules().build()));
+    }
+
+    @Bean
     WebClientHttpServiceGroupConfigurer axizWebClientGroups(
-        HttpClientRegistry registry, ObjectProvider<ObservationRegistry> observations) {
+        HttpClientRegistry registry,
+        AxizWebClients clients,
+        ObjectProvider<ObservationRegistry> observations) {
       return groups ->
           groups.forEachClient(
               (HttpServiceGroupConfigurer.ClientCallback<WebClient.Builder>)
@@ -140,21 +163,10 @@ public class AxizHttpClientAutoConfiguration {
                       registry
                           .find(group.name())
                           .ifPresent(
-                              s -> {
-                                HttpClientSettings transport = registry.transport(s);
-                                builder
-                                    .observationRegistry(
-                                        observations.getIfAvailable(() -> ObservationRegistry.NOOP))
-                                    .observationConvention(
-                                        new ReactiveClientNameObservationConvention(s.name()))
-                                    .baseUrl(s.baseUrl().toString())
-                                    .clientConnector(
-                                        ClientHttpConnectorBuilder.detect().build(transport))
-                                    .filter(
-                                        new AxizExchangeFilter(
-                                            registry.resilience(s),
-                                            registry.asyncAuth(s),
-                                            registry.tenantHeader()));
+                              settings -> {
+                                builder.observationRegistry(
+                                    observations.getIfAvailable(() -> ObservationRegistry.NOOP));
+                                clients.configure(settings, builder);
                               }));
     }
   }

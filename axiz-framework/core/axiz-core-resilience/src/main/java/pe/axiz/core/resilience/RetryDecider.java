@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.net.http.HttpTimeoutException;
+import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -29,24 +30,26 @@ public final class RetryDecider {
 
   /** Transient: timeouts, connection failures, and errors whose category is retryable. */
   public static boolean isTransient(Throwable failure) {
+    var seen = new IdentityHashMap<Throwable, Boolean>();
+    boolean transientFailure = false;
     for (Throwable t = failure; t != null; t = t.getCause()) {
+      if (seen.size() >= 64 || seen.put(t, Boolean.TRUE) != null) return false;
       if (t instanceof AxizException axiz) {
-        return axiz.category().retryable();
+        if (!axiz.category().retryable()) return false;
+        transientFailure = true;
       }
       if (t instanceof TimeoutException
           || t instanceof SocketTimeoutException
           || t instanceof HttpTimeoutException
           || t instanceof ConnectException) {
-        return true;
+        transientFailure = true;
       }
-      if (t instanceof IOException && !t.getClass().getSimpleName().contains("SSL")) {
-        return true;
-      }
-      if (t.getCause() == t) {
-        break;
+      if (t instanceof IOException) {
+        if (t.getClass().getSimpleName().contains("SSL")) return false;
+        transientFailure = true;
       }
     }
-    return false;
+    return transientFailure;
   }
 
   public static boolean shouldRetry(

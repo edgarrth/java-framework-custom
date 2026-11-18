@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.reactivestreams.Publisher;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.r2dbc.ConnectionFactoryDecorator;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -33,16 +32,12 @@ import org.springframework.data.r2dbc.convert.R2dbcCustomConversions;
 import org.springframework.data.r2dbc.dialect.PostgresDialect;
 import org.springframework.data.r2dbc.mapping.R2dbcMappingContext;
 import org.springframework.r2dbc.core.DatabaseClient;
-import pe.axiz.adapter.databaseauth.aws.RdsIamPasswordProvider;
 import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
-import pe.axiz.kit.r2dbc.DatabasePasswordProvider;
 import pe.axiz.kit.r2dbc.EncryptedText;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.regions.Region;
 
 /** The read replica connection, IAM tokens, Flyway over IAM and the auditing of rows. */
 class ReaderAndAuditingTest {
@@ -69,7 +64,6 @@ class ReaderAndAuditingTest {
       new ApplicationContextRunner()
           .withPropertyValues(
               "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
           .withConfiguration(AutoConfigurations.of(AxizR2dbcAutoConfiguration.class))
           .withPropertyValues("axiz.r2dbc.encryption-context=account.number");
@@ -113,29 +107,6 @@ class ReaderAndAuditingTest {
   }
 
   @Test
-  void withIamTheReaderSignsATokenForEachNewConnection() {
-    runner
-        .withPropertyValues(
-            "axiz.r2dbc.reader.url=" + READER,
-            "spring.r2dbc.username=app",
-            "spring.r2dbc.password=never-used",
-            "axiz.r2dbc.iam.enabled=true",
-            "axiz.r2dbc.iam.region=us-east-1")
-        .run(
-            ctx -> {
-              ctx.getBean(ReaderDatabase.class);
-              Object password = behindThePool().getValue(ConnectionFactoryOptions.PASSWORD);
-              assertInstanceOf(Publisher.class, password, "resolved when a connection opens");
-              String token = String.valueOf(Mono.from((Publisher<?>) password).block(T));
-              assertThat(token)
-                  .startsWith("reader.cluster-ro.local:5433/")
-                  .contains("DBUser=app")
-                  .contains("X-Amz-Signature=")
-                  .doesNotContain("never-used");
-            });
-  }
-
-  @Test
   void aReaderWithoutUserOrPasswordLeavesThemToTheUrl() {
     ConnectionFactory cf =
         ReaderConnections.create(
@@ -170,43 +141,6 @@ class ReaderAndAuditingTest {
             new pe.axiz.core.commons.net.DataTransportSecurityPolicy("test", true));
     new ReaderDatabase(pooled).destroy();
     new ReaderDatabase(new FakeR2dbc()).destroy();
-  }
-
-  @Test
-  void theRegionComesFromTheSettingOrTheSdkChain() {
-    assertEquals(Region.SA_EAST_1, AwsIamTokens.region(" sa-east-1 "));
-    assertEquals(Region.US_EAST_2, AwsIamTokens.region("  ", " us-east-2 "));
-    assertEquals(Region.US_EAST_2, AwsIamTokens.region(null, "us-east-2"));
-    assertEquals(Region.SA_EAST_1, AwsIamTokens.region(" sa-east-1 ", "us-east-2"));
-    System.setProperty("aws.region", "us-west-2");
-    assertEquals(Region.US_WEST_2, AwsIamTokens.region(null));
-    assertEquals(Region.US_WEST_2, AwsIamTokens.region(" "));
-  }
-
-  @Test
-  void theWriterUsesIamTokensAndFlywayGetsOneForTheMigration() {
-    new ApplicationContextRunner()
-        .withPropertyValues(
-            "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-        .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
-        .withConfiguration(
-            AutoConfigurations.of(
-                AxizR2dbcIamAutoConfiguration.class, AxizR2dbcFlywayIamAutoConfiguration.class))
-        .withPropertyValues(
-            "axiz.r2dbc.iam.enabled=true",
-            "axiz.aws.region=us-east-1",
-            "spring.r2dbc.url=r2dbc:postgresql://writer.cluster.local/payments",
-            "spring.r2dbc.username=app")
-        .run(
-            ctx -> {
-              DatabasePasswordProvider passwords = ctx.getBean(DatabasePasswordProvider.class);
-              assertInstanceOf(RdsIamPasswordProvider.class, passwords);
-              assertThat(passwords.password().toString())
-                  .startsWith("writer.cluster.local:5432/")
-                  .contains("DBUser=app");
-              assertThat(ctx).hasSingleBean(FlywayIamCustomizer.class);
-            });
   }
 
   @Test
@@ -249,7 +183,6 @@ class ReaderAndAuditingTest {
     new ApplicationContextRunner()
         .withPropertyValues(
             "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(
@@ -277,7 +210,6 @@ class ReaderAndAuditingTest {
     new ApplicationContextRunner()
         .withPropertyValues(
             "axiz.config.environment=test", "axiz.transport.allow-insecure-data-stores=true")
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withPropertyValues("axiz.r2dbc.encryption-context=account.number")
         .withConfiguration(AutoConfigurations.of(AxizR2dbcAuditingAutoConfiguration.class))
         .withBean(

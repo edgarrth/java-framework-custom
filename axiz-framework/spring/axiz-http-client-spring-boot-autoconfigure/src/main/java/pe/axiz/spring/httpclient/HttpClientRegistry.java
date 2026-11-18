@@ -43,16 +43,18 @@ public final class HttpClientRegistry implements AutoCloseable {
   private final Clock clock;
   private final @Nullable String tenantHeader;
 
-  public HttpClientRegistry(
-      AxizHttpClientProperties properties,
-      CircuitBreakerRegistry circuitBreakers,
-      @Nullable SecretResolver secrets,
-      @Nullable AsyncSecretResolver asyncSecrets,
-      @Nullable SslBundles sslBundles,
-      Clock clock,
-      @Nullable String tenantHeader,
-      ObservationRegistry observations,
-      TransportSecurityPolicy transportSecurity) {
+  private HttpClientRegistry(Builder builder) {
+    AxizHttpClientProperties properties = Objects.requireNonNull(builder.properties, "properties");
+    CircuitBreakerRegistry circuitBreakers =
+        Objects.requireNonNull(builder.circuitBreakers, "circuitBreakers");
+    @Nullable SecretResolver secrets = builder.secrets;
+    @Nullable AsyncSecretResolver asyncSecrets = builder.asyncSecrets;
+    @Nullable SslBundles sslBundles = builder.sslBundles;
+    Clock clock = Objects.requireNonNull(builder.clock, "clock");
+    @Nullable String tenantHeader = builder.tenantHeader;
+    ObservationRegistry observations = Objects.requireNonNull(builder.observations, "observations");
+    TransportSecurityPolicy transportSecurity =
+        Objects.requireNonNull(builder.transportSecurity, "transportSecurity");
     this.properties = properties;
     this.raw = properties.clients();
     this.circuitBreakers = circuitBreakers;
@@ -87,6 +89,10 @@ public final class HttpClientRegistry implements AutoCloseable {
     }
   }
 
+  public boolean revealCardData(String name) {
+    return Objects.requireNonNull(raw.get(name), "Unknown HTTP client").revealCardData();
+  }
+
   public Optional<ClientSettings> find(String name) {
     return Optional.ofNullable(settings.get(name));
   }
@@ -109,7 +115,8 @@ public final class HttpClientRegistry implements AutoCloseable {
       throw new IllegalStateException(
           "Native HTTP client "
               + settings.name()
-              + " requires AsyncSecretResolver; configure native secrets or provide that core port");
+              + " requires AsyncSecretResolver; configure native secrets or provide that core"
+              + " port");
     return prepared;
   }
 
@@ -147,5 +154,74 @@ public final class HttpClientRegistry implements AutoCloseable {
 
   public Map<String, ClientSettings> all() {
     return Map.copyOf(settings);
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable AxizHttpClientProperties properties = null;
+    private @Nullable CircuitBreakerRegistry circuitBreakers = null;
+    private @Nullable SecretResolver secrets = null;
+    private @Nullable AsyncSecretResolver asyncSecrets = null;
+    private @Nullable SslBundles sslBundles = null;
+    private @Nullable Clock clock = null;
+    private @Nullable String tenantHeader = null;
+    private @Nullable ObservationRegistry observations = null;
+    private @Nullable TransportSecurityPolicy transportSecurity = null;
+
+    private Builder() {}
+
+    public Builder properties(AxizHttpClientProperties value) {
+      this.properties = value;
+      return this;
+    }
+
+    public Builder circuitBreakers(CircuitBreakerRegistry value) {
+      this.circuitBreakers = value;
+      return this;
+    }
+
+    public Builder secrets(@Nullable SecretResolver value) {
+      this.secrets = value;
+      return this;
+    }
+
+    public Builder asyncSecrets(@Nullable AsyncSecretResolver value) {
+      this.asyncSecrets = value;
+      return this;
+    }
+
+    public Builder sslBundles(@Nullable SslBundles value) {
+      this.sslBundles = value;
+      return this;
+    }
+
+    public Builder clock(Clock value) {
+      this.clock = value;
+      return this;
+    }
+
+    public Builder tenantHeader(@Nullable String value) {
+      this.tenantHeader = value;
+      return this;
+    }
+
+    public Builder observations(ObservationRegistry value) {
+      this.observations = value;
+      return this;
+    }
+
+    public Builder transportSecurity(TransportSecurityPolicy value) {
+      this.transportSecurity = value;
+      return this;
+    }
+
+    public HttpClientRegistry build() {
+      return new HttpClientRegistry(this);
+    }
   }
 }

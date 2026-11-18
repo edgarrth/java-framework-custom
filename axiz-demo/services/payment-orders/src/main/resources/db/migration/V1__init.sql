@@ -48,7 +48,7 @@ CREATE TABLE payment_order (
   customer_id        VARCHAR(20)   NOT NULL,
   debtor_account     VARCHAR(200)  NOT NULL,
   creditor_cci       VARCHAR(200)  NOT NULL,
-  creditor_cci_index VARCHAR(64)   NOT NULL,
+  creditor_cci_index VARCHAR(256)   NOT NULL,
   amount             NUMERIC(18,2) NOT NULL CHECK (amount > 0),
   currency           VARCHAR(3)    NOT NULL CONSTRAINT payment_order_currency_iso CHECK (currency ~ '^[A-Z]{3}$'),
   description        VARCHAR(140),

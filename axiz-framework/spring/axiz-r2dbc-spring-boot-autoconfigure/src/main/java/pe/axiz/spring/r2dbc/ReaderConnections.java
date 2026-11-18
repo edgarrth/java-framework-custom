@@ -56,7 +56,7 @@ final class ReaderConnections {
       builder.username(username);
     }
     if (iam != null) {
-      builder.configure(o -> IamTokens.apply(o, iam));
+      builder.configure(o -> R2dbcPasswords.apply(o, iam));
     } else if (password != null) {
       builder.password(password);
     }

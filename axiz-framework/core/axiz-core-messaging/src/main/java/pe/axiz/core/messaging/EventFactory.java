@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.id.IdGenerator;
 
 /**
@@ -56,14 +56,15 @@ public final class EventFactory {
         ext.put("channel", metadata.channel());
       }
     }
-    return new EventEnvelope(
-        eventId == null ? ids.newId() : eventId,
-        source,
-        typePrefix + type,
-        clock.instant(),
-        subject,
-        codec.contentType(),
-        codec.encode(payload),
-        ext);
+    return EventEnvelope.builder()
+        .id(eventId == null ? ids.newId() : eventId)
+        .source(source)
+        .type(typePrefix + type)
+        .time(clock.instant())
+        .subject(subject)
+        .dataContentType(codec.contentType())
+        .data(codec.encode(payload))
+        .extensions(ext)
+        .build();
   }
 }

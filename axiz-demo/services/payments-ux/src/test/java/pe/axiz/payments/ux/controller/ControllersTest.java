@@ -9,7 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.MapFlagProvider;

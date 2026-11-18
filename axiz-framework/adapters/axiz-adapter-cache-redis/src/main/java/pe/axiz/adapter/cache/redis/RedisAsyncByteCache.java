@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import pe.axiz.core.cache.AsyncByteCache;
 import pe.axiz.core.cache.CachedValue;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Redis/Valkey asynchronous cache; TTL reads are atomic and eviction uses paginated SCAN/UNLINK.

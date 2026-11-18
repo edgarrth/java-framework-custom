@@ -1,5 +1,5 @@
-public final class pe.axiz.spring.config.AwsBootstrapLifecycle implements org.springframework.boot.SpringApplicationRunListener {
-public pe.axiz.spring.config.AwsBootstrapLifecycle(org.springframework.boot.SpringApplication, java.lang.String[]);
+public final class pe.axiz.spring.config.aws.AwsBootstrapLifecycle implements org.springframework.boot.SpringApplicationRunListener {
+public pe.axiz.spring.config.aws.AwsBootstrapLifecycle(org.springframework.boot.SpringApplication, java.lang.String[]);
 public void failed(org.springframework.context.ConfigurableApplicationContext, java.lang.Throwable);
 public void starting(org.springframework.boot.bootstrap.ConfigurableBootstrapContext);
 }
@@ -42,21 +42,21 @@ public pe.axiz.spring.config.AxizConfigValidationEnvironmentPostProcessor();
 public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
 }
 
-public final class pe.axiz.spring.config.AxizParameterStoreLoader implements org.springframework.boot.context.config.ConfigDataLoader<pe.axiz.spring.config.AxizParameterStoreResource> {
+public final class pe.axiz.spring.config.aws.AxizParameterStoreLoader implements org.springframework.boot.context.config.ConfigDataLoader<pe.axiz.spring.config.aws.AxizParameterStoreResource> {
 public org.springframework.boot.context.config.ConfigData load(org.springframework.boot.context.config.ConfigDataLoaderContext, org.springframework.boot.context.config.ConfigDataResource) throws java.io.IOException, org.springframework.boot.context.config.ConfigDataResourceNotFoundException;
-public org.springframework.boot.context.config.ConfigData load(org.springframework.boot.context.config.ConfigDataLoaderContext, pe.axiz.spring.config.AxizParameterStoreResource);
-public pe.axiz.spring.config.AxizParameterStoreLoader(org.springframework.boot.logging.DeferredLogFactory);
+public org.springframework.boot.context.config.ConfigData load(org.springframework.boot.context.config.ConfigDataLoaderContext, pe.axiz.spring.config.aws.AxizParameterStoreResource);
+public pe.axiz.spring.config.aws.AxizParameterStoreLoader(org.springframework.boot.logging.DeferredLogFactory);
 }
 
-public final class pe.axiz.spring.config.AxizParameterStoreResolver implements org.springframework.boot.context.config.ConfigDataLocationResolver<pe.axiz.spring.config.AxizParameterStoreResource>, org.springframework.core.Ordered {
+public final class pe.axiz.spring.config.aws.AxizParameterStoreResolver implements org.springframework.boot.context.config.ConfigDataLocationResolver<pe.axiz.spring.config.aws.AxizParameterStoreResource>, org.springframework.core.Ordered {
 public boolean isResolvable(org.springframework.boot.context.config.ConfigDataLocationResolverContext, org.springframework.boot.context.config.ConfigDataLocation);
 public int getOrder();
-public java.util.List<pe.axiz.spring.config.AxizParameterStoreResource> resolve(org.springframework.boot.context.config.ConfigDataLocationResolverContext, org.springframework.boot.context.config.ConfigDataLocation);
-public java.util.List<pe.axiz.spring.config.AxizParameterStoreResource> resolveProfileSpecific(org.springframework.boot.context.config.ConfigDataLocationResolverContext, org.springframework.boot.context.config.ConfigDataLocation, org.springframework.boot.context.config.Profiles);
-public pe.axiz.spring.config.AxizParameterStoreResolver(org.springframework.boot.logging.DeferredLogFactory);
+public java.util.List<pe.axiz.spring.config.aws.AxizParameterStoreResource> resolve(org.springframework.boot.context.config.ConfigDataLocationResolverContext, org.springframework.boot.context.config.ConfigDataLocation);
+public java.util.List<pe.axiz.spring.config.aws.AxizParameterStoreResource> resolveProfileSpecific(org.springframework.boot.context.config.ConfigDataLocationResolverContext, org.springframework.boot.context.config.ConfigDataLocation, org.springframework.boot.context.config.Profiles);
+public pe.axiz.spring.config.aws.AxizParameterStoreResolver(org.springframework.boot.logging.DeferredLogFactory);
 }
 
-public final class pe.axiz.spring.config.AxizParameterStoreResource extends org.springframework.boot.context.config.ConfigDataResource {
+public final class pe.axiz.spring.config.aws.AxizParameterStoreResource extends org.springframework.boot.context.config.ConfigDataResource {
 public boolean equals(java.lang.Object);
 public int hashCode();
 public java.lang.String toString();

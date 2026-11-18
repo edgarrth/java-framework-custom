@@ -1,0 +1,73 @@
+# Remote tokenization consumer
+
+Provides `Tokenizer` on the imperative stack and `ReactiveTokenizer` on the reactive stack.
+The consumer has no dependency on the vault engine, DynamoDB SDK, cryptographic keys or PAN profile.
+Select `axiz-tokenization-spring-boot-starter` together with the application's HTTP client and
+security capabilities. The server independently verifies JWT identity and authorizes each operation.
+
+```yaml
+axiz:
+  tokenization:
+    mode: remote
+    remote:
+      client: token-vault
+  http-client:
+    clients:
+      token-vault:
+        base-url: https://tokens.example.internal
+        auth:
+          type: TOKEN_RELAY
+        retry: NONE
+        max-attempts: 1
+        max-concurrent-calls: 32
+        max-connections: 32
+        connect-timeout: 2s
+        read-timeout: 5s
+        total-timeout: 10s
+```
+
+Use `CLIENT_CREDENTIALS` for service identity, configured through the HTTP client capability with
+an explicit token URI, client ID and secret reference. Reactive credentials require
+`AsyncSecretResolver`. TLS trust or mutual TLS use the named client's `ssl-bundle`; a client
+certificate supplements JWT authentication. API keys alone cannot establish the server's JWT claims.
+Plain HTTP needs the explicit shared transport exception in `local`, `test` or `ci`.
+
+`tokenize(type, value, domain, operationId)` sends the actual value through a dedicated bounded
+writer. It does not install a revealing serializer on the application's mapper. Close the caller's
+`SensitiveValue` after completion; for `Mono`, retain it until subscription and completion. Each
+subscription performs its own operation and reads its own security context. Do not attach body
+logging, payload tracing or caching filters to this client. Built-in HTTP logs contain route metadata.
+
+`lookup` returns an existing token without creating one; `describe` returns permitted metadata;
+`detokenize` returns an owned `SensitiveValue` that the caller must close. The ciphertext and HMAC
+index never leave the vault. `delete` returns whether a record was removed: the HTTP protocol uses
+204 in both cases and the boolean `X-Axiz-Token-Deleted` header, with no response body.
+
+Automatic retries and redirects are disabled. `AXZ-TOKEN-0504` means the mutation may have committed:
+reconcile before deciding to repeat it. Missing/malformed mutation acknowledgments also return that
+uncertainty. A generic proxy 404 does not become an empty lookup. Token errors use a closed catalog
+and discard remote messages and causes; 429 preserves a bounded `Retry-After`. Responses are bounded
+to 64 KiB, require the expected type and field schema, and successful responses require `no-store`.
+Native calls have an overall deadline. Imperative reads check the overall deadline between bounded
+reads; a currently blocked read is bounded by the configured transport read timeout.
+
+For applications using client credentials, `axiz.tokenization.remote.async-facade=true` additionally
+publishes `AsyncTokenizer`. Token relay must use `ReactiveTokenizer`, since a `CompletionStage`
+method has no subscriber security context. No thread-local identity is inferred for this facade.
+
+Owned temporary arrays are cleared on completion/failure/cancellation. Immutable Java strings and
+copies retained by HTTP/TLS implementations cannot be guaranteed erased by this API.
+
+## Local simulation and verification
+
+`mode: local` requires `axiz.config.environment: local|test|ci`. Its bounded, instance-local double
+accepts only labels such as `synthetic:document_one`, with at most 1024 associations. It returns
+predictable tokens solely for testing and never accepts real PAN/DNI values or performs encryption.
+It does not fall back from remote mode. Use the actual vault with synthetic numeric fixtures when
+you need to exercise the PAN validator, encryption, audit or persistence.
+
+`RemoteTokenWireTest` exercises real HTTP bytes for PAN/DNI, concurrent reactive relay identities,
+no retries/redirects, response limits and log canaries, with BlockHound. `TokenRemoteResponseTest`
+checks malformed/unknown fields, UTF-8, no-store and uncertainty; `TokenClientConfigurationTest`
+checks stack selection and invalid startup policies. These protocol tests use a local HTTP fixture;
+they do not establish PCI compliance or substitute for the vault's deployment integration tests.

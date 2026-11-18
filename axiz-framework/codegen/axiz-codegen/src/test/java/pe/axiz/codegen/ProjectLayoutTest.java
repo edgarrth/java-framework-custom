@@ -37,24 +37,26 @@ class ProjectLayoutTest {
         <version>2.0.0</version><relativePath/></parent>
         <groupId>pe.axiz</groupId><artifactId>orders-aggregator</artifactId>
         <version>0.1.0-SNAPSHOT</version><packaging>pom</packaging>
-        <modules><module>"""
+        <modules><module>\
+        """
             + module
             + "</module></modules></project>");
     ProjectManifest m = ProjectManifest.read(root);
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            m.openapi() == null ? null : module + "/" + m.openapi(),
-            m.asyncapi() == null ? null : module + "/" + m.asyncapi(),
-            m.capabilities(),
-            m.operations(),
-            m.extensions())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(m.openapi() == null ? null : module + "/" + m.openapi())
+        .asyncapi(m.asyncapi() == null ? null : module + "/" + m.asyncapi())
+        .capabilities(m.capabilities())
+        .operations(m.operations())
+        .extensions(m.extensions())
+        .build()
         .write(root);
     return application;
   }
@@ -134,20 +136,21 @@ class ProjectLayoutTest {
     assertEquals(app, ProjectLayout.read(root, ProjectManifest.read(root)).module());
     var m = ProjectManifest.read(root);
     var ambiguous =
-        new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            "contracts/api.yaml",
-            null,
-            m.capabilities(),
-            m.operations(),
-            m.extensions());
+        ProjectManifest.builder()
+            .name(m.name())
+            .groupId(m.groupId())
+            .basePackage(m.basePackage())
+            .archetype(m.archetype())
+            .structure(m.structure())
+            .stack(m.stack())
+            .persistence(m.persistence())
+            .axizVersion(m.axizVersion())
+            .openapi("contracts/api.yaml")
+            .asyncapi(null)
+            .capabilities(m.capabilities())
+            .operations(m.operations())
+            .extensions(m.extensions())
+            .build();
     byte[] before = Files.readAllBytes(app.resolve("src/main/resources/application.yaml"));
     assertThrows(
         IOException.class, () -> ProjectRename.apply(root, ambiguous, "payment-orders", false));

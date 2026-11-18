@@ -7,19 +7,20 @@ import org.jspecify.annotations.Nullable;
 /** Port for envelope encryption data keys (AWS KMS in production). */
 public interface DataKeyProvider {
 
-  /** A new data key: plaintext for local use and its encrypted form to store with the data. */
+  /** Transfers a new owned data key; the caller closes it after use or cache retirement. */
   DataKey generate(String context);
 
-  /** Decrypts a stored data key. */
+  /** Decrypts to a fresh owned buffer which the caller clears; never return a shared key array. */
   byte[] decrypt(byte[] encryptedKey, String context);
 
   /**
    * Data key pair. The arrays are copied on the way in and out; equality compares the encrypted key
    * only, in constant time, and the plaintext never appears in {@link #toString()}.
    */
-  final class DataKey {
+  final class DataKey implements AutoCloseable {
     private final byte[] plaintext;
     private final byte[] encrypted;
+    private boolean closed;
 
     /**
      * Creates a data key pair.
@@ -33,8 +34,31 @@ public interface DataKeyProvider {
     }
 
     /** A copy of the 32-byte plaintext key. */
-    public byte[] plaintext() {
+    public synchronized byte[] plaintext() {
+      if (closed) throw new CryptoException("Data key has been closed");
       return plaintext.clone();
+    }
+
+    synchronized DataKey snapshot() {
+      if (closed) throw new CryptoException("Data key has been closed");
+      return new DataKey(plaintext, encrypted);
+    }
+
+    synchronized boolean validForEnvelope() {
+      if (closed
+          || plaintext.length != AesGcm.KEY_BYTES
+          || encrypted.length < 1
+          || encrypted.length > 0xFFFF) throw new CryptoException("Invalid envelope data key");
+      return true;
+    }
+
+    /**
+     * Clears this instance only; callers retain responsibility for their input and output copies.
+     */
+    @Override
+    public synchronized void close() {
+      Arrays.fill(plaintext, (byte) 0);
+      closed = true;
     }
 
     /** A copy of the key encrypted by the master key. */

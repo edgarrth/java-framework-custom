@@ -74,35 +74,6 @@ public record ProjectManifest(
   private static final List<String> KINDS = List.of("service", "platform");
   private static final List<String> PERSISTENCE = List.of("none", Catalog.AURORA, Catalog.DYNAMODB);
 
-  public ProjectManifest(
-      String name,
-      String groupId,
-      String basePackage,
-      String archetype,
-      Structure structure,
-      Stack stack,
-      String persistence,
-      String axizVersion,
-      @Nullable String openapi,
-      @Nullable String asyncapi,
-      List<String> capabilities,
-      List<String> operations) {
-    this(
-        name,
-        groupId,
-        basePackage,
-        archetype,
-        structure,
-        stack,
-        persistence,
-        axizVersion,
-        openapi,
-        asyncapi,
-        capabilities,
-        operations,
-        List.of());
-  }
-
   public boolean cqrs() {
     return extensions.contains(Extension.CQRS);
   }
@@ -152,20 +123,21 @@ public record ProjectManifest(
       throw new IOException("'contract' in " + PATH + " must be a mapping");
     Map<?, ?> contract = contractValue == null ? Map.of() : (Map<?, ?>) contractValue;
     rejectUnknown(contract, CONTRACT_KEYS, PATH + " contract");
-    return new ProjectManifest(
-        required(m, "name"),
-        required(m, "groupId"),
-        required(m, "basePackage"),
-        role,
-        structure,
-        m.containsKey("stack") ? enumValue(m, "stack", Stack::of) : Stack.SERVLET,
-        persistence,
-        required(m, "axizVersion"),
-        path(contract, "openapi"),
-        path(contract, "asyncapi"),
-        names(m, "capabilities"),
-        names(m, "operations"),
-        extensions);
+    return ProjectManifest.builder()
+        .name(required(m, "name"))
+        .groupId(required(m, "groupId"))
+        .basePackage(required(m, "basePackage"))
+        .archetype(role)
+        .structure(structure)
+        .stack(m.containsKey("stack") ? enumValue(m, "stack", Stack::of) : Stack.SERVLET)
+        .persistence(persistence)
+        .axizVersion(required(m, "axizVersion"))
+        .openapi(path(contract, "openapi"))
+        .asyncapi(path(contract, "asyncapi"))
+        .capabilities(names(m, "capabilities"))
+        .operations(names(m, "operations"))
+        .extensions(extensions)
+        .build();
   }
 
   private static void rejectUnknown(Map<?, ?> map, Set<String> allowed, String where)
@@ -221,72 +193,76 @@ public record ProjectManifest(
   }
 
   public ProjectManifest withCapabilities(List<String> newCapabilities) {
-    return new ProjectManifest(
-        name,
-        groupId,
-        basePackage,
-        archetype,
-        structure,
-        stack,
-        persistence,
-        axizVersion,
-        openapi,
-        asyncapi,
-        newCapabilities,
-        operations,
-        extensions);
+    return ProjectManifest.builder()
+        .name(name)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .archetype(archetype)
+        .structure(structure)
+        .stack(stack)
+        .persistence(persistence)
+        .axizVersion(axizVersion)
+        .openapi(openapi)
+        .asyncapi(asyncapi)
+        .capabilities(newCapabilities)
+        .operations(operations)
+        .extensions(extensions)
+        .build();
   }
 
   public ProjectManifest withOperations(List<String> newOperations) {
-    return new ProjectManifest(
-        name,
-        groupId,
-        basePackage,
-        archetype,
-        structure,
-        stack,
-        persistence,
-        axizVersion,
-        openapi,
-        asyncapi,
-        capabilities,
-        newOperations,
-        extensions);
+    return ProjectManifest.builder()
+        .name(name)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .archetype(archetype)
+        .structure(structure)
+        .stack(stack)
+        .persistence(persistence)
+        .axizVersion(axizVersion)
+        .openapi(openapi)
+        .asyncapi(asyncapi)
+        .capabilities(capabilities)
+        .operations(newOperations)
+        .extensions(extensions)
+        .build();
   }
 
   /** Changes the deployment name without changing the explicitly declared Java package. */
   public ProjectManifest withName(String newName) {
-    return new ProjectManifest(
-        newName,
-        groupId,
-        basePackage,
-        archetype,
-        structure,
-        stack,
-        persistence,
-        axizVersion,
-        openapi,
-        asyncapi,
-        capabilities,
-        operations,
-        extensions);
+    return ProjectManifest.builder()
+        .name(newName)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .archetype(archetype)
+        .structure(structure)
+        .stack(stack)
+        .persistence(persistence)
+        .axizVersion(axizVersion)
+        .openapi(openapi)
+        .asyncapi(asyncapi)
+        .capabilities(capabilities)
+        .operations(operations)
+        .extensions(extensions)
+        .build();
   }
 
   public ProjectManifest withAxizVersion(String version) {
-    return new ProjectManifest(
-        name,
-        groupId,
-        basePackage,
-        archetype,
-        structure,
-        stack,
-        persistence,
-        version,
-        openapi,
-        asyncapi,
-        capabilities,
-        operations,
-        extensions);
+    return ProjectManifest.builder()
+        .name(name)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .archetype(archetype)
+        .structure(structure)
+        .stack(stack)
+        .persistence(persistence)
+        .axizVersion(version)
+        .openapi(openapi)
+        .asyncapi(asyncapi)
+        .capabilities(capabilities)
+        .operations(operations)
+        .extensions(extensions)
+        .build();
   }
 
   private static String required(Map<?, ?> m, String key) throws IOException {
@@ -329,6 +305,112 @@ public record ProjectManifest(
       return parse.apply(value);
     } catch (IllegalArgumentException e) {
       throw new IOException("Unsupported '" + key + "' in " + PATH + ": " + value, e);
+    }
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable String name = null;
+    private @Nullable String groupId = null;
+    private @Nullable String basePackage = null;
+    private @Nullable String archetype = null;
+    private @Nullable Structure structure = null;
+    private @Nullable Stack stack = null;
+    private @Nullable String persistence = null;
+    private @Nullable String axizVersion = null;
+    private @Nullable String openapi = null;
+    private @Nullable String asyncapi = null;
+    private @Nullable List<String> capabilities = List.of();
+    private @Nullable List<String> operations = List.of();
+    private @Nullable List<Extension> extensions = List.of();
+
+    private Builder() {}
+
+    public Builder name(String value) {
+      this.name = value;
+      return this;
+    }
+
+    public Builder groupId(String value) {
+      this.groupId = value;
+      return this;
+    }
+
+    public Builder basePackage(String value) {
+      this.basePackage = value;
+      return this;
+    }
+
+    public Builder archetype(String value) {
+      this.archetype = value;
+      return this;
+    }
+
+    public Builder structure(Structure value) {
+      this.structure = value;
+      return this;
+    }
+
+    public Builder stack(Stack value) {
+      this.stack = value;
+      return this;
+    }
+
+    public Builder persistence(String value) {
+      this.persistence = value;
+      return this;
+    }
+
+    public Builder axizVersion(String value) {
+      this.axizVersion = value;
+      return this;
+    }
+
+    public Builder openapi(@Nullable String value) {
+      this.openapi = value;
+      return this;
+    }
+
+    public Builder asyncapi(@Nullable String value) {
+      this.asyncapi = value;
+      return this;
+    }
+
+    public Builder capabilities(List<String> value) {
+      this.capabilities = List.copyOf(value);
+      return this;
+    }
+
+    public Builder operations(List<String> value) {
+      this.operations = List.copyOf(value);
+      return this;
+    }
+
+    public Builder extensions(List<Extension> value) {
+      this.extensions = List.copyOf(value);
+      return this;
+    }
+
+    public ProjectManifest build() {
+      return new ProjectManifest(
+          Objects.requireNonNull(name, "name"),
+          Objects.requireNonNull(groupId, "groupId"),
+          Objects.requireNonNull(basePackage, "basePackage"),
+          Objects.requireNonNull(archetype, "archetype"),
+          Objects.requireNonNull(structure, "structure"),
+          Objects.requireNonNull(stack, "stack"),
+          Objects.requireNonNull(persistence, "persistence"),
+          Objects.requireNonNull(axizVersion, "axizVersion"),
+          openapi,
+          asyncapi,
+          Objects.requireNonNull(capabilities, "capabilities"),
+          Objects.requireNonNull(operations, "operations"),
+          Objects.requireNonNull(extensions, "extensions"));
     }
   }
 }

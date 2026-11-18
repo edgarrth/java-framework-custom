@@ -142,6 +142,9 @@ public final class ArtifactGenerator {
     if ((type.equals("command") || type.equals("query")) && !project.cqrs()) {
       throw new IllegalArgumentException(type + " requires the CQRS extension");
     }
+    if (project.archetype().equals("core")
+        && Set.of("entity", "repository", "migration").contains(type))
+      throw new IllegalArgumentException("Core facades do not own persistence artifacts");
     Set<Structure> styles = TYPES.get(type);
     if (styles == null) {
       throw new IllegalArgumentException(

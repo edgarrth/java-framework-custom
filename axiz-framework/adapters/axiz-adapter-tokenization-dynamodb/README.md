@@ -1,0 +1,69 @@
+# axiz-adapter-tokenization-dynamodb
+
+Atomic DynamoDB token vault with shared request construction and native asynchronous I/O.
+
+This module owns the `pe.axiz.adapter.tokenization.dynamodb` API.
+
+The operator provisions one table with a string partition key named `pk` and no sort key.
+This adapter never creates a table or enables automatic TTL. Schema version 1 stores:
+
+| Prefix | Contents |
+| --- | --- |
+| `T#` | Token, framed scope, canonical profile/version, keyset, fingerprint list, revision, envelope bytes, timestamps and bounded metadata |
+| `F#` | Scope/key/HMAC reference, associated token, keyset and key identifier |
+| `C#` | Versioned keyset control: write key and ordered read keys |
+| `E#` | Independent versioned envelope wrapping-key control |
+| `R#` | Permanent reservation of each activated HMAC/wrapping-key identifier |
+| `I#` | Permanent initialization marker for each HMAC/wrapping control |
+
+`DynamoDbTokenVault` and `DynamoDbAsyncTokenVault` borrow their clients. Each request has an
+explicit timeout between 1 ms and 30 seconds. Lookups use transactional snapshots of references
+and owner records, so a concurrent delete is distinguished from a persistent orphan. Writes
+check the HMAC control version and the envelope write route; deletes also check ciphertext to
+fence a recreated token incarnation. Routed DEKs are mandatory for this vault adapter. There is
+no fallback when a control item is absent or when a cached DEK belongs to an old write route.
+Transaction conflicts have a bounded retry budget. A timeout, transport failure or ambiguous
+service error is an uncertain write, not a confirmed collision.
+
+`DynamoDbVaultMaintenance` is the separate privileged adapter used by `VaultRotator`. It adds
+conditional control initialization, compare-and-set control transitions, bounded consistent
+scans and atomic record/reference migration. Operational adapters expose none of those methods.
+The injected maintenance client must have its own IAM role; constructing a different Java class
+does not itself establish an IAM boundary. Ordinary services must not write control items or
+scan the table. Do not grant `dynamodb:*`; transactional access is authorized through item actions.
+
+Initialize both HMAC and wrapping controls through the privileged protocol. Their key identifiers
+are reserved atomically and permanently. Removing a key from the read set does not permit later
+reuse of its identifier; retain reservation items, initialization markers and control versions
+during backup/restore. If a control item is lost, initialization cannot reset it with a different
+key: restore and reconcile its prior state before serving writes.
+Reciphering checks the current envelope write route. An index-only migration preserves ciphertext
+and instead checks that its route remains an allowed reader. Both variants also fence the exact
+record incarnation, so a delayed job cannot put an old envelope back after another job replaced it.
+
+The exact storage schema is strict. Malformed rows, mismatched scopes, missing owned references
+and conflicting owners fail closed. The reference scan blocks retirement even when a referenced
+token row is missing. Automatic TTL cannot provide atomic deletion of a token and its indexes;
+use coordinated removal through the protocol.
+
+`VaultRetention` provides the separate, audited maintenance job for logical expiry. It uses
+revision, timestamps, ciphertext and reference ownership conditions, without decrypting values.
+The [infrastructure package](infra/README.md) includes the schema CloudFormation template,
+separate operational/migration/retention policies and the AWS IAM simulation procedure.
+
+AWS documents [scan consistency and pagination](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Scan.html)
+and [transaction isolation and idempotency](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html).
+The administrative scan is not a snapshot. The core protocol relies on monotonic reference
+removal and conditional writes under the same control version. Global tables and arbitrary
+direct/import writers are not validated by the local integration test.
+
+From `axiz-framework`, run the local integration suite with Docker available:
+
+```sh
+mvn -Pquality -pl quality/axiz-store-integration-tests -am \
+  -Dtest=LocalStackTokenVaultIT -Dsurefire.failIfNoSpecifiedTests=false \
+  -Daxiz.it.requireDocker=true test
+```
+
+LocalStack exercises actual SDK requests and transactions. It does not certify AWS IAM,
+KMS operation, production durability, PCI compliance or the independent audit/rate-limit integrations.

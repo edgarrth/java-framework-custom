@@ -108,8 +108,18 @@ class WorkflowSourcesTest(unittest.TestCase):
         self.assertTrue(any('outside .github/workflows' in e for e in self.check()[0]))
 
     def test_repository_executable_scope_and_full_scope_both_pass(self):
-        self.assertEqual(([], 17, 22), check_tree(ROOT, ROOT, scope='executable'))
-        self.assertEqual(([], 67, 89), check_tree(ROOT, ROOT, scope='all'))
+        self.assertEqual(([], 17, 23), check_tree(ROOT, ROOT, scope='executable'))
+        self.assertEqual(([], 68, 93), check_tree(ROOT, ROOT, scope='all'))
+
+    def test_local_audit_copies_are_not_product_sources_but_called_actions_are_checked(self):
+        self.workflow()
+        self.action()
+        self.write('_validacion-framework-axiz/copy/.github/workflows/demo.yaml',
+                   'on: push\njobs:\n  work:\n    steps:\n      - uses: vendor/action@mutable\n')
+        self.assertEqual([], self.check('all')[0])
+        self.workflow('./_validacion-framework-axiz/tool')
+        self.action('_validacion-framework-axiz/tool/action.yaml', 'vendor/action@mutable')
+        self.assertTrue(any('pin external' in e for e in self.check()[0]))
 
     def test_consumer_release_configuration_does_not_become_axiz_monorepo_policy(self):
         self.workflow().rename(self.root / '.github/workflows/framework-ci.yaml')

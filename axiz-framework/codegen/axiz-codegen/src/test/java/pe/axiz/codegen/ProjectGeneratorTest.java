@@ -36,6 +36,39 @@ class ProjectGeneratorTest {
   private final ProjectGenerator generator = ProjectGenerator.withDefaults();
 
   @Test
+  void tokenArchitectureScopeFollowsTheResolvedCapabilities() {
+    for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
+      for (boolean server : List.of(false, true)) {
+        var capabilities =
+            server
+                ? List.of(
+                    "tokenization-vault-dynamodb",
+                    "tokenization-vault-redis",
+                    "audit-kafka",
+                    "tokenization-pan")
+                : List.of("tokenization", "carddata");
+        var project =
+            generator.generate(
+                Fixtures.request("business", Structure.HEXAGONAL, stack, "dynamodb", capabilities));
+        var architecture =
+            project.files().entrySet().stream()
+                .filter(e -> e.getKey().endsWith("/ArchitectureTest.java"))
+                .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(architecture.contains("TokenizationScope." + (server ? "VAULT" : "CLIENT")));
+        assertTrue(architecture.contains("CardDataScope." + (server ? "VAULT" : "EDGE")));
+        if (!server) {
+          assertFalse(project.text("pom.xml").contains("axiz-tokenization-vault"));
+          assertTrue(
+              project.text("src/main/resources/application-local.yaml").contains("mode: local"));
+          assertTrue(project.text("src/main/resources/application.yaml").contains("retry: NONE"));
+        }
+      }
+    }
+  }
+
+  @Test
   void eventProcessorsDeclareSecurityForTheirManagementEndpoints() {
     for (Stack stack : List.of(Stack.SERVLET, Stack.REACTIVE)) {
       for (Structure structure : List.of(Structure.EDA, Structure.HEXAGONAL)) {
@@ -104,6 +137,18 @@ class ProjectGeneratorTest {
       }
       assertEquals(cqrs, text.contains("import pe.axiz.quality.archunit.Extension;"));
       assertEquals(cqrs, text.contains(".extensions(Extension.CQRS)"));
+      assertTrue(text.contains("static AxizArchitecture architecture()"));
+      assertTrue(text.contains("architecture().verify()"));
+      assertTrue(text.contains(".cardData(CardDataScope.NONE)"));
+      assertTrue(text.contains(".tokenization(TokenizationScope.NONE)"));
+      String selfCheck =
+          files.entrySet().stream()
+              .filter(e -> e.getKey().endsWith("/ArchitectureSelfCheckTest.java"))
+              .map(e -> new String(e.getValue(), StandardCharsets.UTF_8))
+              .findFirst()
+              .orElseThrow();
+      assertTrue(
+          selfCheck.contains("ArchitectureSelfCheck.verify(ArchitectureTest.architecture())"));
     }
   }
 
@@ -164,7 +209,11 @@ class ProjectGeneratorTest {
     GeneratedProject p =
         generator.generate(
             Fixtures.request(
-                "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of("outbox")));
+                "business",
+                Structure.HEXAGONAL,
+                Stack.SERVLET,
+                "aurora",
+                List.of("outbox", "messaging-kafka")));
     String base = "src/main/java/pe/axiz/orders/orders/";
     for (String f :
         List.of(
@@ -278,7 +327,7 @@ class ProjectGeneratorTest {
                 Structure.HEXAGONAL,
                 Stack.REACTIVE,
                 "aurora",
-                List.of("outbox", "inbox", "scheduling"),
+                List.of("outbox", "inbox", "scheduling", "messaging-kafka"),
                 Extension.CQRS));
     String base = "src/main/java/pe/axiz/orders/orders/";
     String controller = p.text(base + "adapter/in/rest/OrdersController.java");
@@ -296,16 +345,12 @@ class ProjectGeneratorTest {
         p.text(base + "application/query/GetOrderHandler.java").contains("ReactiveQueryHandler"));
     String pom = p.text("pom.xml");
     assertTrue(pom.contains("<artifactId>axiz-r2dbc-spring-boot-starter</artifactId>"));
-    assertTrue(
-        Pattern.compile(
-                "<artifactId>axiz-adapter-database-auth-aws</artifactId>\\s*<scope>runtime</scope>")
-            .matcher(pom)
-            .find(),
-        "Generated IAM support must be a runtime adapter: " + pom);
+    assertFalse(pom.contains("axiz-adapter-database-auth-aws"));
+    assertFalse(pom.contains("axiz-r2dbc-aws"), "IAM is an explicit capability");
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"), "JPA blocks: never on reactive");
-    assertTrue(pom.contains("<artifactId>axiz-adapter-outbox-r2dbc</artifactId>"));
-    assertTrue(pom.contains("<artifactId>axiz-adapter-inbox-r2dbc</artifactId>"));
-    assertTrue(pom.contains("<artifactId>shedlock-provider-r2dbc</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-outbox-r2dbc-spring-boot-starter</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-inbox-r2dbc-spring-boot-starter</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-scheduling-r2dbc-spring-boot-starter</artifactId>"));
     String app = p.text("src/main/resources/application.yaml");
     assertTrue(app.contains("r2dbc:postgresql://"), app);
     assertTrue(app.contains("DB_SSL_MODE:verify-full"), app);
@@ -337,7 +382,7 @@ class ProjectGeneratorTest {
             .orElseThrow();
     assertTrue(handler.contains("extends ReactiveTypedEventHandler<ExampleCreated>"), handler);
     assertTrue(handler.contains("protected Publisher<Void> on("));
-    assertTrue(p.text("pom.xml").contains("axiz-adapter-inbox-r2dbc"));
+    assertTrue(p.text("pom.xml").contains("axiz-inbox-r2dbc-spring-boot-starter"));
   }
 
   @Test
@@ -347,20 +392,21 @@ class ProjectGeneratorTest {
     String contract = "asyncapi: 3.0.0\ninfo: {title: Orders, version: 1.0.0}\nchannels: {}\n";
     GeneratedProject project =
         generator.generate(
-            new ProjectRequest(
-                base.name(),
-                base.groupId(),
-                base.basePackage(),
-                base.description(),
-                base.archetype(),
-                base.structure(),
-                base.stack(),
-                base.persistence(),
-                base.capabilities(),
-                base.openApi(),
-                contract,
-                base.frameworkVersion(),
-                base.extensions()));
+            ProjectRequest.builder()
+                .name(base.name())
+                .groupId(base.groupId())
+                .basePackage(base.basePackage())
+                .description(base.description())
+                .archetype(base.archetype())
+                .structure(base.structure())
+                .stack(base.stack())
+                .persistence(base.persistence())
+                .capabilities(base.capabilities())
+                .openApi(base.openApi())
+                .asyncApi(contract)
+                .frameworkVersion(base.frameworkVersion())
+                .extensions(base.extensions())
+                .build());
     assertEquals(
         project.text("src/main/asyncapi/asyncapi.yaml"),
         project.text(".axiz/asyncapi.snapshot.yaml"));
@@ -375,19 +421,21 @@ class ProjectGeneratorTest {
         Fixtures.request(
             "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of(), Extension.CQRS);
     ProjectRequest r =
-        new ProjectRequest(
-            base.name(),
-            base.groupId(),
-            base.basePackage(),
-            "History: read model <R2DBC> & \"events\" -- see */ docs",
-            base.archetype(),
-            base.structure(),
-            base.stack(),
-            base.persistence(),
-            base.capabilities(),
-            base.openApi(),
-            null,
-            base.frameworkVersion());
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description("History: read model <R2DBC> & \"events\" -- see */ docs")
+            .archetype(base.archetype())
+            .structure(base.structure())
+            .stack(base.stack())
+            .persistence(base.persistence())
+            .capabilities(base.capabilities())
+            .openApi(base.openApi())
+            .asyncApi(null)
+            .frameworkVersion(base.frameworkVersion())
+            .extensions(List.of())
+            .build();
     GeneratedProject p = generator.generate(r);
     Object chart =
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -431,19 +479,21 @@ class ProjectGeneratorTest {
                     List.of(),
                     Extension.CQRS);
         ProjectRequest r =
-            new ProjectRequest(
-                base.name(),
-                base.groupId(),
-                base.basePackage(),
-                description,
-                base.archetype(),
-                base.structure(),
-                base.stack(),
-                base.persistence(),
-                base.capabilities(),
-                base.openApi(),
-                null,
-                base.frameworkVersion());
+            ProjectRequest.builder()
+                .name(base.name())
+                .groupId(base.groupId())
+                .basePackage(base.basePackage())
+                .description(description)
+                .archetype(base.archetype())
+                .structure(base.structure())
+                .stack(base.stack())
+                .persistence(base.persistence())
+                .capabilities(base.capabilities())
+                .openApi(base.openApi())
+                .asyncApi(null)
+                .frameworkVersion(base.frameworkVersion())
+                .extensions(List.of())
+                .build();
         GeneratedProject p = generator.generate(r);
         Document pom =
             xml.newDocumentBuilder().parse(new ByteArrayInputStream(p.files().get("pom.xml")));
@@ -501,7 +551,7 @@ class ProjectGeneratorTest {
             .anyMatch(f -> f.endsWith("handler/ExampleCreatedHandler.java")));
     assertTrue(p.files().keySet().stream().noneMatch(f -> f.endsWith("Controller.java")));
     assertTrue(
-        p.text("pom.xml").contains("axiz-adapter-inbox-dynamodb"),
+        p.text("pom.xml").contains("axiz-inbox-dynamodb-spring-boot-starter"),
         "inbox store follows the persistence");
     assertTrue(p.text("src/main/resources/application.yaml").contains("store: dynamodb"));
     assertTrue(p.text("compose.yaml").contains("kafka:"));
@@ -529,8 +579,8 @@ class ProjectGeneratorTest {
     assertFalse(app.contains("password:"));
     String values = p.text("deploy/helm/orders-core/values.yaml");
     assertTrue(values.contains("- field-key-v1"), "secrets come from the ExternalSecret");
-    assertTrue(
-        p.text("deploy/helm/orders-core/values-prod.yaml").contains("# axiz.crypto.kms.key-id:"));
+    assertFalse(
+        p.text("deploy/helm/orders-core/values-prod.yaml").contains("axiz.crypto.kms.key-id"));
   }
 
   @Test
@@ -552,19 +602,21 @@ class ProjectGeneratorTest {
     assertTrue(
         lib.files().containsKey("src/main/java/pe/axiz/orders/orderslibrary/OrdersLibrary.java"));
     ProjectRequest starter =
-        new ProjectRequest(
-            "axiz-geo",
-            "pe.axiz",
-            "pe.axiz.core.geo",
-            "",
-            "starter",
-            Structure.NONE,
-            Stack.SERVLET,
-            "none",
-            List.of(),
-            null,
-            null,
-            "2.0.0");
+        ProjectRequest.builder()
+            .name("axiz-geo")
+            .groupId("pe.axiz")
+            .basePackage("pe.axiz.core.geo")
+            .description("")
+            .archetype("starter")
+            .structure(Structure.NONE)
+            .stack(Stack.SERVLET)
+            .persistence("none")
+            .capabilities(List.of())
+            .openApi(null)
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     GeneratedProject s = generator.generate(starter);
     assertSeparatedDeployment(s, "lib-deploy");
     assertEquals(
@@ -602,19 +654,21 @@ class ProjectGeneratorTest {
   void starterWithExplicitCorePrefixKeepsItsCapabilityNameAndSiblingSpringPackage() {
     GeneratedProject project =
         generator.generate(
-            new ProjectRequest(
-                "axiz-core-geo",
-                "pe.axiz",
-                "pe.axiz.core.geo",
-                "",
-                "starter",
-                Structure.NONE,
-                Stack.SERVLET,
-                "none",
-                List.of(),
-                null,
-                null,
-                "2.0.0"));
+            ProjectRequest.builder()
+                .name("axiz-core-geo")
+                .groupId("pe.axiz")
+                .basePackage("pe.axiz.core.geo")
+                .description("")
+                .archetype("starter")
+                .structure(Structure.NONE)
+                .stack(Stack.SERVLET)
+                .persistence("none")
+                .capabilities(List.of())
+                .openApi(null)
+                .asyncApi(null)
+                .frameworkVersion("2.0.0")
+                .extensions(List.of())
+                .build());
     assertTrue(project.text("pom.xml").contains("<module>axiz-core-geo</module>"));
     assertTrue(
         project

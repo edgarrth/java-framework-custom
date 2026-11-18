@@ -171,7 +171,9 @@ jobs:
           fi
           # Build required sibling modules from this checkout. Install only into this job's
           # isolated local repository so the later Jib invocation resolves those same bytes.
+          "$PYTHON" "$TOOLS/check_architecture.py" "$MODULE" --prepare
           mvn -B -ntp -f pom.xml -pl "$MODULE" -am "-P$profiles" install 2>&1 | tee target/build-reports/verify.log
+          "$PYTHON" "$TOOLS/check_architecture.py" "$MODULE" | tee target/build-reports/architecture.json
           if [[ "$VARIANT" == native ]]; then
             # Reuse the verified package/AOT outputs; forking package again imports generated proxies into architecture tests.
             mvn -B -ntp -f "$MODULE/pom.xml" "-P$profiles" native:compile-no-fork native:test 2>&1 | tee -a target/build-reports/verify.log
@@ -284,13 +286,13 @@ jobs:
       - name: Scan source, dependency bytes and configuration
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
-          version: v0.70.0
+          version: v0.76.2
           scan-type: fs
           scan-ref: .
           scanners: vuln,secret,misconfig
           format: json
           output: target/build-reports/source-scan.json
-          severity: HIGH,CRITICAL
+          severity: MEDIUM,HIGH,CRITICAL
           exit-code: '1'
       - name: Scan every platform of the exact image digest
         env:
@@ -306,11 +308,23 @@ jobs:
           reports=()
           for platform in "${platforms[@]}"; do
             report="target/build-reports/image-${platform//\//-}.json"
-            trivy image --platform "$platform" --exit-code 1 --severity HIGH,CRITICAL --format json \
+            trivy image --platform "$platform" --exit-code 1 --severity MEDIUM,HIGH,CRITICAL --format json \
               --output "$report" "$IMAGE"
             reports+=("$report")
           done
           jq -s . "${reports[@]}" > target/build-reports/image-scan.json
+      # Exact immutable internal release: evaluate code and schema cannot come from the PR.
+      - name: Complete vulnerability evidence and protected risk deadlines
+        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
+        uses: edgarrth/java-framework-custom/.github/actions/check-vulnerabilities@axiz-workflows-v2.0.0 # x-release-please-version
+        env:
+          TRIVY_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
+        with:
+          mode: service
+          scope: ${{ inputs.service }}
+          metadata: ${{ steps.inputs.outputs.metadata }}
+          output: target/build-reports/vulnerability-policy
       - name: Record service content, platform digests and evidence
         id: bundle
         env:

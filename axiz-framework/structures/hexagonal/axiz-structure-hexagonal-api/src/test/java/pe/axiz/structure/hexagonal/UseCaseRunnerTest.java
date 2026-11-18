@@ -44,6 +44,27 @@ class UseCaseRunnerTest {
   }
 
   @Test
+  void explicitUseCaseAndNoTransactionPreserveResultWithoutRetainingEvents() {
+    UseCaseRunner runner = new UseCaseRunner(UseCaseTransaction.none(), DomainEventSink.discard());
+    assertEquals("accepted:42", runner.run(input -> "accepted:" + input, 42));
+    assertEquals(
+        "p4",
+        runner.run(
+            false,
+            () -> {
+              Payment payment = new Payment("p4");
+              DomainEvents.collect(payment);
+              assertEquals(
+                  List.of(new PaymentCreated("e-p4", Instant.EPOCH, "p4")), DomainEvents.drain());
+              assertTrue(
+                  DomainEvents.drain().isEmpty(),
+                  "draining must never publish the same event twice");
+              return payment.id();
+            }));
+    assertTrue(DomainEvents.drain().isEmpty());
+  }
+
+  @Test
   void eventsArePublishedAfterCommitAndDroppedOnFailure() {
     RecordingTx tx = new RecordingTx();
     List<String> published = new ArrayList<>();

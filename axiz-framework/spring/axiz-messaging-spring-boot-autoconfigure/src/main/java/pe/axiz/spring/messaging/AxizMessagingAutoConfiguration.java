@@ -43,9 +43,7 @@ import tools.jackson.databind.json.JsonMapper;
 @AutoConfiguration(
     afterName = {
       "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration",
-      "pe.axiz.spring.inbox.AxizInboxAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration"
+      "pe.axiz.spring.inbox.AxizInboxAutoConfiguration"
     })
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)
 @EnableConfigurationProperties(AxizMessagingProperties.class)

@@ -8,6 +8,11 @@ import org.jspecify.annotations.Nullable;
 /** Persistence port of the outbox. {@link #append} runs inside the business transaction. */
 public interface OutboxStore {
 
+  /** Resource identity used to ensure that audit heads and records share a transaction. */
+  default @Nullable Object transactionResource() {
+    return null;
+  }
+
   void append(OutboxRecord record);
 
   /**

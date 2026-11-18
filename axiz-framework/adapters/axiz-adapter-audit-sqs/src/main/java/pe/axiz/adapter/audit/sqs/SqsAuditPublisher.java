@@ -1,22 +1,26 @@
 package pe.axiz.adapter.audit.sqs;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.audit.AuditEvent;
+import pe.axiz.core.audit.AuditEventJson;
 import pe.axiz.core.audit.AuditPublishException;
 import pe.axiz.core.audit.AuditPublisher;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonWriter;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 /**
  * Publishes audit events to an Amazon SQS queue. For FIFO queues the group is the resource and the
- * deduplication id is the event id (deterministic, never random).
+ * deduplication id identifies the sealed attempt (stable for retransmission).
  */
 public final class SqsAuditPublisher implements AuditPublisher {
 
@@ -41,10 +45,17 @@ public final class SqsAuditPublisher implements AuditPublisher {
   @Override
   public void publish(AuditEvent event) {
     try {
-      sqs.sendMessage(request(queueUrl, fifo, event));
+      requireAcknowledgement(sqs.sendMessage(request(queueUrl, fifo, event)));
     } catch (SdkException e) {
       throw new AuditPublishException("Audit event " + event.id() + " not accepted by SQS", e);
     }
+  }
+
+  static void requireAcknowledgement(@Nullable SendMessageResponse response) {
+    if (response == null || response.messageId() == null || response.messageId().isBlank())
+      throw new AuditPublishException(
+          "SQS did not return an acceptance identifier",
+          new IllegalStateException("Missing durable acknowledgement"));
   }
 
   static SendMessageRequest request(String queueUrl, boolean fifo, AuditEvent event) {
@@ -54,12 +65,12 @@ public final class SqsAuditPublisher implements AuditPublisher {
             .messageBody(cloudEvent(event))
             .messageAttributes(
                 Map.of(
-                    "ce_id", attribute(event.id()),
+                    "ce_id", attribute(event.deliveryId()),
                     "ce_type", attribute(AuditEvent.CLOUD_EVENT_TYPE)));
     if (fifo) {
       String group =
           event.resourceType() + ":" + (event.resourceId() == null ? "none" : event.resourceId());
-      request.messageGroupId(group).messageDeduplicationId(event.id());
+      request.messageGroupId(group).messageDeduplicationId(event.deliveryId());
     }
     return request.build();
   }
@@ -68,8 +79,11 @@ public final class SqsAuditPublisher implements AuditPublisher {
   static String cloudEvent(AuditEvent event) {
     Map<String, @Nullable Object> m = new LinkedHashMap<>(event.cloudEventAttributes());
     m.put("datacontenttype", "application/json");
-    m.put("data", event.toMap());
-    return JsonWriter.write(m);
+    m.put(
+        "data_base64",
+        Base64.getEncoder()
+            .encodeToString(AuditEventJson.write(event).getBytes(StandardCharsets.UTF_8)));
+    return JsonWriter.writeCanonical(m);
   }
 
   private static MessageAttributeValue attribute(String value) {

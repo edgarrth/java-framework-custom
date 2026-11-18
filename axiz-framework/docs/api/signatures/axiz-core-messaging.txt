@@ -118,7 +118,7 @@ public static final java.lang.String TRACESTATE = "tracestate";
 }
 
 public final class pe.axiz.core.messaging.EventFactory {
-public pe.axiz.core.messaging.EventEnvelope create(java.lang.String, java.lang.String, java.lang.String, java.lang.Object, pe.axiz.core.commons.RequestMetadata);
+public pe.axiz.core.messaging.EventEnvelope create(java.lang.String, java.lang.String, java.lang.String, java.lang.Object, pe.axiz.core.context.RequestMetadata);
 public pe.axiz.core.messaging.EventFactory(java.lang.String, java.lang.String, pe.axiz.core.messaging.PayloadCodec, pe.axiz.core.id.IdGenerator, java.time.Clock);
 }
 

@@ -7,11 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.SqlStates;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 /**
  * Counter table on Aurora PostgreSQL: {@code UPDATE ... SET value = value + ?} locks the row, so

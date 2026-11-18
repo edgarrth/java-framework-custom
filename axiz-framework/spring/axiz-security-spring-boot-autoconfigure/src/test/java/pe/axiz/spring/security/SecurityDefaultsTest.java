@@ -6,13 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +42,13 @@ import org.springframework.security.oauth2.server.resource.InvalidBearerTokenExc
 import org.springframework.security.web.server.WebFilterChainProxy;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.security.ClaimMapping;
 import pe.axiz.core.security.ClaimsMapper;
 import pe.axiz.core.security.InMemoryAsyncRateLimiter;
+import pe.axiz.core.security.InMemoryRateLimiter;
 import pe.axiz.core.security.IssuerPolicy;
 import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
@@ -316,6 +320,116 @@ class SecurityDefaultsTest {
 
   // --- rate limits -------------------------------------------------------------------------------
 
+  @Test
+  void bothSecurityChainsAuthorizeBeforeConsumingAnAnonymousQuota() {
+    String[] quota = {
+      "axiz.security.public-paths[0]=/public/**",
+      "axiz.security.rate-limit.enabled=true",
+      "axiz.security.rate-limit.store=memory",
+      "axiz.config.environment=test",
+      "axiz.security.rate-limit.rules[0].name=public",
+      "axiz.security.rate-limit.rules[0].paths[0]=/**",
+      "axiz.security.rate-limit.rules[0].key=anonymous-ip",
+      "axiz.security.rate-limit.rules[0].fail-open=false"
+    };
+    var servletKeys = new ArrayList<String>();
+    servlet
+        .withPropertyValues(quota)
+        .withBean(
+            RateLimiter.class,
+            () ->
+                (key, limit, window) -> {
+                  servletKeys.add(key);
+                  return new RateLimiter.Decision(true, 1, Duration.ZERO);
+                })
+        .run(
+            ctx -> {
+              assertThat(ctx).hasNotFailed();
+              Filter chain = ctx.getBean("springSecurityFilterChain", Filter.class);
+              assertEquals(401, call(chain, "/private", null));
+              assertTrue(servletKeys.isEmpty());
+              assertEquals(0, call(chain, "/public/status", null));
+              assertEquals(1, servletKeys.size());
+            });
+    var reactiveKeys = new ArrayList<String>();
+    reactive
+        .withPropertyValues(quota)
+        .withBean(
+            AsyncRateLimiter.class,
+            () ->
+                (key, limit, window, failOpen) -> {
+                  reactiveKeys.add(key);
+                  return CompletableFuture.completedFuture(
+                      new RateLimiter.Decision(true, 1, Duration.ZERO));
+                })
+        .run(
+            ctx -> {
+              assertThat(ctx).hasNotFailed();
+              WebFilter chain = ctx.getBean(WebFilterChainProxy.class);
+              assertEquals(401, exchange(chain, "/private"));
+              assertTrue(reactiveKeys.isEmpty());
+              var request =
+                  MockServerWebExchange.from(
+                      MockServerHttpRequest.get("/public/status")
+                          .remoteAddress(new InetSocketAddress("192.0.2.1", 1234)));
+              var reached = new AtomicInteger();
+              chain.filter(request, e -> Mono.fromRunnable(reached::incrementAndGet)).block();
+              assertEquals(1, reached.get());
+              assertEquals(1, reactiveKeys.size());
+            });
+  }
+
+  @Test
+  void anonymousGatewayLimitsUseConnectionAddressesAndIgnoreForwardedHeaders() throws Exception {
+    var rules =
+        new RateLimitRules(
+            List.of(
+                new AxizSecurityProperties.Rule(
+                    "callers", List.of("/public/**"), 1, Duration.ofMinutes(1), "client", false),
+                new AxizSecurityProperties.Rule(
+                    "anonymous",
+                    List.of("/public/**"),
+                    1,
+                    Duration.ofMinutes(1),
+                    "anonymous-ip",
+                    false)));
+    var sync =
+        new RateLimitFilter(
+            new InMemoryRateLimiter(Clock.systemUTC()), rules, new SecurityProblems(null));
+    var async =
+        new RateLimitWebFilter(
+            new InMemoryAsyncRateLimiter(Clock.systemUTC()), rules, new SecurityProblems(null));
+    SecurityContextHolder.clearContext();
+    AtomicInteger servletCalls = new AtomicInteger();
+    AtomicInteger reactiveCalls = new AtomicInteger();
+    for (int i = 0; i < 3; i++) {
+      String address = i < 2 ? "192.0.2.1" : "192.0.2.2";
+      var request = new MockHttpServletRequest("GET", "/public/status");
+      request.setRemoteAddr(address);
+      request.addHeader("X-Forwarded-For", "198.51.100." + i);
+      var response = new MockHttpServletResponse();
+      sync.doFilter(request, response, (q, r) -> servletCalls.incrementAndGet());
+      assertEquals(i == 1 ? 429 : 200, response.getStatus());
+      var exchange =
+          MockServerWebExchange.from(
+              MockServerHttpRequest.get("/public/status")
+                  .remoteAddress(new InetSocketAddress(address, 1234))
+                  .header("X-Forwarded-For", "198.51.100." + i));
+      async
+          .filter(exchange, e -> Mono.fromRunnable(reactiveCalls::incrementAndGet))
+          .block(Duration.ofSeconds(2));
+      if (i == 1) assertEquals(429, exchange.getResponse().getStatusCode().value());
+    }
+    assertEquals(2, servletCalls.get());
+    assertEquals(2, reactiveCalls.get());
+    var missingAddress = MockServerWebExchange.from(MockServerHttpRequest.get("/public/status"));
+    async
+        .filter(
+            missingAddress, e -> Mono.error(new AssertionError("Missing address bypassed quota")))
+        .block(Duration.ofSeconds(2));
+    assertEquals(503, missingAddress.getResponse().getStatusCode().value());
+  }
+
   private static RateLimitRules oneRequestPerMinute(Boolean failOpen) {
     return new RateLimitRules(
         List.of(
@@ -425,28 +539,36 @@ class SecurityDefaultsTest {
   @Test
   void anonymousPathsCollectEverySwitch() {
     AxizSecurityProperties defaults =
-        new AxizSecurityProperties(
-            List.of(),
-            List.of("RS256"),
-            Duration.ofSeconds(30),
-            null,
-            List.of(),
-            false,
-            false,
-            "SCOPE_actuator",
-            null);
+        AxizSecurityProperties.builder()
+            .issuers(List.of())
+            .algorithms(List.of("RS256"))
+            .clockSkew(Duration.ofSeconds(30))
+            .claims(AxizSecurityProperties.Claims.builder().build())
+            .publicPaths(List.of())
+            .publicApiDocs(false)
+            .publicInfo(false)
+            .actuatorAuthority("SCOPE_actuator")
+            .rateLimit(new AxizSecurityProperties.RateLimit(false, null, List.of()))
+            .authorization(new AxizSecurityProperties.Authorization("fail", List.of()))
+            .jwks(new AxizSecurityProperties.Jwks(Duration.ofSeconds(2), Duration.ofSeconds(3)))
+            .allowHttpJwksInCluster(false)
+            .build();
     assertTrue(defaults.anonymousPaths("/actuator").isEmpty());
     AxizSecurityProperties open =
-        new AxizSecurityProperties(
-            List.of(),
-            List.of("RS256"),
-            Duration.ofSeconds(30),
-            null,
-            List.of("/catalog/**"),
-            true,
-            true,
-            "SCOPE_actuator",
-            null);
+        AxizSecurityProperties.builder()
+            .issuers(List.of())
+            .algorithms(List.of("RS256"))
+            .clockSkew(Duration.ofSeconds(30))
+            .claims(AxizSecurityProperties.Claims.builder().build())
+            .publicPaths(List.of("/catalog/**"))
+            .publicApiDocs(true)
+            .publicInfo(true)
+            .actuatorAuthority("SCOPE_actuator")
+            .rateLimit(new AxizSecurityProperties.RateLimit(false, null, List.of()))
+            .authorization(new AxizSecurityProperties.Authorization("fail", List.of()))
+            .jwks(new AxizSecurityProperties.Jwks(Duration.ofSeconds(2), Duration.ofSeconds(3)))
+            .allowHttpJwksInCluster(false)
+            .build();
     assertEquals(
         List.of(
             "/catalog/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/manage/info"),
@@ -461,9 +583,15 @@ class SecurityDefaultsTest {
         AxizSecurityAutoConfiguration.issuerPolicy(
             List.of(
                 new AxizSecurityProperties.Issuer(
-                    ISSUER, "https://idp.example.com/realms/axiz/certs", List.of("payments-api")),
+                    ISSUER,
+                    "https://idp.example.com/realms/axiz/certs",
+                    List.of("payments-api"),
+                    JwtAccessProfile.COMPATIBLE),
                 new AxizSecurityProperties.Issuer(
-                    "https://idp.example.com/realms/partners", null, List.of("payments-api"))));
+                    "https://idp.example.com/realms/partners",
+                    null,
+                    List.of("payments-api"),
+                    JwtAccessProfile.COMPATIBLE)));
     TrustedIssuerDecoders decoders =
         new TrustedIssuerDecoders(policy, List.of("RS256", "ES256"), Duration.ofSeconds(30));
     assertThat(decoders.servlet(ISSUER)).isSameAs(decoders.servlet(ISSUER));
@@ -582,5 +710,19 @@ class SecurityDefaultsTest {
     }
     servlet.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
     reactive.withPropertyValues(base).run(ctx -> assertThat(ctx).hasFailed());
+
+    // A new integration supplies a port; the neutral base has no provider enum to extend.
+    var custom = mock(RateLimiter.class);
+    servlet
+        .withPropertyValues(base)
+        .withPropertyValues("axiz.security.rate-limit.store=application-provider")
+        .withBean(RateLimiter.class, () -> custom)
+        .run(ctx -> assertThat(ctx.getBean(RateLimiter.class)).isSameAs(custom));
+    var nativeCustom = mock(AsyncRateLimiter.class);
+    reactive
+        .withPropertyValues(base)
+        .withPropertyValues("axiz.security.rate-limit.store=application-provider")
+        .withBean(AsyncRateLimiter.class, () -> nativeCustom)
+        .run(ctx -> assertThat(ctx.getBean(AsyncRateLimiter.class)).isSameAs(nativeCustom));
   }
 }

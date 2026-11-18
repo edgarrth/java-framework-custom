@@ -39,9 +39,10 @@ import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.kit.r2dbc.ReactiveSql;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.inbox.AxizInboxAutoConfiguration;
-import pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration;
+import pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 import pe.axiz.spring.messaging.ReactiveTypedEventHandler;
 import pe.axiz.spring.r2dbc.DatabaseClientReactiveSql;
@@ -54,7 +55,7 @@ import reactor.core.scheduler.Schedulers;
 @ExtendWith(BlockHoundExtension.class)
 @Timeout(60)
 class PostgresInboxAtomicityIT {
-  private static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(Docker.POSTGRES);
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static PGSimpleDataSource source;
   private static ConnectionFactory factory;
   private Handler handler;
@@ -150,15 +151,16 @@ class PostgresInboxAtomicityIT {
   }
 
   private EventEnvelope event() {
-    return new EventEnvelope(
-        "one",
-        "urn:source",
-        "atomic.created",
-        Instant.now(),
-        null,
-        "application/json",
-        "\"value\"".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id("one")
+        .source("urn:source")
+        .type("atomic.created")
+        .time(Instant.now())
+        .subject(null)
+        .dataContentType("application/json")
+        .data("\"value\"".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   private int count(String table) throws Exception {
@@ -179,7 +181,8 @@ class PostgresInboxAtomicityIT {
               try (var connection = source.getConnection();
                   var statement = connection.createStatement()) {
                 statement.execute(
-                    "ALTER TABLE axiz_inbox ADD CONSTRAINT reject_processed CHECK(status <> 'PROCESSED')");
+                    "ALTER TABLE axiz_inbox ADD CONSTRAINT reject_processed CHECK(status <>"
+                        + " 'PROCESSED')");
               }
               assertEquals(
                   DeliveryDecision.RETRY, ctx.getBean(EventDispatcher.class).dispatch(event(), 1));

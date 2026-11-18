@@ -17,6 +17,9 @@ def read_document(path):
 
 def workflow_files(root):
     for path in root.rglob("*"):
+        # Local audit evidence contains generated copies; executable local calls remain checked.
+        if path.relative_to(root).parts[0] == "_validacion-framework-axiz":
+            continue
         if not path.is_file() or any(p in IGNORED for p in path.parts):
             continue
         if path.name.endswith((".yaml", ".yml", ".yaml.mustache", ".yml.mustache")):

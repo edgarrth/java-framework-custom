@@ -81,8 +81,14 @@ public final class IdempotencyStoreContract {
   }
 
   private static IdempotencyRecord start(String key, String owner, MutableClock clock) {
-    return new IdempotencyRecord(
-        key, "fp", IdempotencyRecord.Status.IN_PROGRESS, owner, null, clock.instant().plus(LOCK));
+    return IdempotencyRecord.builder(
+            key, "fp", clock.instant().plus(LOCK), clock.instant().plus(LOCK))
+        .status(IdempotencyRecord.Status.IN_PROGRESS)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(0)
+        .failure(null)
+        .build();
   }
 
   private static StoredResponse response(String body) {
@@ -173,16 +179,14 @@ public final class IdempotencyStoreContract {
   }
 
   private static IdempotencyRecord retained(String key, String owner, MutableClock clock) {
-    return new IdempotencyRecord(
-        key,
-        "fp",
-        IdempotencyRecord.Status.IN_PROGRESS,
-        owner,
-        null,
-        clock.instant().plus(LOCK),
-        clock.instant().plus(RETENTION),
-        0,
-        null);
+    return IdempotencyRecord.builder(
+            key, "fp", clock.instant().plus(LOCK), clock.instant().plus(RETENTION))
+        .status(IdempotencyRecord.Status.IN_PROGRESS)
+        .owner(owner)
+        .response(null)
+        .resolutionVersion(0)
+        .failure(null)
+        .build();
   }
 
   private static void retainedLease(Backend backend) {

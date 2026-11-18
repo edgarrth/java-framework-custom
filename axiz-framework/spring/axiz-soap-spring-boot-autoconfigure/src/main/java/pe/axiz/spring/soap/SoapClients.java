@@ -6,35 +6,36 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import java.net.http.HttpClient;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import pe.axiz.adapter.http.jdk.JdkSoapTransport;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
-import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.soap.SoapClient;
 import pe.axiz.core.soap.SoapEnvelope;
 import pe.axiz.core.soap.WsSecurity;
 
 /**
  * Named SOAP clients. Each call is a CLIENT observation ({@code axiz.soap.client}) with the logical
- * system and SOAP action; payloads are logged masked by the core client.
+ * system and SOAP action. Payloads are excluded from diagnostics. Closing the factory closes all
+ * its owned transports and prevents new requests.
  */
-public class SoapClients {
+public class SoapClients implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(SoapClients.class);
 
   private final AxizSoapProperties properties;
   private final @Nullable SecretResolver secrets;
-  private final ObjectMasker masker;
 
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -45,7 +46,9 @@ public class SoapClients {
 
   private final Clock clock;
   private final TransportSecurityPolicy transportSecurity;
-  private final Map<String, SoapClient> clients = new ConcurrentHashMap<>();
+  private final Map<String, SoapClient> clients = new HashMap<>();
+  private final ArrayList<HttpClient> transports = new ArrayList<>();
+  private boolean closed;
 
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",
@@ -55,13 +58,11 @@ public class SoapClients {
   public SoapClients(
       AxizSoapProperties properties,
       @Nullable SecretResolver secrets,
-      ObjectMasker masker,
       ObservationRegistry observations,
       Clock clock,
       TransportSecurityPolicy transportSecurity) {
     this.properties = Objects.requireNonNull(properties);
     this.secrets = secrets;
-    this.masker = Objects.requireNonNull(masker);
     this.observations = Objects.requireNonNull(observations);
     this.clock = Objects.requireNonNull(clock);
     this.transportSecurity = Objects.requireNonNull(transportSecurity);
@@ -75,12 +76,39 @@ public class SoapClients {
 
   /** Calls an operation of a configured client and returns the response payload element. */
   public Element call(String client, String soapAction, String payloadXml) {
-    SoapClient c = clients.computeIfAbsent(client, this::create);
+    SoapClient c = client(client);
     return Observation.createNotStarted(AxizObservations.SOAP_CLIENT, observations)
         .contextualName("soap " + client)
         .lowCardinalityKeyValue(KeyValue.of(AxizAttributes.CLIENT, client))
         .lowCardinalityKeyValue(KeyValue.of(AxizAttributes.OPERATION, soapAction))
         .observe(() -> c.call(soapAction, payloadXml));
+  }
+
+  private synchronized SoapClient client(String name) {
+    if (closed) throw new IllegalStateException("SOAP clients are closed");
+    return clients.computeIfAbsent(name, this::create);
+  }
+
+  @Override
+  public void close() {
+    ArrayList<HttpClient> owned;
+    synchronized (this) {
+      if (closed) return;
+      closed = true;
+      owned = new ArrayList<>(transports);
+      transports.clear();
+      clients.clear();
+    }
+    RuntimeException failure = null;
+    for (var http : owned) {
+      try {
+        http.close();
+      } catch (RuntimeException cleanup) {
+        if (failure == null) failure = cleanup;
+        else failure.addSuppressed(cleanup);
+      }
+    }
+    if (failure != null) throw failure;
   }
 
   private SoapClient create(String name) {
@@ -114,21 +142,37 @@ public class SoapClients {
         throw new IllegalStateException(
             prefix + "password-ref needs a SecretResolver: add axiz-secrets-spring-boot-starter");
       }
-      char[] password =
-          s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref)).revealChars();
-      credentials = new SoapEnvelope.Credentials(cfg.username(), password, mode);
-      Arrays.fill(password, '\0');
+      try (var secret = s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref))) {
+        char[] password = secret.revealChars();
+        try {
+          credentials = new SoapEnvelope.Credentials(cfg.username(), password, mode);
+        } finally {
+          Arrays.fill(password, '\0');
+        }
+      }
     }
     HttpClient http = HttpClient.newBuilder().connectTimeout(cfg.connectTimeout()).build();
-    return new SoapClient(
-        name,
-        http,
-        cfg.endpoint(),
-        cfg.version(),
-        cfg.timeout(),
-        credentials,
-        masker,
-        clock,
-        transportSecurity);
+    try {
+      SoapClient client =
+          SoapClient.builder()
+              .system(name)
+              .transport(new JdkSoapTransport(http))
+              .endpoint(cfg.endpoint())
+              .version(cfg.version())
+              .timeout(cfg.timeout())
+              .credentials(credentials)
+              .clock(clock)
+              .transportSecurity(transportSecurity)
+              .build();
+      transports.add(http);
+      return client;
+    } catch (RuntimeException | Error failure) {
+      try {
+        http.close();
+      } catch (RuntimeException cleanup) {
+        failure.addSuppressed(cleanup);
+      }
+      throw failure;
+    }
   }
 }

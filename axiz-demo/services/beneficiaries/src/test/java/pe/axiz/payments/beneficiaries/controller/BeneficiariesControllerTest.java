@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;

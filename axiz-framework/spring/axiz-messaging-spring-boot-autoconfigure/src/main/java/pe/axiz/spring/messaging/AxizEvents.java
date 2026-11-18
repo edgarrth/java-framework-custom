@@ -2,7 +2,7 @@ package pe.axiz.spring.messaging;
 
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;

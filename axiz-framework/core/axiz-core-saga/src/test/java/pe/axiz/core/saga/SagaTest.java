@@ -183,9 +183,27 @@ class SagaTest {
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
     // simulate a crash after step 1 was persisted
     store.create(
-        new SagaState("s-4", "payment", SagaStatus.RUNNING, 0, "", null, Instant.EPOCH, 0));
+        SagaState.builder()
+            .sagaId("s-4")
+            .sagaName("payment")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(0)
+            .context("")
+            .error(null)
+            .updatedAt(Instant.EPOCH)
+            .version(0)
+            .build());
     store.update(
-        new SagaState("s-4", "payment", SagaStatus.RUNNING, 1, "reserve", null, Instant.EPOCH, 1));
+        SagaState.builder()
+            .sagaId("s-4")
+            .sagaName("payment")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(1)
+            .context("reserve")
+            .error(null)
+            .updatedAt(Instant.EPOCH)
+            .version(1)
+            .build());
     assertEquals(1, store.findStale(Instant.now(), 10).size());
     SagaResult<List<String>> r = orchestrator(store).resume(def, new Codec(), "s-4");
     assertTrue(r.completed());
@@ -203,8 +221,16 @@ class SagaTest {
         SagaConcurrencyException.class,
         () ->
             store.update(
-                new SagaState(
-                    "s-4", "payment", SagaStatus.RUNNING, 1, "", null, Instant.EPOCH, 1)));
+                SagaState.builder()
+                    .sagaId("s-4")
+                    .sagaName("payment")
+                    .status(SagaStatus.RUNNING)
+                    .stepIndex(1)
+                    .context("")
+                    .error(null)
+                    .updatedAt(Instant.EPOCH)
+                    .version(1)
+                    .build()));
     assertThrows(
         IllegalArgumentException.class, () -> new SagaDefinition<List<String>>("x", List.of()));
   }
@@ -216,9 +242,27 @@ class SagaTest {
     SagaDefinition<List<String>> def =
         new SagaDefinition<>("payment", List.of(new Step("reserve", log), new Step("send", log)));
     store.create(
-        new SagaState("s-5", "payment", SagaStatus.RUNNING, 1, "reserve", null, Instant.EPOCH, 0));
+        SagaState.builder()
+            .sagaId("s-5")
+            .sagaName("payment")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(1)
+            .context("reserve")
+            .error(null)
+            .updatedAt(Instant.EPOCH)
+            .version(0)
+            .build());
     store.create(
-        new SagaState("s-6", "unknown", SagaStatus.RUNNING, 0, "", null, Instant.EPOCH, 0));
+        SagaState.builder()
+            .sagaId("s-6")
+            .sagaName("unknown")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(0)
+            .context("")
+            .error(null)
+            .updatedAt(Instant.EPOCH)
+            .version(0)
+            .build());
 
     SagaRecovery recovery =
         new SagaRecovery(store, orchestrator(store), Clock.systemUTC()).register(def, new Codec());

@@ -29,7 +29,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Documented
 @Conditional(ConditionalOnListProperty.OnListPropertyCondition.class)
-@interface ConditionalOnListProperty {
+public @interface ConditionalOnListProperty {
 
   /** Name of the list property. */
   String value();

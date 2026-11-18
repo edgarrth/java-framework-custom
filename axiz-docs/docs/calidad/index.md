@@ -20,11 +20,11 @@ las referencian: un servicio no copia archivos de configuración.
 | Bytecode y seguridad | SpotBugs + FindSecBugs | sin hallazgos de prioridad alta |
 | Modernización | OpenRewrite (análisis estático) en modo informe en cada PR | informativo |
 | Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | ≥ 80 % líneas, ≥ 70 % ramas |
-| Calidad de pruebas | PIT en la capa 1 | ≥ 60 % de mutantes eliminados |
+| Calidad de pruebas | PIT en la capa 1 | ≥ 81 % de mutantes eliminados |
 | Integración | Failsafe + Testcontainers + LocalStack; BlockHound en reactivo | obligatorio por starter |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo | nocturno en verde |
 | SAST | SonarQube (quality gate) y Semgrep (reglas públicas y de axiz) | sin bloqueantes ni críticos |
-| Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | falla con HIGH/CRITICAL sin excepción aprobada |
+| Vulnerabilidades | Trivy sobre dependencias (SBOM), filesystem e imagen | bloquea siempre MEDIUM/HIGH/CRITICAL, incluidas dependencias de desarrollo |
 | SBOM y firma | CycloneDX por artefacto; imágenes firmadas con cosign y SBOM atestado | en cada imagen |
 | Secretos | gitleaks en pre-commit (`.pre-commit-config.yaml`) y en cada PR | cero hallazgos |
 | Licencias | dependency review con licencias denegadas (AGPL, GPL-3.0, SSPL) | falla el PR |

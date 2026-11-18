@@ -20,6 +20,7 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.pattern.PathPattern;
 import org.springframework.web.util.pattern.PathPatternParser;
+import pe.axiz.core.api.HttpPayloadPolicy;
 import pe.axiz.core.logging.HttpLogFormatter;
 
 /**
@@ -34,15 +35,20 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
   private final HttpLogFormatter formatter;
   private final AxizLoggingProperties.Http settings;
   private final List<PathPattern> excluded;
+  private final List<HttpPayloadPolicy> payloadPolicies;
 
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",
       justification =
           "Rejects invalid construction; no finalizer or publication of this. The overridable "
               + "Spring SPI remains extensible; this constructor acquires no external resource.")
-  public HttpLoggingFilter(HttpLogFormatter formatter, AxizLoggingProperties.Http settings) {
+  public HttpLoggingFilter(
+      HttpLogFormatter formatter,
+      AxizLoggingProperties.Http settings,
+      List<HttpPayloadPolicy> payloadPolicies) {
     this.formatter = Objects.requireNonNull(formatter);
     this.settings = Objects.requireNonNull(settings);
+    this.payloadPolicies = List.copyOf(payloadPolicies);
     this.excluded =
         settings.excludedPaths().stream().map(PathPatternParser.defaultInstance::parse).toList();
   }
@@ -60,10 +66,13 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     long start = System.nanoTime();
+    String path = request.getRequestURI().substring(request.getContextPath().length());
+    boolean capture =
+        settings.bodies() && payloadPolicies.stream().allMatch(p -> p.permitsCapture(path));
     HttpServletRequest req =
-        settings.bodies() ? new BoundedRequest(request, settings.maxMaskedBodyLength()) : request;
+        capture ? new BoundedRequest(request, settings.maxMaskedBodyLength()) : request;
     BoundedCaptureResponseWrapper res =
-        settings.bodies()
+        capture
             ? new BoundedCaptureResponseWrapper(request, response, settings.maxMaskedBodyLength())
             : null;
     try {
@@ -73,7 +82,7 @@ public class HttpLoggingFilter extends OncePerRequestFilter implements Ordered {
       long ms = (System.nanoTime() - start) / 1_000_000;
       Map<String, String> headers =
           formatter.headers(Collections.list(request.getHeaderNames()), request::getHeader);
-      if (settings.bodies() && res != null && !request.isAsyncStarted()) {
+      if (capture && res != null && !request.isAsyncStarted()) {
         BoundedRequest kept = (BoundedRequest) req;
         String in = new String(kept.getContentAsByteArray(), StandardCharsets.UTF_8);
         boolean outComplete = res.eligible() && res.complete();

@@ -1,9 +1,10 @@
 package pe.axiz.adapter.crypto.kms;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.CompletionStage;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.AsyncDataKeyProvider;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
@@ -29,22 +30,21 @@ public final class KmsAsyncDataKeyProvider implements AsyncDataKeyProvider {
 
   @Override
   public CompletionStage<DataKey> generate(String context) {
-    return failure(
-        Stages.map(
-            Stages.call(() -> kms.generateDataKey(requests.generate(context))),
-            response ->
-                new DataKey(
-                    response.plaintext().asByteArray(), response.ciphertextBlob().asByteArray())),
-        "GenerateDataKey");
+    return Stages.consume(
+        failure(
+            Stages.call(() -> kms.generateDataKey(requests.generate(context))), "GenerateDataKey"),
+        KmsRequests::dataKey,
+        response -> {},
+        DataKey::close);
   }
 
   @Override
   public CompletionStage<byte[]> decrypt(byte[] encryptedKey, String context) {
-    return failure(
-        Stages.map(
-            Stages.call(() -> kms.decrypt(requests.decrypt(encryptedKey, context))),
-            response -> response.plaintext().asByteArray()),
-        "Decrypt");
+    return Stages.consume(
+        failure(Stages.call(() -> kms.decrypt(requests.decrypt(encryptedKey, context))), "Decrypt"),
+        response -> response.plaintext().asByteArray(),
+        response -> {},
+        bytes -> Arrays.fill(bytes, (byte) 0));
   }
 
   private static <T> CompletionStage<T> failure(CompletionStage<T> work, String operation) {

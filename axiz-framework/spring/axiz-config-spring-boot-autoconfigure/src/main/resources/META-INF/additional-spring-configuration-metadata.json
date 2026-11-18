@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.config.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables config auto-configuration."
+    }
+  ]
+}

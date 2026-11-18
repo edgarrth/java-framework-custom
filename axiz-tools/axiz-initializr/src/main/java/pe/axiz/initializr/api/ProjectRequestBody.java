@@ -56,23 +56,29 @@ public record ProjectRequestBody(
         catalog
             .archetype(archetype)
             .orElseThrow(() -> new IllegalArgumentException("Unknown archetype " + archetype));
-    return new ProjectRequest(
-        name,
-        groupId,
-        basePackage,
-        description == null ? "" : description,
-        a.name(),
-        structure == null || structure.isBlank()
-            ? a.defaultStructure()
-            : Structure.of(structure.toLowerCase(Locale.ROOT)),
-        stack == null || stack.isBlank()
-            ? a.defaultStack()
-            : Stack.of(stack.toLowerCase(Locale.ROOT)),
-        persistence == null || persistence.isBlank() ? a.defaultPersistence() : persistence,
-        capabilities == null ? List.of() : capabilities,
-        openApi,
-        asyncApi,
-        frameworkVersion == null ? defaultVersion : frameworkVersion,
-        (extensions == null ? List.<String>of() : extensions).stream().map(Extension::of).toList());
+    return ProjectRequest.builder()
+        .name(name)
+        .groupId(groupId)
+        .basePackage(basePackage)
+        .description(description == null ? "" : description)
+        .archetype(a.name())
+        .structure(
+            structure == null || structure.isBlank()
+                ? a.defaultStructure()
+                : Structure.of(structure.toLowerCase(Locale.ROOT)))
+        .stack(
+            stack == null || stack.isBlank()
+                ? a.defaultStack()
+                : Stack.of(stack.toLowerCase(Locale.ROOT)))
+        .persistence(
+            persistence == null || persistence.isBlank() ? a.defaultPersistence() : persistence)
+        .capabilities(capabilities == null ? List.of() : capabilities)
+        .openApi(openApi)
+        .asyncApi(asyncApi)
+        .frameworkVersion(frameworkVersion == null ? defaultVersion : frameworkVersion)
+        .extensions(
+            (extensions == null ? List.<String>of() : extensions)
+                .stream().map(Extension::of).toList())
+        .build();
   }
 }

@@ -39,6 +39,15 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   @Override
+  public Mono<Boolean> isTransactionActive() {
+    return Mono.deferContextual(
+        context -> {
+          Connection connection = shared(context);
+          return Mono.just(connection != null && !connection.isAutoCommit());
+        });
+  }
+
+  @Override
   public Mono<Long> update(String sql, SqlParams params) {
     NamedSql named = NamedSql.parse(sql);
     return withConnection(

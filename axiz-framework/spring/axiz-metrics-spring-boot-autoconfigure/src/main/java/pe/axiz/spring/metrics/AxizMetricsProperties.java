@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -78,6 +79,84 @@ public record AxizMetricsProperties(
       amountSlos = List.copyOf(amountSlos);
       durationSlos = List.copyOf(durationSlos);
       valueSlos = List.copyOf(valueSlos);
+    }
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private int maxEvents = 0;
+    private int maxValuesPerTag = 0;
+    private @Nullable Set<String> channels = Set.of();
+    private @Nullable Map<String, Tag> standardTags = Map.of();
+    private @Nullable Map<String, Tag> tags = Map.of();
+    private @Nullable Map<String, Event> events = Map.of();
+    private boolean percentileHistograms = false;
+    private @Nullable String domain = null;
+    private @Nullable String version = null;
+
+    private Builder() {}
+
+    public Builder maxEvents(int value) {
+      this.maxEvents = value;
+      return this;
+    }
+
+    public Builder maxValuesPerTag(int value) {
+      this.maxValuesPerTag = value;
+      return this;
+    }
+
+    public Builder channels(Set<String> value) {
+      this.channels = Set.copyOf(value);
+      return this;
+    }
+
+    public Builder standardTags(Map<String, Tag> value) {
+      this.standardTags = Map.copyOf(value);
+      return this;
+    }
+
+    public Builder tags(Map<String, Tag> value) {
+      this.tags = Map.copyOf(value);
+      return this;
+    }
+
+    public Builder events(Map<String, Event> value) {
+      this.events = Map.copyOf(value);
+      return this;
+    }
+
+    public Builder percentileHistograms(boolean value) {
+      this.percentileHistograms = value;
+      return this;
+    }
+
+    public Builder domain(@Nullable String value) {
+      this.domain = value;
+      return this;
+    }
+
+    public Builder version(@Nullable String value) {
+      this.version = value;
+      return this;
+    }
+
+    public AxizMetricsProperties build() {
+      return new AxizMetricsProperties(
+          maxEvents,
+          maxValuesPerTag,
+          Objects.requireNonNull(channels, "channels"),
+          Objects.requireNonNull(standardTags, "standardTags"),
+          Objects.requireNonNull(tags, "tags"),
+          Objects.requireNonNull(events, "events"),
+          percentileHistograms,
+          domain,
+          version);
     }
   }
 }

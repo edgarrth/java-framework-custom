@@ -71,6 +71,16 @@
     <spotbugs.version>4.10.3</spotbugs.version>
     <archunit.version>1.5.1</archunit.version>
     <wiremock.version>3.13.2</wiremock.version>
+    <!-- WireMock templates: CVE-2026-55760 is fixed in 4.5.2. -->
+    <handlebars.version>4.5.2</handlebars.version>
+    <!-- WireMock 3 uses the helpers' original package names; only the engine contains the CVE. -->
+    <handlebars-helpers.version>4.3.1</handlebars-helpers.version>
+    <!-- Converge Nashorn and JSON Smart on one ASM line supporting the project's JDK. -->
+    <asm.version>9.10.1</asm.version>
+    <!-- Align the unshaded WireMock and Testcontainers dependency paths. -->
+    <commons-io.version>2.20.0</commons-io.version>
+    <!-- Keep WireMock's EE10 and Spring Boot's EE11 on the same Jetty runtime line. -->
+    <jetty.version>12.1.14</jetty.version>
     <!-- 3.0.6 supports the Jackson 3.1 line managed by Spring Boot. -->
     <json-schema-validator.version>3.0.6</json-schema-validator.version>
     <blockhound.version>1.0.16.RELEASE</blockhound.version>
@@ -90,6 +100,67 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-analysis</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-commons</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-tree</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-util</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.jknack</groupId>
+        <artifactId>handlebars</artifactId>
+        <version>${handlebars.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.jknack</groupId>
+        <artifactId>handlebars-helpers</artifactId>
+        <version>${handlebars-helpers.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee11</groupId>
+        <artifactId>jetty-ee11-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.xerial.snappy</groupId>
         <artifactId>snappy-java</artifactId>
@@ -387,7 +458,7 @@
       </dependency>
       <dependency>
         <groupId>org.wiremock</groupId>
-        <artifactId>wiremock-standalone</artifactId>
+        <artifactId>wiremock-jetty12</artifactId>
         <version>${wiremock.version}</version>
       </dependency>
       <dependency>

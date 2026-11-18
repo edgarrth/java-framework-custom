@@ -29,6 +29,11 @@
 
 `ArchitectureTest` enforces the rules of the `{{fw.id}}` style and the general axiz rules;
 `{{project.className}}ApplicationTest` starts the service against real dependencies in containers.
+`SensitiveDataCanaryTest` uses synthetic PAN, CVV and password values to check the configured
+logging, audit sanitization, error mapping and server response converter/encoder. It covers
+success, failure, timeout and rollback evidence; JPA services additionally trigger a real
+PostgreSQL constraint failure and rollback. Extend it with your DTOs and custom integrations.
+Never run a canary with real sensitive values.
 {{#hasExamples}}
 `ContractExamplesTest` checks that every request example of the contract is a valid request.
 {{/hasExamples}}

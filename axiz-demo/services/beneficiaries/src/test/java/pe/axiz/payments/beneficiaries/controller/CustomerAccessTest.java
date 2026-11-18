@@ -16,7 +16,7 @@ class CustomerAccessTest {
 
   static TestingAuthenticationToken token(String subject, String client) {
     AxizPrincipal principal =
-        new AxizPrincipal(subject, client, "iss", List.of(), Set.of(), Set.of(), null, Map.of());
+        AxizPrincipal.builder().subject(subject).clientId(client).issuer("iss").audience(List.of()).scopes(Set.of()).roles(Set.of()).tenantId(null).attributes(Map.of()).build();
     return new TestingAuthenticationToken(principal, null, List.of());
   }
 

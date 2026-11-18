@@ -72,7 +72,7 @@ Un calificador textual o ajeno a Axiz queda excluido del alcance global y no se 
 selector AWS. Los atributos de anotaciones compuestas deben usar los enums tipados. Un bean
 sin calificador y `defaultCandidate=false` no se considera global; los beans con alcance tipado
 siguen disponibles. Se heredan candidatos del padre salvo que su nombre quede oculto localmente.
-Importar los tipos desde `pe.axiz.spring.foundation.aws`.
+Importar los tipos desde `pe.axiz.spring.aws`.
 
 Por ejemplo, una aplicación que ya posee un cliente STS puede aportar un rol distinto para S3:
 

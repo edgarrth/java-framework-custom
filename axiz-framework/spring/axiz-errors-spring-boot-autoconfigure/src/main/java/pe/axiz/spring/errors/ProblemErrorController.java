@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
 import pe.axiz.core.errors.Problem;
 
 /**
@@ -74,6 +74,7 @@ public class ProblemErrorController implements ErrorController {
             uri == null ? null : uri.toString(),
             request.getHeader(StandardHeaders.CORRELATION_ID));
     return ResponseEntity.status(problem.status())
+        .headers(headers -> responder.headers(headers, problem, failure))
         .contentType(MediaType.parseMediaType(ProblemResponder.MEDIA_TYPE))
         .body(responder.json(problem));
   }

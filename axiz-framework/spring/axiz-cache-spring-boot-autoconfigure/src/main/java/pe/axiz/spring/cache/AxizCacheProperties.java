@@ -9,13 +9,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Two-level cache ({@code axiz.cache.*}): L1 in memory per instance, L2 on ElastiCache (Redis or
- * Valkey) shared by the replicas. Redis outages degrade to L1 without failing requests.
+ * Two-level cache ({@code axiz.cache.*}): L1 in memory per instance, L2 through an optional shared
+ * cache port. Remote cache outages degrade to L1 without failing requests.
  *
  * @param prefix key prefix; defaults to the application name
  * @param defaultTtl TTL of caches without their own entry
  * @param l1 local level
- * @param redis whether the Redis level is used when a connection is configured
+ * @param l2 shared cache level policy
  * @param caches TTL per cache name
  */
 @ConfigurationProperties("axiz.cache")
@@ -23,11 +23,14 @@ public record AxizCacheProperties(
     @Nullable String prefix,
     @DefaultValue("10m") Duration defaultTtl,
     @DefaultValue L1 l1,
-    @DefaultValue("true") boolean redis,
+    @DefaultValue L2 l2,
     @DefaultValue Map<String, CacheSpec> caches) {
   public AxizCacheProperties {
     caches = Collections.unmodifiableMap(new LinkedHashMap<>(caches));
   }
+
+  /** Shared cache policy; any integration can supply the L2 port. */
+  public record L2(@DefaultValue("true") boolean enabled) {}
 
   /**
    * Local level.

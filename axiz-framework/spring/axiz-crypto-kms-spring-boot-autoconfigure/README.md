@@ -1,0 +1,43 @@
+# axiz-crypto-kms-spring-boot-autoconfigure
+
+AWS KMS integration for envelope encryption.
+
+This module owns the `pe.axiz.spring.crypto.kms` API. It composes the neutral crypto capability
+with the AWS KMS adapter and the shared AWS identity/transport integration.
+
+For rotation between distinct KMS keys, configure immutable route names and immutable key ARNs:
+
+```yaml
+axiz:
+  crypto:
+    kms:
+      key-id: arn:aws:kms:us-east-1:123456789012:key/22222222-2222-2222-2222-222222222222
+      key-ring:
+        generation1: arn:aws:kms:us-east-1:123456789012:key/11111111-1111-1111-1111-111111111111
+        generation2: arn:aws:kms:us-east-1:123456789012:key/22222222-2222-2222-2222-222222222222
+      data-key-max-age: 5m
+      data-key-max-uses: 1000
+```
+
+The example ARNs are placeholders. `key-id` must match exactly one ring entry. The ring accepts
+at most 16 routes, rejects mutable aliases, and requires unique key ARNs. Both stacks wrap the
+same format and select a single configured provider for decryption; they do not try every key
+or ask KMS to decrypt with an unspecified key.
+
+The route identifier is authenticated through the wrapping context, so changing the identifier
+does not redirect valid ciphertext even if a custom configuration reuses one underlying key.
+Context contains a technical purpose and route, never a token, PAN, tenant identifier or record
+binding. AWS explains why [encryption context is public audit data](https://docs.aws.amazon.com/kms/latest/developerguide/encrypt_context.html)
+and recommends [explicit key selection when decrypting](https://docs.aws.amazon.com/kms/latest/APIReference/API_Decrypt.html).
+
+Use a ring before writing the first routed envelope. Configuring only `key-id` creates a direct
+single-key provider and a different wrapped-DEK format; there is no implicit format fallback.
+Converting direct envelopes to routed envelopes is an explicit migration with source and target
+encryptors, not an automatic rolling configuration change.
+
+Each route must permanently name the same key. Install the new read route on every reader before
+switching writers. Rebuild encryptors to change their immutable key ring and retire old caches.
+Keep all required read routes until migration and reconciliation have proved their removal safe.
+This integration supplies routing; disabling/deleting KMS keys requires a separately governed
+retirement process that accounts for active writers, persisted records, backups and other users.
+No bean performs KMS disable/delete operations.

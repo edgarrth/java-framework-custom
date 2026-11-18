@@ -65,6 +65,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
@@ -158,6 +159,23 @@ class LocalStackDynamoDbStoresIT {
                 .keySchema(
                     KeySchemaElement.builder().attributeName("pk").keyType(KeyType.HASH).build()));
     dynamo.waiter().waitUntilTableExists(b -> b.tableName(name));
+  }
+
+  @Test
+  void protectedReplayAndConcurrentCasKeepTheSameCiphertext() {
+    ProtectedReplayChecks.verify(
+        new DynamoDbIdempotencyStore(dynamo, "axiz-idempotency"),
+        new DynamoDbAsyncIdempotencyStore(nativeDynamo, "axiz-idempotency", Clock.systemUTC()),
+        key ->
+            dynamo
+                .getItem(
+                    b ->
+                        b.tableName("axiz-idempotency")
+                            .key(Map.of("pk", AttributeValue.fromS(key)))
+                            .consistentRead(true))
+                .item()
+                .get("data")
+                .s());
   }
 
   @TestFactory
@@ -304,7 +322,13 @@ class LocalStackDynamoDbStoresIT {
         new DynamoDbAsyncIdempotencyStore(nativeDynamo, "axiz-idempotency", Clock.systemUTC());
     var key = "native-" + UUID.randomUUID();
     var record =
-        new IdempotencyRecord(key, "hash", Status.IN_PROGRESS, "owner", null, now.plusSeconds(60));
+        IdempotencyRecord.builder(key, "hash", now.plusSeconds(60), now.plusSeconds(60))
+            .status(Status.IN_PROGRESS)
+            .owner("owner")
+            .response(null)
+            .resolutionVersion(0)
+            .failure(null)
+            .build();
     var response = new StoredResponse(201, Map.of("Location", "/payments/1"), new byte[] {0, 127});
     StepVerifier.create(nativeCall(() -> store.tryStart(record)))
         .expectNext(true)

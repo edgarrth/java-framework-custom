@@ -44,11 +44,6 @@ public final class PeruIdentifiers implements IdentifierTypeProvider {
           }
           return CheckDigits.mod11(v.substring(0, 10), WEIGHTS) == v.charAt(10) - '0';
         }
-
-        @Override
-        public String mask(String v) {
-          return v; // a taxpayer number is public information
-        }
       };
 
   /** Foreigner card: 9 to 12 alphanumeric characters. */

@@ -15,7 +15,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.storage.AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectKey;

@@ -5,36 +5,35 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.quality.containers.TestContainerImages;
 
 /**
  * Containers matching the approved infrastructure: Aurora PostgreSQL, MSK (Kafka), ElastiCache
  * (Valkey) and LocalStack for DynamoDB, SQS, SNS, S3, KMS, Secrets Manager and Parameter Store.
- * Images are pinned; Renovate keeps them current.
+ * PostgreSQL, Valkey and Kafka are built lazily from the central patched recipes. Other provider
+ * images must independently pass the image vulnerability gate before release.
  */
 public final class AxizContainers {
 
-  public static final DockerImageName POSTGRES = DockerImageName.parse("postgres:17.6-alpine");
-  public static final DockerImageName KAFKA = DockerImageName.parse("apache/kafka-native:4.1.0");
-  public static final DockerImageName VALKEY = DockerImageName.parse("valkey/valkey:8.1-alpine");
   public static final DockerImageName LOCALSTACK =
       DockerImageName.parse("localstack/localstack:4.9");
 
   private AxizContainers() {}
 
   public static PostgreSQLContainer postgres() {
-    return new PostgreSQLContainer(POSTGRES)
+    return TestContainerImages.postgres()
         .withDatabaseName("app")
         .withUsername("app")
         .withPassword("app");
   }
 
   public static KafkaContainer kafka() {
-    return new KafkaContainer(KAFKA);
+    return TestContainerImages.kafka();
   }
 
   @SuppressWarnings("resource")
   public static GenericContainer<?> valkey() {
-    return new GenericContainer<>(VALKEY).withExposedPorts(6379);
+    return TestContainerImages.valkey();
   }
 
   public static LocalStackContainer localstack() {

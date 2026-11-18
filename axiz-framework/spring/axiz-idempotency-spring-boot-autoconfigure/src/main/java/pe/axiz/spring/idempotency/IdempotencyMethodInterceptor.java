@@ -1,6 +1,5 @@
 package pe.axiz.spring.idempotency;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -13,8 +12,10 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
@@ -34,7 +35,7 @@ import pe.axiz.core.idempotency.Idempotent;
  * (returning {@code Mono} or {@code Flux}) take it from {@link IdempotencyWebFilter} through the
  * Reactor context.
  */
-public class IdempotencyMethodInterceptor implements MethodInterceptor {
+public final class IdempotencyMethodInterceptor implements MethodInterceptor {
 
   /** After {@code AuthorizationInterceptorsOrder.JSR250} (400), before result authorization. */
   public static final int ORDER = 440;
@@ -50,13 +51,10 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
           IdempotencyMethodInterceptor.class.getClassLoader());
 
   private final Supplier<IdempotencyService> service;
+  private final Supplier<PayloadProtector> protection;
+  private final Supplier<AsyncPayloadProtector> asyncProtection;
   private final Supplier<AsyncIdempotencyService> asyncService;
 
-  @SuppressFBWarnings(
-      value = "CT_CONSTRUCTOR_THROW",
-      justification =
-          "Rejects invalid construction; no finalizer or publication of this. The overridable "
-              + "Spring SPI remains extensible; this constructor acquires no external resource.")
   public IdempotencyMethodInterceptor(Supplier<IdempotencyService> service) {
     this(
         service,
@@ -65,13 +63,18 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
         });
   }
 
-  @SuppressFBWarnings(
-      value = "CT_CONSTRUCTOR_THROW",
-      justification =
-          "Spring advice extension validates service suppliers; no external resource is "
-              + "acquired or this reference published.")
   public IdempotencyMethodInterceptor(
       Supplier<IdempotencyService> service, Supplier<AsyncIdempotencyService> asyncService) {
+    this(service, asyncService, () -> PayloadProtector.NONE, () -> AsyncPayloadProtector.NONE);
+  }
+
+  public IdempotencyMethodInterceptor(
+      Supplier<IdempotencyService> service,
+      Supplier<AsyncIdempotencyService> asyncService,
+      Supplier<PayloadProtector> protection,
+      Supplier<AsyncPayloadProtector> asyncProtection) {
+    this.protection = Objects.requireNonNull(protection);
+    this.asyncProtection = Objects.requireNonNull(asyncProtection);
     this.service = Objects.requireNonNull(service);
     this.asyncService = Objects.requireNonNull(asyncService);
   }
@@ -94,7 +97,7 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       }
     }
     if (REACTOR && ReactiveIdempotency.handles(method.getReturnType())) {
-      return ReactiveIdempotency.apply(invocation, rule, operation, asyncService);
+      return ReactiveIdempotency.apply(invocation, rule, operation, asyncService, asyncProtection);
     }
     return invocation.proceed(); // not called from a web request
   }
@@ -114,11 +117,14 @@ public class IdempotencyMethodInterceptor implements MethodInterceptor {
       }
       return invocation.proceed();
     }
-    IdempotencyService.Decision decision =
-        service.get().begin(IdempotencySupport.scope(operation, RequestContext.get()), key, fp);
+    String scope = IdempotencySupport.scope(operation, RequestContext.get());
+    var binding = IdempotencyPayloads.Binding.of(operation, scope, key);
+    IdempotencyService.Decision decision = service.get().begin(scope, key, fp);
     if (decision instanceof IdempotencyService.Replay replay) {
-      throw new IdempotentReplay(replay.response());
+      throw new IdempotentReplay(
+          IdempotencyPayloads.reveal(replay.response(), binding, protection.get()));
     }
+    request.setAttribute(IdempotencyPayloads.BINDING_ATTRIBUTE, binding);
     request.setAttribute(IdempotencySupport.KEY_ATTRIBUTE, decision);
     request.setAttribute(
         IdempotencyFilter.LEASE_ATTRIBUTE,

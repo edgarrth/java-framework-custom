@@ -3,6 +3,7 @@ package pe.axiz.core.identifiers.contact;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import pe.axiz.core.identifiers.IdentifierMasks;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
@@ -77,11 +78,7 @@ public final class ContactIdentifiers implements IdentifierTypeProvider {
 
         @Override
         public String mask(String v) {
-          int at = v.indexOf('@');
-          if (at <= 1) {
-            return "*" + v.substring(Math.max(at, 0));
-          }
-          return v.charAt(0) + "*".repeat(at - 1) + v.substring(at);
+          return IdentifierMasks.email(v);
         }
       };
 

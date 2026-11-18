@@ -29,19 +29,21 @@ class GeneratedDynamoRepositoryTest {
       for (var stack : Stack.values()) {
         Path output = Files.createDirectory(root.resolve(structure.name() + "-" + stack.name()));
         var project =
-            new ProjectManifest(
-                "orders",
-                "pe.axiz.orders",
-                "pe.axiz.orders",
-                "business",
-                structure,
-                stack,
-                "dynamodb",
-                "2.0.0",
-                null,
-                null,
-                List.of(),
-                List.of());
+            ProjectManifest.builder()
+                .name("orders")
+                .groupId("pe.axiz.orders")
+                .basePackage("pe.axiz.orders")
+                .archetype("business")
+                .structure(structure)
+                .stack(stack)
+                .persistence("dynamodb")
+                .axizVersion("2.0.0")
+                .openapi(null)
+                .asyncapi(null)
+                .capabilities(List.of())
+                .operations(List.of())
+                .extensions(List.of())
+                .build();
         var args =
             new ArrayList<>(
                 List.of(

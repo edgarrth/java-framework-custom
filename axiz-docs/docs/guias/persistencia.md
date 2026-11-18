@@ -52,6 +52,13 @@ conserva su propia conexión, incluso dentro de una transacción anidada. El con
 una conexión global. Las transacciones de fábricas distintas se confirman de forma independiente;
 no constituyen una transacción distribuida.
 
+El kit `R2dbcSql` usa marcadores PostgreSQL y presupone
+`standard_conforming_strings=on`. Su analizador conserva los literales entre comillas,
+los bloques `$tag$...$tag$`, los comentarios anidados y los literales `E'...'`, incluida su
+continuación por salto de línea. El SQL debe pertenecer a la aplicación: los valores del
+usuario se pasan mediante `SqlParams`, nunca concatenados. La implementación Spring
+`DatabaseClientReactiveSql` usa el procesamiento de parámetros de `DatabaseClient`.
+
 ```java
 @Table("payment_history")
 class PaymentHistoryRow extends AuditableRow {
@@ -125,6 +132,20 @@ solo aplican su API en los adaptadores.
 
 Al migrar, revisar consumidores que dependían del redondeo implícito de entradas o de resultados
 fuera del rango. La demo ilustra este contrato, sin introducir una implementación monetaria propia.
+
+## SQL con parámetros y compatibilidad R2DBC
+
+Enviar datos de usuarios con `SqlParams.bind`, incluidos los textos que contienen comillas,
+dos puntos o delimitadores `$tag$`. `NamedSql` transforma los nombres de los parámetros y
+conserva los literales, identificadores y comentarios; no concatena valores en la consulta.
+
+El driver PostgreSQL R2DBC 1.1.3 rechaza los literales `E'…'` que contienen una comilla escapada
+con barra invertida, tanto en una línea como en continuaciones. PostgreSQL admite esa sintaxis,
+pero el analizador del driver no reconoce ese escape de comilla. Para consultas R2DBC,
+usar comillas duplicadas (`'it''s'`) o, preferentemente, un parámetro enlazado.
+El kit no reescribe el contenido de los literales para sortear esa limitación: podría cambiar
+el valor de escapes octales o hexadecimales. La prueba `PostgresReactiveUseCaseIT` comprueba
+los enlaces sobre PostgreSQL y el rechazo de esta sintaxis antes de ejecutar la consulta.
 
 ## Multi-tenancy
 

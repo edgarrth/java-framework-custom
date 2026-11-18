@@ -63,7 +63,7 @@ public final class AxizCache {
     try {
       return Optional.of(codec.decode(bytes.get(), type));
     } catch (RuntimeException e) {
-      LOG.warn("Discarding undecodable cache entry: {}", e.toString());
+      LOG.warn("Discarding undecodable cache entry: {}", e.getClass().getSimpleName());
       cache.evict(fullKey(key));
       return Optional.empty();
     }

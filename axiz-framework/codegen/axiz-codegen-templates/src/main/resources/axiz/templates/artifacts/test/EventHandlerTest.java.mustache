@@ -22,15 +22,7 @@ class {{artifact.className}}HandlerTest {
   @Test
   void handlesTheEvent() {
     EventEnvelope envelope =
-        new EventEnvelope(
-            "evt-1",
-            "urn:axiz:test",
-            handler.eventType(),
-            Instant.parse("2026-01-01T00:00:00Z"),
-            null,
-            "application/json",
-            "{}".getBytes(StandardCharsets.UTF_8),
-            Map.of());
+        EventEnvelope.builder().id("evt-1").source("urn:axiz:test").type(handler.eventType()).time(Instant.parse("2026-01-01T00:00:00Z")).subject(null).dataContentType("application/json").data("{}".getBytes(StandardCharsets.UTF_8)).extensions(Map.of()).build();
     assertThatCode(() -> handler.handle(new {{artifact.className}}("1"), envelope))
         .doesNotThrowAnyException();
   }

@@ -71,7 +71,8 @@ class LockTest {
               attempted.countDown();
               return acquired;
             },
-            Duration.ofMillis(5));
+            Duration.ofMillis(5),
+            LockObserver.NONE);
     AtomicInteger concurrent = new AtomicInteger();
     AtomicInteger maxConcurrent = new AtomicInteger();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
@@ -99,7 +100,7 @@ class LockTest {
   @Test
   void busyResourceIs409AndLeaseIsRenewedDuringLongWork() throws Exception {
     InMemoryDistributedLock lock = new InMemoryDistributedLock(Clock.systemUTC());
-    LockTemplate template = new LockTemplate(lock, Duration.ofMillis(5));
+    LockTemplate template = new LockTemplate(lock, Duration.ofMillis(5), LockObserver.NONE);
     LockHandle held = lock.tryAcquire("r", Duration.ofSeconds(30)).orElseThrow();
     BusinessException e =
         assertThrows(

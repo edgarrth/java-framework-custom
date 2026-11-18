@@ -3,8 +3,8 @@ package pe.axiz.payments.orders.application.port.out;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.domain.PaymentOrder;
 

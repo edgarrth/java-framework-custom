@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import org.reactivestreams.Subscription;
-import pe.axiz.core.commons.AsyncLoadingCache;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.AsyncLoadingCache;
+import pe.axiz.core.concurrent.Stages;
 import reactor.test.StepVerifier;
 import reactor.util.context.Context;
 

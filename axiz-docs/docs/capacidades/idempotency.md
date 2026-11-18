@@ -31,5 +31,11 @@ axiz.idempotency.retention: 24h
 ## Módulos
 
 - [`axiz-idempotency-spring-boot-autoconfigure`](../referencia/spring/axiz-idempotency-spring-boot-autoconfigure.md)
+- [`axiz-core-api`](../referencia/core/axiz-core-api.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
+- [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
+- [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-idempotency`](../referencia/core/axiz-core-idempotency.md)
+- [`axiz-core-json`](../referencia/core/axiz-core-json.md)

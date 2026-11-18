@@ -38,7 +38,7 @@ yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
 trap 'red "demo.sh: unexpected failure (exit $?) at line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # true when something accepts connections on localhost:<port>
-port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
+port_busy() { (: >"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
 # reads `docker ps` lines (name, image, ports, compose project) and prints the container that
 # publishes host port $1. Docker writes ranges as one mapping ("0.0.0.0:4317-4318->4317-4318/tcp")
@@ -71,7 +71,7 @@ port_owner() {
   echo "$owner"
 }
 
-pid_of() { [ -f "$run/$1.pid" ] && cat "$run/$1.pid" || true; }
+pid_of() { if [ -f "$run/$1.pid" ]; then cat "$run/$1.pid" || true; fi; }
 alive() { local pid; pid=$(pid_of "$1"); [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; }
 
 health() {

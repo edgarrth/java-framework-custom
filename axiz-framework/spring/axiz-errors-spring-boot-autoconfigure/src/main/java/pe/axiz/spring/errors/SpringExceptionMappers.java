@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
+import org.springframework.beans.ConversionNotSupportedException;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.codec.DecodingException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -20,6 +22,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.MissingRequestValueException;
 import pe.axiz.core.errors.AccessException;
 import pe.axiz.core.errors.AxizException;
@@ -169,6 +172,16 @@ final class SpringExceptionMappers {
         || failure instanceof DecodingException) {
       return Optional.of(new BusinessException(CoreErrors.MALFORMED_BODY, "unreadable body"));
     }
+    if (failure instanceof ConversionNotSupportedException) return Optional.empty();
+    if (failure instanceof TypeMismatchException mismatch) {
+      String field =
+          mismatch instanceof MethodArgumentTypeMismatchException argument
+              ? argument.getName()
+              : "parameter";
+      return Optional.of(
+          new ValidationException(
+              List.of(FieldViolation.of(field, "TypeMismatch", "invalid value"))));
+    }
     if (failure instanceof ErrorResponse er) {
       int status = er.getStatusCode().value();
       ErrorCategory category = ErrorCategory.fromHttpStatus(status);
@@ -176,7 +189,7 @@ final class SpringExceptionMappers {
           new AxizException(
               CoreErrors.forCategory(category),
               // logged as the reason of the problem: "NoResourceFoundException: No static resource"
-              failure.getClass().getSimpleName() + ": " + failure.getMessage(),
+              failure.getClass().getSimpleName(),
               failure));
     }
     return Optional.empty();
@@ -192,6 +205,17 @@ final class SpringExceptionMappers {
     private ServletErrors() {}
 
     static Optional<AxizException> map(Throwable failure) {
+      // Optional container type: malformed query/form encoding fails before Spring binding.
+      // Do not map arbitrary IllegalStateException/IllegalArgumentException or reflect the input.
+      if (failure
+          .getClass()
+          .getName()
+          .equals("org.apache.tomcat.util.http.InvalidParameterException")) {
+        return Optional.of(
+            new ValidationException(
+                List.of(
+                    FieldViolation.of("parameters", "Malformed", "invalid request parameters"))));
+      }
       if (failure instanceof MissingRequestHeaderException mh) {
         return Optional.of(missingHeader(mh.getHeaderName()));
       }

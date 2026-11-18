@@ -1,6 +1,8 @@
 package pe.axiz.spring.crypto;
 
-import java.util.Base64;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.binder.MeterBinder;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,6 @@ import pe.axiz.core.crypto.KeyProvider;
 import pe.axiz.core.crypto.PasswordHasher;
 import pe.axiz.core.crypto.Pbkdf2PasswordHasher;
 import pe.axiz.core.crypto.StaticKeyProvider;
-import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.spring.foundation.ConditionalOnConfiguredProperty;
 
@@ -73,23 +74,26 @@ public class AxizCryptoAutoConfiguration {
   @ConditionalOnBean(SecretResolver.class)
   static class FieldsConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
-    KeyProvider axizKeyProvider(AxizCryptoProperties p, SecretResolver secrets) {
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean(KeyProvider.class)
+    StaticKeyProvider axizKeyProvider(AxizCryptoProperties p, SecretResolver secrets) {
       AxizCryptoProperties.Fields f = p.fields();
       String current = Objects.requireNonNull(f.currentKeyId());
-      Map<String, String> keys = new LinkedHashMap<>();
+      Map<String, byte[]> keys = new LinkedHashMap<>();
       List<String> ids =
           f.keyIds().contains(current)
               ? f.keyIds()
               : Stream.concat(f.keyIds().stream(), Stream.of(current)).toList();
-      for (String id : ids) {
-        String name = f.secretPrefix() + id;
-        keys.put(
-            id,
-            secrets.resolve(name).orElseThrow(() -> new SecretNotFoundException(name)).reveal());
+      try {
+        for (String id : ids) {
+          try (var secret = secrets.require(f.secretPrefix() + id)) {
+            keys.put(id, secret.base64Bytes(32, 32));
+          }
+        }
+        return StaticKeyProvider.fromBytes(current, keys);
+      } finally {
+        keys.values().forEach(key -> Arrays.fill(key, (byte) 0));
       }
-      return StaticKeyProvider.fromBase64(current, keys);
     }
 
     @Bean
@@ -99,24 +103,56 @@ public class AxizCryptoAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnConfiguredProperty("axiz.crypto.fields.blind-index-secret")
-    BlindIndex axizBlindIndex(AxizCryptoProperties p, SecretResolver secrets) {
-      String name = Objects.requireNonNull(p.fields().blindIndexSecret());
-      byte[] key =
-          Base64.getDecoder()
-              .decode(
-                  secrets
-                      .resolve(name)
-                      .orElseThrow(() -> new SecretNotFoundException(name))
-                      .reveal());
-      return new BlindIndex(key, p.fields().blindIndexBytes());
+    MeterBinder axizFieldEncryptionMetrics(
+        AxizCryptoProperties properties, KeyProvider keys, FieldEncryptor encryptor) {
+      List<String> ids =
+          Stream.concat(properties.fields().keyIds().stream(), Stream.of(keys.currentKeyId()))
+              .distinct()
+              .toList();
+      return registry ->
+          ids.forEach(
+              id ->
+                  FunctionCounter.builder(
+                          "axiz.crypto.field.encryptions",
+                          encryptor,
+                          value -> value.encryptions(id))
+                      .tag("keyId", id)
+                      .register(registry));
     }
+  }
 
-    @Bean
-    EncryptionRegistrar axizEncryptionRegistrar(
-        FieldEncryptor encryptor, ObjectProvider<BlindIndex> index) {
-      return new EncryptionRegistrar(encryptor, index.getIfAvailable());
+  /** Search keys do not require field encryption to be enabled. */
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnBean(SecretResolver.class)
+  @ConditionalOnConfiguredProperty("axiz.crypto.fields.index-current-key-id")
+  static class IndexConfiguration {
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean
+    BlindIndex axizBlindIndex(
+        AxizCryptoProperties properties,
+        SecretResolver secrets,
+        ObjectProvider<KeyProvider> providers) {
+      Map<String, byte[]> keys = new LinkedHashMap<>();
+      try {
+        properties
+            .fields()
+            .indexSecrets()
+            .forEach(
+                (id, name) -> {
+                  try (var value = secrets.require(name)) {
+                    keys.put(id, value.base64Bytes(32, 1024));
+                  }
+                });
+        KeyProvider provider = providers.getIfAvailable();
+        if (provider instanceof StaticKeyProvider fieldKeys
+            && keys.values().stream().anyMatch(fieldKeys::containsKeyMaterial))
+          throw new IllegalStateException(
+              "Field encryption and index keys must use different key material");
+        return new BlindIndex(
+            keys, Objects.requireNonNull(properties.fields().indexCurrentKeyId()));
+      } finally {
+        keys.values().forEach(key -> Arrays.fill(key, (byte) 0));
+      }
     }
   }
 

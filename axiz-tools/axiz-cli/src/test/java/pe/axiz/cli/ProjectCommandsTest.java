@@ -20,8 +20,7 @@ class ProjectCommandsTest {
     assertEquals(0, h.run("add", "cache-redis", "lock", "--dir", p.toString()), h.output());
     String pom = Files.readString(p.resolve("pom.xml"));
     assertTrue(
-        pom.contains("axiz-cache-spring-boot-starter")
-            && pom.contains("axiz-adapter-cache-redis")
+        pom.contains("axiz-cache-redis-spring-boot-starter")
             && pom.contains("axiz-lock-spring-boot-starter"));
     assertTrue(h.output().contains("spring.data.redis.url"), "ConfigMap keys are listed");
     assertTrue(h.output().contains("Example:"));

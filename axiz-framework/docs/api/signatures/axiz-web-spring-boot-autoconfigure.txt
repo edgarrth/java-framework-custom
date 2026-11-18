@@ -88,7 +88,7 @@ public final java.lang.String toString();
 public int maxLength();
 public java.lang.String name();
 public java.lang.String pattern();
-public pe.axiz.core.commons.HeaderDefinition toDefinition();
+public pe.axiz.core.api.HeaderDefinition toDefinition();
 public pe.axiz.spring.web.AxizWebProperties$Header(java.lang.String, boolean, java.lang.String, boolean, boolean, int);
 }
 
@@ -121,12 +121,12 @@ public static final java.lang.String REQUEST_ID = "requestId";
 public class pe.axiz.spring.web.PageRequestArgumentResolver implements org.springframework.web.method.support.HandlerMethodArgumentResolver {
 public boolean supportsParameter(org.springframework.core.MethodParameter);
 public java.lang.Object resolveArgument(org.springframework.core.MethodParameter, org.springframework.web.method.support.ModelAndViewContainer, org.springframework.web.context.request.NativeWebRequest, org.springframework.web.bind.support.WebDataBinderFactory) throws java.lang.Exception;
-public pe.axiz.core.commons.PageRequest resolveArgument(org.springframework.core.MethodParameter, org.springframework.web.method.support.ModelAndViewContainer, org.springframework.web.context.request.NativeWebRequest, org.springframework.web.bind.support.WebDataBinderFactory);
+public pe.axiz.core.api.PageRequest resolveArgument(org.springframework.core.MethodParameter, org.springframework.web.method.support.ModelAndViewContainer, org.springframework.web.context.request.NativeWebRequest, org.springframework.web.bind.support.WebDataBinderFactory);
 public pe.axiz.spring.web.PageRequestArgumentResolver(pe.axiz.spring.web.PageRequestParser);
 }
 
 public final class pe.axiz.spring.web.PageRequestParser {
-public pe.axiz.core.commons.PageRequest parse(java.lang.String, java.lang.String, java.util.List<java.lang.String>, pe.axiz.spring.web.Paging);
+public pe.axiz.core.api.PageRequest parse(java.lang.String, java.lang.String, java.util.List<java.lang.String>, pe.axiz.spring.web.Paging);
 public pe.axiz.spring.web.PageRequestParser(int, int);
 }
 
@@ -139,7 +139,7 @@ public abstract java.lang.String[] sortable();
 public class pe.axiz.spring.web.ReactivePageRequestArgumentResolver implements org.springframework.web.reactive.result.method.SyncHandlerMethodArgumentResolver {
 public boolean supportsParameter(org.springframework.core.MethodParameter);
 public java.lang.Object resolveArgumentValue(org.springframework.core.MethodParameter, org.springframework.web.reactive.BindingContext, org.springframework.web.server.ServerWebExchange);
-public pe.axiz.core.commons.PageRequest resolveArgumentValue(org.springframework.core.MethodParameter, org.springframework.web.reactive.BindingContext, org.springframework.web.server.ServerWebExchange);
+public pe.axiz.core.api.PageRequest resolveArgumentValue(org.springframework.core.MethodParameter, org.springframework.web.reactive.BindingContext, org.springframework.web.server.ServerWebExchange);
 public pe.axiz.spring.web.ReactivePageRequestArgumentResolver(pe.axiz.spring.web.PageRequestParser);
 }
 
@@ -153,14 +153,14 @@ public int getOrder();
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
 }
 
-public class pe.axiz.spring.web.RequestContextAccessor implements io.micrometer.context.ThreadLocalAccessor<pe.axiz.core.commons.RequestMetadata> {
+public class pe.axiz.spring.web.RequestContextAccessor implements io.micrometer.context.ThreadLocalAccessor<pe.axiz.core.context.RequestMetadata> {
 public java.lang.Object getValue();
 public java.lang.Object key();
-public pe.axiz.core.commons.RequestMetadata getValue();
+public pe.axiz.core.context.RequestMetadata getValue();
 public pe.axiz.spring.web.RequestContextAccessor();
 public void setValue();
 public void setValue(java.lang.Object);
-public void setValue(pe.axiz.core.commons.RequestMetadata);
+public void setValue(pe.axiz.core.context.RequestMetadata);
 }
 
 public class pe.axiz.spring.web.RequestMetadataFilter extends org.springframework.web.filter.OncePerRequestFilter implements org.springframework.core.Ordered {
@@ -174,9 +174,9 @@ public static final int ORDER = -2147483628;
 public final class pe.axiz.spring.web.RequestMetadataResolver {
 public boolean isExcluded(java.lang.String);
 public java.util.List<java.lang.String> invalidHeaders(java.lang.String, java.util.function.Function<java.lang.String, java.lang.String>);
-public pe.axiz.core.commons.HeaderCatalog catalog();
-public pe.axiz.core.commons.RequestMetadata resolve(java.util.function.Function<java.lang.String, java.lang.String>, java.util.Locale);
-public pe.axiz.spring.web.RequestMetadataResolver(pe.axiz.core.commons.HeaderCatalog, java.util.List<java.lang.String>, java.lang.String, java.time.Clock);
+public pe.axiz.core.api.HeaderCatalog catalog();
+public pe.axiz.core.context.RequestMetadata resolve(java.util.function.Function<java.lang.String, java.lang.String>, java.util.Locale);
+public pe.axiz.spring.web.RequestMetadataResolver(pe.axiz.core.api.HeaderCatalog, java.util.List<java.lang.String>, java.lang.String, java.time.Clock);
 }
 
 public final class pe.axiz.spring.web.RequestMetadataWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {

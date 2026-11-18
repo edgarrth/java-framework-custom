@@ -22,7 +22,9 @@ public enum ErrorCategory {
   NOT_IMPLEMENTED(501, ErrorType.TECHNICAL, false),
   BAD_GATEWAY(502, ErrorType.EXTERNAL, true),
   SERVICE_UNAVAILABLE(503, ErrorType.TECHNICAL, true),
-  GATEWAY_TIMEOUT(504, ErrorType.EXTERNAL, true);
+  GATEWAY_TIMEOUT(504, ErrorType.EXTERNAL, true),
+  /** The mutation may have committed; reconcile before any deliberate retry. */
+  OUTCOME_UNKNOWN(504, ErrorType.TECHNICAL, false);
 
   private final int httpStatus;
   private final ErrorType defaultType;
@@ -47,8 +49,10 @@ public enum ErrorCategory {
   }
 
   /**
-   * Category for an HTTP status received from a dependency. Unknown 4xx become {@link
-   * #UNPROCESSABLE}; unknown 5xx become {@link #BAD_GATEWAY}; anything else {@link #INTERNAL}.
+   * Default category for an HTTP status received from a dependency. A bare 504 cannot distinguish a
+   * timeout from an uncertain mutation; protocol clients must preserve the explicit error code.
+   * Unknown 4xx become {@link #UNPROCESSABLE}; unknown 5xx become {@link #BAD_GATEWAY}; anything
+   * else {@link #INTERNAL}.
    *
    * @param status HTTP status code
    * @return matching category

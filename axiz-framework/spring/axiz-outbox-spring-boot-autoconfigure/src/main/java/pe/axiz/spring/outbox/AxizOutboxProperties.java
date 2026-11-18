@@ -1,27 +1,15 @@
 package pe.axiz.spring.outbox;
 
 import java.time.Duration;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
 
-/**
- * Transactional outbox ({@code axiz.outbox.*}) on Aurora PostgreSQL, over JDBC or R2DBC.
- *
- * @param table outbox table
- * @param initializeSchema when the table is created by the starter
- * @param relay relay settings
- * @param statementTimeout bound of each outbox statement run by the relay over R2DBC
- */
+/** Shared relay policy; persistence settings belong to the selected integration. */
 @ConfigurationProperties("axiz.outbox")
-public record AxizOutboxProperties(
-    @DefaultValue("axiz_outbox") String table,
-    @DefaultValue("EMBEDDED") SchemaInitializer.Mode initializeSchema,
-    @DefaultValue Relay relay,
-    @DefaultValue("30s") Duration statementTimeout) {
-
+public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultValue Relay relay) {
   /**
    * Relay to the broker (at-least-once; safe with several replicas thanks to {@code SKIP LOCKED}).
    *
@@ -55,49 +43,96 @@ public record AxizOutboxProperties(
             "outbox claim-allowance and publish-budget must be positive");
     }
 
-    public Relay(
-        boolean enabled,
-        Duration pollInterval,
-        int batchSize,
-        int maxAttempts,
-        Duration initialDelay,
-        Duration maxDelay,
-        Duration retention,
-        Duration purgeInterval,
-        Duration leaseDuration) {
-      this(
-          enabled,
-          pollInterval,
-          batchSize,
-          maxAttempts,
-          initialDelay,
-          maxDelay,
-          retention,
-          purgeInterval,
-          leaseDuration,
-          Duration.ofSeconds(2),
-          null);
+    /** Named construction; required values and invariants are checked by build. */
+    public static Builder builder() {
+      return new Builder();
     }
 
-    public Relay(
-        boolean enabled,
-        Duration pollInterval,
-        int batchSize,
-        int maxAttempts,
-        Duration initialDelay,
-        Duration maxDelay,
-        Duration retention,
-        Duration purgeInterval) {
-      this(
-          enabled,
-          pollInterval,
-          batchSize,
-          maxAttempts,
-          initialDelay,
-          maxDelay,
-          retention,
-          purgeInterval,
-          Duration.ofMinutes(3));
+    /** Mutable construction state; use one builder per operation, never as shared state. */
+    public static final class Builder {
+      private boolean enabled = false;
+      private @Nullable Duration pollInterval = null;
+      private int batchSize = 0;
+      private int maxAttempts = 0;
+      private @Nullable Duration initialDelay = null;
+      private @Nullable Duration maxDelay = null;
+      private @Nullable Duration retention = null;
+      private @Nullable Duration purgeInterval = null;
+      private @Nullable Duration leaseDuration = null;
+      private @Nullable Duration claimAllowance = null;
+      private @Nullable Duration publishBudget = null;
+
+      private Builder() {}
+
+      public Builder enabled(boolean value) {
+        this.enabled = value;
+        return this;
+      }
+
+      public Builder pollInterval(Duration value) {
+        this.pollInterval = value;
+        return this;
+      }
+
+      public Builder batchSize(int value) {
+        this.batchSize = value;
+        return this;
+      }
+
+      public Builder maxAttempts(int value) {
+        this.maxAttempts = value;
+        return this;
+      }
+
+      public Builder initialDelay(Duration value) {
+        this.initialDelay = value;
+        return this;
+      }
+
+      public Builder maxDelay(Duration value) {
+        this.maxDelay = value;
+        return this;
+      }
+
+      public Builder retention(Duration value) {
+        this.retention = value;
+        return this;
+      }
+
+      public Builder purgeInterval(Duration value) {
+        this.purgeInterval = value;
+        return this;
+      }
+
+      public Builder leaseDuration(Duration value) {
+        this.leaseDuration = value;
+        return this;
+      }
+
+      public Builder claimAllowance(Duration value) {
+        this.claimAllowance = value;
+        return this;
+      }
+
+      public Builder publishBudget(@Nullable Duration value) {
+        this.publishBudget = value;
+        return this;
+      }
+
+      public Relay build() {
+        return new Relay(
+            enabled,
+            Objects.requireNonNull(pollInterval, "pollInterval"),
+            batchSize,
+            maxAttempts,
+            Objects.requireNonNull(initialDelay, "initialDelay"),
+            Objects.requireNonNull(maxDelay, "maxDelay"),
+            Objects.requireNonNull(retention, "retention"),
+            Objects.requireNonNull(purgeInterval, "purgeInterval"),
+            Objects.requireNonNull(leaseDuration, "leaseDuration"),
+            Objects.requireNonNull(claimAllowance, "claimAllowance"),
+            publishBudget);
+      }
     }
   }
 }

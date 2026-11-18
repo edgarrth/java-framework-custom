@@ -2,9 +2,6 @@ package pe.axiz.core.soap;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
@@ -15,48 +12,43 @@ import org.w3c.dom.Element;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
-import pe.axiz.core.sensitive.ObjectMasker;
-import pe.axiz.core.sensitive.OutputChannel;
 
-/**
- * Minimal SOAP client over {@link HttpClient} with mandatory timeouts, WS-Security, fault mapping
- * and masked logging. For typed JAXB clients use the SOAP starter (Spring Web Services); both share
- * fault mapping and logging.
- */
+/** SOAP protocol orchestration with explicit transport, WS-Security and safe fault mapping. */
 public final class SoapClient {
 
   private static final Logger LOG = LoggerFactory.getLogger(SoapClient.class);
 
   private final String system;
-  private final HttpClient http;
+  private final SoapTransport transport;
   private final URI endpoint;
   private final SoapVersion version;
   private final Duration timeout;
   private final SoapEnvelope.@Nullable Credentials credentials;
-  private final ObjectMasker masker;
   private final Clock clock;
 
-  public SoapClient(
-      String system,
-      HttpClient http,
-      URI endpoint,
-      SoapVersion version,
-      Duration timeout,
-      SoapEnvelope.@Nullable Credentials credentials,
-      ObjectMasker masker,
-      Clock clock,
-      TransportSecurityPolicy transportSecurity) {
-    this.system = Objects.requireNonNull(system);
-    this.http = Objects.requireNonNull(http);
-    this.endpoint = Objects.requireNonNull(endpoint);
+  private SoapClient(Builder builder) {
+    String system = Objects.requireNonNull(builder.system, "system");
+    SoapTransport transport = Objects.requireNonNull(builder.transport, "transport");
+    URI endpoint = Objects.requireNonNull(builder.endpoint, "endpoint");
+    SoapVersion version = Objects.requireNonNull(builder.version, "version");
+    Duration timeout = Objects.requireNonNull(builder.timeout, "timeout");
+    SoapEnvelope.@Nullable Credentials credentials = builder.credentials;
+    Clock clock = Objects.requireNonNull(builder.clock, "clock");
+    TransportSecurityPolicy transportSecurity =
+        Objects.requireNonNull(builder.transportSecurity, "transportSecurity");
+    this.system = system;
+    this.transport = transport;
+    this.endpoint = endpoint;
     Objects.requireNonNull(transportSecurity).validate(endpoint, "SOAP endpoint");
-    if (http.followRedirects() != HttpClient.Redirect.NEVER)
-      throw new IllegalArgumentException("SOAP transport must disable automatic redirects");
-    this.version = Objects.requireNonNull(version);
-    this.timeout = Objects.requireNonNull(timeout);
+    this.version = version;
+    this.timeout = timeout;
+    if (!timeout.isPositive()) throw new IllegalArgumentException("SOAP timeout must be positive");
+    if (endpoint.getHost() == null
+        || endpoint.getUserInfo() != null
+        || endpoint.getFragment() != null)
+      throw new IllegalArgumentException("Invalid SOAP endpoint");
     this.credentials = credentials;
-    this.masker = Objects.requireNonNull(masker);
-    this.clock = Objects.requireNonNull(clock);
+    this.clock = clock;
   }
 
   /**
@@ -68,31 +60,16 @@ public final class SoapClient {
    */
   public Element call(String soapAction, String payloadXml) {
     String envelope = SoapEnvelope.wrap(version, payloadXml, credentials, clock.instant());
-    HttpRequest.Builder request =
-        HttpRequest.newBuilder(endpoint)
-            .timeout(timeout)
-            .POST(HttpRequest.BodyPublishers.ofString(envelope));
-    if (version == SoapVersion.SOAP_11) {
-      request
-          .header("Content-Type", version.contentType())
-          .header("SOAPAction", "\"" + soapAction + "\"");
-    } else {
-      request.header("Content-Type", version.contentType() + "; action=\"" + soapAction + "\"");
-    }
     long start = System.nanoTime();
     try {
-      HttpResponse<String> response =
-          http.send(request.build(), HttpResponse.BodyHandlers.ofString());
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            "soap system={} action={} status={} durationMs={} response={}",
-            system,
-            soapAction,
-            response.statusCode(),
-            (System.nanoTime() - start) / 1_000_000,
-            masker.maskByKey("body", maskXml(response.body()), OutputChannel.LOG));
-      }
-      return SoapResponse.payload(system, response.statusCode(), response.body());
+      SoapTransport.Reply response =
+          transport.send(endpoint, version, soapAction, envelope, timeout);
+      LOG.debug(
+          "soap system={} status={} durationMs={}",
+          system,
+          response.status(),
+          (System.nanoTime() - start) / 1_000_000);
+      return SoapResponse.payload(system, response.status(), response.body());
     } catch (IOException e) {
       // no answer: a timeout (HttpTimeoutException) is 504, any other transport failure 503
       throw ExternalServiceException.from(
@@ -103,10 +80,66 @@ public final class SoapClient {
     }
   }
 
-  /** Masks the text of sensitive-looking elements (password, pan, cvv, token...). */
-  static String maskXml(String xml) {
-    return xml.replaceAll(
-        "(?i)(<(?:[a-z0-9]+:)?(password|pin|cvv|pan|cardnumber|token|secret)[^>]*>)[^<]*(</)",
-        "$1****$3");
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable String system = null;
+    private @Nullable SoapTransport transport = null;
+    private @Nullable URI endpoint = null;
+    private @Nullable SoapVersion version = null;
+    private @Nullable Duration timeout = null;
+    private SoapEnvelope.@Nullable Credentials credentials = null;
+    private @Nullable Clock clock = null;
+    private @Nullable TransportSecurityPolicy transportSecurity = null;
+
+    private Builder() {}
+
+    public Builder system(String value) {
+      this.system = value;
+      return this;
+    }
+
+    public Builder transport(SoapTransport value) {
+      this.transport = value;
+      return this;
+    }
+
+    public Builder endpoint(URI value) {
+      this.endpoint = value;
+      return this;
+    }
+
+    public Builder version(SoapVersion value) {
+      this.version = value;
+      return this;
+    }
+
+    public Builder timeout(Duration value) {
+      this.timeout = value;
+      return this;
+    }
+
+    public Builder credentials(SoapEnvelope.@Nullable Credentials value) {
+      this.credentials = value;
+      return this;
+    }
+
+    public Builder clock(Clock value) {
+      this.clock = value;
+      return this;
+    }
+
+    public Builder transportSecurity(TransportSecurityPolicy value) {
+      this.transportSecurity = value;
+      return this;
+    }
+
+    public SoapClient build() {
+      return new SoapClient(this);
+    }
   }
 }

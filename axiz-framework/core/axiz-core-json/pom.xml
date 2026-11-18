@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-core</artifactId><version>${revision}</version>
+    <relativePath>../../platform/axiz-parent-core/pom.xml</relativePath></parent>
+  <artifactId>axiz-core-json</artifactId>
+  <name>axiz :: core :: json</name>
+  <description>Strict bounded JSON parsing and serialization</description>
+  <properties><axiz.module.name>pe.axiz.core.json</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
+  <dependencies></dependencies>
+</project>

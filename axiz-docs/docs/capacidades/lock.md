@@ -13,6 +13,12 @@ axiz add lock
 | Stacks del catálogo | servlet, reactive |
 | Incluida por defecto en | ningún arquetipo |
 
+Perfil `local` (`application-local.yaml`):
+
+```yaml
+axiz.lock.store: memory
+```
+
 ## Uso
 
 ```java
@@ -26,4 +32,7 @@ lockTemplate.withLock("account:" + id, Duration.ofSeconds(10), Duration.ofSecond
 ## Módulos
 
 - [`axiz-lock-spring-boot-autoconfigure`](../referencia/spring/axiz-lock-spring-boot-autoconfigure.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-lock`](../referencia/core/axiz-core-lock.md)

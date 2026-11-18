@@ -25,7 +25,12 @@
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-database-auth-aws</artifactId><scope>runtime</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
+<dependency><groupId>pe.axiz</groupId><artifactId>axiz-messaging-msk-spring-boot-starter</artifactId></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-api</artifactId><version>${project.version}</version></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-r2dbc-aws-spring-boot-starter</artifactId><scope>runtime</scope></dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webflux</artifactId>
@@ -89,7 +94,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-secrets-spring-boot-starter</artifactId>
+      <artifactId>axiz-secrets-file-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -102,12 +107,12 @@
     <!-- ReactiveTypedEventHandler: non-blocking Kafka consumers that feed the reactive command bus -->
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-inbox-r2dbc</artifactId>
+      <artifactId>axiz-inbox-r2dbc-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-messaging-kafka</artifactId>
+      <artifactId>axiz-messaging-kafka-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -115,12 +120,8 @@
       <artifactId>spring-boot-starter-kafka</artifactId>
     </dependency>
     <dependency>
-      <groupId>software.amazon.msk</groupId>
-      <artifactId>aws-msk-iam-auth</artifactId>
-    </dependency>
-    <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-secrets-aws</artifactId>
+      <artifactId>axiz-secrets-aws-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -133,7 +134,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-crypto-kms</artifactId>
+      <artifactId>axiz-crypto-kms-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>

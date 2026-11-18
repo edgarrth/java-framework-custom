@@ -52,16 +52,6 @@ public record ClaimMapping(
           "address",
           "updated_at");
 
-  public ClaimMapping(
-      List<String> subject,
-      List<String> clientId,
-      List<String> scopes,
-      List<String> roles,
-      List<String> tenant,
-      List<String> attributes) {
-    this(subject, clientId, scopes, roles, tenant, attributes, DEFAULT_MACHINE_MARKERS);
-  }
-
   public ClaimMapping {
     subject = List.copyOf(subject);
     clientId = List.copyOf(clientId);
@@ -98,6 +88,7 @@ public record ClaimMapping(
         List.of("scope", "scp"),
         List.of("roles", "realm_access.roles", "groups"),
         List.of("tenant", "tenant_id", "tid"),
-        List.of());
+        List.of(),
+        ClaimMapping.DEFAULT_MACHINE_MARKERS);
   }
 }

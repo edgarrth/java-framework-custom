@@ -21,9 +21,9 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import pe.axiz.core.commons.BoundedCallbackExecutor;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.BoundedCallbackExecutor;
+import pe.axiz.core.concurrent.Stages;
+import pe.axiz.core.context.RequestContext;
 
 /**
  * Bounded asynchronous delivery with independently bounded admission, delivery and fallback.
@@ -190,6 +190,11 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     return true;
   }
 
+  private static AuditEvent fallbackEvent(AuditEvent event) {
+    return event.withPersistence(
+        "UNCERTAIN".equals(event.persistence()) ? "UNCERTAIN" : "NOT_CONFIRMED");
+  }
+
   private void fallbackWithoutWait(AuditEvent event) {
     fallbacks.incrementAndGet();
     var completion = new CompletableFuture<Void>();
@@ -207,17 +212,21 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
         failure -> {
           nativeFallbacks.remove(admissionKey);
           lost.incrementAndGet();
-          LOG.error("Audit fallback completion observation failed", failure);
+          LOG.error(
+              "Audit fallback completion observation failed type={}", failure.getClass().getName());
         });
     try {
       fallbackDeliveries.execute(
           () -> {
             try {
-              fallback.publish(event);
+              fallback.publish(fallbackEvent(event));
               completion.complete(null);
             } catch (RuntimeException | Error failure) {
               completion.completeExceptionally(failure);
-              LOG.error("Audit fallback failed for event {}", event.id(), failure);
+              LOG.error(
+                  "Audit fallback failed for event {} type={}",
+                  event.id(),
+                  failure.getClass().getName());
             }
           });
       completion.orTimeout(deliveryTimeoutNanos, TimeUnit.NANOSECONDS);
@@ -317,7 +326,9 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     } catch (RuntimeException failure) {
       failures.incrementAndGet();
       LOG.error(
-          "Audit delivery failed for event {}, writing to fallback", pending.event().id(), failure);
+          "Audit delivery failed for event {}, writing to fallback type={}",
+          pending.event().id(),
+          failure.getClass().getName());
       toFallback(pending.event());
     }
   }
@@ -333,7 +344,7 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
     // Cancellation of a delivery must still allow its fallback within the shared deadline.
     boolean interrupted = Thread.interrupted();
     try {
-      invoke(fallbackDeliveries, () -> fallback.publish(event));
+      invoke(fallbackDeliveries, () -> fallback.publish(fallbackEvent(event)));
     } catch (RuntimeException failure) {
       if (failure instanceof RejectedExecutionException
           || (failure instanceof AuditPublishException
@@ -344,7 +355,10 @@ public final class AsyncAuditPublisher implements AuditPublisher, AuditQueueMetr
       } else {
         unconfirmed.incrementAndGet();
       }
-      LOG.error("Audit fallback did not confirm event {}", event.id(), failure);
+      LOG.error(
+          "Audit fallback did not confirm event {} type={}",
+          event.id(),
+          failure.getClass().getName());
     } finally {
       if (interrupted) Thread.currentThread().interrupt();
     }

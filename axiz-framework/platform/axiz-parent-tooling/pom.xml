@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  axiz-parent-tooling: parent of build tools and generators.
+  Adds: JSpecify, JUnit, module naming, formatting and code standards. This is not a core parent.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>pe.axiz</groupId>
+    <artifactId>axiz-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>axiz-parent-tooling</artifactId>
+  <packaging>pom</packaging>
+  <name>axiz :: parent :: tooling</name>
+  <description>Parent for build tools and generators, outside production core</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jspecify</groupId>
+      <artifactId>jspecify</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-launcher</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement><plugins><plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
+      <configuration><archive><manifestEntries><Automatic-Module-Name>${axiz.module.name}</Automatic-Module-Name></manifestEntries></archive></configuration>
+    </plugin></plugins></pluginManagement>
+
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>axiz-library-module-name</id>
+      <activation><property><name>packaging</name><value>jar</value></property></activation>
+      <build><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId>
+        <executions><execution><id>axiz-library-module-name</id><goals><goal>enforce</goal></goals><configuration><rules><requireProperty>
+          <property>axiz.module.name</property><regex>(?!.*(?:^|\.)(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while|true|false|null|_)(?:\.|$))[\p{javaJavaIdentifierStart}][\p{javaJavaIdentifierPart}]*(?:\.[\p{javaJavaIdentifierStart}][\p{javaJavaIdentifierPart}]*)*</regex>
+          <regexMessage>Libraries require a valid Java module name; use your own namespace.</regexMessage>
+        </requireProperty></rules></configuration></execution></executions>
+      </plugin></plugins></build>
+    </profile>
+
+    <profile>
+      <id>quality</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-code-standards</artifactId>
+                <version>${axiz.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>pe.axiz</groupId>
+                <artifactId>axiz-code-standards</artifactId>
+                <version>${axiz.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <configuration>
+              <targetClasses>
+                <param>pe.axiz.*</param>
+              </targetClasses>
+              <targetTests>
+                <param>pe.axiz.*</param>
+              </targetTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>mutation</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>mutationCoverage</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

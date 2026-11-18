@@ -4,7 +4,7 @@ public T get(I);
 public T update(I, T);
 public org.springframework.http.ResponseEntity<T> create(T);
 public org.springframework.http.ResponseEntity<java.lang.Void> delete(I);
-public pe.axiz.core.commons.PageResponse<T> list(pe.axiz.core.commons.PageRequest);
+public pe.axiz.core.api.PageResponse<T> list(pe.axiz.core.api.PageRequest);
 }
 
 public abstract class pe.axiz.structure.layered.spring.JpaCrudService<T, I> implements pe.axiz.structure.layered.CrudService<T, I> {
@@ -14,6 +14,6 @@ public T create(T);
 public T update(I, T);
 public java.lang.String resourceName();
 public java.util.Optional<T> find(I);
-public pe.axiz.core.commons.Page<T> list(pe.axiz.core.commons.PageRequest);
+public pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
 public void delete(I);
 }

@@ -15,7 +15,7 @@ public void append(pe.axiz.core.outbox.OutboxRecord);
 public void verifySchema();
 }
 
-public final class pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter {
-public pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter(pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore, java.time.Clock);
+public final class pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter {
+public pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter(pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore, java.time.Clock);
 public reactor.core.publisher.Mono<java.lang.Void> write(java.lang.String, pe.axiz.core.messaging.EventEnvelope, java.lang.String);
 }

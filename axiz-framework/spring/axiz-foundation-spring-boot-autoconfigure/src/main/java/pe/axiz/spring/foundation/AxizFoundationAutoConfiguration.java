@@ -79,9 +79,7 @@ public class AxizFoundationAutoConfiguration {
   IdentifierRegistry axizIdentifierRegistry(ObjectProvider<IdentifierType> customTypes) {
     IdentifierRegistry.Builder builder = IdentifierRegistry.builder().discover();
     customTypes.orderedStream().forEach(builder::register);
-    IdentifierRegistry registry = builder.build();
-    IdentifierValidation.use(registry);
-    return registry;
+    return builder.build();
   }
 
   /** Runs before bean initialization, so clients never seed on an event loop. */

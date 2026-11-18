@@ -8,6 +8,38 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 
 class JdbcTransportSecurityTest {
+  @Test
+  void embeddedDatabasesAndBooleanTlsAliasesRespectTheSameDeploymentPolicy() {
+    for (String url : new String[] {"jdbc:h2:mem:test", "jdbc:hsqldb:mem:test"}) {
+      assertThrows(
+          IllegalStateException.class,
+          () ->
+              JdbcTransportSecurity.validate(
+                  url, new Properties(), new DataTransportSecurityPolicy("prod", true)));
+      assertDoesNotThrow(
+          () ->
+              JdbcTransportSecurity.validate(
+                  url, new Properties(), new DataTransportSecurityPolicy("test", false)));
+    }
+    for (String query :
+        new String[] {
+          "ssl",
+          "ssl=",
+          "ssl=true",
+          "sslmode=verify-full&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory"
+        }) {
+      assertDoesNotThrow(
+          () ->
+              JdbcTransportSecurity.validate(
+                  "jdbc:postgresql://database/payments?" + query, new Properties(), production));
+    }
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            JdbcTransportSecurity.validate(
+                "jdbc:postgresql://database/payments?ssl=false", new Properties(), production));
+  }
+
   private final DataTransportSecurityPolicy production =
       new DataTransportSecurityPolicy("prod", true);
 

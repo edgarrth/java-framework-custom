@@ -41,7 +41,6 @@ archetypes:
   - reactive
   persistence:
   - none
-  - dynamodb
   starters:
   - foundation
   - errors

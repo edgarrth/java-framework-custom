@@ -4,8 +4,8 @@ public void afterPropertiesSet();
 public void destroy();
 }
 
-public final class pe.axiz.spring.jpa.AxizJdbcIamPluginFactory implements software.amazon.jdbc.ConnectionPluginFactory {
-public pe.axiz.spring.jpa.AxizJdbcIamPluginFactory();
+public final class pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory implements software.amazon.jdbc.ConnectionPluginFactory {
+public pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory();
 public software.amazon.jdbc.ConnectionPlugin getInstance(software.amazon.jdbc.util.FullServicesContainer, java.util.Properties);
 }
 

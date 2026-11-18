@@ -3,7 +3,7 @@ package pe.axiz.adapter.audit.kafka;
 import java.nio.charset.StandardCharsets;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import pe.axiz.core.audit.AuditEvent;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.json.JsonWriter;
 
 /** Binary CloudEvents encoding shared by imperative and asynchronous Kafka publication. */
 public final class KafkaAuditRecords {
@@ -14,7 +14,7 @@ public final class KafkaAuditRecords {
     String key =
         event.resourceType() + ":" + (event.resourceId() == null ? event.id() : event.resourceId());
     ProducerRecord<String, String> record =
-        new ProducerRecord<>(topic, key, JsonWriter.write(event.toMap()));
+        new ProducerRecord<>(topic, key, JsonWriter.writeCanonical(event.toMap()));
     // binary-mode CloudEvent: ce_* headers and the JSON data as value
     record.headers().add("content-type", "application/json".getBytes(StandardCharsets.UTF_8));
     event

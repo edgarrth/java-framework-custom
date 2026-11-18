@@ -1,7 +1,7 @@
 package pe.axiz.payments.history.adapter.in.rest;
 
 import java.time.ZoneOffset;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.history.api.model.PaymentHistoryItem;
 import pe.axiz.payments.history.api.model.PaymentHistoryPage;

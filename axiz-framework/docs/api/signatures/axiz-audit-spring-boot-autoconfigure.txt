@@ -37,8 +37,8 @@ public class pe.axiz.spring.audit.AxizAuditAutoConfiguration {
 public pe.axiz.spring.audit.AxizAuditAutoConfiguration();
 }
 
-public class pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration {
-public pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration();
+public class pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration {
+public pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration();
 }
 
 public final class pe.axiz.spring.audit.AxizAuditProperties extends java.lang.Record {
@@ -112,8 +112,8 @@ public java.lang.String queueUrl();
 public pe.axiz.spring.audit.AxizAuditProperties$Sqs(java.lang.String);
 }
 
-public class pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration {
-public pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration();
+public class pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration {
+public pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration();
 }
 
 public class pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration {
@@ -160,8 +160,8 @@ public pe.axiz.spring.audit.ReactiveAuditableInterceptor(java.util.function.Supp
 
 public final class pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher implements pe.axiz.spring.audit.ReactiveAuditPublisher {
 public long notConfirmedCount();
-public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction);
-public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction, org.springframework.transaction.ReactiveTransactionManager, java.time.Duration, int);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction, org.springframework.transaction.ReactiveTransactionManager, java.time.Duration, int);
 public reactor.core.publisher.Mono<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
 }
 

@@ -8,7 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebExceptionHandler;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.Problem;
 import reactor.core.publisher.Mono;
 
@@ -27,6 +29,7 @@ public class ProblemWebExceptionHandler implements WebExceptionHandler {
     if (response.isCommitted()) {
       return Mono.error(failure);
     }
+    RequestMetadata metadata = exchange.getAttribute(RequestContext.KEY);
     Problem problem =
         responder.problem(
             failure,
@@ -34,7 +37,10 @@ public class ProblemWebExceptionHandler implements WebExceptionHandler {
                 ? exchange.getLocaleContext().getLocale()
                 : Locale.ROOT,
             exchange.getRequest().getPath().value(),
-            exchange.getRequest().getHeaders().getFirst(StandardHeaders.CORRELATION_ID));
+            metadata != null
+                ? metadata.correlationId()
+                : exchange.getRequest().getHeaders().getFirst(StandardHeaders.CORRELATION_ID));
+    responder.headers(response.getHeaders(), problem, failure);
     response.setStatusCode(HttpStatusCode.valueOf(problem.status()));
     response.getHeaders().setContentType(MediaType.parseMediaType(ProblemResponder.MEDIA_TYPE));
     DataBuffer buffer =

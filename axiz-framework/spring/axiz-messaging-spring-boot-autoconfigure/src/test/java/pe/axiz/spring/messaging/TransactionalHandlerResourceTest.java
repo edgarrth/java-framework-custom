@@ -44,15 +44,16 @@ import reactor.core.publisher.Mono;
 @ExtendWith(BlockHoundExtension.class)
 class TransactionalHandlerResourceTest {
   private static final EventEnvelope EVENT =
-      new EventEnvelope(
-          "event",
-          "urn:test",
-          "test.created",
-          Instant.EPOCH,
-          null,
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("event")
+          .source("urn:test")
+          .type("test.created")
+          .time(Instant.EPOCH)
+          .subject(null)
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   private static <T> ObjectProvider<T> provider(Class<T> type, T value) {
     var beans = new StaticListableBeanFactory();

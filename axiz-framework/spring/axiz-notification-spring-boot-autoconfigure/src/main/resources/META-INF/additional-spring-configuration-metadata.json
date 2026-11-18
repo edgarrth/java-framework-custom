@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.notification.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables notification auto-configuration."
+    }
+  ]
+}

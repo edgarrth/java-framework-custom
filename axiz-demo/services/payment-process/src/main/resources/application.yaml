@@ -28,6 +28,7 @@ axiz:
       subscriptions:
       - pe.axiz.payments.payment-order.created.v1
     kafka:
+      authentication: ${AXIZ_KAFKA_AUTHENTICATION:msk}
       iam: ${AXIZ_KAFKA_IAM:true}
       topics:
       - payments

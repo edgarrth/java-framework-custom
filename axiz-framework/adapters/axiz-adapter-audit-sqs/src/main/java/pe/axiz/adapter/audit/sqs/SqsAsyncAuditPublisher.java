@@ -7,7 +7,7 @@ import java.util.concurrent.CompletionStage;
 import pe.axiz.core.audit.AsyncAuditEventPublisher;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditPublishException;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 
 /**
@@ -38,7 +38,13 @@ public final class SqsAsyncAuditPublisher implements AsyncAuditEventPublisher {
   public CompletionStage<Void> publish(AuditEvent event) {
     return Stages.settle(
         Stages.ignore(
-            Stages.call(() -> sqs.sendMessage(SqsAuditPublisher.request(queueUrl, fifo, event)))),
+            Stages.map(
+                Stages.call(
+                    () -> sqs.sendMessage(SqsAuditPublisher.request(queueUrl, fifo, event))),
+                response -> {
+                  SqsAuditPublisher.requireAcknowledgement(response);
+                  return response;
+                })),
         failure -> {
           if (failure instanceof CancellationException cancelled) throw cancelled;
           if (failure instanceof Error fatal) throw fatal;

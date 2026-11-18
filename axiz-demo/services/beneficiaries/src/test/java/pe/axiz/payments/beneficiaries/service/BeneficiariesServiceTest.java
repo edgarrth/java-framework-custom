@@ -8,7 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;

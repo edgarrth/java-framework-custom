@@ -28,6 +28,17 @@ class MoneyTest {
   private static final Currency USD = Currency.getInstance("USD");
 
   @Test
+  void zeroDivisorsUseThePublicInvalidAmountError() {
+    for (String zero : List.of("0", "0.00", "-0.000")) {
+      var failure =
+          assertThrows(
+              BusinessException.class,
+              () -> Money.of("10.00", "PEN").divide(new BigDecimal(zero), RoundingMode.HALF_EVEN));
+      assertEquals(MoneyErrors.INVALID_AMOUNT.code(), failure.code());
+    }
+  }
+
+  @Test
   void textFactoriesRejectExcessiveLexicalLengthEvenForAnOtherwiseValidAmount() {
     String padded = "0".repeat(4096) + "1.00";
     assertThrows(BusinessException.class, () -> Money.of(padded, "PEN"));

@@ -2,8 +2,8 @@ public class pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration {
 public pe.axiz.spring.idempotency.AxizIdempotencyAutoConfiguration();
 }
 
-public class pe.axiz.spring.idempotency.AxizIdempotencyDynamoDbAutoConfiguration {
-public pe.axiz.spring.idempotency.AxizIdempotencyDynamoDbAutoConfiguration();
+public class pe.axiz.spring.idempotency.dynamodb.AxizIdempotencyDynamoDbAutoConfiguration {
+public pe.axiz.spring.idempotency.dynamodb.AxizIdempotencyDynamoDbAutoConfiguration();
 }
 
 public final class pe.axiz.spring.idempotency.AxizIdempotencyProperties extends java.lang.Record {
@@ -21,8 +21,8 @@ public java.time.Duration retention();
 public pe.axiz.spring.idempotency.AxizIdempotencyProperties(java.lang.String, java.lang.String, java.lang.String, java.time.Duration, java.time.Duration, int, int, java.time.Duration);
 }
 
-public class pe.axiz.spring.idempotency.AxizIdempotencyRedisAutoConfiguration {
-public pe.axiz.spring.idempotency.AxizIdempotencyRedisAutoConfiguration();
+public class pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisAutoConfiguration {
+public pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisAutoConfiguration();
 }
 
 public class pe.axiz.spring.idempotency.IdempotencyFilter extends org.springframework.web.filter.OncePerRequestFilter {

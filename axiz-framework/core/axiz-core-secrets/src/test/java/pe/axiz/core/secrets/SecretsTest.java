@@ -1,24 +1,18 @@
 package pe.axiz.core.secrets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class SecretsTest {
 
@@ -28,31 +22,23 @@ class SecretsTest {
     assertEquals("SecretValue[****]", s.toString());
     assertEquals("p4ss", s.reveal());
     assertEquals(4, s.revealChars().length);
-    assertEquals(SecretValue.of("p4ss"), s);
+    assertTrue(s.matches(SecretValue.of("p4ss")));
+    assertNotEquals(SecretValue.of("p4ss"), s);
     assertNotEquals(SecretValue.of("other"), s);
-    assertEquals(SecretValue.of("p4ss").hashCode(), s.hashCode());
-  }
-
-  @Test
-  void environmentAndFileResolvers(@TempDir Path dir) throws Exception {
-    EnvironmentSecretResolver env =
-        new EnvironmentSecretResolver(Map.of("PAYMENTS_DB_PASSWORD", "x", "EMPTY", ""));
-    assertEquals("x", env.require("payments/db-password").reveal());
-    assertTrue(env.resolve("empty").isEmpty());
-    Files.writeString(dir.resolve("payments.api-key"), "key-1\n");
-    FileSecretResolver files = new FileSecretResolver(dir);
-    assertEquals("key-1", files.require("payments/api-key").reveal());
-    Files.writeString(dir.resolve("payments.db.password"), "field-override");
-    assertEquals("field-override", files.require("payments/db#password").reveal());
-    assertTrue(files.resolve("missing").isEmpty());
-    assertThrows(IllegalArgumentException.class, () -> files.resolve("../etc/passwd"));
-    assertThrows(IllegalArgumentException.class, () -> files.resolve("a b"));
-    CompositeSecretResolver composite = new CompositeSecretResolver(List.of(env, files));
-    assertEquals("key-1", composite.require("payments/api-key").reveal());
-    SecretNotFoundException e =
-        assertThrows(SecretNotFoundException.class, () -> composite.require("nope"));
-    assertFalse(e.getMessage().contains("key-1"));
-    assertTrue(EnvironmentSecretResolver.system() != null);
+    char[][] temporary = new char[1][];
+    assertEquals(
+        "p4ss",
+        s.use(
+            chars -> {
+              temporary[0] = chars;
+              return new String(chars);
+            }));
+    assertTrue(java.util.Arrays.equals(new char[4], temporary[0]));
+    s.close();
+    s.close();
+    assertThrows(IllegalStateException.class, s::reveal);
+    assertThrows(IllegalStateException.class, s::revealChars);
+    assertThrows(IllegalStateException.class, () -> s.use(chars -> chars.length));
   }
 
   @Test

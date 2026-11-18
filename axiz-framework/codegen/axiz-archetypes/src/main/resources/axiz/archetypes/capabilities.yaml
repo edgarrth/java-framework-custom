@@ -60,7 +60,7 @@ capabilities:
     properties:
       management.opentelemetry.tracing.export.otlp.endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
       management.otlp.metrics.export.url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
-      management.tracing.sampling.probability: ${AXIZ_TRACE_SAMPLING:1.0}
+      management.tracing.sampling.probability: ${AXIZ_TRACE_SAMPLING:0.1}
     example: |
       @Metered(event = "order.price")
       Money price(Order order) { ... }
@@ -78,13 +78,24 @@ capabilities:
   - name: config
     stacks: [servlet, reactive]
     starter: axiz-config-spring-boot-starter
-    description: ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), Parameter Store, required keys check
-    localProperties:
+    description: ConfigMaps mounted as files (axiz-common, <app>, <app>-errors; no Kubernetes API access), required keys check
+    local:
       axiz.config.environment: local
       axiz.transport.allow-plain-http: true
       axiz.transport.allow-insecure-data-stores: true
     example: |
       axiz.config.required: [axiz.http-client.clients.core.base-url]
+
+  - name: config-aws
+    stacks: [servlet, reactive]
+    starter: axiz-config-aws-spring-boot-starter
+    requires: [config]
+    description: Opt-in AWS Parameter Store bootstrap with process-selected environment and destination
+    example: |
+      # Set these in the process, before Config Data; not in application.yaml.
+      AXIZ_CONFIG_PARAMETER_STORE_ENABLED=true
+      AXIZ_CONFIG_PARAMETER_STORE_APPLICATION=payments
+      AXIZ_CONFIG_ENVIRONMENT=prod
 
   - name: i18n
     stacks: [servlet, reactive]
@@ -109,7 +120,7 @@ capabilities:
     starter: axiz-security-spring-boot-starter
     description: OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit
     properties:
-      axiz.security.issuers[0].issuer: ${AXIZ_OIDC_ISSUER:http://localhost:8180/realms/axiz}
+      axiz.security.issuers[0].issuer: ${AXIZ_OIDC_ISSUER}
       axiz.security.issuers[0].audiences[0]: ${spring.application.name}
     configMapKeys: [axiz.security.issuers]
     local:
@@ -119,6 +130,23 @@ capabilities:
       axiz.security.public-api-docs: true
     example: |
       @PreAuthorize("hasAuthority('SCOPE_orders.write')")
+
+  - name: security-redis
+    stacks: [servlet, reactive]
+    starter: axiz-security-redis-spring-boot-starter
+    description: Shared rate limits using Redis with the managed TLS transport
+    requires: [security]
+    properties:
+      axiz.security.rate-limit.enabled: true
+      axiz.security.rate-limit.store: redis
+      axiz.security.rate-limit.rules[0].name: api
+      axiz.security.rate-limit.rules[0].paths: ["/**"]
+      axiz.security.rate-limit.rules[0].limit: 100
+      axiz.security.rate-limit.rules[0].window: 1m
+      axiz.security.rate-limit.rules[0].fail-open: false
+    configMapKeys: [axiz.security.rate-limit]
+    example: |
+      axiz.security.rate-limit.store: redis
 
   # --- integration ------------------------------------------------------------------------
   - name: http-client
@@ -156,53 +184,85 @@ capabilities:
   - name: secrets
     stacks: [servlet, reactive]
     starter: axiz-secrets-spring-boot-starter
-    description: Secrets from the mounted ExternalSecret directory, environment, Secrets Manager or Parameter Store, cached
-    dependencies: [pe.axiz:axiz-adapter-secrets-aws, software.amazon.awssdk:secretsmanager, software.amazon.awssdk:ssm]
+    description: Ordered secret sources and bounded TTL cache, independent of the provider
+    example: |
+      try (SecretValue apiKey = secretResolver.require("partner-api-key")) { /* use apiKey */ }
+
+  - name: secrets-file
+    stacks: [servlet, reactive]
+    starter: axiz-secrets-file-spring-boot-starter
+    requires: [secrets]
+    description: Mounted secret files and environment variables, with native refreshed snapshots
     properties:
       axiz.secrets.directory: /var/run/secrets/axiz
     local:
-      axiz.aws.endpoint: http://localhost:4566
       axiz.secrets.directory: ./local/secrets
-    example: |
-      SecretValue apiKey = secretResolver.require("partner-api-key");
+
+  - name: secrets-aws
+    stacks: [servlet, reactive]
+    starter: axiz-secrets-aws-spring-boot-starter
+    requires: [secrets]
+    description: Explicit Secrets Manager and Parameter Store sources with shared AWS identity
+    properties:
+      axiz.secrets.secrets-manager.enabled: true
+    local:
+      axiz.aws.endpoint: http://localhost:4566
 
   # --- data -------------------------------------------------------------------------------
   - name: jpa
     stacks: [servlet]
     dependencies: [pe.axiz:axiz-kit-jpa]
     starter: axiz-jpa-spring-boot-starter
-    description: Aurora PostgreSQL with JPA, Flyway, AWS JDBC wrapper (IAM, failover, read/write splitting), auditing and encrypted columns
+    description: PostgreSQL with JPA, Flyway, auditing and encrypted columns
     properties:
       spring.datasource.url: ${DB_URL:jdbc:postgresql://localhost:5432/app}
       spring.datasource.username: ${DB_USERNAME:app}
       spring.jpa.open-in-view: false
       spring.jpa.hibernate.ddl-auto: validate
       spring.flyway.enabled: true
-      axiz.jpa.aws-wrapper.enabled: ${AXIZ_JPA_AWS_WRAPPER:false}
-      axiz.jpa.aws-wrapper.iam: ${AXIZ_JPA_IAM:false}
-    configMapKeys: [spring.datasource.url, spring.datasource.username, axiz.jpa.aws-wrapper.enabled, axiz.jpa.aws-wrapper.iam]
+    configMapKeys: [spring.datasource.url, spring.datasource.username]
     persistence:
       aurora: {}
     example: |
       @Entity class Order extends AuditableEntity { ... }
 
+  - name: jpa-aws
+    stacks: [servlet]
+    starter: axiz-jpa-aws-spring-boot-starter
+    requires: [jpa]
+    description: AWS JDBC wrapper for Aurora failover and optional IAM authentication
+    properties:
+      axiz.jpa.aws-wrapper.enabled: ${AXIZ_JPA_AWS_WRAPPER:true}
+      axiz.jpa.aws-wrapper.iam: ${AXIZ_JPA_IAM:false}
+    configMapKeys: [axiz.jpa.aws-wrapper.enabled, axiz.jpa.aws-wrapper.iam]
+
   - name: r2dbc
     stacks: [reactive]
-    dependencies: [pe.axiz:axiz-kit-r2dbc, pe.axiz:axiz-adapter-database-auth-aws]
+    dependencies: [pe.axiz:axiz-kit-r2dbc]
     starter: axiz-r2dbc-spring-boot-starter
-    description: Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, IAM tokens, auditing, encrypted and money columns, reader endpoint
+    description: Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, auditing, encrypted and money columns, reader endpoint
     properties:
       spring.r2dbc.url: ${DB_R2DBC_URL:r2dbc:postgresql://localhost:5432/app}
       spring.r2dbc.username: ${DB_USERNAME:app}
       spring.r2dbc.properties.sslMode: ${DB_SSL_MODE:verify-full}
       spring.flyway.enabled: true
-      axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:false}
-    configMapKeys: [spring.r2dbc.url, spring.r2dbc.username, axiz.r2dbc.iam.enabled]
+    configMapKeys: [spring.r2dbc.url, spring.r2dbc.username]
     persistence:
       r2dbc: {}
     example: |
       @Table("payment") class PaymentRow extends AuditableRow { ... }
       interface PaymentRows extends ReactiveCrudRepository<PaymentRow, UUID> {}
+
+  - name: r2dbc-aws
+    stacks: [reactive]
+    starter: axiz-r2dbc-aws-spring-boot-starter
+    requires: [r2dbc]
+    description: AWS IAM authentication with independent writer and reader credentials
+    properties:
+      axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:true}
+    configMapKeys: [axiz.r2dbc.iam.enabled]
+    local:
+      axiz.r2dbc.iam.enabled: false
 
   - name: dynamodb
     stacks: [servlet, reactive]
@@ -251,7 +311,7 @@ capabilities:
     starter: axiz-cache-spring-boot-starter
     description: L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages
     requires: [cache]
-    dependencies: [pe.axiz:axiz-adapter-cache-redis, org.springframework.boot:spring-boot-starter-data-redis]
+    dependencies: [pe.axiz:axiz-cache-redis-spring-boot-starter]
     properties:
       axiz.cache.redis: true
       spring.data.redis.url: ${REDIS_URL:redis://localhost:6379}
@@ -269,9 +329,9 @@ capabilities:
     description: CloudEvents ports, handlers, routes and Spring facade
   - name: storage-s3
     stacks: [servlet, reactive]
-    starter: axiz-storage-spring-boot-starter
+    starter: axiz-storage-s3-spring-boot-starter
     description: Object storage on S3 (streaming, presigned URLs, metadata), observed
-    dependencies: [pe.axiz:axiz-adapter-storage-s3, software.amazon.awssdk:s3]
+    requires: [storage]
     properties:
       axiz.storage.bucket: ${AXIZ_STORAGE_BUCKET:local-bucket}
     configMapKeys: [axiz.storage.bucket]
@@ -292,35 +352,44 @@ capabilities:
       axiz.sequence.sequences.operation.prefix: OP
     persistence:
       aurora:
-        dependencies: [pe.axiz:axiz-adapter-sequence-jdbc]
+        dependencies: [pe.axiz:axiz-sequence-jdbc-spring-boot-starter]
       r2dbc:
-        dependencies: [pe.axiz:axiz-adapter-sequence-r2dbc]
+        properties: {axiz.sequence.store: r2dbc}
+        dependencies: [pe.axiz:axiz-sequence-r2dbc-spring-boot-starter]
       dynamodb:
         properties: {axiz.sequence.store: dynamodb, axiz.sequence.table: '${axiz.dynamodb.table-prefix}axiz-sequence'}
-        dependencies: [pe.axiz:axiz-adapter-sequence-dynamodb]
+        dependencies: [pe.axiz:axiz-sequence-dynamodb-spring-boot-starter]
     example: |
       sequences.next("operation"); // String with Sequences; Mono<String> with ReactiveSequences
 
   # --- messaging --------------------------------------------------------------------------
   - name: messaging-kafka
     stacks: [servlet, reactive]
-    starter: axiz-messaging-spring-boot-starter
-    description: CloudEvents over Amazon MSK with IAM auth, retries, DLQ and trace propagation
-    dependencies: [pe.axiz:axiz-adapter-messaging-kafka, org.springframework.boot:spring-boot-starter-kafka, software.amazon.msk:aws-msk-iam-auth, pe.axiz:axiz-adapter-observability-aws]
+    starter: axiz-messaging-kafka-spring-boot-starter
+    requires: [messaging]
+    description: CloudEvents over Kafka with retries, DLQ and trace propagation
     properties:
       spring.kafka.bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
-      axiz.messaging.kafka.iam: ${AXIZ_KAFKA_IAM:true}
-    configMapKeys: [spring.kafka.bootstrap-servers, axiz.messaging.destinations, axiz.messaging.kafka.iam]
-    local:
-      axiz.messaging.kafka.iam: false
+    configMapKeys: [spring.kafka.bootstrap-servers, axiz.messaging.destinations]
     example: |
       axizEvents.publish("orders", "order-created.v1", order.id(), new OrderCreated(order.id()));
 
+  - name: messaging-msk
+    stacks: [servlet, reactive]
+    starter: axiz-messaging-msk-spring-boot-starter
+    requires: [messaging-kafka]
+    description: MSK IAM authentication through the shared AWS credential policy
+    properties:
+      axiz.messaging.kafka.authentication: msk
+    configMapKeys: [axiz.messaging.kafka.authentication]
+    local:
+      axiz.messaging.kafka.authentication: configured
+
   - name: messaging-sqs
     stacks: [servlet, reactive]
-    starter: axiz-messaging-spring-boot-starter
+    starter: axiz-messaging-sqs-spring-boot-starter
+    requires: [messaging]
     description: CloudEvents over SQS (standard and FIFO) consumers and publishers with DLQ
-    dependencies: [pe.axiz:axiz-adapter-messaging-sqs, software.amazon.awssdk:sqs, pe.axiz:axiz-adapter-observability-aws]
     properties:
       axiz.messaging.sqs.wait-time: 20s
     configMapKeys: [axiz.messaging.sqs.queues, axiz.messaging.destinations]
@@ -331,9 +400,9 @@ capabilities:
 
   - name: messaging-sns
     stacks: [servlet, reactive]
-    starter: axiz-messaging-spring-boot-starter
+    starter: axiz-messaging-sns-spring-boot-starter
+    requires: [messaging]
     description: CloudEvents publishing to SNS topics (fan-out)
-    dependencies: [pe.axiz:axiz-adapter-messaging-sns, software.amazon.awssdk:sns, pe.axiz:axiz-adapter-observability-aws]
     properties: {}
     configMapKeys: [axiz.messaging.destinations]
     local:
@@ -342,6 +411,7 @@ capabilities:
       axiz.messaging.destinations.notifications: arn:aws:sns:<region>:<account>:notifications
 
   - name: outbox
+    requiresAnyOf: [messaging-kafka, messaging-sns, messaging-sqs]
     stacks: [servlet, reactive]
     starter: axiz-outbox-spring-boot-starter
     description: Transactional outbox in Aurora (JDBC or R2DBC) with a relay to MSK, SNS or SQS (at least once)
@@ -350,10 +420,12 @@ capabilities:
     persistence:
       aurora:
         requires: [jpa]
-        dependencies: [pe.axiz:axiz-adapter-outbox-jdbc]
+        dependencies: [pe.axiz:axiz-outbox-jdbc-spring-boot-starter]
       r2dbc:
+        properties:
+          axiz.outbox.store: r2dbc
         requires: [r2dbc]
-        dependencies: [pe.axiz:axiz-adapter-outbox-r2dbc]
+        dependencies: [pe.axiz:axiz-outbox-r2dbc-spring-boot-starter]
     example: |
       // inside the transaction of the business change: published if and only if it commits
       transactionalEvents.enqueue("orders", event.id(), "order-created.v1", "order", order.id(), event);
@@ -366,18 +438,14 @@ capabilities:
     properties:
       axiz.inbox.retention: 14d
     persistence:
-      none:
-        properties: {axiz.inbox.store: dynamodb, axiz.inbox.table: '${axiz.dynamodb.table-prefix}axiz-inbox'}
-        dependencies: [pe.axiz:axiz-adapter-inbox-dynamodb]
-        requires: [dynamodb]
       aurora:
-        dependencies: [pe.axiz:axiz-adapter-inbox-jdbc]
+        dependencies: [pe.axiz:axiz-inbox-jdbc-spring-boot-starter]
       r2dbc:
         properties: {axiz.inbox.store: r2dbc}
-        dependencies: [pe.axiz:axiz-adapter-inbox-r2dbc]
+        dependencies: [pe.axiz:axiz-inbox-r2dbc-spring-boot-starter]
       dynamodb:
         properties: {axiz.inbox.store: dynamodb, axiz.inbox.table: '${axiz.dynamodb.table-prefix}axiz-inbox'}
-        dependencies: [pe.axiz:axiz-adapter-inbox-dynamodb]
+        dependencies: [pe.axiz:axiz-inbox-dynamodb-spring-boot-starter]
     example: |
       // consumers are de-duplicated automatically by event id
 
@@ -396,7 +464,7 @@ capabilities:
     starter: axiz-idempotency-spring-boot-starter
     description: Idempotency store on ElastiCache (Redis/Valkey)
     requires: [idempotency]
-    dependencies: [pe.axiz:axiz-adapter-idempotency-redis, org.springframework.boot:spring-boot-starter-data-redis]
+    dependencies: [pe.axiz:axiz-idempotency-redis-spring-boot-starter]
     properties:
       axiz.idempotency.store: redis
       spring.data.redis.url: ${REDIS_URL:redis://localhost:6379}
@@ -409,7 +477,7 @@ capabilities:
     starter: axiz-idempotency-spring-boot-starter
     description: Idempotency store on DynamoDB (conditional writes and TTL)
     requires: [idempotency, dynamodb]
-    dependencies: [pe.axiz:axiz-adapter-idempotency-dynamodb]
+    dependencies: [pe.axiz:axiz-idempotency-dynamodb-spring-boot-starter]
     properties:
       axiz.idempotency.store: dynamodb
       axiz.idempotency.table: ${axiz.dynamodb.table-prefix}axiz-idempotency
@@ -421,7 +489,7 @@ capabilities:
     starter: axiz-saga-spring-boot-starter
     description: Orchestrated sagas with persisted state, step retries and compensations
     requires: [jpa]
-    dependencies: [pe.axiz:axiz-adapter-saga-jdbc]
+    dependencies: [pe.axiz:axiz-saga-jdbc-spring-boot-starter]
     properties:
       axiz.saga.step-attempts: 3
     example: |
@@ -432,7 +500,7 @@ capabilities:
     stacks: [servlet, reactive]
     starter: axiz-lock-spring-boot-starter
     description: Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb)
-    localProperties:
+    local:
       axiz.lock.store: memory
     example: |
       // the lease is checked right before the effect; the debit itself is idempotent (key) in the core
@@ -446,7 +514,7 @@ capabilities:
     starter: axiz-lock-spring-boot-starter
     description: Distributed locks on ElastiCache (Redis/Valkey)
     requires: [lock]
-    dependencies: [pe.axiz:axiz-adapter-lock-redis, org.springframework.boot:spring-boot-starter-data-redis]
+    dependencies: [pe.axiz:axiz-lock-redis-spring-boot-starter]
     properties:
       axiz.lock.store: redis
       spring.data.redis.url: ${REDIS_URL:redis://localhost:6379}
@@ -459,7 +527,7 @@ capabilities:
     starter: axiz-lock-spring-boot-starter
     description: Distributed locks on DynamoDB (leases)
     requires: [lock, dynamodb]
-    dependencies: [pe.axiz:axiz-adapter-lock-dynamodb]
+    dependencies: [pe.axiz:axiz-lock-dynamodb-spring-boot-starter]
     properties:
       axiz.lock.store: dynamodb
       axiz.lock.table: ${axiz.dynamodb.table-prefix}axiz-locks
@@ -474,13 +542,13 @@ capabilities:
       axiz.scheduling.default-lock-at-most-for: 10m
     persistence:
       aurora:
-        dependencies: [net.javacrumbs.shedlock:shedlock-provider-jdbc-template]
+        dependencies: [pe.axiz:axiz-scheduling-jdbc-spring-boot-starter]
       r2dbc:
         properties: {axiz.scheduling.store: r2dbc}
-        dependencies: [net.javacrumbs.shedlock:shedlock-provider-r2dbc]
+        dependencies: [pe.axiz:axiz-scheduling-r2dbc-spring-boot-starter]
       dynamodb:
         properties: {axiz.scheduling.store: dynamodb, axiz.scheduling.table: '${axiz.dynamodb.table-prefix}axiz-shedlock'}
-        dependencies: [net.javacrumbs.shedlock:shedlock-provider-dynamodb2]
+        dependencies: [pe.axiz:axiz-scheduling-dynamodb-spring-boot-starter]
     example: |
       @Scheduled(cron = "0 0 2 * * *") @SchedulerLock(name = "purge")
       void purge() { ... }
@@ -496,10 +564,9 @@ capabilities:
 
   - name: audit-kafka
     stacks: [servlet, reactive]
-    starter: axiz-audit-spring-boot-starter
+    starter: axiz-audit-kafka-spring-boot-starter
     description: Audit events published to MSK
     requires: [audit, messaging-kafka]
-    dependencies: [pe.axiz:axiz-adapter-audit-kafka]
     properties:
       axiz.audit.kafka.topic: ${AXIZ_AUDIT_TOPIC:audit}
     configMapKeys: [axiz.audit.kafka.topic]
@@ -508,10 +575,9 @@ capabilities:
 
   - name: audit-sqs
     stacks: [servlet, reactive]
-    starter: axiz-audit-spring-boot-starter
+    starter: axiz-audit-sqs-spring-boot-starter
     description: Audit events published to SQS
     requires: [audit]
-    dependencies: [pe.axiz:axiz-adapter-audit-sqs, software.amazon.awssdk:sqs]
     properties:
       axiz.audit.sqs.queue-url: ${AXIZ_AUDIT_QUEUE_URL}
     configMapKeys: [axiz.audit.sqs.queue-url]
@@ -523,24 +589,111 @@ capabilities:
   - name: crypto
     stacks: [servlet, reactive]
     starter: axiz-crypto-spring-boot-starter
-    description: Field encryption (JPA and DynamoDB converters, rotating keys from the secret store), KMS envelope encryption, blind index, JOSE, password hashing
-    requires: [secrets]
-    dependencies: [pe.axiz:axiz-adapter-crypto-kms, software.amazon.awssdk:kms]
+    description: Field encryption, blind indices with independent rotation, and password hashing
+    requires: [secrets-file]
     properties:
-      axiz.crypto.kms.key-id: ${AXIZ_KMS_KEY_ID:alias/local}
       axiz.crypto.fields.current-key-id: v1
       axiz.crypto.fields.key-ids: [v1]
-      axiz.crypto.fields.blind-index-secret: blind-index-key
-    configMapKeys: [axiz.crypto.kms.key-id, axiz.crypto.fields.current-key-id, axiz.crypto.fields.key-ids]
+      axiz.crypto.fields.index-current-key-id: v1
+      axiz.crypto.fields.index-secrets.v1: blind-index-key
+    configMapKeys: [axiz.crypto.fields.current-key-id, axiz.crypto.fields.key-ids]
     secrets: [field-key-v1, blind-index-key]
-    local:
-      axiz.aws.endpoint: http://localhost:4566
     example: |
       @Converter
       final class AccountNumberConverter extends EncryptedConverter {
+        AccountNumberConverter(FieldEncryptor encryptor) { super(encryptor); }
         @Override protected String context() { return "account.number"; }
       }
       @Convert(converter = AccountNumberConverter.class) String accountNumber;
+
+  - name: crypto-kms
+    stacks: [servlet, reactive]
+    starter: axiz-crypto-kms-spring-boot-starter
+    description: Envelope encryption with AWS KMS and bounded data-key reuse
+    requires: [crypto]
+    properties:
+      axiz.crypto.kms.key-id: ${AXIZ_KMS_KEY_ID:alias/local}
+    configMapKeys: [axiz.crypto.kms.key-id]
+    local:
+      axiz.aws.endpoint: http://localhost:4566
+    example: |
+      byte[] encrypted = envelopeEncryptor.encrypt(payload, "statements");
+
+  - name: carddata
+    stacks: [servlet, reactive]
+    starter: axiz-core-carddata
+    description: Semantic PAN and transient authentication-data types; masking by default, no vault
+    requires: [sensitive]
+    example: |
+      try (Pan pan = Pan.of(value)) { /* only reveal at an authorized integration boundary */ }
+
+  - name: tokenization
+    stacks: [servlet, reactive]
+    starter: axiz-tokenization-spring-boot-starter
+    description: Authenticated remote token client without vault storage, keys or provider SDKs
+    requires: [http-client, security]
+    properties:
+      axiz.tokenization.mode: remote
+      axiz.tokenization.remote.client: token-vault
+      axiz.http-client.clients.token-vault.base-url: ${TOKEN_VAULT_URL}
+      axiz.http-client.clients.token-vault.auth.type: TOKEN_RELAY
+      axiz.http-client.clients.token-vault.retry: NONE
+      axiz.http-client.clients.token-vault.max-attempts: 1
+      axiz.http-client.clients.token-vault.max-concurrent-calls: 32
+      axiz.http-client.clients.token-vault.max-connections: 32
+      axiz.http-client.clients.token-vault.connect-timeout: 2s
+      axiz.http-client.clients.token-vault.read-timeout: 5s
+      axiz.http-client.clients.token-vault.total-timeout: 10s
+    configMapKeys: [axiz.http-client.clients.token-vault.base-url]
+    local:
+      axiz.tokenization.mode: local
+      axiz.http-client.clients.token-vault.base-url: https://synthetic.invalid
+    example: |
+      // Own and close SensitiveValue; the consumer receives only the token, never the index.
+      tokenizer.tokenize(type, value, domain, operationId);
+
+  - name: tokenization-vault
+    stacks: [servlet, reactive]
+    starter: axiz-tokenization-vault-spring-boot-starter
+    description: Central token vault with explicit policies, durable audit and distributed budgets
+    requires: [crypto, audit, security]
+    requiresAnyOf: [audit-kafka, audit-sqs, outbox]
+    configMapKeys: [axiz.tokenization.vault.auth, axiz.tokenization.vault.types]
+    example: |
+      # Supply verified claim mapping, type policies, access policy and reconciliation SPIs.
+      # The server refuses to start when a required collaborator or key control is missing.
+
+  - name: tokenization-vault-dynamodb
+    stacks: [servlet, reactive]
+    starter: axiz-tokenization-vault-dynamodb-spring-boot-starter
+    description: Explicit central vault table, atomic uniqueness and key-rotation controls
+    requires: [tokenization-vault, dynamodb, crypto-kms]
+    properties:
+      axiz.tokenization.vault.dynamodb.table: ${TOKEN_VAULT_TABLE}
+    configMapKeys: [axiz.tokenization.vault.dynamodb.table]
+    example: |
+      # Provision the table and key controls with the separate operator identity before startup.
+
+  - name: tokenization-vault-redis
+    stacks: [servlet, reactive]
+    starter: axiz-tokenization-vault-redis-spring-boot-starter
+    description: Dedicated authenticated TLS connection for distributed fail-closed token budgets
+    requires: [tokenization-vault, secrets]
+    properties:
+      axiz.tokenization.vault.redis.fail-open: false
+      axiz.tokenization.vault.redis.connection.tls: true
+    configMapKeys: [axiz.tokenization.vault.redis.namespace, axiz.tokenization.vault.redis.connection, axiz.tokenization.vault.redis.policy]
+    example: |
+      # Supply all subject/client/tenant windows and concurrency limits; there are no invented quotas.
+      # connection.password-secret is a SecretResolver reference, never an inline credential.
+
+  - name: tokenization-pan
+    stacks: [servlet, reactive]
+    starter: axiz-tokenization-pan-spring-boot-starter
+    description: PAN profile for the generic vault; independent from DNI-only deployments
+    requires: [tokenization-vault]
+    example: |
+      # Register a server type referencing the installed PAN profile and explicit keyset/purposes.
 
   - name: tenancy
     stacks: [servlet, reactive]
@@ -570,18 +723,11 @@ capabilities:
     example: |
       notificationSender.send(new NotificationRequest(id, NotificationChannel.EMAIL, to, "payment-confirmed", locale, params, null));
 
-# What the starter of each architectural style brings by itself. The generator adds these
-# capabilities and tables to every service of the style, so the migration, the properties and the
-# local resources always match what starts (a wired store without its table fails at startup or on
-# the first write).
-#   capabilities  added when the service store supports them (an event processor without
-#                 persistence has no inbox store: its handlers must be idempotent on their own)
-#   jdbc-tables   tables of stores the style starter wires when the service has a JDBC database
-#                 (servlet stack on Aurora), even if the capability was not chosen. Optional
-#                 dependencies of a starter do not count: they only arrive with their capability
+# Capabilities selected by architectural style. Dependencies, properties, migrations and local
+# resources all derive from these capabilities. Store-dependent defaults apply only when the
+# selected persistence supports them; explicit incompatible requests are rejected.
 styles:
   eda:
     capabilities: [inbox]
-    jdbc-tables: [outbox]
   batch:
-    jdbc-tables: [shedlock]
+    capabilities: [scheduling]

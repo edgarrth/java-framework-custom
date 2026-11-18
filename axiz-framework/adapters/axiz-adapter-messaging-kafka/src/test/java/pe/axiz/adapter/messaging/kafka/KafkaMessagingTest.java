@@ -28,15 +28,16 @@ import pe.axiz.core.messaging.PublishException;
 class KafkaMessagingTest {
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        "e-1",
-        "urn:axiz:test",
-        "t.v1",
-        Instant.parse("2026-01-01T00:00:00Z"),
-        "agg-1",
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of("correlationid", "c-1"));
+    return EventEnvelope.builder()
+        .id("e-1")
+        .source("urn:axiz:test")
+        .type("t.v1")
+        .time(Instant.parse("2026-01-01T00:00:00Z"))
+        .subject("agg-1")
+        .dataContentType("application/json")
+        .data("{}".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of("correlationid", "c-1"))
+        .build();
   }
 
   @Test
@@ -173,8 +174,7 @@ class KafkaMessagingTest {
   }
 
   @Test
-  void mskIamProperties() {
-    assertEquals("AWS_MSK_IAM", MskIam.clientProperties().get("sasl.mechanism"));
-    assertEquals("all", MskIam.reliableProducer().get("acks"));
+  void reliableProducerProperties() {
+    assertEquals("all", KafkaProducerPolicy.reliableProducer().get("acks"));
   }
 }

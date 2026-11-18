@@ -19,10 +19,30 @@ class SagaConcurrencyInvariantsTest {
   void onlyOneConcurrentRecoveryCanAdvanceTheSameVersion() throws Exception {
     var store = new InMemorySagaStateStore();
     Instant now = Instant.parse("2026-11-05T00:00:00Z");
-    var original = new SagaState("id", "payment", SagaStatus.RUNNING, 0, "", null, now, 0);
+    var original =
+        SagaState.builder()
+            .sagaId("id")
+            .sagaName("payment")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(0)
+            .context("")
+            .error(null)
+            .updatedAt(now)
+            .version(0)
+            .build();
     store.create(original);
     assertThrows(IllegalStateException.class, () -> store.create(original));
-    var next = new SagaState("id", "payment", SagaStatus.RUNNING, 1, "done", null, now, 1);
+    var next =
+        SagaState.builder()
+            .sagaId("id")
+            .sagaName("payment")
+            .status(SagaStatus.RUNNING)
+            .stepIndex(1)
+            .context("done")
+            .error(null)
+            .updatedAt(now)
+            .version(1)
+            .build();
     var start = new CountDownLatch(1);
     var advanced = new AtomicInteger();
     var conflicts = new AtomicInteger();
@@ -49,7 +69,17 @@ class SagaConcurrencyInvariantsTest {
     assertEquals(next, store.find("id").orElseThrow());
     assertTrue(store.findStale(now, 10).isEmpty());
     assertEquals(List.of(next), store.findStale(now.plusNanos(1), 10));
-    store.update(new SagaState("id", "payment", SagaStatus.COMPLETED, 1, "done", null, now, 2));
+    store.update(
+        SagaState.builder()
+            .sagaId("id")
+            .sagaName("payment")
+            .status(SagaStatus.COMPLETED)
+            .stepIndex(1)
+            .context("done")
+            .error(null)
+            .updatedAt(now)
+            .version(2)
+            .build());
     assertTrue(store.findStale(now.plusSeconds(1), 10).isEmpty());
   }
 }

@@ -20,22 +20,26 @@ import pe.axiz.core.commons.TransactionOutcome;
 @Timeout(10)
 class AuditDeliveryModesTest {
   private AuditEvent event() {
-    return new AuditEvent(
-        "event",
-        Instant.EPOCH,
-        "service",
-        "action",
-        "resource",
-        null,
-        new AuditEvent.Actor(null, null, null),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        null,
-        null,
-        null,
-        Map.of(),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id("event")
+        .occurredAt(Instant.EPOCH)
+        .service("service")
+        .action("action")
+        .resourceType("resource")
+        .resourceId(null)
+        .actor(new AuditEvent.Actor(null, null, null))
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId(null)
+        .channel(null)
+        .tenant(null)
+        .details(Map.of())
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 
   @Test
@@ -182,7 +186,7 @@ class AuditDeliveryModesTest {
     var original = event().withOutcomes(TransactionOutcome.ROLLED_BACK, TransactionOutcome.UNKNOWN);
     var degraded = original.withPersistence("NOT_CONFIRMED");
     assertTrue(original.details().isEmpty());
-    assertEquals("NOT_CONFIRMED", degraded.details().get("audit.persistence"));
+    assertEquals("NOT_CONFIRMED", degraded.persistence());
     assertEquals(TransactionOutcome.ROLLED_BACK, degraded.transactionOutcome());
     assertEquals(TransactionOutcome.UNKNOWN, degraded.operationOutcome());
     assertThrows(UnsupportedOperationException.class, () -> degraded.details().put("x", "y"));

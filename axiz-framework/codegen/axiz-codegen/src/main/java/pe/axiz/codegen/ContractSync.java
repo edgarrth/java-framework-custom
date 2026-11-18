@@ -114,20 +114,21 @@ public final class ContractSync {
             .orElseThrow(
                 () -> new IllegalArgumentException("Unknown archetype " + manifest.archetype()));
     ProjectRequest request =
-        new ProjectRequest(
-            manifest.name(),
-            manifest.groupId(),
-            manifest.basePackage(),
-            "",
-            manifest.archetype(),
-            manifest.structure(),
-            manifest.stack(),
-            manifest.persistence(),
-            List.of(),
-            text,
-            null,
-            manifest.axizVersion(),
-            manifest.extensions());
+        ProjectRequest.builder()
+            .name(manifest.name())
+            .groupId(manifest.groupId())
+            .basePackage(manifest.basePackage())
+            .description("")
+            .archetype(manifest.archetype())
+            .structure(manifest.structure())
+            .stack(manifest.stack())
+            .persistence(manifest.persistence())
+            .capabilities(List.of())
+            .openApi(text)
+            .asyncApi(null)
+            .frameworkVersion(manifest.axizVersion())
+            .extensions(manifest.extensions())
+            .build();
     Map<String, Object> context = generator.context(request, archetype, contract);
     Map<String, byte[]> rendered =
         JavaFormatter.formatAll(TemplateSet.load("service").render(context));

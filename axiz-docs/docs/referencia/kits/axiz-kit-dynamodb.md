@@ -21,7 +21,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `CursorCodec` | Authenticated, query-bound pagination cursor with keyed rotation and optional AES-GCM encryption (string, number and binary keys). |
 | `DynamoRepository` | Generic repository over the DynamoDB Enhanced Client: get by partition key (and sort key), conditional and plain writes, deletes, queries on the table, GSIs and LSIs with cursor pagination, and transactions. |
 | `DynamoAsyncRepository` | Native CompletionStage API with SDK optimistic locking and cancellation of the exact low-level request; queries fetch one bounded page. |
-| `EncryptedAttributeConverter` | Encrypts String attributes with the registered field encryptor: `@DynamoDbConvertedBy(EncryptedAttributeConverter.class)`. |
+| `EncryptedAttributeConverter` | Injected per-column String converter with an explicit encryption context. |
+| `EncryptedTableSchema` | Builds an Enhanced Client schema with injected converters and unique column contexts. |
 | `MoneyAttributeConverter` | Stores `Money` as its text form (`"PEN 150.00"`), never as a binary float. |
 
 ## Tests
@@ -36,6 +37,36 @@ completion thread and must perform CPU-only work; a converter that calls synchro
 appropriate for this API. Queries preserve the same opaque cursor format as the synchronous
 repository. The returned `table()` is an SDK escape hatch for transaction descriptions; direct
 SDK operations have the SDK's own cancellation semantics.
+
+## Injected field encryption
+
+Build the schema in the persistence adapter at startup and supply the `FieldEncryptor` owned
+by that application context. `EncryptedAttributeConverter` has no zero-argument constructor:
+do not register it through `@DynamoDbConvertedBy` or a global registry.
+
+```java
+TableSchema<Customer> schema =
+    new EncryptedTableSchema<>(Customer.class, Customer::new, fieldEncryptor)
+        .attribute(StaticAttribute.builder(Customer.class, String.class)
+            .name("id").getter(Customer::getId).setter(Customer::setId)
+            .tags(StaticAttributeTags.primaryPartitionKey()).build())
+        .encryptedString("dni", "customer.dni", Customer::getDni, Customer::setDni)
+        .build();
+```
+
+The model supplies the constructor, getters and setters referenced above. Pass the resulting
+schema to `DynamoRepositories.create(table, schema)` or its reactive counterpart; the class-only
+overload uses SDK annotation discovery and cannot inject this converter. A converter provider
+selected only by Java type would encrypt every String with one context, so encrypted attributes
+are registered individually. Names and encrypted-column contexts cannot be duplicated.
+
+Mapping uses local keys and performs no KMS request. The helper prevents ciphertext substitution
+between columns. Attribute converters cannot bind a ciphertext to another attribute's row ID;
+use `FieldProtector` with explicit row binding before constructing the persistence item when
+that protection is required. Store its encoded ciphertext without applying another converter.
+
+`EncryptedTableSchemaTest` exercises the SDK's `itemToMap`/`mapToItem`, cross-column substitution,
+independent key providers and malformed attribute types; it does not require a DynamoDB server.
 
 ## Authenticated pagination cursors
 

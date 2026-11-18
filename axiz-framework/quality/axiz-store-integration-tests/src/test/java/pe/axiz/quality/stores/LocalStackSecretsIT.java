@@ -37,9 +37,10 @@ import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.secrets.AxizSecretsAutoConfiguration;
-import pe.axiz.spring.secrets.AxizSecretsAwsAutoConfiguration;
-import pe.axiz.spring.secrets.AxizSecretsNativeAwsAutoConfiguration;
 import pe.axiz.spring.secrets.ReactiveSecrets;
+import pe.axiz.spring.secrets.aws.AxizSecretsAwsAutoConfiguration;
+import pe.axiz.spring.secrets.aws.AxizSecretsNativeAwsAutoConfiguration;
+import pe.axiz.spring.secrets.file.AxizSecretsFileAutoConfiguration;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -195,6 +196,7 @@ class LocalStackSecretsIT {
             AutoConfigurations.of(
                 AxizSecretsAwsAutoConfiguration.class,
                 AxizSecretsNativeAwsAutoConfiguration.class,
+                AxizSecretsFileAutoConfiguration.class,
                 AxizSecretsAutoConfiguration.class))
         .withPropertyValues(
             "axiz.secrets.directory=" + directory,

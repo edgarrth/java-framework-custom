@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
@@ -33,15 +33,16 @@ import reactor.core.publisher.Mono;
 class ReactionsTest {
 
   private static final EventEnvelope ENVELOPE =
-      new EventEnvelope(
-          "e-1",
-          "urn:test",
-          "pe.axiz.cards.card-blocked.v1",
-          Instant.EPOCH,
-          "c-1",
-          "application/json",
-          new byte[0],
-          Map.of());
+      EventEnvelope.builder()
+          .id("e-1")
+          .source("urn:test")
+          .type("pe.axiz.cards.card-blocked.v1")
+          .time(Instant.EPOCH)
+          .subject("c-1")
+          .dataContentType("application/json")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
 
   private static final PayloadCodec CODEC =
       new PayloadCodec() {
@@ -99,7 +100,7 @@ class ReactionsTest {
     RecordingReactiveEvents() {
       super(
           factory(),
-          new ReactiveOutboxWriter(
+          new R2dbcOutboxWriter(
               new R2dbcOutboxStore(
                   nothing(ReactiveSql.class), "axiz_outbox", Duration.ofSeconds(1)),
               Clock.systemUTC()));

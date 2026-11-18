@@ -3,8 +3,8 @@ package pe.axiz.spring.audit;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.audit.AuditTrail;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 
 /** Builds the audit context (actor, correlation, channel, tenant) from the current request. */
 @FunctionalInterface

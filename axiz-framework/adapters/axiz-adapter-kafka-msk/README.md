@@ -1,0 +1,40 @@
+# axiz-adapter-kafka-msk
+
+Amazon MSK IAM authentication with owned AWS credentials.
+
+This module owns the `pe.axiz.adapter.kafka.msk` API.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-adapter-kafka-msk</artifactId>
+</dependency>
+```
+
+## Types
+
+Public types declared by this module:
+
+- `AxizIamClientCallbackHandler`
+- `MskIam`
+
+## Operations
+
+Provision topics and broker access with TLS/SASL, bounded transport timeouts and durability
+settings suited to the event contract. Delivery may be repeated; consumers use stable event
+IDs and inbox deduplication. A producer acknowledgement is not a business transaction commit.
+
+## Verification
+
+From `axiz-framework`:
+
+```bash
+./mvnw -pl adapters/axiz-adapter-kafka-msk -am test
+```
+
+The full acceptance gate is `./mvnw clean install -Pquality -Daxiz.it.requireDocker=true`.
+Provider integration tests live in `quality/axiz-store-integration-tests` and require Docker.

@@ -33,8 +33,8 @@ public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Durat
 public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
 }
 
-public class pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration {
-public pe.axiz.spring.outbox.AxizOutboxR2dbcAutoConfiguration();
+public class pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration {
+public pe.axiz.spring.outbox.r2dbc.AxizOutboxR2dbcAutoConfiguration();
 }
 
 public final class pe.axiz.spring.outbox.CachedPendingCount {
@@ -56,8 +56,8 @@ public void stop();
 }
 
 public class pe.axiz.spring.outbox.ReactiveTransactionalEvents {
-public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter);
-public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter, io.micrometer.observation.ObservationRegistry);
+public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter);
+public pe.axiz.spring.outbox.ReactiveTransactionalEvents(pe.axiz.core.messaging.EventFactory, pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter, io.micrometer.observation.ObservationRegistry);
 public reactor.core.publisher.Mono<pe.axiz.core.messaging.EventEnvelope> enqueue(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Object);
 }
 

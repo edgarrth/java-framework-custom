@@ -38,7 +38,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ProjectRequest'}
-            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business, openApi: "openapi: 3.1.0 ..."}
+            example: {name: payment-orders, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.orders, archetype: business, openApi: "openapi: 3.1.0 ..."}
       responses:
         '200':
           description: The project
@@ -60,7 +60,7 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ProjectRequest'}
-            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business}
+            example: {name: payment-orders, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.orders, archetype: business}
       responses:
         '200':
           description: Validation result
@@ -83,14 +83,14 @@ paths:
         content:
           application/json:
             schema: {$ref: '#/components/schemas/ProjectRequest'}
-            example: {name: payments-business, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.business, archetype: business}
+            example: {name: payment-orders, groupId: pe.axiz.payments, basePackage: pe.axiz.payments.orders, archetype: business}
       responses:
         '201':
           description: Created
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Repository'}
-              example: {repository: acme/payments-business, url: https://github.com/acme/payments-business}
+              example: {repository: acme/payment-orders, url: https://github.com/acme/payment-orders}
         '403':
           description: The user has not authorized GitHub yet; open `authorize` in the browser and retry
           content:

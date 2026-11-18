@@ -25,6 +25,7 @@ axiz:
     kafka:
       topics:
       - payments
+      authentication: ${AXIZ_KAFKA_AUTHENTICATION:msk}
       iam: ${AXIZ_KAFKA_IAM:true}
       group-id: notifications-processor
     sqs:

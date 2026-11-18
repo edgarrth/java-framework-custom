@@ -13,6 +13,28 @@ import pe.axiz.core.errors.ExternalServiceException;
 
 /** Reading SOAP answers without a server, and the credentials value type. */
 class SoapResponseTest {
+  @Test
+  void qualifiedSoap11FaultsAndSoap12ReasonsRetainTheirCodesWithoutReturningAPayload() {
+    String eleven =
+        "<soap:Body><soap:Fault><soap:faultcode>soap:Server</soap:faultcode>"
+            + "<soap:faultstring> failed </soap:faultstring></soap:Fault></soap:Body>";
+    var failure =
+        assertThrows(
+            ExternalServiceException.class,
+            () -> SoapResponse.payload("core", 200, envelope(eleven)));
+    assertEquals("soap:Server", failure.detail().code());
+    assertEquals("failed", failure.detail().message());
+    String twelve =
+        "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"><s:Body><s:Fault>"
+            + "<s:Code><s:Value>s:Receiver</s:Value></s:Code><s:Reason><s:Text> failed </s:Text></s:Reason>"
+            + "</s:Fault></s:Body></s:Envelope>";
+    var modern =
+        assertThrows(
+            ExternalServiceException.class, () -> SoapResponse.payload("core", 503, twelve));
+    assertEquals("s:Receiver", modern.detail().code());
+    assertEquals("failed", modern.detail().message());
+    assertEquals(503, modern.detail().status());
+  }
 
   private static final String SOAP11 = "http://schemas.xmlsoap.org/soap/envelope/";
 

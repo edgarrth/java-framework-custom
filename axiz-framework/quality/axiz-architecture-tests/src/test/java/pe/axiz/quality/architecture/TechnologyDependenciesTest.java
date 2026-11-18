@@ -47,8 +47,15 @@ class TechnologyDependenciesTest {
           if (!child(dependency, "groupId").equals("pe.axiz") || !target.startsWith("axiz-kit-"))
             continue;
           String scope = child(dependency, "scope");
+          var targetPom =
+              factory
+                  .newDocumentBuilder()
+                  .parse(root.resolve("kits").resolve(target).resolve("pom.xml").toFile());
+          String targetNamespace =
+              targetPom.getElementsByTagName("axiz.module.name").item(0).getTextContent().strip();
           if (Set.of("", "compile", "runtime").contains(scope)
-              && !TechnologyBoundaries.allowed(module, technology, target.substring(9)))
+              && !TechnologyBoundaries.allowed(
+                  module, technology, TechnologyBoundaries.technology(targetNamespace)))
             violations.add(artifact + " -> " + target + " in " + pom);
         }
       }

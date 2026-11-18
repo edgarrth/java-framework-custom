@@ -53,12 +53,12 @@ public pe.axiz.spring.r2dbc.AxizR2dbcEnvironmentPostProcessor();
 public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
 }
 
-public class pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration {
-public pe.axiz.spring.r2dbc.AxizR2dbcFlywayIamAutoConfiguration();
+public class pe.axiz.spring.r2dbc.AxizR2dbcFlywayPasswordAutoConfiguration {
+public pe.axiz.spring.r2dbc.AxizR2dbcFlywayPasswordAutoConfiguration();
 }
 
-public class pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration {
-public pe.axiz.spring.r2dbc.AxizR2dbcIamAutoConfiguration();
+public class pe.axiz.spring.r2dbc.aws.AxizR2dbcIamAutoConfiguration {
+public pe.axiz.spring.r2dbc.aws.AxizR2dbcIamAutoConfiguration();
 }
 
 public final class pe.axiz.spring.r2dbc.AxizR2dbcProperties extends java.lang.Record {
@@ -112,8 +112,8 @@ public pe.axiz.spring.r2dbc.DatabaseClientReactiveSql(org.springframework.r2dbc.
 public reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
 }
 
-public final class pe.axiz.spring.r2dbc.FlywayIamCustomizer implements org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer {
-public pe.axiz.spring.r2dbc.FlywayIamCustomizer(pe.axiz.kit.r2dbc.DatabasePasswordProvider, org.springframework.core.env.Environment);
+public final class pe.axiz.spring.r2dbc.FlywayPasswordCustomizer implements org.springframework.boot.flyway.autoconfigure.FlywayConfigurationCustomizer {
+public pe.axiz.spring.r2dbc.FlywayPasswordCustomizer(pe.axiz.kit.r2dbc.DatabasePasswordProvider, org.springframework.core.env.Environment);
 public void customize(org.flywaydb.core.api.configuration.FluentConfiguration);
 }
 

@@ -23,7 +23,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.DataKeyProvider.DataKey;
 
 class AsyncEnvelopeEncryptorTest {
@@ -146,13 +146,13 @@ class AsyncEnvelopeEncryptorTest {
     assertArrayEquals(
         PLAIN,
         envelope
-            .decrypt(EnvelopePayload.seal(PLAIN, keyA, wrappedA, "account"), "account")
+            .decrypt(EnvelopePayload.seal(PLAIN, keyA.clone(), wrappedA, "account"), "account")
             .toCompletableFuture()
             .join());
     assertArrayEquals(
         PLAIN,
         envelope
-            .decrypt(EnvelopePayload.seal(PLAIN, keyB, wrappedB, "account"), "account")
+            .decrypt(EnvelopePayload.seal(PLAIN, keyB.clone(), wrappedB, "account"), "account")
             .toCompletableFuture()
             .join());
   }

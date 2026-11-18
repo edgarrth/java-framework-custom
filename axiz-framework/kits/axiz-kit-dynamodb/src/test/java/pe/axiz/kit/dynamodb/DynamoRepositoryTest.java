@@ -15,8 +15,9 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.money.Money;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
@@ -330,7 +331,13 @@ class DynamoRepositoryTest {
 
   @Test
   void anEncryptedAttributeOfAnotherTypeIsRejected() {
-    EncryptedAttributeConverter converter = new EncryptedAttributeConverter();
+    EncryptedAttributeConverter converter =
+        new EncryptedAttributeConverter(
+            new FieldEncryptor(new StaticKeyProvider("k", Map.of("k", AesGcm.newKey())))) {
+          protected String context() {
+            return "card.pan";
+          }
+        };
     assertThrows(
         IllegalArgumentException.class, () -> converter.transformTo(AttributeValue.fromN("1")));
     assertEquals(String.class, converter.type().rawClass());

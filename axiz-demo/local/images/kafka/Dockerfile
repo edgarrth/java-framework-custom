@@ -1,0 +1,22 @@
+FROM apache/kafka:4.2.2@sha256:1213eb3943d551e5ed1fca7a4e109001cee35770b66a02a0c37a8964efe09b69
+USER root
+# Patch the distribution packages and the affected libraries; retain package metadata for SCA.
+RUN apk upgrade --no-cache
+# Verify every download before removing its predecessor. Compatible with Docker's classic builder.
+RUN wget -q -O /opt/kafka/libs/jackson-core-2.21.7.jar https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-core/2.21.7/jackson-core-2.21.7.jar \
+    && printf '%s\n' '8c5623b98f32d5f7e1287ff61ed50e08ab7b11381e991fff89327faabba42261  /opt/kafka/libs/jackson-core-2.21.7.jar' | sha256sum -c - \
+    && test -f /opt/kafka/libs/jackson-core-2.21.6.jar && rm /opt/kafka/libs/jackson-core-2.21.6.jar \
+    && chown 1000:1000 /opt/kafka/libs/jackson-core-2.21.7.jar && chmod 0644 /opt/kafka/libs/jackson-core-2.21.7.jar
+RUN wget -q -O /opt/kafka/libs/jackson-databind-2.21.7.jar https://repo.maven.apache.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.21.7/jackson-databind-2.21.7.jar \
+    && printf '%s\n' '1290c2795e93e8a6861a6c4d9ff0d844d32f5ea178362cb2721edf5561e828b1  /opt/kafka/libs/jackson-databind-2.21.7.jar' | sha256sum -c - \
+    && test -f /opt/kafka/libs/jackson-databind-2.21.6.jar && rm /opt/kafka/libs/jackson-databind-2.21.6.jar \
+    && chown 1000:1000 /opt/kafka/libs/jackson-databind-2.21.7.jar && chmod 0644 /opt/kafka/libs/jackson-databind-2.21.7.jar
+RUN wget -q -O /opt/kafka/libs/snappy-java-1.1.10.9.jar https://repo.maven.apache.org/maven2/org/xerial/snappy/snappy-java/1.1.10.9/snappy-java-1.1.10.9.jar \
+    && printf '%s\n' '35228628442e4b9797681c7cbd3b26594f6da3379159dbd0cb07094ed3aece0d  /opt/kafka/libs/snappy-java-1.1.10.9.jar' | sha256sum -c - \
+    && test -f /opt/kafka/libs/snappy-java-1.1.10.7.jar && rm /opt/kafka/libs/snappy-java-1.1.10.7.jar \
+    && chown 1000:1000 /opt/kafka/libs/snappy-java-1.1.10.9.jar && chmod 0644 /opt/kafka/libs/snappy-java-1.1.10.9.jar
+RUN wget -q -O /opt/kafka/libs/lz4-java-1.11.4.jar https://repo.maven.apache.org/maven2/at/yawk/lz4/lz4-java/1.11.4/lz4-java-1.11.4.jar \
+    && printf '%s\n' '58c8e0b813960d2a248e050c353baea73139b48a2ffc55382d42c69707e17325  /opt/kafka/libs/lz4-java-1.11.4.jar' | sha256sum -c - \
+    && test -f /opt/kafka/libs/lz4-java-1.11.2.jar && rm /opt/kafka/libs/lz4-java-1.11.2.jar \
+    && chown 1000:1000 /opt/kafka/libs/lz4-java-1.11.4.jar && chmod 0644 /opt/kafka/libs/lz4-java-1.11.4.jar
+USER appuser

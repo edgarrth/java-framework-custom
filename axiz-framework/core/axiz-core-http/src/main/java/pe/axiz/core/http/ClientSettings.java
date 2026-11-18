@@ -65,17 +65,110 @@ public record ClientSettings(
   }
 
   public static ClientSettings of(String name, URI baseUrl) {
-    return new ClientSettings(
-        name,
-        baseUrl,
-        TimeoutSettings.defaults(),
-        AuthSettings.none(),
-        RetryMode.IDEMPOTENT_ONLY,
-        3,
-        "default",
-        0,
-        List.of(),
-        50,
-        TransportSecurityPolicy.system());
+    return ClientSettings.builder()
+        .name(name)
+        .baseUrl(baseUrl)
+        .timeouts(TimeoutSettings.defaults())
+        .auth(AuthSettings.none())
+        .retry(RetryMode.IDEMPOTENT_ONLY)
+        .maxAttempts(3)
+        .circuitBreaker("default")
+        .maxConcurrentCalls(0)
+        .propagateHeaders(List.of())
+        .maxConnections(50)
+        .transportSecurity(TransportSecurityPolicy.system())
+        .build();
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable String name = null;
+    private @Nullable URI baseUrl = null;
+    private @Nullable TimeoutSettings timeouts = null;
+    private @Nullable AuthSettings auth = null;
+    private @Nullable RetryMode retry = null;
+    private int maxAttempts = 0;
+    private @Nullable String circuitBreaker = null;
+    private int maxConcurrentCalls = 0;
+    private @Nullable List<String> propagateHeaders = List.of();
+    private int maxConnections = 0;
+    private @Nullable TransportSecurityPolicy transportSecurity = null;
+
+    private Builder() {}
+
+    public Builder name(String value) {
+      this.name = value;
+      return this;
+    }
+
+    public Builder baseUrl(URI value) {
+      this.baseUrl = value;
+      return this;
+    }
+
+    public Builder timeouts(TimeoutSettings value) {
+      this.timeouts = value;
+      return this;
+    }
+
+    public Builder auth(AuthSettings value) {
+      this.auth = value;
+      return this;
+    }
+
+    public Builder retry(RetryMode value) {
+      this.retry = value;
+      return this;
+    }
+
+    public Builder maxAttempts(int value) {
+      this.maxAttempts = value;
+      return this;
+    }
+
+    public Builder circuitBreaker(@Nullable String value) {
+      this.circuitBreaker = value;
+      return this;
+    }
+
+    public Builder maxConcurrentCalls(int value) {
+      this.maxConcurrentCalls = value;
+      return this;
+    }
+
+    public Builder propagateHeaders(List<String> value) {
+      this.propagateHeaders = List.copyOf(value);
+      return this;
+    }
+
+    public Builder maxConnections(int value) {
+      this.maxConnections = value;
+      return this;
+    }
+
+    public Builder transportSecurity(TransportSecurityPolicy value) {
+      this.transportSecurity = value;
+      return this;
+    }
+
+    public ClientSettings build() {
+      return new ClientSettings(
+          Objects.requireNonNull(name, "name"),
+          Objects.requireNonNull(baseUrl, "baseUrl"),
+          Objects.requireNonNull(timeouts, "timeouts"),
+          Objects.requireNonNull(auth, "auth"),
+          Objects.requireNonNull(retry, "retry"),
+          maxAttempts,
+          circuitBreaker,
+          maxConcurrentCalls,
+          Objects.requireNonNull(propagateHeaders, "propagateHeaders"),
+          maxConnections,
+          Objects.requireNonNull(transportSecurity, "transportSecurity"));
+    }
   }
 }

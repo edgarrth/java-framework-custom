@@ -39,5 +39,13 @@
     <module>axiz-core-storage</module>
     <module>axiz-core-tenancy</module>
     <module>axiz-core-time</module>
+    <module>axiz-core-api</module>
+    <module>axiz-core-context</module>
+    <module>axiz-core-concurrent</module>
+    <module>axiz-core-json</module>
+    <module>axiz-core-carddata</module>
+    <module>axiz-core-tokenization</module>
+    <module>axiz-core-tokenization-vault</module>
+    <module>axiz-core-tokenization-pan</module>
   </modules>
 </project>

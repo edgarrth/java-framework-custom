@@ -1,9 +1,9 @@
 package pe.axiz.adapter.sequence.r2dbc;
 
 import io.r2dbc.spi.ConnectionFactory;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.kit.sql.SqlIdentifiers;
 import reactor.core.publisher.Mono;
 
 /** Atomic PostgreSQL counter blocks, using an independent connection and transaction. */

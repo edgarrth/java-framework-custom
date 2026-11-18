@@ -61,19 +61,21 @@ class ContractAndUpgradeTest {
 
     Path library = Files.createDirectories(tmp.resolve("library"));
     ProjectManifest m = ProjectManifest.read(CliHarness.service(tmp));
-    new ProjectManifest(
-            m.name(),
-            m.groupId(),
-            m.basePackage(),
-            m.archetype(),
-            m.structure(),
-            m.stack(),
-            m.persistence(),
-            m.axizVersion(),
-            null,
-            null,
-            m.capabilities(),
-            List.of())
+    ProjectManifest.builder()
+        .name(m.name())
+        .groupId(m.groupId())
+        .basePackage(m.basePackage())
+        .archetype(m.archetype())
+        .structure(m.structure())
+        .stack(m.stack())
+        .persistence(m.persistence())
+        .axizVersion(m.axizVersion())
+        .openapi(null)
+        .asyncapi(null)
+        .capabilities(m.capabilities())
+        .operations(List.of())
+        .extensions(List.of())
+        .build()
         .write(library);
     CliHarness none = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, none.run("contract", "lint", "--dir", library.toString()));

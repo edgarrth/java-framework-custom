@@ -32,7 +32,7 @@ public final class ReactiveRules {
           "pe.axiz.core.audit.AuditTrail",
           "pe.axiz.core.audit.AsyncAuditPublisher",
           "pe.axiz.core.http.AccessTokenProvider",
-          "pe.axiz.core.http.ClientCredentialsTokenProvider",
+          "pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider",
           "pe.axiz.core.notification.NotificationSender",
           "pe.axiz.core.notification.EventNotificationSender",
           "pe.axiz.core.messaging.RoutingEventPublisher",

@@ -95,8 +95,9 @@ def aggregate(prepared, root):
             if SEVERITY[level]>SEVERITY[item['severity']]:item['severity']=level
             item['sourceIds']=sorted(set([*item['sourceIds'],advisory['source']]))
             item['locks']=sorted(set([*item['locks'],record['path']]))
-    passed=all(not any(row['affectedPackagesBySeverity'].get(level,0) for level in ('high','critical')) for row in locks)
-    return {'schema':2,'preparedAt':prepared['preparedAt'],'passedHighCriticalThreshold':passed,'locks':locks,
+    passed=all(not any(row['affectedPackagesBySeverity'].get(level,0) for level in ('moderate','high','critical')) for row in locks)
+    passed=passed and not any(SEVERITY[row['severity']]>=SEVERITY['moderate'] for row in advisories.values())
+    return {'schema':3,'preparedAt':prepared['preparedAt'],'passedMediumHighCriticalThreshold':passed,'locks':locks,
             'affectedLockPackagePairs':pairs,'uniqueAffectedPackageNames':len(names),'uniqueAdvisoryCount':len(advisories),
             'uniqueAdvisoriesBySeverity':dict(Counter(row['severity'] for row in advisories.values())),
             'advisories':[advisories[key] for key in sorted(advisories)],
@@ -115,5 +116,5 @@ def main():
     result=aggregate(json.loads(args.input.read_text()),args.root)
     args.output.write_text(json.dumps(result,indent=2)+'\n')
     print('All three npm locks covered; unique advisories:',result['uniqueAdvisoryCount'])
-    return int(not result['passedHighCriticalThreshold'])
+    return int(not result['passedMediumHighCriticalThreshold'])
 if __name__=='__main__':raise SystemExit(main())

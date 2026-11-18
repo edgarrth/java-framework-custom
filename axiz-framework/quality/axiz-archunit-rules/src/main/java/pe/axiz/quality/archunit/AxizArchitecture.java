@@ -17,6 +17,8 @@ public final class AxizArchitecture {
   private Stack stack = Stack.SERVLET;
   private Structure structure = Structure.HEXAGONAL;
   private Set<Extension> extensions = Set.of();
+  private CardDataScope cardData = CardDataScope.NONE;
+  private TokenizationScope tokenization = TokenizationScope.NONE;
 
   private AxizArchitecture(String basePackage) {
     this.basePackage = Objects.requireNonNull(basePackage, "basePackage");
@@ -47,13 +49,25 @@ public final class AxizArchitecture {
     return this;
   }
 
+  public AxizArchitecture cardData(CardDataScope value) {
+    cardData = Objects.requireNonNull(value);
+    return this;
+  }
+
+  public AxizArchitecture tokenization(TokenizationScope value) {
+    tokenization = Objects.requireNonNull(value);
+    return this;
+  }
+
   public List<ArchRule> rules() {
     validate();
     List<ArchRule> rules = new ArrayList<>(GeneralRules.all());
     rules.addAll(ArchetypeRules.rules(archetype));
+    rules.addAll(CardDataRules.rules(basePackage, cardData));
+    rules.addAll(TokenizationRules.rules(basePackage, tokenization));
     if (stack == Stack.REACTIVE) rules.addAll(ReactiveRules.rules());
     rules.addAll(structureRules(basePackage, structure));
-    if (extensions.contains(Extension.CQRS)) rules.addAll(CqrsRules.rules(basePackage));
+    if (extensions.contains(Extension.CQRS)) rules.addAll(CqrsRules.extensionRules());
     return List.copyOf(rules);
   }
 
@@ -87,14 +101,19 @@ public final class AxizArchitecture {
   }
 
   public void verify() {
-    verify(
+    JavaClasses classes =
         new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
             .importPackages(basePackage, "pe.axiz.core")
             .that(
                 DescribedPredicate.describe(
                     "service production classes",
-                    type -> type.getName().startsWith(basePackage + "."))));
+                    type -> type.getName().startsWith(basePackage + ".")));
+    long bootstraps = classes.stream().filter(PackageClosure::bootstrap).count();
+    if (bootstraps != 1)
+      throw new IllegalArgumentException(
+          "Expected exactly one Spring Boot application under " + basePackage);
+    verify(classes);
   }
 
   public void verify(JavaClasses classes) {

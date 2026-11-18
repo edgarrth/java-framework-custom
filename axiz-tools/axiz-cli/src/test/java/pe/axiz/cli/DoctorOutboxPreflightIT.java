@@ -18,14 +18,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight;
+import pe.axiz.quality.containers.TestContainerImages;
 
 /**
  * Runs the actual doctor command using a SELECT-only PostgreSQL account and the current v2 schema.
  */
 @Timeout(60)
 class DoctorOutboxPreflightIT {
-  private static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer("postgres:17.6-alpine");
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static final String PASSWORD = UUID.randomUUID().toString();
 
   @BeforeAll

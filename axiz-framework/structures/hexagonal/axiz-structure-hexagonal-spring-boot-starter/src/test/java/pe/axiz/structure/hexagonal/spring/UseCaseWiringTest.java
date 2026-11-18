@@ -129,15 +129,16 @@ class UseCaseWiringTest {
         @Nullable String aggregateId,
         Object payload) {
       enqueued.add(destination + "|" + type + "|" + aggregateType + "|" + aggregateId);
-      return new EventEnvelope(
-          eventId == null ? "x" : eventId,
-          "urn:test",
-          type,
-          Instant.EPOCH,
-          aggregateId,
-          "text/plain",
-          new byte[0],
-          Map.of());
+      return EventEnvelope.builder()
+          .id(eventId == null ? "x" : eventId)
+          .source("urn:test")
+          .type(type)
+          .time(Instant.EPOCH)
+          .subject(aggregateId)
+          .dataContentType("text/plain")
+          .data(new byte[0])
+          .extensions(Map.of())
+          .build();
     }
   }
 

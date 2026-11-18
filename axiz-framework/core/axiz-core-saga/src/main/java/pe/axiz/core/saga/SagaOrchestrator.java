@@ -6,6 +6,7 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.resilience.Retry;
 import pe.axiz.core.resilience.RetryPolicy;
 
@@ -32,6 +33,7 @@ public final class SagaOrchestrator {
   private final RetryPolicy compensationRetry;
   private final SagaListener listener;
   private final Clock clock;
+  private final PayloadProtector protector;
 
   public SagaOrchestrator(
       SagaStateStore store,
@@ -39,6 +41,17 @@ public final class SagaOrchestrator {
       RetryPolicy compensationRetry,
       SagaListener listener,
       Clock clock) {
+    this(store, stepRetry, compensationRetry, listener, clock, PayloadProtector.NONE);
+  }
+
+  public SagaOrchestrator(
+      SagaStateStore store,
+      RetryPolicy stepRetry,
+      RetryPolicy compensationRetry,
+      SagaListener listener,
+      Clock clock,
+      PayloadProtector protector) {
+    this.protector = Objects.requireNonNull(protector);
     this.store = Objects.requireNonNull(store);
     this.stepRetry = Objects.requireNonNull(stepRetry);
     this.compensationRetry = Objects.requireNonNull(compensationRetry);
@@ -48,18 +61,20 @@ public final class SagaOrchestrator {
 
   public <C> SagaResult<C> start(
       SagaDefinition<C> definition, ContextCodec<C> codec, String sagaId, C initial) {
+    var contexts = new SagaContextStore<>(definition.name(), codec, protector);
     SagaState state =
-        new SagaState(
-            sagaId,
-            definition.name(),
-            SagaStatus.RUNNING,
-            0,
-            codec.encode(initial),
-            null,
-            clock.instant(),
-            0);
+        SagaState.builder()
+            .sagaId(sagaId)
+            .sagaName(definition.name())
+            .status(SagaStatus.RUNNING)
+            .stepIndex(0)
+            .context(contexts.toStored(sagaId, initial))
+            .error(null)
+            .updatedAt(clock.instant())
+            .version(0)
+            .build();
     store.create(state);
-    return run(definition, codec, state);
+    return run(definition, contexts, state);
   }
 
   public <C> SagaResult<C> resume(
@@ -71,17 +86,17 @@ public final class SagaOrchestrator {
     if (!state.sagaName().equals(definition.name())) {
       throw new IllegalArgumentException("Saga " + sagaId + " is not a " + definition.name());
     }
-    return run(definition, codec, state);
+    return run(definition, new SagaContextStore<>(definition.name(), codec, protector), state);
   }
 
   private <C> SagaResult<C> run(
-      SagaDefinition<C> definition, ContextCodec<C> codec, SagaState initial) {
+      SagaDefinition<C> definition, SagaContextStore<C> contexts, SagaState initial) {
     SagaState state = initial;
-    C context = codec.decode(state.context());
+    C context = contexts.fromStored(state.sagaId(), state.context());
     List<SagaStep<C>> steps = definition.steps();
     if (state.status() == SagaStatus.IN_DOUBT) {
       int i = state.stepIndex();
-      Resolution<C> r = resolve(definition, codec, state, context, steps.get(i), i, null);
+      Resolution<C> r = resolve(definition, contexts, state, context, steps.get(i), i, null);
       if (r instanceof Resolution.Done<C> done) {
         return done.result();
       }
@@ -98,10 +113,10 @@ public final class SagaOrchestrator {
         } catch (Exception e) {
           if (StepFailures.isDefiniteRejection(e)) {
             // the participant refused: step i has no effect, compensate the steps before it
-            return abort(definition, codec, state, context, step, i - 1, e);
+            return abort(definition, contexts, state, context, step, i - 1, e);
           }
           // uncertain: the effect may exist, ask the participant before deciding anything
-          Resolution<C> r = resolve(definition, codec, state, context, step, i, e);
+          Resolution<C> r = resolve(definition, contexts, state, context, step, i, e);
           if (r instanceof Resolution.Done<C> done) {
             return done.result();
           }
@@ -114,12 +129,16 @@ public final class SagaOrchestrator {
           state =
               save(
                   state.next(
-                      SagaStatus.RUNNING, i + 1, codec.encode(context), null, clock.instant()));
+                      SagaStatus.RUNNING,
+                      i + 1,
+                      contexts.toStored(state.sagaId(), context),
+                      null,
+                      clock.instant()));
         } catch (SagaConcurrencyException e) {
           throw e; // another instance owns this saga
         } catch (RuntimeException e) {
           // step i ran but its result could not be recorded: it must be compensated as well
-          return abort(definition, codec, state, context, step, i, e);
+          return abort(definition, contexts, state, context, step, i, e);
         }
         String stepName = step.name();
         notifyListener(() -> listener.stepCompleted(definition.name(), initial.sagaId(), stepName));
@@ -129,7 +148,7 @@ public final class SagaOrchestrator {
               state.next(
                   SagaStatus.COMPLETED,
                   steps.size(),
-                  codec.encode(context),
+                  contexts.toStored(state.sagaId(), context),
                   null,
                   clock.instant()));
       notifyListener(
@@ -173,7 +192,7 @@ public final class SagaOrchestrator {
    */
   private <C> Resolution<C> resolve(
       SagaDefinition<C> definition,
-      ContextCodec<C> codec,
+      SagaContextStore<C> contexts,
       SagaState state,
       C context,
       SagaStep<C> step,
@@ -188,7 +207,7 @@ public final class SagaOrchestrator {
           definition.name(),
           state.sagaId(),
           step.name(),
-          e.toString());
+          e.getClass().getSimpleName());
       check = StepCheck.unknown();
     }
     return switch (check) {
@@ -198,11 +217,16 @@ public final class SagaOrchestrator {
         try {
           saved =
               save(
-                  state.next(SagaStatus.RUNNING, i + 1, codec.encode(next), null, clock.instant()));
+                  state.next(
+                      SagaStatus.RUNNING,
+                      i + 1,
+                      contexts.toStored(state.sagaId(), next),
+                      null,
+                      clock.instant()));
         } catch (SagaConcurrencyException e) {
           throw e;
         } catch (RuntimeException e) {
-          yield Resolution.done(abort(definition, codec, state, next, step, i, e));
+          yield Resolution.done(abort(definition, contexts, state, next, step, i, e));
         }
         LOG.info(
             "Saga {} {}: step {} was applied despite the failure",
@@ -217,7 +241,7 @@ public final class SagaOrchestrator {
           Resolution.done(
               abort(
                   definition,
-                  codec,
+                  contexts,
                   state,
                   context,
                   step,
@@ -228,10 +252,16 @@ public final class SagaOrchestrator {
       case StepCheck.Unknown<C> unknown -> {
         String error =
             cause != null
-                ? truncate(step.name() + ": in doubt, " + cause)
+                ? truncate(step.name() + ": in doubt, " + cause.getClass().getSimpleName())
                 : Objects.requireNonNullElse(state.error(), step.name() + ": in doubt");
         SagaState inDoubt =
-            save(state.next(SagaStatus.IN_DOUBT, i, codec.encode(context), error, clock.instant()));
+            save(
+                state.next(
+                    SagaStatus.IN_DOUBT,
+                    i,
+                    contexts.toStored(state.sagaId(), context),
+                    error,
+                    clock.instant()));
         LOG.warn(
             "Saga {} {} IN_DOUBT at step {}: outcome unknown, nothing compensated",
             definition.name(),
@@ -253,7 +283,7 @@ public final class SagaOrchestrator {
    */
   private <C> SagaResult<C> abort(
       SagaDefinition<C> definition,
-      ContextCodec<C> codec,
+      SagaContextStore<C> contexts,
       SagaState state,
       C context,
       SagaStep<C> failed,
@@ -264,14 +294,14 @@ public final class SagaOrchestrator {
         definition.name(),
         state.sagaId(),
         failed.name(),
-        cause.toString());
+        cause.getClass().getSimpleName());
     SagaState compensating =
         save(
             state.next(
                 SagaStatus.COMPENSATING,
                 lastToCompensate,
-                codec.encode(context),
-                truncate(failed.name() + ": " + cause),
+                contexts.toStored(state.sagaId(), context),
+                truncate(failed.name() + ": " + cause.getClass().getSimpleName()),
                 clock.instant()));
     SagaResult<C> r = compensate(definition, compensating, context, failed.name());
     notifyListener(() -> listener.finished(definition.name(), state.sagaId(), r.status(), cause));
@@ -292,18 +322,18 @@ public final class SagaOrchestrator {
                 });
       } catch (Exception e) {
         LOG.error(
-            "Saga {} {} could not compensate step {}: manual intervention required",
+            "Saga {} {} could not compensate step {}: manual intervention required; failureType={}",
             definition.name(),
             state.sagaId(),
             step.name(),
-            e);
+            e.getClass().getSimpleName());
         state =
             save(
                 state.next(
                     SagaStatus.FAILED,
                     j,
                     state.context(),
-                    truncate("compensation " + step.name() + ": " + e),
+                    truncate("compensation " + step.name() + ": " + e.getClass().getSimpleName()),
                     clock.instant()));
         return new SagaResult<>(state.sagaId(), SagaStatus.FAILED, context, failedStep);
       }
@@ -329,7 +359,8 @@ public final class SagaOrchestrator {
     try {
       call.run();
     } catch (RuntimeException e) {
-      LOG.warn("Saga listener failed; the saga outcome is not affected", e);
+      LOG.warn(
+          "Saga listener failed; outcome unchanged; failureType={}", e.getClass().getSimpleName());
     }
   }
 

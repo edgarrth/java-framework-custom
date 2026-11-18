@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.idempotency.Idempotent;
 import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;

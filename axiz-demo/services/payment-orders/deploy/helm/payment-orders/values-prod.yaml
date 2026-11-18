@@ -42,6 +42,7 @@ config:
         - v1
     messaging:
       kafka:
+        authentication: msk
         iam: true
       destinations:
         payments: kafka:payments

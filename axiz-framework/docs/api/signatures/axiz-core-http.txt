@@ -60,9 +60,9 @@ public java.util.concurrent.CompletionStage<pe.axiz.core.http.AccessToken> token
 public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider(pe.axiz.core.http.AsyncHttpExchange, java.net.URI, java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.String>>, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, java.time.Duration, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
 }
 
-public final class pe.axiz.core.http.ClientCredentialsTokenProvider implements pe.axiz.core.http.AccessTokenProvider {
+public final class pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider implements pe.axiz.core.http.AccessTokenProvider {
 public pe.axiz.core.http.AccessToken token();
-public pe.axiz.core.http.ClientCredentialsTokenProvider(java.net.http.HttpClient, java.net.URI, java.lang.String, java.util.function.Supplier<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, java.time.Duration, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
+public pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider(java.net.http.HttpClient, java.net.URI, java.lang.String, java.util.function.Supplier<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, java.time.Duration, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
 }
 
 public final class pe.axiz.core.http.ClientSettings extends java.lang.Record {

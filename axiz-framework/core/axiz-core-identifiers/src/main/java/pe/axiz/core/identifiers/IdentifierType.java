@@ -19,10 +19,11 @@ public interface IdentifierType {
     return raw.replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT);
   }
 
-  /** Masks the value for logs and responses; by default keeps the last four characters. */
+  /**
+   * Masks the value for logs and responses; by default reveals at most 25% and four suffix
+   * characters.
+   */
   default String mask(String normalizedValue) {
-    int keep = Math.min(4, normalizedValue.length() / 2);
-    return "*".repeat(normalizedValue.length() - keep)
-        + normalizedValue.substring(normalizedValue.length() - keep);
+    return IdentifierMasks.tail(normalizedValue, 4);
   }
 }

@@ -30,4 +30,7 @@ throw new BusinessException(MyErrors.LIMIT_EXCEEDED, "limit exceeded", Map.of("l
 ## Módulos
 
 - [`axiz-errors-spring-boot-autoconfigure`](../referencia/spring/axiz-errors-spring-boot-autoconfigure.md)
+- [`axiz-core-api`](../referencia/core/axiz-core-api.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
+- [`axiz-core-id`](../referencia/core/axiz-core-id.md)

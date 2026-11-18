@@ -2,6 +2,7 @@ package pe.axiz.quality.stores;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.micrometer.observation.ObservationRegistry;
@@ -11,6 +12,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
+import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.crypto.kms.KmsAsyncDataKeyProvider;
@@ -32,6 +36,8 @@ import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.core.crypto.KeyringAsyncDataKeyProvider;
+import pe.axiz.core.crypto.KeyringDataKeyProvider;
 import pe.axiz.spring.crypto.ReactiveEnvelopeEncryption;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -57,8 +63,7 @@ import software.amazon.awssdk.services.kms.model.KmsException;
  */
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackKmsIT {
-  private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("kms");
+  private static LocalStackContainer localstack;
   private static final byte[] PLAIN = "account statement".getBytes(StandardCharsets.UTF_8);
   private static final AtomicInteger REFRESHES = new AtomicInteger();
   private static final Set<String> PROVIDER_THREADS = ConcurrentHashMap.newKeySet();
@@ -75,14 +80,16 @@ class LocalStackKmsIT {
   static void start() {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
-    LOCALSTACK.start();
+    localstack =
+        new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("kms");
+    localstack.start();
     var credentials =
         StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(LOCALSTACK.getAccessKey(), LOCALSTACK.getSecretKey()));
+            AwsBasicCredentials.create(localstack.getAccessKey(), localstack.getSecretKey()));
     sync =
         KmsClient.builder()
-            .endpointOverride(LOCALSTACK.getEndpoint())
-            .region(Region.of(LOCALSTACK.getRegion()))
+            .endpointOverride(localstack.getEndpoint())
+            .region(Region.of(localstack.getRegion()))
             .credentialsProvider(credentials)
             .httpClient(UrlConnectionHttpClient.create())
             .build();
@@ -90,7 +97,7 @@ class LocalStackKmsIT {
     lifecycle = new NettyLifecycleProbe();
     resources =
         new AsyncAwsClients(
-            pe.axiz.adapter.aws.identity.AwsCredentialSource.borrowed(
+            AwsCredentialSource.borrowed(
                 () -> {
                   PROVIDER_THREADS.add(Thread.currentThread().getName());
                   REFRESHES.incrementAndGet();
@@ -107,10 +114,10 @@ class LocalStackKmsIT {
             ObservationRegistry.NOOP,
             key ->
                 switch (key) {
-                  case "axiz.aws.region" -> LOCALSTACK.getRegion();
+                  case "axiz.aws.region" -> localstack.getRegion();
                   case "axiz.config.environment" -> "test";
                   case "axiz.transport.allow-plain-http" -> "true";
-                  case "axiz.aws.endpoint" -> LOCALSTACK.getEndpoint().toString();
+                  case "axiz.aws.endpoint" -> localstack.getEndpoint().toString();
                   case "axiz.aws.async.connection-ttl", "axiz.aws.async.max-idle-time" -> "100ms";
                   default -> null;
                 },
@@ -146,7 +153,7 @@ class LocalStackKmsIT {
     if (async != null) async.close();
     if (resources != null) resources.close();
     if (sync != null) sync.close();
-    LOCALSTACK.stop();
+    if (localstack != null) localstack.stop();
     if (lifecycle != null) {
       lifecycle.close();
       assertTrue(lifecycle.errors.isEmpty(), () -> "Lifecycle errors: " + lifecycle.errors);
@@ -259,6 +266,86 @@ class LocalStackKmsIT {
 
     public Instant instant() {
       return now;
+    }
+  }
+
+  @Test
+  void distinctKmsKeysHaveBoundedExplicitDualReadsAndNativeRouting() {
+    String oldArn = sync.createKey().keyMetadata().arn();
+    String newArn = sync.createKey().keyMetadata().arn();
+    var oldProvider = new KmsDataKeyProvider(sync, oldArn);
+    var newProvider = new KmsDataKeyProvider(sync, newArn);
+    try (var old =
+            new EnvelopeEncryptor(
+                new KeyringDataKeyProvider(Map.of("old", oldProvider), "old"),
+                Duration.ofMinutes(1),
+                100,
+                Clock.systemUTC());
+        var mixed =
+            new EnvelopeEncryptor(
+                new KeyringDataKeyProvider(Map.of("old", oldProvider, "new", newProvider), "new"),
+                Duration.ofMinutes(1),
+                100,
+                Clock.systemUTC());
+        var nativeMixed =
+            new AsyncEnvelopeEncryptor(
+                new KeyringAsyncDataKeyProvider(
+                    Map.of(
+                        "old",
+                        new KmsAsyncDataKeyProvider(async, oldArn),
+                        "new",
+                        new KmsAsyncDataKeyProvider(async, newArn)),
+                    "new"),
+                Duration.ofMinutes(1),
+                100,
+                Clock.systemUTC())) {
+      byte[] before = old.encrypt(PLAIN, "purpose:token-vault", "synthetic-token-binding");
+      byte[] after = mixed.encrypt(PLAIN, "purpose:token-vault", "synthetic-token-binding");
+      assertEquals("old", KeyringDataKeyProvider.envelopeKeyId(before));
+      assertEquals("new", KeyringDataKeyProvider.envelopeKeyId(after));
+      assertArrayEquals(
+          PLAIN, mixed.decrypt(before, "purpose:token-vault", "synthetic-token-binding"));
+      StepVerifier.create(
+              Flux.just(before, after)
+                  .publishOn(Schedulers.parallel())
+                  .flatMap(
+                      bytes ->
+                          Mono.fromCompletionStage(
+                              () ->
+                                  nativeMixed.decrypt(
+                                      bytes, "purpose:token-vault", "synthetic-token-binding"))))
+          .expectNextMatches(bytes -> Arrays.equals(PLAIN, bytes))
+          .expectNextMatches(bytes -> Arrays.equals(PLAIN, bytes))
+          .verifyComplete();
+      StepVerifier.create(
+              Mono.defer(
+                      () ->
+                          Mono.fromCompletionStage(
+                              nativeMixed.encrypt(
+                                  PLAIN, "purpose:token-vault", "synthetic-token-binding")))
+                  .subscribeOn(Schedulers.parallel()))
+          .assertNext(
+              bytes -> {
+                assertEquals("new", KeyringDataKeyProvider.envelopeKeyId(bytes));
+              })
+          .verifyComplete();
+      try (var retired =
+          new EnvelopeEncryptor(
+              new KeyringDataKeyProvider(Map.of("new", newProvider), "new"),
+              Duration.ofMinutes(1),
+              100,
+              Clock.systemUTC())) {
+        assertThrows(
+            CryptoException.class,
+            () -> retired.decrypt(before, "purpose:token-vault", "synthetic-token-binding"));
+        assertArrayEquals(
+            PLAIN, retired.decrypt(after, "purpose:token-vault", "synthetic-token-binding"));
+      }
+      byte[] swapped = before.clone();
+      System.arraycopy("new".getBytes(StandardCharsets.US_ASCII), 0, swapped, 8, 3);
+      assertThrows(
+          CryptoException.class,
+          () -> mixed.decrypt(swapped, "purpose:token-vault", "synthetic-token-binding"));
     }
   }
 }

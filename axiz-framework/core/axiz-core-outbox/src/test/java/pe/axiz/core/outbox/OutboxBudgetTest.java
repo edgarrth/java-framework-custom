@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.LeaseTiming;
+import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.PublishResult;
@@ -47,30 +47,26 @@ class OutboxBudgetTest {
               i -> {
                 String id = "event-" + i;
                 var event =
-                    new EventEnvelope(
-                        id,
-                        "urn:test",
-                        "changed.v1",
-                        NOW,
-                        id,
-                        "application/json",
-                        new byte[0],
-                        Map.of());
-                return new OutboxRecord(
-                    id,
-                    "topic",
-                    "order",
-                    id,
-                    event.type(),
-                    CloudEventJson.write(event),
-                    OutboxRecord.Status.IN_FLIGHT,
-                    0,
-                    NOW,
-                    NOW,
-                    null,
-                    1,
-                    owner,
-                    NOW.minusSeconds(3600));
+                    EventEnvelope.builder()
+                        .id(id)
+                        .source("urn:test")
+                        .type("changed.v1")
+                        .time(NOW)
+                        .subject(id)
+                        .dataContentType("application/json")
+                        .data(new byte[0])
+                        .extensions(Map.of())
+                        .build();
+                return OutboxRecord.builder(
+                        id, "topic", event.type(), CloudEventJson.write(event), NOW)
+                    .aggregate("order", id)
+                    .status(OutboxRecord.Status.IN_FLIGHT)
+                    .attempts(0)
+                    .nextAttemptAt(NOW)
+                    .lastError(null)
+                    .aggregateSequence(1)
+                    .lease(owner, NOW.minusSeconds(3600))
+                    .build();
               })
           .limit(size)
           .toList();
@@ -102,22 +98,23 @@ class OutboxBudgetTest {
   }
 
   private OutboxRelay relay(Store store, Duration sendDuration, Listener listener) {
-    return new OutboxRelay(
-        store,
-        (destination, event) -> {
-          assertFalse(store.tx.active);
-          store.time.addAndGet(sendDuration.toNanos());
-          return new PublishResult(event.id(), destination, null);
-        },
-        store.tx,
-        Clock.fixed(NOW, ZoneOffset.UTC),
-        3,
-        2,
-        Backoff.fixed(Duration.ZERO),
-        LEASE,
-        BUDGET,
-        listener,
-        store.time::get);
+    return OutboxRelay.builder(
+            store,
+            (destination, event) -> {
+              assertFalse(store.tx.active);
+              store.time.addAndGet(sendDuration.toNanos());
+              return new PublishResult(event.id(), destination, null);
+            },
+            store.tx,
+            Clock.fixed(NOW, ZoneOffset.UTC))
+        .batchSize(3)
+        .maxAttempts(2)
+        .backoff(Backoff.fixed(Duration.ZERO))
+        .lease(LEASE)
+        .publishBudget(BUDGET)
+        .listener(listener)
+        .ticker(store.time::get)
+        .build();
   }
 
   @Test
@@ -158,27 +155,29 @@ class OutboxBudgetTest {
       assertThrows(
           IllegalArgumentException.class,
           () ->
-              new OutboxRelay(
-                  store,
-                  (d, e) -> new PublishResult(e.id(), d, null),
-                  store.tx,
-                  Clock.systemUTC(),
-                  1,
-                  1,
-                  Backoff.fixed(Duration.ZERO),
-                  LEASE,
-                  invalid));
+              OutboxRelay.builder(
+                      store,
+                      (d, e) -> new PublishResult(e.id(), d, null),
+                      store.tx,
+                      Clock.systemUTC())
+                  .batchSize(1)
+                  .maxAttempts(1)
+                  .backoff(Backoff.fixed(Duration.ZERO))
+                  .lease(LEASE)
+                  .publishBudget(invalid)
+                  .build());
     assertDoesNotThrow(
         () ->
-            new OutboxRelay(
-                store,
-                (d, e) -> new PublishResult(e.id(), d, null),
-                store.tx,
-                Clock.systemUTC(),
-                1,
-                1,
-                Backoff.fixed(Duration.ZERO),
-                LEASE,
-                LEASE.minus(LeaseTiming.margin(LEASE))));
+            OutboxRelay.builder(
+                    store,
+                    (d, e) -> new PublishResult(e.id(), d, null),
+                    store.tx,
+                    Clock.systemUTC())
+                .batchSize(1)
+                .maxAttempts(1)
+                .backoff(Backoff.fixed(Duration.ZERO))
+                .lease(LEASE)
+                .publishBudget(LEASE.minus(LeaseTiming.margin(LEASE)))
+                .build());
   }
 }

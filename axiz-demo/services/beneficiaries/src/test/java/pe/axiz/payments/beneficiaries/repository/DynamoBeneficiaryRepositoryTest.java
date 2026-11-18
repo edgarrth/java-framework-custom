@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;

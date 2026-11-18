@@ -33,15 +33,7 @@ class PaymentOrderHandlersTest {
       };
 
   private static EventEnvelope envelope(String type, Instant time) {
-    return new EventEnvelope(
-        "evt-1",
-        "urn:axiz:payment-orders",
-        type,
-        time,
-        "p-1",
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder().id("evt-1").source("urn:axiz:payment-orders").type(type).time(time).subject("p-1").dataContentType("application/json").data("{}".getBytes(StandardCharsets.UTF_8)).extensions(Map.of()).build();
   }
 
   @Test

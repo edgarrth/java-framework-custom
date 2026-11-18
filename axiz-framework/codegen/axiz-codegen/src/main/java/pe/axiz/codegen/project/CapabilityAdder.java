@@ -13,7 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import pe.axiz.codegen.model.ArchitectureScopes;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.Stack;
@@ -78,31 +80,40 @@ public final class CapabilityAdder {
    *     project
    */
   public Result add(Path dir, String capability) throws IOException {
+    return add(dir, List.of(capability));
+  }
+
+  /** Validates a complete capability composition before changing any project file. */
+  public Result add(Path dir, List<String> capabilities) throws IOException {
+    if (capabilities.isEmpty())
+      throw new IllegalArgumentException("At least one capability is required");
+    List<Capability> requested =
+        capabilities.stream()
+            .map(
+                name ->
+                    catalog
+                        .capability(name)
+                        .orElseThrow(
+                            () -> new IllegalArgumentException("Unknown capability " + name)))
+            .toList();
+    String capability = String.join("-", capabilities);
+    String example = String.join("\n", requested.stream().map(Capability::example).toList());
     dir = dir.toAbsolutePath().normalize();
     ProjectManifest manifest = ProjectManifest.read(dir);
     if (!manifest.isService()) {
       throw new IllegalArgumentException("Capabilities apply to services only");
     }
-    Capability requested =
-        catalog
-            .capability(capability)
-            .orElseThrow(
-                () ->
-                    new IllegalArgumentException(
-                        "Unknown capability "
-                            + capability
-                            + "; available: "
-                            + String.join(
-                                ", ",
-                                catalog.capabilities().stream().map(Capability::name).toList())));
     String persistence = manifest.persistence();
     String store = Catalog.store(persistence, manifest.stack());
+    Set<String> requestedNames = new LinkedHashSet<>(manifest.capabilities());
+    requestedNames.addAll(capabilities);
+    List<Capability> resolved = catalog.resolve(requestedNames, store);
+    List<String> incomplete = catalog.missingAlternatives(resolved);
+    if (!incomplete.isEmpty()) throw new IllegalArgumentException(String.join("; ", incomplete));
     List<Capability> missing =
-        catalog.resolve(List.of(capability), store).stream()
-            .filter(c -> !manifest.capabilities().contains(c.name()))
-            .toList();
+        resolved.stream().filter(c -> !manifest.capabilities().contains(c.name())).toList();
     if (missing.isEmpty()) {
-      return new Result(List.of(), List.of(), List.of(), requested.example());
+      return new Result(List.of(), List.of(), List.of(), example);
     }
     for (Capability c : missing) {
       if (!c.supports(manifest.stack()))
@@ -143,6 +154,21 @@ public final class CapabilityAdder {
       try (Stream<Path> entries = Files.list(chart)) {
         for (Path file : entries.toList()) SafePaths.target(dir, dir.relativize(file).toString());
       }
+    }
+    Path architecture =
+        layout.target(
+            "src/test/java/" + manifest.basePackage().replace('.', '/') + "/ArchitectureTest.java");
+    String architectureText = null;
+    if (capabilities.stream()
+        .anyMatch(name -> name.equals("carddata") || name.startsWith("tokenization"))) {
+      if (!Files.isRegularFile(architecture))
+        throw new IllegalArgumentException(
+            "ArchitectureTest is required before adding sensitive-data capabilities");
+      ArchitectureScopes scopes = ArchitectureScopes.of(resolved);
+      architectureText =
+          scope(Files.readString(architecture), "cardData", "CardDataScope", scopes.cardData());
+      architectureText =
+          scope(architectureText, "tokenization", "TokenizationScope", scopes.tokenization());
     }
     List<String> changed = new ArrayList<>();
 
@@ -235,13 +261,25 @@ public final class CapabilityAdder {
 
     List<String> all = new ArrayList<>(manifest.capabilities());
     missing.forEach(c -> all.add(c.name()));
+    if (architectureText != null) {
+      Files.writeString(architecture, architectureText, StandardCharsets.UTF_8);
+      changed.add(dir.relativize(architecture).toString());
+    }
     manifest.withCapabilities(all).write(dir);
     changed.add(ProjectManifest.PATH);
     return new Result(
-        missing.stream().map(Capability::name).toList(),
-        changed,
-        List.copyOf(keys),
-        requested.example());
+        missing.stream().map(Capability::name).toList(), changed, List.copyOf(keys), example);
+  }
+
+  private static String scope(String source, String method, String type, String value) {
+    var pattern = Pattern.compile("\\." + method + "\\(" + type + "\\.[A-Z]+\\)");
+    var matches = pattern.matcher(source);
+    if (matches.results().count() != 1)
+      throw new IllegalArgumentException(
+          "ArchitectureTest must declare one explicit "
+              + type
+              + " before adding this capability; migrate its configuration first");
+    return pattern.matcher(source).replaceFirst("." + method + "(" + type + "." + value + ")");
   }
 
   private static boolean applicationFile(Path file) {

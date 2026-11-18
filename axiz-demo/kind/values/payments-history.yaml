@@ -46,5 +46,6 @@ config:
   spring.r2dbc.properties.sslMode: disable
   axiz.r2dbc.iam.enabled: false
   spring.kafka.bootstrap-servers: kafka.axiz-demo.svc.cluster.local:9092
+  axiz.messaging.kafka.authentication: configured
   axiz.messaging.kafka.iam: false
   axiz.aws.endpoint: http://localstack.axiz-demo.svc.cluster.local:4566

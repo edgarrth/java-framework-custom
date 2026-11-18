@@ -40,7 +40,10 @@
     <module name="MultipleVariableDeclarations"/>
     <module name="ArrayTypeStyle"/>
     <module name="UpperEll"/>
-    <module name="HideUtilityClassConstructor"/>
+    <!-- Spring instantiates configuration even when its infrastructure beans are static. -->
+    <module name="HideUtilityClassConstructor">
+      <property name="ignoreAnnotatedBy" value="AutoConfiguration,org.springframework.boot.autoconfigure.AutoConfiguration"/>
+    </module>
     <module name="EqualsHashCode"/>
     <module name="NoFinalizer"/>
     <module name="MissingSwitchDefault"/>

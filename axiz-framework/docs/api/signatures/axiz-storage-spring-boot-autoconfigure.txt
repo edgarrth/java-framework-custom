@@ -13,8 +13,8 @@ public java.time.Duration maxPresignTtl();
 public pe.axiz.spring.storage.AxizStorageProperties(java.lang.String, java.lang.String, java.lang.String, java.time.Duration);
 }
 
-public class pe.axiz.spring.storage.AxizStorageS3AutoConfiguration {
-public pe.axiz.spring.storage.AxizStorageS3AutoConfiguration();
+public class pe.axiz.spring.storage.s3.AxizStorageS3AutoConfiguration {
+public pe.axiz.spring.storage.s3.AxizStorageS3AutoConfiguration();
 }
 
 public final class pe.axiz.spring.storage.ReactiveStorage {

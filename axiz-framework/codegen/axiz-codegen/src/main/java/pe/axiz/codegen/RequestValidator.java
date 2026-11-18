@@ -71,7 +71,7 @@ public final class RequestValidator {
     List<String> problems = new ArrayList<>();
     List<LintFinding> findings = new ArrayList<>();
     if (!Names.isArtifactId(r.name())) {
-      problems.add("name must be kebab-case (letters, digits and dashes), e.g. payments-business");
+      problems.add("name must be kebab-case (letters, digits and dashes), e.g. payment-orders");
     }
     if (!Names.isPackage(r.groupId())) {
       problems.add("groupId must be a valid Maven group, e.g. pe.axiz.payments");
@@ -153,13 +153,15 @@ public final class RequestValidator {
       String store = Catalog.store(r.persistence(), r.stack());
       List<Capability> capabilities =
           catalog.resolve(ProjectGenerator.capabilityNames(catalog, r, a), store);
+      problems.addAll(catalog.missingAlternatives(capabilities));
       if (consumesEvents
           && capabilities.stream()
               .noneMatch(
-                  capability -> capability.starter().equals("axiz-messaging-spring-boot-starter")))
+                  capability ->
+                      Set.of("messaging-kafka", "messaging-sqs").contains(capability.name())))
         problems.add(
-            "Consuming AsyncAPI events requires a messaging capability: messaging, messaging-sqs or"
-                + " messaging-kafka");
+            "Consuming AsyncAPI events requires a messaging capability with consumers:"
+                + " messaging-kafka or messaging-sqs");
       List<String> resolved = capabilities.stream().map(Capability::name).toList();
       if (resolved.contains("jpa") && !"aurora".equals(r.persistence())) {
         problems.add("Capabilities " + needing(r, "jpa") + " need Aurora: use persistence aurora");

@@ -16,9 +16,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.crypto.BlindIndex;
+import pe.axiz.core.crypto.IndexScope;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
 import pe.axiz.payments.orders.application.port.out.PaymentOrders;
@@ -30,7 +31,9 @@ import pe.axiz.payments.orders.domain.PaymentStatus;
 @Component
 public class PaymentOrderPersistenceAdapter implements PaymentOrders {
 
-  static final String CCI_CONTEXT = "payment-order.creditor-cci";
+  static IndexScope cciScope(String customerId) {
+    return new IndexScope("duplicate-payment", "CCI_PE", customerId, "payments", "identity", 1);
+  }
 
   /** Unique index of (customer_id, request_key), see V3__payment_limits_and_request_keys.sql. */
   static final String REQUEST_KEY_CONSTRAINT = "payment_order_request_key";
@@ -112,7 +115,7 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
         order.customerId(),
         order.debtorAccount(),
         order.creditorCci(),
-        blindIndex.index(order.creditorCci(), CCI_CONTEXT),
+        blindIndex.index(order.creditorCci(), cciScope(order.customerId())).encoded(),
         order.amount().amount(),
         order.amount().currencyCode(),
         order.description(),
@@ -162,12 +165,9 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
   @Override
   public boolean exists(
       String customerId, String creditorCci, Money amount, LocalDate processingDate) {
-    return repository.existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
-        customerId,
-        blindIndex.index(creditorCci, CCI_CONTEXT),
-        amount.amount(),
-        processingDate,
-        PaymentStatus.REJECTED.name());
+    return blindIndex.candidates(creditorCci, cciScope(customerId)).stream().anyMatch(candidate ->
+        repository.existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
+            customerId, candidate.encoded(), amount.amount(), processingDate, PaymentStatus.REJECTED.name()));
   }
 
   static PaymentOrder toDomain(PaymentOrderEntity e) {

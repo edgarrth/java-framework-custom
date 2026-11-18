@@ -30,6 +30,9 @@ public final class HexagonalRules {
     String adapters = basePackage + ".adapter..";
     String config = basePackage + ".config..";
     return List.of(
+        PackageClosure.rule(
+            basePackage, List.of("domain", "application", "adapter.in", "adapter.out", "config")),
+        PackageClosure.bootstrapOnlyStarts(basePackage),
         layeredArchitecture()
             .consideringOnlyDependenciesInLayers()
             .layer("Domain")
@@ -48,6 +51,41 @@ public final class HexagonalRules {
             .mayOnlyBeAccessedByLayers("Adapters", "Config")
             .whereLayer("Domain")
             .mayOnlyBeAccessedByLayers("Application", "Adapters", "Config"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.Runtime"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.ProcessBuilder"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .dependOnClassesThat()
+            .haveFullyQualifiedName("java.lang.Thread"),
+        noClasses()
+            .that()
+            .resideInAPackage(domain)
+            .should()
+            .callMethodWhere(
+                DescribedPredicate.describe(
+                    "ambient system state or exit",
+                    call ->
+                        call.getTargetOwner().isEquivalentTo(System.class)
+                            && Set.of(
+                                    "getenv",
+                                    "getProperty",
+                                    "getProperties",
+                                    "setProperty",
+                                    "setProperties",
+                                    "exit")
+                                .contains(call.getName()))),
         classes()
             .that()
             .resideInAnyPackage(domain, application)
@@ -58,7 +96,13 @@ public final class HexagonalRules {
             .should()
             .onlyDependOnClassesThat(
                 JavaClass.Predicates.resideInAnyPackage(
-                        "java..",
+                        "java.lang..",
+                        "java.util",
+                        "java.util.function..",
+                        "java.util.stream..",
+                        "java.util.concurrent.atomic..",
+                        "java.time..",
+                        "java.math..",
                         "org.jspecify.annotations..",
                         domain,
                         "pe.axiz.core.domain..",
@@ -85,7 +129,7 @@ public final class HexagonalRules {
                             "HeaderDefinition",
                             "StandardHeaders")
                         .stream()
-                        .map(n -> "pe.axiz.core.commons." + n)
+                        .map(n -> "pe.axiz.core.api." + n)
                         .anyMatch(n -> name.equals(n) || name.startsWith(n + "$"));
                   }
                 }),
@@ -158,6 +202,7 @@ public final class HexagonalRules {
                 "pe.axiz.structure.hexagonal.annotation..",
                 "pe.axiz.extension.cqrs",
                 "pe.axiz.core.commons..",
+                "pe.axiz.core.api..",
                 "pe.axiz.core.lang..",
                 "pe.axiz.core.money..",
                 "pe.axiz.core.errors..",

@@ -119,7 +119,7 @@ expect() {
   [[ " $codes " == *" $code "* ]] || why="HTTP $code, expected $codes"
   if [ -z "$why" ]; then
     for q in "$@"; do
-      jq -e "$q" >/dev/null 2>&1 <<<"$body" || { why="response does not satisfy: $q"; break; }
+      jq -e "$q" <<<"$body" >/dev/null 2>&1 || { why="response does not satisfy: $q"; break; }
     done
   fi
   if [ -z "$why" ]; then pass "$name"; return 0; fi

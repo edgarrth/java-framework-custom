@@ -19,7 +19,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 
 /** Native in-memory implementation for local/test use, with a bounded upload size per object. */
 public final class InMemoryAsyncObjectStorage implements AsyncObjectStorage {

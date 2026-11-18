@@ -70,7 +70,7 @@ public final class CachedPendingCount {
     try {
       last.set(new Sample(query.applyAsLong(store), clock.instant()));
     } catch (RuntimeException e) {
-      LOG.debug("Outbox pending count failed: {}", e.toString());
+      LOG.debug("Outbox pending count failed ({})", e.getClass().getSimpleName());
       last.set(new Sample(Double.NaN, clock.instant()));
     } finally {
       refreshing.set(false);

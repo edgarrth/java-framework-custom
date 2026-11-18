@@ -31,5 +31,13 @@ axiz.audit.mode: ASYNC
 
 - [`axiz-audit-spring-boot-autoconfigure`](../referencia/spring/axiz-audit-spring-boot-autoconfigure.md)
 - [`axiz-core-audit`](../referencia/core/axiz-core-audit.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
+- [`axiz-core-id`](../referencia/core/axiz-core-id.md)
+- [`axiz-core-json`](../referencia/core/axiz-core-json.md)
+- [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
 - [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)
+- [`axiz-core-secrets`](../referencia/core/axiz-core-secrets.md)
+- [`axiz-core-sensitive`](../referencia/core/axiz-core-sensitive.md)

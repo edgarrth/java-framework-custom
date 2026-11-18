@@ -77,8 +77,8 @@ public final class StoredResponse {
   public String toString() {
     return "StoredResponse[status="
         + status
-        + ", headers="
-        + headers
+        + ", headerCount="
+        + headers.size()
         + ", "
         + body.length
         + " bytes]";

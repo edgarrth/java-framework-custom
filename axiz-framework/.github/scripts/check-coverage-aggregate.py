@@ -22,7 +22,8 @@ def modules_with_code(root):
         dirnames[:] = [d for d in dirnames if d not in ('target', '.git', 'node_modules', 'templates')]
         if 'pom.xml' not in files or os.path.abspath(dirpath) == os.path.abspath(root):
             continue
-        pom = open(os.path.join(dirpath, 'pom.xml'), encoding='utf-8').read()
+        with open(os.path.join(dirpath, 'pom.xml'), encoding='utf-8') as source:
+            pom = source.read()
         own = re.sub(r'<parent>.*?</parent>', '', pom, flags=re.S)
         packaging = re.search(r'<packaging>(.*?)</packaging>', own)
         if packaging and packaging.group(1) != 'jar':

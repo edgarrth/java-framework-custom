@@ -99,19 +99,21 @@ class HttpClientGeneratorTest {
   }
 
   private static ProjectManifest project(Structure f, Stack s) {
-    return new ProjectManifest(
-        "payments-experience",
-        "pe.axiz.payments",
-        "pe.axiz.payments.experience",
-        "ux",
-        f,
-        s,
-        "none",
-        "2.0.0",
-        null,
-        null,
-        List.of("http-client"),
-        List.of());
+    return ProjectManifest.builder()
+        .name("payments-experience")
+        .groupId("pe.axiz.payments")
+        .basePackage("pe.axiz.payments.experience")
+        .archetype("ux")
+        .structure(f)
+        .stack(s)
+        .persistence("none")
+        .axizVersion("2.0.0")
+        .openapi(null)
+        .asyncapi(null)
+        .capabilities(List.of("http-client"))
+        .operations(List.of())
+        .extensions(List.of())
+        .build();
   }
 
   private static String file(HttpClientGenerator.Result r, String suffix) {

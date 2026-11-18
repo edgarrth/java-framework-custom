@@ -123,28 +123,32 @@ class NativeHttpCredentialsTest {
   }
 
   private ClientSettings settings(AuthType type) {
-    return new ClientSettings(
-        "bank",
-        URI.create("http://localhost:" + server.getAddress().getPort()),
-        new TimeoutSettings(Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(5)),
-        type == AuthType.API_KEY
-            ? new AuthSettings(type, null, null, null, List.of(), null, "X-Api-Key", "api")
-            : new AuthSettings(
-                type,
-                URI.create("http://localhost:" + server.getAddress().getPort() + "/token"),
-                "client",
-                "oauth",
-                List.of("read"),
-                null,
-                null,
-                null),
-        ClientSettings.RetryMode.NONE,
-        1,
-        null,
-        1,
-        List.of(),
-        2,
-        new TransportSecurityPolicy("test", true));
+    return ClientSettings.builder()
+        .name("bank")
+        .baseUrl(URI.create("http://localhost:" + server.getAddress().getPort()))
+        .timeouts(
+            new TimeoutSettings(
+                Duration.ofSeconds(2), Duration.ofSeconds(3), Duration.ofSeconds(5)))
+        .auth(
+            type == AuthType.API_KEY
+                ? new AuthSettings(type, null, null, null, List.of(), null, "X-Api-Key", "api")
+                : new AuthSettings(
+                    type,
+                    URI.create("http://localhost:" + server.getAddress().getPort() + "/token"),
+                    "client",
+                    "oauth",
+                    List.of("read"),
+                    null,
+                    null,
+                    null))
+        .retry(ClientSettings.RetryMode.NONE)
+        .maxAttempts(1)
+        .circuitBreaker(null)
+        .maxConcurrentCalls(1)
+        .propagateHeaders(List.of())
+        .maxConnections(2)
+        .transportSecurity(new TransportSecurityPolicy("test", true))
+        .build();
   }
 
   @Test
@@ -342,19 +346,28 @@ class NativeHttpCredentialsTest {
   private ClientSettings tokenSettings(URI uri) {
     var original = settings(AuthType.CLIENT_CREDENTIALS);
     var a = original.auth();
-    return new ClientSettings(
-        original.name(),
-        original.baseUrl(),
-        original.timeouts(),
-        new AuthSettings(
-            a.type(), uri, a.clientId(), a.clientSecretRef(), a.scopes(), a.audience(), null, null),
-        original.retry(),
-        original.maxAttempts(),
-        original.circuitBreaker(),
-        original.maxConcurrentCalls(),
-        original.propagateHeaders(),
-        original.maxConnections(),
-        new TransportSecurityPolicy("test", true));
+    return ClientSettings.builder()
+        .name(original.name())
+        .baseUrl(original.baseUrl())
+        .timeouts(original.timeouts())
+        .auth(
+            new AuthSettings(
+                a.type(),
+                uri,
+                a.clientId(),
+                a.clientSecretRef(),
+                a.scopes(),
+                a.audience(),
+                null,
+                null))
+        .retry(original.retry())
+        .maxAttempts(original.maxAttempts())
+        .circuitBreaker(original.circuitBreaker())
+        .maxConcurrentCalls(original.maxConcurrentCalls())
+        .propagateHeaders(original.propagateHeaders())
+        .maxConnections(original.maxConnections())
+        .transportSecurity(new TransportSecurityPolicy("test", true))
+        .build();
   }
 
   @Test

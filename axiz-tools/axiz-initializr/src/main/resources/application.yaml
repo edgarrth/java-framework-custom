@@ -49,7 +49,7 @@ management:
         enabled: true
 axiz:
   initializr:
-    structure-version: ${AXIZ_FRAMEWORK_VERSION:2.0.0}
+    framework-version: ${AXIZ_FRAMEWORK_VERSION:2.0.0}
     github-organization: ${AXIZ_GITHUB_ORGANIZATION:}
     # bearer tokens of the CLI and automations must name this API in their audience
     audience: ${AXIZ_INITIALIZR_AUDIENCE:axiz-initializr}

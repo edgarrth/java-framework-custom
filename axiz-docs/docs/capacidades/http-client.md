@@ -36,7 +36,11 @@ interface AccountsClient { @GetExchange("/{id}") Account get(@PathVariable Strin
 ## Módulos
 
 - [`axiz-http-client-spring-boot-autoconfigure`](../referencia/spring/axiz-http-client-spring-boot-autoconfigure.md)
+- [`axiz-core-api`](../referencia/core/axiz-core-api.md)
+- [`axiz-core-carddata`](../referencia/core/axiz-core-carddata.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-http`](../referencia/core/axiz-core-http.md)
 - [`axiz-core-logging`](../referencia/core/axiz-core-logging.md)

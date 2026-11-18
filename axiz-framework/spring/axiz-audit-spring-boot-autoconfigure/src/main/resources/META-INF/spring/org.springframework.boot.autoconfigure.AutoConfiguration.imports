@@ -1,4 +1,4 @@
-pe.axiz.spring.audit.AxizAuditKafkaAutoConfiguration
-pe.axiz.spring.audit.AxizAuditSqsAutoConfiguration
 pe.axiz.spring.audit.AxizAuditAutoConfiguration
 pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration
+pe.axiz.spring.audit.AxizStrictAuditAutoConfiguration
+pe.axiz.spring.audit.AxizAuditCheckpointAutoConfiguration

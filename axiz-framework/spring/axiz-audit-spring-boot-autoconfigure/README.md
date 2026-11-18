@@ -29,9 +29,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AuditSink` | A destination of audit events contributed by an adapter auto-configuration. |
 | `AuditableInterceptor` | Applies `Auditable`: records who did what on which resource and with what result. |
 | `AxizAuditAutoConfiguration` | Audit: `Auditable` through an infrastructure advisor, sanitized immutable events, real asynchronous publication (bounded queue, virtual thread, log fallback) and optional HTTP audit. |
-| `AxizAuditKafkaAutoConfiguration` | MSK sink for audit events, active when `axiz.audit.kafka.topic` is set. |
 | `AxizAuditProperties` | Audit settings (`axiz.audit.*`). |
-| `AxizAuditSqsAutoConfiguration` | SQS sink for audit events, active when `axiz.audit.sqs.queue-url` is set. |
 | `HttpAuditFilter` | Audits mutating HTTP requests. |
 | `HttpAuditWebFilter` | Reactive counterpart of `HttpAuditFilter`. |
 | `TransactionalAuditPublisher` | Durable audit: a successful action recorded inside a transaction is written to the outbox in that same transaction, so the evidence exists if and only if the business change was committed, and survives a crash right after the commit (the relay publishes it later, at least once, with the event id for deduplication). |
@@ -49,13 +47,13 @@ record and request metadata. Native R2DBC transaction context is preserved throu
 
 ## Delivery modes and transaction evidence
 
-Set `axiz.audit.mode` explicitly to `async`, `durable` or `sync`. If omitted, the existing
-`durable.enabled` and `async.enabled` flags retain their meaning. Conflicting explicit modes and
-`durable.enabled=true` are rejected.
+Set `axiz.audit.mode` explicitly to `async`, `durable` or `sync`. Legacy `durable.enabled`
+and `async.enabled` selectors are rejected. Select the Kafka or SQS provider starter separately;
+this neutral module does not own those SDKs or auto-configurations.
 
 | Mode | Guarantee |
 |---|---|
-| `async` (default) | Bounded in-memory queue. Enqueue is not a destination acknowledgement and does not survive a process crash. Startup warns outside `local`/`test`. |
+| `async` (implicit only in development) | Bounded in-memory queue. Enqueue is not a destination acknowledgement and does not survive a process crash. Deployed applications must choose a mode explicitly. |
 | `durable` | Success is appended to the outbox in the business transaction. Relay delivery is at least once; consumers deduplicate event IDs. |
 | `sync` | Waits for the destination acknowledgement, using the native asynchronous transport on WebFlux. It is not atomic with business changes. Delivery failure logs the sanitized event as `audit.persistence=UNCONFIRMED` and does not undo business completion. |
 
@@ -100,6 +98,26 @@ scraping configured. Adapt `monitoring.prometheusRules.metricSelector` to the ac
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-audit-spring-boot-autoconfigure verify`.
+
+## Integrity and confirmed publication
+
+`axiz.audit.integrity.mode=HASH` seals canonical immutable events by default; `HMAC` adds
+authentication using the separate secret reference `integrity.hmac-secret` and rotation ID
+`integrity.hmac-key-id`. `NONE` disables sealing and is incompatible with strict publication.
+An unkeyed hash chain does not prevent an actor with write access from recomputing evidence.
+
+`axiz.audit.strict.enabled=true` publishes `StrictAuditPublisher` or its native asynchronous
+counterpart. `strict.mode=DIRECT` requires an explicitly attested durable sink; `DURABLE`
+requires a separately committed outbox. There is no tolerant queue/log fallback on this path.
+Timeout (default 2 s) and concurrency (default 4) are bounded. A publication failure propagates;
+it does not claim that a previously committed business effect was rolled back.
+
+Memory chains emit confirmed checkpoints every `strict.checkpoint-interval` (default 1 minute)
+when a strict path exists. The verifier must obtain a trusted checkpoint from the durable sink,
+not a local diagnostic snapshot. `AuditChainVerifier` reports integrity separately from
+completeness: without a trusted checkpoint, completeness is `NOT_ASSESSED`; a missing suffix is
+detectable only up to that checkpoint. Preserve checkpoints and HMAC verification keys under
+separate operational control. No local hash, metric or successful enqueue proves complete receipt.
 
 ### Kafka submission in reactive applications
 

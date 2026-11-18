@@ -9,9 +9,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.AsyncLoadingCache;
-import pe.axiz.core.commons.Stages;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
+import pe.axiz.core.concurrent.AsyncLoadingCache;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Coalesced native token renewal and asynchronous secret lookup through a JDK-only transport port.
@@ -26,26 +26,28 @@ public final class ClientCredentialsAsyncTokenProvider implements AsyncAccessTok
   private final AsyncLoadingCache<AccessToken> pending;
   private volatile @Nullable AccessToken cached;
 
-  public ClientCredentialsAsyncTokenProvider(
-      AsyncHttpExchange http,
-      URI tokenUri,
-      String clientId,
-      Supplier<CompletionStage<String>> clientSecret,
-      List<String> scopes,
-      @Nullable String audience,
-      Duration renewBefore,
-      Duration timeout,
-      Clock clock,
-      TransportSecurityPolicy transportSecurity) {
-    this.http = Objects.requireNonNull(http);
-    this.clientSecret = Objects.requireNonNull(clientSecret);
+  private ClientCredentialsAsyncTokenProvider(Builder builder) {
+    AsyncHttpExchange http = Objects.requireNonNull(builder.http, "http");
+    URI tokenUri = Objects.requireNonNull(builder.tokenUri, "tokenUri");
+    String clientId = Objects.requireNonNull(builder.clientId, "clientId");
+    Supplier<CompletionStage<String>> clientSecret =
+        Objects.requireNonNull(builder.clientSecret, "clientSecret");
+    List<String> scopes = Objects.requireNonNull(builder.scopes, "scopes");
+    @Nullable String audience = builder.audience;
+    Duration renewBefore = Objects.requireNonNull(builder.renewBefore, "renewBefore");
+    Duration timeout = Objects.requireNonNull(builder.timeout, "timeout");
+    Clock clock = Objects.requireNonNull(builder.clock, "clock");
+    TransportSecurityPolicy transportSecurity =
+        Objects.requireNonNull(builder.transportSecurity, "transportSecurity");
+    this.http = http;
+    this.clientSecret = clientSecret;
     this.exchange =
         new ClientCredentialsExchange(
             tokenUri, clientId, scopes, audience, timeout, transportSecurity);
-    this.renewBefore = Objects.requireNonNull(renewBefore);
+    this.renewBefore = renewBefore;
     if (renewBefore.isNegative())
       throw new IllegalArgumentException("Token renewal margin must not be negative");
-    this.clock = Objects.requireNonNull(clock);
+    this.clock = clock;
     this.pending = new AsyncLoadingCache<>(Duration.ZERO, Long.MAX_VALUE, 1, clock);
   }
 
@@ -85,5 +87,80 @@ public final class ClientCredentialsAsyncTokenProvider implements AsyncAccessTok
                   }),
               response -> exchange.read(response, requestedAt, clock.instant()));
         });
+  }
+
+  /** Named construction; required values and invariants are checked by build. */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /** Mutable construction state; use one builder per operation, never as shared state. */
+  public static final class Builder {
+    private @Nullable AsyncHttpExchange http = null;
+    private @Nullable URI tokenUri = null;
+    private @Nullable String clientId = null;
+    private @Nullable Supplier<CompletionStage<String>> clientSecret = null;
+    private @Nullable List<String> scopes = List.of();
+    private @Nullable String audience = null;
+    private @Nullable Duration renewBefore = null;
+    private @Nullable Duration timeout = null;
+    private @Nullable Clock clock = null;
+    private @Nullable TransportSecurityPolicy transportSecurity = null;
+
+    private Builder() {}
+
+    public Builder http(AsyncHttpExchange value) {
+      this.http = value;
+      return this;
+    }
+
+    public Builder tokenUri(URI value) {
+      this.tokenUri = value;
+      return this;
+    }
+
+    public Builder clientId(String value) {
+      this.clientId = value;
+      return this;
+    }
+
+    public Builder clientSecret(Supplier<CompletionStage<String>> value) {
+      this.clientSecret = value;
+      return this;
+    }
+
+    public Builder scopes(List<String> value) {
+      this.scopes = List.copyOf(value);
+      return this;
+    }
+
+    public Builder audience(@Nullable String value) {
+      this.audience = value;
+      return this;
+    }
+
+    public Builder renewBefore(Duration value) {
+      this.renewBefore = value;
+      return this;
+    }
+
+    public Builder timeout(Duration value) {
+      this.timeout = value;
+      return this;
+    }
+
+    public Builder clock(Clock value) {
+      this.clock = value;
+      return this;
+    }
+
+    public Builder transportSecurity(TransportSecurityPolicy value) {
+      this.transportSecurity = value;
+      return this;
+    }
+
+    public ClientCredentialsAsyncTokenProvider build() {
+      return new ClientCredentialsAsyncTokenProvider(this);
+    }
   }
 }

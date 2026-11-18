@@ -20,6 +20,45 @@ class StructureBoundaryRegressionTest {
   @TempDir Path directory;
 
   @Test
+  void onlyTheNamedTransactionalContractsCanExposeReactorOutsideR2dbc() throws Exception {
+    var contract =
+        new ClassFileImporter()
+            .importClasses(
+                pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter.class,
+                pe.axiz.kit.reactor.audit.ReactiveAuditChainState.class);
+    assertFalse(
+        FrameworkArchitectureTest.REACTOR_API_ONLY_IN_R2DBC_TECHNOLOGY
+            .evaluate(contract)
+            .hasViolation());
+    assertFalse(
+        FrameworkArchitectureTest.TECHNOLOGY_PUBLIC_API_USES_PORT_TYPES
+            .evaluate(contract)
+            .hasViolation());
+    var other =
+        compile(
+            Map.of(
+                "pe.axiz.kit.reactor.outbox.Unapproved",
+                "package pe.axiz.kit.reactor.outbox; public interface Unapproved {"
+                    + " reactor.core.publisher.Mono<Void> run(); }",
+                "pe.axiz.kit.reactor.audit.Unapproved",
+                "package pe.axiz.kit.reactor.audit; public interface Unapproved {"
+                    + " reactor.core.publisher.Mono<Void> run(); }"));
+    assertTrue(
+        FrameworkArchitectureTest.REACTOR_API_ONLY_IN_R2DBC_TECHNOLOGY
+            .evaluate(other)
+            .hasViolation());
+    assertTrue(
+        FrameworkArchitectureTest.TECHNOLOGY_PUBLIC_API_USES_PORT_TYPES
+            .evaluate(other)
+            .hasViolation());
+    assertTrue(
+        FrameworkArchitectureTest.ADAPTERS_ONLY_IMPLEMENT_THEIR_CONTRACT
+            .evaluate(
+                dependency("pe.axiz.adapter.kafka.msk", "pe.axiz.adapter.aws.identity", false))
+            .hasViolation());
+  }
+
+  @Test
   void technologyBoundariesRejectForeignKitsAndAllowTheirOwnKit() throws Exception {
     assertFalse(
         FrameworkArchitectureTest.TECHNOLOGY_USES_ONLY_ITS_OWN_KIT
@@ -55,25 +94,25 @@ class StructureBoundaryRegressionTest {
 
   @Test
   void domainCommonsAreNeutralAndApplicationHasNoResponseOrHeaderContracts() throws Exception {
-    for (String type : List.of("ApiResponse", "RequestContext"))
-      assertTrue(hexagonalViolation("domain", "pe.axiz.core.commons." + type + " value;"));
+    for (String type : List.of("api.ApiResponse<?> ", "context.RequestContext "))
+      assertTrue(hexagonalViolation("domain", "pe.axiz.core." + type + "value;"));
     assertFalse(
         hexagonalViolation(
             "domain", "void check() { pe.axiz.core.lang.Checks.notNull(this, \"sample\"); }"));
-    assertTrue(hexagonalViolation("application", "pe.axiz.core.commons.ApiResponse<?> value;"));
-    assertFalse(hexagonalViolation("application", "pe.axiz.core.commons.PageRequest value;"));
+    assertTrue(hexagonalViolation("application", "pe.axiz.core.api.ApiResponse<?> value;"));
+    assertFalse(hexagonalViolation("application", "pe.axiz.core.api.PageRequest value;"));
     assertFalse(
         hexagonalViolation(
             "domain",
             """
-        pe.axiz.core.lang.Result<String,String> result = new pe.axiz.core.lang.Result.Ok<>("ok");
-        String inspect(pe.axiz.core.lang.Result<String,String> value) {
-          return switch(value) {
-            case pe.axiz.core.lang.Result.Ok<String,String>(var ok) -> ok;
-            case pe.axiz.core.lang.Result.Err<String,String>(var error) -> error;
-          };
-        }
-        """));
+            pe.axiz.core.lang.Result<String,String> result = new pe.axiz.core.lang.Result.Ok<>("ok");
+            String inspect(pe.axiz.core.lang.Result<String,String> value) {
+              return switch(value) {
+                case pe.axiz.core.lang.Result.Ok<String,String>(var ok) -> ok;
+                case pe.axiz.core.lang.Result.Err<String,String>(var error) -> error;
+              };
+            }
+            """));
   }
 
   private JavaClasses compile(Map<String, String> sources) throws Exception {
@@ -90,6 +129,50 @@ class StructureBoundaryRegressionTest {
         ToolProvider.getSystemJavaCompiler()
             .run(null, null, null, arguments.toArray(String[]::new)));
     return new ClassFileImporter().importPath(compilation);
+  }
+
+  @Test
+  void coreIoRuleRejectsConcreteIoButAllowsNeutralDataAndOnlyTimeoutClassification()
+      throws Exception {
+    for (String type :
+        List.of(
+            "java.net.http.HttpClient",
+            "java.net.http.HttpRequest",
+            "java.nio.file.Path",
+            "java.io.FileInputStream",
+            "java.net.Socket")) {
+      var classes =
+          compile(
+              Map.of(
+                  "pe.axiz.core.sample.Invalid",
+                  "package pe.axiz.core.sample; public class Invalid { " + type + " io; }"));
+      assertTrue(
+          FrameworkArchitectureTest.CORE_DOES_NOT_PERFORM_IO.evaluate(classes).hasViolation(),
+          type);
+    }
+    var neutral =
+        compile(
+            Map.of(
+                "pe.axiz.core.sample.Port",
+                "package pe.axiz.core.sample; public interface Port { String send(java.net.URI"
+                    + " endpoint); }"));
+    assertFalse(
+        FrameworkArchitectureTest.CORE_DOES_NOT_PERFORM_IO.evaluate(neutral).hasViolation());
+    var classifier =
+        compile(
+            Map.of(
+                "pe.axiz.core.resilience.RetryDecider",
+                "package pe.axiz.core.resilience; public class RetryDecider {"
+                    + " java.net.http.HttpTimeoutException timeout; }"));
+    assertFalse(
+        FrameworkArchitectureTest.CORE_DOES_NOT_PERFORM_IO.evaluate(classifier).hasViolation());
+    var widened =
+        compile(
+            Map.of(
+                "pe.axiz.core.resilience.RetryDecider",
+                "package pe.axiz.core.resilience; public class RetryDecider {"
+                    + " java.net.http.HttpClient client; }"));
+    assertTrue(FrameworkArchitectureTest.CORE_DOES_NOT_PERFORM_IO.evaluate(widened).hasViolation());
   }
 
   private JavaClasses dependency(String from, String to, boolean cycle) throws Exception {
@@ -157,6 +240,9 @@ class StructureBoundaryRegressionTest {
             List.of("adapter.lock.redis", "adapter.lock.dynamodb"),
             List.of("kit.jpa", "kit.r2dbc"),
             List.of("spring.cache", "spring.lock"),
+            List.of("spring.messaging", "spring.messaging.kafka"),
+            List.of("spring.messaging.kafka", "spring.messaging.sqs"),
+            List.of("structure.hexagonal", "structure.hexagonal.spring"),
             List.of("structure.hexagonal", "extension.cqrs"),
             List.of("kit.jpa", "adapter.audit.r2dbc"))) {
       String first = "pe.axiz." + pair.get(0);
@@ -175,6 +261,38 @@ class StructureBoundaryRegressionTest {
     assertTrue(
         FrameworkArchitectureTest.STRUCTURES_HAVE_NO_CYCLES
             .evaluate(dependency("pe.axiz.structure.hexagonal", "pe.axiz.extension.cqrs", true))
+            .hasViolation());
+  }
+
+  @Test
+  void integrationsDependOnTheirBaseAndSharedSupportWithoutReversingTheEdge() throws Exception {
+    for (var edge :
+        List.of(
+            List.of("spring.messaging", "spring.messaging.kafka"),
+            List.of("spring.messaging.kafka", "spring.messaging.sqs"),
+            List.of("spring.audit", "spring.aws"),
+            List.of("spring.config", "spring.config.aws"))) {
+      assertTrue(
+          FrameworkArchitectureTest.STARTERS_ARE_ISOLATED
+              .evaluate(dependency("pe.axiz." + edge.get(0), "pe.axiz." + edge.get(1), false))
+              .hasViolation(),
+          edge.toString());
+    }
+    for (var edge :
+        List.of(
+            List.of("spring.messaging.kafka", "spring.messaging"),
+            List.of("spring.messaging.msk", "spring.messaging.kafka"),
+            List.of("spring.audit.sqs", "spring.aws"))) {
+      assertFalse(
+          FrameworkArchitectureTest.STARTERS_ARE_ISOLATED
+              .evaluate(dependency("pe.axiz." + edge.get(0), "pe.axiz." + edge.get(1), false))
+              .hasViolation(),
+          edge.toString());
+    }
+    assertTrue(
+        FrameworkArchitectureTest.NEUTRAL_CAPABILITIES_HAVE_NO_PROVIDERS
+            .evaluate(
+                dependency("pe.axiz.spring.messaging", "pe.axiz.adapter.messaging.kafka", false))
             .hasViolation());
   }
 }

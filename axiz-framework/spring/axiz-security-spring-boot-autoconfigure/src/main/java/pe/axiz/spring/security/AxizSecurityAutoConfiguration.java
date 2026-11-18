@@ -41,8 +41,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.InvalidBearerTokenException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationProvider;
 import org.springframework.security.oauth2.server.resource.authentication.JwtIssuerAuthenticationManagerResolver;
@@ -52,10 +52,13 @@ import org.springframework.security.oauth2.server.resource.authentication.Reacti
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.security.web.header.writers.CrossOriginResourcePolicyHeaderWriter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
+import org.springframework.security.web.server.header.CrossOriginResourcePolicyServerHttpHeadersWriter;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
 import org.springframework.web.util.pattern.PathPattern;
 import pe.axiz.core.commons.Environments;
@@ -134,10 +137,23 @@ public class AxizSecurityAutoConfiguration {
     return new ClaimsMapper(p.claims().toMapping(), p.claims().subjectAsClient());
   }
 
-  @Bean
+  @Bean(initMethod = "warmUp", destroyMethod = "close")
   @ConditionalOnMissingBean
-  TrustedIssuerDecoders axizTrustedIssuerDecoders(IssuerPolicy policy, AxizSecurityProperties p) {
-    return new TrustedIssuerDecoders(policy, p.algorithms(), p.clockSkew());
+  TrustedIssuerDecoders axizTrustedIssuerDecoders(
+      IssuerPolicy policy, AxizSecurityProperties p, Environment environment) {
+    boolean local =
+        Environments.allowsInMemoryState(environment.getProperty("axiz.config.environment"));
+    return new TrustedIssuerDecoders(
+        policy,
+        p.algorithms(),
+        p.clockSkew(),
+        p.jwks(),
+        local || p.allowHttpJwksInCluster(),
+        p.issuers().stream()
+            .collect(
+                Collectors.toUnmodifiableMap(
+                    AxizSecurityProperties.Issuer::issuer,
+                    AxizSecurityProperties.Issuer::profile)));
   }
 
   @Bean
@@ -188,7 +204,8 @@ public class AxizSecurityAutoConfiguration {
     return () -> {
       if (limiter.getIfAvailable() == null)
         throw new IllegalStateException(
-            "Selected axiz.security.rate-limit.store is unavailable: add its adapter and connection factory");
+            "Selected axiz.security.rate-limit.store is unavailable: add its adapter and connection"
+                + " factory");
     };
   }
 
@@ -199,7 +216,8 @@ public class AxizSecurityAutoConfiguration {
     return () -> {
       if (limiter.getIfAvailable() == null)
         throw new IllegalStateException(
-            "Selected axiz.security.rate-limit.store is unavailable: add its async adapter and connection factory");
+            "Selected axiz.security.rate-limit.store is unavailable: add its async adapter and"
+                + " connection factory");
     };
   }
 
@@ -264,7 +282,7 @@ public class AxizSecurityAutoConfiguration {
         TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
       AuthenticationManagerResolver<String> byIssuer =
           issuer -> {
-            NimbusJwtDecoder decoder = decoders.servlet(issuer);
+            JwtDecoder decoder = decoders.servlet(issuer);
             if (decoder == null) {
               return UNTRUSTED_ISSUER;
             }
@@ -296,6 +314,11 @@ public class AxizSecurityAutoConfiguration {
           .headers(
               h ->
                   h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .crossOriginResourcePolicy(
+                          r ->
+                              r.policy(
+                                  CrossOriginResourcePolicyHeaderWriter.CrossOriginResourcePolicy
+                                      .SAME_ORIGIN))
                       .referrerPolicy(
                           r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
           .authorizeHttpRequests(
@@ -334,7 +357,7 @@ public class AxizSecurityAutoConfiguration {
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
             new RateLimitFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
-            CallerContextFilter.class);
+            AuthorizationFilter.class);
       }
       return new VerifiedServletSecurityChain(http.build());
     }
@@ -384,7 +407,7 @@ public class AxizSecurityAutoConfiguration {
         TrustedIssuerDecoders decoders, AxizJwtConverter converter) {
       return new JwtIssuerReactiveAuthenticationManagerResolver(
           issuer -> {
-            NimbusReactiveJwtDecoder decoder = decoders.reactive(issuer);
+            ReactiveJwtDecoder decoder = decoders.reactive(issuer);
             if (decoder == null) {
               return Mono.empty();
             }
@@ -414,6 +437,11 @@ public class AxizSecurityAutoConfiguration {
           .headers(
               h ->
                   h.contentSecurityPolicy(c -> c.policyDirectives(CSP))
+                      .crossOriginResourcePolicy(
+                          r ->
+                              r.policy(
+                                  CrossOriginResourcePolicyServerHttpHeadersWriter
+                                      .CrossOriginResourcePolicy.SAME_ORIGIN))
                       .referrerPolicy(
                           r ->
                               r.policy(

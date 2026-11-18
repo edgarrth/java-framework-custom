@@ -10,7 +10,7 @@ import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.ClassUtils;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.Idempotent;
 import pe.axiz.core.idempotency.StoredResponse;

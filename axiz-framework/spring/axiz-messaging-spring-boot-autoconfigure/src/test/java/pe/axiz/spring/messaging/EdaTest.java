@@ -23,7 +23,6 @@ import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.core.messaging.TypedEventHandler;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
 
 class EdaTest {
 
@@ -61,7 +60,6 @@ class EdaTest {
   void handlersRunInATransaction() {
     CardIssuedHandler handler = new CardIssuedHandler();
     new ApplicationContextRunner()
-        .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizMessagingAutoConfiguration.class))
         .withBean(PlatformTransactionManager.class, FakeTx::new)
         .withBean("cardIssuedHandler", CardIssuedHandler.class, () -> handler)
@@ -74,15 +72,16 @@ class EdaTest {
               EventHandler<CardIssued> typed = (EventHandler<CardIssued>) bean;
               typed.handle(
                   new CardIssued("c1"),
-                  new EventEnvelope(
-                      "e1",
-                      "s",
-                      "pe.axiz.cards.card-issued.v1",
-                      Instant.EPOCH,
-                      null,
-                      "application/json",
-                      new byte[0],
-                      Map.of()));
+                  EventEnvelope.builder()
+                      .id("e1")
+                      .source("s")
+                      .type("pe.axiz.cards.card-issued.v1")
+                      .time(Instant.EPOCH)
+                      .subject(null)
+                      .dataContentType("application/json")
+                      .data(new byte[0])
+                      .extensions(Map.of())
+                      .build());
               assertTrue(handler.inTx.get());
             });
   }
@@ -122,29 +121,31 @@ class EdaTest {
             () ->
                 handler.handle(
                     "io",
-                    new EventEnvelope(
-                        "e",
-                        "urn:test",
-                        "pe.axiz.cards.card-blocked.v1",
-                        Instant.EPOCH,
-                        null,
-                        "application/json",
-                        new byte[0],
-                        Map.of())));
+                    EventEnvelope.builder()
+                        .id("e")
+                        .source("urn:test")
+                        .type("pe.axiz.cards.card-blocked.v1")
+                        .time(Instant.EPOCH)
+                        .subject(null)
+                        .dataContentType("application/json")
+                        .data(new byte[0])
+                        .extensions(Map.of())
+                        .build()));
     assertEquals("statement store unreachable", io.getMessage());
     assertThrows(
         IllegalStateException.class,
         () ->
             handler.handle(
                 "state",
-                new EventEnvelope(
-                    "e",
-                    "urn:test",
-                    "pe.axiz.cards.card-blocked.v1",
-                    Instant.EPOCH,
-                    null,
-                    "application/json",
-                    new byte[0],
-                    Map.of())));
+                EventEnvelope.builder()
+                    .id("e")
+                    .source("urn:test")
+                    .type("pe.axiz.cards.card-blocked.v1")
+                    .time(Instant.EPOCH)
+                    .subject(null)
+                    .dataContentType("application/json")
+                    .data(new byte[0])
+                    .extensions(Map.of())
+                    .build()));
   }
 }

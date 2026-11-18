@@ -1,0 +1,41 @@
+# axiz-r2dbc-aws-spring-boot-starter
+
+Opt-in AWS IAM authentication for R2DBC.
+
+This module owns the `pe.axiz.spring.r2dbc.aws.starter` API.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-r2dbc-aws-spring-boot-starter</artifactId>
+</dependency>
+```
+
+This artifact composes dependencies; its wiring and operational contract are documented in
+[`axiz-r2dbc-aws-spring-boot-autoconfigure`](../axiz-r2dbc-aws-spring-boot-autoconfigure/README.md).
+
+## Catalog usage
+
+```bash
+axiz add r2dbc-aws
+```
+
+Required capabilities: `r2dbc`.
+
+The catalog supplies the following properties. Environment placeholders must resolve in the
+service configuration; they are not credentials or provisioned infrastructure.
+
+```yaml
+axiz.r2dbc.iam.enabled: ${AXIZ_R2DBC_IAM:true}
+```
+
+## Operations
+
+Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
+resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
+LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
+Never place long-lived credentials in generated YAML.

@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Axiz vulnerability risk inventory v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "calendar",
+    "authorizedOwners",
+    "findings"
+  ],
+  "properties": {
+    "schema": {
+      "const": 2
+    },
+    "calendar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weekend",
+        "holidays"
+      ],
+      "properties": {
+        "weekend": {
+          "const": [
+            6,
+            7
+          ]
+        },
+        "holidays": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "authorizedOwners": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/text"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "vulnerabilityId",
+          "owner",
+          "treatment",
+          "aliases",
+          "component",
+          "affectedVersions",
+          "artifactScopes",
+          "firstSeen",
+          "acknowledgedAt",
+          "triageDue",
+          "dueAt",
+          "nextMinorAt",
+          "applicability",
+          "contextualRisk",
+          "knownExploited",
+          "status",
+          "evidence",
+          "exceptions"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/text"
+          },
+          "vulnerabilityId": {
+            "$ref": "#/$defs/text"
+          },
+          "owner": {
+            "$ref": "#/$defs/text"
+          },
+          "treatment": {
+            "$ref": "#/$defs/text"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/text"
+            },
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "component": {
+            "type": "string",
+            "pattern": "^pkg:"
+          },
+          "affectedVersions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/text"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "artifactScopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/text"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "firstSeen": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+          },
+          "acknowledgedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "triageDue": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+          },
+          "dueAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+          },
+          "nextMinorAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "applicability": {
+            "enum": [
+              "pending",
+              "applicable",
+              "not-applicable"
+            ]
+          },
+          "contextualRisk": {
+            "enum": [
+              "pending",
+              "low",
+              "medium",
+              "high",
+              "critical",
+              "urgent"
+            ]
+          },
+          "knownExploited": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "open",
+              "resolved"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/text"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "exceptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "reason",
+                "mitigation",
+                "approvedBy",
+                "approval",
+                "evidence",
+                "approvedAt",
+                "expiresAt",
+                "affectedVersions",
+                "artifactScopes"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "#/$defs/text"
+                },
+                "reason": {
+                  "$ref": "#/$defs/text"
+                },
+                "mitigation": {
+                  "$ref": "#/$defs/text"
+                },
+                "approvedBy": {
+                  "$ref": "#/$defs/text"
+                },
+                "approval": {
+                  "$ref": "#/$defs/text"
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                },
+                "approvedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$"
+                },
+                "affectedVersions": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                },
+                "artifactScopes": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/text"
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^*]+$"
+    }
+  }
+}

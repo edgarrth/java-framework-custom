@@ -15,12 +15,7 @@ import pe.axiz.core.messaging.RoutingAsyncEventPublisher;
 import pe.axiz.spring.foundation.ConfigurationErrors;
 
 /** Native outgoing messages for reactive flows; poll workers retain the imperative dispatcher. */
-@AutoConfiguration(
-    afterName = {
-      "pe.axiz.spring.messaging.AxizMessagingAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration",
-      "pe.axiz.spring.messaging.AxizMessagingKafkaAutoConfiguration"
-    })
+@AutoConfiguration(afterName = {"pe.axiz.spring.messaging.AxizMessagingAutoConfiguration"})
 @ConditionalOnClass(name = "reactor.core.publisher.Mono")
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
 @ConditionalOnBooleanProperty(name = "axiz.messaging.enabled", matchIfMissing = true)

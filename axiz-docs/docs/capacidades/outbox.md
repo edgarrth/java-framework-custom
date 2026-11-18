@@ -27,13 +27,17 @@ axiz.outbox.relay.enabled: true
 
 Agrega también: [`jpa`](jpa.md)
 
-- `pe.axiz:axiz-adapter-outbox-jdbc`
+- `pe.axiz:axiz-outbox-jdbc-spring-boot-starter`
 
 ### Aurora en reactivo (R2DBC)
 
 Agrega también: [`r2dbc`](r2dbc.md)
 
-- `pe.axiz:axiz-adapter-outbox-r2dbc`
+- `pe.axiz:axiz-outbox-r2dbc-spring-boot-starter`
+
+```yaml
+axiz.outbox.store: r2dbc
+```
 
 ## Uso
 
@@ -46,5 +50,11 @@ transactionalEvents.enqueue("orders", event.id(), "order-created.v1", "order", o
 ## Módulos
 
 - [`axiz-outbox-spring-boot-autoconfigure`](../referencia/spring/axiz-outbox-spring-boot-autoconfigure.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
+- [`axiz-core-crypto`](../referencia/core/axiz-core-crypto.md)
+- [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
 - [`axiz-core-outbox`](../referencia/core/axiz-core-outbox.md)
+- [`axiz-core-resilience`](../referencia/core/axiz-core-resilience.md)

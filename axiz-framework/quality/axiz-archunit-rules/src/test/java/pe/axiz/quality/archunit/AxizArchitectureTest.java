@@ -24,7 +24,11 @@ class AxizArchitectureTest {
 
   @Test
   void hexagonalRulesDetectOutwardDependencies() {
-    ArchRule layering = HexagonalRules.rules("pe.axiz.quality.archunit.sample.hex").get(0);
+    ArchRule layering =
+        HexagonalRules.rules("pe.axiz.quality.archunit.sample.hex").stream()
+            .filter(rule -> rule.getDescription().contains("Layered architecture"))
+            .findFirst()
+            .orElseThrow();
     assertTrue(layering.evaluate(sample).hasViolation());
     String report = layering.evaluate(sample).getFailureReport().toString();
     assertTrue(report.contains("BadDomain"), report);

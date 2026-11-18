@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.asyncapi.AsyncApiDocument;
 import pe.axiz.codegen.model.Archetype;
+import pe.axiz.codegen.model.ArchitectureScopes;
 import pe.axiz.codegen.model.Capability;
 import pe.axiz.codegen.model.Catalog;
 import pe.axiz.codegen.model.ProjectRequest;
@@ -219,11 +220,6 @@ public final class ProjectGenerator {
       configMapKeys.addAll(cap.configMapKeys());
       secrets.addAll(cap.secrets());
     }
-    if (Catalog.AURORA.equals(store)) {
-      for (String table : catalog.style(r.structure()).jdbcTables())
-        if (Set.of("outbox", "inbox", "saga", "sequence").contains(table))
-          dependencyIds.add("pe.axiz:axiz-adapter-" + table + "-jdbc");
-    }
     List<Map<String, Object>> starters = new ArrayList<>();
     starterIds.forEach(id -> starters.add(Map.of("artifactId", id)));
     if (r.structure() != Structure.NONE) {
@@ -237,9 +233,11 @@ public final class ProjectGenerator {
           Map.of(
               "groupId", ga[0], "artifactId", ga[1], "runtime", ga[1].startsWith("axiz-adapter-")));
     }
-    caps.put("technicalinboxdynamodb", caps.containsKey("inbox") && "none".equals(r.persistence()));
+    ArchitectureScopes scopes = ArchitectureScopes.of(resolved);
+    c.put("tokenizationScope", scopes.tokenization());
+    c.put("cardDataScope", scopes.cardData());
     c.put("caps", caps);
-    c.put("schema", schema(catalog.style(r.structure()), caps, Catalog.AURORA.equals(store)));
+    c.put("schema", schema(caps));
     c.put("capabilities", capabilityRows);
     c.put("starters", starters);
     c.put("dependencies", dependencies);
@@ -461,8 +459,11 @@ public final class ProjectGenerator {
 
   /** Archetype starters, persistence and the requested capabilities (before requirements). */
   static List<String> capabilityNames(Catalog catalog, ProjectRequest r, Archetype a) {
-    Set<String> names = new LinkedHashSet<>(a.starters());
+    Set<String> names = new LinkedHashSet<>();
     String store = Catalog.store(r.persistence(), r.stack());
+    for (String starter : a.starters()) {
+      if (catalog.capability(starter).map(c -> c.supports(store)).orElse(false)) names.add(starter);
+    }
     // what the style starter brings: the service gets its tables, properties and resources too
     for (String implied : catalog.style(r.structure()).capabilities()) {
       if (catalog.capability(implied).map(c -> c.supports(store)).orElse(false)) {
@@ -514,48 +515,45 @@ public final class ProjectGenerator {
    * the style starter wires on its own when the service has a JDBC database. A store that is wired
    * always has its table, so nothing fails later on the first write or poll.
    */
-  static Map<String, Object> schema(Style style, Map<String, Object> caps, boolean jdbc) {
+  static Map<String, Object> schema(Map<String, Object> caps) {
     Map<String, Object> schema = new LinkedHashMap<>();
     for (String table : Style.TABLES) {
       String capability = "shedlock".equals(table) ? "scheduling" : table;
-      schema.put(
-          table, caps.containsKey(capability) || (jdbc && style.jdbcTables().contains(table)));
+      schema.put(table, caps.containsKey(capability));
     }
     return schema;
   }
 
   /** Local infrastructure the service needs (Docker Compose, Testcontainers, README). */
   static Map<String, Object> infrastructure(List<Capability> caps, ProjectRequest r) {
-    Set<String> artifacts = new LinkedHashSet<>();
     Set<String> names = new LinkedHashSet<>();
     for (Capability c : caps) {
       names.add(c.name());
-      artifacts.add(c.starter());
-      c.dependencies(Catalog.store(r.persistence(), r.stack()))
-          .forEach(d -> artifacts.add(d.substring(d.indexOf(':') + 1)));
     }
     boolean postgres =
         names.contains("jpa") || names.contains("r2dbc") || "aurora".equals(r.persistence());
-    boolean kafka = artifacts.contains("spring-boot-starter-kafka");
-    boolean redis = artifacts.contains("spring-boot-starter-data-redis");
+    boolean kafka = names.contains("messaging-kafka");
+    boolean redis = names.stream().anyMatch(name -> name.endsWith("-redis"));
     List<String> localstack = new ArrayList<>();
     if (names.contains("dynamodb")) {
       localstack.add("dynamodb");
     }
-    if (artifacts.contains("s3")) {
+    if (names.contains("storage-s3")) {
       localstack.add("s3");
     }
-    if (artifacts.contains("sqs")) {
+    if (names.contains("messaging-sqs") || names.contains("audit-sqs")) {
       localstack.add("sqs");
     }
-    if (artifacts.contains("sns")) {
+    if (names.contains("messaging-sns")) {
       localstack.add("sns");
     }
-    if (artifacts.contains("kms")) {
+    if (names.contains("crypto-kms")) {
       localstack.add("kms");
     }
-    if (artifacts.contains("secretsmanager")) {
+    if (names.contains("secrets-aws")) {
       localstack.add("secretsmanager");
+    }
+    if (names.contains("secrets-aws") || names.contains("config-aws")) {
       localstack.add("ssm");
     }
     Map<String, Object> infra = new LinkedHashMap<>();

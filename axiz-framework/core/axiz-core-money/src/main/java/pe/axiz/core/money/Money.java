@@ -237,6 +237,9 @@ public final class Money implements Comparable<Money> {
   public Money divide(BigDecimal divisor, RoundingMode rounding) {
     // Bound the operand before BigDecimal can expand an arbitrarily large power of ten.
     requireBounded(Objects.requireNonNull(divisor, "divisor"));
+    if (divisor.signum() == 0) {
+      throw new BusinessException(MoneyErrors.INVALID_AMOUNT, "divisor must not be zero");
+    }
     return new Money(amount.divide(divisor, amount.scale(), rounding), currency);
   }
 

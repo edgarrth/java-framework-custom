@@ -32,10 +32,10 @@ import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.messaging.sns.SnsEventPublisher;
 import pe.axiz.adapter.observability.aws.AwsObservability;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.json.JsonReader;
-import pe.axiz.core.commons.json.JsonWriter;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
+import pe.axiz.core.json.JsonReader;
+import pe.axiz.core.json.JsonWriter;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.PublishException;
@@ -46,8 +46,9 @@ import pe.axiz.core.observability.AxizObservations;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 import pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration;
-import pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration;
 import pe.axiz.spring.messaging.ReactiveEvents;
+import pe.axiz.spring.messaging.sns.AxizNativeMessagingSnsAutoConfiguration;
+import pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguration;
 import pe.axiz.spring.notification.AxizNotificationAutoConfiguration;
 import pe.axiz.spring.notification.ReactiveNotifications;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -227,9 +228,11 @@ class LocalStackMessagingIT {
     new ReactiveWebApplicationContextRunner()
         .withConfiguration(
             AutoConfigurations.of(
-                AxizMessagingAutoConfiguration.class, AxizNativeMessagingAwsAutoConfiguration.class,
+                AxizMessagingAutoConfiguration.class,
+                AxizNativeMessagingSqsAutoConfiguration.class,
+                AxizNativeMessagingSnsAutoConfiguration.class,
                 AxizNativeMessagingAutoConfiguration.class,
-                    AxizNotificationAutoConfiguration.class))
+                AxizNotificationAutoConfiguration.class))
         .withBean(SqsAsyncClient.class, () -> sqs)
         .withBean(SnsAsyncClient.class, () -> sns)
         .withBean(ObservationRegistry.class, () -> OBSERVATIONS)
@@ -278,15 +281,16 @@ class LocalStackMessagingIT {
                       ctx.getBean(EventFactory.class), new SnsEventPublisher(setupSns), topic)
                   .send(request);
               var missing =
-                  new EventEnvelope(
-                      "missing",
-                      "urn:service",
-                      "event.v1",
-                      Instant.EPOCH,
-                      "account",
-                      "application/json",
-                      new byte[0],
-                      Map.of());
+                  EventEnvelope.builder()
+                      .id("missing")
+                      .source("urn:service")
+                      .type("event.v1")
+                      .time(Instant.EPOCH)
+                      .subject("account")
+                      .dataContentType("application/json")
+                      .data(new byte[0])
+                      .extensions(Map.of())
+                      .build();
               StepVerifier.create(
                       events
                           .publish(

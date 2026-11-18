@@ -1,59 +1,27 @@
 package pe.axiz.spring.config;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.springframework.boot.EnvironmentPostProcessor;
 import org.springframework.boot.SpringApplication;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.StringUtils;
 import pe.axiz.core.commons.Environments;
 
-/**
- * Applies the configuration conventions before config data is loaded.
- *
- * <ul>
- *   <li>Inside Kubernetes (outside explicit single-process environments) it imports the ConfigMaps
- *       the chart mounts as files under {@code axiz.config.directory} (default {@value
- *       #DEFAULT_DIRECTORY}): {@code common/application.yaml} (ConfigMap {@code axiz-common},
- *       optional), then {@code service/application.yaml} ({@code <app>}) and {@code
- *       errors/application.yaml} ({@code <app>-errors}), both required so a missing ConfigMap stops
- *       the startup. Later files win. Reading files instead of the Kubernetes API means the pods
- *       need no service account token and no RBAC: a compromised pod cannot list the ConfigMaps of
- *       the namespace. A ConfigMap change rolls the pods (checksum annotations).
- *   <li>With {@code axiz.config.parameter-store.enabled=true} it imports {@code
- *       optional:aws-parameterstore:/axiz/<environment>/<app>/} below the ConfigMaps.
- *   <li>Spring Cloud AWS Parameter Store follows {@code axiz.config.parameter-store.enabled} (false
- *       by default): otherwise it builds an {@code SsmClient} at startup that nothing uses, and
- *       that fails without an AWS region (tests, laptops, generated projects without AWS).
- *   <li>The Spring Cloud AWS Secrets Manager integration is off by default: axiz reads secrets
- *       through {@code axiz.secrets} (its own resolver, enabled explicitly), and that integration
- *       would otherwise build a {@code SecretsManagerClient} as soon as the SDK is on the
- *       classpath. A service that imports {@code aws-secretsmanager:} config data turns it on with
- *       {@code spring.cloud.aws.secretsmanager.enabled=true}.
- * </ul>
- *
- * Values set explicitly by the service always win: the conventions are added with the lowest
- * precedence, and existing {@code spring.config.import} entries are kept.
- */
+/** Imports mounted ConfigMaps before Config Data, after provider conventions; no Kubernetes API. */
 public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProcessor, Ordered {
 
   /** Runs before Boot's config data processing ({@code HIGHEST_PRECEDENCE + 10}). */
-  public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 5;
+  public static final int ORDER = Ordered.HIGHEST_PRECEDENCE + 6;
 
   /** Where the chart mounts the ConfigMaps. */
   public static final String DEFAULT_DIRECTORY = "/etc/axiz/config";
 
-  static final String DEFAULTS = "axizConfigDefaults";
   static final String IMPORTS = "axizConfigImports";
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment env, SpringApplication application) {
-    verifyWebIdentity(env);
     var selection = new ConfigBootstrapSelection(env);
     env.getPropertySources().addLast(selection);
     if (!env.getProperty("axiz.config.enabled", Boolean.class, true)) {
@@ -61,21 +29,9 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
     }
     boolean cluster =
         inCluster(env) && !Environments.allowsInMemoryState(selection.getSource().environment());
-    if (cluster) ConfigBootstrapSelection.requireEnvironment(selection.getSource().environment());
-    Map<String, Object> defaults = new LinkedHashMap<>();
+    if (cluster) ConfigurationEnvironment.requireEnvironment(selection.getSource().environment());
     List<String> imports = new ArrayList<>();
 
-    if (selection.getSource().enabled()) {
-      var selected = selection.getSource();
-      imports.add(
-          "optional:aws-parameterstore:"
-              + selected.prefix()
-              + "/"
-              + selected.environment()
-              + "/"
-              + selected.application()
-              + "/");
-    }
     if (cluster) {
       String dir = env.getProperty("axiz.config.directory", DEFAULT_DIRECTORY);
       String base = dir.endsWith("/") ? dir.substring(0, dir.length() - 1) : dir;
@@ -83,44 +39,7 @@ public class AxizConfigEnvironmentPostProcessor implements EnvironmentPostProces
       imports.add("file:" + base + "/service/application.yaml");
       imports.add("file:" + base + "/errors/application.yaml");
     }
-    // a placeholder, resolved when Spring Cloud AWS binds it: the service's own files count too
-    defaults.put(
-        "spring.cloud.aws.parameterstore.enabled", "${axiz.config.parameter-store.enabled:false}");
-    defaults.put("spring.cloud.aws.secretsmanager.enabled", "false");
-    env.getPropertySources().addLast(new MapPropertySource(DEFAULTS, defaults));
-
-    if (!imports.isEmpty()) {
-      List<String> merged = new ArrayList<>();
-      String existing = env.getProperty("spring.config.import");
-      if (StringUtils.hasText(existing)) {
-        merged.addAll(
-            Arrays.stream(existing.split(",", -1))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList());
-      }
-      for (String i : imports) {
-        String target = i.replace("optional:", "");
-        if (merged.stream().noneMatch(e -> e.replace("optional:", "").equals(target))) {
-          merged.add(i);
-        }
-      }
-      env.getPropertySources()
-          .addFirst(
-              new MapPropertySource(
-                  IMPORTS, Map.of("spring.config.import", String.join(",", merged))));
-    }
-  }
-
-  private static void verifyWebIdentity(ConfigurableEnvironment env) {
-    String role = env.getProperty("aws.roleArn");
-    if (role == null) role = env.getProperty("AWS_ROLE_ARN");
-    String token = env.getProperty("aws.webIdentityTokenFile");
-    if (token == null) token = env.getProperty("AWS_WEB_IDENTITY_TOKEN_FILE");
-    if ((role != null || token != null)
-        && (role == null || role.isBlank() || token == null || token.isBlank()))
-      throw new IllegalStateException(
-          "IRSA requires both AWS_ROLE_ARN and AWS_WEB_IDENTITY_TOKEN_FILE");
+    ConfigurationImports.append(env, IMPORTS, imports);
   }
 
   static boolean inCluster(ConfigurableEnvironment env) {

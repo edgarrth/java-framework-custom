@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort.Direction;
-import pe.axiz.core.commons.PageRequest;
-import pe.axiz.core.commons.Sort;
+import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.api.Sort;
 
 class JpaCrudServiceTest {
 

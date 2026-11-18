@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.quality.archunit.Archetype;
 import pe.axiz.quality.archunit.AxizArchitecture;
+import pe.axiz.quality.archunit.CardDataScope;
+import pe.axiz.quality.archunit.TokenizationScope;
 import pe.axiz.quality.archunit.Stack;
 import pe.axiz.quality.archunit.Structure;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -14,10 +16,15 @@ class ArchitectureTest {
 
   @Test
   void followsTheArchitecture() {
-    AxizArchitecture.of("pe.axiz.payments.ux")
+    architecture().verify();
+  }
+
+  static AxizArchitecture architecture() {
+    return AxizArchitecture.of("pe.axiz.payments.ux")
         .archetype(Archetype.UX)
         .stack(Stack.REACTIVE)
         .structure(Structure.BFF)
-        .verify();
+        .cardData(CardDataScope.NONE)
+        .tokenization(TokenizationScope.NONE);
   }
 }

@@ -1,0 +1,34 @@
+# axiz-messaging-sns-spring-boot-starter
+
+SNS CloudEvents messaging.
+
+This module owns the `pe.axiz.spring.messaging.sns.starter` API.
+
+## Selection
+
+Versions are managed by `axiz-bom`; applications inherit `axiz-parent-service`.
+
+```xml
+<dependency>
+  <groupId>pe.axiz</groupId>
+  <artifactId>axiz-messaging-sns-spring-boot-starter</artifactId>
+</dependency>
+```
+
+This artifact composes dependencies; its wiring and operational contract are documented in
+[`axiz-messaging-sns-spring-boot-autoconfigure`](../axiz-messaging-sns-spring-boot-autoconfigure/README.md).
+
+## Catalog usage
+
+```bash
+axiz add messaging-sns
+```
+
+Required capabilities: `messaging`.
+
+## Operations
+
+Provide region, workload identity, TLS and least-privilege permissions for the selected AWS
+resources. Provision production tables, queues, topics, keys and buckets through reviewed IaC.
+LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
+Never place long-lived credentials in generated YAML.

@@ -24,12 +24,12 @@ class ApplicationModelsTest {
     return ApplicationModels.records(
             OpenApiDocument.parse(
                 """
-        openapi: 3.1.0
-        info: {title: Models, version: 1.0.0}
-        paths: {}
-        components:
-          schemas:
-        """
+                openapi: 3.1.0
+                info: {title: Models, version: 1.0.0}
+                paths: {}
+                components:
+                  schemas:
+                """
                     + schemas.indent(4)))
         .toString();
   }
@@ -39,22 +39,22 @@ class ApplicationModelsTest {
     String result =
         models(
             """
-        Status: {type: string, enum: [READY, DONE]}
-        Item:
-          type: object
-          properties:
-            id: {type: string, format: uuid}
-            day: {type: string, format: date}
-            time: {type: string, format: date-time}
-            label: {type: [string, 'null']}
-            status: {$ref: '#/components/schemas/Status'}
-            count: {type: integer}
-            total: {type: integer, format: int64}
-            amount: {type: number}
-            enabled: {type: boolean}
-            children: {type: array, items: {$ref: '#/components/schemas/Item'}}
-            attributes: {type: object}
-        """);
+            Status: {type: string, enum: [READY, DONE]}
+            Item:
+              type: object
+              properties:
+                id: {type: string, format: uuid}
+                day: {type: string, format: date}
+                time: {type: string, format: date-time}
+                label: {type: [string, 'null']}
+                status: {$ref: '#/components/schemas/Status'}
+                count: {type: integer}
+                total: {type: integer, format: int64}
+                amount: {type: number}
+                enabled: {type: boolean}
+                children: {type: array, items: {$ref: '#/components/schemas/Item'}}
+                attributes: {type: object}
+            """);
     for (String expected :
         new String[] {
           "enum Status",
@@ -139,11 +139,11 @@ class ApplicationModelsTest {
         () ->
             models(
                 """
-        Item:
-          type: object
-          properties:
-            remote: {$ref: 'https://example.invalid/schema'}
-        """));
+                Item:
+                  type: object
+                  properties:
+                    remote: {$ref: 'https://example.invalid/schema'}
+                """));
   }
 
   @Test
@@ -151,19 +151,19 @@ class ApplicationModelsTest {
     var document =
         OpenApiDocument.parse(
             """
-        openapi: 3.1.0
-        info: {title: Models, version: 1.0.0}
-        paths: {}
-        components:
-          schemas:
-            Item:
-              type: object
-              properties:
-                amount: {type: number}
-                items: {type: array, items: {$ref: '#/components/schemas/Item'}}
-                label: {type: string}
-                metadata: {type: object}
-        """);
+            openapi: 3.1.0
+            info: {title: Models, version: 1.0.0}
+            paths: {}
+            components:
+              schemas:
+                Item:
+                  type: object
+                  properties:
+                    amount: {type: number}
+                    items: {type: array, items: {$ref: '#/components/schemas/Item'}}
+                    label: {type: string}
+                    metadata: {type: object}
+            """);
     var model = ApplicationModels.records(document).getFirst();
     var source = directory.resolve("Item.java");
     Files.writeString(

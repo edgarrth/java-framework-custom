@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.sensitive.OutputChannel;
+import pe.axiz.core.sensitive.SensitiveField;
 
 /**
  * Writes the entry and exit lines of an operation. Arguments and results are masked with the {@link
@@ -31,6 +32,7 @@ public final class OperationLogger {
    * @param argumentNames parameter names
    * @param arguments argument values
    * @param excluded per argument, whether it is marked {@link NoLog}
+   * @param declared sensitivity declared on each argument, if any
    * @param level level
    */
   public void entry(
@@ -38,6 +40,7 @@ public final class OperationLogger {
       List<String> argumentNames,
       @Nullable Object[] arguments,
       boolean[] excluded,
+      @Nullable SensitiveField[] declared,
       LogOperation.Level level) {
     if (!enabled(level)) {
       return;
@@ -49,7 +52,8 @@ public final class OperationLogger {
           name,
           i < excluded.length && excluded[i]
               ? "<not logged>"
-              : masker.describe(arguments[i], OutputChannel.LOG));
+              : masker.describeNamed(
+                  name, arguments[i], i < declared.length ? declared[i] : null, OutputChannel.LOG));
     }
     write(level, "operation={} phase=start args={}", operation, args);
   }
@@ -102,7 +106,10 @@ public final class OperationLogger {
             operation,
             error.getClass().getSimpleName());
       } else {
-        LOG.error("operation={} phase=end outcome=error", operation, error);
+        LOG.error(
+            "operation={} phase=end outcome=error type={}",
+            operation,
+            error.getClass().getSimpleName());
       }
     }
   }

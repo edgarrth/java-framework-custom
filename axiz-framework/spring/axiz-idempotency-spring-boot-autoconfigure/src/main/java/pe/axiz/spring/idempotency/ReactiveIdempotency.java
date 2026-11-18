@@ -5,8 +5,9 @@ import java.util.function.Supplier;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
+import pe.axiz.core.crypto.AsyncPayloadProtector;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NoEffect;
 import pe.axiz.core.idempotency.AsyncIdempotencyService;
@@ -35,7 +36,8 @@ final class ReactiveIdempotency {
       MethodInvocation invocation,
       Idempotent rule,
       String operation,
-      Supplier<AsyncIdempotencyService> service) {
+      Supplier<AsyncIdempotencyService> service,
+      Supplier<AsyncPayloadProtector> protection) {
     Mono<Void> gate =
         Mono.deferContextual(
             ctx -> {
@@ -54,11 +56,18 @@ final class ReactiveIdempotency {
               }
               RequestMetadata caller = ctx.getOrDefault(RequestContext.KEY, null);
               String scope = IdempotencySupport.scope(operation, caller);
+              var binding = IdempotencyPayloads.Binding.of(operation, scope, key);
+              exchange.binding = binding;
               return ReactiveStages.from(() -> service.get().begin(scope, key, fingerprint))
                   .flatMap(
                       decision -> {
                         if (decision instanceof IdempotencyService.Replay replay) {
-                          return Mono.<Void>error(new IdempotentReplay(replay.response()));
+                          return ReactiveStages.from(
+                                  () ->
+                                      IdempotencyPayloads.reveal(
+                                          replay.response(), binding, protection.get()))
+                              .flatMap(
+                                  revealed -> Mono.<Void>error(new IdempotentReplay(revealed)));
                         }
                         exchange.execution((IdempotencyService.Proceed) decision);
                         exchange.lease =
@@ -103,6 +112,7 @@ final class ReactiveIdempotency {
     private volatile IdempotencyService.@Nullable Proceed execution;
     private volatile @Nullable IdempotencyLease lease;
     volatile boolean noEffect;
+    volatile IdempotencyPayloads.@Nullable Binding binding;
 
     void closeLease() {
       IdempotencyLease current = lease;

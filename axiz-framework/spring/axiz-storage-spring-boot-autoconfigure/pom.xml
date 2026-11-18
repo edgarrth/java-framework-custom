@@ -14,15 +14,15 @@
   <name>axiz :: spring :: storage :: autoconfigure</name>
   <description>Object storage on Amazon S3 with SSE-KMS and presigned URLs (auto-configuration)</description>
 
-  <properties>
+  <properties><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>
 
     <axiz.module.name>pe.axiz.spring.storage</axiz.module.name>
   </properties>
 
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-observability-aws</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-aws</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-micrometer-metrics</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-foundation-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
@@ -37,17 +37,6 @@
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-storage</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-storage-s3</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>software.amazon.awssdk</groupId>
-      <artifactId>s3</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>

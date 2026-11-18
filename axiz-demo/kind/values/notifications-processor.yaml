@@ -35,6 +35,7 @@ config:
   management.opentelemetry.tracing.export.otlp.endpoint: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/traces
   management.otlp.metrics.export.url: http://otel-lgtm.axiz-demo.svc.cluster.local:4318/v1/metrics
   spring.kafka.bootstrap-servers: kafka.axiz-demo.svc.cluster.local:9092
+  axiz.messaging.kafka.authentication: configured
   axiz.messaging.kafka.iam: false
   axiz.aws.endpoint: http://localstack.axiz-demo.svc.cluster.local:4566
   axiz.aws.region: us-east-1

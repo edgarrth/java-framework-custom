@@ -29,10 +29,32 @@ class CapabilityAdderTest {
   }
 
   @Test
+  void addsSensitiveCapabilitiesAsACompleteCompositionAndUpdatesTheActualRules(@TempDir Path tmp)
+      throws Exception {
+    Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "dynamodb");
+    String before = Files.readString(dir.resolve("pom.xml"));
+    assertThrows(
+        IllegalArgumentException.class, () -> adder.add(dir, "tokenization-vault-dynamodb"));
+    assertEquals(before, Files.readString(dir.resolve("pom.xml")));
+    adder.add(
+        dir,
+        List.of(
+            "tokenization-vault-dynamodb",
+            "tokenization-vault-redis",
+            "audit-kafka",
+            "tokenization-pan"));
+    Path architecture = dir.resolve("src/test/java/pe/axiz/orders/orders/ArchitectureTest.java");
+    assertTrue(Files.readString(architecture).contains("TokenizationScope.VAULT"));
+    assertTrue(Files.readString(architecture).contains("CardDataScope.VAULT"));
+    assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "tokenization"));
+  }
+
+  @Test
   void addingOutboxPreservesTheExistingExplicitAuditMode(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
     Path application = dir.resolve("src/main/resources/application.yaml");
     assertTrue(Files.readString(application).contains("mode: ASYNC"));
+    adder.add(dir, "messaging-kafka");
     adder.add(dir, "outbox");
     assertTrue(Files.readString(application).contains("mode: ASYNC"));
   }
@@ -42,6 +64,7 @@ class CapabilityAdderTest {
       throws Exception {
     Path fresh =
         project(tmp.resolve("fresh"), "support", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    adder.add(fresh, "messaging-kafka");
     adder.add(fresh, "outbox");
     adder.add(fresh, "audit");
     assertTrue(
@@ -60,6 +83,7 @@ class CapabilityAdderTest {
               Structure.HEXAGONAL,
               Stack.SERVLET,
               "aurora");
+      adder.add(existing, "messaging-kafka");
       adder.add(existing, "outbox");
       Path application = existing.resolve("src/main/resources/application.yaml");
       Files.writeString(application, selector + "\n");
@@ -81,6 +105,7 @@ class CapabilityAdderTest {
               Structure.HEXAGONAL,
               Stack.SERVLET,
               "aurora");
+      adder.add(dir, "messaging-kafka");
       adder.add(dir, "outbox");
       Path profile = dir.resolve("src/main/resources/" + file);
       String selector =
@@ -103,8 +128,8 @@ class CapabilityAdderTest {
     assertEquals(List.of("idempotency", "idempotency-redis"), r.added());
     String pom = Files.readString(dir.resolve("pom.xml"));
     assertTrue(pom.contains("<artifactId>axiz-idempotency-spring-boot-starter</artifactId>"));
-    assertTrue(pom.contains("<artifactId>axiz-adapter-idempotency-redis</artifactId>"));
-    assertTrue(pom.contains("<artifactId>spring-boot-starter-data-redis</artifactId>"));
+    assertTrue(pom.contains("<artifactId>axiz-idempotency-redis-spring-boot-starter</artifactId>"));
+    assertFalse(pom.contains("<artifactId>spring-boot-starter-data-redis</artifactId>"));
     assertEquals(
         1, pom.split("axiz-idempotency-spring-boot-starter").length - 1, "starter added once");
     String app = Files.readString(dir.resolve("src/main/resources/application.yaml"));
@@ -124,6 +149,7 @@ class CapabilityAdderTest {
   @Test
   void addsTheTablesAsANewMigration(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    adder.add(dir, "messaging-kafka");
     CapabilityAdder.Result r = adder.add(dir, "outbox");
     // continues the project numbering after V1__init.sql
     Path migration = dir.resolve("src/main/resources/db/migration/V2__axiz_outbox.sql");
@@ -166,7 +192,9 @@ class CapabilityAdderTest {
   void storeFollowsThePersistence(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "event-processor", Structure.EDA, Stack.SERVLET, "dynamodb");
     adder.add(dir, "sequence");
-    assertTrue(Files.readString(dir.resolve("pom.xml")).contains("axiz-adapter-sequence-dynamodb"));
+    assertTrue(
+        Files.readString(dir.resolve("pom.xml"))
+            .contains("axiz-sequence-dynamodb-spring-boot-starter"));
     assertTrue(
         Files.readString(dir.resolve("src/main/resources/application.yaml"))
             .contains("store: dynamodb"));
@@ -175,35 +203,38 @@ class CapabilityAdderTest {
   @Test
   void reactiveAuroraProjectsGetTheR2dbcVariants(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.REACTIVE, "aurora");
+    adder.add(dir, "messaging-kafka");
     CapabilityAdder.Result r = adder.add(dir, "outbox");
     assertEquals(List.of("outbox"), r.added(), "r2dbc came with the project");
     String pom = Files.readString(dir.resolve("pom.xml"));
-    assertTrue(pom.contains("axiz-adapter-outbox-r2dbc"));
+    assertTrue(pom.contains("axiz-outbox-r2dbc-spring-boot-starter"));
     assertFalse(pom.contains("axiz-jpa-spring-boot-starter"));
     assertTrue(
         Files.list(dir.resolve(Migrations.DIR))
             .anyMatch(f -> f.getFileName().toString().endsWith("__axiz_outbox.sql")));
     adder.add(dir, "scheduling");
-    assertTrue(Files.readString(dir.resolve("pom.xml")).contains("shedlock-provider-r2dbc"));
+    assertTrue(
+        Files.readString(dir.resolve("pom.xml"))
+            .contains("axiz-scheduling-r2dbc-spring-boot-starter"));
     IllegalArgumentException jpa =
         assertThrows(IllegalArgumentException.class, () -> adder.add(dir, "saga"));
     assertTrue(jpa.getMessage().contains("does not support reactive"), jpa.getMessage());
     adder.add(dir, "sequence");
     String withSequence = Files.readString(dir.resolve("pom.xml"));
     assertTrue(
-        withSequence.contains(
-            "<artifactId>axiz-adapter-sequence-r2dbc</artifactId>\n      <scope>runtime</scope>"));
+        withSequence.contains("<artifactId>axiz-sequence-r2dbc-spring-boot-starter</artifactId>"));
     assertFalse(withSequence.contains("axiz-adapter-sequence-jdbc"));
+    assertTrue(
+        Files.readString(dir.resolve("src/main/resources/application.yaml"))
+            .contains("store: r2dbc"));
   }
 
   @Test
-  void addedAdaptersMustBeRuntimeDependencies(@TempDir Path tmp) throws Exception {
+  void addsIntegrationStarterWithoutExposingConcreteAdapter(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp, "business", Structure.HEXAGONAL, Stack.SERVLET, "aurora");
+    adder.add(dir, "messaging-kafka");
     adder.add(dir, "outbox");
     String pom = Files.readString(dir.resolve("pom.xml"));
-    assertTrue(
-        pom.contains(
-            "<artifactId>axiz-adapter-outbox-jdbc</artifactId>\n      <scope>runtime</scope>"),
-        pom);
+    assertTrue(pom.contains("<artifactId>axiz-outbox-jdbc-spring-boot-starter</artifactId>"), pom);
   }
 }

@@ -1,11 +1,18 @@
 package pe.axiz.spring.secrets;
 
+import java.util.Objects;
 import pe.axiz.core.secrets.AsyncSecretResolver;
 
 /**
- * Native source contributed by an adapter, ordered after mounted snapshots and environment.
+ * Ordered native source contributed by an integration.
  *
- * @param name source name for diagnostics
+ * @param name diagnostic name, never a secret value
  * @param resolver native resolver
+ * @param cacheable whether the common TTL cache applies; refreshed snapshots must use false
  */
-public record AsyncSecretSource(String name, AsyncSecretResolver resolver) {}
+public record AsyncSecretSource(String name, AsyncSecretResolver resolver, boolean cacheable) {
+  public AsyncSecretSource {
+    Objects.requireNonNull(name);
+    Objects.requireNonNull(resolver);
+  }
+}

@@ -16,6 +16,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.codegen.openapi.Json;
 
 class SupportTest {
 
@@ -51,7 +52,7 @@ class SupportTest {
     m.put("name", "a\"b\n");
     m.put("list", List.of(1, true));
     m.put("none", null);
-    assertEquals("{\"name\":\"a\\\"b\\n\",\"list\":[1,true],\"none\":null}", JsonWriter.write(m));
+    assertEquals("{\"name\":\"a\\\"b\\n\",\"list\":[1,true],\"none\":null}", Json.write(m));
   }
 
   @Test

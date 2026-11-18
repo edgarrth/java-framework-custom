@@ -68,12 +68,29 @@ class SqsAsyncAuditPublisherTest {
     client.response.complete(SendMessageResponse.builder().messageId("id").build());
     assertNull(pending.join());
     assertFalse(client.closed);
-    client.response = CompletableFuture.completedFuture(SendMessageResponse.builder().build());
+    client.response =
+        CompletableFuture.completedFuture(SendMessageResponse.builder().messageId("id-2").build());
     new SqsAsyncAuditPublisher(client, "https://local/a")
         .publish(event)
         .toCompletableFuture()
         .join();
     assertNull(client.requests.getLast().messageGroupId());
+  }
+
+  @Test
+  void missingAcceptanceIdentifierIsNotSuccess() {
+    var client = new Client();
+    client.response = CompletableFuture.completedFuture(SendMessageResponse.builder().build());
+    assertInstanceOf(
+        AuditPublishException.class,
+        assertThrows(
+                CompletionException.class,
+                () ->
+                    new SqsAsyncAuditPublisher(client, "queue")
+                        .publish(event("id"))
+                        .toCompletableFuture()
+                        .join())
+            .getCause());
   }
 
   @Test
@@ -114,21 +131,25 @@ class SqsAsyncAuditPublisherTest {
   }
 
   private static AuditEvent event(String id) {
-    return new AuditEvent(
-        id,
-        Instant.EPOCH,
-        "svc",
-        "create",
-        "account",
-        null,
-        AuditEvent.Actor.system(),
-        AuditEvent.Outcome.SUCCESS,
-        null,
-        "corr",
-        null,
-        null,
-        Map.of(),
-        TransactionOutcome.UNKNOWN,
-        TransactionOutcome.UNKNOWN);
+    return AuditEvent.builder()
+        .id(id)
+        .occurredAt(Instant.EPOCH)
+        .service("svc")
+        .action("create")
+        .resourceType("account")
+        .resourceId(null)
+        .actor(AuditEvent.Actor.system())
+        .outcome(AuditEvent.Outcome.SUCCESS)
+        .errorCode(null)
+        .correlationId("corr")
+        .channel(null)
+        .tenant(null)
+        .details(Map.of())
+        .transactionOutcome(TransactionOutcome.UNKNOWN)
+        .operationOutcome(TransactionOutcome.UNKNOWN)
+        .persistence(null)
+        .integrity(null)
+        .detailsSanitized(0)
+        .build();
   }
 }

@@ -14,7 +14,7 @@ import java.sql.Savepoint;
 import java.util.UUID;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
-import pe.axiz.core.commons.SqlIdentifiers;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 class SqlStatesTest {
 

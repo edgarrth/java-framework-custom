@@ -21,6 +21,7 @@ networkPolicy:
 externalSecret:
   remotePrefix: prod/payments-history
 config:
+  axiz.messaging.kafka.authentication: msk
   axiz.messaging.kafka.iam: true
   axiz.config.environment: prod
   management.tracing.sampling.probability: '0.1'

@@ -13,17 +13,29 @@ import org.springframework.boot.test.context.runner.ReactiveWebApplicationContex
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.ReactiveTransactionManager;
-import pe.axiz.adapter.outbox.r2dbc.ReactiveOutboxWriter;
+import pe.axiz.core.audit.AuditChainState;
 import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxWriter;
-import pe.axiz.spring.foundation.aws.AxizAwsIdentityAutoConfiguration;
+import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
+import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
 
 class AuditDestinationValidationTest {
+  private static OutboxWriter writer() {
+    var writer = mock(OutboxWriter.class);
+    when(writer.transactionResource()).thenReturn(AuditTestTransactions.RESOURCE);
+    return writer;
+  }
+
+  private static ReactiveOutboxWriter reactiveWriter() {
+    var writer = mock(ReactiveOutboxWriter.class);
+    when(writer.transactionResource()).thenReturn(AuditTestTransactions.RESOURCE);
+    return writer;
+  }
+
   @Test
   void dottedScalarMapKeysRespectBothSpellingsAndSourcePrecedence() {
     for (String spelling : List.of(".audit.v2", "[audit.v2]")) {
       new ApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
           .withPropertyValues(
               "axiz.audit.mode=DURABLE",
@@ -40,7 +52,8 @@ class AuditDestinationValidationTest {
                               Map.of(
                                   "axiz.messaging.destinations" + spelling,
                                   "${AXIZ_MISSING_DOTTED_ROUTE}"))))
-          .withBean(OutboxWriter.class, () -> mock(OutboxWriter.class))
+          .withBean(OutboxWriter.class, AuditDestinationValidationTest::writer)
+          .withBean(AuditChainState.class, AuditTestTransactions::state)
           .withBean(PlatformTransactionManager.class, () -> mock(PlatformTransactionManager.class))
           .withBean(OutboxRelay.class, () -> mock(OutboxRelay.class))
           .run(
@@ -60,11 +73,11 @@ class AuditDestinationValidationTest {
             "https://user:secret@example.test/audit?token=hidden")) {
       var relay = mock(OutboxRelay.class);
       new ApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
           .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
           .withPropertyValues(
               "axiz.audit.mode=DURABLE", "axiz.messaging.destinations.audit=" + destination)
-          .withBean(OutboxWriter.class, () -> mock(OutboxWriter.class))
+          .withBean(OutboxWriter.class, AuditDestinationValidationTest::writer)
+          .withBean(AuditChainState.class, AuditTestTransactions::state)
           .withBean(PlatformTransactionManager.class, () -> mock(PlatformTransactionManager.class))
           .withBean(OutboxRelay.class, () -> relay)
           .run(
@@ -86,42 +99,16 @@ class AuditDestinationValidationTest {
   }
 
   @Test
-  void explicitBlankTransportSettingsFailBeforeAnyPublication() {
-    for (String key : List.of("axiz.audit.sqs.queue-url", "axiz.audit.kafka.topic")) {
-      for (String value : List.of("", " ", "${AXIZ_MISSING_AUDIT_DESTINATION}")) {
-        new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-            .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
-            .withPropertyValues("axiz.audit.mode=ASYNC", key + "=" + value)
-            .run(
-                ctx ->
-                    assertThat(ctx.getStartupFailure())
-                        .hasStackTraceContaining("must not be blank"));
-        new ReactiveWebApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
-            .withConfiguration(
-                AutoConfigurations.of(
-                    AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
-            .withPropertyValues("axiz.audit.mode=ASYNC", key + "=" + value)
-            .run(
-                ctx ->
-                    assertThat(ctx.getStartupFailure())
-                        .hasStackTraceContaining("must not be blank"));
-      }
-    }
-  }
-
-  @Test
   void durableChecksTheActualRelayInBothStacksButAllowsAWriterOnlyService() {
     for (boolean supported : List.of(false, true)) {
       var relay = mock(OutboxRelay.class);
       when(relay.supportsDestination("audit")).thenReturn(supported);
       var imperative =
           new ApplicationContextRunner()
-              .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
               .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
               .withPropertyValues("axiz.audit.mode=DURABLE")
-              .withBean(OutboxWriter.class, () -> mock(OutboxWriter.class))
+              .withBean(OutboxWriter.class, AuditDestinationValidationTest::writer)
+              .withBean(AuditChainState.class, AuditTestTransactions::state)
               .withBean(
                   PlatformTransactionManager.class, () -> mock(PlatformTransactionManager.class));
       imperative.run(
@@ -142,12 +129,12 @@ class AuditDestinationValidationTest {
               });
       var reactive =
           new ReactiveWebApplicationContextRunner()
-              .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
               .withConfiguration(
                   AutoConfigurations.of(
                       AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
               .withPropertyValues("axiz.audit.mode=DURABLE")
-              .withBean(ReactiveOutboxWriter.class, () -> mock(ReactiveOutboxWriter.class))
+              .withBean(ReactiveOutboxWriter.class, AuditDestinationValidationTest::reactiveWriter)
+              .withBean(ReactiveAuditChainState.class, AuditTestTransactions::reactiveState)
               .withBean(
                   ReactiveTransactionManager.class, () -> mock(ReactiveTransactionManager.class));
       reactive.run(

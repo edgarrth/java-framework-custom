@@ -22,19 +22,21 @@ class ArtifactGeneratorTest {
 
   private static ProjectManifest project(
       Structure f, Stack s, String persistence, List<String> caps) {
-    return new ProjectManifest(
-        "orders",
-        "pe.axiz.orders",
-        "pe.axiz.orders.business",
-        "business",
-        f,
-        s,
-        persistence,
-        "2.0.0",
-        "src/main/openapi/openapi.yaml",
-        null,
-        caps,
-        List.of());
+    return ProjectManifest.builder()
+        .name("orders")
+        .groupId("pe.axiz.orders")
+        .basePackage("pe.axiz.orders.business")
+        .archetype("business")
+        .structure(f)
+        .stack(s)
+        .persistence(persistence)
+        .axizVersion("2.0.0")
+        .openapi("src/main/openapi/openapi.yaml")
+        .asyncapi(null)
+        .capabilities(caps)
+        .operations(List.of())
+        .extensions(List.of())
+        .build();
   }
 
   private static String text(ArtifactGenerator.Result r, String suffix) {

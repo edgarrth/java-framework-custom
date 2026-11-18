@@ -16,6 +16,13 @@ class LeaseAndFingerprintInvariantsTest {
   @Test
   void everyRequestAndCallerComponentParticipatesInTheFingerprint() {
     byte[] body = "amount=10".getBytes(StandardCharsets.UTF_8);
+    assertNotEquals(
+        IdempotencyService.fingerprint("COMMAND", "/payments", "v=1", body),
+        IdempotencyService.fingerprint("COMMAND/", "payments", "v=1", body));
+    assertNotEquals(
+        IdempotencyService.fingerprint("POST", "/payments", "v=1", body),
+        IdempotencyService.fingerprint(
+            "POST", "/payments", "v=1amount=", "10".getBytes(StandardCharsets.UTF_8)));
     String expected = IdempotencyService.fingerprint("POST", "/payments", "v=1", body);
     assertEquals(
         expected, IdempotencyService.fingerprint("POST", "/payments", "v=1", body.clone()));

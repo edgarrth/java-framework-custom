@@ -17,6 +17,9 @@ axiz add messaging
 
 - [`axiz-messaging-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-concurrent`](../referencia/core/axiz-core-concurrent.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-id`](../referencia/core/axiz-core-id.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)
+- [`axiz-core-resilience`](../referencia/core/axiz-core-resilience.md)

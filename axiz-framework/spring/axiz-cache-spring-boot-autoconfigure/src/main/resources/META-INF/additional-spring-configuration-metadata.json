@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "axiz.cache.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables cache auto-configuration."
+    }
+  ]
+}

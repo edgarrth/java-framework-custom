@@ -20,7 +20,7 @@ Valores por defecto seguros en `application.yaml`; los valores de cada ambiente 
 ```yaml
 management.opentelemetry.tracing.export.otlp.endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
 management.otlp.metrics.export.url: ${OTEL_EXPORTER_OTLP_METRICS_ENDPOINT:http://localhost:4318/v1/metrics}
-management.tracing.sampling.probability: ${AXIZ_TRACE_SAMPLING:1.0}
+management.tracing.sampling.probability: ${AXIZ_TRACE_SAMPLING:0.1}
 ```
 
 ## Uso
@@ -34,5 +34,6 @@ Money price(Order order) { ... }
 
 - [`axiz-observability-spring-boot-autoconfigure`](../referencia/spring/axiz-observability-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-context`](../referencia/core/axiz-core-context.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-observability`](../referencia/core/axiz-core-observability.md)

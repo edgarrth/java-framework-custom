@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -86,7 +88,78 @@ public record AxizResilienceProperties(
       @DefaultValue("50") int slidingWindowSize,
       @DefaultValue("20") int minimumNumberOfCalls,
       @DefaultValue("30s") Duration waitInOpenState,
-      @DefaultValue("5") int permittedCallsInHalfOpenState) {}
+      @DefaultValue("5") int permittedCallsInHalfOpenState) {
+    /** Named construction; required values and invariants are checked by build. */
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    /** Mutable construction state; use one builder per operation, never as shared state. */
+    public static final class Builder {
+      private boolean enabled = false;
+      private float failureRateThreshold = 0;
+      private float slowCallRateThreshold = 0;
+      private @Nullable Duration slowCallDuration = null;
+      private int slidingWindowSize = 0;
+      private int minimumNumberOfCalls = 0;
+      private @Nullable Duration waitInOpenState = null;
+      private int permittedCallsInHalfOpenState = 0;
+
+      private Builder() {}
+
+      public Builder enabled(boolean value) {
+        this.enabled = value;
+        return this;
+      }
+
+      public Builder failureRateThreshold(float value) {
+        this.failureRateThreshold = value;
+        return this;
+      }
+
+      public Builder slowCallRateThreshold(float value) {
+        this.slowCallRateThreshold = value;
+        return this;
+      }
+
+      public Builder slowCallDuration(Duration value) {
+        this.slowCallDuration = value;
+        return this;
+      }
+
+      public Builder slidingWindowSize(int value) {
+        this.slidingWindowSize = value;
+        return this;
+      }
+
+      public Builder minimumNumberOfCalls(int value) {
+        this.minimumNumberOfCalls = value;
+        return this;
+      }
+
+      public Builder waitInOpenState(Duration value) {
+        this.waitInOpenState = value;
+        return this;
+      }
+
+      public Builder permittedCallsInHalfOpenState(int value) {
+        this.permittedCallsInHalfOpenState = value;
+        return this;
+      }
+
+      public CircuitBreaker build() {
+        return new CircuitBreaker(
+            enabled,
+            failureRateThreshold,
+            slowCallRateThreshold,
+            Objects.requireNonNull(slowCallDuration, "slowCallDuration"),
+            slidingWindowSize,
+            minimumNumberOfCalls,
+            Objects.requireNonNull(waitInOpenState, "waitInOpenState"),
+            permittedCallsInHalfOpenState);
+      }
+    }
+  }
 
   /**
    * Bulkhead (semaphore).

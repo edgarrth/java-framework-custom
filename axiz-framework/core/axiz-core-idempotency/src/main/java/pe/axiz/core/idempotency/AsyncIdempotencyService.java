@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.errors.BusinessException;
 
 /** Non-blocking idempotency with the same scoped keys, replay decisions, leases and fencing. */
@@ -101,16 +101,14 @@ public final class AsyncIdempotencyService {
     String owner = UUID.randomUUID().toString();
     return Stages.map(
         store.tryStart(
-            new IdempotencyRecord(
-                key,
-                fingerprint,
-                IdempotencyRecord.Status.IN_PROGRESS,
-                owner,
-                null,
-                now.plus(inProgressTtl),
-                now.plus(retention),
-                0,
-                null)),
+            IdempotencyRecord.builder(
+                    key, fingerprint, now.plus(inProgressTtl), now.plus(retention))
+                .status(IdempotencyRecord.Status.IN_PROGRESS)
+                .owner(owner)
+                .response(null)
+                .resolutionVersion(0)
+                .failure(null)
+                .build()),
         started ->
             started ? Optional.of(new IdempotencyService.Proceed(key, owner)) : Optional.empty());
   }

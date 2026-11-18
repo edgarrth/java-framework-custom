@@ -23,6 +23,7 @@ externalSecret:
 config:
   axiz.config.environment: prod
   management.tracing.sampling.probability: '0.1'
+  axiz.messaging.kafka.authentication: msk
   axiz.messaging.kafka.iam: true
   spring.kafka.bootstrap-servers: b-1.payments-prod.kafka.us-east-1.amazonaws.com:9098,b-2.payments-prod.kafka.us-east-1.amazonaws.com:9098
   axiz.messaging.destinations:

@@ -3,7 +3,7 @@ package pe.axiz.payments.beneficiaries.repository;
 import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.Page;
+import pe.axiz.core.api.Page;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 
 /** Storage of beneficiaries; only active (not removed) items are returned. */

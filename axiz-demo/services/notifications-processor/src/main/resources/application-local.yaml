@@ -20,6 +20,7 @@ spring:
 
 
 # The local Kafka container has no IAM listener.
+axiz.messaging.kafka.authentication: configured
 axiz.messaging.kafka.iam: false
 
 # Explicit transport settings for local containers without TLS.

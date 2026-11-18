@@ -1,0 +1,2 @@
+pe.axiz.spring.tokenization.vault.AxizTokenizationVaultAutoConfiguration
+pe.axiz.spring.tokenization.vault.http.AxizTokenizationVaultHttpAutoConfiguration

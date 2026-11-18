@@ -41,7 +41,7 @@ class RequestValidatorTest {
               structure,
               Stack.REACTIVE,
               "aurora",
-              List.of("outbox", "inbox", "scheduling"));
+              List.of("outbox", "inbox", "scheduling", "messaging-kafka"));
       assertTrue(generator.validate(r).valid(), generator.validate(r).problems().toString());
     }
     assertTrue(
@@ -94,11 +94,11 @@ class RequestValidatorTest {
                     "core", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of("outbox"))),
             "Capability outbox is not available on none"));
     assertTrue(
-        generator
-            .validate(
+        mentions(
+            problems(
                 Fixtures.request(
-                    "event-processor", Structure.EDA, Stack.SERVLET, "none", List.of("inbox")))
-            .valid());
+                    "event-processor", Structure.EDA, Stack.SERVLET, "none", List.of("inbox"))),
+            "Capability inbox is not available on none"));
     assertTrue(
         mentions(
             problems(
@@ -124,34 +124,38 @@ class RequestValidatorTest {
     ProjectRequest base =
         Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of());
     ProjectRequest missing =
-        new ProjectRequest(
-            base.name(),
-            base.groupId(),
-            base.basePackage(),
-            "",
-            "business",
-            Structure.LAYERED,
-            Stack.SERVLET,
-            "aurora",
-            List.of(),
-            null,
-            null,
-            "2.0.0");
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description("")
+            .archetype("business")
+            .structure(Structure.LAYERED)
+            .stack(Stack.SERVLET)
+            .persistence("aurora")
+            .capabilities(List.of())
+            .openApi(null)
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     assertTrue(mentions(problems(missing), "OpenAPI 3.1 contract is required"));
     ProjectRequest broken =
-        new ProjectRequest(
-            base.name(),
-            base.groupId(),
-            base.basePackage(),
-            "",
-            "business",
-            Structure.LAYERED,
-            Stack.SERVLET,
-            "aurora",
-            List.of(),
-            "openapi: 3.1.0\npaths:\n  /orders:\n    get:\n      responses: {}\n",
-            null,
-            "2.0.0");
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description("")
+            .archetype("business")
+            .structure(Structure.LAYERED)
+            .stack(Stack.SERVLET)
+            .persistence("aurora")
+            .capabilities(List.of())
+            .openApi("openapi: 3.1.0\npaths:\n  /orders:\n    get:\n      responses: {}\n")
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     assertFalse(generator.validate(broken).valid(), "lint errors block the generation");
   }
 
@@ -160,19 +164,21 @@ class RequestValidatorTest {
     ProjectRequest base =
         Fixtures.request("business", Structure.LAYERED, Stack.SERVLET, "aurora", List.of());
     ProjectRequest evil =
-        new ProjectRequest(
-            "../../etc",
-            "pe.axiz",
-            "pe.axiz.x",
-            "",
-            "business",
-            Structure.LAYERED,
-            Stack.SERVLET,
-            "aurora",
-            List.of(),
-            base.openApi(),
-            null,
-            "2.0.0");
+        ProjectRequest.builder()
+            .name("../../etc")
+            .groupId("pe.axiz")
+            .basePackage("pe.axiz.x")
+            .description("")
+            .archetype("business")
+            .structure(Structure.LAYERED)
+            .stack(Stack.SERVLET)
+            .persistence("aurora")
+            .capabilities(List.of())
+            .openApi(base.openApi())
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
     assertTrue(mentions(problems(evil), "kebab-case"));
     assertThrows(GenerationException.class, () -> generator.generate(evil));
   }
@@ -190,18 +196,20 @@ class RequestValidatorTest {
   }
 
   private static ProjectRequest withDescription(ProjectRequest b, String description) {
-    return new ProjectRequest(
-        b.name(),
-        b.groupId(),
-        b.basePackage(),
-        description,
-        b.archetype(),
-        b.structure(),
-        b.stack(),
-        b.persistence(),
-        b.capabilities(),
-        b.openApi(),
-        b.asyncApi(),
-        b.frameworkVersion());
+    return ProjectRequest.builder()
+        .name(b.name())
+        .groupId(b.groupId())
+        .basePackage(b.basePackage())
+        .description(description)
+        .archetype(b.archetype())
+        .structure(b.structure())
+        .stack(b.stack())
+        .persistence(b.persistence())
+        .capabilities(b.capabilities())
+        .openApi(b.openApi())
+        .asyncApi(b.asyncApi())
+        .frameworkVersion(b.frameworkVersion())
+        .extensions(List.of())
+        .build();
   }
 }

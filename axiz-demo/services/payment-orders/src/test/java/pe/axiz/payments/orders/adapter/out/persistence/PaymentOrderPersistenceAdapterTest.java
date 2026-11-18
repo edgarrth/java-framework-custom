@@ -23,8 +23,8 @@ import org.postgresql.util.ServerErrorMessage;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import pe.axiz.core.commons.Page;
-import pe.axiz.core.commons.PageRequest;
+import pe.axiz.core.api.Page;
+import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.crypto.BlindIndex;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
@@ -113,7 +113,7 @@ class PaymentOrderPersistenceAdapterTest {
   }
 
   final Rows rows = new Rows();
-  final BlindIndex blindIndex = new BlindIndex("k".repeat(32).getBytes(StandardCharsets.UTF_8), 16);
+  final BlindIndex blindIndex = new BlindIndex(Map.of("i1", "k".repeat(32).getBytes(StandardCharsets.UTF_8)), "i1");
   final PaymentOrderPersistenceAdapter adapter =
       new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex);
 
@@ -261,7 +261,7 @@ class PaymentOrderPersistenceAdapterTest {
 
     rows.exists = true;
     assertThat(adapter.exists("C-1", CCI, amount, DAY)).isTrue();
-    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.CCI_CONTEXT);
+    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.cciScope(CUSTOMER)).encoded();
     assertThat(rows.calls).contains("release", "exists:" + index + ":REJECTED");
     assertThat(index).doesNotContain(CCI);
   }

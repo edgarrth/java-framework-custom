@@ -54,7 +54,7 @@ public class AxizR2dbcEnvironmentPostProcessor implements EnvironmentPostProcess
       String rootCert = env.getProperty("spring.r2dbc.properties.sslRootCert");
       if (rootCert != null) d.put("spring.flyway.jdbc-properties.sslrootcert", rootCert);
       d.put("spring.flyway.user", "${spring.r2dbc.username:}");
-      if (!env.getProperty("axiz.r2dbc.iam.enabled", Boolean.class, false)) {
+      if (!"dynamic".equals(env.getProperty("axiz.r2dbc.password-mode", "static"))) {
         d.put("spring.flyway.password", "${spring.r2dbc.password:}");
       }
     }

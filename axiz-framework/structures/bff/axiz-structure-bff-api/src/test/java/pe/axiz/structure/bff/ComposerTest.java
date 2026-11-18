@@ -1,6 +1,7 @@
 package pe.axiz.structure.bff;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,10 +10,30 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.ExternalServiceException;
 
 class ComposerTest {
+
+  @Test
+  void successfulCompositionPropagatesContextAndNeverReportsDegradation() {
+    AtomicInteger calls = new AtomicInteger();
+    Composition complete =
+        Composer.within(
+                Duration.ofSeconds(2),
+                task ->
+                    () -> {
+                      calls.incrementAndGet();
+                      return task.call();
+                    })
+            .required("value", () -> "accepted")
+            .run();
+    assertEquals("accepted", complete.get("value", String.class));
+    assertEquals(1, calls.get());
+    assertFalse(complete.partial());
+    assertEquals(List.of(), complete.degraded());
+  }
 
   @Test
   void optionalPartsDegradeAndRequiredPartsFail() {

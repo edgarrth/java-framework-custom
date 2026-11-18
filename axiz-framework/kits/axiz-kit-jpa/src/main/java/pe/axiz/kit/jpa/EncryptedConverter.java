@@ -1,9 +1,9 @@
 package pe.axiz.kit.jpa;
 
 import jakarta.persistence.AttributeConverter;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.crypto.EncryptionContext;
-import pe.axiz.core.crypto.EncryptionRegistry;
 import pe.axiz.core.crypto.FieldEncryptor;
 
 /**
@@ -14,16 +14,11 @@ import pe.axiz.core.crypto.FieldEncryptor;
  */
 public abstract class EncryptedConverter implements AttributeConverter<String, String> {
 
-  private final @Nullable FieldEncryptor injected;
+  private final FieldEncryptor encryptor;
 
-  /** Used by JPA providers without dependency injection. */
-  public EncryptedConverter() {
-    this.injected = null;
-  }
-
-  /** Used when the provider obtains converters from the application context. */
+  /** The JPA provider must obtain converters through its dependency-injection integration. */
   public EncryptedConverter(FieldEncryptor encryptor) {
-    this.injected = encryptor;
+    this.encryptor = Objects.requireNonNull(encryptor);
   }
 
   protected abstract String context();
@@ -33,17 +28,13 @@ public abstract class EncryptedConverter implements AttributeConverter<String, S
     return EncryptionContext.require(context());
   }
 
-  private FieldEncryptor encryptor() {
-    return injected != null ? injected : EncryptionRegistry.encryptor();
-  }
-
   @Override
   public @Nullable String convertToDatabaseColumn(@Nullable String attribute) {
-    return encryptor().encrypt(attribute, encryptionContext());
+    return encryptor.encrypt(attribute, encryptionContext());
   }
 
   @Override
   public @Nullable String convertToEntityAttribute(@Nullable String dbData) {
-    return encryptor().decrypt(dbData, encryptionContext());
+    return encryptor.decrypt(dbData, encryptionContext());
   }
 }

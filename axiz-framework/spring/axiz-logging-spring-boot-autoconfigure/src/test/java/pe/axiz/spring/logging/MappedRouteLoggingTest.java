@@ -47,7 +47,7 @@ class MappedRouteLoggingTest {
     String query = UUID.randomUUID().toString();
     var mvc =
         MockMvcBuilders.standaloneSetup(new Customers())
-            .addFilters(new HttpLoggingFilter(formatter(), settings()))
+            .addFilters(new HttpLoggingFilter(formatter(), settings(), List.of()))
             .build();
     mvc.perform(get("/customers/{id}", customerId).queryParam("credential", query))
         .andExpect(status().isOk());

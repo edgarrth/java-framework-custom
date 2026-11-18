@@ -23,24 +23,13 @@ axiz.inbox.retention: 14d
 
 ## Según la persistencia del servicio
 
-### none
-
-Agrega también: [`dynamodb`](dynamodb.md)
-
-- `pe.axiz:axiz-adapter-inbox-dynamodb`
-
-```yaml
-axiz.inbox.store: dynamodb
-axiz.inbox.table: ${axiz.dynamodb.table-prefix}axiz-inbox
-```
-
 ### Aurora en servlet (JDBC/JPA)
 
-- `pe.axiz:axiz-adapter-inbox-jdbc`
+- `pe.axiz:axiz-inbox-jdbc-spring-boot-starter`
 
 ### Aurora en reactivo (R2DBC)
 
-- `pe.axiz:axiz-adapter-inbox-r2dbc`
+- `pe.axiz:axiz-inbox-r2dbc-spring-boot-starter`
 
 ```yaml
 axiz.inbox.store: r2dbc
@@ -48,7 +37,7 @@ axiz.inbox.store: r2dbc
 
 ### DynamoDB
 
-- `pe.axiz:axiz-adapter-inbox-dynamodb`
+- `pe.axiz:axiz-inbox-dynamodb-spring-boot-starter`
 
 ```yaml
 axiz.inbox.store: dynamodb
@@ -65,3 +54,4 @@ axiz.inbox.table: ${axiz.dynamodb.table-prefix}axiz-inbox
 
 - [`axiz-inbox-spring-boot-autoconfigure`](../referencia/spring/axiz-inbox-spring-boot-autoconfigure.md)
 - [`axiz-core-inbox`](../referencia/core/axiz-core-inbox.md)
+- [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)

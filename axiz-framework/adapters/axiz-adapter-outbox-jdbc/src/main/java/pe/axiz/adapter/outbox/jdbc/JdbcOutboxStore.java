@@ -12,12 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.SqlIdentifiers;
 import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.outbox.OutboxException;
 import pe.axiz.core.outbox.OutboxRecord;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.kit.jdbc.ConnectionProvider;
+import pe.axiz.kit.sql.SqlIdentifiers;
 
 /** Transaction-aware JDBC outbox with persistent aggregate counters and fenced short claims. */
 public final class JdbcOutboxStore implements OutboxStore {
@@ -43,6 +43,11 @@ public final class JdbcOutboxStore implements OutboxStore {
   }
 
   @Override
+  public @Nullable Object transactionResource() {
+    return connections.transactionResource();
+  }
+
+  @Override
   public void append(OutboxRecord r) {
     transaction(
         c -> {
@@ -54,8 +59,8 @@ public final class JdbcOutboxStore implements OutboxStore {
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
-          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
-              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. Claim size"
+              + " is a positive integer and dialect fragments come from the closed Dialect enum.")
   private void append(Connection c, OutboxRecord r) throws SQLException {
     String upsert =
         dialect == Dialect.POSTGRESQL
@@ -140,8 +145,8 @@ public final class JdbcOutboxStore implements OutboxStore {
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
-          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
-              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. Claim size"
+              + " is a positive integer and dialect fragments come from the closed Dialect enum.")
   private List<OutboxRecord> claimDue(Connection c, int size, Duration lease, String owner)
       throws SQLException {
     String select =
@@ -199,21 +204,16 @@ public final class JdbcOutboxStore implements OutboxStore {
         }
       }
       claimed.add(
-          new OutboxRecord(
-              r.id(),
-              r.destination(),
-              r.aggregateType(),
-              r.aggregateId(),
-              r.eventType(),
-              r.envelopeJson(),
-              OutboxRecord.Status.IN_FLIGHT,
-              r.attempts(),
-              r.createdAt(),
-              r.nextAttemptAt(),
-              r.lastError(),
-              r.aggregateSequence(),
-              owner,
-              leaseUntil));
+          OutboxRecord.builder(
+                  r.id(), r.destination(), r.eventType(), r.envelopeJson(), r.createdAt())
+              .aggregate(r.aggregateType(), r.aggregateId())
+              .status(OutboxRecord.Status.IN_FLIGHT)
+              .attempts(r.attempts())
+              .nextAttemptAt(r.nextAttemptAt())
+              .lastError(r.lastError())
+              .aggregateSequence(r.aggregateSequence())
+              .lease(owner, leaseUntil)
+              .build());
     }
     return List.copyOf(claimed);
   }
@@ -304,8 +304,8 @@ public final class JdbcOutboxStore implements OutboxStore {
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
-          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
-              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. Claim size"
+              + " is a positive integer and dialect fragments come from the closed Dialect enum.")
   private void verifySchema(Connection c) throws SQLException {
     try (PreparedStatement ps =
         c.prepareStatement("SELECT " + COLUMNS + " FROM " + table + " WHERE 1=0")) {
@@ -328,8 +328,8 @@ public final class JdbcOutboxStore implements OutboxStore {
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
-          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
-              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. Claim size"
+              + " is a positive integer and dialect fragments come from the closed Dialect enum.")
   private int update(Connection c, String statement, @Nullable Object... values)
       throws SQLException {
     try (PreparedStatement ps = c.prepareStatement(statement)) {
@@ -348,8 +348,8 @@ public final class JdbcOutboxStore implements OutboxStore {
   @SuppressFBWarnings(
       value = "SQL_INJECTION_JDBC",
       justification =
-          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. "
-              + "Claim size is a positive integer and dialect fragments come from the closed Dialect enum.")
+          "Private SQL path: identifiers pass SqlIdentifiers.require; values are bound. Claim size"
+              + " is a positive integer and dialect fragments come from the closed Dialect enum.")
   private long count(Connection c, String statement) throws SQLException {
     try (PreparedStatement ps = c.prepareStatement(statement);
         ResultSet rs = ps.executeQuery()) {
@@ -364,21 +364,20 @@ public final class JdbcOutboxStore implements OutboxStore {
 
   private static OutboxRecord record(ResultSet rs) throws SQLException {
     Timestamp lease = rs.getTimestamp(14);
-    return new OutboxRecord(
-        rs.getString(1),
-        rs.getString(2),
-        rs.getString(3),
-        rs.getString(4),
-        rs.getString(5),
-        rs.getString(6),
-        OutboxRecord.Status.valueOf(rs.getString(7)),
-        rs.getInt(8),
-        rs.getTimestamp(9).toInstant(),
-        rs.getTimestamp(10).toInstant(),
-        rs.getString(11),
-        rs.getLong(12),
-        rs.getString(13),
-        lease == null ? null : lease.toInstant());
+    return OutboxRecord.builder(
+            rs.getString(1),
+            rs.getString(2),
+            rs.getString(5),
+            rs.getString(6),
+            rs.getTimestamp(9).toInstant())
+        .aggregate(rs.getString(3), rs.getString(4))
+        .status(OutboxRecord.Status.valueOf(rs.getString(7)))
+        .attempts(rs.getInt(8))
+        .nextAttemptAt(rs.getTimestamp(10).toInstant())
+        .lastError(rs.getString(11))
+        .aggregateSequence(rs.getLong(12))
+        .lease(rs.getString(13), lease == null ? null : lease.toInstant())
+        .build();
   }
 
   private <T extends @Nullable Object> T transaction(ConnectionWork<T> work) {

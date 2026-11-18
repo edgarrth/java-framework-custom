@@ -1,0 +1,2 @@
+pe.axiz.spring.messaging.sns.AxizMessagingSnsAutoConfiguration
+pe.axiz.spring.messaging.sns.AxizNativeMessagingSnsAutoConfiguration

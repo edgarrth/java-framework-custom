@@ -17,9 +17,9 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
-import pe.axiz.core.commons.RequestContext;
-import pe.axiz.core.commons.RequestMetadata;
-import pe.axiz.core.commons.StandardHeaders;
+import pe.axiz.core.api.StandardHeaders;
+import pe.axiz.core.context.RequestContext;
+import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
@@ -46,11 +46,23 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
               + "shared, not copied.")
   private final ClientResilience resilience;
 
+  private final boolean translateErrors;
   private final OutboundAuth auth;
   private final @Nullable String tenantHeader;
 
   public AxizExchangeFilter(
       ClientResilience resilience, OutboundAuth auth, @Nullable String tenantHeader) {
+    this(resilience, auth, tenantHeader, true);
+  }
+
+  AxizExchangeFilter(
+      ClientResilience resilience,
+      OutboundAuth auth,
+      @Nullable String tenantHeader,
+      boolean translateErrors) {
+    if (!translateErrors && resilience.settings().retry() != ClientSettings.RetryMode.NONE)
+      throw new IllegalArgumentException("Raw HTTP exchanges require retry=NONE");
+    this.translateErrors = translateErrors;
     this.resilience = Objects.requireNonNull(resilience);
     this.auth = Objects.requireNonNull(auth);
     this.tenantHeader = tenantHeader;
@@ -166,10 +178,28 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
                       res -> {
                         try {
                           int status = res.statusCode().value();
+                          if (!translateErrors) {
+                            log(settings, method, req, status, start, attempt[0]);
+                            return Mono.just(
+                                res.mutate()
+                                    .body(
+                                        body ->
+                                            body.doOnError(
+                                                    failure -> {
+                                                      if (released.compareAndSet(false, true))
+                                                        resilience.release(start, failure, status);
+                                                    })
+                                                .doFinally(
+                                                    signal -> {
+                                                      if (released.compareAndSet(false, true))
+                                                        resilience.release(start, null, status);
+                                                    }))
+                                    .build());
+                          }
                           if (released.compareAndSet(false, true))
                             resilience.release(start, null, status);
                           log(settings, method, req, status, start, attempt[0]);
-                          if (status >= 400) {
+                          if (translateErrors && status >= 400) {
                             return res.bodyToMono(String.class)
                                 .defaultIfEmpty("")
                                 .flatMap(

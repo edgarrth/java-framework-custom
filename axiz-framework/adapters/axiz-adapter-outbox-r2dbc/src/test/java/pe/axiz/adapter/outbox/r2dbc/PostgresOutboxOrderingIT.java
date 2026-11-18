@@ -1,6 +1,8 @@
 package pe.axiz.adapter.outbox.r2dbc;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -54,18 +58,30 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import pe.axiz.adapter.outbox.jdbc.Dialect;
 import pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore;
 import pe.axiz.core.commons.tx.TransactionRunner;
+import pe.axiz.core.crypto.AsyncDataKeyProvider;
+import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
+import pe.axiz.core.crypto.AsyncEnvelopePayloadProtector;
+import pe.axiz.core.crypto.CryptoException;
+import pe.axiz.core.crypto.DataKeyProvider;
+import pe.axiz.core.crypto.DataKeyProvider.DataKey;
+import pe.axiz.core.crypto.EnvelopeEncryptor;
+import pe.axiz.core.crypto.EnvelopePayloadProtector;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.messaging.PublishResult;
 import pe.axiz.core.outbox.OutboxAdmin;
 import pe.axiz.core.outbox.OutboxRelay;
+import pe.axiz.core.outbox.OutboxRelayListener;
 import pe.axiz.core.outbox.OutboxStore;
+import pe.axiz.core.outbox.OutboxWriteTracing;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 import pe.axiz.kit.jdbc.JdbcTransactions;
 import pe.axiz.kit.r2dbc.R2dbcSql;
 import pe.axiz.kit.r2dbc.R2dbcTransactionRunner;
+import pe.axiz.kit.r2dbc.SqlParams;
+import pe.axiz.quality.containers.TestContainerImages;
 import reactor.blockhound.BlockHound;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Mono;
@@ -74,11 +90,125 @@ import reactor.core.scheduler.Schedulers;
 /** PostgreSQL semantics, independently exercised through both production drivers. */
 @Timeout(180)
 class PostgresOutboxOrderingIT {
-  private static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer("postgres:17.6-alpine");
+  private static final PostgreSQLContainer POSTGRES = TestContainerImages.postgres();
   private static PGSimpleDataSource source;
   private static ConnectionFactory connections;
   private static final Clock CLOCK = Clock.systemUTC();
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void protectedPayloadCommitsAtomicallyAndOnlyRelayRevealsIt(boolean reactive) throws Exception {
+    DataKeyProvider keys =
+        new DataKeyProvider() {
+          public DataKey generate(String context) {
+            return new DataKey(new byte[32], new byte[] {1});
+          }
+
+          public byte[] decrypt(byte[] key, String context) {
+            return new byte[32];
+          }
+        };
+    var nativeKeys =
+        new AsyncDataKeyProvider() {
+          public CompletionStage<DataKey> generate(String context) {
+            return Mono.delay(Duration.ofMillis(5))
+                .map(ignored -> keys.generate(context))
+                .toFuture();
+          }
+
+          public CompletionStage<byte[]> decrypt(byte[] key, String context) {
+            return CompletableFuture.completedFuture(keys.decrypt(key, context));
+          }
+        };
+    byte[] sensitive = "{\"document\":\"00123456\"}".getBytes(StandardCharsets.UTF_8);
+    var event =
+        EventEnvelope.builder()
+            .id("protected")
+            .source("urn:test")
+            .type("protected.v1")
+            .time(CLOCK.instant())
+            .subject("subject")
+            .dataContentType("application/json")
+            .data(sensitive)
+            .extensions(Map.of())
+            .build();
+    Backend b = backend(reactive);
+    try (var envelope = new EnvelopeEncryptor(keys, Duration.ofMinutes(1), 100, CLOCK);
+        var nativeEnvelope =
+            new AsyncEnvelopeEncryptor(nativeKeys, Duration.ofMinutes(1), 100, CLOCK)) {
+      var protection = new EnvelopePayloadProtector(envelope);
+      if (reactive) {
+        var sql = new R2dbcSql(connections);
+        var store = new R2dbcOutboxStore(sql, "axiz_outbox", Duration.ofSeconds(5));
+        var writer =
+            new R2dbcOutboxWriter(store, CLOCK, new AsyncEnvelopePayloadProtector(nativeEnvelope));
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                sql.inTransaction(
+                        tx ->
+                            writer
+                                .write("sensitive-events", event, "document")
+                                .then(Mono.error(new IllegalStateException("rollback"))))
+                    .subscribeOn(Schedulers.parallel())
+                    .block(Duration.ofSeconds(10)));
+        assertEquals(0, b.store().countPending());
+        sql.inTransaction(tx -> writer.write("sensitive-events", event, "document"))
+            .subscribeOn(Schedulers.parallel())
+            .block(Duration.ofSeconds(10));
+        String stored =
+            sql.queryOne(
+                    "SELECT envelope FROM axiz_outbox WHERE id=:id",
+                    SqlParams.of().bind("id", event.id()),
+                    row -> row.require("envelope", String.class))
+                .block(Duration.ofSeconds(5));
+        assertNotNull(stored);
+        assertTrue(stored.startsWith("axzp1:"));
+        assertFalse(stored.contains("00123456"));
+        assertThrows(
+            CryptoException.class,
+            () -> protection.reveal(stored, "purpose:outbox:sensitive-events", "another-row"));
+      } else {
+        var writer = new OutboxWriter(b.store(), CLOCK, OutboxWriteTracing.NONE, protection);
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                b.tx()
+                    .inTransaction(
+                        () -> {
+                          writer.write("sensitive-events", event, "document");
+                          throw new IllegalStateException("rollback");
+                        }));
+        assertEquals(0, b.store().countPending());
+        b.tx()
+            .inTransaction(
+                () -> {
+                  writer.write("sensitive-events", event, "document");
+                  return null;
+                });
+      }
+      var relay =
+          OutboxRelay.builder(
+                  b.store(),
+                  (destination, restored) -> {
+                    assertArrayEquals(sensitive, restored.data());
+                    assertEquals("sensitive-events", destination);
+                    return new PublishResult(restored.id(), destination, null);
+                  },
+                  b.tx(),
+                  CLOCK)
+              .batchSize(1)
+              .maxAttempts(1)
+              .backoff(Backoff.fixed(Duration.ZERO))
+              .lease(Duration.ofMinutes(1))
+              .publishBudget(Duration.ofSeconds(5))
+              .listener(OutboxRelayListener.NOOP)
+              .protector(protection)
+              .build();
+      assertEquals(1, relay.relayOnce().published());
+      assertEquals(0, b.store().countPending());
+    }
+  }
 
   @BeforeAll
   @Timeout(120)
@@ -171,28 +301,26 @@ class PostgresOutboxOrderingIT {
   }
 
   private static EventEnvelope event(String id, String aggregate) {
-    return new EventEnvelope(
-        id,
-        "urn:test",
-        "ordered.v1",
-        CLOCK.instant(),
-        aggregate,
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id(id)
+        .source("urn:test")
+        .type("ordered.v1")
+        .time(CLOCK.instant())
+        .subject(aggregate)
+        .dataContentType("application/json")
+        .data("{}".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   private OutboxRelay relay(Backend b, EventPublisher publisher) {
-    return new OutboxRelay(
-        b.store(),
-        publisher,
-        b.tx(),
-        CLOCK,
-        100,
-        2,
-        Backoff.fixed(Duration.ZERO),
-        Duration.ofMinutes(3),
-        Duration.ofMillis(1));
+    return OutboxRelay.builder(b.store(), publisher, b.tx(), CLOCK)
+        .batchSize(100)
+        .maxAttempts(2)
+        .backoff(Backoff.fixed(Duration.ZERO))
+        .lease(Duration.ofMinutes(3))
+        .publishBudget(Duration.ofMillis(1))
+        .build();
   }
 
   @Test
@@ -449,19 +577,20 @@ class PostgresOutboxOrderingIT {
       }
       var sent = new ArrayList<String>();
       var relay =
-          new OutboxRelay(
-              b.store(),
-              (destination, e) -> {
-                sent.add(e.id());
-                return new PublishResult(e.id(), destination, null);
-              },
-              b.tx(),
-              Clock.offset(CLOCK, Duration.ofHours(hours)),
-              10,
-              2,
-              Backoff.fixed(Duration.ZERO),
-              Duration.ofMinutes(3),
-              Duration.ofMillis(1));
+          OutboxRelay.builder(
+                  b.store(),
+                  (destination, e) -> {
+                    sent.add(e.id());
+                    return new PublishResult(e.id(), destination, null);
+                  },
+                  b.tx(),
+                  Clock.offset(CLOCK, Duration.ofHours(hours)))
+              .batchSize(10)
+              .maxAttempts(2)
+              .backoff(Backoff.fixed(Duration.ZERO))
+              .lease(Duration.ofMinutes(3))
+              .publishBudget(Duration.ofMillis(1))
+              .build();
       assertEquals(
           0, relay.relayOnce().published(), "app clock cannot steal an unexpired database lease");
       try (var c = source.getConnection();

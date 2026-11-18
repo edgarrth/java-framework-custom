@@ -16,6 +16,11 @@
     <axiz.module.name>pe.axiz.adapter.saga.jdbc</axiz.module.name>
   </properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-resilience</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version></dependency>
+
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-schema</artifactId><version>${project.version}</version></dependency>
 
     <dependency>

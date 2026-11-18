@@ -32,6 +32,11 @@ files:
 
   # --- local environment ---------------------------------------------------------------------
   - {template: local/compose.yaml.mustache, path: compose.yaml}
+  - {template: local/images/postgres/Dockerfile, path: local/images/postgres/Dockerfile, binary: true, when: infra.postgres}
+  - {template: local/images/valkey/Dockerfile, path: local/images/valkey/Dockerfile, binary: true, when: infra.redis}
+  - {template: local/images/wiremock/Dockerfile, path: local/images/wiremock/Dockerfile, binary: true, when: infra.wiremock}
+  - {template: local/images/keycloak/Dockerfile, path: local/images/keycloak/Dockerfile, binary: true, when: infra.keycloak}
+  - {template: local/images/kafka/Dockerfile, path: local/images/kafka/Dockerfile, binary: true, when: infra.kafka}
   - {template: local/dev-secrets.sh.mustache, path: local/dev-secrets.sh}
   - {template: local/localstack-init.sh.mustache, path: local/localstack/init.sh, when: infra.localstack}
   - {template: static/keycloak-realm.json, path: local/keycloak/axiz-realm.json, binary: true, when: infra.keycloak}
@@ -79,7 +84,9 @@ files:
 
   # --- tests ---------------------------------------------------------------------------------
   - {template: test/ArchitectureTest.java.mustache, path: "src/test/java/{{project.packagePath}}/ArchitectureTest.java"}
+  - {template: test/ArchitectureSelfCheckTest.java.mustache, path: "src/test/java/{{project.packagePath}}/ArchitectureSelfCheckTest.java"}
   - {template: test/ApplicationTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{project.className}}ApplicationTest.java"}
+  - {template: test/SensitiveDataCanaryTest.java.mustache, path: "src/test/java/{{project.packagePath}}/SensitiveDataCanaryTest.java"}
   - {template: test/AuditTestConfiguration.java.mustache, path: "src/test/java/{{project.packagePath}}/AuditTestConfiguration.java", when: auditResources.required}
   - {template: test/ContractExamplesTest.java.mustache, path: "src/test/java/{{project.packagePath}}/{{fw.restPath}}/ContractExamplesTest.java", when: hasExamples}
   - {template: test/example.json.mustache, path: "src/test/resources/contract-examples/{{item.operationId}}.json", each: examples}

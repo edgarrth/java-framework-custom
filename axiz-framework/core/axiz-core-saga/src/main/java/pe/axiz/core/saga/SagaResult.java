@@ -14,6 +14,11 @@ import org.jspecify.annotations.Nullable;
 public record SagaResult<C>(
     String sagaId, SagaStatus status, C context, @Nullable String failedStep) {
 
+  @Override
+  public String toString() {
+    return "SagaResult[status=" + status + ", context=****]";
+  }
+
   public boolean completed() {
     return status == SagaStatus.COMPLETED;
   }

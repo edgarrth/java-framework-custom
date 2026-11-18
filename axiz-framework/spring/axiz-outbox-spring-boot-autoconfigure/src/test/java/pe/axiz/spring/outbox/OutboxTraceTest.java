@@ -24,15 +24,16 @@ import pe.axiz.core.messaging.EventEnvelope;
 class OutboxTraceTest {
 
   private static EventEnvelope event() {
-    return new EventEnvelope(
-        "e-1",
-        "urn:axiz:orders",
-        "pe.axiz.orders.order-placed.v1",
-        Instant.EPOCH,
-        "o-1",
-        "application/json",
-        "{}".getBytes(StandardCharsets.UTF_8),
-        Map.of());
+    return EventEnvelope.builder()
+        .id("e-1")
+        .source("urn:axiz:orders")
+        .type("pe.axiz.orders.order-placed.v1")
+        .time(Instant.EPOCH)
+        .subject("o-1")
+        .dataContentType("application/json")
+        .data("{}".getBytes(StandardCharsets.UTF_8))
+        .extensions(Map.of())
+        .build();
   }
 
   private static ObservationRegistry tracing(SimpleTracer tracer) {

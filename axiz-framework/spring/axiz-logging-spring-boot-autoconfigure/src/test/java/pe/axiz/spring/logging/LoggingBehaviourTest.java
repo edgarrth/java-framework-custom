@@ -44,6 +44,34 @@ class LoggingBehaviourTest {
       new ApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizLoggingAutoConfiguration.class));
 
+  @Test
+  void payloadVetoPreventsBothRequestAndResponseCaptureEvenWhenBodyLoggingIsEnabled(
+      CapturedOutput output) throws Exception {
+    var filter =
+        new HttpLoggingFilter(formatter(), http(true), List.of(path -> !path.startsWith("/vault")));
+    var request = new MockHttpServletRequest("POST", "/app/vault/reveal");
+    request.setContextPath("/app");
+    request.setContentType("application/json");
+    request.setContent("{\"value\":\"synthetic-source-canary\"}".getBytes(StandardCharsets.UTF_8));
+    var response = new MockHttpServletResponse();
+    filter.doFilter(
+        request,
+        response,
+        (actualRequest, actualResponse) -> {
+          assertThat(actualRequest).isSameAs(request);
+          assertThat(actualResponse).isSameAs(response);
+          assertThat(actualRequest.getInputStream().readAllBytes())
+              .isEqualTo(request.getContentAsByteArray());
+          actualResponse
+              .getOutputStream()
+              .write("synthetic-revealed-canary".getBytes(StandardCharsets.UTF_8));
+        });
+    assertThat(output.getAll())
+        .doesNotContain(
+            "synthetic-source-canary", "synthetic-revealed-canary", "request=", "response=");
+    assertThat(response.getContentAsString()).isEqualTo("synthetic-revealed-canary");
+  }
+
   /** Every public method is an operation (annotation on the type). */
   @LogOperation(logArguments = false, logResult = true)
   public static class Statements {
@@ -125,7 +153,7 @@ class LoggingBehaviourTest {
 
   @Test
   void bodiesLargerThanWhatIsKeptAreLoggedBySizeOnly(CapturedOutput output) throws Exception {
-    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true, 32));
+    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true, 32), List.of());
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setAttribute(
         org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/login");
@@ -153,7 +181,7 @@ class LoggingBehaviourTest {
   @Test
   void theServletAccessLogHasOneLineWithoutSecretsOrQueryStrings(CapturedOutput output)
       throws Exception {
-    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(false));
+    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(false), List.of());
     assertEquals(Ordered.HIGHEST_PRECEDENCE + 30, filter.getOrder());
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/accounts");
     request.setAttribute(
@@ -179,7 +207,7 @@ class LoggingBehaviourTest {
 
   @Test
   void bodiesAreMaskedTruncatedAndStillReachTheClient(CapturedOutput output) throws Exception {
-    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true));
+    HttpLoggingFilter filter = new HttpLoggingFilter(formatter(), http(true), List.of());
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
     request.setAttribute(
         org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE, "/login");

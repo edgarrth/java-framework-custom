@@ -80,7 +80,9 @@ public final class TwoLevelCache implements ByteCache {
       }
       return Optional.of(remote.get().value());
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache read failed for a key; continuing without cache: {}", e.toString());
+      LOG.warn(
+          "L2 cache read failed for a key; continuing without cache: {}",
+          e.getClass().getSimpleName());
       return Optional.empty();
     }
   }
@@ -116,7 +118,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       l2.put(key, value, ttl);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache write failed; value kept only locally: {}", e.toString());
+      LOG.warn("L2 cache write failed; value kept only locally: {}", e.getClass().getSimpleName());
     }
   }
 
@@ -126,7 +128,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       l2.evict(key);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache eviction failed: {}", e.toString());
+      LOG.warn("L2 cache eviction failed: {}", e.getClass().getSimpleName());
     }
   }
 
@@ -136,7 +138,7 @@ public final class TwoLevelCache implements ByteCache {
     try {
       n += l2.evictByPrefix(prefix);
     } catch (RuntimeException e) {
-      LOG.warn("L2 cache prefix eviction failed: {}", e.toString());
+      LOG.warn("L2 cache prefix eviction failed: {}", e.getClass().getSimpleName());
     }
     return n;
   }

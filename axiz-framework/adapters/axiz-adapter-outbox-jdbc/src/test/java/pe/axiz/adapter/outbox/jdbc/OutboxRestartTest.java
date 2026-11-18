@@ -40,15 +40,16 @@ class OutboxRestartTest {
         new JdbcOutboxStore(
             new JdbcTransactions(ds), new JdbcTransactions(ds), "axiz_outbox", Dialect.H2);
     var event =
-        new EventEnvelope(
-            "payment-1",
-            "urn:payments",
-            "paid.v1",
-            Instant.now(),
-            "a-1",
-            "application/json",
-            new byte[0],
-            Map.of());
+        EventEnvelope.builder()
+            .id("payment-1")
+            .source("urn:payments")
+            .type("paid.v1")
+            .time(Instant.now())
+            .subject("a-1")
+            .dataContentType("application/json")
+            .data(new byte[0])
+            .extensions(Map.of())
+            .build();
     new OutboxWriter(first, Clock.systemUTC()).write("kafka:payments", event, "payment");
     assertEquals(1, first.countPending());
     var reopened = new JdbcDataSource();
@@ -57,19 +58,20 @@ class OutboxRestartTest {
     var restarted = new JdbcOutboxStore(tx, tx, "axiz_outbox", Dialect.H2);
     var published = new ArrayList<EventEnvelope>();
     var relay =
-        new OutboxRelay(
-            restarted,
-            (destination, message) -> {
-              published.add(message);
-              return new PublishResult(message.id(), destination, "ack");
-            },
-            tx,
-            Clock.systemUTC(),
-            10,
-            3,
-            Backoff.fixed(Duration.ofSeconds(1)),
-            Duration.ofMinutes(3),
-            Duration.ofMillis(1));
+        OutboxRelay.builder(
+                restarted,
+                (destination, message) -> {
+                  published.add(message);
+                  return new PublishResult(message.id(), destination, "ack");
+                },
+                tx,
+                Clock.systemUTC())
+            .batchSize(10)
+            .maxAttempts(3)
+            .backoff(Backoff.fixed(Duration.ofSeconds(1)))
+            .lease(Duration.ofMinutes(3))
+            .publishBudget(Duration.ofMillis(1))
+            .build();
     relay.relayOnce();
     relay.relayOnce();
     assertEquals(0, restarted.countPending());

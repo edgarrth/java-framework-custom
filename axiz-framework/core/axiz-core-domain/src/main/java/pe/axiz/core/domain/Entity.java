@@ -4,7 +4,10 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Domain entity with identity. Two entities are equal when they have the same type and id.
+ * Domain entity with identity. Two entities are equal when they have the same type and id. Assign a
+ * non-null, stable identity when creating the entity, before placing it in collections. An identity
+ * assigned or changed later invalidates hash-based collection membership; null IDs of the same
+ * concrete type compare equal and are not supported for distinct transient entities.
  *
  * @param <I> id type
  */

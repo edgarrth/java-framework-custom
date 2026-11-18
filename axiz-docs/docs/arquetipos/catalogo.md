@@ -6,7 +6,7 @@ La primera estructura, stack y persistencia de cada lista es el valor por defect
 | Arquetipo | Rol | Estructuras | Extensiones | Stack | Persistencia | Despliegue | API REST |
 |---|---|---|---|---|---|---|---|
 | `business` | Owner of domain business rules | hexagonal, layered | cqrs | servlet, reactive | aurora, dynamodb | deployment | sí |
-| `core` | Facade to internal systems of record | hexagonal |  | servlet, reactive | none, dynamodb | deployment | sí |
+| `core` | Facade to internal systems of record | hexagonal |  | servlet, reactive | none | deployment | sí |
 | `gateway` | Facade and security for external systems | hexagonal |  | servlet, reactive | none | deployment | sí |
 | `ux` | Channel experience without domain persistence | bff |  | servlet, reactive | none | deployment | sí |
 | `support` | Reusable cross-domain support service | hexagonal, layered |  | servlet, reactive | none, aurora, dynamodb | deployment | sí |

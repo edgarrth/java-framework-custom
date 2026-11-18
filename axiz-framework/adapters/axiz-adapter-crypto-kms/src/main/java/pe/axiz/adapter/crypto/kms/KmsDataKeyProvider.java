@@ -34,7 +34,7 @@ public final class KmsDataKeyProvider implements DataKeyProvider {
   public DataKey generate(String context) {
     try {
       GenerateDataKeyResponse r = kms.generateDataKey(requests.generate(context));
-      return new DataKey(r.plaintext().asByteArray(), r.ciphertextBlob().asByteArray());
+      return KmsRequests.dataKey(r);
     } catch (SdkException e) {
       throw new CryptoException("KMS GenerateDataKey failed", e);
     }

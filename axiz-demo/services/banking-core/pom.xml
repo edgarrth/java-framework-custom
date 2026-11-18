@@ -25,6 +25,8 @@
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-config-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -80,7 +82,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-secrets-spring-boot-starter</artifactId>
+      <artifactId>axiz-secrets-file-spring-boot-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
@@ -100,7 +102,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-secrets-aws</artifactId>
+      <artifactId>axiz-secrets-aws-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -113,7 +115,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-lock-redis</artifactId>
+      <artifactId>axiz-lock-redis-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>
@@ -122,7 +124,7 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-adapter-audit-sqs</artifactId>
+      <artifactId>axiz-audit-sqs-spring-boot-starter</artifactId>
       <scope>runtime</scope>
     </dependency>
     <dependency>

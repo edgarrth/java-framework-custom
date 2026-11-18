@@ -36,6 +36,16 @@ public class ProblemAuthenticationEntryPoint
   public void commence(
       HttpServletRequest request, HttpServletResponse response, AuthenticationException e)
       throws IOException {
+    var unavailable = IssuerUnavailableException.find(e);
+    if (unavailable != null) {
+      response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(unavailable.retryAfterSeconds()));
+      response.setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+      write(
+          response,
+          503,
+          problems.unavailable(LocaleContextHolder.getLocale(), request.getRequestURI()));
+      return;
+    }
     boolean hadToken = request.getHeader(HttpHeaders.AUTHORIZATION) != null;
     response.setHeader(
         HttpHeaders.WWW_AUTHENTICATE, hadToken ? "Bearer error=\"invalid_token\"" : "Bearer");

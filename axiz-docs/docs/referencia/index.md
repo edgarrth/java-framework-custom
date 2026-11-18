@@ -15,15 +15,20 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-parent-spring`](platform/axiz-parent-spring.md) | Parent of layer 2 starters, layer 3 frameworks and the Spring libraries of the teams: Spring Boot |
 | [`axiz-parent-technology`](platform/axiz-parent-technology.md) | Maven parent of technology adapters and persistence kits. Inherits shared standards and tests; forbids runtime-framework coupling. It governs technology dependencies independently of pure core contracts. |
 | [`axiz-parent-test`](platform/axiz-parent-test.md) | Test-support libraries: fixtures and contract suites. This parent is only for quality modules and is never a runtime contract. |
+| [`axiz-parent-tooling`](platform/axiz-parent-tooling.md) | Parent for build tools, archetype resources and code generators. These artifacts may use parsing, |
 | [`axiz-schema`](platform/axiz-schema.md) | Canonical SQL resources for Axiz tables, under `axiz/sql/`. This JAR contains resources only: no drivers, runtime or startup migration runner. JDBC adapters and project generation consume the same bytes. |
 
-## Capa 1: core (Java puro)
+## Capa 1: núcleo y puertos sin I/O
 
 | Módulo | Descripción |
 |---|---|
+| [`axiz-core-api`](core/axiz-core-api.md) | API responses, pagination and header contracts. |
 | [`axiz-core-audit`](core/axiz-core-audit.md) | Immutable audit events, publication policies, sanitization and asynchronous publishers. |
 | [`axiz-core-cache`](core/axiz-core-cache.md) | Cache port, two-level cache and in-memory implementation. |
+| [`axiz-core-carddata`](core/axiz-core-carddata.md) | Card data value types with controlled reveal and masked representations. |
 | [`axiz-core-commons`](core/axiz-core-commons.md) | Request/page/header metadata, JSON, concurrency and transaction contracts. |
+| [`axiz-core-concurrent`](core/axiz-core-concurrent.md) | Bounded concurrency and asynchronous composition. |
+| [`axiz-core-context`](core/axiz-core-context.md) | Immutable request metadata and explicit context scopes. |
 | [`axiz-core-crypto`](core/axiz-core-crypto.md) | AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation. |
 | [`axiz-core-domain`](core/axiz-core-domain.md) | DDD building blocks: aggregate root, entity, value object, domain events, typed ids, common value objects. |
 | [`axiz-core-errors`](core/axiz-core-errors.md) | Error model: types, categories with HTTP mapping, AxizException, RFC 9457 problem, externalized catalog. |
@@ -35,6 +40,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | An authoritative resolver that confirms no effect releases the key and returns 409 |
 | [`axiz-core-identifiers`](core/axiz-core-identifiers.md) | Generic identifier SPI with validators (national documents, bank accounts, cards, contact data). |
 | [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer: processed-message registry with JDBC store. |
+| [`axiz-core-json`](core/axiz-core-json.md) | Strict bounded JSON parsing and serialization. |
 | [`axiz-core-lang`](core/axiz-core-lang.md) | Pure Java language helpers: `Checks`, `Strings`, `Dates` and `Result` (including `Ok` and `Err`). |
 | [`axiz-core-lock`](core/axiz-core-lock.md) | Distributed lock port with lease, background renewal and lock template; in-memory implementation. |
 | [`axiz-core-logging`](core/axiz-core-logging.md) | Structured logging fields, scoped MDC, operation logging and header allow-list. |
@@ -54,6 +60,9 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-storage`](core/axiz-core-storage.md) | Object storage port with streaming, presigned URLs and metadata; in-memory implementation. |
 | [`axiz-core-tenancy`](core/axiz-core-tenancy.md) | Tenant context, resolution and propagation. |
 | [`axiz-core-time`](core/axiz-core-time.md) | Injectable clock, business calendar, holidays, cut-off times and due dates. |
+| [`axiz-core-tokenization`](core/axiz-core-tokenization.md) | Provider-neutral typed tokenization contracts with masked disposable values. |
+| [`axiz-core-tokenization-pan`](core/axiz-core-tokenization-pan.md) | PAN profile and typed facade over the generic tokenization contract. |
+| [`axiz-core-tokenization-vault`](core/axiz-core-tokenization-vault.md) | Explicit-principal token vault orchestration and atomic persistence ports. |
 | [`core`](core/core.md) | Contratos y algoritmos `axiz-core-<capacidad>`, independientes de Spring y de los clientes de |
 
 ## Capa 2: adaptadores tecnológicos
@@ -68,11 +77,13 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-crypto-jose`](adapters/axiz-adapter-crypto-jose.md) | JWS and JWE utilities. |
 | [`axiz-adapter-crypto-kms`](adapters/axiz-adapter-crypto-kms.md) | AWS KMS key provider for envelope encryption with data key cache. |
 | [`axiz-adapter-database-auth-aws`](adapters/axiz-adapter-database-auth-aws.md) | AWS RDS/Aurora IAM password tokens implementing `DatabasePasswordProvider` from `axiz-kit-r2dbc`. |
+| [`axiz-adapter-http-jdk`](adapters/axiz-adapter-http-jdk.md) | JDK HTTP transports for OAuth and SOAP. |
 | [`axiz-adapter-idempotency-dynamodb`](adapters/axiz-adapter-idempotency-dynamodb.md) | Idempotency store on DynamoDB with TTL. |
 | [`axiz-adapter-idempotency-redis`](adapters/axiz-adapter-idempotency-redis.md) | Idempotency store on Redis (ElastiCache). |
 | [`axiz-adapter-inbox-dynamodb`](adapters/axiz-adapter-inbox-dynamodb.md) | Inbox store on DynamoDB with TTL. |
 | [`axiz-adapter-inbox-jdbc`](adapters/axiz-adapter-inbox-jdbc.md) | Inbox persistence and schema resources over JDBC. |
 | [`axiz-adapter-inbox-r2dbc`](adapters/axiz-adapter-inbox-r2dbc.md) | Inbox (idempotent consumer) on Aurora PostgreSQL over R2DBC. |
+| [`axiz-adapter-kafka-msk`](adapters/axiz-adapter-kafka-msk.md) | Amazon MSK IAM authentication with owned AWS credentials. |
 | [`axiz-adapter-lock-dynamodb`](adapters/axiz-adapter-lock-dynamodb.md) | Distributed lock on DynamoDB conditional writes. |
 | [`axiz-adapter-lock-redis`](adapters/axiz-adapter-lock-redis.md) | Distributed lock on Redis. |
 | [`axiz-adapter-messaging-kafka`](adapters/axiz-adapter-messaging-kafka.md) | Amazon MSK (Kafka) publisher and consumer adapter with IAM authentication. |
@@ -83,32 +94,49 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-adapter-outbox-r2dbc`](adapters/axiz-adapter-outbox-r2dbc.md) | Transactional outbox on Aurora PostgreSQL over R2DBC: non-blocking writer and relay store. |
 | [`axiz-adapter-saga-jdbc`](adapters/axiz-adapter-saga-jdbc.md) | Saga persistence and schema resources over JDBC. |
 | [`axiz-adapter-secrets-aws`](adapters/axiz-adapter-secrets-aws.md) | Secret resolvers for AWS Secrets Manager and Parameter Store. |
+| [`axiz-adapter-secrets-file`](adapters/axiz-adapter-secrets-file.md) | File and environment secret adapters with bounded refresh and owned lifecycle. |
 | [`axiz-adapter-security-redis`](adapters/axiz-adapter-security-redis.md) | Distributed rate limiter and replay-protection nonce store on Redis (ElastiCache). |
 | [`axiz-adapter-sequence-dynamodb`](adapters/axiz-adapter-sequence-dynamodb.md) | Sequence store on a DynamoDB atomic counter. |
 | [`axiz-adapter-sequence-jdbc`](adapters/axiz-adapter-sequence-jdbc.md) | Sequence persistence and schema resources over JDBC. |
 | [`axiz-adapter-sequence-r2dbc`](adapters/axiz-adapter-sequence-r2dbc.md) | Native PostgreSQL counter reservations for reactive services. Implements `ReactiveSequenceStore` |
 | [`axiz-adapter-storage-s3`](adapters/axiz-adapter-storage-s3.md) | Amazon S3 object storage with SSE-KMS and presigned URLs. |
+| [`axiz-adapter-tokenization-dynamodb`](adapters/axiz-adapter-tokenization-dynamodb.md) | Atomic DynamoDB token vault with shared request construction and native asynchronous I/O. |
+| [`axiz-adapter-tokenization-redis`](adapters/axiz-adapter-tokenization-redis.md) | Presupuestos distribuidos para la bóveda. Implementa `TokenBudget` y `AsyncTokenBudget` usando |
 
 ## Capa 2: kits de persistencia
 
 | Módulo | Descripción |
 |---|---|
+| [`axiz-kit-audit-reactor`](kits/axiz-kit-audit-reactor.md) | Provider-independent Reactor contract for transactional audit chain state. |
 | [`axiz-kit-dynamodb`](kits/axiz-kit-dynamodb.md) | Generic DynamoDB repository over the Enhanced Client with cursor pagination and converters. |
 | [`axiz-kit-jdbc`](kits/axiz-kit-jdbc.md) | Transaction-aware JDBC connections, SQLSTATE helpers and local transactions. |
 | [`axiz-kit-jpa`](kits/axiz-kit-jpa.md) | JPA base entity with UUIDv7, auditing, versioning and encrypted attribute converters. |
+| [`axiz-kit-outbox-reactor`](kits/axiz-kit-outbox-reactor.md) | Provider-independent Reactor contract for transactional outbox writes. |
 | [`axiz-kit-r2dbc`](kits/axiz-kit-r2dbc.md) | Non-blocking Aurora PostgreSQL access over R2DBC: named-parameter SQL, transactions and a neutral password-provider contract. |
+| [`axiz-kit-sql`](kits/axiz-kit-sql.md) | SQL identifier validation independent of database drivers. |
 | [`kits`](kits/kits.md) | Public technology APIs used by service persistence adapters. Kits have compile scope and are confined to persistence packages. They do not depend on Spring or higher layers. |
 
 ## Capa 3: Spring Boot
 
 | Módulo | Descripción |
 |---|---|
+| [`axiz-audit-kafka-spring-boot-autoconfigure`](spring/axiz-audit-kafka-spring-boot-autoconfigure.md) | KAFKA audit destination with native synchronous and reactive publication. |
+| [`axiz-audit-kafka-spring-boot-starter`](spring/axiz-audit-kafka-spring-boot-starter.md) | KAFKA audit publishing. |
 | [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode=ASYNC\|DURABLE\|SYNC` is the only delivery selector. Removed boolean selectors |
 | [`axiz-audit-spring-boot-starter`](spring/axiz-audit-spring-boot-starter.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS). |
+| [`axiz-audit-sqs-spring-boot-autoconfigure`](spring/axiz-audit-sqs-spring-boot-autoconfigure.md) | SQS audit destination with native synchronous and reactive publication. |
+| [`axiz-audit-sqs-spring-boot-starter`](spring/axiz-audit-sqs-spring-boot-starter.md) | SQS audit publishing. |
+| [`axiz-aws-spring-boot-autoconfigure`](spring/axiz-aws-spring-boot-autoconfigure.md) | Shared AWS workload identity, lifecycle and transport wiring. |
+| [`axiz-cache-redis-spring-boot-autoconfigure`](spring/axiz-cache-redis-spring-boot-autoconfigure.md) | Cache integration for redis. |
+| [`axiz-cache-redis-spring-boot-starter`](spring/axiz-cache-redis-spring-boot-starter.md) | Cache with redis. |
 | [`axiz-cache-spring-boot-autoconfigure`](spring/axiz-cache-spring-boot-autoconfigure.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance (auto-configuration). |
 | [`axiz-cache-spring-boot-starter`](spring/axiz-cache-spring-boot-starter.md) | @AxizCacheable with L1 Caffeine and L2 Redis (ElastiCache), TTL per cache and failure tolerance. |
+| [`axiz-config-aws-spring-boot-autoconfigure`](spring/axiz-config-aws-spring-boot-autoconfigure.md) | AWS Parameter Store bootstrap with owned credentials and immutable selectors. |
+| [`axiz-config-aws-spring-boot-starter`](spring/axiz-config-aws-spring-boot-starter.md) | Opt-in AWS Parameter Store configuration. |
 | [`axiz-config-spring-boot-autoconfigure`](spring/axiz-config-spring-boot-autoconfigure.md) | ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation (auto-configuration). |
 | [`axiz-config-spring-boot-starter`](spring/axiz-config-spring-boot-starter.md) | ConfigMaps mounted as files and Parameter Store conventions with fail-fast validation. |
+| [`axiz-crypto-kms-spring-boot-autoconfigure`](spring/axiz-crypto-kms-spring-boot-autoconfigure.md) | AWS KMS integration for envelope encryption. |
+| [`axiz-crypto-kms-spring-boot-starter`](spring/axiz-crypto-kms-spring-boot-starter.md) | Envelope encryption using AWS KMS. |
 | [`axiz-crypto-spring-boot-autoconfigure`](spring/axiz-crypto-spring-boot-autoconfigure.md) | Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE (auto-configuration). |
 | [`axiz-crypto-spring-boot-starter`](spring/axiz-crypto-spring-boot-starter.md) | Field encryption with key rotation, KMS envelope encryption, blind index, password hashing and JOSE. |
 | [`axiz-dynamodb-spring-boot-autoconfigure`](spring/axiz-dynamodb-spring-boot-autoconfigure.md) | DynamoDB Enhanced Client, table naming per environment and generic repositories (auto-configuration). |
@@ -123,52 +151,114 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-http-client-spring-boot-starter`](spring/axiz-http-client-spring-boot-starter.md) | Declarative @HttpExchange clients with per-client settings, outbound auth, resilience, error translation and logs. |
 | [`axiz-i18n-spring-boot-autoconfigure`](spring/axiz-i18n-spring-boot-autoconfigure.md) | Message bundles, Accept-Language resolution and error message localization (auto-configuration). |
 | [`axiz-i18n-spring-boot-starter`](spring/axiz-i18n-spring-boot-starter.md) | Message bundles, Accept-Language resolution and error message localization. |
+| [`axiz-idempotency-dynamodb-spring-boot-autoconfigure`](spring/axiz-idempotency-dynamodb-spring-boot-autoconfigure.md) | Idempotency integration for dynamodb. |
+| [`axiz-idempotency-dynamodb-spring-boot-starter`](spring/axiz-idempotency-dynamodb-spring-boot-starter.md) | Idempotency with dynamodb. |
+| [`axiz-idempotency-redis-spring-boot-autoconfigure`](spring/axiz-idempotency-redis-spring-boot-autoconfigure.md) | Idempotency integration for redis. |
+| [`axiz-idempotency-redis-spring-boot-starter`](spring/axiz-idempotency-redis-spring-boot-starter.md) | Idempotency with redis. |
 | [`axiz-idempotency-spring-boot-autoconfigure`](spring/axiz-idempotency-spring-boot-autoconfigure.md) | @Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB (auto-configuration). |
 | [`axiz-idempotency-spring-boot-starter`](spring/axiz-idempotency-spring-boot-starter.md) | @Idempotent endpoints with Idempotency-Key, stored responses in Redis or DynamoDB. |
+| [`axiz-inbox-dynamodb-spring-boot-autoconfigure`](spring/axiz-inbox-dynamodb-spring-boot-autoconfigure.md) | DYNAMODB inbox integration. |
+| [`axiz-inbox-dynamodb-spring-boot-starter`](spring/axiz-inbox-dynamodb-spring-boot-starter.md) | Opt-in DYNAMODB inbox. |
+| [`axiz-inbox-jdbc-spring-boot-autoconfigure`](spring/axiz-inbox-jdbc-spring-boot-autoconfigure.md) | JDBC inbox integration. |
+| [`axiz-inbox-jdbc-spring-boot-starter`](spring/axiz-inbox-jdbc-spring-boot-starter.md) | Opt-in JDBC inbox. |
+| [`axiz-inbox-r2dbc-spring-boot-autoconfigure`](spring/axiz-inbox-r2dbc-spring-boot-autoconfigure.md) | R2DBC inbox integration. |
+| [`axiz-inbox-r2dbc-spring-boot-starter`](spring/axiz-inbox-r2dbc-spring-boot-starter.md) | Opt-in R2DBC inbox. |
 | [`axiz-inbox-spring-boot-autoconfigure`](spring/axiz-inbox-spring-boot-autoconfigure.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB (auto-configuration). |
 | [`axiz-inbox-spring-boot-starter`](spring/axiz-inbox-spring-boot-starter.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB. |
 | [`axiz-jdbc-spring-boot-autoconfigure`](spring/axiz-jdbc-spring-boot-autoconfigure.md) | Shared JDBC transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector. |
-| [`axiz-jpa-spring-boot-autoconfigure`](spring/axiz-jpa-spring-boot-autoconfigure.md) | Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults (auto-configuration). |
+| [`axiz-jpa-aws-spring-boot-autoconfigure`](spring/axiz-jpa-aws-spring-boot-autoconfigure.md) | AWS JDBC wrapper failover and IAM authentication for JPA. |
+| [`axiz-jpa-aws-spring-boot-starter`](spring/axiz-jpa-aws-spring-boot-starter.md) | Opt-in AWS JDBC wrapper and IAM credentials. |
+| [`axiz-jpa-spring-boot-autoconfigure`](spring/axiz-jpa-spring-boot-autoconfigure.md) | Provider-neutral JPA conventions. Consumers select `axiz-jpa-spring-boot-starter`; |
 | [`axiz-jpa-spring-boot-starter`](spring/axiz-jpa-spring-boot-starter.md) | Aurora PostgreSQL with Hibernate 7: base entities, auditing, encryption, read replicas and safe defaults. |
 | [`axiz-kafka-spring-boot-autoconfigure`](spring/axiz-kafka-spring-boot-autoconfigure.md) | Shared effective Kafka transport validation for messaging and audit. Require SSL or SASL_SSL and peer/hostname verification outside an explicit local/test/ci exception (`axiz.transport.allow-insecure-data-stores=true`). |
+| [`axiz-lock-dynamodb-spring-boot-autoconfigure`](spring/axiz-lock-dynamodb-spring-boot-autoconfigure.md) | Lock integration for dynamodb. |
+| [`axiz-lock-dynamodb-spring-boot-starter`](spring/axiz-lock-dynamodb-spring-boot-starter.md) | Lock with dynamodb. |
+| [`axiz-lock-redis-spring-boot-autoconfigure`](spring/axiz-lock-redis-spring-boot-autoconfigure.md) | Lock integration for redis. |
+| [`axiz-lock-redis-spring-boot-starter`](spring/axiz-lock-redis-spring-boot-starter.md) | Lock with redis. |
 | [`axiz-lock-spring-boot-autoconfigure`](spring/axiz-lock-spring-boot-autoconfigure.md) | Distributed locks on Redis or DynamoDB with the lock template (auto-configuration). |
 | [`axiz-lock-spring-boot-starter`](spring/axiz-lock-spring-boot-starter.md) | Distributed locks on Redis or DynamoDB with the lock template. |
 | [`axiz-logging-spring-boot-autoconfigure`](spring/axiz-logging-spring-boot-autoconfigure.md) | Structured JSON logging, operation logging with masking and HTTP request logs (auto-configuration). |
 | [`axiz-logging-spring-boot-starter`](spring/axiz-logging-spring-boot-starter.md) | Structured JSON logging, operation logging with masking and HTTP request logs. |
+| [`axiz-messaging-kafka-spring-boot-autoconfigure`](spring/axiz-messaging-kafka-spring-boot-autoconfigure.md) | KAFKA integration for CloudEvents messaging. |
+| [`axiz-messaging-kafka-spring-boot-starter`](spring/axiz-messaging-kafka-spring-boot-starter.md) | KAFKA CloudEvents messaging. |
+| [`axiz-messaging-msk-spring-boot-autoconfigure`](spring/axiz-messaging-msk-spring-boot-autoconfigure.md) | MSK integration for CloudEvents messaging. |
+| [`axiz-messaging-msk-spring-boot-starter`](spring/axiz-messaging-msk-spring-boot-starter.md) | MSK CloudEvents messaging. |
+| [`axiz-messaging-sns-spring-boot-autoconfigure`](spring/axiz-messaging-sns-spring-boot-autoconfigure.md) | SNS integration for CloudEvents messaging. |
+| [`axiz-messaging-sns-spring-boot-starter`](spring/axiz-messaging-sns-spring-boot-starter.md) | SNS CloudEvents messaging. |
 | [`axiz-messaging-spring-boot-autoconfigure`](spring/axiz-messaging-spring-boot-autoconfigure.md) | Publishers expose their caller-visible budget through `BoundedPublisher`. Kafka uses the same |
 | [`axiz-messaging-spring-boot-starter`](spring/axiz-messaging-spring-boot-starter.md) | CloudEvents publishers and consumers for MSK, SQS and SNS with retries, DLQ and inbox integration. |
+| [`axiz-messaging-sqs-spring-boot-autoconfigure`](spring/axiz-messaging-sqs-spring-boot-autoconfigure.md) | SQS integration for CloudEvents messaging. |
+| [`axiz-messaging-sqs-spring-boot-starter`](spring/axiz-messaging-sqs-spring-boot-starter.md) | SQS CloudEvents messaging. |
 | [`axiz-metrics-spring-boot-autoconfigure`](spring/axiz-metrics-spring-boot-autoconfigure.md) | Generic event metrics with @Metered, catalog, common tags and cardinality protection (auto-configuration). |
 | [`axiz-metrics-spring-boot-starter`](spring/axiz-metrics-spring-boot-starter.md) | Generic event metrics with @Metered, catalog, common tags and cardinality protection. |
 | [`axiz-notification-spring-boot-autoconfigure`](spring/axiz-notification-spring-boot-autoconfigure.md) | Notification requests published as events to the delivering service (auto-configuration). |
 | [`axiz-notification-spring-boot-starter`](spring/axiz-notification-spring-boot-starter.md) | Notification requests published as events to the delivering service. |
 | [`axiz-observability-spring-boot-autoconfigure`](spring/axiz-observability-spring-boot-autoconfigure.md) | OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing (auto-configuration). |
 | [`axiz-observability-spring-boot-starter`](spring/axiz-observability-spring-boot-starter.md) | OpenTelemetry via Micrometer: framework spans, structured events, PII protection, health groups, AWS SDK tracing. |
+| [`axiz-outbox-jdbc-spring-boot-autoconfigure`](spring/axiz-outbox-jdbc-spring-boot-autoconfigure.md) | JDBC transactional outbox persistence. |
+| [`axiz-outbox-jdbc-spring-boot-starter`](spring/axiz-outbox-jdbc-spring-boot-starter.md) | JDBC outbox integration with the shared relay. |
+| [`axiz-outbox-r2dbc-spring-boot-autoconfigure`](spring/axiz-outbox-r2dbc-spring-boot-autoconfigure.md) | R2DBC transactional outbox persistence. |
+| [`axiz-outbox-r2dbc-spring-boot-starter`](spring/axiz-outbox-r2dbc-spring-boot-starter.md) | R2DBC outbox integration with the shared relay. |
 | [`axiz-outbox-spring-boot-autoconfigure`](spring/axiz-outbox-spring-boot-autoconfigure.md) | Relay startup validates the actual `EventPublisher` budget, including routing and observation |
 | [`axiz-outbox-spring-boot-starter`](spring/axiz-outbox-spring-boot-starter.md) | Transactional outbox on Aurora PostgreSQL with background relay. |
+| [`axiz-r2dbc-aws-spring-boot-autoconfigure`](spring/axiz-r2dbc-aws-spring-boot-autoconfigure.md) | AWS IAM credentials for R2DBC writer and reader pools. |
+| [`axiz-r2dbc-aws-spring-boot-starter`](spring/axiz-r2dbc-aws-spring-boot-starter.md) | Opt-in AWS IAM authentication for R2DBC. |
 | [`axiz-r2dbc-spring-boot-autoconfigure`](spring/axiz-r2dbc-spring-boot-autoconfigure.md) | Aurora PostgreSQL for reactive services over R2DBC: IAM tokens, pool defaults, Flyway over JDBC, transactional ReactiveSql, auditing, encrypted and money columns, reader endpoint (auto-configuration). |
 | [`axiz-r2dbc-spring-boot-starter`](spring/axiz-r2dbc-spring-boot-starter.md) | Aurora PostgreSQL for reactive services over R2DBC. |
 | [`axiz-redis-spring-boot-autoconfigure`](spring/axiz-redis-spring-boot-autoconfigure.md) | Shared REDIS transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector. |
 | [`axiz-resilience-spring-boot-autoconfigure`](spring/axiz-resilience-spring-boot-autoconfigure.md) | Resilience4j defaults (circuit breaker, bulkhead) and Spring @Retryable configured by properties (auto-configuration). |
 | [`axiz-resilience-spring-boot-starter`](spring/axiz-resilience-spring-boot-starter.md) | Resilience4j defaults (circuit breaker, bulkhead) and Spring @Retryable configured by properties. |
+| [`axiz-saga-jdbc-spring-boot-autoconfigure`](spring/axiz-saga-jdbc-spring-boot-autoconfigure.md) | Opt-in JDBC saga persistence. Install `axiz-saga-jdbc-spring-boot-starter` for the |
+| [`axiz-saga-jdbc-spring-boot-starter`](spring/axiz-saga-jdbc-spring-boot-starter.md) | Opt-in JDBC saga persistence. Install `axiz-saga-jdbc-spring-boot-starter` for the |
 | [`axiz-saga-spring-boot-autoconfigure`](spring/axiz-saga-spring-boot-autoconfigure.md) | Saga orchestrator with persistent state on PostgreSQL and recovery of stale sagas (auto-configuration). |
 | [`axiz-saga-spring-boot-starter`](spring/axiz-saga-spring-boot-starter.md) | Saga orchestrator with persistent state on PostgreSQL and recovery of stale sagas. |
+| [`axiz-scheduling-dynamodb-spring-boot-autoconfigure`](spring/axiz-scheduling-dynamodb-spring-boot-autoconfigure.md) | DYNAMODB scheduling integration. |
+| [`axiz-scheduling-dynamodb-spring-boot-starter`](spring/axiz-scheduling-dynamodb-spring-boot-starter.md) | Opt-in DYNAMODB scheduling. |
+| [`axiz-scheduling-jdbc-spring-boot-autoconfigure`](spring/axiz-scheduling-jdbc-spring-boot-autoconfigure.md) | JDBC scheduling integration. |
+| [`axiz-scheduling-jdbc-spring-boot-starter`](spring/axiz-scheduling-jdbc-spring-boot-starter.md) | Opt-in JDBC scheduling. |
+| [`axiz-scheduling-r2dbc-spring-boot-autoconfigure`](spring/axiz-scheduling-r2dbc-spring-boot-autoconfigure.md) | R2DBC scheduling integration. |
+| [`axiz-scheduling-r2dbc-spring-boot-starter`](spring/axiz-scheduling-r2dbc-spring-boot-starter.md) | Opt-in R2DBC scheduling. |
 | [`axiz-scheduling-spring-boot-autoconfigure`](spring/axiz-scheduling-spring-boot-autoconfigure.md) | Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB) (auto-configuration). |
 | [`axiz-scheduling-spring-boot-starter`](spring/axiz-scheduling-spring-boot-starter.md) | Single execution per cluster for scheduled tasks with ShedLock (JDBC or DynamoDB). |
+| [`axiz-secrets-aws-spring-boot-autoconfigure`](spring/axiz-secrets-aws-spring-boot-autoconfigure.md) | AWS integration for secret resolution. |
+| [`axiz-secrets-aws-spring-boot-starter`](spring/axiz-secrets-aws-spring-boot-starter.md) | AWS secret sources. |
+| [`axiz-secrets-file-spring-boot-autoconfigure`](spring/axiz-secrets-file-spring-boot-autoconfigure.md) | FILE integration for secret resolution. |
+| [`axiz-secrets-file-spring-boot-starter`](spring/axiz-secrets-file-spring-boot-starter.md) | FILE secret sources. |
 | [`axiz-secrets-spring-boot-autoconfigure`](spring/axiz-secrets-spring-boot-autoconfigure.md) | SecretResolver over mounted files, environment and AWS Secrets Manager / Parameter Store (auto-configuration). |
 | [`axiz-secrets-spring-boot-starter`](spring/axiz-secrets-spring-boot-starter.md) | SecretResolver over mounted files, environment and AWS Secrets Manager / Parameter Store. |
+| [`axiz-security-redis-spring-boot-autoconfigure`](spring/axiz-security-redis-spring-boot-autoconfigure.md) | Redis integration for cluster-wide rate limiting. |
+| [`axiz-security-redis-spring-boot-starter`](spring/axiz-security-redis-spring-boot-starter.md) | Cluster-wide rate limiting on Redis. |
 | [`axiz-security-spring-boot-autoconfigure`](spring/axiz-security-spring-boot-autoconfigure.md) | OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit (auto-configuration). |
 | [`axiz-security-spring-boot-starter`](spring/axiz-security-spring-boot-starter.md) | OAuth2 resource server with issuer allow-list, claim mapping, method security, headers and rate limit. |
 | [`axiz-sensitive-spring-boot-autoconfigure`](spring/axiz-sensitive-spring-boot-autoconfigure.md) | Masking of @Sensitive and @Mask fields in JSON responses, logs and audit (auto-configuration). |
 | [`axiz-sensitive-spring-boot-starter`](spring/axiz-sensitive-spring-boot-starter.md) | Masking of @Sensitive and @Mask fields in JSON responses, logs and audit. |
+| [`axiz-sequence-dynamodb-spring-boot-autoconfigure`](spring/axiz-sequence-dynamodb-spring-boot-autoconfigure.md) | DYNAMODB sequence integration. |
+| [`axiz-sequence-dynamodb-spring-boot-starter`](spring/axiz-sequence-dynamodb-spring-boot-starter.md) | Opt-in DYNAMODB sequence. |
+| [`axiz-sequence-jdbc-spring-boot-autoconfigure`](spring/axiz-sequence-jdbc-spring-boot-autoconfigure.md) | JDBC sequence integration. |
+| [`axiz-sequence-jdbc-spring-boot-starter`](spring/axiz-sequence-jdbc-spring-boot-starter.md) | Opt-in JDBC sequence. |
+| [`axiz-sequence-r2dbc-spring-boot-autoconfigure`](spring/axiz-sequence-r2dbc-spring-boot-autoconfigure.md) | R2DBC sequence integration. |
+| [`axiz-sequence-r2dbc-spring-boot-starter`](spring/axiz-sequence-r2dbc-spring-boot-starter.md) | Opt-in R2DBC sequence. |
 | [`axiz-sequence-spring-boot-autoconfigure`](spring/axiz-sequence-spring-boot-autoconfigure.md) | Formatted atomic sequences on JDBC, native R2DBC or DynamoDB, selected by application stack. |
 | [`axiz-sequence-spring-boot-starter`](spring/axiz-sequence-spring-boot-starter.md) | Formatted atomic sequences on PostgreSQL or DynamoDB. |
 | [`axiz-soap-spring-boot-autoconfigure`](spring/axiz-soap-spring-boot-autoconfigure.md) | SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations (auto-configuration). |
 | [`axiz-soap-spring-boot-starter`](spring/axiz-soap-spring-boot-starter.md) | SOAP clients with safe XML parsing: timeouts, WS-Security, fault mapping, masked logs and observations. |
+| [`axiz-storage-s3-spring-boot-autoconfigure`](spring/axiz-storage-s3-spring-boot-autoconfigure.md) | Amazon S3 integration for object storage. |
+| [`axiz-storage-s3-spring-boot-starter`](spring/axiz-storage-s3-spring-boot-starter.md) | S3 object storage with bounded signed URLs. |
 | [`axiz-storage-spring-boot-autoconfigure`](spring/axiz-storage-spring-boot-autoconfigure.md) | Object storage on Amazon S3 with SSE-KMS and presigned URLs (auto-configuration). |
 | [`axiz-storage-spring-boot-starter`](spring/axiz-storage-spring-boot-starter.md) | Object storage on Amazon S3 with SSE-KMS and presigned URLs. |
 | [`axiz-tenancy-spring-boot-autoconfigure`](spring/axiz-tenancy-spring-boot-autoconfigure.md) | Tenant resolution from token or trusted header and propagation to HTTP, messaging and Hibernate (auto-configuration). |
 | [`axiz-tenancy-spring-boot-starter`](spring/axiz-tenancy-spring-boot-starter.md) | Tenant resolution from token or trusted header and propagation to HTTP, messaging and Hibernate. |
 | [`axiz-test-spring-boot-starter`](spring/axiz-test-spring-boot-starter.md) | Test support: Testcontainers (PostgreSQL, LocalStack, Kafka, Redis), WireMock, ArchUnit rules, BlockHound and fixtures. |
+| [`axiz-tokenization-pan-spring-boot-autoconfigure`](spring/axiz-tokenization-pan-spring-boot-autoconfigure.md) | Registra `PanTokenProfile`, perfil `pan.luhn` versión 1, en el motor genérico de la bóveda. |
+| [`axiz-tokenization-pan-spring-boot-starter`](spring/axiz-tokenization-pan-spring-boot-starter.md) | Starter sin código para habilitar el perfil PAN en una bóveda genérica. |
+| [`axiz-tokenization-spring-boot-autoconfigure`](spring/axiz-tokenization-spring-boot-autoconfigure.md) | Provides `Tokenizer` on the imperative stack and `ReactiveTokenizer` on the reactive stack. |
+| [`axiz-tokenization-spring-boot-starter`](spring/axiz-tokenization-spring-boot-starter.md) | Dependency-only entry point for the remote consumer. Configure `axiz.tokenization.mode` explicitly; |
+| [`axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure`](spring/axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure.md) | Integra la bóveda genérica con DynamoDB. Usa el adaptador transaccional; no contiene otro motor, |
+| [`axiz-tokenization-vault-dynamodb-spring-boot-starter`](spring/axiz-tokenization-vault-dynamodb-spring-boot-starter.md) | Starter sin código que incorpora la integración DynamoDB de la bóveda central. |
+| [`axiz-tokenization-vault-redis-spring-boot-autoconfigure`](spring/axiz-tokenization-vault-redis-spring-boot-autoconfigure.md) | Compone los presupuestos distribuidos de la bóveda con una conexión Redis/Valkey exclusiva. |
+| [`axiz-tokenization-vault-redis-spring-boot-starter`](spring/axiz-tokenization-vault-redis-spring-boot-starter.md) | Starter sin código para seleccionar Redis/Valkey como presupuesto compartido de la bóveda. |
+| [`axiz-tokenization-vault-spring-boot-autoconfigure`](spring/axiz-tokenization-vault-spring-boot-autoconfigure.md) | Composición del servidor genérico de tokenización. Requiere configuración explícita y los |
+| [`axiz-tokenization-vault-spring-boot-starter`](spring/axiz-tokenization-vault-spring-boot-starter.md) | Starter de dependencias para el servidor genérico de bóveda. Incluye únicamente su |
 | [`axiz-web-spring-boot-autoconfigure`](spring/axiz-web-spring-boot-autoconfigure.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata (auto-configuration). |
 | [`axiz-web-spring-boot-starter`](spring/axiz-web-spring-boot-starter.md) | Correlation, header catalog validation, pagination, API versioning, CORS and OpenAPI metadata. |
 | [`spring`](spring/spring.md) | Integración Spring Boot 4.1 para las capacidades del framework. |
@@ -215,5 +305,6 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-coverage-report`](quality/axiz-coverage-report.md) | Aggregates the JaCoCo reports of every module with production code (`./mvnw -Pquality verify`, |
 | [`axiz-store-contract-tests`](quality/axiz-store-contract-tests.md) | Contract checks every idempotency and inbox store must pass (ownership, expiry, takeover), run against fakes in unit tests and real backends in integration tests. |
 | [`axiz-store-integration-tests`](quality/axiz-store-integration-tests.md) | Internal module, never published: it is not a dependency for services. |
+| [`axiz-test-containers`](quality/axiz-test-containers.md) | Herramientas para contenedores de pruebas, independientes de Spring y del core de producción. |
 | [`axiz-test-support`](quality/axiz-test-support.md) | Test fixtures for layer 1: mutable clock, recording publisher, metric assertions and an in-memory R2DBC fake. |
 | [`quality`](quality/quality.md) | Los parents Maven aplican los estándares comunes; los servicios incorporan las reglas de |

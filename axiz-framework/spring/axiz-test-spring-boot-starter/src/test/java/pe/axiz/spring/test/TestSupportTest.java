@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.localstack.LocalStackContainer;
-import pe.axiz.core.commons.RequestContext;
+import pe.axiz.core.context.RequestContext;
 
 class TestSupportTest {
   @Test

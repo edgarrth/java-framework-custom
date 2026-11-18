@@ -37,19 +37,20 @@ public final class Fixtures {
           default -> "orders-" + archetype;
         };
     boolean rest = !List.of("event-processor", "batch", "library", "starter").contains(archetype);
-    return new ProjectRequest(
-        name,
-        "pe.axiz.orders",
-        "pe.axiz.orders." + name.replace("-", ""),
-        "Orders of the example domain",
-        archetype,
-        structure,
-        stack,
-        persistence,
-        capabilities,
-        rest ? orders() : null,
-        null,
-        "2.0.0",
-        List.of(extensions));
+    return ProjectRequest.builder()
+        .name(name)
+        .groupId("pe.axiz.orders")
+        .basePackage("pe.axiz.orders." + name.replace("-", ""))
+        .description("Orders of the example domain")
+        .archetype(archetype)
+        .structure(structure)
+        .stack(stack)
+        .persistence(persistence)
+        .capabilities(capabilities)
+        .openApi(rest ? orders() : null)
+        .asyncApi(null)
+        .frameworkVersion("2.0.0")
+        .extensions(List.of(extensions))
+        .build();
   }
 }

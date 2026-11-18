@@ -1,26 +1,30 @@
 package pe.axiz.kit.dynamodb;
 
 import java.util.Objects;
-import pe.axiz.core.crypto.EncryptionRegistry;
+import pe.axiz.core.crypto.EncryptionContext;
+import pe.axiz.core.crypto.FieldEncryptor;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 /**
- * Encrypts String attributes with the registered field encryptor:
- * {@code @DynamoDbConvertedBy(EncryptedAttributeConverter.class)}.
+ * Injected per-field converter. Install the instance with an explicit Enhanced Client table schema.
  */
-public class EncryptedAttributeConverter implements AttributeConverter<String> {
+public abstract class EncryptedAttributeConverter implements AttributeConverter<String> {
 
-  protected String context() {
-    return "axiz.dynamodb.field";
+  private final FieldEncryptor encryptor;
+
+  protected EncryptedAttributeConverter(FieldEncryptor encryptor) {
+    this.encryptor = Objects.requireNonNull(encryptor);
   }
+
+  protected abstract String context();
 
   @Override
   public AttributeValue transformFrom(String input) {
     return AttributeValue.builder()
-        .s(EncryptionRegistry.encryptor().encrypt(input, context()))
+        .s(encryptor.encrypt(input, EncryptionContext.require(context())))
         .build();
   }
 
@@ -33,7 +37,8 @@ public class EncryptedAttributeConverter implements AttributeConverter<String> {
           "Encrypted attribute expected as a string, found " + input.type());
     }
     // decrypt only answers null for a null input
-    return Objects.requireNonNull(EncryptionRegistry.encryptor().decrypt(encrypted, context()));
+    return Objects.requireNonNull(
+        encryptor.decrypt(encrypted, EncryptionContext.require(context())));
   }
 
   @Override

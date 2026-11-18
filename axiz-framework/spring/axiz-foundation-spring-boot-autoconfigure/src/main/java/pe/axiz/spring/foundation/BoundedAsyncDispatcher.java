@@ -22,8 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.core.commons.BoundedCallbackExecutor;
-import pe.axiz.core.commons.Stages;
+import pe.axiz.core.concurrent.BoundedCallbackExecutor;
+import pe.axiz.core.concurrent.Stages;
 
 /**
  * Bounded submission boundary for transports whose asynchronous send can block on admission.

@@ -2,6 +2,8 @@ package pe.axiz.spring.r2dbc;
 
 import java.util.Objects;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.transaction.NoTransactionException;
+import org.springframework.transaction.reactive.TransactionSynchronizationManager;
 import pe.axiz.kit.r2dbc.R2dbcRow;
 import pe.axiz.kit.r2dbc.ReactiveSql;
 import pe.axiz.kit.r2dbc.RowMapper;
@@ -25,6 +27,16 @@ public final class DatabaseClientReactiveSql implements ReactiveSql {
   @Override
   public Object transactionResource() {
     return client.getConnectionFactory();
+  }
+
+  @Override
+  public Mono<Boolean> isTransactionActive() {
+    return TransactionSynchronizationManager.forCurrentTransaction()
+        .map(
+            manager ->
+                manager.isActualTransactionActive()
+                    && manager.hasResource(client.getConnectionFactory()))
+        .onErrorReturn(NoTransactionException.class, false);
   }
 
   @Override

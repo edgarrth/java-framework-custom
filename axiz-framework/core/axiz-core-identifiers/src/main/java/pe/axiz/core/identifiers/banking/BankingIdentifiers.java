@@ -3,6 +3,7 @@ package pe.axiz.core.identifiers.banking;
 import java.util.List;
 import java.util.Map;
 import pe.axiz.core.identifiers.CheckDigits;
+import pe.axiz.core.identifiers.IdentifierMasks;
 import pe.axiz.core.identifiers.IdentifierType;
 import pe.axiz.core.identifiers.IdentifierTypeProvider;
 
@@ -61,8 +62,7 @@ public final class BankingIdentifiers implements IdentifierTypeProvider {
 
         @Override
         public String mask(String v) {
-          // PCI DSS: at most first 6 and last 4 digits may be displayed
-          return v.substring(0, 6) + "*".repeat(v.length() - 10) + v.substring(v.length() - 4);
+          return IdentifierMasks.card(v);
         }
       };
 

@@ -2,8 +2,8 @@ public class pe.axiz.spring.inbox.AxizInboxAutoConfiguration {
 public pe.axiz.spring.inbox.AxizInboxAutoConfiguration();
 }
 
-public class pe.axiz.spring.inbox.AxizInboxDynamoDbAutoConfiguration {
-public pe.axiz.spring.inbox.AxizInboxDynamoDbAutoConfiguration();
+public class pe.axiz.spring.inbox.dynamodb.AxizInboxDynamoDbAutoConfiguration {
+public pe.axiz.spring.inbox.dynamodb.AxizInboxDynamoDbAutoConfiguration();
 }
 
 public final class pe.axiz.spring.inbox.AxizInboxProperties extends java.lang.Record {
@@ -21,8 +21,8 @@ public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
 public pe.axiz.spring.inbox.AxizInboxProperties(java.lang.String, java.lang.String, java.time.Duration, java.time.Duration, java.time.Duration, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode, java.time.Duration, java.lang.String);
 }
 
-public class pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration {
-public pe.axiz.spring.inbox.AxizInboxR2dbcAutoConfiguration();
+public class pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration {
+public pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration();
 }
 
 public class pe.axiz.spring.inbox.InboxPurger implements org.springframework.context.SmartLifecycle {

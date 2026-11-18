@@ -1,21 +1,15 @@
 {
   "properties": [
     {
+      "name": "axiz.audit.enabled",
+      "type": "java.lang.Boolean",
+      "defaultValue": true,
+      "description": "Enables audit auto-configuration."
+    },
+    {
       "name": "axiz.audit.mode",
       "type": "pe.axiz.spring.audit.AxizAuditProperties$Mode",
       "description": "Canonical audit delivery mode: DURABLE requires transactional outbox; ASYNC uses an in-memory queue; SYNC confirms delivery before returning."
-    },
-    {
-      "name": "axiz.audit.kafka.send-workers",
-      "type": "java.lang.Integer",
-      "defaultValue": 2,
-      "description": "Dedicated Kafka send workers; positive. Send admission never runs on the reactive caller."
-    },
-    {
-      "name": "axiz.audit.kafka.send-queue-capacity",
-      "type": "java.lang.Integer",
-      "defaultValue": 256,
-      "description": "Additional admission capacity beyond workers. Total pending submissions plus unacknowledged sends is bounded by workers plus queue capacity; saturation rejects immediately."
     }
   ]
 }
