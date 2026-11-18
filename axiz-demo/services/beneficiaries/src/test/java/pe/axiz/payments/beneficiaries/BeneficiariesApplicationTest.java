@@ -30,7 +30,7 @@ class BeneficiariesApplicationTest {
 
   @DynamicPropertySource
   static void secrets(DynamicPropertyRegistry registry) {
-    EphemeralSecrets.register(registry, "cursor-key-v1");
+    EphemeralSecrets.register(registry, "cursor-key-v1", "field-key-v1");
   }
 
   @Test

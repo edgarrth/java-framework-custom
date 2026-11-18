@@ -7,6 +7,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.sample.sensitive.model.DataShapes;
+import pe.axiz.quality.archunit.sample.sensitive.model.MappingShapes;
 
 class SensitiveArchitectureTest {
   private static final String BASE = "pe.axiz.quality.archunit.sample.sensitive";
@@ -66,6 +67,48 @@ class SensitiveArchitectureTest {
         fails(CardDataScope.NONE, DataShapes.AutoMapped.class, DataShapes.AutoEncryption.class));
     assertTrue(
         fails(CardDataScope.NONE, DataShapes.Disabled.class, DataShapes.AutoEncryption.class));
+  }
+
+  @Test
+  void jpaAccessInferenceAndOverridesMustSelectTheActualEncryptedMember() {
+    for (Class<?> good :
+        List.of(
+            MappingShapes.FieldId.class,
+            MappingShapes.EmbeddedFieldId.class,
+            MappingShapes.GetterId.class,
+            MappingShapes.EmbeddedGetterId.class,
+            MappingShapes.FieldOverride.class,
+            MappingShapes.GetterOverride.class,
+            MappingShapes.ComputedTyped.class,
+            MappingShapes.LowSensitivity.class,
+            MappingShapes.Cyclic.class))
+      assertFalse(fails(CardDataScope.NONE, good, DataShapes.Encryption.class), good.getName());
+    for (Class<?> bad :
+        List.of(
+            MappingShapes.ConflictingOverrides.class,
+            MappingShapes.MissingGetter.class,
+            MappingShapes.Numeric.class,
+            MappingShapes.ExplicitDefaultConverter.class,
+            MappingShapes.AnnotatedGetter.class))
+      assertTrue(fails(CardDataScope.NONE, bad, DataShapes.Encryption.class), bad.getName());
+  }
+
+  @Test
+  void dynamoGettersNeedACompatibleEncryptionConverterIncludingComputedProperties() {
+    for (Class<?> good :
+        List.of(MappingShapes.DynamoGood.class, MappingShapes.DynamoComputed.class))
+      assertFalse(
+          fails(CardDataScope.NONE, good, MappingShapes.DynamoEncryption.class), good.getName());
+    for (Class<?> bad : List.of(MappingShapes.DynamoBad.class, MappingShapes.DynamoNumeric.class))
+      assertTrue(
+          fails(CardDataScope.NONE, bad, MappingShapes.DynamoEncryption.class), bad.getName());
+  }
+
+  @Test
+  void computedPropertiesCannotSmuggleAuthenticationDataOrUnencryptedPan() {
+    assertTrue(fails(CardDataScope.VAULT, MappingShapes.ComputedSad.class));
+    assertTrue(fails(CardDataScope.EDGE, MappingShapes.ComputedPan.class));
+    assertTrue(fails(CardDataScope.VAULT, MappingShapes.ComputedPan.class));
   }
 
   @Test

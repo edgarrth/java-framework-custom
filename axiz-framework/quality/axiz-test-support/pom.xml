@@ -28,11 +28,6 @@
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-structure-layered-api</artifactId><version>${project.version}</version><optional>true</optional></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-messaging</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -46,6 +41,11 @@
       <artifactId>micrometer-core</artifactId>
     </dependency>
     <!-- FakeR2dbc: only for modules that test R2DBC stores -->
+    <dependency>
+      <groupId>org.reactivestreams</groupId>
+      <artifactId>reactive-streams</artifactId>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>io.r2dbc</groupId>
       <artifactId>r2dbc-spi</artifactId>

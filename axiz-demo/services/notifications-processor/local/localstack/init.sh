@@ -19,6 +19,5 @@ dlq_arn=$(awslocal sqs get-queue-attributes --queue-url "$dlq_url" --attribute-n
 awslocal sqs create-queue --queue-name axiz-demo-audit \
   --attributes "{\"RedrivePolicy\":\"{\\\"deadLetterTargetArn\\\":\\\"$dlq_arn\\\",\\\"maxReceiveCount\\\":\\\"5\\\"}\"}" >/dev/null || true
 awslocal sns create-topic --name local-customer-notifications >/dev/null || true
-# demo contact (fictitious data): customer C-1001 of the Keycloak demo realm
-awslocal dynamodb put-item --table-name local-notification-contacts --item \
-  '{"customerId":{"S":"C-1001"},"channel":{"S":"EMAIL"},"address":{"S":"ana.demo@example.com"},"locale":{"S":"es-PE"},"paymentAlerts":{"BOOL":true}}' || true
+# The local application seeds fictitious contacts with Axiz field encryption.
+# No plaintext address is written to DynamoDB by infrastructure scripts.

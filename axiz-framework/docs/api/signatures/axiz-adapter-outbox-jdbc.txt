@@ -7,6 +7,13 @@ public static pe.axiz.adapter.outbox.jdbc.Dialect valueOf(java.lang.String);
 public static pe.axiz.adapter.outbox.jdbc.Dialect[] values();
 }
 
+public final class pe.axiz.adapter.outbox.jdbc.JdbcAuditChainState implements pe.axiz.core.audit.AuditChainState {
+public java.lang.Object transactionResource();
+public pe.axiz.adapter.outbox.jdbc.JdbcAuditChainState(pe.axiz.kit.jdbc.ConnectionProvider, javax.sql.DataSource, java.lang.String, pe.axiz.adapter.outbox.jdbc.Dialect, java.time.Clock, java.time.Duration);
+public pe.axiz.core.audit.AuditIntegrity advance(java.lang.String, java.util.function.UnaryOperator<pe.axiz.core.audit.AuditIntegrity>);
+public pe.axiz.core.audit.ChainCheckpoint checkpoint(java.lang.String);
+}
+
 public final class pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight {
 public static long report(java.sql.Connection, java.lang.String, java.util.function.Consumer<pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure>) throws java.sql.SQLException;
 }
@@ -24,6 +31,19 @@ public java.lang.String destination();
 public java.lang.String error();
 public java.lang.String id();
 public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure(java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, java.lang.String, boolean, boolean);
+public static pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder builder();
+}
+
+public final class pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder {
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure build();
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder aggregateId(java.lang.String);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder aggregateType(java.lang.String);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder attempts(int);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder destination(java.lang.String);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder error(java.lang.String);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder id(java.lang.String);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder pendingSuccessors(boolean);
+public pe.axiz.adapter.outbox.jdbc.JdbcOutboxPreflight$Failure$Builder publishedSuccessors(boolean);
 }
 
 public final class pe.axiz.adapter.outbox.jdbc.JdbcOutboxStore implements pe.axiz.core.outbox.OutboxStore {
@@ -32,6 +52,7 @@ public boolean markPublished(java.lang.String, java.lang.String, java.time.Insta
 public boolean retry(java.lang.String);
 public boolean skip(java.lang.String, java.lang.String);
 public int purgePublished(java.time.Instant);
+public java.lang.Object transactionResource();
 public java.util.List<pe.axiz.core.outbox.OutboxRecord> claimDue(int, java.time.Duration, java.lang.String);
 public long countBlockedAggregates();
 public long countPending();

@@ -33,6 +33,7 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   pr:
     permissions:
+      packages: read
       contents: read
       pull-requests: read
       security-events: write
@@ -42,9 +43,8 @@ jobs:
     uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
   parameters:
     permissions:
@@ -75,6 +75,7 @@ jobs:
       working-directory: axiz-framework
   build:
     permissions:
+      packages: read
       contents: read
       actions: read
       id-token: write
@@ -90,13 +91,13 @@ jobs:
       maven-args: '["-Daxiz.it.requireDocker=true"]'
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   api-compat:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs:
@@ -104,9 +105,9 @@ jobs:
     - build
     runs-on: ubuntu-24.04
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
+      PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
+      PACKAGES_URL: https://maven.pkg.github.com/edgarrth/java-framework-custom
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
@@ -115,7 +116,7 @@ jobs:
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
-        nexus-url: ${{ secrets.NEXUS_URL }}
+        packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
     - name: Validate the final public API
       run: |
         set -euo pipefail
@@ -167,9 +168,8 @@ jobs:
     uses: ./.github/workflows/framework-native-reactive.yaml
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
   wrapper:
     permissions:
       contents: read
@@ -238,13 +238,15 @@ jobs:
       working-directory: axiz-framework
   samples:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
+      PACKAGES_URL: https://maven.pkg.github.com/edgarrth/java-framework-custom
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # Immutable internal release; check_workflow_security verifies the fail-closed release guard.
@@ -255,7 +257,7 @@ jobs:
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
-        nexus-url: ${{ secrets.NEXUS_URL }}
+        packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
     - name: Install the framework and generate the samples
       run: .github/scripts/samples.sh
       working-directory: axiz-framework

@@ -16,6 +16,13 @@ public java.lang.String value();
 public pe.axiz.core.identifiers.Identifier(java.lang.String, java.lang.String);
 }
 
+public final class pe.axiz.core.identifiers.IdentifierMasks {
+public static final java.lang.String FULL = "****";
+public static java.lang.String card(java.lang.String);
+public static java.lang.String email(java.lang.String);
+public static java.lang.String tail(java.lang.String, int);
+}
+
 public final class pe.axiz.core.identifiers.IdentifierRegistry {
 public boolean isValid(java.lang.String, java.lang.String);
 public java.util.Collection<java.lang.String> names();

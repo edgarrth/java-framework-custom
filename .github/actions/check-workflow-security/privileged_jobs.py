@@ -40,10 +40,12 @@ def validate(document):
         match=re.fullmatch(r'edgarrth/java-framework-custom/\.github/workflows/([a-z-]+\.yaml)@('+TAG_PATTERN+r')',ref,re.ASCII)
         if match:
             target=match.group(1)
-            delegated={**{key:{'contents':'read','actions':'read','id-token':'write'} for key in BUILD},
-                       **{key:{'contents':'write','actions':'read','id-token':'write'} for key in DEPLOY},
-                       'pr.yaml':{'contents':'read','pull-requests':'read','actions':'read','security-events':'write'},
+            delegated={**{key:{'contents':'read','actions':'read','id-token':'write','packages':'read'} for key in BUILD},
+                       **{key:{'contents':'write','actions':'read','id-token':'write','packages':'read'} for key in DEPLOY},
+                       'pr.yaml':{'contents':'read','pull-requests':'read','actions':'read','security-events':'write','packages':'read'},
                        'release.yaml':{'contents':'write'}}
+            delegated['service-build.yaml']['packages']='write'
+            delegated['lib-deploy.yaml']['packages']='write'
             if target in delegated and permissions==delegated[target]:continue
             errors.append(name+': delegated permissions differ from the reviewed reusable role');continue
         if 'env' in document or 'defaults' in document:

@@ -1,7 +1,7 @@
 nameOverride: payment-orders
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/payment-orders
+  repository: ghcr.io/edgarrth/java-framework-custom/payment-orders
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

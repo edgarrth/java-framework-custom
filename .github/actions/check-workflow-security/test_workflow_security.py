@@ -20,7 +20,7 @@ class PolicyTest(unittest.TestCase):
         del self.document['jobs']['sign']
         self.document['jobs']['consumer'] = {
             'needs': GUARD, 'uses': 'edgarrth/java-framework-custom/.github/workflows/lib-build.yaml@axiz-workflows-v' + (ROOT / 'version.txt').read_text().strip(),
-            'secrets': {'NEXUS_URL': '${{ secrets.NEXUS_URL }}'}}
+            'secrets': {'PACKAGES_URL': '${{ secrets.PACKAGES_URL }}'}}
         contract = self.document.get('on', self.document.get(True))['workflow_call']
         self.document['jobs']['consumer']['with'] = {
             key: 'explicit' for key, value in contract.get('inputs', {}).items() if value.get('required')}

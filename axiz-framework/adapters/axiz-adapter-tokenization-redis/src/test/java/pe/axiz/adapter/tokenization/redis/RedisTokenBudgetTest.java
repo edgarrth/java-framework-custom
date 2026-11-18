@@ -22,16 +22,22 @@ import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.TimeoutOptions;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.api.sync.RedisCommands;
 import io.lettuce.core.protocol.AsyncCommand;
 import io.lettuce.core.protocol.Command;
 import io.lettuce.core.protocol.CommandType;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
+import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.errors.RateLimitedException;
 import pe.axiz.core.tokenization.TokenDomain;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
@@ -43,6 +49,63 @@ import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
 class RedisTokenBudgetTest {
+  @Test
+  void leasesUseRandomRfc4122IdentifiersAndKeysKeepCallerDimensionsIndependent() {
+    var fixture = new Fixture();
+    var protocol = new RedisBudgetProtocol(fixture.connection, "vault", POLICY, (n, l) -> {});
+    Set<UUID> generated = new HashSet<>();
+    for (int i = 0; i < 128; i++) {
+      UUID lease = protocol.newLease();
+      assertEquals(4, lease.version());
+      assertEquals(2, lease.variant());
+      assertTrue(generated.add(lease));
+    }
+    var alice = new BudgetKeys("vault", CALLER, SCOPE).leases();
+    var bob = new BudgetKeys("vault", caller("bob", "client-a"), SCOPE).leases();
+    var client = new BudgetKeys("vault", caller("alice", "client-b"), SCOPE).leases();
+    assertEquals(3, new HashSet<>(alice).size());
+    assertNotEquals(alice.getFirst(), bob.getFirst());
+    assertNotEquals(alice.get(1), client.get(1));
+    assertNotEquals(alice, new BudgetKeys("other-vault", CALLER, SCOPE).leases());
+  }
+
+  @Test
+  void writeBudgetAndAdmissionBothFailClosedWhenRateLimitsAreExhausted() {
+    var fixture = new Fixture();
+    var commands = synchronous(fixture);
+    when(commands.<List<Long>>eval(
+            anyString(), eq(ScriptOutputType.MULTI), any(String[].class), any(String[].class)))
+        .thenReturn(List.of(WINDOWS.burst() + 1, 1000L));
+    var budget =
+        new RedisTokenBudget(
+            fixture.connection,
+            "vault",
+            POLICY,
+            (n, l) -> {},
+            new RedisRateLimiter(fixture.connection.sync(), "", false));
+    assertThrows(
+        RateLimitedException.class, () -> budget.acquire(CALLER, TokenOperation.TOKENIZE, SCOPE));
+    var async =
+        new RedisAsyncTokenBudget(
+            fixture.connection,
+            "vault",
+            POLICY,
+            (n, l) -> {},
+            new RedisAsyncRateLimiter(fixture.connection.async(), ""));
+    assertTrue(async.distributed());
+    async.beforeWrite(CALLER, SCOPE).toCompletableFuture().join();
+    var denied = RedisTokenBudgetTest.<List<Long>>future();
+    denied.complete(List.of(WINDOWS.burst() + 1, 1000L));
+    when(fixture.commands.<List<Long>>eval(
+            anyString(), eq(ScriptOutputType.MULTI), any(String[].class), any(String[].class)))
+        .thenReturn(denied);
+    var failure =
+        assertThrows(
+            CompletionException.class,
+            () -> async.beforeWrite(CALLER, SCOPE).toCompletableFuture().join());
+    assertInstanceOf(RateLimitedException.class, failure.getCause());
+  }
+
   private static final TokenDomain DOMAIN = new TokenDomain("billing");
   private static final VaultScope SCOPE =
       new VaultScope(new TokenType("DNI"), "tenant", DOMAIN, "dni", 1);
@@ -182,17 +245,140 @@ class RedisTokenBudgetTest {
   }
 
   @Test
+  void synchronousPermitsReleaseOnceAndKeepAmbiguousOutcomesClosed() {
+    for (Long removed : new Long[] {0L, 3L, 2L, null}) {
+      var fixture = new Fixture();
+      var commands = synchronous(fixture);
+      when(commands.<Long>eval(
+              eq(RedisBudgetProtocol.ACQUIRE),
+              eq(ScriptOutputType.INTEGER),
+              any(String[].class),
+              any(String[].class)))
+          .thenReturn(1L);
+      when(commands.<Long>eval(
+              eq(RedisBudgetProtocol.RELEASE),
+              eq(ScriptOutputType.INTEGER),
+              any(String[].class),
+              any(String[].class)))
+          .thenReturn(removed);
+      var budget =
+          new RedisTokenBudget(
+              fixture.connection,
+              "vault",
+              POLICY,
+              (namespace, lease) -> fixture.alarms.incrementAndGet(),
+              new RedisRateLimiter(fixture.connection.sync(), "", false));
+      assertTrue(budget.distributed());
+      budget.beforeWrite(CALLER, SCOPE);
+      var permit = budget.acquire(CALLER, TokenOperation.DETOKENIZE, SCOPE);
+      if (removed != null && (removed == 0 || removed == 3)) {
+        permit.close();
+        permit.close();
+        assertEquals(0, fixture.alarms.get());
+      } else {
+        var first = assertThrows(AxizException.class, permit::close);
+        assertEquals(TokenErrors.UNAVAILABLE.code(), first.code());
+        assertEquals(first, assertThrows(AxizException.class, permit::close));
+        assertEquals(1, fixture.alarms.get());
+      }
+      verify(commands, times(1))
+          .eval(
+              eq(RedisBudgetProtocol.RELEASE),
+              eq(ScriptOutputType.INTEGER),
+              any(String[].class),
+              any(String[].class));
+    }
+  }
+
+  @Test
+  void synchronousAdmissionDistinguishesDenialFromAnUnknownLease() {
+    for (Long granted : new Long[] {0L, 2L, null}) {
+      var fixture = new Fixture();
+      var commands = synchronous(fixture);
+      when(commands.<Long>eval(
+              eq(RedisBudgetProtocol.ACQUIRE),
+              eq(ScriptOutputType.INTEGER),
+              any(String[].class),
+              any(String[].class)))
+          .thenReturn(granted);
+      var budget =
+          new RedisTokenBudget(
+              fixture.connection,
+              "vault",
+              POLICY,
+              (namespace, lease) -> fixture.alarms.incrementAndGet(),
+              new RedisRateLimiter(fixture.connection.sync(), "", false));
+      var failure =
+          assertThrows(
+              AxizException.class, () -> budget.acquire(CALLER, TokenOperation.LOOKUP, SCOPE));
+      if (granted != null && granted == 0) {
+        assertInstanceOf(RateLimitedException.class, failure);
+        assertEquals(0, fixture.alarms.get());
+      } else {
+        assertEquals(TokenErrors.UNAVAILABLE.code(), failure.code());
+        assertEquals(1, fixture.alarms.get());
+      }
+      assertNull(failure.getCause());
+    }
+  }
+
+  @Test
+  void writeBudgetsRejectExhaustionAndDoNotExposeProviderFailures() {
+    var fixture = new Fixture();
+    var commands = synchronous(fixture);
+    var budget =
+        new RedisTokenBudget(
+            fixture.connection,
+            "vault",
+            POLICY,
+            (namespace, lease) -> {},
+            new RedisRateLimiter(fixture.connection.sync(), "", false));
+    when(commands.<List<Long>>eval(
+            anyString(), eq(ScriptOutputType.MULTI), any(String[].class), any(String[].class)))
+        .thenReturn(List.of(WINDOWS.burst() + 1, 1000L));
+    assertThrows(RateLimitedException.class, () -> budget.beforeWrite(CALLER, SCOPE));
+    when(commands.<List<Long>>eval(
+            anyString(), eq(ScriptOutputType.MULTI), any(String[].class), any(String[].class)))
+        .thenThrow(new RedisCommandTimeoutException("sensitive-provider-context"));
+    var failure = assertThrows(AxizException.class, () -> budget.beforeWrite(CALLER, SCOPE));
+    assertEquals(TokenErrors.UNAVAILABLE.code(), failure.code());
+    assertNull(failure.getCause());
+    assertFalse(failure.toString().contains("sensitive-provider-context"));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static RedisCommands<String, String> synchronous(Fixture fixture) {
+    RedisCommands<String, String> commands = mock(RedisCommands.class);
+    when(fixture.connection.sync()).thenReturn(commands);
+    when(commands.<List<Long>>eval(
+            anyString(), eq(ScriptOutputType.MULTI), any(String[].class), any(String[].class)))
+        .thenReturn(List.of(1L, 1000L));
+    return commands;
+  }
+
+  @Test
   void unboundedOrQueueingConnectionFailsAtBootstrap() {
     var fixture = new Fixture();
+    synchronous(fixture);
     when(fixture.connection.getOptions()).thenReturn(ClientOptions.create());
     assertThrows(
         IllegalArgumentException.class,
-        () -> new RedisTokenBudget(fixture.connection, "vault", POLICY, (namespace, lease) -> {}));
+        () ->
+            new RedisTokenBudget(
+                fixture.connection,
+                "vault",
+                POLICY,
+                (namespace, lease) -> {},
+                new RedisRateLimiter(fixture.connection.sync(), "", false)));
     assertThrows(
         IllegalArgumentException.class,
         () ->
             new RedisAsyncTokenBudget(
-                fixture.connection, "vault", POLICY, (namespace, lease) -> {}));
+                fixture.connection,
+                "vault",
+                POLICY,
+                (namespace, lease) -> {},
+                new RedisAsyncRateLimiter(fixture.connection.async(), "")));
   }
 
   private static <T> AsyncCommand<String, String, T> future() {
@@ -229,7 +415,11 @@ class RedisTokenBudgetTest {
               });
       budget =
           new RedisAsyncTokenBudget(
-              connection, "vault", POLICY, (namespace, lease) -> alarms.incrementAndGet());
+              connection,
+              "vault",
+              POLICY,
+              (namespace, lease) -> alarms.incrementAndGet(),
+              new RedisAsyncRateLimiter(connection.async(), ""));
     }
   }
 }

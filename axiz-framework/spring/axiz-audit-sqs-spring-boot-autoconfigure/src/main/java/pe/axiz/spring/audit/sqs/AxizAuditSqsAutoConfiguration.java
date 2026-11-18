@@ -55,6 +55,7 @@ public class AxizAuditSqsAutoConfiguration {
   /** Bind and validate destination settings before constructing transport resources. */
   public AxizAuditSqsAutoConfiguration(AxizAuditSqsProperties properties) {
     Objects.requireNonNull(properties);
+    super();
   }
 
   @Bean(destroyMethod = "close", defaultCandidate = false)

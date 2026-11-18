@@ -1,0 +1,4 @@
+public interface pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter {
+public abstract reactor.core.publisher.Mono<java.lang.Void> write(java.lang.String, pe.axiz.core.messaging.EventEnvelope, java.lang.String);
+public default java.lang.Object transactionResource();
+}

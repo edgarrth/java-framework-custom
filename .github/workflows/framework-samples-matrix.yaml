@@ -23,14 +23,15 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   samples:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
       MODE: all
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -40,7 +41,7 @@ jobs:
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
-        nexus-url: ${{ secrets.NEXUS_URL }}
+        packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
     - name: Install the framework and generate every combination
       run: .github/scripts/samples.sh
       working-directory: axiz-framework

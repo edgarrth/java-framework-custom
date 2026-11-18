@@ -22,6 +22,7 @@
 
   <properties>
     <axiz.base-package>pe.axiz.payments.settlement</axiz.base-package>
+    <axiz.openapi.model-package>${axiz.base-package}.job.model</axiz.openapi.model-package>
   </properties>
 
   <dependencies>

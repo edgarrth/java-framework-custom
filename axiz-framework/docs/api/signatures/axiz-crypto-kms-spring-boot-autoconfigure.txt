@@ -1,0 +1,14 @@
+public class pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration {
+public pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration();
+}
+
+public final class pe.axiz.spring.crypto.kms.AxizCryptoKmsProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String keyId();
+public java.time.Duration dataKeyMaxAge();
+public java.util.Map<java.lang.String, java.lang.String> keyRing();
+public long dataKeyMaxUses();
+public pe.axiz.spring.crypto.kms.AxizCryptoKmsProperties(java.lang.String, java.time.Duration, long, java.util.Map<java.lang.String, java.lang.String>);
+}

@@ -8,7 +8,7 @@ import yaml
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'.github/actions/check-workflow-security'))
 from privileged_jobs import fingerprint, normalized_document, POLICY
-ROLES={'lib-build.yaml':['sign'],'service-build.yaml':['sign'],'native.yaml':['sign'],
+ROLES={'lib-build.yaml':['sign'],'service-build.yaml':['publish','sign'],'native.yaml':['sign'],
        'lib-deploy.yaml':['deploy'],'service-deploy.yaml':['deploy'],
        'docs-docs.yaml':['publish','deploy-pages'],'security.yaml':['publish-sarif'],
        'pr.yaml':['publish-sarif'],'release.yaml':['release'],'release-self.yaml':['release']}

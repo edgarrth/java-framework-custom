@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.lock.InMemoryDistributedLock;
-import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.lock.LockObserver;
+import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
 import pe.axiz.core.money.Money;
@@ -73,7 +73,8 @@ class UseCasesTest {
             core.attempts.countDown();
             return acquired;
           },
-          Duration.ofMillis(5), LockObserver.NONE);
+          Duration.ofMillis(5),
+          LockObserver.NONE);
 
   static MovementOrder order(String account) {
     return new MovementOrder(account, Money.of("150.75", "PEN"), "OP-1");

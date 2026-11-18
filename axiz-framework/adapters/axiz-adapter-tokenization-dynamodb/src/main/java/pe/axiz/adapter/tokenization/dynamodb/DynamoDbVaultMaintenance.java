@@ -1,5 +1,6 @@
 package pe.axiz.adapter.tokenization.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +28,12 @@ import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledExcepti
  * Explicit privileged adapter for an independently authorized maintenance job and borrowed client.
  */
 public final class DynamoDbVaultMaintenance implements TokenVaultMaintenance {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "The SDK client is an injected collaborator with shared identity and lifecycle; it cannot be copied.")
   private final DynamoDbClient client;
+
   private final DynamoDbTokenVault operational;
   private final MaintenanceRequests requests;
 

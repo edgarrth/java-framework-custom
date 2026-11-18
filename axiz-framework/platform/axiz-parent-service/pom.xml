@@ -23,8 +23,8 @@
   <properties>
     <axiz.version>${revision}</axiz.version>
     <!-- Container image -->
-    <axiz.image.registry>nexus-docker.axiz.internal</axiz.image.registry>
-    <axiz.image.repository>${axiz.image.registry}/axiz/${project.artifactId}</axiz.image.repository>
+    <axiz.image.registry>ghcr.io/edgarrth/java-framework-custom</axiz.image.registry>
+    <axiz.image.repository>${axiz.image.registry}/${project.artifactId}</axiz.image.repository>
     <!-- Base images by tag and digest: Renovate pins and updates the digest (customManagers of the
          axiz preset); a release image is only built from a pinned base (service-ci) -->
     <!-- renovate: datasource=docker depName=eclipse-temurin -->

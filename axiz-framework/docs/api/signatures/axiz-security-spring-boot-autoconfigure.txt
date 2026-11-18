@@ -22,6 +22,7 @@ public pe.axiz.spring.security.AxizSecurityAutoConfiguration();
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties extends java.lang.Record {
+public boolean allowHttpJwksInCluster();
 public boolean publicApiDocs();
 public boolean publicInfo();
 public final boolean equals(java.lang.Object);
@@ -35,9 +36,10 @@ public java.util.List<java.lang.String> publicPaths();
 public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer> issuers();
 public pe.axiz.spring.security.AxizSecurityProperties$Authorization authorization();
 public pe.axiz.spring.security.AxizSecurityProperties$Claims claims();
+public pe.axiz.spring.security.AxizSecurityProperties$Jwks jwks();
 public pe.axiz.spring.security.AxizSecurityProperties$RateLimit rateLimit();
-public pe.axiz.spring.security.AxizSecurityProperties(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Claims, java.util.List<java.lang.String>, boolean, boolean, java.lang.String, pe.axiz.spring.security.AxizSecurityProperties$RateLimit);
-public pe.axiz.spring.security.AxizSecurityProperties(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Claims, java.util.List<java.lang.String>, boolean, boolean, java.lang.String, pe.axiz.spring.security.AxizSecurityProperties$RateLimit, pe.axiz.spring.security.AxizSecurityProperties$Authorization);
+public pe.axiz.spring.security.AxizSecurityProperties(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Claims, java.util.List<java.lang.String>, boolean, boolean, java.lang.String, pe.axiz.spring.security.AxizSecurityProperties$RateLimit, pe.axiz.spring.security.AxizSecurityProperties$Authorization, pe.axiz.spring.security.AxizSecurityProperties$Jwks, boolean);
+public static pe.axiz.spring.security.AxizSecurityProperties$Builder builder();
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$Authorization extends java.lang.Record {
@@ -47,6 +49,22 @@ public final java.lang.String toString();
 public java.lang.String unprotected();
 public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$RouteRule> rules();
 public pe.axiz.spring.security.AxizSecurityProperties$Authorization(java.lang.String, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$RouteRule>);
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Builder {
+public pe.axiz.spring.security.AxizSecurityProperties build();
+public pe.axiz.spring.security.AxizSecurityProperties$Builder actuatorAuthority(java.lang.String);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder algorithms(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder allowHttpJwksInCluster(boolean);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder authorization(pe.axiz.spring.security.AxizSecurityProperties$Authorization);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder claims(pe.axiz.spring.security.AxizSecurityProperties$Claims);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder clockSkew(java.time.Duration);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder issuers(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Issuer>);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder jwks(pe.axiz.spring.security.AxizSecurityProperties$Jwks);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder publicApiDocs(boolean);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder publicInfo(boolean);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder publicPaths(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Builder rateLimit(pe.axiz.spring.security.AxizSecurityProperties$RateLimit);
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$Claims extends java.lang.Record {
@@ -63,6 +81,19 @@ public java.util.List<java.lang.String> subject();
 public java.util.List<java.lang.String> tenant();
 public pe.axiz.core.security.ClaimMapping toMapping();
 public pe.axiz.spring.security.AxizSecurityProperties$Claims(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, boolean);
+public static pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder builder();
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder {
+public pe.axiz.spring.security.AxizSecurityProperties$Claims build();
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder attributes(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder clientId(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder machine(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder roles(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder scopes(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder subject(java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder subjectAsClient(boolean);
+public pe.axiz.spring.security.AxizSecurityProperties$Claims$Builder tenant(java.util.List<java.lang.String>);
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$Issuer extends java.lang.Record {
@@ -72,7 +103,17 @@ public final java.lang.String toString();
 public java.lang.String issuer();
 public java.lang.String jwkSetUri();
 public java.util.List<java.lang.String> audiences();
-public pe.axiz.spring.security.AxizSecurityProperties$Issuer(java.lang.String, java.lang.String, java.util.List<java.lang.String>);
+public pe.axiz.spring.security.AxizSecurityProperties$Issuer(java.lang.String, java.lang.String, java.util.List<java.lang.String>, pe.axiz.spring.security.JwtAccessProfile);
+public pe.axiz.spring.security.JwtAccessProfile profile();
+}
+
+public final class pe.axiz.spring.security.AxizSecurityProperties$Jwks extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.Duration connectTimeout();
+public java.time.Duration readTimeout();
+public pe.axiz.spring.security.AxizSecurityProperties$Jwks(java.time.Duration, java.time.Duration);
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$RateLimit extends java.lang.Record {
@@ -80,16 +121,9 @@ public boolean enabled();
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
+public java.lang.String store();
 public java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule> rules();
-public pe.axiz.spring.security.AxizSecurityProperties$RateLimit(boolean, pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
-public pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore store();
-}
-
-public final class pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore extends java.lang.Enum<pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore> {
-public static final pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore MEMORY;
-public static final pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore REDIS;
-public static pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore valueOf(java.lang.String);
-public static pe.axiz.spring.security.AxizSecurityProperties$RateLimitStore[] values();
+public pe.axiz.spring.security.AxizSecurityProperties$RateLimit(boolean, java.lang.String, java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
 }
 
 public final class pe.axiz.spring.security.AxizSecurityProperties$RouteRule extends java.lang.Record {
@@ -116,10 +150,6 @@ public long limit();
 public pe.axiz.spring.security.AxizSecurityProperties$Rule(java.lang.String, java.util.List<java.lang.String>, long, java.time.Duration, java.lang.String, java.lang.Boolean);
 }
 
-public class pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration {
-public pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration();
-}
-
 public class pe.axiz.spring.security.CallerContextFilter extends org.springframework.web.filter.OncePerRequestFilter {
 protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException, java.io.IOException;
 public pe.axiz.spring.security.CallerContextFilter();
@@ -128,6 +158,18 @@ public pe.axiz.spring.security.CallerContextFilter();
 public class pe.axiz.spring.security.CallerContextWebFilter implements org.springframework.web.server.WebFilter {
 public pe.axiz.spring.security.CallerContextWebFilter();
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
+}
+
+public final class pe.axiz.spring.security.IssuerUnavailableException extends org.springframework.security.core.AuthenticationException {
+public long retryAfterSeconds();
+public pe.axiz.spring.security.IssuerUnavailableException(long);
+}
+
+public final class pe.axiz.spring.security.JwtAccessProfile extends java.lang.Enum<pe.axiz.spring.security.JwtAccessProfile> {
+public static final pe.axiz.spring.security.JwtAccessProfile COMPATIBLE;
+public static final pe.axiz.spring.security.JwtAccessProfile STRICT;
+public static pe.axiz.spring.security.JwtAccessProfile valueOf(java.lang.String);
+public static pe.axiz.spring.security.JwtAccessProfile[] values();
 }
 
 public class pe.axiz.spring.security.ProblemAuthenticationEntryPoint implements org.springframework.security.web.AuthenticationEntryPoint,org.springframework.security.web.access.AccessDeniedHandler {
@@ -143,6 +185,7 @@ public pe.axiz.spring.security.RateLimitFilter(pe.axiz.core.security.RateLimiter
 
 public class pe.axiz.spring.security.RateLimitRules {
 public java.util.Optional<pe.axiz.spring.security.AxizSecurityProperties$Rule> match(java.lang.String);
+public java.util.Optional<pe.axiz.spring.security.AxizSecurityProperties$Rule> match(java.lang.String, boolean);
 public pe.axiz.spring.security.RateLimitRules(java.util.List<pe.axiz.spring.security.AxizSecurityProperties$Rule>);
 public static java.lang.String key(pe.axiz.spring.security.AxizSecurityProperties$Rule, pe.axiz.core.security.AxizPrincipal);
 }
@@ -166,9 +209,13 @@ public java.lang.String unavailable(java.util.Locale, java.lang.String);
 public pe.axiz.spring.security.SecurityProblems(pe.axiz.core.errors.ProblemFactory);
 }
 
-public class pe.axiz.spring.security.TrustedIssuerDecoders {
-public org.springframework.security.oauth2.jwt.NimbusJwtDecoder servlet(java.lang.String);
-public org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder reactive(java.lang.String);
+public final class pe.axiz.spring.security.TrustedIssuerDecoders implements java.lang.AutoCloseable {
+public org.springframework.security.oauth2.jwt.JwtDecoder servlet(java.lang.String);
+public org.springframework.security.oauth2.jwt.ReactiveJwtDecoder reactive(java.lang.String);
 public pe.axiz.core.security.IssuerPolicy policy();
 public pe.axiz.spring.security.TrustedIssuerDecoders(pe.axiz.core.security.IssuerPolicy, java.util.List<java.lang.String>, java.time.Duration);
+public pe.axiz.spring.security.TrustedIssuerDecoders(pe.axiz.core.security.IssuerPolicy, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Jwks, boolean);
+public pe.axiz.spring.security.TrustedIssuerDecoders(pe.axiz.core.security.IssuerPolicy, java.util.List<java.lang.String>, java.time.Duration, pe.axiz.spring.security.AxizSecurityProperties$Jwks, boolean, java.util.Map<java.lang.String, pe.axiz.spring.security.JwtAccessProfile>);
+public void close();
+public void warmUp();
 }

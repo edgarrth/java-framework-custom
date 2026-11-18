@@ -21,6 +21,7 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   pr:
     permissions:
+      packages: read
       contents: read
       pull-requests: read
       security-events: write
@@ -29,9 +30,8 @@ jobs:
     uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
   docs-pr-check:
     name: axiz-docs-pr

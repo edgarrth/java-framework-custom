@@ -1,7 +1,7 @@
 nameOverride: beneficiaries
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/beneficiaries
+  repository: ghcr.io/edgarrth/java-framework-custom/beneficiaries
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent
@@ -69,4 +69,4 @@ externalSecret:
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/beneficiaries
-  keys: [cursor-key-v1]
+  keys: [cursor-key-v1, field-key-v1]

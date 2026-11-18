@@ -2,40 +2,25 @@ public class pe.axiz.spring.crypto.AxizCryptoAutoConfiguration {
 public pe.axiz.spring.crypto.AxizCryptoAutoConfiguration();
 }
 
-public class pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration {
-public pe.axiz.spring.crypto.kms.AxizCryptoKmsAutoConfiguration();
-}
-
 public final class pe.axiz.spring.crypto.AxizCryptoProperties extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
 public pe.axiz.spring.crypto.AxizCryptoProperties$Fields fields();
-public pe.axiz.spring.crypto.AxizCryptoProperties$Kms kms();
 public pe.axiz.spring.crypto.AxizCryptoProperties$Password password();
-public pe.axiz.spring.crypto.AxizCryptoProperties(pe.axiz.spring.crypto.AxizCryptoProperties$Fields, pe.axiz.spring.crypto.AxizCryptoProperties$Kms, pe.axiz.spring.crypto.AxizCryptoProperties$Password);
+public pe.axiz.spring.crypto.AxizCryptoProperties(pe.axiz.spring.crypto.AxizCryptoProperties$Fields, pe.axiz.spring.crypto.AxizCryptoProperties$Password);
 }
 
 public final class pe.axiz.spring.crypto.AxizCryptoProperties$Fields extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
-public int blindIndexBytes();
-public java.lang.String blindIndexSecret();
 public java.lang.String currentKeyId();
+public java.lang.String indexCurrentKeyId();
 public java.lang.String secretPrefix();
 public java.util.List<java.lang.String> keyIds();
-public pe.axiz.spring.crypto.AxizCryptoProperties$Fields(java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.lang.String, int);
-}
-
-public final class pe.axiz.spring.crypto.AxizCryptoProperties$Kms extends java.lang.Record {
-public final boolean equals(java.lang.Object);
-public final int hashCode();
-public final java.lang.String toString();
-public java.lang.String keyId();
-public java.time.Duration dataKeyMaxAge();
-public long dataKeyMaxUses();
-public pe.axiz.spring.crypto.AxizCryptoProperties$Kms(java.lang.String, java.time.Duration, long);
+public java.util.Map<java.lang.String, java.lang.String> indexSecrets();
+public pe.axiz.spring.crypto.AxizCryptoProperties$Fields(java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>);
 }
 
 public final class pe.axiz.spring.crypto.AxizCryptoProperties$Password extends java.lang.Record {
@@ -44,12 +29,6 @@ public final int hashCode();
 public final java.lang.String toString();
 public java.lang.String algorithm();
 public pe.axiz.spring.crypto.AxizCryptoProperties$Password(java.lang.String);
-}
-
-public class pe.axiz.spring.crypto.EncryptionRegistrar implements org.springframework.beans.factory.InitializingBean,org.springframework.beans.factory.DisposableBean {
-public pe.axiz.spring.crypto.EncryptionRegistrar(pe.axiz.core.crypto.FieldEncryptor, pe.axiz.core.crypto.BlindIndex);
-public void afterPropertiesSet();
-public void destroy();
 }
 
 public final class pe.axiz.spring.crypto.ReactiveEnvelopeEncryption {

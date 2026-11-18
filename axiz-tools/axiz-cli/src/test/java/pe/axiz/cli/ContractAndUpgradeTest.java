@@ -104,8 +104,13 @@ class ContractAndUpgradeTest {
     Files.writeString(openapi, withNewOperation(openapi));
 
     CliHarness h = new CliHarness();
+    h.javaFormatter = false;
     assertEquals(0, h.run("contract", "sync", "--dir", p.toString()), h.output());
-    assertTrue(h.output().contains("✔"), h.output());
+    assertTrue(h.output().contains("Created src/main/java/"), h.output());
+    assertTrue(h.output().contains("Review and merge "), h.output());
+    assertTrue(h.output().contains(".axiz-new (then delete it)"), h.output());
+    assertTrue(
+        h.processes.commands.stream().anyMatch(command -> command.contains("spotless:apply")));
     assertTrue(ProjectManifest.read(p).operations().contains("listOrderNotes"));
 
     Files.writeString(
@@ -113,6 +118,7 @@ class ContractAndUpgradeTest {
     CliHarness invalid = new CliHarness();
     assertEquals(ExitCodes.PROBLEMS, invalid.run("contract", "sync", "--dir", p.toString()));
     assertTrue(invalid.output().contains("lint errors: nothing generated"), invalid.output());
+    assertTrue(invalid.output().contains("operationId"), invalid.output());
   }
 
   @Test
@@ -148,6 +154,10 @@ class ContractAndUpgradeTest {
     assertEquals(0, skip.run("upgrade", "--to", "2.3.0", "--skip-rewrite", "--dir", p.toString()));
     assertEquals("2.3.0", ProjectManifest.read(p).axizVersion());
     assertTrue(skip.processes.commands.isEmpty());
+    assertTrue(
+        skip.output()
+            .contains("Recipes skipped explicitly; migration validation is still required"),
+        skip.output());
 
     CliHarness failing = new CliHarness();
     failing.processes.exitCode = 3;

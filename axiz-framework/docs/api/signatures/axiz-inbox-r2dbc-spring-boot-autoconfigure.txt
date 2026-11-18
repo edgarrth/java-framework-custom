@@ -1,0 +1,12 @@
+public class pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration {
+public pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcAutoConfiguration();
+}
+
+public final class pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String table();
+public java.time.Duration statementTimeout();
+public pe.axiz.spring.inbox.r2dbc.AxizInboxR2dbcProperties(java.lang.String, java.time.Duration);
+}

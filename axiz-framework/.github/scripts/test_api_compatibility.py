@@ -15,23 +15,29 @@ SPEC.loader.exec_module(gate)
 class ApiCompatibilityTest(unittest.TestCase):
     policy = {"schema": 1, "mode": "first-release", "version": "2.0.0", "baseline": None}
 
+    registry = "https://maven.pkg.github.com/example/framework"
+
     def setUp(self):
-        self.original_search = gate.published_versions
-        def search(nexus, coordinates, opener):
-            def metadata_aware(request, **kwargs):
-                if request.full_url.endswith("/repositories/maven-releases"):
-                    return io.BytesIO(b'{"name":"maven-releases","format":"maven2","type":"hosted"}')
-                return opener(request, **kwargs)
-            return self.original_search(nexus, coordinates, metadata_aware)
-        patcher = patch.object(gate, "published_versions", side_effect=search)
+        patcher = patch.dict("os.environ", {"PACKAGES_TOKEN": "fixture-token", "PACKAGES_USERNAME": "example"})
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def response(self, items=(), token=None):
-        return io.BytesIO(json.dumps({"items": list(items), "continuationToken": token}).encode())
+    def item(self, **changes):
+        return {"id": 1, "package_type": "maven", "name": "pe.axiz.axiz-core-audit",
+                "repository": {"full_name": "example/framework"}, **changes}
 
-    def item(self, name="axiz-core-audit", version="2.0.0", repository="maven-releases"):
-        return {"group": "pe.axiz", "name": name, "version": version, "repository": repository}
+    def opener(self, packages=(), versions=()):
+        def request(request, **kwargs):
+            self.assertEqual("Bearer fixture-token", request.get_header("Authorization"))
+            url = request.full_url
+            if "/repos/" in url:
+                value = {"full_name": "example/framework", "owner": {"type": "User"}}
+            elif "/versions?" in url:
+                value = list(versions)
+            else:
+                value = list(packages)
+            return io.BytesIO(json.dumps(value).encode())
+        return request
 
     def test_first_release_only_when_the_product_has_no_published_v2(self):
         gate.validate_first_release(self.policy, set())
@@ -41,55 +47,50 @@ class ApiCompatibilityTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 gate.validate_first_release({**self.policy, "version": version}, set())
 
-    def test_search_uses_only_final_repository_and_product_coordinates(self):
+    def test_search_authenticates_and_filters_exact_repository_and_coordinates(self):
+        packages = [self.item(id=1, name="pe.axiz.other"),
+                    self.item(id=2, repository={"full_name": "example/other"}), self.item(id=3)]
+        versions = gate.published_versions(self.registry, {"axiz-core-audit"},
+            self.opener(packages, [{"id": 10, "name": "2.0.0"}, {"id": 11, "name": "1.0.0"}]))
+        self.assertEqual({"2.0.0"}, versions)
+        self.assertEqual(set(), gate.published_versions(self.registry, {"axiz-core-audit"}, self.opener()))
+
+    def test_pagination_includes_later_pages_and_rejects_repeated_ids(self):
         seen = []
         def opener(request, **kwargs):
             seen.append(request.full_url)
-            return self.response([self.item("other-product")])
-        self.assertEqual(set(), gate.published_versions("https://nexus.example", {"axiz-core-audit"}, opener))
-        self.assertIn("repository=maven-releases", seen[0])
-        self.assertNotIn("staging", seen[0])
-
-    def test_published_release_is_detected_on_later_pages(self):
-        pages = iter([self.response(token="page2"), self.response([self.item()])])
-        versions = gate.published_versions("https://nexus.example", {"axiz-core-audit"}, lambda *a, **k: next(pages))
-        self.assertEqual({"2.0.0"}, versions)
-        with self.assertRaises(ValueError):
-            gate.validate_first_release(self.policy, versions)
-
-    def test_query_failure_or_ambiguous_metadata_never_bootstraps(self):
-        def fail(*a, **k):
-            raise urllib.error.URLError("unavailable")
-        with self.assertRaises(OSError):
-            gate.published_versions("https://nexus.example", {"axiz-core-audit"}, fail)
-        for data in [{}, {"items": []}, {"items": [{}], "continuationToken": None}]:
-            with self.assertRaises(ValueError):
-                gate.published_versions("https://nexus.example", set(), lambda *a, **k: io.BytesIO(json.dumps(data).encode()))
-        with self.assertRaisesRegex(ValueError, "different repository"):
-            gate.published_versions("https://nexus.example", {"axiz-core-audit"},
-                                    lambda *a, **k: self.response([self.item(repository="staging")]))
-
-    def test_final_repository_must_exist_and_be_hosted_maven(self):
-        for metadata in [{}, {"name": "maven-releases", "format": "maven2", "type": "proxy"}]:
-            with self.assertRaisesRegex(ValueError, "missing or ambiguous"):
-                self.original_search("https://nexus.example", set(), lambda *a, **k: io.BytesIO(json.dumps(metadata).encode()))
-
-    def test_malformed_component_metadata_cannot_appear_as_an_empty_repository(self):
-        for key in ("repository", "group", "name", "version"):
-            for value in (None, 2, {}, "", " "):
-                with self.subTest(key=key, value=value), self.assertRaisesRegex(ValueError, "Invalid publication metadata"):
-                    gate.published_versions("https://nexus.example", {"axiz-core-audit"},
-                        lambda *a, **k: self.response([{**self.item(), key: value}]))
-
-    def test_a_v2_prerelease_in_final_repository_also_forbids_bootstrap(self):
-        versions = gate.published_versions("https://nexus.example", {"axiz-core-audit"},
-            lambda *a, **k: self.response([self.item(version="2.0.0-rc.1")]))
-        with self.assertRaises(ValueError):
-            gate.validate_first_release(self.policy, versions)
-
-    def test_repeated_continuation_token_fails_closed(self):
+            page = [{"id": n} for n in range(1, 101)] if "&page=1" in request.full_url else [{"id": 101}]
+            return io.BytesIO(json.dumps(page).encode())
+        self.assertEqual(101, len(list(gate.package_pages("users/example/packages?package_type=maven", opener))))
+        self.assertIn("page=2", seen[-1])
         with self.assertRaisesRegex(ValueError, "pagination"):
-            gate.published_versions("https://nexus.example", set(), lambda *a, **k: self.response(token="loop"))
+            list(gate.package_pages("users/example/packages", lambda *a, **k: io.BytesIO(json.dumps([{"id": n} for n in range(1,101)]).encode())))
+
+    def test_authentication_and_network_errors_never_mean_empty_registry(self):
+        for code in [401, 403, 404, 429, 500]:
+            def fail(*args, **kwargs):
+                raise urllib.error.HTTPError("https://api.github.com/", code, "denied", {}, None)
+            with self.subTest(code=code), self.assertRaises(OSError):
+                gate.published_versions(self.registry, {"axiz-core-audit"}, fail)
+        with patch.dict("os.environ", {"PACKAGES_TOKEN": ""}), self.assertRaisesRegex(ValueError, "mandatory"):
+            gate.published_versions(self.registry, set(), self.opener())
+
+    def test_repository_and_package_metadata_fail_closed(self):
+        with self.assertRaisesRegex(ValueError, "missing or ambiguous"):
+            gate.published_versions(self.registry, set(), lambda *a, **k: io.BytesIO(b"{}"))
+        for key, value in [("name", None), ("repository", None), ("package_type", "container"), ("id", None)]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                gate.published_versions(self.registry, {"axiz-core-audit"}, self.opener([self.item(**{key:value})]))
+        for invalid in ["http://maven.pkg.github.com/a/b", "https://evil.test/a/b",
+                        "https://maven.pkg.github.com/a/b?token=x", "https://secret@maven.pkg.github.com/a/b"]:
+            with self.assertRaises(ValueError):
+                gate.published_versions(invalid, set(), self.opener())
+
+    def test_a_v2_prerelease_also_forbids_bootstrap(self):
+        versions = gate.published_versions(self.registry, {"axiz-core-audit"},
+            self.opener([self.item()], [{"id": 2, "name": "2.0.0-rc.1"}]))
+        with self.assertRaises(ValueError):
+            gate.validate_first_release(self.policy, versions)
 
     def test_signature_changes_and_missing_modules_require_review(self):
         observed = {"schema": 1, "version": "2.0.0", "artifacts": {"demo": {"apiSha256": "approved", "jarSha256": "actual"}}}
@@ -118,12 +119,12 @@ class ApiCompatibilityTest(unittest.TestCase):
                 seen.append(request.full_url)
                 return io.BytesIO(jar.getvalue())
             directory = root / "pinned"
-            gate.release_baseline(root, "https://nexus.example", "2.0.0", directory, download)
-            self.assertEqual(["https://nexus.example/repository/maven-releases/pe/axiz/axiz-core-demo/2.0.0/axiz-core-demo-2.0.0.jar"], seen)
-            gate.verify_baseline(root, "https://nexus.example", "2.0.0", directory)
+            gate.release_baseline(root, "https://maven.pkg.github.com/example/framework", "2.0.0", directory, download)
+            self.assertEqual(["https://maven.pkg.github.com/example/framework/pe/axiz/axiz-core-demo/2.0.0/axiz-core-demo-2.0.0.jar"], seen)
+            gate.verify_baseline(root, "https://maven.pkg.github.com/example/framework", "2.0.0", directory)
             (directory / "axiz-core-demo-2.0.0.jar").write_bytes(b"candidate cache substitution")
             with self.assertRaisesRegex(ValueError, "modified"):
-                gate.verify_baseline(root, "https://nexus.example", "2.0.0", directory)
+                gate.verify_baseline(root, "https://maven.pkg.github.com/example/framework", "2.0.0", directory)
 
     def test_post_release_gate_checks_real_report_identity_and_compatibility(self):
         import os

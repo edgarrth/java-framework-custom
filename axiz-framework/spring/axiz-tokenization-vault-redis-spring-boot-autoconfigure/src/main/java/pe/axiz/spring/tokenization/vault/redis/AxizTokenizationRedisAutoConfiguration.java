@@ -5,6 +5,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
+import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
+import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget;
 import pe.axiz.adapter.tokenization.redis.RedisTokenBudget;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
@@ -36,7 +38,11 @@ public class AxizTokenizationRedisAutoConfiguration {
       AxizTokenizationRedisProperties properties,
       TokenBudgetLeaseAlarm alarm) {
     return new RedisTokenBudget(
-        resources.connection(), properties.namespace(), properties.policy(), alarm);
+        resources.connection(),
+        properties.namespace(),
+        properties.policy(),
+        alarm,
+        new RedisRateLimiter(resources.connection().sync(), "", false));
   }
 
   @Bean
@@ -46,6 +52,10 @@ public class AxizTokenizationRedisAutoConfiguration {
       AxizTokenizationRedisProperties properties,
       TokenBudgetLeaseAlarm alarm) {
     return new RedisAsyncTokenBudget(
-        resources.connection(), properties.namespace(), properties.policy(), alarm);
+        resources.connection(),
+        properties.namespace(),
+        properties.policy(),
+        alarm,
+        new RedisAsyncRateLimiter(resources.connection().async(), ""));
   }
 }

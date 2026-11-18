@@ -247,6 +247,17 @@ public final class ProjectGenerator {
 
     Map<String, Object> api = new LinkedHashMap<>();
     api.put("present", contract != null);
+    String apiModelPackage =
+        r.basePackage()
+            + switch (r.structure()) {
+              case HEXAGONAL -> ".adapter.in.rest.model";
+              case LAYERED -> ".model.api";
+              case BFF -> ".composition.model";
+              case EDA -> ".event.model";
+              case BATCH -> ".job.model";
+              case NONE -> ".api.model";
+            };
+    api.put("modelPackage", apiModelPackage);
     String openApi = r.openApi();
     api.put("text", openApi == null ? "" : openApi);
     api.put("title", contract == null ? "" : contract.title());
@@ -269,6 +280,7 @@ public final class ProjectGenerator {
                   + op.operationId()
                   + " requires a request example for its generated denial test");
         Map<String, Object> o = operation(op, r.basePackage());
+        o.put("modelPackage", apiModelPackage);
         if (r.cqrs()) {
           o.put("modelPackage", r.basePackage() + ".application.model");
         }
@@ -323,7 +335,7 @@ public final class ProjectGenerator {
             }
           }
           t.put("models", models.stream().map(m -> Map.of("name", m)).toList());
-          t.put("modelPackage", r.basePackage() + ".api.model");
+          t.put("modelPackage", apiModelPackage);
           List<String[]> fields = new ArrayList<>();
           switch (r.structure()) {
             case HEXAGONAL -> {
@@ -432,8 +444,8 @@ public final class ProjectGenerator {
               List.of(
                   "controller", "REST controllers generated from the OpenAPI contract.",
                   "service", "Business services, transactional.",
-                  "repository", "Data access.",
-                  "model", "Entities and items.");
+                  "repository", "Data access, persistent entities and items.",
+                  "model", "Application values and API models, independent of persistence.");
           case BFF ->
               List.of(
                   "controller", "Channel API generated from the OpenAPI contract.",

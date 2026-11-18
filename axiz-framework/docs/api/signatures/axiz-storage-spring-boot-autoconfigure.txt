@@ -6,15 +6,9 @@ public final class pe.axiz.spring.storage.AxizStorageProperties extends java.lan
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
-public java.lang.String bucket();
-public java.lang.String kmsKeyId();
 public java.lang.String type();
 public java.time.Duration maxPresignTtl();
-public pe.axiz.spring.storage.AxizStorageProperties(java.lang.String, java.lang.String, java.lang.String, java.time.Duration);
-}
-
-public class pe.axiz.spring.storage.s3.AxizStorageS3AutoConfiguration {
-public pe.axiz.spring.storage.s3.AxizStorageS3AutoConfiguration();
+public pe.axiz.spring.storage.AxizStorageProperties(java.lang.String, java.time.Duration);
 }
 
 public final class pe.axiz.spring.storage.ReactiveStorage {

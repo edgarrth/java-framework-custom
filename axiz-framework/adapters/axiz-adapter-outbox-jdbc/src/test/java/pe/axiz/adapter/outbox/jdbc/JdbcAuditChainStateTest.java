@@ -22,6 +22,58 @@ import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.kit.jdbc.ConnectionProvider;
 
 class JdbcAuditChainStateTest {
+  @Test
+  void chainRequiresSharedTransactionResourceAndBoundedStatementTimeout() throws Exception {
+    var source = database();
+    var transactions =
+        new ConnectionProvider() {
+          @Override
+          public Object transactionResource() {
+            return source;
+          }
+
+          @Override
+          public Connection get() throws SQLException {
+            return source.getConnection();
+          }
+
+          @Override
+          public void release(Connection connection) throws SQLException {
+            connection.close();
+          }
+        };
+    for (Duration timeout : List.of(Duration.ZERO, Duration.ofSeconds(-1), Duration.ofSeconds(61)))
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              new JdbcAuditChainState(
+                  transactions,
+                  source,
+                  "axiz_audit_chain",
+                  Dialect.H2,
+                  Clock.systemUTC(),
+                  timeout));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new JdbcAuditChainState(
+                transactions,
+                database(),
+                "axiz_audit_chain",
+                Dialect.H2,
+                Clock.systemUTC(),
+                Duration.ofSeconds(1)));
+    var state =
+        new JdbcAuditChainState(
+            transactions,
+            source,
+            "axiz_audit_chain",
+            Dialect.H2,
+            Clock.systemUTC(),
+            Duration.ofMinutes(1));
+    assertEquals(0, state.checkpoint("new").sequence());
+  }
+
   private static JdbcDataSource database() throws SQLException {
     var source = new JdbcDataSource();
     source.setURL("jdbc:h2:mem:audit-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");

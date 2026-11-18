@@ -15,12 +15,16 @@ metrics:
   - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementSummaryTasklet.java, contains: MetricEvent.of("settlement.file")}
 config:
   - {service: payment-orders, file: deploy/helm/payment-orders/templates/configmap.yaml, contains: mounted in /etc/axiz/config/service}
+config-aws:
+  - {service: payment-orders, file: deploy/helm/payment-orders/templates/_helpers.tpl, contains: AXIZ_CONFIG_PARAMETER_STORE_ENABLED}
 i18n:
   - {service: payments-ux, file: src/main/resources/messages_en.properties, contains: error.PAYMENTS-PAYMENTSUX-0001}
 sensitive:
   - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/ChannelViews.java, contains: MaskType.NAME}
 security:
   - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/Customer.java, contains: m.subject()}
+security-redis:
+  - {service: payments-ux, file: src/main/resources/application.yaml, contains: "store: redis"}
 http-client:
   - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/adapter/out/corebanking/CoreBankingClientConfiguration.java, contains: "@ImportHttpServices"}
 resilience:
@@ -29,11 +33,17 @@ soap:
   - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/adapter/out/soap/CoreCreditGateway.java, contains: SoapClients}
 secrets:
   - {service: banking-core, file: deploy/helm/banking-core/values.yaml, contains: core-banking-client-secret}
+secrets-file:
+  - {service: banking-core, file: src/main/resources/application.yaml, contains: "directory: /var/run/secrets/axiz"}
 jpa:
   - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/persistence/PaymentOrderEntity.java, contains: AuditableEntity}
+jpa-aws:
+  - {service: payment-orders, file: src/main/resources/application.yaml, contains: "iam: ${AXIZ_JPA_IAM:false}"}
 r2dbc:
   - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRow.java, contains: AuditableRow}
   - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRepository.java, contains: ReactiveCrudRepository}
+r2dbc-aws:
+  - {service: payments-history, file: src/main/resources/application.yaml, contains: "enabled: ${AXIZ_R2DBC_IAM:false}"}
 dynamodb:
   - {service: beneficiaries, file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java, contains: CursorCodec}
 cache:
@@ -41,11 +51,13 @@ cache:
 cache-redis:
   - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/BeneficiaryDirectory.java, contains: "@AxizCacheable"}
 storage-s3:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: ObjectStorage}
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: ObjectStorage}
 sequence:
   - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/sequence/OperationNumberAdapter.java, contains: Sequences}
 messaging-kafka:
   - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/messaging/PaymentOrderCreatedHandler.java, contains: EventHandler}
+messaging-msk:
+  - {service: payment-process, file: src/main/resources/application.yaml, contains: "authentication: ${AXIZ_KAFKA_AUTHENTICATION:msk}"}
 messaging-sqs:
   - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "queues:"}
 messaging-sns:
@@ -68,7 +80,7 @@ lock:
 lock-redis:
   - {service: banking-core, file: src/main/resources/application.yaml, contains: "store: redis"}
 lock-dynamodb:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: withLock}
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: withLock}
 scheduling:
   - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/scheduling/SagaRecoveryJob.java, contains: "@SchedulerLock"}
   - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementRunner.java, contains: LockingTaskExecutor}
@@ -80,6 +92,8 @@ audit-sqs:
   - {service: banking-core, file: deploy/helm/banking-core/values-prod.yaml, contains: "queue-url: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod"}
 crypto:
   - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/persistence/PaymentOrderPersistenceAdapter.java, contains: BlindIndex}
+crypto-kms:
+  - {service: payment-orders, file: src/main/resources/application.yaml, contains: "key-id: ${AXIZ_KMS_KEY_ID:alias/local}"}
 tenancy:
   - {service: payment-process, file: src/main/resources/application.yaml, contains: "tenancy:"}
 featureflags:
@@ -89,10 +103,31 @@ notification:
 
 # Base ports are shown separately from their selected transport implementations.
 storage:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/archive/AuditArchive.java, contains: ObjectStorage}
+  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: ObjectStorage}
 messaging:
   - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/handler/PaymentNotificationHandler.java, contains: EventHandler}
 dynamodb-cursor:
   - service: beneficiaries
     file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java
     contains: cursors
+
+secrets-aws:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizSecretsAwsAutoConfiguration.class}
+
+carddata:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: invalidPan}
+
+tokenization:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: created.token()}
+
+tokenization-vault:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationVaultAutoConfiguration.class}
+
+tokenization-vault-dynamodb:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationDynamoDbAutoConfiguration.class}
+
+tokenization-vault-redis:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationRedisAutoConfiguration.class}
+
+tokenization-pan:
+  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationPanAutoConfiguration.class}

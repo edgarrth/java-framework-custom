@@ -1,0 +1,46 @@
+public final class pe.axiz.core.context.RequestContext {
+public static <T> T call(pe.axiz.core.context.RequestMetadata, java.util.concurrent.Callable<T>) throws java.lang.Exception;
+public static final java.lang.String KEY = "axiz.request";
+public static java.util.Optional<pe.axiz.core.context.RequestMetadata> current();
+public static pe.axiz.core.context.RequestContext$Scope open(pe.axiz.core.context.RequestMetadata);
+public static pe.axiz.core.context.RequestMetadata get();
+public static void restore(pe.axiz.core.context.RequestMetadata);
+}
+
+public interface pe.axiz.core.context.RequestContext$Scope extends java.lang.AutoCloseable {
+public abstract void close();
+}
+
+public final class pe.axiz.core.context.RequestMetadata extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String channel();
+public java.lang.String clientId();
+public java.lang.String correlationId();
+public java.lang.String issuer();
+public java.lang.String requestId();
+public java.lang.String subject();
+public java.lang.String tenantId();
+public java.time.Instant receivedAt();
+public java.util.Locale locale();
+public java.util.Map<java.lang.String, java.lang.String> attributes();
+public java.util.Optional<java.lang.String> attribute(java.lang.String);
+public pe.axiz.core.context.RequestMetadata withCaller(java.lang.String, java.lang.String, java.lang.String);
+public pe.axiz.core.context.RequestMetadata withCaller(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+public pe.axiz.core.context.RequestMetadata withTenant(java.lang.String);
+public pe.axiz.core.context.RequestMetadata(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Locale, java.time.Instant, java.util.Map<java.lang.String, java.lang.String>);
+public static pe.axiz.core.context.RequestMetadata$Builder builder(java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.core.context.RequestMetadata$Builder {
+public pe.axiz.core.context.RequestMetadata build();
+public pe.axiz.core.context.RequestMetadata$Builder attributes(java.util.Map<java.lang.String, java.lang.String>);
+public pe.axiz.core.context.RequestMetadata$Builder channel(java.lang.String);
+public pe.axiz.core.context.RequestMetadata$Builder clientId(java.lang.String);
+public pe.axiz.core.context.RequestMetadata$Builder issuer(java.lang.String);
+public pe.axiz.core.context.RequestMetadata$Builder locale(java.util.Locale);
+public pe.axiz.core.context.RequestMetadata$Builder receivedAt(java.time.Instant);
+public pe.axiz.core.context.RequestMetadata$Builder subject(java.lang.String);
+public pe.axiz.core.context.RequestMetadata$Builder tenantId(java.lang.String);
+}

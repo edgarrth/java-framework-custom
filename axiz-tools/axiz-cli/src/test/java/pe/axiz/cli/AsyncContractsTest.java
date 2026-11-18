@@ -70,6 +70,10 @@ class AsyncContractsTest {
     assertTrue(source.contains("@HandlesEvent(\"pe.axiz.order.created.v1\")"));
     assertTrue(source.contains("TypedEventHandler<OrderCreatedV1>"));
     assertTrue(source.contains("UnsupportedOperationException"));
+    assertTrue(
+        cli.output().contains("Implement the event handler before consuming live messages"),
+        cli.output());
+    assertTrue(cli.output().contains("Created src/main/java/"), cli.output());
     Files.writeString(handler, source + "\n// Implemented by the service owner\n");
     assertEquals(
         0,
@@ -170,11 +174,24 @@ class AsyncContractsTest {
   void syncGenerateLintAndDoctorUseTheSameAsyncApiSource(@TempDir Path temporary) throws Exception {
     Path directory = service(temporary);
     CliHarness h = new CliHarness();
+    h.javaFormatter = false;
     assertEquals(
         0,
         h.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
         h.output());
     assertTrue(Files.exists(directory.resolve(AsyncContractSync.SNAPSHOT)));
+    assertTrue(h.output().contains("Created src/main/java/"), h.output());
+    assertTrue(
+        h.output().contains("AsyncAPI payloads and generation snapshot synchronized"), h.output());
+    assertEquals(1, h.processes.commands.size());
+    assertTrue(h.processes.commands.getFirst().contains("spotless:apply"));
+    var same = new CliHarness();
+    same.javaFormatter = false;
+    assertEquals(
+        0,
+        same.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
+        same.output());
+    assertTrue(same.processes.commands.isEmpty(), "Unchanged sources need no formatter process");
     Path record;
     try (var files = Files.walk(directory.resolve("src/main/java"))) {
       record =
@@ -311,5 +328,49 @@ class AsyncContractsTest {
         .write(directory);
     assertEquals(0, new CliHarness().run("contract", "sync", "--dir", directory.toString()));
     assertEquals(0, new CliHarness().run("contract", "lint", "--dir", directory.toString()));
+  }
+
+  @Test
+  void
+      compatibleEventChangesProduceReviewableProposalsAndFormattingWithoutOverwritingImplementation(
+          @TempDir Path temporary) throws Exception {
+    Path directory = service(temporary);
+    var initial = new CliHarness();
+    assertEquals(
+        0, initial.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()));
+    Path record;
+    try (var files = Files.walk(directory.resolve("src/main/java"))) {
+      record =
+          files
+              .filter(path -> path.getFileName().toString().equals("OrderCreatedV1.java"))
+              .findFirst()
+              .orElseThrow();
+    }
+    String before = Files.readString(record);
+    Path contract = directory.resolve("src/main/asyncapi/asyncapi.yaml");
+    Files.writeString(
+        contract,
+        Files.readString(contract)
+            .replace(
+                "        id: {type: string}",
+                "        id: {type: string}\n        note: {type: string}"));
+    var sync = new CliHarness();
+    sync.javaFormatter = false;
+    assertEquals(
+        0,
+        sync.run("contract", "sync", "--type", "asyncapi", "--dir", directory.toString()),
+        sync.output());
+    assertEquals(before, Files.readString(record));
+    Path proposal = record.resolveSibling(record.getFileName() + ".axiz-new");
+    assertTrue(Files.readString(proposal).contains("String note"));
+    assertTrue(sync.output().contains("Review and merge "), sync.output());
+    assertTrue(sync.output().contains("OrderCreatedV1.java.axiz-new"), sync.output());
+    assertTrue(sync.output().contains("AsyncAPI payloads and generation snapshot synchronized"));
+    assertTrue(
+        sync.processes.commands.stream().anyMatch(command -> command.contains("spotless:apply")));
+    var lint = new CliHarness();
+    assertEquals(
+        0, lint.run("contract", "lint", "--type", "asyncapi", "--dir", directory.toString()));
+    assertTrue(lint.output().contains("1 published types, 1 consumed types"), lint.output());
   }
 }

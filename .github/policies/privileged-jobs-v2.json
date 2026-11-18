@@ -4,36 +4,43 @@
     {
       "workflow": "lib-build.yaml",
       "job": "sign",
-      "workflowSha256": "0c7c3a84aed20de5ca75fd60e70c9cdad002a472e69764d666b00f51c1124ae2",
-      "jobSha256": "225140b0688d23e04a3990a8739ebd6af13e644481961a5319be73c72023e997",
+      "workflowSha256": "2cade368259fd4e1cf9ee13cb026594017ef9de1571ec110179640fc865de0b3",
+      "jobSha256": "10fdec8e9e32f4f609773cd1d78bdc486ac7b735f0fcd4f73a70671c306c317f",
+      "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
+    },
+    {
+      "workflow": "service-build.yaml",
+      "job": "publish",
+      "workflowSha256": "c0e67761014726590259a80c891e52f38a357369c5a4aee1a091f1c07b009dd0",
+      "jobSha256": "8537c562b1e5c28acc8ce81b74371a134976daa6a96bd19b2769a663f3480a83",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
     {
       "workflow": "service-build.yaml",
       "job": "sign",
-      "workflowSha256": "976c21e0a35cdbb13cd3a52f273645e31eaa798cabe1228ca5cc928fb983a338",
-      "jobSha256": "0a8bef3cf2edf6f3a1cb8f47f36463c3b6b46e24549269d808494ea3259a7012",
+      "workflowSha256": "c0e67761014726590259a80c891e52f38a357369c5a4aee1a091f1c07b009dd0",
+      "jobSha256": "b4aac5a4158b99db09adcd3647f6b4fb0727cc4bdb364cca5b25f41111f407c7",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
     {
       "workflow": "native.yaml",
       "job": "sign",
-      "workflowSha256": "5f3cd9afca691e7c0a19351b9a5fdc2dfdec941676ec76b7ced93575e0978245",
-      "jobSha256": "7893604759b4293179e0718dc5fea2ae68625b898ca045caca9808b9b9b4fa49",
+      "workflowSha256": "66cefc12a1ef04c765c492d0cce97cf2569d5bdd627e64d3f4444583e3eb74de",
+      "jobSha256": "f71cd175968674725b0a163e96e8af27d04d427a7930dbe18ffb87512e1db4e9",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
     {
       "workflow": "lib-deploy.yaml",
       "job": "deploy",
-      "workflowSha256": "f8ba8703d109adb2ac7d8e8b3f1a66c63f59671b26dc9e3de11f695e3ffd3580",
-      "jobSha256": "4477632dc1d50b928d47e592bb91b3dfe813bf1ff844b64561fb40808e6552a1",
+      "workflowSha256": "13b82be5ce12f84c92d8c51b397c4bb836f1db60efec267ddf0d8d263fbf7893",
+      "jobSha256": "3735bc9d930c1b509f7c0d289ece66156c4dc6542064150ef902c470f3902463",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
     {
       "workflow": "service-deploy.yaml",
       "job": "deploy",
-      "workflowSha256": "d4081dbe60509ce7e3d142b715bf5a1c686d7b3cdb94218bbc4d2e188f810cb0",
-      "jobSha256": "f49d72327e52c667c1e347baac8460bde0157c08ce5e1e62f43024207c27c5f6",
+      "workflowSha256": "ff07621e4dd52acf951cb8d6e2006d33ec97696e0236f3340bc2f3270a0c6d16",
+      "jobSha256": "dc1d31a902c6940311b3d9b1e588225e8b151baa7be3d6eea279fb977333103c",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },
     {
@@ -60,7 +67,7 @@
     {
       "workflow": "pr.yaml",
       "job": "publish-sarif",
-      "workflowSha256": "e95cc3e2b88269b378f73eb96c013798373b72957992d507691fc324631d4a08",
+      "workflowSha256": "3105bafa15fb9e62bf098756ce43f2c8598e8373567e64b870ef600d23203062",
       "jobSha256": "c7c3353cb2c28bb5eac233191ad0a89c95c083d32ec4d0580b6119ed3f0d35f1",
       "reason": "Reviewed immutable role and complete workflow context; no consumer policy can authorize new privileged execution"
     },

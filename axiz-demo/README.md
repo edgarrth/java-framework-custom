@@ -52,7 +52,7 @@ redelivered events and sagas resumed after a crash never repeat an effect.
 ## Run it locally
 
 Requirements: JDK 25, Docker, `jq`; Bruno to explore the APIs. The axiz artifacts must be
-reachable: `./mvnw install -DskipTests` in axiz-framework once, or the Nexus mirror in
+reachable: `./mvnw install -DskipTests` in axiz-framework once, or the GitHub Packages repository in
 `~/.m2/settings.xml`. The README at the root of the delivery walks through a clean installation
 and every test with `curl`, including what to check in each response.
 
@@ -181,3 +181,7 @@ verified manifest; each service built in the root matrix has its own hash. No CI
 a service automatically. Configure separate dependency-read, registry-build, registry-read and
 GitOps credentials as described in [the pipeline documentation](../.github/docs/pipelines.md).
 The kind end-to-end workflow deploys an ephemeral test environment as part of its test scenario.
+
+The [protected-data executable examples](examples/protected-data/README.md) demonstrate
+PAN/DNI tokenization and independent encrypted DNI lookup with LocalStack and Valkey.
+They run as part of the demo reactor and are not deployed with the payment services.

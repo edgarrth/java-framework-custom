@@ -32,6 +32,7 @@ public static final pe.axiz.core.errors.ErrorDefinition METHOD_NOT_ALLOWED;
 public static final pe.axiz.core.errors.ErrorDefinition MISSING_HEADER;
 public static final pe.axiz.core.errors.ErrorDefinition NOT_FOUND;
 public static final pe.axiz.core.errors.ErrorDefinition NOT_IMPLEMENTED;
+public static final pe.axiz.core.errors.ErrorDefinition OUTCOME_UNKNOWN;
 public static final pe.axiz.core.errors.ErrorDefinition PAYLOAD_TOO_LARGE;
 public static final pe.axiz.core.errors.ErrorDefinition PRECONDITION_FAILED;
 public static final pe.axiz.core.errors.ErrorDefinition TOO_MANY_REQUESTS;
@@ -74,6 +75,7 @@ public static final pe.axiz.core.errors.ErrorCategory INTERNAL;
 public static final pe.axiz.core.errors.ErrorCategory METHOD_NOT_ALLOWED;
 public static final pe.axiz.core.errors.ErrorCategory NOT_FOUND;
 public static final pe.axiz.core.errors.ErrorCategory NOT_IMPLEMENTED;
+public static final pe.axiz.core.errors.ErrorCategory OUTCOME_UNKNOWN;
 public static final pe.axiz.core.errors.ErrorCategory PAYLOAD_TOO_LARGE;
 public static final pe.axiz.core.errors.ErrorCategory PRECONDITION_FAILED;
 public static final pe.axiz.core.errors.ErrorCategory SERVICE_UNAVAILABLE;
@@ -189,6 +191,21 @@ public java.util.List<pe.axiz.core.errors.FieldViolation> violations();
 public java.util.Map<java.lang.String, java.lang.Object> external();
 public pe.axiz.core.errors.Problem(java.lang.String, java.lang.String, int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.util.List<pe.axiz.core.errors.FieldViolation>, java.util.Map<java.lang.String, java.lang.Object>);
 public static final java.lang.String MEDIA_TYPE = "application/problem+json";
+public static pe.axiz.core.errors.Problem$Builder builder();
+}
+
+public final class pe.axiz.core.errors.Problem$Builder {
+public pe.axiz.core.errors.Problem build();
+public pe.axiz.core.errors.Problem$Builder code(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder correlationId(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder detail(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder external(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.core.errors.Problem$Builder instance(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder status(int);
+public pe.axiz.core.errors.Problem$Builder timestamp(java.time.Instant);
+public pe.axiz.core.errors.Problem$Builder title(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder type(java.lang.String);
+public pe.axiz.core.errors.Problem$Builder violations(java.util.List<pe.axiz.core.errors.FieldViolation>);
 }
 
 public final class pe.axiz.core.errors.ProblemFactory {
@@ -211,6 +228,11 @@ public static pe.axiz.core.errors.ProblemFactory$Settings defaults();
 public final class pe.axiz.core.errors.ProblemJson {
 public static java.lang.String write(pe.axiz.core.errors.Problem);
 public static java.util.Map<java.lang.String, java.lang.Object> toMap(pe.axiz.core.errors.Problem);
+}
+
+public final class pe.axiz.core.errors.RateLimitedException extends pe.axiz.core.errors.BusinessException {
+public long retryAfterSeconds();
+public pe.axiz.core.errors.RateLimitedException(pe.axiz.core.errors.ErrorDefinition, java.time.Duration);
 }
 
 public final class pe.axiz.core.errors.RejectedBeforeEffect extends pe.axiz.core.errors.BusinessException implements pe.axiz.core.errors.NoEffect {

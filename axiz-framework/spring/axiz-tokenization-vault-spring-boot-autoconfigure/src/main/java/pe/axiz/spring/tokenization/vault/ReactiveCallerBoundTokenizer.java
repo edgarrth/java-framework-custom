@@ -1,5 +1,6 @@
 package pe.axiz.spring.tokenization.vault;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
@@ -20,7 +21,12 @@ import reactor.core.publisher.Mono;
 
 /** In-process native consumer; explicit verified identity is obtained inside each subscription. */
 public final class ReactiveCallerBoundTokenizer {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Injected async vault port is borrowed; its transaction, quota and audit state must be shared.")
   private final AsyncVaultOperations engine;
+
   private final VerifiedTokenCaller callers;
 
   public ReactiveCallerBoundTokenizer(AsyncVaultOperations engine, VerifiedTokenCaller callers) {

@@ -1,5 +1,6 @@
 package pe.axiz.spring.tokenization.vault;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Optional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import pe.axiz.core.tokenization.SensitiveValue;
@@ -16,7 +17,12 @@ import pe.axiz.core.tokenization.vault.VaultOperations;
 
 /** In-process imperative consumer; resolves verified identity anew on every invocation. */
 public final class CallerBoundTokenizer implements Tokenizer {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Injected vault port is borrowed; its transaction, quota and audit state must be shared.")
   private final VaultOperations engine;
+
   private final VerifiedTokenCaller callers;
 
   public CallerBoundTokenizer(VaultOperations engine, VerifiedTokenCaller callers) {

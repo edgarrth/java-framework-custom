@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -47,14 +46,14 @@ final class InitializrClient {
       b.header("Authorization", "Bearer " + token);
     }
     try {
-      HttpResponse<byte[]> response = http.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+      HttpResponse<byte[]> response =
+          http.send(
+              b.build(),
+              HttpResponse.BodyHandlers.limiting(
+                  HttpResponse.BodyHandlers.ofByteArray(), ZipExtractor.MAX_TOTAL));
       if (response.statusCode() != 200) {
-        String body = new String(response.body(), StandardCharsets.UTF_8);
-        throw new IOException(
-            "initializr answered "
-                + response.statusCode()
-                + ": "
-                + (body.length() > 2000 ? body.substring(0, 2000) : body));
+        // A remote diagnostic can echo credentials, contract values or terminal control codes.
+        throw new IOException("initializr answered " + response.statusCode());
       }
       return response.body();
     } catch (InterruptedException e) {

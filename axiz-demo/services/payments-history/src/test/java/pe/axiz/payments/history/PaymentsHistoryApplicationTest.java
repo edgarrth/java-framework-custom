@@ -46,6 +46,7 @@ import reactor.util.retry.Retry;
 @SpringBootTest(
     properties = {
       "axiz.config.environment=test",
+      "axiz.messaging.kafka.authentication=configured",
       "axiz.transport.allow-plain-http=true",
       "axiz.transport.allow-insecure-data-stores=true"
     })

@@ -9,6 +9,9 @@
   <description>JDBC transactional outbox persistence</description>
   <properties><axiz.module.name>pe.axiz.spring.outbox.jdbc</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers-postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-audit</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-outbox</artifactId><version>${project.version}</version></dependency>

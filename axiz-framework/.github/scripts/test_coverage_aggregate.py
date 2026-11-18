@@ -12,6 +12,25 @@ SPEC.loader.exec_module(gate)
 
 
 class CoverageInventoryTest(unittest.TestCase):
+    def test_cross_module_test_execution_cannot_be_omitted_or_treated_as_production(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            module = root / 'integration-tests'
+            (module / 'src/test/java').mkdir(parents=True)
+            (module / 'src/test/java/StoreIT.java').write_text('class StoreIT {}')
+            (module / 'pom.xml').write_text(
+                '<project><artifactId>integration-tests</artifactId></project>')
+            report = root / gate.REPORT_POM
+            report.parent.mkdir(parents=True)
+            for scope, expected in ((None, 1), ('provided', 1), ('test', 0)):
+                dependency = '' if scope is None else (
+                    '<dependency><groupId>pe.axiz</groupId>'
+                    '<artifactId>integration-tests</artifactId>'
+                    f'<scope>{scope}</scope></dependency>')
+                report.write_text(f'<project><dependencies>{dependency}</dependencies></project>')
+                with self.subTest(scope=scope), contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(expected, gate.check_inventory(root))
+
     def test_scopes_belong_to_their_own_dependency_and_cannot_hide_missing_modules(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

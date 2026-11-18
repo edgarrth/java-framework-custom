@@ -35,6 +35,19 @@ public int slidingWindowSize();
 public java.time.Duration slowCallDuration();
 public java.time.Duration waitInOpenState();
 public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker(boolean, float, float, java.time.Duration, int, int, java.time.Duration, int);
+public static pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder builder();
+}
+
+public final class pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder {
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker build();
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder enabled(boolean);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder failureRateThreshold(float);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder minimumNumberOfCalls(int);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder permittedCallsInHalfOpenState(int);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder slidingWindowSize(int);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder slowCallDuration(java.time.Duration);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder slowCallRateThreshold(float);
+public pe.axiz.spring.resilience.AxizResilienceProperties$CircuitBreaker$Builder waitInOpenState(java.time.Duration);
 }
 
 public final class pe.axiz.spring.resilience.AxizResilienceProperties$Policy extends java.lang.Record {

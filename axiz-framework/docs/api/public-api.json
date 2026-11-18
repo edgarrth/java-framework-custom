@@ -4,19 +4,19 @@
   "artifacts": {
     "axiz-adapter-audit-kafka": {
       "apiSha256": "d91baa59db4c5fa15b8aaa571d68c427e9dce733bb3c41f5f254deaf64aaa523",
-      "jarSha256": "87cfc46f955f77ec2371e5d61fc063dec572422db76731ed2c290fbf63474ee3"
+      "jarSha256": "25a5e4bdc8c38ea458eca91594de217513d3c65a0ba941bc52d40b0280d4addb"
     },
     "axiz-adapter-audit-sqs": {
       "apiSha256": "b349d8334b3055c1e749e933d7bd7e4fc9665a9538502e2b7acf4ce6d12cc376",
-      "jarSha256": "e29022c0851db90670111de2297c224af59add071ad92e8629fdd04f10d5195c"
+      "jarSha256": "0dc6b3dc89c1b232cfdfcadb1523af6bb3806b27503a60d96d664b2687f6e129"
     },
     "axiz-adapter-aws": {
       "apiSha256": "6c3ad44e99e86925a9921e51970eb992e6cc34b572b358625f4c6a599ca036fe",
-      "jarSha256": "0389641f30216230bfea5f1b0b9c10858123b53a32a132cb2f8cd0010eeeb66b"
+      "jarSha256": "e6fadf2bf7df6bdcd6f38fe1c324d8a4d3039effd1150c020f2e3fdb1889a9b0"
     },
     "axiz-adapter-cache-redis": {
       "apiSha256": "22eba106d37d6c4a57055b7aba3835bc43f42116ac561b9de12d07e5beca98cf",
-      "jarSha256": "5f7c3e040ba1feeca1e29bc5e1f19bd8933aaa607f6d7db1965a96af65aef3e9"
+      "jarSha256": "a7113b6c7d887f9fb5c55fd4350e97c7bbaa4926d862ca7e545b53b0f9bf5d34"
     },
     "axiz-adapter-crypto-jose": {
       "apiSha256": "1cabdc08cebd01d906708f545a28d2de4ea784adbb77466d0735d172637c3015",
@@ -24,111 +24,159 @@
     },
     "axiz-adapter-crypto-kms": {
       "apiSha256": "226528de0a12237f86c6f714c78e14315445e8b0cb90f7025a674b05f9d2fb3d",
-      "jarSha256": "cb8bc2709a6b4fd2e3a17010b56f694ae69208dfe80a79556a4b44c029317a0b"
+      "jarSha256": "be049a760e8af8667ef4f34f0f330b6ca571a4ffd6820a2dd706ba03b8252a55"
     },
     "axiz-adapter-database-auth-aws": {
       "apiSha256": "268130c231d4e4554a3cfb2664a7062d66f1b25512ace5d69a67cc7da822761a",
       "jarSha256": "f6c125e763166c6b8adfe26d2fc36b91661c09ee35fe128bb8108fa30b0a2cd4"
     },
+    "axiz-adapter-http-jdk": {
+      "apiSha256": "2782f995eb5590581405455add58886edcd0b3ea787874c1fa0538f9cff4afab",
+      "jarSha256": "4cc9c7ff3d84a0f13508d1cb9181eabdf9dc921208f344c7706bfa55a9bb88cd"
+    },
     "axiz-adapter-idempotency-dynamodb": {
       "apiSha256": "c381f691bd08d47a1f8edd838c4eb0907c34478b3df2588c3afb30f03336f505",
-      "jarSha256": "0ca5aca625ee4168f5c2584099d2d81651bd65bf4a59b7f231c9be019ef881a0"
+      "jarSha256": "a9a09ec388a6938749f76469dd9ef0c42b8bea2036ca28c1539d826bb9035ab8"
     },
     "axiz-adapter-idempotency-redis": {
       "apiSha256": "2bbcf2b999150816615b9a8cdcc8593f27ca8c0131e4f45acd92c48b50e174dd",
-      "jarSha256": "811670198ba05853614fc3d9f4c330eb5e6d5055eee8c9e54a610e53fee89557"
+      "jarSha256": "d968f0b413398c990a2b91a63ce322aeb4312ddab9789737bf7ad30e0a12e0c3"
     },
     "axiz-adapter-inbox-dynamodb": {
       "apiSha256": "3cf11b36e4632d4f03532878895ca85e78f65dfe06def8a58b60a573509f015d",
-      "jarSha256": "1ac47c0de66d4018df76aedd44858d86cc774a4ca67b020fb79d104773e06822"
+      "jarSha256": "12516a91930111d38ac6830b107b57d50fa8f9e22dd632e70c758b38d059619a"
     },
     "axiz-adapter-inbox-jdbc": {
       "apiSha256": "7e554b28c22fcfd87da3295f8c78604412fad0c92c011ecb9211c48fc78573a0",
-      "jarSha256": "e2c220f1ced9e3672d9cc3b30bd541dd681c85dc0548d3affb61f70ec610cb38"
+      "jarSha256": "2221c40c1b3394d43524798dc9f3d59b3e889d748f1c68fab60272418567c31e"
     },
     "axiz-adapter-inbox-r2dbc": {
       "apiSha256": "3fd792020812a92769b4279453d37ac018dc2960a7a0094ca7bffd85b26dee87",
-      "jarSha256": "3a5e89bce0feb448c7cc89548e0851e0314d3edefcc0f2a4ee8ccdd63ca5b979"
+      "jarSha256": "3b2f247ac2411af259f1e2183dbcf10732ed2d9e8c7853814405ca87f1ca8fe2"
+    },
+    "axiz-adapter-kafka-msk": {
+      "apiSha256": "58dbff1693939afe5c0aa1091333ad3e3943a3b0adbfeef7f533753dc4039e06",
+      "jarSha256": "a3adda083f2a0aa1a3fd1061cbd1d4c5e5c42f4ce72bd0da5bf7a2b395a91e49"
     },
     "axiz-adapter-lock-dynamodb": {
       "apiSha256": "33bccdc2964276485fd503854023ce99a17789f8a58e52247b586e7db9be0f8d",
-      "jarSha256": "7454b846d58ce383503c6eac47f09cf9b004cd9b4588c53e63d6ba1a03346bec"
+      "jarSha256": "8bc49e36e51bb67a8968f5aff139928df5cc91675ece1953ab7d112dfd571371"
     },
     "axiz-adapter-lock-redis": {
       "apiSha256": "d0bbed3fe9a5cef5f1773e8e493f99c7a1eb67e392120be2fce2f967e0e548f6",
-      "jarSha256": "d45aae3d1902cddab98a71ef9a4b2fcbe8a3d39710063089cacd0200a4c79ce6"
+      "jarSha256": "21fea862f52b8de0f7b3081379c566911dcdda377accdad841c3d37d969f452b"
     },
     "axiz-adapter-messaging-kafka": {
-      "apiSha256": "75746748ed0fe2d641fd5962a1adf90fc6f6e43f866d1cb59de36382a9ebb221",
-      "jarSha256": "806f4b16f18774b364d7d1543b5ceb3d2aa2411f5cced18042add16a72ed89eb"
+      "apiSha256": "683f8ef41f6f1082d2fa009d69da5a556e4b61ad925cd7f0a336d880527bb140",
+      "jarSha256": "7bf1a0808b4e627ee33a2bccb11a49fb37abf630590d80be0d68b62ab2b4028f"
     },
     "axiz-adapter-messaging-sns": {
       "apiSha256": "48dc5031370bbe5e3b41bd9fa7100e65237ba4d044ffa4c78668a538c548e13d",
-      "jarSha256": "e8975505e6dfff87529742231fda7f950a1904493f42259885c1203401919276"
+      "jarSha256": "7042e4869365e2b9e880e54f8b163c798a632e08f0159bf21c090c77388e6d23"
     },
     "axiz-adapter-messaging-sqs": {
       "apiSha256": "016737404dce359da04194912429ec75ae8a171f8869336647f3fe7dfece39a8",
-      "jarSha256": "c306781fde11fb954dacf2a6c51b4c8f1c053d5ea33a676b4b2e16adb02439d3"
+      "jarSha256": "68e00becdc81e4af0ff46a51a3df6783edbe7ee8ebe7ef1897f0434b436c0b78"
     },
     "axiz-adapter-observability-aws": {
       "apiSha256": "f4d2f098761d262475f04ec8b90016f9fb3f0d34dadbc8c7b3351592aef72dd5",
-      "jarSha256": "29b401f82c5096869bfef0475ec14df89bbf1c72065f5361269b94e09cc39fb8"
+      "jarSha256": "bd3a3c504925ebfcf817593833d085659f926b846d07e54343c0f6b6b341b4df"
     },
     "axiz-adapter-outbox-jdbc": {
-      "apiSha256": "22321439893d882fd2319ed948e76391b909ea0dd1acdc4da23b9d15c0208bf3",
-      "jarSha256": "5565de93b322738d417efaf65770e9401b5f255750ebf91c0ae582cab046e126"
+      "apiSha256": "856179b5eee64d92aad6108241b7d9e1dcd9d4cc381d1e9ee818fe7c4911fcf1",
+      "jarSha256": "7f71f34dc93e45d14b1c879aa327b7614dc24b104605e024002161a114296624"
     },
     "axiz-adapter-outbox-r2dbc": {
-      "apiSha256": "1b9d49f119e34d2a3a8231e700f91e2c9ae987b5c2cdb4f0fd005322fb0407b6",
-      "jarSha256": "7f8fd74a3d18415e561e6a5aa7dd2c5be166a0053636e8b3ec5e21fb15b08e67"
+      "apiSha256": "21f7cd16d5fad911a74be297fdb64431ce61e59d700316787bbb35187dc2ce42",
+      "jarSha256": "574ea79b70d65da20fb179cbf842041e67df84315920c9c0cd523988f88a5650"
     },
     "axiz-adapter-saga-jdbc": {
       "apiSha256": "6d2e98d41d304a28b31f20088f2961685b0c5addbcbcac8b27d9f1de07a67448",
-      "jarSha256": "38b6eac9f4a05ad8853c08fb69c238bfa9b6d80811462be5e637072ac60d553c"
+      "jarSha256": "fb64db13a6859ee2f05dabba8e3a8dc0fafcf9d2478597d8a7d1ad5b42e54466"
     },
     "axiz-adapter-secrets-aws": {
       "apiSha256": "1e32de9cfa91e72980abaf18c5e980154a9136e0a4fb0f451fd2360530876456",
-      "jarSha256": "a8116d86776a7f1c5798044ad73932695dfeaa5b0dff3fad27e34582d8d1b63b"
+      "jarSha256": "444dc8f46cba4f273924f67203d3bedbafc5a0cdcd32a99353ee9b4ec610f365"
+    },
+    "axiz-adapter-secrets-file": {
+      "apiSha256": "aac737bf71f4dd3719e2cddb4348e16a5c5aaed9b871d560ae81e97e4b0ce4ec",
+      "jarSha256": "2288eea33975a64f7b4d3cc33db29ed80a4bd6aa89129223e2b2e905dec484b8"
     },
     "axiz-adapter-security-redis": {
       "apiSha256": "a75bd506cb1da967bd8113dba6aae6be589a53af11c8490600c20d030abdd511",
-      "jarSha256": "f8f6db6fbeebcb32677686d78026593a97e455049aa1540d67d96a52071b9321"
+      "jarSha256": "6bc285a500167fc61d4614ea2feeb0df2da9cd658f452e6a7fd3591ed010d066"
     },
     "axiz-adapter-sequence-dynamodb": {
       "apiSha256": "3fe2072b91e862bfc154b8bd5b9d385ec7787a2cd5219ed1b08985977095c851",
-      "jarSha256": "b1902ff47d129423c69a68011aa40c8d5fa856de83fe36cf1f56856ef6242387"
+      "jarSha256": "eac50c742d5fedff18355cacac2f6bb40afb36bdce1f686b82896de7a4f2d1d8"
     },
     "axiz-adapter-sequence-jdbc": {
       "apiSha256": "94b7f84a5412efc6f2c56292317fa7d855bc1a65eb47978d18767aec252853be",
-      "jarSha256": "c9939e5cd30a9fe63a9729e54755bf5eaa8f7fed78cbbb1629665af1279b0df9"
+      "jarSha256": "83c675f3d8fe0f83e1712735b7e0f5352c02038ff698161363cc52afa9f06d53"
     },
     "axiz-adapter-sequence-r2dbc": {
       "apiSha256": "bfcd71876005477d4e7c4b8a3ab1fa5ddf5a6653b522c00ff3c9dadedde1884d",
-      "jarSha256": "959631583f755ef2f5a1f342afe3c38f1344b3495eb59d71e2224ee0ecaf655b"
+      "jarSha256": "758df7fc780399ef1af905d3121b3757155ca610f17afad5a9a8b4325d6f3454"
     },
     "axiz-adapter-storage-s3": {
       "apiSha256": "cfd0dd890b402e742337782df29f7206cbb80fe1062cff7d3a1a05259c30313a",
-      "jarSha256": "539288db46ae6b55ac083dd19dfb0d4c7577046c31d863d7b9846701b7848caa"
+      "jarSha256": "6b55775379d85e6506bef738ff49cb11e3a4abede1929f6555f5c00a8adb51a5"
+    },
+    "axiz-adapter-tokenization-dynamodb": {
+      "apiSha256": "939b462c5b3421304a5747f69a85c4eefc34acc005b87a2c2a6fabe17dcdfe82",
+      "jarSha256": "ccc686ac560c377afb9fa0e49bbff324f05e2832642720db68e51ccb07086451"
+    },
+    "axiz-adapter-tokenization-redis": {
+      "apiSha256": "b029ee4bfad014ffae7fa0b1c0a1ed42711dd81cf7b0929bf1f15b67dc6e60b1",
+      "jarSha256": "c0963297f6bbd050da8e21c736cd3a1b7826b1cfe43670d8c47c6cb22fce71e3"
     },
     "axiz-archetypes": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "a2b98a57d2a978fe6695877dce851576fd8a843bbac60c881d02d1daed69c6c3"
+      "jarSha256": "3a414bd210ebd8b1099838abfc6e372d90e0a8300ad19120038c27c2b8410fee"
     },
     "axiz-archunit-rules": {
-      "apiSha256": "3fb80fa5f405f177d460f8205425be55f94b460771d7437c46dae763775ef89c",
-      "jarSha256": "8858ac384ac46da458213a3de4d5ac53618f11b9a773c8d5cd04cb600144595e"
+      "apiSha256": "2d4828f24979ba725bf85b4faa9d99669e726774d310df0dce277621db00d12f",
+      "jarSha256": "a49e921682c9a9d09464c49598d195120df842bdff1e08caca2c830e2bfbdb31"
+    },
+    "axiz-audit-kafka-spring-boot-autoconfigure": {
+      "apiSha256": "732b2fe347d583a8fe509e14b625749dde45149449e8bd20e6a59cec4f770a31",
+      "jarSha256": "59ccaa499ad66f30735da526da1bcd6d4979b5ca5ece57cd6f98616aaf95afea"
+    },
+    "axiz-audit-kafka-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "5c0a0d0a5935aba98eb1ec9a5537e36a99efc5bd6eb5ba4389740a5bbf47860f"
     },
     "axiz-audit-spring-boot-autoconfigure": {
-      "apiSha256": "90aa5c3c981117b7d6c3c2f594e1ad8a92d24a767e45bd6632c389f689c08960",
-      "jarSha256": "7fd5a98df927d73d51a4f6dd9eb94f7964e3b043042af95dde0e8ac5bcc2bd17"
+      "apiSha256": "73a9fca073f3de5ad08321df0f80113b119ab8d3e82f66fbef04028eea461c53",
+      "jarSha256": "29a20121e643440789dae831c230a065ffaa39659bb8d1c6c6c146cddde4e448"
     },
     "axiz-audit-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "a3749c6d22d289478a064619fc88701d7a34b4af15fab70731c0995cfc96134e"
     },
+    "axiz-audit-sqs-spring-boot-autoconfigure": {
+      "apiSha256": "6ee4bd35a196d56ade9c405166ffb7ddb2f9c81649024e943edefd206ca9d3bd",
+      "jarSha256": "4de45f701261158f2b9fa59a15502f1bfe97db570796d5614780271dee61d931"
+    },
+    "axiz-audit-sqs-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "f8a725efef9992101dcad2bebf5801443cabe3e8703a2d738fad20e22f52f5f1"
+    },
+    "axiz-aws-spring-boot-autoconfigure": {
+      "apiSha256": "3efe2d7fecf20b867789057b7193c89b8efcd452f8879e560289e122b7a960c3",
+      "jarSha256": "bbe3e6b89425ecfa247353ede944738e7151aea1dcd29c5861817bd0e4988369"
+    },
+    "axiz-cache-redis-spring-boot-autoconfigure": {
+      "apiSha256": "d9fc157f7d1619bcd160b4bb963f19098eefa467a08e64bc3d5f90c9549d2e34",
+      "jarSha256": "1171db4352f0d280b288307b74855369971a452bab66f717eb8ee68356f565bd"
+    },
+    "axiz-cache-redis-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "3fe066675a8191ba814a20038e6c5a2c77971b79a4a3a1a1d511bd492ef18b7a"
+    },
     "axiz-cache-spring-boot-autoconfigure": {
-      "apiSha256": "c62e12b4e3baf04812c6ad8a3020967299cde9a06ba2fdf7bd914d6a39bd2648",
-      "jarSha256": "dbf0d9d6cdedb387640efaec9905765acb05e28d4434efce2ed0e43cf1e9ed0c"
+      "apiSha256": "083421857f0c2eb2776e81064b177aea0d31732d38acc67140e94148e66891bf",
+      "jarSha256": "df3969c349c2dad13257e3b9376049f48d2c20a8667ccdbb2ce6bd9515841bc2"
     },
     "axiz-cache-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -136,175 +184,223 @@
     },
     "axiz-code-standards": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "ecca35c779158b9da33d319e802e6cae576be3d1b1b9105b790c5de7858da0ba"
+      "jarSha256": "f2410a2745255952a325b1fd724d2b6ea660ebb135d5ccb1b4a53d87dc477d22"
     },
     "axiz-codegen": {
-      "apiSha256": "3430427dc8871daaac1bd087ffda465f500adc45ef21e3d7f58616833f3c39cd",
-      "jarSha256": "a2af43bf1792162d1df99c970636a528948f27c7e93f6e530d291ad75875e26d"
+      "apiSha256": "40962aead0e0b683d92b0d08684b7815e8544a60c776cf5dc36e555383e8d5bb",
+      "jarSha256": "26879c3d5c2f13a238d9f262529b19e81c085b66269af251c9ce6f8194030670"
     },
     "axiz-codegen-templates": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "ba36e852606a8bd0b2b9ba7fff04cdd69420fe1699fa1a040b14a1ffa2787b83"
+      "jarSha256": "6e35c784ab2e61a6ed1342405a840e4cef741bb4116742215ac4fa5ac6383824"
+    },
+    "axiz-config-aws-spring-boot-autoconfigure": {
+      "apiSha256": "46a7d881b47ed2dfe014490a8f4c141f5ec0335ec99aa99b68940e714bc62fdc",
+      "jarSha256": "47404b1415dc479c661841f7d172f85c798d185c0195817da37f8b45d0737818"
+    },
+    "axiz-config-aws-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "4b940e8fbcaa235a60f4d75456d635ababa58a7ab3c3a22d6f7d6e1d68c9a75f"
     },
     "axiz-config-spring-boot-autoconfigure": {
-      "apiSha256": "e7df62c5b3cdc0b7097f8906f264edeb5a447c17015854f1916c733a38b72ed1",
-      "jarSha256": "21646b0a7e4400310b4e79d130d7285895402e7c688a1f5ad06d82bbd76732dc"
+      "apiSha256": "2877cd3ea7965ed329766949f129ed8a1e69ac80b83d9f2e5fef4a40cf227188",
+      "jarSha256": "3cf49244441ee8720028964a7264adb48709fc5130c07fc665c82e56b459f0a0"
     },
     "axiz-config-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "8b22fb36bd69386372e439da26b5691463cee92581198b1b1f283635a7faaae5"
+      "jarSha256": "df20f3db6ec43b0d7de6d13e89608ce846047948067fc205a50a80cb41b332f4"
+    },
+    "axiz-core-api": {
+      "apiSha256": "712283320f1c9be4956579535782f21ae2036144f1e7dbc19a75821830bcb48f",
+      "jarSha256": "7f7dc3949a3403ab93d4bf22db32d2233a47b632589215e28a622b181b87a9ad"
     },
     "axiz-core-audit": {
-      "apiSha256": "0279a55f98e910e539e2edcc638e3db1b06311ee5ac79d5d8365ae6f8ad4f7f0",
-      "jarSha256": "a706ab811e3b09827b5ce132301c07382760ee37a05d1e8bcbea90177e821622"
+      "apiSha256": "7ed8a00c6cfc8b2ef05e5d6eda4b3da8c7292e31ffcee25b9615e28c48e450dd",
+      "jarSha256": "48b7479b65dd4dac1e622c1e8169eb760abf44198a5f85c6e4a0780cb23c5f07"
     },
     "axiz-core-cache": {
       "apiSha256": "5a36f857a5ae23887315e1a0af39b5385c8f03d77d290bd414a5c63da71963a6",
-      "jarSha256": "2d9af27aff9979f6cdd40973c567d7ed58c5a61225a1f7f9c088cea1c3ea2fb9"
+      "jarSha256": "44232c4b8aa2afb33f03e81202565a4b4a007cb2e7dc3528fe092fe096ebc506"
+    },
+    "axiz-core-carddata": {
+      "apiSha256": "7dd63676a47545e9d4c2da6a21f2ed67b21e1e5019d5b9a0b40b620a7b4d3821",
+      "jarSha256": "30eb72a9668f8c217714aff81a7f470ffad472a6bf31adaea3f8412454b8d78a"
     },
     "axiz-core-commons": {
-      "apiSha256": "0ae49d4196c4ddd7ca1f3f6c7709d0e6a0048186c4a8290f3e2f75c8f6c4797b",
-      "jarSha256": "a5e1f0577442120f5399d33dc27c11c506d2b8b9ce8dca5acc753f58b09e4fa3"
+      "apiSha256": "9640faf14aed9614173b069447bc21c6c909ca819c0df29504c6f015b8c1cc29",
+      "jarSha256": "24bee7eabcb5114b00aacf3d85a73d42872fb34ab0c92a18038c248d697e20fe"
+    },
+    "axiz-core-concurrent": {
+      "apiSha256": "9865072fc8abe8eb6327a1e21aeb91af7491d741c71f5eba2a01dcc0bc332a78",
+      "jarSha256": "09671b16ed1d525c23b72244c1764b597e74741c6993dd14be2f266b83c69cda"
+    },
+    "axiz-core-context": {
+      "apiSha256": "2303ba8fc20aa5ba18d4bd97290615f2fb4e6fe53e14083ee3fd2f7ad5d18475",
+      "jarSha256": "34508703e7e3baac657bf6427cf85be795eb2feac5a885ccba9f2bdebb2c9cb0"
     },
     "axiz-core-crypto": {
-      "apiSha256": "581d864983c2a756499e22c40eb75574508f90bc6a67e0fd443af325dfe87e21",
-      "jarSha256": "4c02b633ccfb018b98e4bd12c87337f04731ba0c2415e673161715855361072c"
+      "apiSha256": "c798686566509b33ee7faa79200003d47ee7111285c654cf4833832dc197ad35",
+      "jarSha256": "98912b4c460650a9eafa71bfc47c744f3c43ea2889970b87bd715d77b5b4cf3a"
     },
     "axiz-core-domain": {
       "apiSha256": "8bbf62eb4ee63303ee463e7efcc175e0d24cce1ecd225fe28759533c77a21eee",
-      "jarSha256": "9e28e611519356b924925704b9a1a833207067f5283f214a18538a714aeab9c9"
+      "jarSha256": "4b7a6229c4e9079f598fa7b0288bccb9ff4fcc4cce26ac17c72c8293c28c2087"
     },
     "axiz-core-errors": {
-      "apiSha256": "6974d485793a366db4cbd2210f5ffd8e62512bd0f757eb8458edc9e039a83224",
-      "jarSha256": "7e0055324a6704e26e7c789ccf6f290cffb9a0573834270dd1e632526651d225"
+      "apiSha256": "1fc562fe2cd6779b0f41cd1ce19882e4724c1fe64efc2fc2551fc0b11adbe984",
+      "jarSha256": "491f1a7edb8cc2bf73ba7fe75d70019ba3876946164decb09232a9f9c2b1f87e"
     },
     "axiz-core-featureflags": {
       "apiSha256": "ace13053c88360c7beaf4cc4754d10cf44a4c59750595715cf5763159a25aab3",
-      "jarSha256": "551153e3e85b3966eaa90fd664defa397637ea13cef137bd1ac12efc5ac0e022"
+      "jarSha256": "f3aba0b49bc535edef53b95d5b3d4e9c5be66ffad44eeaa2d41f63a2f49ec69b"
     },
     "axiz-core-fileformats": {
       "apiSha256": "0dcbefc01350bd79827b6685ef8946ffe3430878940cdb0cae5a1e24498d5fe1",
-      "jarSha256": "08f199b67bfcecdb1cf6fc59b322ee74ce9118bce53be95e908849982b65ca90"
+      "jarSha256": "7897c830bd356920e85af50ad0f99b973b04c5e2738ecf713dbdd3c31ea85952"
     },
     "axiz-core-http": {
-      "apiSha256": "81d1ccd380325de84992488178712e28dec7ca1ab90cd5d423a82eb275c5f536",
-      "jarSha256": "b4e898fb9dc483659d7f48a16f2161b0ab57c09b93b3780a63d13384fcd2028a"
+      "apiSha256": "f9c268829a3020afa7435374005d69b0aabae29258316d1a3ac869eea433a144",
+      "jarSha256": "2b5421deebe0b44a3c0ed3e3eb6838ca3cef0f1738e877942e6097306e702e23"
     },
     "axiz-core-i18n": {
       "apiSha256": "9ae4c9d6eceb819c727d3160754160d12b4afd83766a0be4f29b2ede2e42298e",
-      "jarSha256": "22dc82a395b797267bb4efcaeef729d83e17d291158beb55d4ac119c81270436"
+      "jarSha256": "011eda51434522c1fed399437121b1d41b90446c13c1852fe9a93e98e9ba77f8"
     },
     "axiz-core-id": {
       "apiSha256": "9e873f36e938094be84e39f38fdce4fca90612d6eb103635eb146e2ae500f0a8",
-      "jarSha256": "93f43339ab7dadbc115dbe88b16775d82fe625274fcf998c5a595dd72c75f5b4"
+      "jarSha256": "227f419cb5ba51a5bf88bd340e07d3bff9b01f1fd8c7013cd9ae3c85b9d63e34"
     },
     "axiz-core-idempotency": {
-      "apiSha256": "7bef022535b85273b110b3e15da5ab10a906e52450011492d2c7abd12e893e22",
-      "jarSha256": "a80ca391cf1080e4a765dddc394587e0d96e28d8d9f32ae651579aa1c53eb548"
+      "apiSha256": "a6159fa6ce7c2f79f6f2e5a2d49d6abbfbae0e7a7679254c95fd9aaf7edc6c79",
+      "jarSha256": "1fa5735dce73918c9615653d80da445d464f6c379d9ea6af8ca0298a4e6f3db9"
     },
     "axiz-core-identifiers": {
-      "apiSha256": "67710d77363b82a310fa7f903af60ac93b8f8e8cb1ae88bb1f58f736bd8ff8c5",
-      "jarSha256": "1fbd95d028d6f0e51a133487480a6e3bf970981393142d967897ebfb2d750305"
+      "apiSha256": "146b0a7d7b9b7228549bb387700c82b81abe9a82361b4ae0fb1eb7dc5c105c69",
+      "jarSha256": "3005dba00d9b3212db8b4f2dc5c6462a780d62251125d2d8e524eaa0c8bae1dd"
     },
     "axiz-core-inbox": {
       "apiSha256": "cfa163f565f250dec23639a3c94a5c82bf19ad354990c77f2222d01d19c11b64",
-      "jarSha256": "aa82bd382a3ea961c974293b8b527440dbb0fec8180af3189764332aea9f4c05"
+      "jarSha256": "d43025002dc88087902260394f4c826acf6519e03cf4fedf636072f128f00a1a"
+    },
+    "axiz-core-json": {
+      "apiSha256": "de11a84fba4d0893e8094e723db1e1477c271238d430648b9feb22ff60594e53",
+      "jarSha256": "04da07172ba4cc4ee92153731c246ae3ec7f58e521ff8c463658d09bd495a18b"
     },
     "axiz-core-lang": {
       "apiSha256": "ac132676d394fb8efeb874b275b457fc820815102abad724011f2ce790a19f28",
       "jarSha256": "a35abea5bc2632e7f93acdc6a88d7a9bb2accadd614da79305dc50d03aa7b25d"
     },
     "axiz-core-lock": {
-      "apiSha256": "457d4eb2ed2251451a61116548c4102fccf43c6898f60d1972ed053a0c0b59d0",
-      "jarSha256": "2acf54590ad1644275c59c86229dde1b53658d577dbfe3368aa62ad5cf3877c6"
+      "apiSha256": "59341d15619416779bb48a7fd5f8a88451516622f9d2ff7a05c1581de092494a",
+      "jarSha256": "98209d5801d2b339557299827c967e58a8dcbf7e8f7c3fe728f81194f7be8f43"
     },
     "axiz-core-logging": {
-      "apiSha256": "a1e6794c761c269b5a07bf3930bd7cc91e3dfa68fffa3e33c68ecc03ea0f1c2f",
-      "jarSha256": "009cb34e77060f3ae7053fd183ca80e8e54bb87616973f61083ca721f177f083"
+      "apiSha256": "9033fafbaf3dc8dee9a73e710080bf15a7d4ed75ee404ca0090e9c1ac4f02252",
+      "jarSha256": "145d1788ecf44c3a1a193ab385e76d3125be94711a459786923e2d73689f0fd0"
     },
     "axiz-core-messaging": {
-      "apiSha256": "085e935a9f57a2e3386161cda7e4bff72c852b28baaf91dacebd9c2adfa2bf9e",
-      "jarSha256": "a406a9d0ab00cc2545402817c3752e94ed08ab8d598bd799344e021d34258cf2"
+      "apiSha256": "286900e2e246f14d2324d2ef2a55ed12957b0b341b6f08d32aaa31729360718d",
+      "jarSha256": "45c0c52e76aca385325792be16e5af525b679428a2508167108d55bee81a6e8f"
     },
     "axiz-core-metrics": {
       "apiSha256": "160c71005826d3f42af1df41d69142e712e49ec3d58f7c3e1c8ca9c433760b71",
-      "jarSha256": "f090849cb172fc3556fb2e793dd8fc6bdb7f9f6ab8ee6837270111354101d270"
+      "jarSha256": "39625e1fe028c867d469356a2aadf8de20540ef2dac2146adb1af4a5700cda9f"
     },
     "axiz-core-money": {
       "apiSha256": "17a2a6c35d6f84683c083daac7e24954875e8b9595bee4f72e991a6a7e691dc0",
-      "jarSha256": "a22c9ffdc6fc8585d23149da7b98f36b2291de1371c74d6b5e5e6fd556c4d075"
+      "jarSha256": "f52331bcc71f3644508d1de6b951775f47ddc8cbe92103b24bb64b3c01ee45c7"
     },
     "axiz-core-notification": {
       "apiSha256": "a9f65546141786a6ba4df77d60d74fcb5458207a48dfb89bdcc5291bd885afa6",
-      "jarSha256": "3b579fcb6b36e789f42aa910c665d6cbcddbeb041ca3e7d813f4c1d3f11bfcfd"
+      "jarSha256": "19f19fde8d1d5348f33e919c016556e18deafb7fa64f6c46b65b2277f22c6f35"
     },
     "axiz-core-observability": {
       "apiSha256": "3571ec73c96cade26fe0b99c96fb572ded8ba837296eb31de54ce2c5d990e679",
-      "jarSha256": "0934757b4e5ff14877acc47f9a12462bb5851361bc180e68057a784f70b90cef"
+      "jarSha256": "2294dcffd749267f1149963be675dd51634346537e8c90b39ecef651c4e84135"
     },
     "axiz-core-outbox": {
-      "apiSha256": "326c2b0b4ea1e2d90c8f9279aa9f52de3cf4f0e24c1844693701497e6149fd5e",
-      "jarSha256": "f26175dfc3df609bbb73b5160ddd5dde41a44f1d4205273196c29948166e6e5a"
+      "apiSha256": "44e8e1e62edf2a0136e77339fbcc4b3421f3fb0e723e93bb2f2c3d6cefc4b830",
+      "jarSha256": "93697eaeb3825e8fa7ba8f0164f76b093d3d08c479f7197fa8eeebdf2561c9cc"
     },
     "axiz-core-resilience": {
       "apiSha256": "bb5033539f53c63ba150f9eb8aa28a3e18b1917bf0a48228bee22be491d35fca",
-      "jarSha256": "c0ad95491fd101a8f81abdf0b6bbf6af4ea9067852414fd5c7b7fcf110cc7072"
+      "jarSha256": "144455713f316b11106ea251c3ef55163eab5ee4d241bfeaec737ac4d2402940"
     },
     "axiz-core-saga": {
-      "apiSha256": "69892c15b9d23aa9337b30a59ffe50310c1468592179e90971e4aa98048d1f42",
-      "jarSha256": "7e63b5e04b62b51402b6a92b506581b95f640e9b2a5acdca63afc740efcb19e6"
+      "apiSha256": "b439ae3f9b15d54c85af0bdd0e7b8e255931b35167d6210149279290e24900cc",
+      "jarSha256": "9cc28fec676a76bc02593c255f7f4da919fa246acf51a0e2e50b7a57963cbf7a"
     },
     "axiz-core-secrets": {
-      "apiSha256": "b20d40bf483772c64258b5adb92cf3fe3b348f5d2b6dd85c519a056760706fd6",
-      "jarSha256": "6ec839ecd2326a56c4b1d46c05d9eb2f864a3464e0eb2709234c5b368528dc24"
+      "apiSha256": "43ac6398546f575d9126f9d10a99a151fd7b40886eb021f7b36cbf751d7eb264",
+      "jarSha256": "9506e25e4f94af6df5e870b538f19091ce9b7e785452f0aa97f12679abf4fe2c"
     },
     "axiz-core-security": {
-      "apiSha256": "e45c2ff9136ca7a455df6f7d259812867f6872cff039f51b591514c36b228e08",
-      "jarSha256": "337c4c4922cd6f39b9a492b6f1916edc2718f4513e300b49dcc982ef621a40a2"
+      "apiSha256": "4ba67ca51c4b385391c1f2e274cc66c1d369a879ed5335a3385c937ce3d7d2ce",
+      "jarSha256": "9d844935ffda4cd41796f7eaece0a7d14a82be2df376c8d6ac4ad7a83a65dc9e"
     },
     "axiz-core-sensitive": {
-      "apiSha256": "6b958374eafdb44c0d166a6b15303d08509bd3be63362ec63d2d2cb07bcc3f8a",
-      "jarSha256": "81edc69c07207c6ffef719cf720d5b42fec04a5e34da980aa3ba9083ac1f098e"
+      "apiSha256": "fe4acbd24ad7576410cfc9d021cd5b69110644fb980c6063ff1c0cc0a9dbdf5b",
+      "jarSha256": "da30fa7f7f36046c779794abad3a597b927eb0b4754c0cbb7b7535529f08eea0"
     },
     "axiz-core-sequence": {
       "apiSha256": "daa8adfa105f524ab345e17ab438c38a1f65aed943e8a529cbc75e33ce6ab98e",
-      "jarSha256": "6b70de69d67fb2f3d5927b6e28405b23b2d986f659eb155498fab4f8496e29fc"
+      "jarSha256": "cb61d9d2690fb1738b7a1ffd6e387898a10b8104a62b606f99c57b0bbdb687b2"
     },
     "axiz-core-soap": {
-      "apiSha256": "32e8e940d360fbb117efbc0ceeec58eca90719559865b924a01b9e9381dad425",
-      "jarSha256": "ecd064d1c37cae720c88ec5cb7b7d2406130bf9363aafa604886fba3e80341c7"
+      "apiSha256": "38742f4d10856fb5c6bf87023c646939e1322a0a22866f00a544bd7bce062921",
+      "jarSha256": "5de3fbc2f6f39579a6ba8af0be407329a95c6ffe00122f9afa7d46f716b8e087"
     },
     "axiz-core-storage": {
       "apiSha256": "27ebe6ee1acbdd1cbe5744ab684e25ffa21026d10c3113fd2f7e0bd42d68915e",
-      "jarSha256": "c7db3835b5a68216f8993a83e5ad115cca5aa7c1c519bc1d629dfa5d5b876f1e"
+      "jarSha256": "071b0f644a494188be8496d7781b1c6849a6da27aa90e6b32089f37a37ebb52d"
     },
     "axiz-core-tenancy": {
       "apiSha256": "62f2e0c00d41b6ab706f1542dd754c4fe4a182c217dd06da54fbef03862e4304",
-      "jarSha256": "23c84962ee7d479d703a056b5bbe06b7bfa382418901e47f30f8164093a9a354"
+      "jarSha256": "5e31983102984ca0220a513cf097301044413c7332927ec0e6438f4295e76cce"
     },
     "axiz-core-time": {
       "apiSha256": "e7a734dc8c3fa8369fd93df6e308d37269e19d0e5263010eeeafbdc54eb45bd5",
-      "jarSha256": "29da8f109e7ebb19914a850f7dc660a22b56f9217cb13d71fb926c385611d040"
+      "jarSha256": "da7f944a711ba018b045cd2fb60cf23427e1863393864c47838755cec663c3aa"
+    },
+    "axiz-core-tokenization": {
+      "apiSha256": "3ac9ef341dabba21b291e6e5983749f010914ba91ece2a63dddcb5b7da690666",
+      "jarSha256": "b17055f214071b546d6b0fdbbc17a4b4075e925416641965838e828374dec2e7"
+    },
+    "axiz-core-tokenization-pan": {
+      "apiSha256": "c530f37d37ab1efe20cf5276efec5a30dbd47b7cd0170bc11dda1e257a9748ea",
+      "jarSha256": "c538f907cdde1914980dc6a9cce10a92c855763b408b97f870cfeef5f8ae1cbc"
+    },
+    "axiz-core-tokenization-vault": {
+      "apiSha256": "8509eb8ce90abce6bbc48a19a908eff93489ad312450bdccc883baa2a6921a03",
+      "jarSha256": "a591db06246aad168068527a1c39c1951d098cf65d1648d7cc9328965665fc92"
+    },
+    "axiz-crypto-kms-spring-boot-autoconfigure": {
+      "apiSha256": "e30d4899c71f2df141da7831576033783eaea8b720b2a7cfa942cd7015168880",
+      "jarSha256": "43564df2b8c036b8dc4aedee7b40fcd491334862f933b92ae8cfd7a8272fb53d"
+    },
+    "axiz-crypto-kms-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "b063406e5c4df1cdfc94645327f828d5df3e55b288c40593a66ea62985f87fad"
     },
     "axiz-crypto-spring-boot-autoconfigure": {
-      "apiSha256": "8fa8744d5f549da81c795aef6f229f036657c322d05cc35a76e0e88fb90c89cd",
-      "jarSha256": "52687584443a461ff38c26a68cd3264a7ec0ee2a8651da9e2a3219d560e792ff"
+      "apiSha256": "e53210bfc8c81f90fb7170ce8dca1aee84592900dc82039bf937bd4f5eb93676",
+      "jarSha256": "da421363a3ecc7387518c392c2138868ec08dd437cf43f43c21864d43f33cebd"
     },
     "axiz-crypto-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "ef9d1810596924a22e72de28ffa4aff19b66821285970d2f300bfc35e4d46fd7"
     },
     "axiz-dynamodb-spring-boot-autoconfigure": {
-      "apiSha256": "46740ee776981611d2bbaed75c277f4f5db7aaf8955d71a3783b46d36565b502",
-      "jarSha256": "6af77a065abfcd2ae87549da962ae25090565b7497cf9da344719d79e1dd875a"
+      "apiSha256": "eae54ba337288361f9ea1bd0abcd4d0e19d16f2eeba2519b8d8a4e03ce534e5b",
+      "jarSha256": "dcd785a3f3b86b32f355097e2d22e97d5f70dcc5a7d00df0e55e393a3ef50d9c"
     },
     "axiz-dynamodb-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "daaa7d52327cba8c9520d5f5d78bf92b89a5339e46b4157bbf273c1503cf74db"
     },
     "axiz-errors-spring-boot-autoconfigure": {
-      "apiSha256": "598c454cf2e1952135a96ec962015434b9c206141393403468c5d343b1c7e11f",
-      "jarSha256": "174fb5644557f506a62c1dfa1490d7be005409c7cf4e958e49e1d6724b9231e1"
+      "apiSha256": "a0dc30680edc0289c5dff0fe412e4950ff95c34f7f1cfcbd0d4662989b0d2a26",
+      "jarSha256": "6f6ee7dd9c6f9b359f3144fc06f843d3da5079d6431d8e8d2b27f66af0468a2d"
     },
     "axiz-errors-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -316,27 +412,27 @@
     },
     "axiz-extension-cqrs-spring-boot-starter": {
       "apiSha256": "df39e7015d99c66f3ecf5ed15b4a179450bd049dd15cc556014009f53c652e76",
-      "jarSha256": "4b51d536d68736ba07a91bfbeffd4ccac53fbac6f32418afa6f5000fc08f9f63"
+      "jarSha256": "232298bf656ae460132c85c2332738fc86e7800605365a7bf9929308cba7c587"
     },
     "axiz-featureflags-spring-boot-autoconfigure": {
       "apiSha256": "49f4dc3a42cb72d6446e1934fdd2b265b964110ac6dad9893c21e12f8dc35173",
-      "jarSha256": "ee6fc2f9150e56491f46491b71c336ef76fc081899c89108c8f1e4a464f51a9a"
+      "jarSha256": "d99277c26dee5148bfebec71e3beab297886ee26dd05a1e59fff48205a51dc45"
     },
     "axiz-featureflags-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "787028f13662345b84ef356efc3e84d10d3b38129aaf8939a355654ad361167a"
     },
     "axiz-foundation-spring-boot-autoconfigure": {
-      "apiSha256": "2deb6735e903ac42b3a9c529a8f3b322b7b79d710e42bcd4fbbc4920e99e0a13",
-      "jarSha256": "fa371c35693c7d8a0dfd82a2905d31b28c2d2ade2b4bd5e83fa069a6fb36daae"
+      "apiSha256": "27ca7ea58d686263fe1497cc01244d0073f3ea548da966247107a7493d1a7396",
+      "jarSha256": "bf9a5382f45b73455079f4d87b332d0ed775b437d100bfb0d39241638f29c21f"
     },
     "axiz-foundation-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "c28f9fed52e645523b2035d8f241b36831b28b07cfc8182128b40ce29344dfb9"
     },
     "axiz-http-client-spring-boot-autoconfigure": {
-      "apiSha256": "ad5a37969f072f0c1c7833de4c5ca652c23dc737c7af5e5896312b540597f0a9",
-      "jarSha256": "51ac5e0b9c740639ca2cc4be41fd1b9ae95aa22f8a952b96d34018db4145dccf"
+      "apiSha256": "475da4b7dee901208595fc0949a997fc1d4ad60c0d9bb415d79cfd3f77644c02",
+      "jarSha256": "90e78ebccffac7ab545a1590238153acafc6097591cb21c332d9957b3114c625"
     },
     "axiz-http-client-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -344,23 +440,63 @@
     },
     "axiz-i18n-spring-boot-autoconfigure": {
       "apiSha256": "2e64ff185d5d67ed9f029f16741ce86671dabcc5ec21416c4b0312b7dfff42ae",
-      "jarSha256": "3fee0d1f7faa3f54e2e1a57b201675495a6a06ed9a1f8873ad9aab7af149473f"
+      "jarSha256": "23d65e4920d4a0f92d228c2903753829aa74cbf5a0751c9971055189fe8810df"
     },
     "axiz-i18n-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "6b505211b4f352fdbb8bb6323dc7aceebfa292823a55d5ab081bd2296c1b1a62"
     },
+    "axiz-idempotency-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "c08412e1faf88a8cc451d08fbb8733914c5fa229bb33bc313c044739cc025ffd",
+      "jarSha256": "982e7c137b3590775fb7b89d44e396e6cf9917bea81824b9de8b0fe9677e602d"
+    },
+    "axiz-idempotency-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "d68848ed7822f516edca2c1d3324eff7c9d45f18a5e4ae9d8b89e3b5fd57cf21"
+    },
+    "axiz-idempotency-redis-spring-boot-autoconfigure": {
+      "apiSha256": "ec7d19c7e1e27f52850a6ed706c8ecbca40c15a36cc7b62c09ce462fd9d23068",
+      "jarSha256": "fb191abbb62bde4045d09f4d0bf1165147d60798f733e723d71b566c8bfd45fe"
+    },
+    "axiz-idempotency-redis-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "a09aade479e033c0fef836b13623377e05ad66ee2f093333280fcc84a0cf850f"
+    },
     "axiz-idempotency-spring-boot-autoconfigure": {
-      "apiSha256": "77265f27c8ece228149529a9913672ea2eea43d6d856e416eff3dae9d046cfb7",
-      "jarSha256": "d4ec3183ce4d68fb5da22564b693ffd769132f35d2f17d8b9911933a6589414d"
+      "apiSha256": "9a5a4981f9c584db949dcecb2e6a3b3f8ab0c37babca36ed29c98a2ff34b0e15",
+      "jarSha256": "083d4f7b7f14fe28a06e241dc13d1f97bc5423ca9e98338a23808abb2cc76286"
     },
     "axiz-idempotency-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "066fe449b5a5eaaafdd79b409bed567b6900a9d8378a642d48beb91087d87375"
     },
+    "axiz-inbox-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "1d2235d06dba32dd8714d95e749fc4185102e55aeccf287c8ff663cf211c7600",
+      "jarSha256": "86cf068997899f857f6ae9554fd67e77420e4f4a42e88a7ad2889336cf802e11"
+    },
+    "axiz-inbox-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "35a76050c7ddbe3df07dd73ac8ed08bd2c346fbf2606673ba5498f641018a903"
+    },
+    "axiz-inbox-jdbc-spring-boot-autoconfigure": {
+      "apiSha256": "5ff2671219573e68774b0f64285e5ecab5411eea0ba911c970142047ef9af7ad",
+      "jarSha256": "05781d5bb100b9e3c064a33852071721daf4b819f2ce8996c28d894027265fa7"
+    },
+    "axiz-inbox-jdbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "32426a97749147386ccc960c9f5e97a249f1862a2ce9bbe6aa519c6bf14a2ec3"
+    },
+    "axiz-inbox-r2dbc-spring-boot-autoconfigure": {
+      "apiSha256": "f554bfe563806e9800b0bfc15e96d7e6d9bcf1833e509646872214d168441817",
+      "jarSha256": "76de5e5910f469a64fa35f5eec5982ebb89c7df5f2f76c57c87df9274709fcb7"
+    },
+    "axiz-inbox-r2dbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "8f4c7b559306e196c31d5f2087c08d0b2f7b5d5004586d5fc78d2e24afce557e"
+    },
     "axiz-inbox-spring-boot-autoconfigure": {
-      "apiSha256": "08927487572b9e23166fc43dca6e1b0fb80574dc5dffde4cd900293508cdf971",
-      "jarSha256": "46cfde730510c0dac7d9566575e00868d39496c8386e8d6b9e50653ed207600f"
+      "apiSha256": "cbc39ab5d792d27fb0ca0b88423f0f6822a42f5c856503b193d3b0741332d17d",
+      "jarSha256": "96edfe67cc26ed76c08f8b14c8bdde2d54394a71c34999b1c450a38b9c4916a0"
     },
     "axiz-inbox-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -368,63 +504,131 @@
     },
     "axiz-jdbc-spring-boot-autoconfigure": {
       "apiSha256": "0579c07430484f66373f7c782f8d832b8d521f9b5a7a634ef9c36f4e29ae8cd3",
-      "jarSha256": "4ed482429036584460f067e13353946462d03ca836b6bb8e16d5127ef4d9f5db"
+      "jarSha256": "5ee790d83c40c183e9b70a0186569f58caed8016999586f1b32c30111c77e148"
+    },
+    "axiz-jpa-aws-spring-boot-autoconfigure": {
+      "apiSha256": "9f88a42582f9e83095d005a43d43af2f91330b28400635d06112b7cadec25b6a",
+      "jarSha256": "74bd016542d1280281dac2ac4aea58c5eb01b45778e48c107bf43197ad805ad1"
+    },
+    "axiz-jpa-aws-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "d76092841b43d3f907a8ee9105722510911e62cbf5fe8eb61d2abff26fdaae25"
     },
     "axiz-jpa-spring-boot-autoconfigure": {
-      "apiSha256": "254b8c95c2c031b0c2992f2614b1d9c872cec0b41fad9a44d7b9825039f903ff",
-      "jarSha256": "f1319d1ef63e6aae1898baed783401327071c2055b7de91a0861bdb7f18431f8"
+      "apiSha256": "eb810e6fb0362a91414c3b72596d639afa80cfe2a88ca79bb177a522a4ead144",
+      "jarSha256": "70baad506cdbe74f4166a62df8d99f5685ec1f1d21a098af0dfc37c79308d970"
     },
     "axiz-jpa-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "3de232f8f68a728139650eb647ea20bbb64b79a46338780056d8d36d9d40ff67"
+      "jarSha256": "fc6b155aa3382854d0e4be5d207aede8610fe8859f30ef9f4e897dac30a2333c"
     },
     "axiz-kafka-spring-boot-autoconfigure": {
       "apiSha256": "339850a549e44392a2c1bd8fd816c89b300f8ad6141bddf9510a24e21ae4e674",
       "jarSha256": "30a07e7704121ed7f35ac16e04b148ff3d91193d982eac4f6e66f4cdeb09c6d2"
     },
+    "axiz-kit-audit-reactor": {
+      "apiSha256": "4ff165d1fa21b928bfb9fffa3a01a4bdbf81124cf9c3c43e0df0ab01a8b256f9",
+      "jarSha256": "457e3abb63ba88d8a9cd84b1ffb642ee3bb9bb2f6f22b725cb1ccdcc25fe35a6"
+    },
     "axiz-kit-dynamodb": {
-      "apiSha256": "c7903375cc0423f80641aa0c7e0d112a5f72156b6c7ecee9916edfbfff617cd4",
-      "jarSha256": "ff0b4edd2e723da6ec9fd4caa0bbc45807a4acf33fb3339da165227ab6e20bcb"
+      "apiSha256": "1793a0be7dcdf6e2e2f31e4a591ab45cd5ecf5065c20bdc5e2d478ca381aa449",
+      "jarSha256": "1d98e609bbc4287804205d7d82ea071198fbea8f1b48ed3ad1537bcf13c62df1"
     },
     "axiz-kit-jdbc": {
-      "apiSha256": "de7a53561969e04d8570750a0dd776178b4dd2ab5dd8ad6f312085998538b1cf",
-      "jarSha256": "ca82466992eb8801e2d3b63b4422a27f9d1cd61ffbb66f31cd16a68cba9bcf75"
+      "apiSha256": "726b4a1c7ff96668a3aa0d3fa9d4b4bee6af965378115ceb1baf9b82c9c025a4",
+      "jarSha256": "b22ef968f90d7f6b00b2cd493dd36831a8bc6f320350cf04ff3c2ede7ccd420a"
     },
     "axiz-kit-jpa": {
-      "apiSha256": "735f9631d4ec97142c4462194becf60e1f13ed359540e77a9348906db5c9e672",
-      "jarSha256": "eb4a5b18dc84de0e790a7ab4edc6f958bfc6956beb485a1c31754e04eb15fb2c"
+      "apiSha256": "f14943c8468078230f1d0d99a604456053dca486e390702f9c9b5e32a2a3f1ae",
+      "jarSha256": "2d88dbd6fb447967f91b91b3be1d404695101844d2a134bc3a9da34c3ac3dc50"
+    },
+    "axiz-kit-outbox-reactor": {
+      "apiSha256": "ccd8514f0728f019c6079829497dfec89726f59381c62597e6d244f5080fa731",
+      "jarSha256": "ede8ff72248e90d75626041ae5941565a7445a3a448f643a0dbc277e32165227"
     },
     "axiz-kit-r2dbc": {
-      "apiSha256": "6e8f07b74e0c79907ebcf1d97116e0afbe547a5e4b278913e58e0db24c50f2c6",
-      "jarSha256": "ee92103bea7a9ad4f7438776b4cddfdd1093c3836fe1c836135ba4bd8c6f8be3"
+      "apiSha256": "6c18d40ab14c2387005770651a5348fef794b4694cc2ae603142cb34829ae453",
+      "jarSha256": "287333d9ce6b0ef29bfd6191d2d3efb555655e19c6dd4d06c7d25498022a8491"
+    },
+    "axiz-kit-sql": {
+      "apiSha256": "7ca53e50d2cb00feff3c8741bf660da1916f88ea649ae668a1d7d0ba6fcc9fc9",
+      "jarSha256": "0ea631ecb2f0de3254d5ea68184bfd2d0ed16d75d4abc5d531d837cd10cf7555"
+    },
+    "axiz-lock-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "c073795485ee641d34f19734872de2812c8c43d1d280ef4a94fd691bc57b147a",
+      "jarSha256": "0681753839eaca9b64c07a36a241d6700c7abd7411105edc562e0c319b9e256b"
+    },
+    "axiz-lock-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "faa46fcb09b412a631c49f2bd6251e3065028b995ca8081c68481852f8d2cf7c"
+    },
+    "axiz-lock-redis-spring-boot-autoconfigure": {
+      "apiSha256": "d2d12025b810f8492ea175f2f9c2a4b1fd8f94b69cc798ca0d4723d4d2af0929",
+      "jarSha256": "4aafb5b17028c43cdcc18e9ddaa22e7315138a19c9427e5d0d12a89496c6e139"
+    },
+    "axiz-lock-redis-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "cb780fc3776bcb6c8acde87f05aed15d7e6d96fc48d44c803f3d7a6a46d20cc6"
     },
     "axiz-lock-spring-boot-autoconfigure": {
-      "apiSha256": "f0e0c17723494e56e7ca64ede8a5067c4df3122235eed4646a22b0a3edc0b53b",
-      "jarSha256": "d1cf27a5e3520c8f2d31c44957929510b3e4b36c578a8a32bfef07556875c7ea"
+      "apiSha256": "8c28ad0d2116ae1cf46e93bbab6dd5e6fb5b0c292ded5325255b1bfc58b830dc",
+      "jarSha256": "e84dd305229cfa850b22c862f4b54c6547f2343aef666ecd8ff48a8baf60f5ce"
     },
     "axiz-lock-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "8a1009c2c66848f877b2d9c591d7da9ed7219bfa2db572afe460e16e46099615"
     },
     "axiz-logging-spring-boot-autoconfigure": {
-      "apiSha256": "3ff4d54de9c4ede8bc2438fa23ba7e77c49d7bd942037c0e732907dd0901efe8",
-      "jarSha256": "de26e55697feff126e6c2e1a7953c08aeee68120f2045daa208b146c688d5337"
+      "apiSha256": "50019f119d7126cd949ff93b3e8eee0153cf1ac3915776ff8aeab5acb4b43a62",
+      "jarSha256": "157195e3fce515593f7f799a5c75aa3f2ce014a2b647dd3c054b5f82768e4e34"
     },
     "axiz-logging-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "03fc97871dc74fd81e3158270dd99137c69afdd95f16c717d9f46e2d9928eddb"
     },
+    "axiz-messaging-kafka-spring-boot-autoconfigure": {
+      "apiSha256": "b08a1de2ede3cf684797f6273dcc7ee84a6dc867b0d7f49105ba648926a8e043",
+      "jarSha256": "e6a8bfb2b94bff6de8737a4de0cbeabe94316c634045cd58c49a0e4d41fddb9e"
+    },
+    "axiz-messaging-kafka-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "87631164200694a19ec41092662f1dd39171ce7b94d587b4b39dcb1cb7d99643"
+    },
+    "axiz-messaging-msk-spring-boot-autoconfigure": {
+      "apiSha256": "15500efdfd4f407d9210d8756f7b7bff16210ad0a823e8bdfc0fc101c073033a",
+      "jarSha256": "d325977136932a62dfdc710e6baa7be52f956b2420e12a1887c5dea18b740e38"
+    },
+    "axiz-messaging-msk-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "2e66304e831982a168c4df814fc75b6db2deb66419ca3a93c74337926a941ebc"
+    },
+    "axiz-messaging-sns-spring-boot-autoconfigure": {
+      "apiSha256": "4c3a8f234495dab0ec35d6f6b2b937641409dcb782e2fe47639f2153a5b98cd3",
+      "jarSha256": "a01d73205492013add79c5e05fc45158c73e8ff67f6fee1ac66c40faea7660d6"
+    },
+    "axiz-messaging-sns-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "4bf2a07bb8d365a2d590a9194a058cd9bede22c5780a30a40bcee581c7f19506"
+    },
     "axiz-messaging-spring-boot-autoconfigure": {
-      "apiSha256": "957886def9f705cacc17a60a0b57cc7dbc42947d1668fdbb6399e3133cad74d0",
-      "jarSha256": "8ee272cf0585e5e281e003bbb9dc4646bb05d153a577be4cf45ce67d9db1c783"
+      "apiSha256": "df25dbf423d0d899c08a74d65049e7f34c640352bcfbb82dcd45c1db7b3947a0",
+      "jarSha256": "a417e99961221aed31692c04fc73c895eb83edac052e2687e92f1d177f595ace"
     },
     "axiz-messaging-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "866921b7d75b366a7083147bf30d7b935a9e472809f765d051c08b930ab549ff"
     },
+    "axiz-messaging-sqs-spring-boot-autoconfigure": {
+      "apiSha256": "b9586aeb608d0cb090f899d242d8cce57d0912f8f8391c95966969f3952ec7cc",
+      "jarSha256": "eb6c01c82442c484d1f272eb65d2e10f98d75ad9dcfba0624df569e0acaaaa20"
+    },
+    "axiz-messaging-sqs-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "a6a3a1d6df87d2ab4d4b0b95a5271e8f81c0996fab99dac5df57b13ad906a397"
+    },
     "axiz-metrics-spring-boot-autoconfigure": {
-      "apiSha256": "bdaa10a71349a33039a040f225b9d51525eecf1654cf371ac2f05d889e865751",
-      "jarSha256": "82625892d703484a50f483ac02d7fb5982a712500e700eff0250bd922288e751"
+      "apiSha256": "26f5a4298cabcaf6fea00a26bc2977aff9991a05019716330a0f7f95dcda7442",
+      "jarSha256": "52c09e9f63216051bc085147ae0a359a23754bfe29fc7bf7945d4b50acb6b689"
     },
     "axiz-metrics-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -432,7 +636,7 @@
     },
     "axiz-notification-spring-boot-autoconfigure": {
       "apiSha256": "f23d353a5c17340177c94a9d1b65cac29936e43b1b97da67dbbe69f7758c7ffc",
-      "jarSha256": "b669366e8d87711dd0c48a98309558c6ce2409e59dc457227b40aaa63787032c"
+      "jarSha256": "597df35f8c2777fd2f1cf4963a49561fe927721ae7a5754507ef8b2c2691f9e9"
     },
     "axiz-notification-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -440,23 +644,47 @@
     },
     "axiz-observability-spring-boot-autoconfigure": {
       "apiSha256": "361cfd4c8a73aafc3312133a643dccf716ec9121abf3493b874db8f4b2648c98",
-      "jarSha256": "133ac780a9b38e20f03a47741336791674625cfd4fcda8ecdcb81f7e329e2dd4"
+      "jarSha256": "f178b1a2ef1badc4eee3e816eee98d9de336e9c82a5b0faac277acbd271ba0d7"
     },
     "axiz-observability-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "311497c3ac3847028614781fe0d01dcbdf17986dce5e4dd9939dce75c7517fef"
     },
+    "axiz-outbox-jdbc-spring-boot-autoconfigure": {
+      "apiSha256": "e2ff858934b82c7908940aa967a029d991905c6c05149fa0f72a80d4c83bfb97",
+      "jarSha256": "d590af97de2dff4879058cd6456877c847e92ea81d8cacf65f7d826324b1f2c5"
+    },
+    "axiz-outbox-jdbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "00eed5a76d07aeb5cf9db96dec70674de2374bfeb5231146368c324929ae3054"
+    },
+    "axiz-outbox-r2dbc-spring-boot-autoconfigure": {
+      "apiSha256": "fdacb1ee2e3d9d1affccbe40bd2fbc26ced03a0fef102fc1bc649bafd6da853c",
+      "jarSha256": "78d4088fef8a3b4a38e80541b48a6badb07c21d970aab138b84e442844e5bb06"
+    },
+    "axiz-outbox-r2dbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "7e25d8b50c19db78b133b188e036abe81cbf246c41a77a9831d58aa447b2eb2d"
+    },
     "axiz-outbox-spring-boot-autoconfigure": {
-      "apiSha256": "b9c5184f0e7b02063d547e2252f199693c29656a7b9baa63849a4305ec3560d0",
-      "jarSha256": "ea4c6fee3b872f2b2d3ddae7787aa0a987423026bd31a16905c8b6062ca7f433"
+      "apiSha256": "f2cab5ff4e365840ae820c84b1a04526a24f97ccac289b967f397b7f2bbb37d9",
+      "jarSha256": "700b007db997b366e6ee18c84844191dc67c248337871099cdc3c8daf133fe77"
     },
     "axiz-outbox-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "727a4fa0810003d22d36fe7f992833c279edbf6cf031a5531c66a585d30c8b60"
+      "jarSha256": "a43bd16323f80f4451d67499468f868dfb7e9fd21779091ccfb10a8ee93957e2"
+    },
+    "axiz-r2dbc-aws-spring-boot-autoconfigure": {
+      "apiSha256": "3ae3f4122c32a71858d88012ccebf0643995ad0cd0e9d808221ed49becbf29c0",
+      "jarSha256": "f8ebaa1947298d1c3607d4754e0d36f1b29f1dc641283b140129e696c9bfce74"
+    },
+    "axiz-r2dbc-aws-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "d4c2feb0f4436e35c6e2cd75628e91f4ee9ec75162b139a1181789ad593c9d8b"
     },
     "axiz-r2dbc-spring-boot-autoconfigure": {
-      "apiSha256": "971f384040a778cac5f4cf21ce66000fd7a6784b2dd71713be293950608a9fb0",
-      "jarSha256": "ee5625240aab1a4946854c64359fed2ea8610cf78bde47be5429373814cf1fa7"
+      "apiSha256": "06a33d47fea422a3343aea451ff663a58032521b107d88239096a1335dd4b234",
+      "jarSha256": "deef8ad4405ec7b0b67aa16ed6d1f04a97208f7376493625c57968d0981f8bbd"
     },
     "axiz-r2dbc-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -467,24 +695,56 @@
       "jarSha256": "784897a0bd64b31a0f19788cae8cbebec14f981a392d52ba5490399ab65371b3"
     },
     "axiz-resilience-spring-boot-autoconfigure": {
-      "apiSha256": "0cd4b6fca8fdd945b1a719ed85e10fe54f22867dab51326d06e98d8d650d9f4a",
-      "jarSha256": "eaf507f75a7ed5e7776fc285f5b766095f1ea85831af907112b379b7fafc84e5"
+      "apiSha256": "2cceb4cb60093c74a6752d96a843fd5573bb2e648a8e94c479bae82d9121b698",
+      "jarSha256": "46f6221c763aa5d0b1fc52c33149cd886e039c8ec1fe810fbcc50655bc3c7b72"
     },
     "axiz-resilience-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "0a1885a45fc20714d038b2afb36cce12324bdd43773d1f1f677f411e089226c2"
     },
+    "axiz-saga-jdbc-spring-boot-autoconfigure": {
+      "apiSha256": "eee0851f6cf607938fadea4512fcb78d061bae12b8a007bea5006b9f5d3566c3",
+      "jarSha256": "d9365435e4861add0ff6f4cc3bfc1d0066cceae4ead6b057437c0b01069ee569"
+    },
+    "axiz-saga-jdbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "7ff62e7f8a20f3db88c596a7e13ee1de253fd07e2ec664f77eea62ea192f66d8"
+    },
     "axiz-saga-spring-boot-autoconfigure": {
-      "apiSha256": "9297ce1b719230f3f94b6e901fb2fca26571b6e92e02b9703d3f57a0d078021b",
-      "jarSha256": "31fd340faaf3f263792d5c15c510f6826868bdceadf935d048db7aa21e301c7c"
+      "apiSha256": "965ecd7257b1e1bfc40f6cb1a70edfaa4a73aaf72cfdcf62fc3173fc7b7708e6",
+      "jarSha256": "06ab02eadbf5214933ce0c38e11f8d0ca56c7fe669f5c02d319595956c690233"
     },
     "axiz-saga-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "5289da69f5d6cae01db25777a877d1a20d7f306de16f9e7d252227aa02a48877"
+      "jarSha256": "0d6a00f3aad7e4f08bee5eb4cb2f5662a5ff8a1934d724ca448304c4b977c045"
+    },
+    "axiz-scheduling-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "565d9be8cd7a74007a96b7f7835ef8aa139bb8db88e9ae2526ad561854a3188d",
+      "jarSha256": "c3816f97f0bd4267f071a3af6d4a39ba6314f34f13d5cb1fdf0fc7e0585d986b"
+    },
+    "axiz-scheduling-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "2cd44df5ae8175e10af8503393b9015135e349c9c5112ac7fdbe1b2e964e1e8b"
+    },
+    "axiz-scheduling-jdbc-spring-boot-autoconfigure": {
+      "apiSha256": "bbfdcc0b81377355169db6e21d9b86f6f37edbafca3fdbf6aaa8c1c80e52f1a4",
+      "jarSha256": "bf6795361cb214a0b8e104972521053a181798c5cffb2a852a395b4ca4d56c73"
+    },
+    "axiz-scheduling-jdbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "254767e29ae95d2c2472bf455a535fe723d6404a781525b06bbf3cb9247f52e6"
+    },
+    "axiz-scheduling-r2dbc-spring-boot-autoconfigure": {
+      "apiSha256": "ebf623781c9453d83cd10d6802f52a7ef3acf1ff264a6ebfd883bc9a14a700d9",
+      "jarSha256": "e06e5490006a3fab95e5ce5cfe0728c17cbc87cbf892b9a4ce3804e9b279816b"
+    },
+    "axiz-scheduling-r2dbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "aded9d1cd30efa0b90ac0753190644fc1bcacb96d9b03ca287cdf0853592fc2c"
     },
     "axiz-scheduling-spring-boot-autoconfigure": {
-      "apiSha256": "99b9389e591820846e0caddc447b048be2271c3ba023dd1eb1ed15ae4fc27384",
-      "jarSha256": "786770b37b31fa8324d1bc0e19be7ec7e8286b91d38596d623ed273ba7b82705"
+      "apiSha256": "5dbd65056dd23d06284e6a6c257b51b73213af3bedbb06a20d6925834ae002eb",
+      "jarSha256": "00ba56d941342ca8930a3b9cac8d00d6db251691a0f0d89916d64c1420b0ae8e"
     },
     "axiz-scheduling-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -492,51 +752,107 @@
     },
     "axiz-schema": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
-      "jarSha256": "af9cbc6c50f0434e9646318c1d0b311b4f68733a864ea147547ec687060b112c"
+      "jarSha256": "3ef9e02221fdf6caf873ebca849345db8aaddc5024fe09856c61a604e5576446"
+    },
+    "axiz-secrets-aws-spring-boot-autoconfigure": {
+      "apiSha256": "b0f2193b7a64f462503f284ccb7ca190cee18b441393e8804501623f05398aa3",
+      "jarSha256": "8d474beca65d38671e06b14ae0259ad2a0dc07a26316ab69a00d8a8d2b99f184"
+    },
+    "axiz-secrets-aws-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "d98ab08a27d13dd29fb1b5b9605728997a52a171fb1c6dbbd2ecb2c6a888617e"
+    },
+    "axiz-secrets-file-spring-boot-autoconfigure": {
+      "apiSha256": "ca5c8140282a5a1bd87b295814d8629e0009c35e391d5ac0518acdf030f69b9d",
+      "jarSha256": "75081f189f4ae50fa0e7ea95d1f50c8cecdd0b9ea4957a179f9e0bb808cae185"
+    },
+    "axiz-secrets-file-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "0d9eae14d55d1001ed81c467ccab885ae2d0b819957f4608cfb39ccc4b8a37e1"
     },
     "axiz-secrets-spring-boot-autoconfigure": {
-      "apiSha256": "eda135cbd24775ca2a98441b30c3b3d78889674cde0e4968d7d193c312752ba8",
-      "jarSha256": "b944ee89b04e45857bda0f540cb6775647013e0173fe14e6a3001a63aca8ffba"
+      "apiSha256": "81b547fb26375899b2a53e3be922d5b13033d071631b5d38dd91b4c25cee1fd8",
+      "jarSha256": "7d4cf356814bd760d3a8204c145de4a4ad09593deeced76349750421a81862c1"
     },
     "axiz-secrets-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "b6b9f6a358e52da13520bc6983e3d5fcda3960ce6c71324c53ac73f58776386a"
     },
+    "axiz-security-redis-spring-boot-autoconfigure": {
+      "apiSha256": "7fda9975718c0958633a40bb1709a0d603f5a2bf1642b0e812842d3cc52e6b48",
+      "jarSha256": "73d67c2ac869862f757adeef507dc0b35a0449e53229dc35b388472c7ee3d9d6"
+    },
+    "axiz-security-redis-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "657d457cdf6a6c6672ebe546c66ab51c36a15902f5dc43f5aa9e577848b57e5c"
+    },
     "axiz-security-spring-boot-autoconfigure": {
-      "apiSha256": "ef9e5ca6b4491bd30397f4255f8a8c278438f2896ef9ea68ac4632b142ea9805",
-      "jarSha256": "761d1a9a2b990d5325c2f7b8358f0b128f52d5da8db24f32ddb9938a41d99b56"
+      "apiSha256": "2637f436beb29046f25d40e0a7425ad6f39962ca9fd3c0da6fa1cef35d0ff0b1",
+      "jarSha256": "5132667d9df6d742021b3e2624625553548bc4b905928194089c0e831c602b4c"
     },
     "axiz-security-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "35dacc8b7c8f54dc007668613ae5c4769f4a09be8dce5ce82cecb38820305e1a"
     },
     "axiz-sensitive-spring-boot-autoconfigure": {
-      "apiSha256": "301671e1714f6f13c2769d2f6706b2b4144f835576e9131f60e419615a0c787f",
-      "jarSha256": "0974889c3dacc85bc174e92ae6cb8f28629c4208389d5f92bceae2c99df2ba34"
+      "apiSha256": "4aad3443f5a5464bfee54b2199729008cc99d0e2b3fd3a905ceac871f34eced4",
+      "jarSha256": "f17695f9c21b2d04701c24c08f450d2ca2275ec44086915f8dbc6b0b84743cff"
     },
     "axiz-sensitive-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "126d3bc525d188197c5e06990572ff52987730eed2158b95915ffa5441b7fa59"
     },
+    "axiz-sequence-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "872049c6288c354c0f8b8ca84bc8ebfa9f3762fddd2776f53e188c884d61c98b",
+      "jarSha256": "5e312407d4699ac5cf86fa07e9110dfa28b705b69e3a73110bb6def523c48a08"
+    },
+    "axiz-sequence-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "d91573e93194cfcf38ea1af24011a1cf3e20211d69691b0560239877fdc696b3"
+    },
+    "axiz-sequence-jdbc-spring-boot-autoconfigure": {
+      "apiSha256": "d11648030310a903d36366c1c9eb38b9c55b820abbcb2797339977e29b94044d",
+      "jarSha256": "45d18393c9302acca85625ed783170da212a114c564d8c32441ba1ad1e4fe187"
+    },
+    "axiz-sequence-jdbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "3e14d46aef925f0a18d5fa32e745794543c57832c66d1950b2405234a435bab9"
+    },
+    "axiz-sequence-r2dbc-spring-boot-autoconfigure": {
+      "apiSha256": "dc612c9fd34a3f7e93e6c4c8017e71b2e015a3d16f5ffa67cdf604fd672d06ab",
+      "jarSha256": "87a0511326b6530385e711eee22bc524f60d6b9714850616ae7ed01edd7b40e4"
+    },
+    "axiz-sequence-r2dbc-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "6c543ca8f6107dcbaa4b18998fc04f0473f49203da77aa646c40a17d709e5cac"
+    },
     "axiz-sequence-spring-boot-autoconfigure": {
-      "apiSha256": "4e0a2a51c3454f172e4bc0a0970e5b130a477db0f82c7ce1bbfb04aac77974df",
-      "jarSha256": "275c293321c3427745682c17bc557669ae942bfeee47f56a1a6524bf00c48a28"
+      "apiSha256": "ef498e9cf95573b0aad0abe1ed39e6f1c8edd9fe335f3c78b3ef910fb787c997",
+      "jarSha256": "957989743b0ac599e58c66937adad9275b145c1aaebb6df849ab4daed9df5a4e"
     },
     "axiz-sequence-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "b28666667d5e7b7bb8c8c381d4154f099366b916a7ed3e7e897c48ae0c8c5305"
     },
     "axiz-soap-spring-boot-autoconfigure": {
-      "apiSha256": "5afcaa619283db0663735247f25de872f98cd28bba21b7b61918448310652e62",
-      "jarSha256": "72cc4d60040f1966319979898a554bbfad5fc4dd8e4008732c9af64a7aafacb0"
+      "apiSha256": "32b1b8ede37008fa14a53d96ec5239d76d275a96b3a7f5d83a184aabd7b0bff4",
+      "jarSha256": "3e6ca91eae8481204b98d8ca8315b4a72e6541b212c532e144bfd75ab373a783"
     },
     "axiz-soap-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "0febe001b2d66d031f0eb4e547d5a725253280072b090f352912ada7488dfd7f"
     },
+    "axiz-storage-s3-spring-boot-autoconfigure": {
+      "apiSha256": "5f9e2dfb4e7fd21abccc2e37e6a10837a3a950e6a2b2cb4dade63ae80fc8af42",
+      "jarSha256": "42c996126d48926b02069168c6e16c10d35a54fdea5013acebf6b0863ef7dc89"
+    },
+    "axiz-storage-s3-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "58f7bdd402e9f8e08f951cd2e3fdbd5449d26aa84dfe263670e66eb2f00bc79d"
+    },
     "axiz-storage-spring-boot-autoconfigure": {
-      "apiSha256": "bbfc458db895dcf5ad5861f644a31f4340095b21c412ee76c41a74bcbf3d018f",
-      "jarSha256": "0edbb873fcaa4df740caedbaae0b88ae57c6b4635ae4d972d5d3a00d555049f1"
+      "apiSha256": "d01ea1d3aefdd66e9c6b8db893f94a636148f0bbdbead1a8eb3e50593cf40d39",
+      "jarSha256": "f85fc1f9b83957f7b358aabf1a754fd6d6889f32cf48a0aa04f09b420c85f6e3"
     },
     "axiz-storage-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
@@ -544,7 +860,7 @@
     },
     "axiz-store-contract-tests": {
       "apiSha256": "98a925b228aa557ce988358593dbbedfeefc23ff08d06f7f788adad0a130eb00",
-      "jarSha256": "2ae95bee7d6306e1f6b402d69b4669b3ee23f812385441a3e991b5fe0bd335b7"
+      "jarSha256": "8b2a4cea94c51823a9806646681a3f186cf22099de9dcd9f17450a44bb84451a"
     },
     "axiz-structure-batch-api": {
       "apiSha256": "3b74ac86c628c71ace44a9be35d4b943ba4e5613f061c438f99131c4eac60cae",
@@ -552,55 +868,99 @@
     },
     "axiz-structure-batch-spring-boot-starter": {
       "apiSha256": "b6a9b089e737b83af61725704deca8e4ffe2313faa2b4bffd99a899b188d1f58",
-      "jarSha256": "c3e0d5cd4a7391ed90920836368f3338f0ac49baa247d21fd1cd8646659320c4"
+      "jarSha256": "314c23af5cdd96975d90c97a9fc3636e0c8d49755523f4e656ec26d55d863c69"
     },
     "axiz-structure-bff-api": {
       "apiSha256": "b1ef299e997abe43474f544c2e0d799f161e8dd3068f04a64d4d9e4a1df3fa6d",
-      "jarSha256": "7a41d906a93b0e0ebe1e24094329ba102a03d3413b7c967e9fcfbda2e194c7c5"
+      "jarSha256": "0c8c28661b1379c9f2034cb1a92215ce0fd0f0487c5fb66729aa08ec53f47455"
     },
     "axiz-structure-bff-spring-boot-starter": {
       "apiSha256": "7928f965c4843df14fca3b341c42dcefde6085e26fe5f2bdb014bc214896b60a",
-      "jarSha256": "4533ac7329d47afdc7ea46f2df42e62fb6e63546c124fe17fb6ff6ade04bd717"
+      "jarSha256": "0a23825b09612078387a4be1a19fb818352282c1cf68e3e5a0cfe41d10542b3e"
     },
     "axiz-structure-eda-spring-boot-starter": {
       "apiSha256": "adc2a7bcc358a0e871c31260e5bf03c691b0f4f419b137661abf01a6250d5736",
-      "jarSha256": "6e8ea9527970d19139017b36376dfa83049d8b24f785f168c2d45ef3777b11b8"
+      "jarSha256": "b965afaf1907ba5f85ca5d3f06af9c06642db0370e2483c4986fb25d102c5765"
     },
     "axiz-structure-hexagonal-api": {
       "apiSha256": "47272fa889ac0f0c2f144fa9a97c14904e08de9d36f6aaedde7dafaa1d89f384",
-      "jarSha256": "9ab4b1b5d2eb9ec5ac19db787e91730fc8e9e48aaaf3a7544929502dd8e66c6d"
+      "jarSha256": "bf2d77308eb719724e52a7fed2eb88844422ee34c2a04f61327e6aa7cd79f04d"
     },
     "axiz-structure-hexagonal-spring-boot-starter": {
       "apiSha256": "91af6cf592b889578d45d4e27542db5f45947cc8e93f643304f96036a3a1fa0b",
-      "jarSha256": "5301d51f123cc7836ae063d440340298c46d965710b2872fab54608ef11c29fa"
+      "jarSha256": "88c8eb2e6b64adc367553de9501642fd80fe41d5810f6a7876b060a40c9228fb"
     },
     "axiz-structure-layered-api": {
-      "apiSha256": "ead86576ce45a00f1be58b877a96dcea315a6fa6e716c41d4d149832af2cf211",
-      "jarSha256": "9f0dc60602252999d8e47d5fcb908ce4ba7ade542f3345c2476f22053e42841a"
+      "apiSha256": "4b439e1ff09188197100968d8a06bc87722077b19a9220b9c950ece6abcfb793",
+      "jarSha256": "2978ac56af7f59709872628d8310c201a81cc47995bb0985c52e1d2d215d1580"
     },
     "axiz-structure-layered-spring-boot-starter": {
-      "apiSha256": "1628fe69b70450d9274898c74aa2994bdbfa44258f3711b5a66b1a329c9543f6",
-      "jarSha256": "3dfbffad872d2ffc42f9050cc5e657a6f2e69c6d018aeb94cb289d450fa74ca0"
+      "apiSha256": "e2a8062eeffcf15888f2772b85881f25a2ac4ac2400b78f303796022f86be004",
+      "jarSha256": "57b4c30049894f70bc8d7e275eaaa9e9b64fabb0605de56f5c6c96ca89588333"
     },
     "axiz-tenancy-spring-boot-autoconfigure": {
-      "apiSha256": "7dd18f0fe5d8f3709d66ef2d534d51a4b37cd04102622aef96c24d4b1a152f7a",
-      "jarSha256": "3889ed90fe25974d63110eeab0ae6cff4c9bba49762b241cdb265588680c8c7e"
+      "apiSha256": "636dd66de0b1c13fbee55526675577fdd0499595f14db27d6637cd9ceeb62534",
+      "jarSha256": "f1653e72e79793054c4c7bc707b7dc62340b647b4eef3d04f5daf3b76c5bc7ed"
     },
     "axiz-tenancy-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
       "jarSha256": "f1cf4d72fa0f87e73654f52f80d05e8aa7f4d1b0e283b13d9a82f1d480500691"
     },
+    "axiz-test-containers": {
+      "apiSha256": "ef7930f34adc451c094cda8f5a07e1a711bcdfc325351f7a88f416194bd4e126",
+      "jarSha256": "4c07f0fb371ff7c24f207c87057514fae8753c572dd832dd43b0d079044bf19e"
+    },
     "axiz-test-spring-boot-starter": {
-      "apiSha256": "7fffdd599fb53243ba70267f705f5ce001a8dc747a24958ff8da83acda9be1cf",
-      "jarSha256": "930494730066b1545fcff19313d77fb9521119bf8b55b9cb315447bb4f6bffc9"
+      "apiSha256": "b5997b0329e200bf7b7442279d00b3a61917d1023704a5097fa5865c9fda34af",
+      "jarSha256": "bfdd9f1bc88921992f53e418726226be36c6af4c5ccf01d43fa1c0d2fa51e8ed"
     },
     "axiz-test-support": {
-      "apiSha256": "403dfbff9b55a48dca4ed27c1b750f0ecaf5be95810edc081bdf792352540b1e",
-      "jarSha256": "18ac599121f236928805ce878e021fbc6d4ef65a5ce9b07f5b7db7893b7db499"
+      "apiSha256": "af3ea8bad1ad57f03d04e324d40eeabb12efabc242d7c38f8aa1fc81c798060e",
+      "jarSha256": "2bde2c7c463bc2e585223ca56d7000ad71e7ac3e71fec18c1d4bb32307d3999c"
+    },
+    "axiz-tokenization-pan-spring-boot-autoconfigure": {
+      "apiSha256": "a034600a362634041583bd5eb962572245109ddac16adcfe9cae589cf2c42078",
+      "jarSha256": "65669b913895177adff4121435e1d11af098c97ab224ee66b6df047bd9850830"
+    },
+    "axiz-tokenization-pan-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "e96497e3cf274248d0a17892b6a3de8bcfffeac175ff61da7b37d94b9270742c"
+    },
+    "axiz-tokenization-spring-boot-autoconfigure": {
+      "apiSha256": "c36234153f9010990efe7507a831772bae8bffc52a28a16cd823e174b2e4aa4e",
+      "jarSha256": "07c61439f0750835f39904398b35761f5b76cb7b8d73f800c93812ca8be1792a"
+    },
+    "axiz-tokenization-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "a972f4289520cc3e4b2ceef0ab5cadf7dce961eafd1f7c096dcf9b0d3aaad97d"
+    },
+    "axiz-tokenization-vault-dynamodb-spring-boot-autoconfigure": {
+      "apiSha256": "8e602bd00f2b7e89e48b248e5df695d6fff120db84ce755757b6d1858fcae40e",
+      "jarSha256": "b0dec73ec263b5f6f6f683842d39cef9d25bf8fa2b9db8716a0f6a0094a6823a"
+    },
+    "axiz-tokenization-vault-dynamodb-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "4020918d57346fea0bc688201fb27af7b098619aa59b1bed923b0744a48b5798"
+    },
+    "axiz-tokenization-vault-redis-spring-boot-autoconfigure": {
+      "apiSha256": "0dac3e92094d7ecbd2ccab727447af4c41c7f04f608ad0f3eab2407c4c5de891",
+      "jarSha256": "7f3da65383bc6a2cf04dcf7159e532d99e529a2aed46872e9f5d60f16614baa7"
+    },
+    "axiz-tokenization-vault-redis-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "fdc2bf9b5fe3f0fa52abd6684473b531fe2fe4975b031ca0c91ecd426a702990"
+    },
+    "axiz-tokenization-vault-spring-boot-autoconfigure": {
+      "apiSha256": "512c58969ea862722abe3b7b9cb5f7646afe2ced61537ad3e9d429a28da8ed46",
+      "jarSha256": "a2c3684fca9c09f538fb8f1a01e51bfe97b500f995c9684c718f7ed65a624715"
+    },
+    "axiz-tokenization-vault-spring-boot-starter": {
+      "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "jarSha256": "67de6fd34714aad1ccc7903eb9ece98abc0e8b32e25fd2fb0038c10a4a1970da"
     },
     "axiz-web-spring-boot-autoconfigure": {
-      "apiSha256": "cab03e6ba101e0e9da88c2567744fea6eaa4b640fdf70e74f9a16f56e5e91bb1",
-      "jarSha256": "cc117b3b0f0e72bb063460648b86ee93a2c5ed5fb280acafb8a7a1602cc939e7"
+      "apiSha256": "46ea7a99c22cc6f6223637dc31fcadbf3f0b57e14dffaf7d27fe71184745c293",
+      "jarSha256": "f716d741c09ebb0d04e21d10924885b5f372d641ef86592f3ee64d66274e058d"
     },
     "axiz-web-spring-boot-starter": {
       "apiSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",

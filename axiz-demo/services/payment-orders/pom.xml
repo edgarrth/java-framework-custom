@@ -17,6 +17,7 @@
   <description>Owner of payment orders</description>
   <properties>
     <axiz.base-package>pe.axiz.payments.orders</axiz.base-package>
+    <axiz.openapi.model-package>${axiz.base-package}.adapter.in.rest.model</axiz.openapi.model-package>
   </properties>
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jpa-aws-spring-boot-starter</artifactId><version>${project.version}</version></dependency>

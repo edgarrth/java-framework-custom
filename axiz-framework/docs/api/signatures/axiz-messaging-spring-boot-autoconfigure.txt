@@ -18,22 +18,6 @@ public class pe.axiz.spring.messaging.AxizMessagingAutoConfiguration {
 public pe.axiz.spring.messaging.AxizMessagingAutoConfiguration();
 }
 
-public class pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration {
-public pe.axiz.spring.messaging.AxizMessagingAwsAutoConfiguration();
-}
-
-public final class pe.axiz.spring.messaging.AxizMessagingAwsProperties extends java.lang.Record {
-public final boolean equals(java.lang.Object);
-public final int hashCode();
-public final java.lang.String toString();
-public java.time.Duration apiCallTimeout();
-public pe.axiz.spring.messaging.AxizMessagingAwsProperties(java.time.Duration);
-}
-
-public class pe.axiz.spring.messaging.kafka.AxizMessagingKafkaAutoConfiguration {
-public pe.axiz.spring.messaging.kafka.AxizMessagingKafkaAutoConfiguration();
-}
-
 public final class pe.axiz.spring.messaging.AxizMessagingProperties extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
@@ -43,10 +27,8 @@ public java.lang.String source();
 public java.lang.String typePrefix();
 public java.util.Map<java.lang.String, java.lang.String> destinations();
 public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer consumer();
-public pe.axiz.spring.messaging.AxizMessagingProperties$Kafka kafka();
 public pe.axiz.spring.messaging.AxizMessagingProperties$Routes routes();
-public pe.axiz.spring.messaging.AxizMessagingProperties$Sqs sqs();
-public pe.axiz.spring.messaging.AxizMessagingProperties(java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, pe.axiz.spring.messaging.AxizMessagingProperties$Consumer, pe.axiz.spring.messaging.AxizMessagingProperties$Kafka, pe.axiz.spring.messaging.AxizMessagingProperties$Sqs, pe.axiz.spring.messaging.AxizMessagingProperties$Routes);
+public pe.axiz.spring.messaging.AxizMessagingProperties(java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.String>, pe.axiz.spring.messaging.AxizMessagingProperties$Consumer, pe.axiz.spring.messaging.AxizMessagingProperties$Routes);
 }
 
 public final class pe.axiz.spring.messaging.AxizMessagingProperties$Consumer extends java.lang.Record {
@@ -64,20 +46,21 @@ public java.time.Duration initialDelay();
 public java.time.Duration maxDelay();
 public java.util.List<java.lang.String> subscriptions();
 public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer(java.lang.String, int, java.time.Duration, java.time.Duration, boolean, java.util.List<java.lang.String>, java.time.Duration, java.time.Duration, boolean, java.time.Duration);
+public static pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder builder();
 }
 
-public final class pe.axiz.spring.messaging.AxizMessagingProperties$Kafka extends java.lang.Record {
-public boolean iam();
-public final boolean equals(java.lang.Object);
-public final int hashCode();
-public final java.lang.String toString();
-public int concurrency();
-public java.lang.String bootstrapServers();
-public java.lang.String deadLetterSuffix();
-public java.lang.String groupId();
-public java.time.Duration sendTimeout();
-public java.util.List<java.lang.String> topics();
-public pe.axiz.spring.messaging.AxizMessagingProperties$Kafka(java.lang.String, boolean, java.util.List<java.lang.String>, java.lang.String, int, java.lang.String, java.time.Duration);
+public final class pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder {
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer build();
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder deferInterval(java.time.Duration);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder deferMaxWait(java.time.Duration);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder handlerTimeout(java.time.Duration);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder ignoreUnknownTypes(boolean);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder initialDelay(java.time.Duration);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder maxAttempts(int);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder maxDelay(java.time.Duration);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder name(java.lang.String);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder subscriptions(java.util.List<java.lang.String>);
+public pe.axiz.spring.messaging.AxizMessagingProperties$Consumer$Builder transactional(boolean);
 }
 
 public final class pe.axiz.spring.messaging.AxizMessagingProperties$Routes extends java.lang.Record {
@@ -89,24 +72,12 @@ public java.util.Map<java.lang.String, java.lang.String> byType();
 public pe.axiz.spring.messaging.AxizMessagingProperties$Routes(java.lang.String, java.util.Map<java.lang.String, java.lang.String>);
 }
 
-public final class pe.axiz.spring.messaging.AxizMessagingProperties$Sqs extends java.lang.Record {
-public final boolean equals(java.lang.Object);
-public final int hashCode();
-public final java.lang.String toString();
-public int batchSize();
-public java.time.Duration visibilityTimeout();
-public java.time.Duration waitTime();
-public java.util.List<java.lang.String> queues();
-public java.util.Map<java.lang.String, java.lang.String> deadLetterQueues();
-public pe.axiz.spring.messaging.AxizMessagingProperties$Sqs(java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.lang.String>, java.time.Duration, int, java.time.Duration);
-}
-
 public class pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration {
 public pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration();
 }
 
-public class pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration {
-public pe.axiz.spring.messaging.AxizNativeMessagingAwsAutoConfiguration();
+public interface pe.axiz.spring.messaging.ConditionalOnListProperty extends java.lang.annotation.Annotation {
+public abstract java.lang.String value();
 }
 
 public final class pe.axiz.spring.messaging.ConditionalOnListProperty$OnListPropertyCondition extends org.springframework.boot.autoconfigure.condition.SpringBootCondition {
@@ -128,14 +99,6 @@ public <T> T decode(byte[], java.lang.Class<T>);
 public byte[] encode(java.lang.Object);
 public java.lang.String contentType();
 public pe.axiz.spring.messaging.JacksonPayloadCodec(tools.jackson.databind.json.JsonMapper);
-}
-
-public class pe.axiz.spring.messaging.kafka.KafkaConsumers implements org.springframework.context.SmartLifecycle {
-public boolean isRunning();
-public int getPhase();
-public pe.axiz.spring.messaging.kafka.KafkaConsumers(java.util.List<org.springframework.kafka.listener.ConcurrentMessageListenerContainer<java.lang.String, byte[]>>);
-public void start();
-public void stop();
 }
 
 public final class pe.axiz.spring.messaging.ObservedAsyncEventPublisher implements pe.axiz.core.messaging.AsyncEventPublisher {
@@ -193,14 +156,6 @@ public final org.reactivestreams.Publisher<java.lang.Void> react(T, pe.axiz.core
 public final void handle(T, pe.axiz.core.messaging.EventEnvelope) throws java.lang.Exception;
 public static final java.time.Duration DEFAULT_TIMEOUT;
 public static void await(org.reactivestreams.Publisher<?>, java.time.Duration) throws java.lang.Exception;
-}
-
-public final class pe.axiz.spring.messaging.sqs.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
-public boolean isRunning();
-public int getPhase();
-public pe.axiz.spring.messaging.sqs.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.AxizMessagingProperties$Sqs, pe.axiz.core.resilience.Backoff);
-public void start();
-public void stop();
 }
 
 public final class pe.axiz.spring.messaging.TransactionalEventHandler<T> implements pe.axiz.core.messaging.CompletesInTransaction<T> {

@@ -18,6 +18,7 @@ import pe.axiz.quality.archunit.sample.guarded.model.Amount;
 import pe.axiz.quality.archunit.sample.guarded.rogue.Rogue;
 import pe.axiz.quality.archunit.sample.guarded.service.Singletons;
 import pe.axiz.quality.archunit.sample.reactive.BlockingOperations;
+import pe.axiz.quality.archunit.sample.reactiveclean.application.Pipeline;
 
 class RoleRuleContractTest {
   private static final String BASE = "pe.axiz.quality.archunit.sample.guarded";
@@ -51,6 +52,14 @@ class RoleRuleContractTest {
       var persistence = new ClassFileImporter().importClasses(OwnedPersistence.class);
       assertTrue(violates(rules, persistence));
       assertTrue(violates(rules, new ClassFileImporter().importClasses(OwnedMessaging.class)));
+    }
+    for (var role :
+        List.of(
+            Archetype.BUSINESS, Archetype.SUPPORT, Archetype.EVENT_PROCESSOR, Archetype.BATCH)) {
+      assertFalse(
+          violates(
+              ArchetypeRules.rules(role),
+              new ClassFileImporter().importClasses(OwnedPersistence.class, OwnedMessaging.class)));
     }
   }
 
@@ -91,11 +100,20 @@ class RoleRuleContractTest {
         List.of(
             "Future.get()",
             "CompletableFuture.get()",
+            "CompletableFuture.join()",
+            "Mono.block()",
             "Flux.blockFirst()",
+            "Flux.blockLast()",
+            "Flux.toStream()",
             "Flux.toIterable()",
+            "Schedulers.boundedElastic",
             "Schedulers.newBoundedElastic",
             "Thread.sleep",
             "HttpClient.send")) assertTrue(report.contains(call), report);
+    assertFalse(
+        violates(
+            ReactiveRules.rules(),
+            new ClassFileImporter().importClasses(Pipeline.class, NonBlockingNames.class)));
     assertEquals(Stack.REACTIVE, Stack.parse(" reactive "));
     assertEquals(Structure.EDA, Structure.parse(" eda "));
     assertEquals(Archetype.EVENT_PROCESSOR, Archetype.parse("event-processor"));
@@ -114,5 +132,39 @@ class RoleRuleContractTest {
             .count();
     assertEquals(0, servlet);
     assertEquals(1, reactive);
+  }
+
+  static class NonBlockingNames {
+    String join() {
+      return "a";
+    }
+
+    String get() {
+      return "b";
+    }
+
+    String block() {
+      return "c";
+    }
+
+    String sync() {
+      return "d";
+    }
+
+    String send() {
+      return "e";
+    }
+
+    String sleep() {
+      return "f";
+    }
+
+    String boundedElastic() {
+      return "g";
+    }
+
+    String compose() {
+      return join() + get() + block() + sync() + send() + sleep() + boundedElastic();
+    }
   }
 }

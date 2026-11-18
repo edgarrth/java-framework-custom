@@ -37,6 +37,7 @@ public java.lang.String json(pe.axiz.core.errors.Problem);
 public pe.axiz.core.errors.Problem problem(java.lang.Throwable, java.util.Locale, java.lang.String, java.lang.String);
 public pe.axiz.spring.errors.ProblemResponder(pe.axiz.core.errors.ProblemFactory);
 public static final java.lang.String MEDIA_TYPE = "application/problem+json";
+public void headers(org.springframework.http.HttpHeaders, pe.axiz.core.errors.Problem, java.lang.Throwable);
 }
 
 public class pe.axiz.spring.errors.ProblemWebExceptionHandler implements org.springframework.web.server.WebExceptionHandler {

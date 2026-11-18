@@ -23,6 +23,18 @@ mvn -pl axiz-cli -am -Pnative package    # native binary target/axiz (GraalVM 25
 
 Commands and options: see the README of `axiz-tools` and `axiz --help`.
 
+## Online project generation
+
+`axiz new ... --server https://initializr.example` uses `AXIZ_TOKEN` from the environment.
+The CLI does not persist that token or follow HTTP redirects. HTTP errors report the status
+without printing the server's response body, which may contain submitted data.
+
+Downloaded and expanded archives are each limited to 50 MiB; an archive may contain at most
+5,000 entries. Extraction rejects unsafe paths, symbolic-link destinations, duplicate output
+paths and file/directory conflicts before writing project files. `--force` allows replacing
+regular files but does not disable these checks. The target must be a directory under the user's
+control; use a private directory if another process could replace its subdirectories concurrently.
+
 ## Maven aggregators
 
 Run project commands with `--dir` pointing at the directory containing `.axiz/project.yaml`

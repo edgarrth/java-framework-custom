@@ -281,14 +281,14 @@ public final class ArtifactGenerator {
         "entityPackage",
         switch (p.structure()) {
           case HEXAGONAL -> "adapter.out.persistence";
-          case LAYERED -> "model";
+          case LAYERED, EDA, BATCH -> "repository.entity";
           default -> "persistence";
         });
     fw.put(
         "repositoryPackage",
         switch (p.structure()) {
           case HEXAGONAL -> "adapter.out.persistence";
-          case LAYERED -> "repository";
+          case LAYERED, EDA, BATCH -> "repository";
           default -> "persistence";
         });
     fw.put(
@@ -298,6 +298,7 @@ public final class ArtifactGenerator {
           case LAYERED -> "service";
           default -> "";
         });
+    fw.put("separateEntityPackage", !fw.get("entityPackage").equals(fw.get("repositoryPackage")));
     c.put("fw", paths(fw));
     c.put(
         "stack",

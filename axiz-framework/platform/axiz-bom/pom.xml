@@ -16,18 +16,18 @@
 
   <distributionManagement>
     <repository>
-      <id>nexus-releases</id>
-      <url>${axiz.nexus.url}/repository/maven-releases/</url>
+      <id>github</id>
+      <url>${axiz.packages.url}</url>
     </repository>
     <snapshotRepository>
-      <id>nexus-snapshots</id>
-      <url>${axiz.nexus.url}/repository/maven-snapshots/</url>
+      <id>github</id>
+      <url>${axiz.packages.url}</url>
     </snapshotRepository>
   </distributionManagement>
 
   <properties>
     <revision>2.0.0</revision>
-    <axiz.nexus.url>https://nexus.axiz.internal</axiz.nexus.url>
+    <axiz.packages.url>https://maven.pkg.github.com/edgarrth/java-framework-custom</axiz.packages.url>
   </properties>
 
   <dependencyManagement>

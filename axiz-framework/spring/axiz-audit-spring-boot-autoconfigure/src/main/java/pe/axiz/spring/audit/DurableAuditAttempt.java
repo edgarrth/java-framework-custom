@@ -52,9 +52,8 @@ final class DurableAuditAttempt {
   AuditEvent fallback(AuditSealer degradation) {
     TransactionOutcome observed = completion.get();
     AuditEvent attempted = signed.get();
-    if (attempted == null || attempted.integrity() == null)
-      return degradation.seal(original).withPersistence("NOT_CONFIRMED");
-    var seal = attempted.integrity();
+    var seal = attempted == null ? null : attempted.integrity();
+    if (seal == null) return degradation.seal(original).withPersistence("NOT_CONFIRMED");
     boolean rolledBack = observed == TransactionOutcome.ROLLED_BACK;
     return degradation
         .sealAgain(

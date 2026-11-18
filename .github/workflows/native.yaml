@@ -45,12 +45,10 @@ on:
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN:
         required: false
-      NEXUS_URL:
-        required: true
-      NEXUS_READ_USERNAME:
-        required: true
-      NEXUS_READ_PASSWORD:
-        required: true
+      PACKAGES_READ_USERNAME:
+        required: false
+      PACKAGES_READ_TOKEN:
+        required: false
       CANDIDATE_READ_TOKEN:
         required: false
 permissions: {}
@@ -75,6 +73,7 @@ jobs:
   build:
     name: native:${{ matrix.suffix }}
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
@@ -134,7 +133,7 @@ jobs:
       # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:
-          nexus-url: ${{ secrets.NEXUS_URL }}
+          packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
           candidate-bundle: ${{ steps.candidate.outputs.bundle-path }}
           candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
           candidate-source-repository: ${{ inputs.candidate-repository }}
@@ -142,8 +141,8 @@ jobs:
       - name: Compile and smoke the native executable
         shell: bash
         env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+          PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
           VERSION: ${{ inputs.version }}
           NATIVE_MODULE: ${{ inputs.module }}
           NATIVE_BINARY: ${{ inputs.binary }}
@@ -167,6 +166,7 @@ jobs:
           if-no-files-found: error
 
   sign:
+    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name != 'pull_request') }}
     needs: [axiz-workflows-trust, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 30

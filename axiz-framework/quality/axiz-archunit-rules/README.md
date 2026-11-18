@@ -25,7 +25,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `EdaRules` | Event-driven style: handlers live in `handler`, never expose HTTP controllers. |
 | `GeneralRules` | Hygiene rules every axiz service and module follows (section 16 of the definition). |
 | `HexagonalRules` | Hexagonal style: `domain` at the center, `application` (use cases and ports) around it, `adapter.in` and `adapter.out` outside, `config` wiring everything. |
-| `LayeredRules` | Layered style: `controller -> service -> repository`, entities in `model`. |
+| `LayeredRules` | Layered style: `controller -> service -> repository`, persistence entities in repositories. |
 
 ## Tests
 

@@ -79,6 +79,23 @@ class ArtifactGeneratorTest {
   }
 
   @Test
+  void persistentEntitiesAndRepositoriesStayInTheGovernedDataAccessLayer() {
+    for (var structure : List.of(Structure.LAYERED, Structure.EDA, Structure.BATCH)) {
+      var manifest = project(structure, Stack.SERVLET, "aurora", List.of());
+      var entity =
+          generator.generate(manifest, "entity", "payment", ArtifactGenerator.Options.none(), null);
+      var repository =
+          generator.generate(
+              manifest, "repository", "payment", ArtifactGenerator.Options.none(), null);
+      assertTrue(
+          text(entity, "repository/entity/PaymentEntity.java").contains("extends AuditableEntity"));
+      assertTrue(
+          text(repository, "repository/PaymentRepository.java")
+              .contains("import pe.axiz.orders.business.repository.entity.PaymentEntity;"));
+    }
+  }
+
+  @Test
   void followsTheStyleLayout() {
     ArtifactGenerator.Result useCase =
         generator.generate(

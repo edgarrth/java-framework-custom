@@ -30,6 +30,19 @@ public java.util.Map<java.lang.String, java.lang.Object> attributes();
 public java.util.Set<java.lang.String> roles();
 public java.util.Set<java.lang.String> scopes();
 public pe.axiz.core.security.AxizPrincipal(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.Set<java.lang.String>, java.util.Set<java.lang.String>, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+public static pe.axiz.core.security.AxizPrincipal$Builder builder();
+}
+
+public final class pe.axiz.core.security.AxizPrincipal$Builder {
+public pe.axiz.core.security.AxizPrincipal build();
+public pe.axiz.core.security.AxizPrincipal$Builder attributes(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.core.security.AxizPrincipal$Builder audience(java.util.List<java.lang.String>);
+public pe.axiz.core.security.AxizPrincipal$Builder clientId(java.lang.String);
+public pe.axiz.core.security.AxizPrincipal$Builder issuer(java.lang.String);
+public pe.axiz.core.security.AxizPrincipal$Builder roles(java.util.Set<java.lang.String>);
+public pe.axiz.core.security.AxizPrincipal$Builder scopes(java.util.Set<java.lang.String>);
+public pe.axiz.core.security.AxizPrincipal$Builder subject(java.lang.String);
+public pe.axiz.core.security.AxizPrincipal$Builder tenantId(java.lang.String);
 }
 
 public final class pe.axiz.core.security.ClaimMapping extends java.lang.Record {
@@ -43,7 +56,6 @@ public java.util.List<java.lang.String> roles();
 public java.util.List<java.lang.String> scopes();
 public java.util.List<java.lang.String> subject();
 public java.util.List<java.lang.String> tenant();
-public pe.axiz.core.security.ClaimMapping(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
 public pe.axiz.core.security.ClaimMapping(java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
 public static final java.util.List<java.lang.String> DEFAULT_MACHINE_MARKERS;
 public static pe.axiz.core.security.ClaimMapping defaults();
@@ -86,6 +98,7 @@ public interface pe.axiz.core.security.PublicEndpoint extends java.lang.annotati
 }
 
 public final class pe.axiz.core.security.RateLimitKeys {
+public static java.lang.String forAnonymous(java.lang.String, java.lang.String);
 public static java.lang.String forClient(pe.axiz.core.security.AxizPrincipal, java.lang.String);
 public static java.lang.String forSubject(pe.axiz.core.security.AxizPrincipal, java.lang.String);
 }

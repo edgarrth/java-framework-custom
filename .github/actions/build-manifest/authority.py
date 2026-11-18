@@ -8,10 +8,12 @@ GATES = {
                       "Verify mutation workers and encapsulation", "SBOM of the complete staged reactor",
                       "Scan the dependency inventory", "Record exact artifacts, evidence and parameters",
                       "Retain unsigned Maven product"],
-    "service": ["Source contracts and generated snapshots", "Final version, quality, tests and native verification",
-                "Package the previously verified image and chart once", "Scan source, dependency bytes and configuration",
-                "Scan every platform of the exact image digest", "Record service content, platform digests and evidence",
-                "Retain unsigned service product"],
+    "service-compile": ["Source contracts and generated snapshots", "Final version, quality, tests and native verification",
+                        "Package the previously verified image and chart once", "Scan source, dependency bytes and configuration",
+                        "Scan every local image archive", "Retain tested service transfer", "Upload tested service transfer"],
+    "service": ["Publish verified OCI bytes from the successful worker", "Scan published source and install the pinned scanner",
+                "Scan every platform of the exact image digest", "Complete vulnerability evidence and protected risk deadlines",
+                "Record service content, platform digests and evidence", "Retain unsigned service product"],
     "native-component": ["Compile and smoke the native executable", "Retain unsigned native component"],
 }
 

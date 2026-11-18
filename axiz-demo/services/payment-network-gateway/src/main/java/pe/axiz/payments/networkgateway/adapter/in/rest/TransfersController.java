@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.idempotency.Idempotent;
-import pe.axiz.payments.networkgateway.api.model.Transfer;
-import pe.axiz.payments.networkgateway.api.model.TransferRequest;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.Transfer;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.TransferRequest;
 import pe.axiz.payments.networkgateway.application.usecase.SendTransferUseCase;
 
 /**

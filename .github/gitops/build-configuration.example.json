@@ -1,7 +1,18 @@
 {
-  "registry": "",
-  "namespace": "",
+  "registry": "ghcr.io",
+  "namespace": "edgarrth",
   "repository": "edgarrth/java-framework-custom",
   "gitops_repository": "edgarrth/java-framework-custom",
-  "services": []
+  "services": [
+    "axiz-initializr",
+    "payment-orders",
+    "payment-process",
+    "payments-history",
+    "payment-network-gateway",
+    "beneficiaries",
+    "banking-core",
+    "settlement-batch",
+    "notifications-processor",
+    "payments-ux"
+  ]
 }

@@ -1,8 +1,8 @@
 package pe.axiz.payments.networkgateway.adapter.in.rest;
 
 import pe.axiz.core.money.Money;
-import pe.axiz.payments.networkgateway.api.model.Transfer;
-import pe.axiz.payments.networkgateway.api.model.TransferRequest;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.Transfer;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.TransferRequest;
 import pe.axiz.payments.networkgateway.domain.TransferOrder;
 
 /** Maps the HTTP boundary into validated domain values. */

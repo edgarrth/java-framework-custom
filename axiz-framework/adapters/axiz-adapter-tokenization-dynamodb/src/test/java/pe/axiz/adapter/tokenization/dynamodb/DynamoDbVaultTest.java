@@ -24,9 +24,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.AxizException;
+import pe.axiz.core.tokenization.Token;
 import pe.axiz.core.tokenization.vault.DeleteOutcome;
 import pe.axiz.core.tokenization.vault.PutOutcome;
 import pe.axiz.core.tokenization.vault.VaultIntegrityException;
+import pe.axiz.core.tokenization.vault.VaultScope;
 import pe.axiz.core.tokenization.vault.VaultUncertainException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
@@ -182,6 +184,118 @@ class DynamoDbVaultTest {
         .thenReturn(CompletableFuture.failedFuture(cancelled("None", "ConditionalCheckFailed")));
     assertEquals(
         DeleteOutcome.INTEGRITY_FAILURE, nativeVault.delete(record()).toCompletableFuture().join());
+  }
+
+  @Test
+  void asynchronousReadsPreserveControlIdentityScopeAndStoredToken() {
+    when(async.getItem(any(GetItemRequest.class)))
+        .thenReturn(
+            CompletableFuture.completedFuture(
+                GetItemResponse.builder().item(VaultItems.control(STATE)).build()),
+            CompletableFuture.completedFuture(
+                GetItemResponse.builder().item(VaultItems.record(record())).build()),
+            CompletableFuture.completedFuture(
+                GetItemResponse.builder().item(VaultItems.record(record())).build()),
+            CompletableFuture.completedFuture(
+                GetItemResponse.builder().item(VaultItems.record(record())).build()),
+            CompletableFuture.completedFuture(GetItemResponse.builder().build()));
+    assertEquals(STATE, nativeVault.keyState(STATE.keysetId()).toCompletableFuture().join());
+    assertEquals(
+        TOKEN, nativeVault.find(SCOPE, TOKEN).toCompletableFuture().join().orElseThrow().token());
+    var otherScope =
+        new VaultScope(
+            SCOPE.type(), "other", SCOPE.domain(), SCOPE.profileId(), SCOPE.canonicalVersion());
+    assertTrue(nativeVault.find(otherScope, TOKEN).toCompletableFuture().join().isEmpty());
+    var entropy = new byte[16];
+    entropy[15] = 1;
+    var otherToken = Token.fromEntropy(entropy);
+    assertInstanceOf(
+        VaultIntegrityException.class,
+        assertThrows(
+                CompletionException.class,
+                () -> nativeVault.find(SCOPE, otherToken).toCompletableFuture().join())
+            .getCause());
+    assertTrue(nativeVault.find(SCOPE, TOKEN).toCompletableFuture().join().isEmpty());
+    when(client.getItem(any(GetItemRequest.class)))
+        .thenReturn(GetItemResponse.builder().item(VaultItems.control(STATE)).build());
+    assertEquals(STATE, vault.keyState(STATE.keysetId()));
+  }
+
+  @Test
+  void duplicateFingerprintReturnsTheConfirmedOwnerInBothModelsAndRetriesOnlyConfirmedRaces() {
+    var candidates = hashes(SCOPE);
+    var first =
+        TransactGetItemsResponse.builder()
+            .responses(
+                item(VaultItems.fingerprint(record(), candidates.getFirst())), item(Map.of()))
+            .build();
+    var snapshot =
+        TransactGetItemsResponse.builder()
+            .responses(
+                item(VaultItems.fingerprint(record(), candidates.getFirst())),
+                item(Map.of()),
+                item(VaultItems.record(record())))
+            .build();
+    var absent =
+        TransactGetItemsResponse.builder().responses(item(Map.of()), item(Map.of())).build();
+    var collision = cancelled("None", "None", "ConditionalCheckFailed", "None", "None");
+    when(client.transactWriteItems(any(TransactWriteItemsRequest.class))).thenThrow(collision);
+    when(client.transactGetItems(any(TransactGetItemsRequest.class)))
+        .thenReturn(first, snapshot, absent, first, snapshot);
+    assertEquals(
+        new PutOutcome.FingerprintExists(TOKEN),
+        vault.putIfAbsent(record(), STATE, List.of(candidates.getLast())));
+    assertEquals(
+        new PutOutcome.FingerprintExists(TOKEN),
+        vault.putIfAbsent(record(), STATE, List.of(candidates.getLast())));
+    when(async.transactWriteItems(any(TransactWriteItemsRequest.class)))
+        .thenReturn(CompletableFuture.failedFuture(collision));
+    when(async.transactGetItems(any(TransactGetItemsRequest.class)))
+        .thenReturn(
+            CompletableFuture.completedFuture(first),
+            CompletableFuture.completedFuture(snapshot),
+            CompletableFuture.completedFuture(absent),
+            CompletableFuture.completedFuture(first),
+            CompletableFuture.completedFuture(snapshot));
+    assertEquals(
+        new PutOutcome.FingerprintExists(TOKEN),
+        nativeVault
+            .putIfAbsent(record(), STATE, List.of(candidates.getLast()))
+            .toCompletableFuture()
+            .join());
+    assertEquals(
+        new PutOutcome.FingerprintExists(TOKEN),
+        nativeVault
+            .putIfAbsent(record(), STATE, List.of(candidates.getLast()))
+            .toCompletableFuture()
+            .join());
+    verify(async, times(3)).transactWriteItems(any(TransactWriteItemsRequest.class));
+  }
+
+  @Test
+  void asynchronousDeletionDistinguishesAbsenceChangeSuccessAndExhaustedConflicts() {
+    when(async.transactWriteItems(any(TransactWriteItemsRequest.class)))
+        .thenReturn(
+            CompletableFuture.completedFuture(TransactWriteItemsResponse.builder().build()),
+            CompletableFuture.failedFuture(cancelled("ConditionalCheckFailed", "None")),
+            CompletableFuture.failedFuture(cancelled("ConditionalCheckFailed", "None")),
+            CompletableFuture.failedFuture(cancelled("None", "TransactionConflict")));
+    when(async.getItem(any(GetItemRequest.class)))
+        .thenReturn(
+            CompletableFuture.completedFuture(GetItemResponse.builder().build()),
+            CompletableFuture.completedFuture(
+                GetItemResponse.builder().item(VaultItems.record(record())).build()));
+    assertEquals(DeleteOutcome.DELETED, nativeVault.delete(record()).toCompletableFuture().join());
+    assertEquals(
+        DeleteOutcome.NOT_FOUND, nativeVault.delete(record()).toCompletableFuture().join());
+    assertEquals(DeleteOutcome.CHANGED, nativeVault.delete(record()).toCompletableFuture().join());
+    assertInstanceOf(
+        AxizException.class,
+        assertThrows(
+                CompletionException.class,
+                () -> nativeVault.delete(record()).toCompletableFuture().join())
+            .getCause());
+    verify(async, times(6)).transactWriteItems(any(TransactWriteItemsRequest.class));
   }
 
   @Test

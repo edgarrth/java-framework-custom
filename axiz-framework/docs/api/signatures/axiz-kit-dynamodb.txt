@@ -38,15 +38,32 @@ public void save(T);
 public void transact(java.util.function.Consumer<software.amazon.awssdk.enhanced.dynamodb.model.TransactWriteItemsEnhancedRequest$Builder>);
 }
 
-public class pe.axiz.kit.dynamodb.EncryptedAttributeConverter implements software.amazon.awssdk.enhanced.dynamodb.AttributeConverter<java.lang.String> {
-protected java.lang.String context();
+public abstract class pe.axiz.kit.dynamodb.EncryptedAttributeConverter implements software.amazon.awssdk.enhanced.dynamodb.AttributeConverter<java.lang.String> {
+protected abstract java.lang.String context();
+protected pe.axiz.kit.dynamodb.EncryptedAttributeConverter(pe.axiz.core.crypto.FieldEncryptor);
 public java.lang.Object transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
 public java.lang.String transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
-public pe.axiz.kit.dynamodb.EncryptedAttributeConverter();
 public software.amazon.awssdk.enhanced.dynamodb.AttributeValueType attributeValueType();
 public software.amazon.awssdk.enhanced.dynamodb.EnhancedType<java.lang.String> type();
 public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.Object);
 public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.String);
+}
+
+public final class pe.axiz.kit.dynamodb.EncryptedTableSchema<T> {
+public pe.axiz.kit.dynamodb.EncryptedTableSchema(java.lang.Class<T>, java.util.function.Supplier<T>, pe.axiz.core.crypto.FieldEncryptor);
+public pe.axiz.kit.dynamodb.EncryptedTableSchema<T> attribute(software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttribute<T, ?>);
+public pe.axiz.kit.dynamodb.EncryptedTableSchema<T> encryptedString(java.lang.String, java.lang.String, java.util.function.Function<T, java.lang.String>, java.util.function.BiConsumer<T, java.lang.String>);
+public software.amazon.awssdk.enhanced.dynamodb.TableSchema<T> build();
+}
+
+public final class pe.axiz.kit.dynamodb.EncryptedValueAttributeConverter implements software.amazon.awssdk.enhanced.dynamodb.AttributeConverter<pe.axiz.core.crypto.EncryptedValue> {
+public java.lang.Object transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public pe.axiz.core.crypto.EncryptedValue transformTo(software.amazon.awssdk.services.dynamodb.model.AttributeValue);
+public pe.axiz.kit.dynamodb.EncryptedValueAttributeConverter();
+public software.amazon.awssdk.enhanced.dynamodb.AttributeValueType attributeValueType();
+public software.amazon.awssdk.enhanced.dynamodb.EnhancedType<pe.axiz.core.crypto.EncryptedValue> type();
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(java.lang.Object);
+public software.amazon.awssdk.services.dynamodb.model.AttributeValue transformFrom(pe.axiz.core.crypto.EncryptedValue);
 }
 
 public final class pe.axiz.kit.dynamodb.InvalidCursorException extends pe.axiz.core.errors.BusinessException {

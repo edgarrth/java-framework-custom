@@ -15,12 +15,19 @@ public final class pe.axiz.quality.archunit.ArchetypeRules {
 public static java.util.List<com.tngtech.archunit.lang.ArchRule> rules(pe.axiz.quality.archunit.Archetype);
 }
 
+public final class pe.axiz.quality.archunit.ArchitectureSelfCheck {
+public static void verify(java.util.List<com.tngtech.archunit.lang.ArchRule>);
+public static void verify(pe.axiz.quality.archunit.AxizArchitecture);
+}
+
 public final class pe.axiz.quality.archunit.AxizArchitecture {
 public java.util.List<com.tngtech.archunit.lang.ArchRule> rules();
 public pe.axiz.quality.archunit.AxizArchitecture archetype(pe.axiz.quality.archunit.Archetype);
+public pe.axiz.quality.archunit.AxizArchitecture cardData(pe.axiz.quality.archunit.CardDataScope);
 public pe.axiz.quality.archunit.AxizArchitecture extensions(pe.axiz.quality.archunit.Extension...);
 public pe.axiz.quality.archunit.AxizArchitecture stack(pe.axiz.quality.archunit.Stack);
 public pe.axiz.quality.archunit.AxizArchitecture structure(pe.axiz.quality.archunit.Structure);
+public pe.axiz.quality.archunit.AxizArchitecture tokenization(pe.axiz.quality.archunit.TokenizationScope);
 public static pe.axiz.quality.archunit.AxizArchitecture of(java.lang.String);
 public void verify();
 public void verify(com.tngtech.archunit.core.domain.JavaClasses);
@@ -32,6 +39,18 @@ public static java.util.List<com.tngtech.archunit.lang.ArchRule> rules(java.lang
 
 public final class pe.axiz.quality.archunit.BffRules {
 public static java.util.List<com.tngtech.archunit.lang.ArchRule> rules(java.lang.String);
+}
+
+public final class pe.axiz.quality.archunit.CardDataRules {
+public static java.util.List<com.tngtech.archunit.lang.ArchRule> rules(java.lang.String, pe.axiz.quality.archunit.CardDataScope);
+}
+
+public final class pe.axiz.quality.archunit.CardDataScope extends java.lang.Enum<pe.axiz.quality.archunit.CardDataScope> {
+public static final pe.axiz.quality.archunit.CardDataScope EDGE;
+public static final pe.axiz.quality.archunit.CardDataScope NONE;
+public static final pe.axiz.quality.archunit.CardDataScope VAULT;
+public static pe.axiz.quality.archunit.CardDataScope valueOf(java.lang.String);
+public static pe.axiz.quality.archunit.CardDataScope[] values();
 }
 
 public final class pe.axiz.quality.archunit.CqrsRules {
@@ -50,12 +69,15 @@ public static pe.axiz.quality.archunit.Extension[] values();
 }
 
 public final class pe.axiz.quality.archunit.GeneralRules {
+public static final com.tngtech.archunit.lang.ArchRule BUSINESS_USES_INJECTED_CLOCK;
 public static final com.tngtech.archunit.lang.ArchRule KITS_ONLY_IN_PERSISTENCE_PACKAGES;
 public static final com.tngtech.archunit.lang.ArchRule NO_AUTOCONFIGURATION_DEPENDENCIES;
 public static final com.tngtech.archunit.lang.ArchRule NO_AWS_SDK_V1;
 public static final com.tngtech.archunit.lang.ArchRule NO_BLOCK_IN_REACTIVE_CODE;
 public static final com.tngtech.archunit.lang.ArchRule NO_DEPRECATED_API;
+public static final com.tngtech.archunit.lang.ArchRule NO_DOUBLE_DECIMAL_CONSTRUCTION;
 public static final com.tngtech.archunit.lang.ArchRule NO_FIELD_INJECTION;
+public static final com.tngtech.archunit.lang.ArchRule NO_FLOATING_POINT_IN_BUSINESS_MODELS;
 public static final com.tngtech.archunit.lang.ArchRule NO_GENERIC_EXCEPTIONS;
 public static final com.tngtech.archunit.lang.ArchRule NO_JAVA_UTIL_LOGGING;
 public static final com.tngtech.archunit.lang.ArchRule NO_JODA_TIME;
@@ -67,6 +89,9 @@ public static final com.tngtech.archunit.lang.ArchRule NO_SYNCHRONIZED_BUSINESS_
 public static final com.tngtech.archunit.lang.ArchRule NO_SYSTEM_OUT;
 public static final com.tngtech.archunit.lang.ArchRule NO_TECHNOLOGY_ADAPTERS;
 public static final com.tngtech.archunit.lang.ArchRule NO_TESTING_AUTHENTICATION;
+public static final com.tngtech.archunit.lang.ArchRule NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_CLASSES;
+public static final com.tngtech.archunit.lang.ArchRule NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_METHODS;
+public static final com.tngtech.archunit.lang.ArchRule SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED;
 public static final com.tngtech.archunit.lang.ArchRule UNIQUE_BEAN_NAMES;
 public static java.util.List<com.tngtech.archunit.lang.ArchRule> all();
 }
@@ -100,4 +125,21 @@ public static final pe.axiz.quality.archunit.Structure LAYERED;
 public static pe.axiz.quality.archunit.Structure parse(java.lang.String);
 public static pe.axiz.quality.archunit.Structure valueOf(java.lang.String);
 public static pe.axiz.quality.archunit.Structure[] values();
+}
+
+public final class pe.axiz.quality.archunit.TokenizationRules {
+public static java.util.List<com.tngtech.archunit.lang.ArchRule> rules(java.lang.String, pe.axiz.quality.archunit.TokenizationScope);
+}
+
+public final class pe.axiz.quality.archunit.TokenizationScope extends java.lang.Enum<pe.axiz.quality.archunit.TokenizationScope> {
+public static final pe.axiz.quality.archunit.TokenizationScope CLIENT;
+public static final pe.axiz.quality.archunit.TokenizationScope NONE;
+public static final pe.axiz.quality.archunit.TokenizationScope VAULT;
+public static pe.axiz.quality.archunit.TokenizationScope valueOf(java.lang.String);
+public static pe.axiz.quality.archunit.TokenizationScope[] values();
+}
+
+public final class pe.axiz.quality.archunit.selfcheck.application.UnsafeMoney {
+public java.math.BigDecimal decimal();
+public pe.axiz.quality.archunit.selfcheck.application.UnsafeMoney(double);
 }

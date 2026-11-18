@@ -5,18 +5,12 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sensitive.MaskType;
 import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
-import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
 
 /**
- * Frequent beneficiary of a customer, stored in the {@code beneficiaries} table (partition key
- * {@code customerId}, sort key {@code beneficiaryId}). Removal is logical: {@code deletedAt} is set
- * and the item stays for audit; queries skip removed items. {@code version} gives optimistic
- * locking on every write.
+ * Frequent beneficiary of a customer, independent of its persistence mapping. Removal is logical:
+ * {@code deletedAt} is set and the item stays for audit; queries skip removed items. {@code
+ * version} gives optimistic locking on every write.
  */
-@DynamoDbBean
 public class Beneficiary {
 
   private String customerId = "";
@@ -30,7 +24,7 @@ public class Beneficiary {
   private @Nullable Instant deletedAt;
   private @Nullable Long version;
 
-  /** Required by the DynamoDB enhanced client and JSON codecs. */
+  /** Required by JSON codecs and repository mapping. */
   public Beneficiary() {}
 
   /** A new, active beneficiary. */
@@ -70,7 +64,6 @@ public class Beneficiary {
     return cci.equals(otherCci);
   }
 
-  @DynamoDbPartitionKey
   public String getCustomerId() {
     return customerId;
   }
@@ -79,7 +72,6 @@ public class Beneficiary {
     this.customerId = customerId;
   }
 
-  @DynamoDbSortKey
   public String getBeneficiaryId() {
     return beneficiaryId;
   }
@@ -146,7 +138,6 @@ public class Beneficiary {
     this.deletedAt = deletedAt;
   }
 
-  @DynamoDbVersionAttribute
   public @Nullable Long getVersion() {
     return version;
   }

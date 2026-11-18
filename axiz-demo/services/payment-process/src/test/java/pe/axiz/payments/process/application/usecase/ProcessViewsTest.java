@@ -13,7 +13,16 @@ import pe.axiz.payments.process.domain.ProcessStatus;
 class ProcessViewsTest {
 
   static SagaState state(SagaStatus status, String error) {
-    return SagaState.builder().sagaId("O-1").sagaName("payment").status(status).stepIndex(2).context("ctx").error(error).updatedAt(Instant.EPOCH).version(3).build();
+    return SagaState.builder()
+        .sagaId("O-1")
+        .sagaName("payment")
+        .status(status)
+        .stepIndex(2)
+        .context("ctx")
+        .error(error)
+        .updatedAt(Instant.EPOCH)
+        .version(3)
+        .build();
   }
 
   @Test

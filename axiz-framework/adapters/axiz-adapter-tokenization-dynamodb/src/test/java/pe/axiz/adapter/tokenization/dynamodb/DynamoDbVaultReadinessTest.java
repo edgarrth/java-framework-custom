@@ -149,6 +149,32 @@ class DynamoDbVaultReadinessTest {
       }
   }
 
+  @Test
+  void nativeVerificationChecksAllControlBatchesAndRejectsEnabledTtl() {
+    var client = mock(DynamoDbAsyncClient.class);
+    when(client.describeTable(any(DescribeTableRequest.class)))
+        .thenReturn(
+            CompletableFuture.completedFuture(
+                DescribeTableResponse.builder().table(schema()).build()));
+    when(client.describeTimeToLive(any(DescribeTimeToLiveRequest.class)))
+        .thenReturn(CompletableFuture.completedFuture(ttl(TimeToLiveStatus.DISABLED)));
+    when(client.transactGetItems(any(TransactGetItemsRequest.class)))
+        .thenAnswer(call -> CompletableFuture.completedFuture(controls(call.getArgument(0))));
+    var keysets = IntStream.range(0, 64).mapToObj(i -> "keyset" + i).collect(Collectors.toSet());
+    var readiness =
+        new DynamoDbVaultReadiness(
+            "vault",
+            TIMEOUT,
+            new Keys(keysets, KEYS.fingerprints(), KEYS.wrappingWrite(), KEYS.wrappingRead()));
+    assertNull(readiness.verify(client).toCompletableFuture().join());
+    verify(client, times(2)).transactGetItems(any(TransactGetItemsRequest.class));
+    when(client.describeTimeToLive(any(DescribeTimeToLiveRequest.class)))
+        .thenReturn(CompletableFuture.completedFuture(ttl(TimeToLiveStatus.ENABLED)));
+    assertThrows(
+        CompletionException.class, () -> readiness.verify(client).toCompletableFuture().join());
+    verify(client, times(2)).transactGetItems(any(TransactGetItemsRequest.class));
+  }
+
   private static DynamoDbClient healthy() {
     var client = mock(DynamoDbClient.class);
     when(client.describeTable(any(DescribeTableRequest.class)))

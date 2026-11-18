@@ -45,8 +45,5 @@ awslocal sns subscribe --topic-arn "$topic_arn" --protocol sqs --notification-en
 awslocal s3 mb s3://local-bucket || true
 awslocal s3 cp "$here/NET-SETTLE-SAMPLE.txt" s3://local-bucket/in/settlement/NET-SETTLE-SAMPLE.txt || true
 
-# demo contact data (fictitious): customers of the Keycloak demo realm
-awslocal dynamodb put-item --table-name local-notification-contacts --item \
-  '{"customerId":{"S":"C-1001"},"channel":{"S":"EMAIL"},"address":{"S":"ana.demo@example.com"},"locale":{"S":"es-PE"},"paymentAlerts":{"BOOL":true}}' || true
-awslocal dynamodb put-item --table-name local-notification-contacts --item \
-  '{"customerId":{"S":"C-1002"},"channel":{"S":"SMS"},"address":{"S":"+51900000002"},"locale":{"S":"en"},"paymentAlerts":{"BOOL":true}}' || true
+# The local application seeds fictitious contacts with Axiz field encryption.
+# No plaintext address is written to DynamoDB by infrastructure scripts.

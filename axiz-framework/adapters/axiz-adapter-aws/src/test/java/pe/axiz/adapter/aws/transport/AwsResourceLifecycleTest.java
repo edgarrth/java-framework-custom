@@ -20,6 +20,36 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 class AwsResourceLifecycleTest {
   @Test
+  void closingResourceOwnerClosesItsLastInstrumentationBindingExactlyOnce() {
+    var closes = new AtomicInteger();
+    var credentialsClosed = new AtomicInteger();
+    var owner =
+        new AsyncAwsClients(
+            source(credentialsClosed),
+            Clock.systemUTC(),
+            Duration.ofDays(1),
+            AsyncAwsTransportSettings.defaults());
+    owner.observeCompletions(
+        pool ->
+            new CompletionObserver() {
+              @Override
+              public void rejected() {}
+
+              @Override
+              public void completed(long nanos) {}
+
+              @Override
+              public void close() {
+                closes.incrementAndGet();
+              }
+            });
+    owner.close();
+    owner.close();
+    assertEquals(1, closes.get());
+    assertEquals(1, credentialsClosed.get());
+  }
+
+  @Test
   void synchronousClientsOwnTheirResourceAndRetainExistingBuilderConfiguration() {
     var closes = new AtomicInteger();
     var source = source(closes);

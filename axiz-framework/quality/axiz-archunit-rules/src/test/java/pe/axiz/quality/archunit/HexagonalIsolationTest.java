@@ -154,6 +154,25 @@ class HexagonalIsolationTest {
   }
 
   @Test
+  void fieldReviewMetadataIsAllowedWithoutOpeningTheCommonsPackage() throws Exception {
+    assertFalse(
+        violates(
+            Map.of(
+                "sample.domain.Limits",
+                "package sample.domain; public record Limits("
+                    + "@pe.axiz.core.commons.ReviewedState(reason = \"Immutable defensive copy\") "
+                    + "java.util.Map<String, Integer> values) {"
+                    + " public Limits { values = java.util.Map.copyOf(values); } }")));
+    assertTrue(
+        violates(
+            Map.of(
+                "sample.domain.Limits",
+                "package sample.domain; public class Limits { pe.axiz.core.commons.Registry state; }",
+                "pe.axiz.core.commons.Registry",
+                "package pe.axiz.core.commons; public class Registry {}")));
+  }
+
+  @Test
   void axizCannotHidePersistenceFromTheDomain() throws Exception {
     assertTrue(
         violates(

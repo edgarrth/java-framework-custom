@@ -38,6 +38,12 @@ def validate(build, deploy):
     for permissions in [build.get("permissions", {}), *(job.get("permissions", {}) for job in build.get("jobs", {}).values())]:
         if permissions == "write-all" or (isinstance(permissions, dict) and permissions.get("contents") == "write"):
             errors.append("build: contents write permission is forbidden")
+    for name, job in build.get("jobs", {}).items():
+        if job.get("permissions", {}).get("packages") == "write":
+            for step in job.get("steps", []):
+                if (COMPILE.search(step.get("run", "")) or "/setup-maven@" in step.get("uses", "")
+                        or re.search(r"docker\s+run|java\s+-jar|npm\s+(?:run|ci|install)", step.get("run", ""))):
+                    errors.append(name + ": package publication cannot execute project build/application code")
     for call in calls(build):
         if DEPLOY_CALL.search(str(call.get("uses", ""))):
             errors.append("build: may not invoke a deploy workflow")

@@ -36,7 +36,16 @@ class PaymentNotificationHandlerTest {
                   .withCustomTags(TagPolicy.allowed("medium", Set.of("email", "sms", "push")))));
 
   static EventEnvelope envelope(String id) {
-    return EventEnvelope.builder().id(id).source("urn:axiz:payment-orders").type("pe.axiz.payments.payment-order.status-changed.v1").time(Instant.parse("2026-10-12T15:00:00Z")).subject("O-1").dataContentType("application/json").data(new byte[0]).extensions(Map.of()).build()
+    return EventEnvelope.builder()
+        .id(id)
+        .source("urn:axiz:payment-orders")
+        .type("pe.axiz.payments.payment-order.status-changed.v1")
+        .time(Instant.parse("2026-10-12T15:00:00Z"))
+        .subject("O-1")
+        .dataContentType("application/json")
+        .data(new byte[0])
+        .extensions(Map.of())
+        .build()
         .withExtension(EventEnvelope.CORRELATION_ID, "corr-1");
   }
 

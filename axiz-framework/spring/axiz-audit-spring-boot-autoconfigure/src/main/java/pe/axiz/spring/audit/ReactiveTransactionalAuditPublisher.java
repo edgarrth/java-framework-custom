@@ -1,5 +1,6 @@
 package pe.axiz.spring.audit;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -284,6 +285,9 @@ public final class ReactiveTransactionalAuditPublisher
 
     private Builder() {}
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Borrowed outbox port must share the transaction resource and lifecycle.")
     public Builder outbox(ReactiveOutboxWriter value) {
       this.outbox = value;
       return this;

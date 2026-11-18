@@ -1,9 +1,17 @@
+public final class pe.axiz.adapter.outbox.r2dbc.R2dbcAuditChainState implements pe.axiz.kit.reactor.audit.ReactiveAuditChainState {
+public java.lang.Object transactionResource();
+public pe.axiz.adapter.outbox.r2dbc.R2dbcAuditChainState(pe.axiz.kit.r2dbc.ReactiveSql, io.r2dbc.spi.ConnectionFactory, java.lang.String, java.time.Clock, java.time.Duration);
+public reactor.core.publisher.Mono<pe.axiz.core.audit.AuditIntegrity> advance(java.lang.String, java.util.function.UnaryOperator<pe.axiz.core.audit.AuditIntegrity>);
+public reactor.core.publisher.Mono<pe.axiz.core.audit.ChainCheckpoint> checkpoint(java.lang.String);
+}
+
 public final class pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore implements pe.axiz.core.outbox.OutboxStore {
 public boolean markFailed(java.lang.String, java.lang.String, int, java.time.Instant, java.lang.String, boolean);
 public boolean markPublished(java.lang.String, java.lang.String, java.time.Instant);
 public boolean retry(java.lang.String);
 public boolean skip(java.lang.String, java.lang.String);
 public int purgePublished(java.time.Instant);
+public java.lang.Object transactionResource();
 public java.util.List<pe.axiz.core.outbox.OutboxRecord> claimDue(int, java.time.Duration, java.lang.String);
 public long countBlockedAggregates();
 public long countPending();
@@ -15,7 +23,9 @@ public void append(pe.axiz.core.outbox.OutboxRecord);
 public void verifySchema();
 }
 
-public final class pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter {
-public pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter(pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore, java.time.Clock);
+public final class pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter implements pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter {
+public java.lang.Object transactionResource();
+public pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter(pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore, java.time.Clock);
+public pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxWriter(pe.axiz.adapter.outbox.r2dbc.R2dbcOutboxStore, java.time.Clock, pe.axiz.core.crypto.AsyncPayloadProtector);
 public reactor.core.publisher.Mono<java.lang.Void> write(java.lang.String, pe.axiz.core.messaging.EventEnvelope, java.lang.String);
 }

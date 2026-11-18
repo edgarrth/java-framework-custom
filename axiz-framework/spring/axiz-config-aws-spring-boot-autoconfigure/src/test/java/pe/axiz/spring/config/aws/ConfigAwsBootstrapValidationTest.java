@@ -86,6 +86,46 @@ class ConfigAwsBootstrapValidationTest {
     }
   }
 
+  @Test
+  void remotePrefixIsCanonicalAndCannotEscapeItsConfiguredNamespace() {
+    for (String prefix :
+        new String[] {
+          "axiz", "/", "/axiz/", "/axiz//nested", "/axiz/../other", "/axiz/a b", "/axiz/@"
+        }) {
+      var env =
+          new MockEnvironment()
+              .withProperty("axiz.config.environment", "test")
+              .withProperty("axiz.config.parameter-store.enabled", "true")
+              .withProperty("axiz.config.parameter-store.application", "service")
+              .withProperty("axiz.config.parameter-store.prefix", prefix);
+      assertThatThrownBy(() -> new ParameterStoreBootstrapSelection(env))
+          .isInstanceOf(IllegalStateException.class);
+    }
+    var env =
+        new MockEnvironment()
+            .withProperty("axiz.config.environment", "test")
+            .withProperty("axiz.config.parameter-store.enabled", "true")
+            .withProperty("axiz.config.parameter-store.application", "service")
+            .withProperty("axiz.config.parameter-store.prefix", "/A_z-9/second");
+    var selection = new ParameterStoreBootstrapSelection(env);
+    assertThat(selection.getSource().prefix()).isEqualTo("/A_z-9/second");
+    assertThat(selection.getProperty("internal")).isNull();
+  }
+
+  @Test
+  void resourceIdentityDeduplicatesImportsWithTheSameUnderlyingDestination() {
+    var first = new AxizParameterStoreResource("destination", false);
+    var same = new AxizParameterStoreResource("destination", true);
+    var other = new AxizParameterStoreResource("other", false);
+    assertThat(first)
+        .isEqualTo(same)
+        .isNotEqualTo(other)
+        .isNotEqualTo("destination")
+        .isNotEqualTo(null);
+    assertThat(first.hashCode()).isEqualTo(same.hashCode());
+    assertThat(first.toString()).isEqualTo("destination");
+  }
+
   private static SpringApplication application(Map<String, Object> variables) {
     var app = new SpringApplication(EmptyApplication.class);
     app.setWebApplicationType(WebApplicationType.NONE);

@@ -113,7 +113,8 @@ class PaymentOrderPersistenceAdapterTest {
   }
 
   final Rows rows = new Rows();
-  final BlindIndex blindIndex = new BlindIndex(Map.of("i1", "k".repeat(32).getBytes(StandardCharsets.UTF_8)), "i1");
+  final BlindIndex blindIndex =
+      new BlindIndex(Map.of("i1", "k".repeat(32).getBytes(StandardCharsets.UTF_8)), "i1");
   final PaymentOrderPersistenceAdapter adapter =
       new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex);
 
@@ -261,7 +262,7 @@ class PaymentOrderPersistenceAdapterTest {
 
     rows.exists = true;
     assertThat(adapter.exists("C-1", CCI, amount, DAY)).isTrue();
-    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.cciScope(CUSTOMER)).encoded();
+    String index = blindIndex.index(CCI, PaymentOrderPersistenceAdapter.cciScope("C-1")).encoded();
     assertThat(rows.calls).contains("release", "exists:" + index + ":REJECTED");
     assertThat(index).doesNotContain(CCI);
   }

@@ -1,5 +1,6 @@
 package pe.axiz.spring.tokenization;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
@@ -27,7 +28,12 @@ import reactor.core.publisher.Mono;
  * Native remote API; relay identity is read at subscription from that subscriber's Reactor context.
  */
 public final class ReactiveRemoteTokenizer implements ReactiveTokenizer {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Injected thread-safe HTTP client; authentication, transport and lifecycle are shared.")
   private final WebClient client;
+
   private final Duration timeout;
 
   public ReactiveRemoteTokenizer(WebClient client, Duration timeout) {

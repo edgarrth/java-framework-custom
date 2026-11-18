@@ -10,8 +10,8 @@ import java.io.InputStream;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryUpdate;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryRequest;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryUpdate;
 import tools.jackson.databind.json.JsonMapper;
 
 /**

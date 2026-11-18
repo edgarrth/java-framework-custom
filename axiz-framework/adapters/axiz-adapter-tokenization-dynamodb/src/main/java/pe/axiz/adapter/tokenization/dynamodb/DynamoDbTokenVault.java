@@ -1,5 +1,6 @@
 package pe.axiz.adapter.tokenization.dynamodb;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,12 @@ import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledExcepti
  * Borrowed synchronous DynamoDB client; the operator provisions schema-v1 and key control items.
  */
 public final class DynamoDbTokenVault implements TokenVault {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "The SDK client is an injected collaborator with shared identity and lifecycle; it cannot be copied.")
   private final DynamoDbClient client;
+
   private final VaultRequests requests;
 
   public DynamoDbTokenVault(DynamoDbClient client, String table, Duration requestTimeout) {

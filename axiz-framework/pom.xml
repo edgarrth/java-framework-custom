@@ -3,7 +3,7 @@
   axiz-parent: root POM of the axiz-framework monorepo.
   1) Aggregator: lists every module so `./mvnw verify` builds the whole framework in order.
   2) Shared build definition: version (${revision}), Java 25, plugin versions and configuration,
-     enforcer rules, formatting, static analysis and publication to Nexus.
+     enforcer rules, formatting, static analysis and publication to GitHub Packages.
   No service inherits this POM directly: services use axiz-parent-service.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -62,14 +62,14 @@
 
   <distributionManagement>
     <repository>
-      <id>nexus-releases</id>
-      <name>Nexus releases</name>
-      <url>${axiz.nexus.url}/repository/maven-releases/</url>
+      <id>github</id>
+      <name>GitHub Packages releases</name>
+      <url>${axiz.packages.url}</url>
     </repository>
     <snapshotRepository>
-      <id>nexus-snapshots</id>
-      <name>Nexus snapshots</name>
-      <url>${axiz.nexus.url}/repository/maven-snapshots/</url>
+      <id>github</id>
+      <name>GitHub Packages snapshots</name>
+      <url>${axiz.packages.url}</url>
     </snapshotRepository>
   </distributionManagement>
 
@@ -87,8 +87,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.outputTimestamp>2026-01-01T00:00:00Z</project.build.outputTimestamp>
 
-    <!-- Nexus base URL; CI passes -Daxiz.nexus.url=https://nexus.example (never committed credentials) -->
-    <axiz.nexus.url>https://nexus.axiz.internal</axiz.nexus.url>
+    <!-- GitHub Packages base URL; CI passes -Daxiz.packages.url=https://maven.pkg.github.com/owner/repository (never committed credentials) -->
+    <axiz.packages.url>https://maven.pkg.github.com/edgarrth/java-framework-custom</axiz.packages.url>
 
     <!-- Quality gates (section 15 of the definition) -->
     <axiz.coverage.line>0.80</axiz.coverage.line>

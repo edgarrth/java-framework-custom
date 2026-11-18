@@ -3,7 +3,7 @@ nameOverride: ""
 environment: dev
 
 image:
-  repository: nexus-docker.axiz.internal/axiz/axiz-initializr
+  repository: ghcr.io/edgarrth/java-framework-custom/axiz-initializr
   tag: ""          # set by the deployment (GitOps): the commit of the image
   digest: ""       # set by the deployment (GitOps): pins the signed image
   pullPolicy: IfNotPresent

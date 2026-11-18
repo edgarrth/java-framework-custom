@@ -1,0 +1,12 @@
+public class pe.axiz.spring.saga.jdbc.AxizSagaJdbcAutoConfiguration {
+public pe.axiz.spring.saga.jdbc.AxizSagaJdbcAutoConfiguration();
+}
+
+public final class pe.axiz.spring.saga.jdbc.AxizSagaJdbcProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String table();
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
+public pe.axiz.spring.saga.jdbc.AxizSagaJdbcProperties(java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
+}

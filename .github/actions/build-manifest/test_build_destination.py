@@ -38,8 +38,8 @@ class BuildDestinationTest(unittest.TestCase):
         for mutation in mutations:
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 BuildDestination.parse(json.dumps(self.value | mutation))
-        with self.assertRaises(ValueError):
-            BuildDestination.parse((ROOT / 'gitops/build-configuration.example.json').read_text())
+        self.assertEqual('ghcr.io', BuildDestination.parse(
+            (ROOT / 'gitops/build-configuration.example.json').read_text()).registry)
         for field in self.value:
             value = dict(self.value)
             del value[field]

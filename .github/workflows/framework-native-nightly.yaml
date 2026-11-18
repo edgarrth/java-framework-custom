@@ -12,9 +12,8 @@ jobs:
     uses: ./.github/workflows/framework-native-reactive.yaml
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
   axiz-workflows-trust:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
@@ -33,6 +32,7 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   native:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
@@ -47,6 +47,5 @@ jobs:
          "target/samples/sample-settlement-batch"]
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}

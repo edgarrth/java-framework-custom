@@ -25,7 +25,7 @@ python .github/actions/build-manifest/build_destination.py render \
 El proceso de configuración de la plataforma debe suministrar ese mismo JSON al secreto
 `BUILD_DESTINATION` del productor, resolver automático y deploy. Los callers reutilizables transmiten únicamente ese secreto;
 no existe un selector alternativo del registro. El JSON no contiene contraseñas. Las credenciales
-`REGISTRY_BUILD_USERNAME/PASSWORD` siguen siendo independientes.
+`GITHUB_TOKEN` with `packages: write` siguen siendo independientes.
 
 La autoridad `registry` es un `host[:puerto]` usado por Docker y Helm para autenticar. `namespace`
 es una ruta relativa del registro. Con GHCR, comienza por la cuenta u organización autorizada,

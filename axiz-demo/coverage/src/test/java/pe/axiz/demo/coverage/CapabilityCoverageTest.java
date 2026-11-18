@@ -18,12 +18,22 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
  * The demo must show every capability of the axiz catalog: each one needs an entry in
- * coverage.yaml, declared by the service in .axiz/project.yaml and evidenced in its code or
+ * coverage.yaml, declared by the service or executable example and evidenced in its code or
  * configuration. A new capability in the catalog fails this test until the demo uses it.
  */
 class CapabilityCoverageTest {
 
-  static final Path SERVICES = Path.of("..", "services");
+  static final Path DEMO = Path.of("..").toAbsolutePath().normalize();
+
+  static Path project(Map<String, String> use) {
+    String service = use.get("service");
+    String example = use.get("example");
+    assertTrue(
+        (service == null) != (example == null), "Choose exactly one service or executable example");
+    String name = service == null ? example : service;
+    assertTrue(name.matches("[a-z][a-z0-9-]*"), "Invalid example/service name");
+    return DEMO.resolve(service == null ? "examples" : "services").resolve(name);
+  }
 
   static Object yaml(InputStream in) {
     return new Yaml(new SafeConstructor(new LoaderOptions())).load(in);
@@ -50,9 +60,10 @@ class CapabilityCoverageTest {
   }
 
   @SuppressWarnings("unchecked")
-  static List<String> declared(String service) throws IOException {
+  static List<String> declared(Path project, boolean example) throws IOException {
     try (InputStream in =
-        Files.newInputStream(SERVICES.resolve(service).resolve(".axiz/project.yaml"))) {
+        Files.newInputStream(
+            project.resolve(example ? "capabilities.yaml" : ".axiz/project.yaml"))) {
       return (List<String>) ((Map<String, Object>) yaml(in)).get("capabilities");
     }
   }
@@ -68,10 +79,18 @@ class CapabilityCoverageTest {
         continue;
       }
       for (Map<String, String> use : uses) {
-        String service = use.get("service");
-        Path file = SERVICES.resolve(service).resolve(use.get("file"));
-        if (!declared(service).contains(capability)) {
-          problems.add(capability + ": not declared by " + service);
+        Path project = project(use);
+        Path file = project.resolve(use.get("file")).normalize();
+        assertTrue(file.startsWith(project), "Capability evidence cannot leave its project");
+        assertTrue(
+            Files.isRegularFile(project.resolve("pom.xml")),
+            "Evidence must belong to a Maven module");
+        String module = DEMO.relativize(project).toString().replace('\\', '/');
+        assertTrue(
+            Files.readString(DEMO.resolve("pom.xml")).contains("<module>" + module + "</module>"),
+            "Every demonstrated module must execute in the normal demo reactor");
+        if (!declared(project, use.containsKey("example")).contains(capability)) {
+          problems.add(capability + ": not declared by " + project);
         } else if (!Files.isRegularFile(file)) {
           problems.add(capability + ": missing " + file);
         } else if (!Files.readString(file, StandardCharsets.UTF_8).contains(use.get("contains"))) {

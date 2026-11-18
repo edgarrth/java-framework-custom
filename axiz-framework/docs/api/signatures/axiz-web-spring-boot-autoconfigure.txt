@@ -36,8 +36,8 @@ public pe.axiz.spring.web.AxizWebProperties$ApiVersion apiVersion();
 public pe.axiz.spring.web.AxizWebProperties$Cors cors();
 public pe.axiz.spring.web.AxizWebProperties$Json json();
 public pe.axiz.spring.web.AxizWebProperties$Pagination pagination();
-public pe.axiz.spring.web.AxizWebProperties(java.util.List<pe.axiz.spring.web.AxizWebProperties$Header>, java.util.List<java.lang.String>, java.lang.String, pe.axiz.spring.web.AxizWebProperties$Pagination, pe.axiz.spring.web.AxizWebProperties$ApiVersion, pe.axiz.spring.web.AxizWebProperties$Cors, pe.axiz.spring.web.AxizWebProperties$Json);
 public pe.axiz.spring.web.AxizWebProperties(java.util.List<pe.axiz.spring.web.AxizWebProperties$Header>, java.util.List<java.lang.String>, java.lang.String, pe.axiz.spring.web.AxizWebProperties$Pagination, pe.axiz.spring.web.AxizWebProperties$ApiVersion, pe.axiz.spring.web.AxizWebProperties$Cors, pe.axiz.spring.web.AxizWebProperties$Json, org.springframework.util.unit.DataSize, java.util.List<pe.axiz.spring.web.AxizWebProperties$BodyLimit>);
+public static pe.axiz.spring.web.AxizWebProperties$Builder builder();
 }
 
 public final class pe.axiz.spring.web.AxizWebProperties$ApiVersion extends java.lang.Record {
@@ -62,6 +62,19 @@ public org.springframework.util.unit.DataSize maxSize();
 public pe.axiz.spring.web.AxizWebProperties$BodyLimit(java.lang.String, org.springframework.util.unit.DataSize);
 }
 
+public final class pe.axiz.spring.web.AxizWebProperties$Builder {
+public pe.axiz.spring.web.AxizWebProperties build();
+public pe.axiz.spring.web.AxizWebProperties$Builder apiVersion(pe.axiz.spring.web.AxizWebProperties$ApiVersion);
+public pe.axiz.spring.web.AxizWebProperties$Builder bodyLimits(java.util.List<pe.axiz.spring.web.AxizWebProperties$BodyLimit>);
+public pe.axiz.spring.web.AxizWebProperties$Builder channelHeader(java.lang.String);
+public pe.axiz.spring.web.AxizWebProperties$Builder cors(pe.axiz.spring.web.AxizWebProperties$Cors);
+public pe.axiz.spring.web.AxizWebProperties$Builder excludedPaths(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Builder headers(java.util.List<pe.axiz.spring.web.AxizWebProperties$Header>);
+public pe.axiz.spring.web.AxizWebProperties$Builder json(pe.axiz.spring.web.AxizWebProperties$Json);
+public pe.axiz.spring.web.AxizWebProperties$Builder maxRequestBody(org.springframework.util.unit.DataSize);
+public pe.axiz.spring.web.AxizWebProperties$Builder pagination(pe.axiz.spring.web.AxizWebProperties$Pagination);
+}
+
 public final class pe.axiz.spring.web.AxizWebProperties$Cors extends java.lang.Record {
 public boolean allowCredentials();
 public boolean enabled();
@@ -76,6 +89,20 @@ public java.util.List<java.lang.String> allowedOriginPatterns();
 public java.util.List<java.lang.String> allowedOrigins();
 public java.util.List<java.lang.String> exposedHeaders();
 public pe.axiz.spring.web.AxizWebProperties$Cors(boolean, java.lang.String, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, boolean, java.time.Duration);
+public static pe.axiz.spring.web.AxizWebProperties$Cors$Builder builder();
+}
+
+public final class pe.axiz.spring.web.AxizWebProperties$Cors$Builder {
+public pe.axiz.spring.web.AxizWebProperties$Cors build();
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder allowCredentials(boolean);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder allowedHeaders(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder allowedMethods(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder allowedOriginPatterns(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder allowedOrigins(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder enabled(boolean);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder exposedHeaders(java.util.List<java.lang.String>);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder maxAge(java.time.Duration);
+public pe.axiz.spring.web.AxizWebProperties$Cors$Builder pathPattern(java.lang.String);
 }
 
 public final class pe.axiz.spring.web.AxizWebProperties$Header extends java.lang.Record {

@@ -26,6 +26,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
+import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
+import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget;
 import pe.axiz.adapter.tokenization.redis.RedisTokenBudget;
 import pe.axiz.core.errors.AxizException;
@@ -145,10 +147,18 @@ class ValkeyTokenBudgetIT {
       String namespace = "test-budget-" + NAMES.incrementAndGet();
       var synchronous =
           new RedisTokenBudget(
-              first, namespace, policy(limits, 100), (n, id) -> ALARMS.incrementAndGet());
+              first,
+              namespace,
+              policy(limits, 100),
+              (n, id) -> ALARMS.incrementAndGet(),
+              new RedisRateLimiter(first.sync(), "", false));
       var nativeBudget =
           new RedisAsyncTokenBudget(
-              second, namespace, policy(limits, 100), (n, id) -> ALARMS.incrementAndGet());
+              second,
+              namespace,
+              policy(limits, 100),
+              (n, id) -> ALARMS.incrementAndGet(),
+              new RedisAsyncRateLimiter(second.async(), ""));
       synchronous.acquire(CALLER, TokenOperation.LOOKUP, SCOPE).close();
       StepVerifier.create(
               call(() -> nativeBudget.acquire(CALLER, TokenOperation.TOKENIZE, SCOPE))
@@ -186,9 +196,20 @@ class ValkeyTokenBudgetIT {
   void concurrencyIsAtomicAcrossReplicasAndHeldUntilOwnerRelease() {
     String namespace = "test-budget-" + NAMES.incrementAndGet();
     var policy = policy(HIGH_LIMITS, 3);
-    var sync = new RedisTokenBudget(first, namespace, policy, (n, id) -> ALARMS.incrementAndGet());
+    var sync =
+        new RedisTokenBudget(
+            first,
+            namespace,
+            policy,
+            (n, id) -> ALARMS.incrementAndGet(),
+            new RedisRateLimiter(first.sync(), "", false));
     var nativeBudget =
-        new RedisAsyncTokenBudget(second, namespace, policy, (n, id) -> ALARMS.incrementAndGet());
+        new RedisAsyncTokenBudget(
+            second,
+            namespace,
+            policy,
+            (n, id) -> ALARMS.incrementAndGet(),
+            new RedisAsyncRateLimiter(second.async(), ""));
     var held = sync.acquire(CALLER, TokenOperation.LOOKUP, SCOPE);
     List<AsyncTokenBudget.Permit> admitted = new ArrayList<>();
     AtomicInteger limited = new AtomicInteger();
@@ -237,10 +258,18 @@ class ValkeyTokenBudgetIT {
     String namespace = "test-budget-" + NAMES.incrementAndGet();
     var sync =
         new RedisTokenBudget(
-            first, namespace, policy(HIGH_LIMITS, 3), (n, id) -> ALARMS.incrementAndGet());
+            first,
+            namespace,
+            policy(HIGH_LIMITS, 3),
+            (n, id) -> ALARMS.incrementAndGet(),
+            new RedisRateLimiter(first.sync(), "", false));
     var nativeBudget =
         new RedisAsyncTokenBudget(
-            second, namespace, policy(HIGH_LIMITS, 3), (n, id) -> ALARMS.incrementAndGet());
+            second,
+            namespace,
+            policy(HIGH_LIMITS, 3),
+            (n, id) -> ALARMS.incrementAndGet(),
+            new RedisAsyncRateLimiter(second.async(), ""));
     valkey.getDockerClient().pauseContainerCmd(valkey.getContainerId()).exec();
     try {
       var failure =

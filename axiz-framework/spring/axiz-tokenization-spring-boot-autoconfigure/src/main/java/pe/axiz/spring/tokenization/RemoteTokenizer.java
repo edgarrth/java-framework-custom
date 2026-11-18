@@ -1,5 +1,6 @@
 package pe.axiz.spring.tokenization;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
@@ -21,7 +22,12 @@ import pe.axiz.core.tokenization.TokenizerCapabilities;
 
 /** Imperative remote boundary; requests contain values or tokens, never trusted caller claims. */
 public final class RemoteTokenizer implements Tokenizer {
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Injected thread-safe HTTP client; authentication, transport and lifecycle are shared.")
   private final RestClient client;
+
   private final Duration timeout;
 
   public RemoteTokenizer(RestClient client, Duration timeout) {

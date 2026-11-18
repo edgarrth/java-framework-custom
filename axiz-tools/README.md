@@ -71,9 +71,11 @@ promotes the Initializr image and chart through GitOps. Both require the complet
 attempt, external manifest hash, protected environment and predecessor; Initializr additionally
 requires a full values commit. The two products have distinct manifest hashes, even in one CI run.
 
-Read-only Nexus credentials are `NEXUS_READ_USERNAME/PASSWORD`; registry build credentials are
-`REGISTRY_BUILD_USERNAME/PASSWORD`. Deployment uses separate `NEXUS_PUBLISH_USERNAME/PASSWORD`
-or registry-read/GitOps credentials. Configure `AXIZ_JVM_BASE_IMAGE` and `AXIZ_NATIVE_BASE_IMAGE`
+Builds read Maven dependencies with `GITHUB_TOKEN` (`packages: read`) or the optional
+`PACKAGES_READ_USERNAME` / `PACKAGES_READ_TOKEN` for cross-repository access. Maven promotion and
+GHCR publication use the job token with `packages: write`; service deployment reads GHCR and
+uses separate GitOps credentials. See [registry configuration](../.github/docs/github-packages.md).
+Configure `AXIZ_JVM_BASE_IMAGE` and `AXIZ_NATIVE_BASE_IMAGE`
 as digest-pinned repository variables. Optional framework candidates are passed to the JVM,
 native and Initializr builders through the same repository/run/attempt/hash inputs.
 

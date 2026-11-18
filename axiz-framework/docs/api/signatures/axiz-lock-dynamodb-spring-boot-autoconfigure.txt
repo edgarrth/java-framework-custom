@@ -1,0 +1,11 @@
+public class pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbAutoConfiguration {
+public pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbAutoConfiguration();
+}
+
+public final class pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String table();
+public pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbProperties(java.lang.String);
+}

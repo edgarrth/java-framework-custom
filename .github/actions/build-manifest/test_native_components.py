@@ -265,11 +265,11 @@ class NativeComponentsTest(unittest.TestCase):
         (directory / 'axiz').write_bytes(executable('linux-x64'))
         output = self.root / 'rejected-native'
         response = subprocess.CompletedProcess([], 0, stdout=b'axiz 1.0.0\n', stderr=b'')
-        with patch.object(native.platform, 'system', return_value='Linux'), patch.object(native.platform, 'machine', return_value='x86_64'), patch.dict(os.environ, {'NEXUS_PASSWORD': 'must-not-inherit', 'GH_TOKEN': 'must-not-inherit'}), patch.object(native.subprocess, 'run', return_value=response) as run:
+        with patch.object(native.platform, 'system', return_value='Linux'), patch.object(native.platform, 'machine', return_value='x86_64'), patch.dict(os.environ, {'PACKAGES_TOKEN': 'must-not-inherit', 'GH_TOKEN': 'must-not-inherit'}), patch.object(native.subprocess, 'run', return_value=response) as run:
             with self.assertRaisesRegex(ValueError, 'version differs'):
                 native.create(self.root, self.data, self.spec, 'linux-x64', output)
             for call in run.call_args_list:
-                self.assertNotIn('NEXUS_PASSWORD', call.kwargs['env'])
+                self.assertNotIn('PACKAGES_TOKEN', call.kwargs['env'])
                 self.assertNotIn('GH_TOKEN', call.kwargs['env'])
             self.assertFalse(output.exists())
 

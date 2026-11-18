@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/settlement-batch
+  repository: ghcr.io/edgarrth/java-framework-custom/settlement-batch
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

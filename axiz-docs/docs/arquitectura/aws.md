@@ -20,7 +20,7 @@ Gateway, CodeArtifact, ECR) queda fuera, y el enforcer bloquea sus librerías.
 | Amazon S3 | archivos, batch, archivo de auditoría | `axiz-adapter-storage-s3` | LocalStack |
 | Observabilidad | OpenTelemetry Collector en EKS; Prometheus y Grafana; trazas y logs en el backend OTLP de plataforma | `axiz-observability-*`, `axiz-metrics-*` | Grafana LGTM en Docker |
 
-Fuera de AWS: Nexus Repository (artefactos Maven e imágenes), GitHub Actions (CI/CD), Argo CD
+Fuera de AWS: GitHub Packages (Maven), GHCR (imágenes y charts OCI), GitHub Actions (CI/CD), Argo CD
 (despliegue) y el IdP OIDC corporativo.
 
 ## Convenciones de los clientes AWS

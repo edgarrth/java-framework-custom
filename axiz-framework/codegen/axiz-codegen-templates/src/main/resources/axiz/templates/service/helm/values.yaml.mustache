@@ -3,7 +3,7 @@ nameOverride: ""
 environment: ""
 
 image:
-  repository: nexus-docker.axiz.internal/axiz/{{project.name}}
+  repository: ghcr.io/edgarrth/java-framework-custom/{{project.name}}
   tag: ""          # set by the deployment (GitOps): the commit of the image
   digest: ""       # set by the deployment (GitOps): pins the signed image
   pullPolicy: IfNotPresent

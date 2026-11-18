@@ -1,5 +1,5 @@
 # Argo CD project of the axiz services: sources limited to the organization's repositories and
-# Nexus, destinations limited to the service namespaces, no cluster-scoped resources.
+# GHCR, destinations limited to the service namespaces, no cluster-scoped resources.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:

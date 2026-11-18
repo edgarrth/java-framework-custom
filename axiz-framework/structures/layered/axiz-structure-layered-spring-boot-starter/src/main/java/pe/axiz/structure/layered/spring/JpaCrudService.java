@@ -46,13 +46,24 @@ public abstract class JpaCrudService<E, RequestT, ResponseT, I>
       JpaSpecificationExecutor<E> scoped,
       EntityManager entityManager,
       String resourceName) {
-    this.repository = Objects.requireNonNull(repository);
-    this.scoped = Objects.requireNonNull(scoped);
-    this.entityManager = Objects.requireNonNull(entityManager);
-    this.persistence = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
-    this.resourceName = Objects.requireNonNull(resourceName);
+    Objects.requireNonNull(repository);
+    Objects.requireNonNull(scoped);
+    Objects.requireNonNull(entityManager);
+    Objects.requireNonNull(resourceName);
+    PersistenceUnitUtil unit = validatedPersistence(entityType, entityManager);
+    super();
+    this.repository = repository;
+    this.scoped = scoped;
+    this.entityManager = entityManager;
+    this.persistence = unit;
+    this.resourceName = resourceName;
+  }
+
+  private static <E> PersistenceUnitUtil validatedPersistence(
+      Class<E> entityType, EntityManager entityManager) {
     if (!entityManager.getMetamodel().entity(entityType).hasVersionAttribute())
       throw new IllegalArgumentException("CRUD entities require an effective JPA version mapping");
+    return entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
   }
 
   /**

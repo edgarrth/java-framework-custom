@@ -5,6 +5,7 @@
       every module with production code is a `provided` dependency of axiz-coverage-report
       (JaCoCo's report-aggregate takes classes only from compile, runtime and provided
       dependencies; a `test` dependency adds execution data and nothing to measure it against)
+      test-only modules must also be included as `test` dependencies for their execution data
   check-coverage-aggregate.py --report <jacoco.xml>
       an aggregated report holds classes and counters (an empty one fails)
 """
@@ -16,7 +17,7 @@ from defusedxml import ElementTree as ET
 REPORT_POM = 'quality/axiz-coverage-report/pom.xml'
 
 
-def modules_with_code(root):
+def modules_with_code(root, source_directory='main'):
     found = set()
     for dirpath, dirnames, files in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in ('target', '.git', 'node_modules', 'templates')]
@@ -28,7 +29,7 @@ def modules_with_code(root):
         packaging = re.search(r'<packaging>(.*?)</packaging>', own)
         if packaging and packaging.group(1) != 'jar':
             continue
-        main = os.path.join(dirpath, 'src', 'main', 'java')
+        main = os.path.join(dirpath, 'src', source_directory, 'java')
         has_code = any(f.endswith('.java') and f not in ('package-info.java', 'module-info.java')
                        for _, _, fs in os.walk(main) for f in fs)
         if has_code:
@@ -42,13 +43,19 @@ def check_inventory(root):
             for dependency in pom.findall('{*}dependencies/{*}dependency')
             if dependency.findtext('{*}groupId') == 'pe.axiz'}
     errors = 0
-    for artifact in sorted(modules_with_code(root)):
+    production = modules_with_code(root)
+    for artifact in sorted(production):
         if artifact not in deps:
             print(f'::error::{REPORT_POM}: {artifact} has code but is not in the aggregated report')
             errors += 1
         elif deps[artifact] != 'provided':
             print(f'::error::{REPORT_POM}: {artifact} has scope {deps[artifact]}, use provided '
                   '(test dependencies give no classes to the report)')
+            errors += 1
+    for artifact in sorted(modules_with_code(root, 'test') - production):
+        if deps.get(artifact) != 'test':
+            print(f'::error::{REPORT_POM}: test-only module {artifact} must be included '
+                  'with scope test so its execution data reaches the report')
             errors += 1
     print(f'{len(deps)} modules in the aggregated report, {errors} problems')
     return errors

@@ -115,6 +115,7 @@ class TestSupportTest {
     new KafkaTestConfiguration().axizKafkaProperties(kafka).accept(properties::put);
     assertEquals("localhost:32123", properties.get("axiz.messaging.kafka.bootstrap-servers").get());
     assertEquals("false", properties.get("axiz.messaging.kafka.iam").get());
+    assertEquals("configured", properties.get("axiz.messaging.kafka.authentication").get());
   }
 
   @Test

@@ -15,6 +15,10 @@ contract:
   openapi: null
   asyncapi: src/main/asyncapi/asyncapi.yaml
 capabilities:
+  - crypto
+  - secrets-file
+  - config-aws
+  - messaging-msk
   - foundation
   - web
   - errors

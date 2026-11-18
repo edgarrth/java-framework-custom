@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/payment-network-gateway
+  repository: ghcr.io/edgarrth/java-framework-custom/payment-network-gateway
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

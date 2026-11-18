@@ -41,10 +41,12 @@ def check(root, samples=None, workflows_directory=None):
                 errors.append(f'{path.name}: workflow and release guard versions differ')
         if path.name in ('framework-native-nightly.yaml', 'framework-samples-matrix.yaml'):
             for node in nodes(document):
-                for credential in ('USERNAME', 'PASSWORD'):
-                    key = 'NEXUS_' + credential
-                    expected = '${{ secrets.NEXUS_READ_' + credential + ' }}'
-                    if key in node and node[key] != expected:
+                expected = {
+                    'PACKAGES_USERNAME': '${{ secrets.PACKAGES_READ_USERNAME || github.actor }}',
+                    'PACKAGES_TOKEN': '${{ secrets.PACKAGES_READ_TOKEN || github.token }}',
+                }
+                for key, value in expected.items():
+                    if key in node and node[key] != value:
                         errors.append(f'{path.name}: {key} must use the read-only credential')
         for node in nodes(document):
             run = node.get('run', '')

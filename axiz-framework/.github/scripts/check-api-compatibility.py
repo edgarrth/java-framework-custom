@@ -40,50 +40,79 @@ def public_api(jar):
     return "\n\n".join(signatures) + "\n"
 
 
-def published_versions(nexus, coordinates, opener=urllib.request.urlopen):
-    """Query only final releases of this product. Candidates and local M2 are never baselines."""
-    parsed = urllib.parse.urlsplit(nexus)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.query or parsed.fragment or parsed.username:
-        raise ValueError("Invalid final publication Nexus URL")
-    metadata_request = urllib.request.Request(nexus.rstrip("/") + "/service/rest/v1/repositories/maven-releases")
-    username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
-    if username and password:
-        metadata_request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
-    with opener(metadata_request, timeout=30) as response:
-        repository = json.load(response)
-    if not isinstance(repository, dict) or any(repository.get(key) != value for key, value in
-            {"name": "maven-releases", "format": "maven2", "type": "hosted"}.items()):
-        raise ValueError("Final publication repository is missing or ambiguous")
-    token, seen, versions = None, set(), set()
-    while True:
-        params = {"repository": "maven-releases", "group": "pe.axiz"}
-        if token:
-            params["continuationToken"] = token
-        request = urllib.request.Request(nexus.rstrip("/") + "/service/rest/v1/search?" + urllib.parse.urlencode(params))
-        username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
-        if username and password:
-            request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
-        # Errors, invalid JSON, incomplete pagination and ambiguous responses fail closed.
-        with opener(request, timeout=30) as response:
-            data = json.load(response)
-        if not isinstance(data, dict) or not isinstance(data.get("items"), list) or "continuationToken" not in data:
-            raise ValueError("Invalid response from final publication repository")
-        for item in data["items"]:
-            if not isinstance(item, dict) or not all(key in item for key in ("repository", "group", "name", "version")):
-                raise ValueError("Incomplete publication metadata")
-            if not all(isinstance(item[key], str) and item[key].strip()
-                       for key in ("repository", "group", "name", "version")):
-                raise ValueError("Invalid publication metadata")
-            if item["repository"] != "maven-releases":
-                raise ValueError("Publication search returned a different repository")
-            if item["group"] == "pe.axiz" and item["name"] in coordinates and isinstance(item["version"], str) and item["version"].startswith("2."):
-                versions.add(item["version"])
-        token = data["continuationToken"]
-        if token is None:
-            return versions
-        if not isinstance(token, str) or not token or token in seen:
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, file, code, message, headers, url):
+        raise ValueError("Registry redirects cannot receive publication credentials")
+
+
+def registry_repository(url):
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != "https" or parsed.netloc != "maven.pkg.github.com"
+            or not re.fullmatch(r"/[a-z0-9][a-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*/?", parsed.path)
+            or parsed.query or parsed.fragment):
+        raise ValueError("Invalid GitHub Maven publication URL")
+    return parsed.path.strip("/")
+
+
+def github_json(path, opener):
+    token = os.getenv("PACKAGES_TOKEN")
+    if not token:
+        raise ValueError("PACKAGES_TOKEN with read:packages is mandatory")
+    request = urllib.request.Request("https://api.github.com/" + path, headers={
+        "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"})
+    with opener(request, timeout=30) as response:
+        return json.load(response)
+
+
+def package_pages(path, opener):
+    seen = set()
+    for page in range(1, 10001):
+        separator = "&" if "?" in path else "?"
+        data = github_json(path + separator + f"per_page=100&page={page}", opener)
+        if not isinstance(data, list) or len(data) > 100:
             raise ValueError("Invalid publication pagination")
-        seen.add(token)
+        for item in data:
+            if not isinstance(item, dict) or type(item.get("id")) is not int or item["id"] <= 0:
+                raise ValueError("Incomplete publication metadata")
+            if item["id"] in seen:
+                raise ValueError("Repeated publication pagination")
+            seen.add(item["id"])
+            yield item
+        if len(data) < 100:
+            return
+    raise ValueError("Publication pagination exceeds its bound")
+
+
+def published_versions(registry, coordinates, opener=None):
+    """Authenticate and enumerate GitHub Packages; 401/403/404 never mean an empty registry."""
+    if opener is None:
+        opener = urllib.request.build_opener(NoRedirect()).open
+    repository = registry_repository(registry)
+    info = github_json("repos/" + repository, opener)
+    if (not isinstance(info, dict) or info.get("full_name", "").lower() != repository.lower()
+            or info.get("owner", {}).get("type") not in {"User", "Organization"}):
+        raise ValueError("Final publication repository is missing or ambiguous")
+    owner = repository.split("/")[0]
+    prefix = ("orgs/" if info["owner"]["type"] == "Organization" else "users/") + owner + "/packages"
+    versions = set()
+    for package in package_pages(prefix + "?package_type=maven", opener):
+        if (package.get("package_type") != "maven" or not isinstance(package.get("name"), str)
+                or not isinstance(package.get("repository"), dict)
+                or not isinstance(package["repository"].get("full_name"), str)):
+            raise ValueError("Invalid publication metadata")
+        if package["repository"]["full_name"].lower() != repository.lower():
+            continue
+        if package["name"] not in {"pe.axiz." + name for name in coordinates}:
+            continue
+        name = urllib.parse.quote(package["name"], safe="")
+        for version in package_pages(prefix + "/maven/" + name + "/versions?state=active", opener):
+            value = version.get("name")
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError("Invalid publication version metadata")
+            if value.startswith("2."):
+                versions.add(value)
+    return versions
 
 
 def validate_first_release(policy, versions):
@@ -93,8 +122,11 @@ def validate_first_release(policy, versions):
         raise ValueError("First-release mode is forbidden: this product already has published v2 releases")
 
 
-def release_baseline(root, nexus, version, directory, opener=urllib.request.urlopen):
+def release_baseline(root, registry, version, directory, opener=None):
     """Pin actual final-repository bytes outside Maven's candidate/local cache."""
+    registry_repository(registry)
+    if opener is None:
+        opener = urllib.request.build_opener(NoRedirect()).open
     directory.mkdir(parents=True, exist_ok=True)
     records = {}
     for artifact, (_, packaging, _) in modules(root).items():
@@ -103,9 +135,9 @@ def release_baseline(root, nexus, version, directory, opener=urllib.request.urlo
         if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", artifact):
             raise ValueError("Invalid framework coordinate")
         filename = f"{artifact}-{version}.jar"
-        url = nexus.rstrip("/") + f"/repository/maven-releases/pe/axiz/{artifact}/{version}/{filename}"
+        url = registry.rstrip("/") + f"/pe/axiz/{artifact}/{version}/{filename}"
         request = urllib.request.Request(url)
-        username, password = os.getenv("NEXUS_USERNAME"), os.getenv("NEXUS_PASSWORD")
+        username, password = os.getenv("PACKAGES_USERNAME"), os.getenv("PACKAGES_TOKEN")
         if username and password:
             request.add_header("Authorization", "Basic " + base64.b64encode(f"{username}:{password}".encode()).decode())
         with opener(request, timeout=30) as response:
@@ -119,14 +151,14 @@ def release_baseline(root, nexus, version, directory, opener=urllib.request.urlo
                 raise ValueError("Invalid published baseline JAR: " + artifact)
         records[artifact] = sha(data)
     (directory / "baseline.json").write_text(json.dumps({"schema": 1, "version": version,
-        "origin": nexus.rstrip("/") + "/repository/maven-releases", "artifacts": records}, indent=2) + "\n")
+        "origin": registry.rstrip("/"), "artifacts": records}, indent=2) + "\n")
 
 
-def verify_baseline(root, nexus, version, directory):
+def verify_baseline(root, registry, version, directory):
     data = json.loads((directory / "baseline.json").read_text())
     expected = {artifact for artifact, (_, packaging, _) in modules(root).items()
                 if packaging != "pom" and artifact not in INTERNAL}
-    if data.get("schema") != 1 or data.get("version") != version or data.get("origin") != nexus.rstrip("/") + "/repository/maven-releases" or set(data.get("artifacts", {})) != expected:
+    if data.get("schema") != 1 or data.get("version") != version or data.get("origin") != registry.rstrip("/") or set(data.get("artifacts", {})) != expected:
         raise ValueError("Missing or invalid published baseline evidence")
     for artifact, digest in data["artifacts"].items():
         if sha((directory / f"{artifact}-{version}.jar").read_bytes()) != digest:
@@ -207,7 +239,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path, default=Path("target/api-evidence"))
-    parser.add_argument("--nexus-url", default=os.getenv("NEXUS_URL"))
+    parser.add_argument("--packages-url", default=os.getenv("PACKAGES_URL"))
     preparation = parser.add_mutually_exclusive_group()
     preparation.add_argument("--inventory-only", action="store_true", help="Local review preparation only; never a passing release gate")
     preparation.add_argument("--prepare-baseline", action="store_true", help="Pin the actual published baseline before Maven comparison; never passes the gate alone")
@@ -226,19 +258,19 @@ def main():
         if policy["mode"] not in {"first-release", "published-baseline"}:
             raise ValueError("Unknown API gate mode")
         if not args.inventory_only:
-            if not args.nexus_url:
-                raise ValueError("NEXUS_URL is mandatory; repository lookup must not be skipped")
-            versions = published_versions(args.nexus_url, set(modules(root)))
+            if not args.packages_url:
+                raise ValueError("PACKAGES_URL is mandatory; repository lookup must not be skipped")
+            versions = published_versions(args.packages_url, set(modules(root)))
             status["publishedVersions"] = sorted(versions)
             if policy["mode"] == "first-release":
                 validate_first_release(policy, versions)
             elif policy["baseline"] not in versions:
-                raise ValueError("Required v2 baseline is not published in maven-releases")
+                raise ValueError("Required v2 baseline is not published in GitHub Packages")
         if args.prepare_baseline:
             if policy["mode"] != "published-baseline":
                 raise ValueError("Baseline preparation requires published-baseline mode")
             check_baseline_version(policy["baseline"], version)
-            release_baseline(root, args.nexus_url, policy["baseline"], args.baseline_directory)
+            release_baseline(root, args.packages_url, policy["baseline"], args.baseline_directory)
             print("Published baseline pinned from final repository; API gate not yet passed")
             return 0
         observed = inventory(root, version, args.output / "signatures")
@@ -250,7 +282,7 @@ def main():
             verify_reviewed_signatures(root, approved)
             check_signatures(observed, approved)
             if policy["mode"] == "published-baseline":
-                verify_baseline(root, args.nexus_url, policy["baseline"], args.baseline_directory)
+                verify_baseline(root, args.packages_url, policy["baseline"], args.baseline_directory)
                 check_comparisons(root, policy["baseline"], version, args.baseline_directory)
             status["passed"] = True
             print("API gate passed: final publication repository verified, every published API inspected")

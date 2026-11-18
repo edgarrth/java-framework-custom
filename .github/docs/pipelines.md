@@ -5,6 +5,9 @@ El contrato consta de cuatro workflows reutilizables: `lib-build.yaml`, `lib-dep
 Cada producto usa `ci.yaml` para construir y `deploy.yaml` para publicar; las plantillas de
 servicios, librerías y starters generan esos dos consumidores.
 
+Maven usa GitHub Packages e imágenes y charts usan GHCR. Consulte la
+[configuración de GitHub Packages](github-packages.md) para consumo local, permisos y publicación.
+
 ## Identidad del build
 
 La entrada fija `source-sha` al commit completo del productor y declara `version`. Las candidatas
@@ -18,7 +21,7 @@ RFC 8785. Su SHA-256 identifica el producto, sus parámetros efectivos, gates y 
 Los bundles de Actions se llaman `build-bundle-<manifest-sha256>`: dos productos de la misma
 ejecución pueden coexistir sin reemplazarse. Se conservan durante 90 días.
 
-- Librerías: staging Maven local, JAR/POM/BOM y checksums; el build no escribe en Nexus releases.
+- Librerías: staging Maven local, JAR/POM/BOM y checksums; el build no escribe en GitHub Packages releases.
   La versión se aplica al reactor y sus referencias internas, manteniendo la herencia Maven y
   las expresiones CI-friendly. Los parents y BOMs externos conservan su versión; no se usa una
   propiedad global `revision` que pueda alterar la versión del framework heredado.
@@ -33,6 +36,10 @@ ejecución pueden coexistir sin reemplazarse. Se conservan durante 90 días.
   el servicio. La versión final se aplica al reactor y a sus referencias internas en la copia
   de build; los parents del SDK y las dependencias externas conservan sus versiones.
   Esta instalación local no publica librerías ni invoca el deploy.
+  El worker tiene `packages: read` y produce archivos OCI. Un publicador aislado con
+  `packages: write` verifica el worker mediante la API de Actions y comprueba los archivos como
+  datos antes de subirlos; no ejecuta código del proyecto. El manifiesto conserva la evidencia
+  `compile-authority`. Los pull requests ejecutan los gates locales sin publicación ni firma.
 - Gates comunes: pruebas, quality, mutación, encapsulación, SBOM y escaneo. En servicios son
   obligatorias además las evidencias de contratos y charts. Los contratos se descubren en
   `src/main/{openapi,asyncapi}/` o `docs/` del módulo; una ubicación ambigua falla. Las reglas
@@ -78,7 +85,7 @@ manifiesto anterior. Verifica firma, productor, gates y todos los bytes antes de
 Rechaza cualquier archivo ya publicado con contenido diferente. Reutiliza archivos idénticos
 y reanuda promociones interrumpidas sin reconstruir.
 
-El builder admite versiones finales y promoción a `maven-releases`. Para pruebas de una versión
+El builder admite versiones finales y promoción a `github-packages`. Para pruebas de una versión
 se usan candidatas inmutables con manifiesto firmado y repositorio aislado; publicar versiones
 Maven `-SNAPSHOT` queda fuera del flujo de release. Esto no elimina los snapshots OpenAPI/AsyncAPI
 que verifican compatibilidad. El tag final debe apuntar al commit del manifiesto.
@@ -118,9 +125,10 @@ Una promoción o un rollback manual se dispara con `gh workflow run deploy.yaml`
 
 | Ámbito | Credenciales y configuración |
 |---|---|
-| Build | `NEXUS_READ_USERNAME/PASSWORD`; en servicios, `BUILD_DESTINATION` y `REGISTRY_BUILD_USERNAME/PASSWORD`, con escritura solo en el almacén de builds |
-| Deploy Maven | `NEXUS_PUBLISH_USERNAME/PASSWORD`, con escritura solo en el destino |
-| Deploy servicio | `BUILD_DESTINATION` compartido; `REGISTRY_READ_USERNAME/PASSWORD`, solo lectura; `GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`, limitados al repositorio GitOps; `ARGOCD_AUTH_TOKEN`, solo lectura |
+| Compilación | `GITHUB_TOKEN` con `packages: read`; secretos `PACKAGES_READ_USERNAME/TOKEN` opcionales para dependencias de otro repositorio |
+| Publicación y firma de servicios | Jobs aislados con `GITHUB_TOKEN` y `packages: write`; `BUILD_DESTINATION` fija las coordenadas de GHCR |
+| Deploy Maven | `GITHUB_TOKEN` con `packages: write` sobre el repositorio llamador |
+| Deploy servicio | `BUILD_DESTINATION` compartido; `GITHUB_TOKEN` con `packages: read`; `GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`, limitados al repositorio GitOps; `ARGOCD_AUTH_TOKEN`, solo lectura |
 | Lectura de builds | `BUILD_READ_TOKEN` o `CANDIDATE_READ_TOKEN` cuando el token de GitHub no accede al repositorio productor |
 | Variables de deploy | `ARGOCD_SERVER` (hostname HTTPS, sin esquema). Repositorio GitOps desde `BUILD_DESTINATION`; rama `main` compartida y sin selector alternativo |
 | Autorización | Environments `dev`, `qa`, `prod` con revisión registrada; verificación de release inmutable de workflows |

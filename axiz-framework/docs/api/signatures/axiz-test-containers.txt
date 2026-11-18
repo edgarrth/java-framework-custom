@@ -1,0 +1,8 @@
+public final class pe.axiz.quality.containers.TestContainerImages {
+public static java.util.concurrent.Future<java.lang.String> kafkaImage();
+public static org.testcontainers.containers.GenericContainer<?> keycloak();
+public static org.testcontainers.containers.GenericContainer<?> valkey();
+public static org.testcontainers.containers.GenericContainer<?> wiremock();
+public static org.testcontainers.kafka.KafkaContainer kafka();
+public static org.testcontainers.postgresql.PostgreSQLContainer postgres();
+}

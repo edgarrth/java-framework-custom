@@ -1,0 +1,12 @@
+public class pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration {
+public pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration(pe.axiz.spring.audit.kafka.AxizAuditKafkaProperties);
+}
+
+public final class pe.axiz.spring.audit.kafka.AxizAuditKafkaProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String topic();
+public java.time.Duration timeout();
+public pe.axiz.spring.audit.kafka.AxizAuditKafkaProperties(java.lang.String, java.time.Duration);
+}

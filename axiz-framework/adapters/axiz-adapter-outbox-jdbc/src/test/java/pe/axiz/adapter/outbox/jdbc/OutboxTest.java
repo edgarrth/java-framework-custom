@@ -44,6 +44,23 @@ import pe.axiz.kit.jdbc.TransactionOutcomeUnknownException;
 
 class OutboxTest {
 
+  @Test
+  void invalidClaimAndRecoveryInputsLeavePersistedEventsUntouched() {
+    new OutboxWriter(store, clock).write("t", event("unclaimed"), "order");
+    assertThrows(
+        IllegalArgumentException.class, () -> store.claimDue(0, Duration.ofSeconds(1), "worker"));
+    assertThrows(IllegalArgumentException.class, () -> store.claimDue(1, Duration.ZERO, "worker"));
+    assertThrows(
+        IllegalArgumentException.class, () -> store.claimDue(1, Duration.ofSeconds(-1), "worker"));
+    assertThrows(
+        IllegalArgumentException.class, () -> store.claimDue(1, Duration.ofSeconds(1), " "));
+    assertThrows(IllegalArgumentException.class, () -> store.skip("unclaimed", " "));
+    assertThrows(IllegalArgumentException.class, () -> store.skip("unclaimed", "x".repeat(1001)));
+    assertEquals(false, store.skip("unclaimed", "x".repeat(1000)));
+    assertEquals(1, store.countPending());
+    assertEquals("unclaimed", store.claimDue(1, Duration.ofSeconds(1), "worker").getFirst().id());
+  }
+
   private JdbcDataSource source;
   private JdbcTransactions tx;
   private JdbcOutboxStore store;

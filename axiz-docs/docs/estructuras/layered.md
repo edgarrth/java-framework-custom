@@ -7,8 +7,8 @@ un modelo de dominio rico. Admite servlet y reactive con persistencia nativa del
 <base>/
 ├── controller/     REST (esqueletos generados desde el contrato) y mappers de API
 ├── service/        reglas y transacciones; catálogo de errores del servicio
-├── repository/     acceso a datos (JPA, R2DBC o DynamoDB)
-└── model/          entidades
+├── repository/     acceso a datos; entity/ contiene entidades persistentes (JPA, R2DBC o DynamoDB)
+└── model/          valores de aplicación y DTO de API
 ```
 
 El starter no trae persistencia. Con Aurora, el servicio declara `axiz-jpa-spring-boot-starter`

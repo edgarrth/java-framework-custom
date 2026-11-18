@@ -32,6 +32,7 @@ public <T> reactor.core.publisher.Mono<T> inTransaction(java.util.function.Funct
 public <T> reactor.core.publisher.Mono<T> withCallingTransaction(reactor.core.publisher.Mono<T>);
 public java.lang.Object transactionResource();
 public pe.axiz.kit.r2dbc.R2dbcSql(io.r2dbc.spi.ConnectionFactory);
+public reactor.core.publisher.Mono<java.lang.Boolean> isTransactionActive();
 public reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
 public static final java.lang.String CONNECTION_KEY = "pe.axiz.r2dbc.connection";
 }
@@ -61,6 +62,7 @@ public abstract <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.ax
 public abstract reactor.core.publisher.Mono<java.lang.Long> update(java.lang.String, pe.axiz.kit.r2dbc.SqlParams);
 public default <T> reactor.core.publisher.Mono<T> queryOne(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
 public default java.lang.Object transactionResource();
+public default reactor.core.publisher.Mono<java.lang.Boolean> isTransactionActive();
 }
 
 public interface pe.axiz.kit.r2dbc.RowMapper<T> {

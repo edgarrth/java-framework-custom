@@ -70,6 +70,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -89,8 +90,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -163,6 +162,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -182,8 +182,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -256,6 +254,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -275,8 +274,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -349,6 +346,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -368,8 +366,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -442,6 +438,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -461,8 +458,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -535,6 +530,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -554,8 +550,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -628,6 +622,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -647,8 +642,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -721,6 +714,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -740,8 +734,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -814,6 +806,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -833,8 +826,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -907,6 +898,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -926,8 +918,6 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
@@ -1000,6 +990,7 @@ cases:
 
       deploy:
         permissions:
+          packages: read
           contents: write
           actions: read
           id-token: write
@@ -1019,11 +1010,8 @@ cases:
           BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
           AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
           BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-          REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-          REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
           GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
           GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
           ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-normalization: {pattern: '(?<![A-Za-z0-9_.-])axiz-workflows-v2\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?![A-Za-z0-9_.-])',
-  token: '@AXIZ_WORKFLOWS_RELEASE@'}
-normalizedTemplateSha256: 2d3171453dcc73136b6f8a8975ef3aa3e7b908fd27c107e751707fbb2387d648
+normalization: {token: '@AXIZ_WORKFLOWS_RELEASE@', pattern: '(?<![A-Za-z0-9_.-])axiz-workflows-v2\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?![A-Za-z0-9_.-])'}
+normalizedTemplateSha256: 35b828022f1c9396f26396058fd5c506056b2248d8989fb314beeddd0e489035

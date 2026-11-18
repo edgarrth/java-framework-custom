@@ -2,23 +2,13 @@ public class pe.axiz.spring.lock.AxizLockAutoConfiguration {
 public pe.axiz.spring.lock.AxizLockAutoConfiguration();
 }
 
-public class pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbAutoConfiguration {
-public pe.axiz.spring.lock.dynamodb.AxizLockDynamoDbAutoConfiguration();
-}
-
 public final class pe.axiz.spring.lock.AxizLockProperties extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
-public java.lang.String keyPrefix();
 public java.lang.String store();
-public java.lang.String table();
 public java.time.Duration pollInterval();
-public pe.axiz.spring.lock.AxizLockProperties(java.lang.String, java.lang.String, java.lang.String, java.time.Duration);
-}
-
-public class pe.axiz.spring.lock.redis.AxizLockRedisAutoConfiguration {
-public pe.axiz.spring.lock.redis.AxizLockRedisAutoConfiguration();
+public pe.axiz.spring.lock.AxizLockProperties(java.lang.String, java.time.Duration);
 }
 
 public final class pe.axiz.spring.lock.ReactiveLocks {

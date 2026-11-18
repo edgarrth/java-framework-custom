@@ -22,6 +22,9 @@
 
   <properties>
     <axiz.base-package>{{project.basePackage}}</axiz.base-package>
+{{#api.present}}
+    <axiz.openapi.model-package>{{api.modelPackage}}</axiz.openapi.model-package>
+{{/api.present}}
   </properties>
 
   <dependencies>

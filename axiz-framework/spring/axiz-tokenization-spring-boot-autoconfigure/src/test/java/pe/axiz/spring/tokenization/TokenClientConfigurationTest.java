@@ -48,6 +48,16 @@ class TokenClientConfigurationTest {
                 .hasNotFailed()
                 .hasSingleBean(Tokenizer.class)
                 .doesNotHaveBean(AsyncTokenizer.class));
+    for (String override :
+        new String[] {
+          "max-connections=257", "max-concurrent-calls=257", "max-attempts=2",
+          "connect-timeout=11s", "read-timeout=31s", "total-timeout=61s",
+          "base-url=https://vault.example.test/path",
+              "base-url=https://vault.example.test?query=value"
+        })
+      remote
+          .withPropertyValues("axiz.http-client.clients.token-vault." + override)
+          .run(context -> assertThat(context).as(override).hasFailed());
     remote
         .withPropertyValues("axiz.http-client.clients.token-vault.auth.type=NONE")
         .run(context -> assertThat(context).hasFailed());

@@ -7,11 +7,11 @@ import java.time.Duration;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.lock.InMemoryDistributedLock;
-import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.lock.LockObserver;
+import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.storage.InMemoryObjectStorage;
-import pe.axiz.payments.notifications.archive.AuditArchive;
 import pe.axiz.payments.notifications.event.AuditRecord;
+import pe.axiz.payments.notifications.repository.archive.AuditArchive;
 
 /** Audit events of the queue end up in the archive. */
 class AuditArchiveHandlerTest {
@@ -22,7 +22,9 @@ class AuditArchiveHandlerTest {
           new AuditArchive(
               storage,
               new LockTemplate(
-                  new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(2), LockObserver.NONE)));
+                  new InMemoryDistributedLock(Clock.systemUTC()),
+                  Duration.ofMillis(2),
+                  LockObserver.NONE)));
 
   @Test
   void handlesTheAuditEventsAndArchivesEachRecord() throws Exception {

@@ -7,7 +7,7 @@ eventos. El código se deriva de él, nunca al revés.
 
 | Qué | Cuándo | Versionado |
 |---|---|---|
-| Modelos de request y response (`<base>.api.model`) | en cada build (openapi-generator, solo modelos) | no |
+| Modelos de request y response (paquete de modelos del adaptador o capa definida por el estilo) | en cada build (openapi-generator, solo modelos) | no |
 | Controladores, uno por tag, un método por `operationId` | una vez, al crear el servicio o con `contract sync` | sí: es tu código |
 | Casos de uso, commands/queries o composiciones de cada operación | igual que los controladores | sí |
 | Clientes de otras APIs (`axiz generate http-client`) | cuando lo pides | sí (interfaz y modelos) |

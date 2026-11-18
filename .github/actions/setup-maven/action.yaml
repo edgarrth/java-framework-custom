@@ -1,7 +1,7 @@
 name: setup-maven
 description: >-
-  JDK 25 (Temurin or GraalVM), Maven cache and Nexus as the only repository. Credentials are read
-  by Maven from the NEXUS_USERNAME and NEXUS_PASSWORD environment variables of the job (secrets);
+  JDK 25 (Temurin or GraalVM), Maven cache, Maven Central and GitHub Packages. Credentials are read
+  by Maven from the PACKAGES_USERNAME and PACKAGES_TOKEN environment variables of the job (secrets);
   they are never written to disk.
 inputs:
   java-version:
@@ -10,9 +10,9 @@ inputs:
   distribution:
     description: temurin or graalvm
     default: temurin
-  nexus-url:
-    description: Nexus base URL
-    required: true
+  packages-url:
+    description: GitHub Maven registry URL for Axiz dependencies
+    default: https://maven.pkg.github.com/edgarrth/java-framework-custom
   candidate-bundle:
     description: Bundle already signature-verified by consume-build (optional)
     default: ""
@@ -49,7 +49,7 @@ runs:
       id: settings
       shell: bash
       env:
-        NEXUS_URL: ${{ inputs.nexus-url }}
+        PACKAGES_URL: ${{ inputs.packages-url }}
         CANDIDATE_BUNDLE: ${{ inputs.candidate-bundle }}
         EXPECTED_HASH: ${{ inputs.candidate-manifest-sha256 }}
         SOURCE_REPOSITORY: ${{ inputs.candidate-source-repository }}
@@ -67,4 +67,4 @@ runs:
           args+=(--candidate "$CANDIDATE_BUNDLE" --manifest-sha256 "$EXPECTED_HASH" --repository "$SOURCE_REPOSITORY")
         fi
         "$python" "$GITHUB_ACTION_PATH/settings.py" --settings "$HOME/.m2/settings.xml" \
-          --temporary "$RUNNER_TEMP" --nexus-url "$NEXUS_URL" "${args[@]}"
+          --temporary "$RUNNER_TEMP" --packages-url "$PACKAGES_URL" "${args[@]}"

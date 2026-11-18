@@ -2,9 +2,9 @@ package {{project.basePackage}}.{{fw.repositoryPackage}};
 
 import java.util.UUID;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
-{{#fw.layered}}
+{{#fw.separateEntityPackage}}
 import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Entity;
-{{/fw.layered}}
+{{/fw.separateEntityPackage}}
 
 /** Non-blocking data access of {@link {{artifact.className}}Entity} (Spring Data R2DBC). */
 public interface {{artifact.className}}Repository

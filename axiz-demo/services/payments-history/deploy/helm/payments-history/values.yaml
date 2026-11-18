@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/payments-history
+  repository: ghcr.io/edgarrth/java-framework-custom/payments-history
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

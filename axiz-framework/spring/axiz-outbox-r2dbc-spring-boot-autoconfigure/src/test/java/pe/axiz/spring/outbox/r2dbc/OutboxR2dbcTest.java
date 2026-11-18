@@ -150,6 +150,14 @@ class OutboxR2dbcTest {
   }
 
   @Test
+  void rejectsNonpositiveStatementDeadlinesBeforeOpeningAConnection() {
+    for (Duration timeout : new Duration[] {Duration.ZERO, Duration.ofNanos(-1)})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new AxizOutboxR2dbcProperties("outbox", timeout, "chain", Duration.ofSeconds(1)));
+  }
+
+  @Test
   void pendingGaugeNeverQueriesOnTheScrapeThread() throws Exception {
     AtomicInteger queries = new AtomicInteger();
     Thread caller = Thread.currentThread();

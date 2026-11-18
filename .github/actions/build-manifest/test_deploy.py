@@ -57,7 +57,7 @@ class PromotionTest(unittest.TestCase):
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.addCleanup(self.close)
-        self.client = promote_maven.Nexus(f"http://127.0.0.1:{self.server.server_port}", "test", "test", allow_local_test=True)
+        self.client = promote_maven.GitHubMaven(f"http://127.0.0.1:{self.server.server_port}", "test", "test", allow_local_test=True)
         self.data = copy.deepcopy(fixture())
         first = self.data["artifacts"]["maven"][0]
         second = dict(first, extension="pom", path=first["path"].removesuffix("jar") + "pom")
@@ -75,7 +75,7 @@ class PromotionTest(unittest.TestCase):
         self.thread.join(timeout=5)
 
     def url(self, item):
-        return "/repository/maven-releases/" + item["path"]
+        return "/" + item["path"]
 
     def test_promotes_exact_bytes_and_redeployment_is_idempotent(self):
         self.assertEqual(2, promote_maven.promote(self.data, self.root, self.client))
@@ -99,7 +99,7 @@ class PromotionTest(unittest.TestCase):
         self.assertEqual([], self.uploads)
 
     def test_interrupted_promotion_can_resume_without_replacing_an_uploaded_file(self):
-        self.reject = self.url(self.data["artifacts"]["maven"][1])
+        self.reject = self.url(self.data["artifacts"]["maven"][0])
         with self.assertRaisesRegex(ValueError, "503"):
             promote_maven.promote(self.data, self.root, self.client)
         self.assertEqual(1, len(self.uploads))
@@ -113,15 +113,23 @@ class PromotionTest(unittest.TestCase):
             promote_maven.promote(self.data, self.root, self.client)
         self.assertEqual([], self.uploads)
         with self.assertRaisesRegex(ValueError, "HTTPS"):
-            promote_maven.Nexus("http://nexus.example", "test", "test")
+            promote_maven.GitHubMaven("http://maven.pkg.github.com/owner/repo", "test", "test")
 
 
 class DeployRecordTest(unittest.TestCase):
+    def test_maven_publication_is_bound_to_the_source_repository(self):
+        self.assertEqual("https://maven.pkg.github.com/owner/repo",
+                         promote_maven.publication_url("https://maven.pkg.github.com/Owner/Repo/", "Owner/Repo"))
+        for base in ("https://maven.pkg.github.com/owner/another", "https://evil.invalid/owner/repo",
+                     "https://token@maven.pkg.github.com/owner/repo", "http://maven.pkg.github.com/owner/repo"):
+            with self.subTest(base=base), self.assertRaises(ValueError):
+                promote_maven.publication_url(base, "owner/repo")
+
     def test_uses_verified_build_source_and_real_environment_approvals(self):
         history = [{"state": "approved", "user": {"login": "reviewer"}, "environments": [{"name": "prod"}]}]
         approved = deploy_record.approvals(history, "prod", "example/payments", 321)
-        record = deploy_record.record(fixture(), "c" * 64, "prod", "https://nexus.example/repository/maven-releases",
-                                      321, "initial-deployment", [{"name": "nexus-credentials", "ref": "environment:prod/NEXUS_PUBLISH"}], approved, "succeeded")
+        record = deploy_record.record(fixture(), "c" * 64, "prod", "https://maven.pkg.github.com/owner/repo",
+                                      321, "initial-deployment", [{"name": "github-token", "ref": "job:GITHUB_TOKEN:packages-write"}], approved, "succeeded")
         self.assertEqual("a" * 40, record["source"]["sha"])
         self.assertEqual(321, record["run_id"])
         self.assertEqual("reviewer", record["approvals"][0]["actor"])

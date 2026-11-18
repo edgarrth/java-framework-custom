@@ -14,8 +14,11 @@ public class AuditListener {
   private final Clock clock;
 
   public AuditListener(AuditorProvider auditor, Clock clock) {
-    this.auditor = Objects.requireNonNull(auditor);
-    this.clock = Objects.requireNonNull(clock);
+    Objects.requireNonNull(auditor);
+    Objects.requireNonNull(clock);
+    super();
+    this.auditor = auditor;
+    this.clock = clock;
   }
 
   @PrePersist

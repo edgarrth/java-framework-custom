@@ -1,0 +1,45 @@
+public final class pe.axiz.core.concurrent.AsyncLoadingCache<V> implements java.lang.AutoCloseable {
+public java.util.concurrent.CompletionStage<V> get(java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<V>>);
+public java.util.concurrent.CompletionStage<V> get(java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<V>>, java.util.function.Consumer<java.lang.Boolean>);
+public pe.axiz.core.concurrent.AsyncLoadingCache(java.time.Duration, long, int, java.time.Clock);
+public pe.axiz.core.concurrent.AsyncLoadingCache(java.time.Duration, long, int, java.time.Clock, java.util.function.Predicate<? super V>);
+public pe.axiz.core.concurrent.AsyncLoadingCache(java.time.Duration, long, int, java.time.Clock, java.util.function.Predicate<? super V>, java.util.function.UnaryOperator<V>, java.util.function.Consumer<V>);
+public void close();
+public void evict(java.lang.String);
+}
+
+public class pe.axiz.core.concurrent.BoundedCallbackExecutor extends java.util.concurrent.AbstractExecutorService {
+public boolean awaitTermination(long, java.util.concurrent.TimeUnit) throws java.lang.InterruptedException;
+public boolean isShutdown();
+public boolean isTerminated();
+public final int getActiveCount();
+public final int getPoolSize();
+public final int getQueueSize();
+public java.util.List<java.lang.Runnable> shutdownNow();
+public pe.axiz.core.concurrent.BoundedCallbackExecutor(int, int, java.util.concurrent.ThreadFactory, java.lang.String);
+public void execute(java.lang.Runnable);
+public void shutdown();
+}
+
+public final class pe.axiz.core.concurrent.LeaseTiming {
+public static java.time.Duration margin(java.time.Duration);
+public static long validUntil(long, java.time.Duration);
+}
+
+public final class pe.axiz.core.concurrent.Stages {
+public static <T, R> java.util.concurrent.CompletionStage<R> compose(java.util.concurrent.CompletionStage<T>, java.util.function.Function<? super T, ? extends java.util.concurrent.CompletionStage<R>>);
+public static <T, R> java.util.concurrent.CompletionStage<R> consume(java.util.concurrent.CompletionStage<T>, java.util.function.Function<T, R>, java.util.function.Consumer<T>, java.util.function.Consumer<R>);
+public static <T, R> java.util.concurrent.CompletionStage<R> map(java.util.concurrent.CompletionStage<T>, java.util.function.Function<? super T, ? extends R>);
+public static <T> java.util.concurrent.CompletionStage<T> call(java.util.function.Supplier<java.util.concurrent.CompletionStage<T>>);
+public static <T> java.util.concurrent.CompletionStage<T> recover(java.util.concurrent.CompletionStage<T>, java.util.function.Function<java.lang.Throwable, ? extends T>);
+public static <T> java.util.concurrent.CompletionStage<T> requireValue(java.util.concurrent.CompletionStage<T>);
+public static <T> void observe(java.util.concurrent.CompletionStage<T>, java.util.function.BiConsumer<? super T, ? super java.lang.Throwable>, java.util.function.Consumer<java.lang.Throwable>);
+public static java.lang.Throwable unwrap(java.lang.Throwable);
+public static java.util.concurrent.CompletionStage<java.lang.Void> ignore(java.util.concurrent.CompletionStage<?>);
+public static java.util.concurrent.CompletionStage<java.lang.Void> settle(java.util.concurrent.CompletionStage<java.lang.Void>, java.util.function.Consumer<java.lang.Throwable>);
+public static pe.axiz.core.context.RequestContext$Scope context(pe.axiz.core.concurrent.Stages$ContextProvider);
+}
+
+public interface pe.axiz.core.concurrent.Stages$ContextProvider {
+public abstract java.util.function.Supplier<pe.axiz.core.context.RequestContext$Scope> capture();
+}

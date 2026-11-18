@@ -29,3 +29,6 @@ spring.flyway.jdbc-properties.sslmode: disable
 spring.r2dbc.properties.sslMode: disable
 spring.kafka.security.protocol: PLAINTEXT
 spring.data.redis.ssl.enabled: false
+
+axiz.secrets.directory: local/secrets
+demo.local.seed-contacts: true

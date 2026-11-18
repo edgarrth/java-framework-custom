@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.api.PageRequest;
-import pe.axiz.payments.ux.api.model.BeneficiaryList;
 import pe.axiz.payments.ux.composition.BeneficiariesComposition;
+import pe.axiz.payments.ux.composition.model.BeneficiaryList;
 import pe.axiz.spring.web.Paging;
 import reactor.core.publisher.Mono;
 

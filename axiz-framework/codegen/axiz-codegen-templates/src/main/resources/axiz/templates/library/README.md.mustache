@@ -9,8 +9,8 @@ from Spring, Quarkus or plain Java. Build with `./mvnw verify` (enforcer rules a
 version, source commit and optional framework candidate identity. `deploy.yaml` independently
 promotes a completed successful producer run using its attempt and external manifest SHA-256;
 it never executes Maven. Release-please prepares a draft; promotion retains the signed manifest
-before publishing that release. Use separate Nexus read credentials for builds and
-`NEXUS_PUBLISH_USERNAME/PASSWORD` for promotion. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
+before publishing that release. Builds use `GITHUB_TOKEN` with `packages: read`; isolated promotion uses its own job token
+with `packages: write`. Optional `PACKAGES_READ_USERNAME/TOKEN` enable cross-repository reads. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
 nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
 `release-please-config.json`); later ones follow Conventional Commits.
 

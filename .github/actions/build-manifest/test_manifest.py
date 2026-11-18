@@ -28,7 +28,7 @@ def fixture(kind="maven-library"):
                                    "extension": "jar", "path": "pe/axiz/axiz-example/2.0.0/axiz-example-2.0.0.jar",
                                    "sha256": manifest.sha256(b"artifact bytes")}]}}
     if kind == "service":
-        data["gates"].extend({"name": name, "result": "passed", "evidence": evidence} for name in ("contracts", "chart"))
+        data["gates"].extend({"name": name, "result": "passed", "evidence": evidence} for name in ("contracts", "chart", "compile-authority"))
         data["build"]["workflow"]["path"] = ".github/workflows/service-build.yaml"
         data["parameters"] = {"service": "payments", "module": ".", "jdk": "25", "platforms": ["linux/amd64"],
                               "variant": "jvm", "chart": "deploy/helm/payments"}

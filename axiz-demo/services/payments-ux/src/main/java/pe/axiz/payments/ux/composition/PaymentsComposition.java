@@ -13,12 +13,12 @@ import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.money.Money;
 import pe.axiz.core.money.MoneyErrors;
-import pe.axiz.payments.ux.api.model.PaymentRequest;
-import pe.axiz.payments.ux.api.model.PaymentView;
 import pe.axiz.payments.ux.client.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.ux.client.paymentorders.PaymentOrdersClient;
 import pe.axiz.payments.ux.client.paymentorders.model.PaymentOrder;
 import pe.axiz.payments.ux.client.paymentorders.model.PaymentOrderRequest;
+import pe.axiz.payments.ux.composition.model.PaymentRequest;
+import pe.axiz.payments.ux.composition.model.PaymentView;
 import pe.axiz.structure.bff.spring.ReactiveComposer;
 import reactor.core.publisher.Mono;
 

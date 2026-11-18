@@ -124,6 +124,9 @@ class SampleProjectsTest {
           String testSource = Files.readString(boot);
           for (String setting :
               List.of(
+                  "axiz.security.issuers[0].issuer=https://issuer.test",
+                  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+                  "axiz.security.issuers[0].audiences[0]=test",
                   "axiz.config.environment=test",
                   "axiz.transport.allow-plain-http=true",
                   "axiz.transport.allow-insecure-data-stores=true")) {

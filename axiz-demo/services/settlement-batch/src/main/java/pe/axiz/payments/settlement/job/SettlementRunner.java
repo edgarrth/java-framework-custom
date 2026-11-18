@@ -22,6 +22,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.ExitCodeGenerator;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
+import pe.axiz.core.commons.ReviewedState;
 import pe.axiz.core.time.BusinessCalendar;
 
 /**
@@ -44,6 +45,11 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
   private final BusinessCalendar calendar;
   private final SettlementSummaryTasklet summary;
   private final Clock clock;
+
+  @ReviewedState(
+      reason =
+          "One startup run publishes its process exit status; AtomicInteger makes the "
+              + "value visible to the shutdown thread. No business data is retained.")
   private final AtomicInteger exitCode = new AtomicInteger();
 
   public SettlementRunner(

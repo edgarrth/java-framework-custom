@@ -76,6 +76,112 @@ class GenerationModelContractTest {
     }
   }
 
+  @Test
+  void localInfrastructureSelectsOnlyTheRequiredServicesAndOwnedTestFixtures() {
+    var request =
+        Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of());
+    var cases =
+        Map.of(
+            "dynamodb",
+            "dynamodb",
+            "storage-s3",
+            "s3",
+            "messaging-sqs",
+            "sqs",
+            "messaging-sns",
+            "sns",
+            "crypto-kms",
+            "kms",
+            "secrets-aws",
+            "secretsmanager,ssm",
+            "config-aws",
+            "ssm");
+    cases.forEach(
+        (name, services) -> {
+          var caps = CATALOG.resolve(List.of(name), "none");
+          var infra = ProjectGenerator.infrastructure(caps, request);
+          assertEquals(services, infra.get("localstackServices"), name);
+          assertEquals(true, infra.get("localstack"), name);
+          assertEquals(true, infra.get("sharedLocalstack"), name);
+          assertEquals(true, infra.get("any"), name);
+          assertEquals(false, infra.get("postgres"), name);
+          assertEquals(false, infra.get("kafka"), name);
+          assertEquals(false, infra.get("redis"), name);
+          assertEquals("{LocalStackTestConfiguration.class}", infra.get("importList"), name);
+          assertEquals(
+              List.of(Map.of("name", "LocalStackTestConfiguration", "last", true)),
+              infra.get("testConfigurations"),
+              name);
+        });
+    var all =
+        ProjectGenerator.infrastructure(
+            CATALOG.resolve(
+                List.of(
+                    "jpa",
+                    "messaging-kafka",
+                    "cache-redis",
+                    "storage-s3",
+                    "security",
+                    "http-client"),
+                "jdbc"),
+            request);
+    assertEquals(true, all.get("keycloak"));
+    assertEquals(true, all.get("wiremock"));
+    assertEquals(true, all.get("postgres"));
+    assertEquals(true, all.get("kafka"));
+    assertEquals(true, all.get("redis"));
+    assertEquals(
+        "{PostgresTestConfiguration.class, KafkaTestConfiguration.class, "
+            + "RedisTestConfiguration.class, LocalStackTestConfiguration.class}",
+        all.get("importList"));
+    assertEquals(
+        List.of(
+            Map.of("name", "PostgresTestConfiguration", "last", false),
+            Map.of("name", "KafkaTestConfiguration", "last", false),
+            Map.of("name", "RedisTestConfiguration", "last", false),
+            Map.of("name", "LocalStackTestConfiguration", "last", true)),
+        all.get("testConfigurations"));
+    var absent = ProjectGenerator.infrastructure(List.of(), request);
+    for (String flag :
+        List.of(
+            "postgres",
+            "kafka",
+            "redis",
+            "localstack",
+            "sharedLocalstack",
+            "keycloak",
+            "wiremock",
+            "any")) assertEquals(false, absent.get(flag));
+    assertEquals("{}", absent.get("importList"));
+    assertEquals(List.of(), absent.get("testConfigurations"));
+  }
+
+  @Test
+  void auditOwnsItsQueueFixtureAndExposesOnlySecretNamesToConfiguration() {
+    var request =
+        Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "none", List.of());
+    var caps = CATALOG.resolve(List.of("audit-sqs"), "none");
+    var infra = ProjectGenerator.infrastructure(caps, request);
+    assertEquals("sqs", infra.get("localstackServices"));
+    assertEquals(false, infra.get("sharedLocalstack"));
+    assertEquals("{}", infra.get("importList"));
+    var config =
+        ProjectGenerator.configuration(
+            request,
+            CATALOG.archetype("business").orElseThrow(),
+            caps,
+            Set.of("axiz.audit.sqs.queue-url"),
+            Set.of("audit-hmac"));
+    assertEquals(true, config.get("hasConfigMapKeys"));
+    assertEquals(true, config.get("hasSecrets"));
+    assertEquals(List.of("axiz.audit.sqs.queue-url"), config.get("configMapKeys"));
+    assertEquals(List.of(Map.of("key", "audit-hmac")), config.get("secrets"));
+    assertEquals("ASYNC", value(config, "applicationYaml", "axiz.audit.mode"));
+    assertEquals(
+        "http://localhost:4566/000000000000/orders-audit",
+        value(config, "localYaml", "axiz.audit.sqs.queue-url"));
+  }
+
   private static Map<String, Object> configuration(ProjectRequest request, List<String> names) {
     return ProjectGenerator.configuration(
         request,

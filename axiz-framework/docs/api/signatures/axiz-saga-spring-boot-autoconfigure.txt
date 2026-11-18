@@ -8,11 +8,17 @@ public final int hashCode();
 public final java.lang.String toString();
 public int compensationAttempts();
 public int stepAttempts();
-public java.lang.String table();
 public java.time.Duration initialDelay();
 public java.time.Duration maxDelay();
-public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
-public pe.axiz.spring.saga.AxizSagaProperties(java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode, int, int, java.time.Duration, java.time.Duration);
+public pe.axiz.spring.saga.AxizSagaProperties(int, int, java.time.Duration, java.time.Duration);
+}
+
+public final class pe.axiz.spring.saga.AxizSagaProtectionProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public pe.axiz.core.crypto.PayloadProtectionMode contextProtection();
+public pe.axiz.spring.saga.AxizSagaProtectionProperties(pe.axiz.core.crypto.PayloadProtectionMode);
 }
 
 public final class pe.axiz.spring.saga.JacksonContextCodec<C> implements pe.axiz.core.saga.ContextCodec<C> {

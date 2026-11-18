@@ -1,6 +1,8 @@
 public interface pe.axiz.kit.jdbc.ConnectionProvider {
 public abstract java.sql.Connection get() throws java.sql.SQLException;
 public abstract void release(java.sql.Connection) throws java.sql.SQLException;
+public default boolean isTransactionActive(java.sql.Connection) throws java.sql.SQLException;
+public default java.lang.Object transactionResource();
 }
 
 public final class pe.axiz.kit.jdbc.JdbcTransactions implements pe.axiz.core.commons.tx.TransactionRunner,pe.axiz.kit.jdbc.ConnectionProvider {

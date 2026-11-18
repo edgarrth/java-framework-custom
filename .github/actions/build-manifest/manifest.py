@@ -83,7 +83,7 @@ def validate(manifest, bundle=None, *, require_authority=True):
         raise ValueError("Build kind does not match its trusted producer workflow")
     gates = manifest["gates"]
     names = [gate["name"] for gate in gates]
-    required = (REQUIRED_GATES if require_authority else WORKER_GATES) | ({"contracts", "chart"} if kind == "service" else set())
+    required = (REQUIRED_GATES if require_authority else WORKER_GATES) | ({"contracts", "chart", "compile-authority"} if kind == "service" else set())
     if len(set(names)) != len(names) or not required.issubset(names):
         raise ValueError(f"Required gates are missing or duplicated: {sorted(required - set(names))}")
     if kind == "maven-library":

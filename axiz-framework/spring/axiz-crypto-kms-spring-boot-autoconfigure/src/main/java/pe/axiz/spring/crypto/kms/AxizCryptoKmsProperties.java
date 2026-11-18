@@ -34,16 +34,33 @@ public record AxizCryptoKmsProperties(
         throw new IllegalArgumentException("KMS key ring must include its unique write key");
       keyRing.forEach(
           (route, arn) -> {
-            if (!route.matches("[A-Za-z0-9_-]{1,32}")
-                || !arn.matches(
-                    "arn:aws(?:-[a-z]+)*:kms:[a-z0-9-]+:[0-9]{12}:key/"
-                        + "(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})"))
+            if (!route.matches("[A-Za-z0-9_-]{1,32}") || !isImmutableKmsKeyArn(arn))
               throw new IllegalArgumentException(
                   "KMS key ring requires immutable key ARNs and bounded route identifiers");
           });
     }
     if (!dataKeyMaxAge.isPositive() || dataKeyMaxUses < 1)
       throw new IllegalArgumentException("KMS data key cache policy must be positive");
+  }
+
+  private static boolean isImmutableKmsKeyArn(String arn) {
+    String[] fields = arn.split(":", 6);
+    if (fields.length != 6
+        || !fields[0].equals("arn")
+        || !fields[2].equals("kms")
+        || !fields[3].matches("[a-z0-9-]+")
+        || !fields[4].matches("[0-9]{12}")
+        || !fields[5].matches(
+            "key/(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})")) {
+      return false;
+    }
+    // Validate partition segments separately, without nested regex repetition.
+    String[] partition = fields[1].split("-", -1);
+    if (!partition[0].equals("aws")) return false;
+    for (int i = 1; i < partition.length; i++) {
+      if (!partition[i].matches("[a-z]+")) return false;
+    }
+    return true;
   }
 
   String writeRoute() {

@@ -36,11 +36,11 @@ propio parent puede importar ambos sin heredar nada.
 - Versionado SemVer con un tren alineado a la minor de Spring Boot; se soportan la versión actual y
   la minor anterior.
 - release-please mantiene un PR de release por componente con la próxima versión y el changelog
-  (Conventional Commits). Al hacer merge crea el tag del componente; el deploy promueve a Nexus los
+  (Conventional Commits). Al hacer merge crea el tag del componente; el deploy promueve a GitHub Packages los
   artefactos del build verificado.
 - Toda API obsoleta se marca `@Deprecated(forRemoval = true)` con al menos una minor de aviso, y
   cada release trae sus recetas de OpenRewrite (ver [Actualizar servicios](../guias/actualizar-servicio.md)).
-- Nexus Repository es el repositorio de artefactos Maven e imágenes; las credenciales vienen de los
+- GitHub Packages Repository es el repositorio de artefactos Maven e imágenes; las credenciales vienen de los
   secretos de CI o de `~/.m2/settings.xml`, nunca de un repositorio.
 
 ## Gobierno

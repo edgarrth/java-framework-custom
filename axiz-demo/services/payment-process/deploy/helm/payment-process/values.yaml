@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/payment-process
+  repository: ghcr.io/edgarrth/java-framework-custom/payment-process
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

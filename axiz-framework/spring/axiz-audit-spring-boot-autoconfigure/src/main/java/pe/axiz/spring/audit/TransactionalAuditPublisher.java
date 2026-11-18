@@ -49,11 +49,6 @@ import pe.axiz.core.outbox.OutboxWriter;
 public final class TransactionalAuditPublisher
     implements AuditPublisher, AuditPublisherDecorator, AutoCloseable, AuditIntegrityMetrics {
 
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "OutboxWriter is an injected collaborator whose identity and lifecycle must be "
-              + "shared, not copied.")
   private final OutboxWriter outbox;
 
   private final String destination;
@@ -261,10 +256,11 @@ public final class TransactionalAuditPublisher
     if (event.correlationId() != null) {
       extensions.put(EventEnvelope.CORRELATION_ID, event.correlationId());
     }
-    if (event.integrity() != null) {
-      extensions.put("axizchain", event.integrity().chainId());
-      extensions.put("axizseq", Long.toString(event.integrity().sequence()));
-      extensions.put("axizhash", event.integrity().hash());
+    var integrity = event.integrity();
+    if (integrity != null) {
+      extensions.put("axizchain", integrity.chainId());
+      extensions.put("axizseq", Long.toString(integrity.sequence()));
+      extensions.put("axizhash", integrity.hash());
     }
     return EventEnvelope.builder()
         .id(event.deliveryId())
@@ -314,6 +310,9 @@ public final class TransactionalAuditPublisher
 
     private Builder() {}
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Borrowed outbox port must share the transaction resource and lifecycle.")
     public Builder outbox(OutboxWriter value) {
       this.outbox = value;
       return this;

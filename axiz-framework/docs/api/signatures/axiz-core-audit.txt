@@ -30,6 +30,10 @@ public long unconfirmed();
 public pe.axiz.core.audit.AsyncAuditPublisher$Shutdown(boolean, int, long, boolean, long, int);
 }
 
+public interface pe.axiz.core.audit.AsyncAuditPublisherDecorator {
+public abstract pe.axiz.core.audit.AsyncAuditEventPublisher delegate();
+}
+
 public final class pe.axiz.core.audit.AsyncAuditTrail {
 public pe.axiz.core.audit.AsyncAuditTrail$Builder record(java.lang.String, java.lang.String);
 public pe.axiz.core.audit.AsyncAuditTrail(java.lang.String, pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.sensitive.ObjectMasker, pe.axiz.core.id.IdGenerator, java.time.Clock);
@@ -44,15 +48,90 @@ public pe.axiz.core.audit.AsyncAuditTrail$Builder outcomes(pe.axiz.core.commons.
 public pe.axiz.core.audit.AsyncAuditTrail$Builder resourceId(java.lang.String);
 }
 
+public interface pe.axiz.core.audit.AsyncStrictAuditPublisher {
+public abstract java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.AttemptOutcome extends java.lang.Enum<pe.axiz.core.audit.AttemptOutcome> {
+public static final pe.axiz.core.audit.AttemptOutcome ROLLED_BACK;
+public static final pe.axiz.core.audit.AttemptOutcome UNKNOWN;
+public static pe.axiz.core.audit.AttemptOutcome valueOf(java.lang.String);
+public static pe.axiz.core.audit.AttemptOutcome[] values();
+}
+
+public final class pe.axiz.core.audit.AttemptRef extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String chainId();
+public java.lang.String hash();
+public long sequence();
+public pe.axiz.core.audit.AttemptOutcome outcome();
+public pe.axiz.core.audit.AttemptRef(java.lang.String, long, java.lang.String, pe.axiz.core.audit.AttemptOutcome);
+}
+
+public interface pe.axiz.core.audit.AuditChainState {
+public abstract pe.axiz.core.audit.AuditIntegrity advance(java.lang.String, java.util.function.UnaryOperator<pe.axiz.core.audit.AuditIntegrity>);
+public abstract pe.axiz.core.audit.ChainCheckpoint checkpoint(java.lang.String);
+public default java.lang.Object transactionResource();
+}
+
+public final class pe.axiz.core.audit.AuditChainVerifier {
+public static pe.axiz.core.audit.AuditChainVerifier$Result verify(java.lang.Iterable<pe.axiz.core.audit.AuditEvent>, byte[], pe.axiz.core.audit.ChainCheckpoint);
+}
+
+public final class pe.axiz.core.audit.AuditChainVerifier$Completeness extends java.lang.Enum<pe.axiz.core.audit.AuditChainVerifier$Completeness> {
+public static final pe.axiz.core.audit.AuditChainVerifier$Completeness COMPLETE_UP_TO;
+public static final pe.axiz.core.audit.AuditChainVerifier$Completeness NOT_ASSESSED;
+public static final pe.axiz.core.audit.AuditChainVerifier$Completeness TAIL_MISSING;
+public static pe.axiz.core.audit.AuditChainVerifier$Completeness valueOf(java.lang.String);
+public static pe.axiz.core.audit.AuditChainVerifier$Completeness[] values();
+}
+
+public final class pe.axiz.core.audit.AuditChainVerifier$Finding extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public long from();
+public long to();
+public pe.axiz.core.audit.AuditChainVerifier$Finding(pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus, long, long);
+public pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus status();
+}
+
+public final class pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus extends java.lang.Enum<pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus> {
+public static final pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus CONFLICT;
+public static final pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus GAP;
+public static final pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus INTACT;
+public static final pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus INVALID_HASH;
+public static pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus valueOf(java.lang.String);
+public static pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus[] values();
+}
+
+public final class pe.axiz.core.audit.AuditChainVerifier$Result extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.util.List<pe.axiz.core.audit.AuditChainVerifier$Finding> findings();
+public long receivedThrough();
+public long upTo();
+public pe.axiz.core.audit.AuditChainVerifier$Completeness completeness();
+public pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus integrity();
+public pe.axiz.core.audit.AuditChainVerifier$Result(pe.axiz.core.audit.AuditChainVerifier$IntegrityStatus, long, long, java.util.List<pe.axiz.core.audit.AuditChainVerifier$Finding>, pe.axiz.core.audit.AuditChainVerifier$Completeness, pe.axiz.core.audit.ChainCheckpoint);
+public pe.axiz.core.audit.ChainCheckpoint checkpoint();
+}
+
 public final class pe.axiz.core.audit.AuditEvent extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
+public int detailsSanitized();
 public java.lang.String action();
 public java.lang.String channel();
 public java.lang.String correlationId();
+public java.lang.String deliveryId();
 public java.lang.String errorCode();
 public java.lang.String id();
+public java.lang.String persistence();
 public java.lang.String resourceId();
 public java.lang.String resourceType();
 public java.lang.String service();
@@ -61,14 +140,17 @@ public java.time.Instant occurredAt();
 public java.util.Map<java.lang.String, java.lang.Object> details();
 public java.util.Map<java.lang.String, java.lang.Object> toMap();
 public java.util.Map<java.lang.String, java.lang.String> cloudEventAttributes();
+public pe.axiz.core.audit.AuditEvent withIntegrity(pe.axiz.core.audit.AuditIntegrity);
 public pe.axiz.core.audit.AuditEvent withOutcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
 public pe.axiz.core.audit.AuditEvent withPersistence(java.lang.String);
 public pe.axiz.core.audit.AuditEvent$Actor actor();
 public pe.axiz.core.audit.AuditEvent$Outcome outcome();
-public pe.axiz.core.audit.AuditEvent(java.lang.String, java.time.Instant, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.audit.AuditEvent$Actor, pe.axiz.core.audit.AuditEvent$Outcome, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.audit.AuditEvent(java.lang.String, java.time.Instant, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.audit.AuditEvent$Actor, pe.axiz.core.audit.AuditEvent$Outcome, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome, java.lang.String, pe.axiz.core.audit.AuditIntegrity, int);
+public pe.axiz.core.audit.AuditIntegrity integrity();
 public pe.axiz.core.commons.TransactionOutcome operationOutcome();
 public pe.axiz.core.commons.TransactionOutcome transactionOutcome();
 public static final java.lang.String CLOUD_EVENT_TYPE = "pe.axiz.audit.event.v1";
+public static pe.axiz.core.audit.AuditEvent$Builder builder();
 }
 
 public final class pe.axiz.core.audit.AuditEvent$Actor extends java.lang.Record {
@@ -82,11 +164,59 @@ public pe.axiz.core.audit.AuditEvent$Actor(java.lang.String, java.lang.String, j
 public static pe.axiz.core.audit.AuditEvent$Actor system();
 }
 
+public final class pe.axiz.core.audit.AuditEvent$Builder {
+public pe.axiz.core.audit.AuditEvent build();
+public pe.axiz.core.audit.AuditEvent$Builder action(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder actor(pe.axiz.core.audit.AuditEvent$Actor);
+public pe.axiz.core.audit.AuditEvent$Builder channel(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder correlationId(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder details(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.core.audit.AuditEvent$Builder detailsSanitized(int);
+public pe.axiz.core.audit.AuditEvent$Builder errorCode(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder id(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder integrity(pe.axiz.core.audit.AuditIntegrity);
+public pe.axiz.core.audit.AuditEvent$Builder occurredAt(java.time.Instant);
+public pe.axiz.core.audit.AuditEvent$Builder operationOutcome(pe.axiz.core.commons.TransactionOutcome);
+public pe.axiz.core.audit.AuditEvent$Builder outcome(pe.axiz.core.audit.AuditEvent$Outcome);
+public pe.axiz.core.audit.AuditEvent$Builder persistence(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder resourceId(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder resourceType(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder service(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder tenant(java.lang.String);
+public pe.axiz.core.audit.AuditEvent$Builder transactionOutcome(pe.axiz.core.commons.TransactionOutcome);
+}
+
 public final class pe.axiz.core.audit.AuditEvent$Outcome extends java.lang.Enum<pe.axiz.core.audit.AuditEvent$Outcome> {
 public static final pe.axiz.core.audit.AuditEvent$Outcome FAILURE;
 public static final pe.axiz.core.audit.AuditEvent$Outcome SUCCESS;
 public static pe.axiz.core.audit.AuditEvent$Outcome valueOf(java.lang.String);
 public static pe.axiz.core.audit.AuditEvent$Outcome[] values();
+}
+
+public final class pe.axiz.core.audit.AuditEventJson {
+public static java.lang.String write(pe.axiz.core.audit.AuditEvent);
+public static pe.axiz.core.audit.AuditEvent read(java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditIntegrity extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String chainId();
+public java.lang.String hash();
+public java.lang.String keyId();
+public java.lang.String previousHash();
+public long sequence();
+public pe.axiz.core.audit.AttemptRef previousAttempt();
+public pe.axiz.core.audit.AuditIntegrity(java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.audit.AttemptRef);
+public static pe.axiz.core.audit.AuditIntegrity head(java.lang.String, long, java.lang.String);
+public static pe.axiz.core.audit.AuditIntegrity initial(java.lang.String);
+public void requireSuccessor(pe.axiz.core.audit.AuditIntegrity);
+}
+
+public interface pe.axiz.core.audit.AuditIntegrityMetrics {
+public abstract java.util.Map<java.lang.String, java.lang.Long> chainSequences();
+public abstract long detailsSanitizedCount();
 }
 
 public final class pe.axiz.core.audit.AuditPolicy extends java.lang.Enum<pe.axiz.core.audit.AuditPolicy> {
@@ -106,6 +236,10 @@ public interface pe.axiz.core.audit.AuditPublisher {
 public abstract void publish(pe.axiz.core.audit.AuditEvent);
 }
 
+public interface pe.axiz.core.audit.AuditPublisherDecorator {
+public abstract pe.axiz.core.audit.AuditPublisher delegate();
+}
+
 public interface pe.axiz.core.audit.AuditQueueMetrics {
 public abstract boolean workerAlive();
 public abstract int pending();
@@ -123,6 +257,28 @@ public void context(pe.axiz.core.audit.AuditTrail$Context);
 public void detail(java.lang.String, java.lang.Object);
 public void outcomes(pe.axiz.core.commons.TransactionOutcome, pe.axiz.core.commons.TransactionOutcome);
 public void resourceId(java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditSealCalculator {
+public boolean enabled();
+public pe.axiz.core.audit.AuditIntegrity next(pe.axiz.core.audit.AuditEvent, pe.axiz.core.audit.AuditIntegrity, pe.axiz.core.audit.AttemptRef);
+public pe.axiz.core.audit.AuditSealCalculator(pe.axiz.core.audit.AuditSealer$Mode, java.util.function.Supplier<byte[]>, java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditSealer {
+public java.lang.Object transactionResource();
+public long sequence();
+public pe.axiz.core.audit.AuditEvent seal(pe.axiz.core.audit.AuditEvent);
+public pe.axiz.core.audit.AuditEvent sealAgain(pe.axiz.core.audit.AuditEvent, pe.axiz.core.audit.AttemptRef);
+public pe.axiz.core.audit.AuditSealer(java.lang.String, pe.axiz.core.audit.AuditSealer$Mode, pe.axiz.core.audit.AuditChainState, java.util.function.Supplier<byte[]>, java.lang.String);
+}
+
+public final class pe.axiz.core.audit.AuditSealer$Mode extends java.lang.Enum<pe.axiz.core.audit.AuditSealer$Mode> {
+public static final pe.axiz.core.audit.AuditSealer$Mode HASH;
+public static final pe.axiz.core.audit.AuditSealer$Mode HMAC;
+public static final pe.axiz.core.audit.AuditSealer$Mode NONE;
+public static pe.axiz.core.audit.AuditSealer$Mode valueOf(java.lang.String);
+public static pe.axiz.core.audit.AuditSealer$Mode[] values();
 }
 
 public final class pe.axiz.core.audit.AuditTrail {
@@ -161,6 +317,17 @@ public abstract java.lang.String resourceIdArgument();
 public abstract pe.axiz.core.audit.AuditPolicy policy();
 }
 
+public final class pe.axiz.core.audit.ChainCheckpoint extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String chainId();
+public java.lang.String hash();
+public java.time.Instant at();
+public long sequence();
+public pe.axiz.core.audit.ChainCheckpoint(java.lang.String, long, java.lang.String, java.time.Instant);
+}
+
 public final class pe.axiz.core.audit.CompositeAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
 public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
 public pe.axiz.core.audit.CompositeAsyncAuditPublisher(java.util.List<pe.axiz.core.audit.AsyncAuditEventPublisher>);
@@ -171,16 +338,26 @@ public pe.axiz.core.audit.CompositeAuditPublisher(java.util.List<pe.axiz.core.au
 public void publish(pe.axiz.core.audit.AuditEvent);
 }
 
-public final class pe.axiz.core.audit.ConfirmedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
+public final class pe.axiz.core.audit.ConfirmedAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher,pe.axiz.core.audit.AsyncAuditPublisherDecorator,java.lang.AutoCloseable {
 public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
 public long unconfirmedCount();
+public pe.axiz.core.audit.AsyncAuditEventPublisher delegate();
 public pe.axiz.core.audit.ConfirmedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher);
+public void close();
 }
 
-public final class pe.axiz.core.audit.ConfirmedAuditPublisher implements pe.axiz.core.audit.AuditPublisher {
+public final class pe.axiz.core.audit.ConfirmedAuditPublisher implements pe.axiz.core.audit.AuditPublisher,pe.axiz.core.audit.AuditPublisherDecorator,java.lang.AutoCloseable {
 public long unconfirmedCount();
+public pe.axiz.core.audit.AuditPublisher delegate();
 public pe.axiz.core.audit.ConfirmedAuditPublisher(pe.axiz.core.audit.AuditPublisher);
+public void close();
 public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.core.audit.InMemoryAuditChainState implements pe.axiz.core.audit.AuditChainState {
+public pe.axiz.core.audit.AuditIntegrity advance(java.lang.String, java.util.function.UnaryOperator<pe.axiz.core.audit.AuditIntegrity>);
+public pe.axiz.core.audit.ChainCheckpoint checkpoint(java.lang.String);
+public pe.axiz.core.audit.InMemoryAuditChainState(java.time.Clock, int);
 }
 
 public final class pe.axiz.core.audit.LoggingAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher {
@@ -205,4 +382,26 @@ public long unconfirmedCount();
 public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration);
 public pe.axiz.core.audit.QueuedAsyncAuditPublisher(pe.axiz.core.audit.AsyncAuditEventPublisher, pe.axiz.core.audit.AuditPublisher, int, java.time.Duration, pe.axiz.core.concurrent.Stages$ContextProvider);
 public void close();
+}
+
+public final class pe.axiz.core.audit.SealingAsyncAuditPublisher implements pe.axiz.core.audit.AsyncAuditEventPublisher,pe.axiz.core.audit.AsyncAuditPublisherDecorator,java.lang.AutoCloseable,pe.axiz.core.audit.AuditIntegrityMetrics {
+public java.util.Map<java.lang.String, java.lang.Long> chainSequences();
+public java.util.concurrent.CompletionStage<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public long detailsSanitizedCount();
+public pe.axiz.core.audit.AsyncAuditEventPublisher delegate();
+public pe.axiz.core.audit.SealingAsyncAuditPublisher(pe.axiz.core.audit.AuditSealer, pe.axiz.core.audit.AsyncAuditEventPublisher);
+public void close();
+}
+
+public final class pe.axiz.core.audit.SealingAuditPublisher implements pe.axiz.core.audit.AuditPublisher,pe.axiz.core.audit.AuditPublisherDecorator,java.lang.AutoCloseable,pe.axiz.core.audit.AuditIntegrityMetrics {
+public java.util.Map<java.lang.String, java.lang.Long> chainSequences();
+public long detailsSanitizedCount();
+public pe.axiz.core.audit.AuditPublisher delegate();
+public pe.axiz.core.audit.SealingAuditPublisher(pe.axiz.core.audit.AuditSealer, pe.axiz.core.audit.AuditPublisher);
+public void close();
+public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public interface pe.axiz.core.audit.StrictAuditPublisher {
+public abstract void publish(pe.axiz.core.audit.AuditEvent);
 }

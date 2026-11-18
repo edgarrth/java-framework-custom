@@ -1,0 +1,14 @@
+public final class pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory implements software.amazon.jdbc.ConnectionPluginFactory {
+public pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory();
+public software.amazon.jdbc.ConnectionPlugin getInstance(software.amazon.jdbc.util.FullServicesContainer, java.util.Properties);
+}
+
+public class pe.axiz.spring.jpa.aws.AxizJpaAwsAutoConfiguration {
+public pe.axiz.spring.jpa.aws.AxizJpaAwsAutoConfiguration();
+}
+
+public final class pe.axiz.spring.jpa.aws.AxizJpaAwsEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.jpa.aws.AxizJpaAwsEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}

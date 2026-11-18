@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 import pe.axiz.core.commons.net.TransportSecurityPolicy;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.core.soap.SafeXml;
 import pe.axiz.payments.bankingcore.domain.Movement;
 import pe.axiz.payments.bankingcore.domain.MovementOrder;
@@ -31,7 +30,6 @@ class CoreCreditGatewayTest {
       super(
           new AxizSoapProperties(Map.of()),
           null,
-          ObjectMasker.defaults(),
           ObservationRegistry.NOOP,
           Clock.systemUTC(),
           TransportSecurityPolicy.secure());

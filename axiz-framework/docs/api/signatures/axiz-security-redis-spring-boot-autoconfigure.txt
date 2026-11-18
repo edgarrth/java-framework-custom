@@ -1,0 +1,11 @@
+public class pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration {
+public pe.axiz.spring.security.redis.AxizSecurityRedisAutoConfiguration();
+}
+
+public final class pe.axiz.spring.security.redis.AxizSecurityRedisProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String keyPrefix();
+public pe.axiz.spring.security.redis.AxizSecurityRedisProperties(java.lang.String);
+}

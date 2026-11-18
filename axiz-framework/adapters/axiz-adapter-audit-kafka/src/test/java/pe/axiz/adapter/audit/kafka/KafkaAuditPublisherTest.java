@@ -63,6 +63,24 @@ class KafkaAuditPublisherTest {
   }
 
   @Test
+  void interruptedAcknowledgementRestoresTheInterruptFlag() throws Exception {
+    try (var producer =
+        new MockProducer<String, String>(
+            false, null, new StringSerializer(), new StringSerializer())) {
+      var publisher = new KafkaAuditPublisher(producer, "audit", Duration.ofSeconds(1));
+      try {
+        Thread.currentThread().interrupt();
+        var failure =
+            assertThrows(AuditPublishException.class, () -> publisher.publish(event("o-1")));
+        assertTrue(failure.getCause() instanceof InterruptedException);
+        assertTrue(Thread.currentThread().isInterrupted());
+      } finally {
+        Thread.interrupted();
+      }
+    }
+  }
+
+  @Test
   void failureIsVisible() {
     MockProducer<String, String> producer =
         new MockProducer<>(false, null, new StringSerializer(), new StringSerializer());

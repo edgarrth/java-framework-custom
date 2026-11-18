@@ -34,6 +34,34 @@ import software.amazon.awssdk.services.ssm.SsmAsyncClient;
 
 class ReactiveAwsSecretsTest {
   @Test
+  void nativeParameterStoreRejectsMissingAndBlankPaths() {
+    for (String path : new String[] {"", " "}) {
+      reactive()
+          .withUserConfiguration(ServiceIdentities.class)
+          .withPropertyValues(
+              "axiz.secrets.parameter-store.enabled=true",
+              "axiz.secrets.parameter-store.path=" + path)
+          .run(
+              ctx ->
+                  assertThat(ctx)
+                      .hasFailed()
+                      .getFailure()
+                      .rootCause()
+                      .hasMessageContaining("axiz.secrets.parameter-store.path is required"));
+    }
+    reactive()
+        .withUserConfiguration(ServiceIdentities.class)
+        .withPropertyValues("axiz.secrets.parameter-store.enabled=true")
+        .run(
+            ctx ->
+                assertThat(ctx)
+                    .hasFailed()
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("axiz.secrets.parameter-store.path is required"));
+  }
+
+  @Test
   void eachAwsSecretServiceUsesItsOwnQualifiedIdentity(@TempDir Path directory) {
     reactive()
         .withUserConfiguration(ServiceIdentities.class)

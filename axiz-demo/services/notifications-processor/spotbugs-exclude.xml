@@ -2,7 +2,7 @@
 <FindBugsFilter>
   <!-- Injected collaborator: identity and lifecycle are shared with the application context. -->
   <Match>
-    <Class name="pe.axiz.payments.notifications.archive.AuditArchive"/>
+    <Class name="pe.axiz.payments.notifications.repository.archive.AuditArchive"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="storage"/>
   </Match>

@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import pe.axiz.payments.bankingcore.api.model.MovementRequest;
+import pe.axiz.payments.bankingcore.adapter.in.rest.model.MovementRequest;
 import tools.jackson.databind.json.JsonMapper;
 
 /**

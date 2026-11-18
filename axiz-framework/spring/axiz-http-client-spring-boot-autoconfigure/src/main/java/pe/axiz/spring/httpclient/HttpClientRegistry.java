@@ -32,11 +32,6 @@ public final class HttpClientRegistry implements AutoCloseable {
   private final CircuitBreakerRegistry circuitBreakers;
   private final @Nullable SecretResolver secrets;
 
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "SslBundles is an injected collaborator whose identity and lifecycle must be shared, "
-              + "not copied.")
   private final @Nullable SslBundles sslBundles;
 
   private final AxizHttpClientProperties properties;
@@ -195,6 +190,9 @@ public final class HttpClientRegistry implements AutoCloseable {
       return this;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification = "Borrowed Spring SSL registry must retain identity and managed lifecycle.")
     public Builder sslBundles(@Nullable SslBundles value) {
       this.sslBundles = value;
       return this;
@@ -210,6 +208,10 @@ public final class HttpClientRegistry implements AutoCloseable {
       return this;
     }
 
+    @SuppressFBWarnings(
+        value = "EI_EXPOSE_REP2",
+        justification =
+            "Borrowed observation registry must share the application's instrumentation.")
     public Builder observations(ObservationRegistry value) {
       this.observations = value;
       return this;

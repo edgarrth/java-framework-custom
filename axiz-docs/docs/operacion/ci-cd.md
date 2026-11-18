@@ -9,7 +9,7 @@ workflow. Las actualizaciones llegan mediante una nueva release y su adopción e
 |---|---|---|
 | `pr.yaml` | pull request | título Conventional Commits, gitleaks sobre los commits del PR, guardia de nombres, dependency review (licencias y vulnerabilidades), Semgrep (reglas públicas y de axiz), Trivy de filesystem (SARIF a code scanning), actionlint |
 | `lib-build.yaml` | PR y push | `verify -Pquality` (Spotless, Checkstyle, Error Prone + NullAway, SpotBugs/FindSecBugs, ArchUnit, JaCoCo, PIT), informe de OpenRewrite en PRs, SonarQube con quality gate, SBOM CycloneDX y su escaneo; con `stage` guarda los artefactos que pasaron todos los controles (repositorio de staging con manifiesto SHA-256) |
-| `lib-deploy.yaml` | ejecución independiente con aprobación de environment | verifica el run productor, la firma y el hash externo del manifiesto; publica los bytes ya construidos en Nexus releases sin recompilar |
+| `lib-deploy.yaml` | ejecución independiente con aprobación de environment | verifica el run productor, la firma y el hash externo del manifiesto; publica los bytes ya construidos en GitHub Packages releases sin recompilar |
 | `service-build.yaml` | PR y push de un servicio | lo mismo, más lint de OpenAPI y AsyncAPI (Spectral), cambios incompatibles (oasdiff), chart (helm lint, kubeconform y kube-linter por ambiente); en `main` y tags la imagen con Jib (y nativa si aplica), su escaneo, firma sin llave con cosign, OIDC, Fulcio y Rekor y atestación del SBOM |
 | `service-deploy.yaml` | después de la imagen | despliegue GitOps del commit construido (ver [Despliegue](despliegue.md)) |
 | `release.yaml` | push a `main` | release-please: PR de release con versión y changelog; al hacer merge, tag y release |
@@ -56,7 +56,7 @@ son distintas. Una candidata ausente o expirada falla y nunca provoca una recomp
 
 - Acceso a AWS por **OIDC** (`id-token: write`) con un rol por repositorio y ambiente; sin llaves
   de larga duración.
-- Credenciales de Nexus, SonarQube y de las GitHub Apps como secretos de organización o de
+- Credenciales de GitHub Packages, SonarQube y de las GitHub Apps como secretos de organización o de
   environment, nunca en archivos.
 - Environments `dev`, `qa` y `prod` con revisores obligatorios en `prod`; protección de ramas y
   revisión obligatoria.
@@ -123,7 +123,9 @@ plantilla (`.github/scripts/release-version`).
 
 | Tipo | Nombre | Para qué |
 |---|---|---|
-| Secreto | `NEXUS_URL`, `NEXUS_READ_USERNAME`, `NEXUS_READ_PASSWORD`, `NEXUS_PUBLISH_USERNAME`, `NEXUS_PUBLISH_PASSWORD`, `NEXUS_DOCKER_REGISTRY` | builds e imágenes |
+| Variable opcional | `AXIZ_PACKAGES_URL` | repositorio Maven; predeterminado `https://maven.pkg.github.com/edgarrth/java-framework-custom` |
+| Secretos opcionales | `PACKAGES_READ_USERNAME`, `PACKAGES_READ_TOKEN` | lectura Maven desde otro repositorio; PAT clásico con `read:packages` |
+| Token automático | `GITHUB_TOKEN` | permisos por job: lectura Maven; publicación Maven, imágenes y charts OCI en GHCR |
 | Secreto (opcional) | `SONAR_HOST_URL`, `SONAR_TOKEN` | análisis y quality gate |
 | Secreto | `AXIZ_NAMING_GUARD` | identificadores prohibidos, uno por línea (fuera de todo repositorio); `pr.yaml` falla si falta, salvo `AXIZ_NAMING_GUARD_OPTIONAL=true` |
 | Secreto | `GITOPS_APP_CLIENT_ID`, `GITOPS_APP_PRIVATE_KEY` | GitHub App que solo puede escribir en el repositorio GitOps |

@@ -17,8 +17,8 @@ import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.featureflags.FeatureFlags;
 import pe.axiz.core.featureflags.FlagDefinition;
 import pe.axiz.core.featureflags.MapFlagProvider;
-import pe.axiz.payments.ux.api.model.PaymentRequest;
-import pe.axiz.payments.ux.api.model.PaymentView;
+import pe.axiz.payments.ux.composition.model.PaymentRequest;
+import pe.axiz.payments.ux.composition.model.PaymentView;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
 

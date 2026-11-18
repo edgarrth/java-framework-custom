@@ -65,8 +65,8 @@ class SampleWorkflowsTest(unittest.TestCase):
                 'native': {
                     'uses': 'edgarrth/java-framework-custom/.github/workflows/native-nightly.yaml@axiz-workflows-v2.0.0',
                     'with': {'modules': json.dumps(modules)},
-                    'secrets': {'NEXUS_USERNAME': '${{ secrets.NEXUS_READ_USERNAME }}',
-                                'NEXUS_PASSWORD': '${{ secrets.NEXUS_READ_PASSWORD }}'},
+                    'secrets': {'PACKAGES_READ_USERNAME': '${{ secrets.PACKAGES_READ_USERNAME }}',
+                                'PACKAGES_READ_TOKEN': '${{ secrets.PACKAGES_READ_TOKEN }}'},
                 },
             },
         }
@@ -114,7 +114,7 @@ class SampleWorkflowsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             path, original, _, _ = self.fixture(root)
-            original['jobs']['native']['secrets']['NEXUS_PASSWORD'] = '${{ secrets.NEXUS_PASSWORD }}'
+            original['jobs']['native']['secrets']['PACKAGES_TOKEN'] = '${{ secrets.PACKAGES_TOKEN }}'
             path.write_text(yaml.safe_dump(original))
             self.assertTrue(any('read-only' in error for error in policy.check(root)))
 

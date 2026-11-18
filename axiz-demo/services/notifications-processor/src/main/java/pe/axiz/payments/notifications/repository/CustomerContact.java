@@ -3,14 +3,11 @@ package pe.axiz.payments.notifications.repository;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.sensitive.Sensitive;
 import pe.axiz.core.sensitive.SensitivityLevel;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 
 /**
- * How a customer wants to be notified (table {@code notification-contacts}, partition key {@code
- * customerId}). Maintained by the customer profile domain; this service only reads it.
+ * Decrypted delivery preferences used in memory. DynamoDB stores {@link ContactItem}, with the
+ * address encrypted and authenticated against the customer and channel.
  */
-@DynamoDbBean
 public class CustomerContact {
 
   private String customerId = "";
@@ -34,7 +31,6 @@ public class CustomerContact {
     this.paymentAlerts = paymentAlerts;
   }
 
-  @DynamoDbPartitionKey
   public String getCustomerId() {
     return customerId;
   }

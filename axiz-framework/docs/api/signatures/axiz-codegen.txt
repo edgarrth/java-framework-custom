@@ -190,6 +190,32 @@ public java.util.Map<java.lang.String, java.lang.Object> properties();
 public pe.axiz.codegen.model.Archetype(java.lang.String, java.lang.String, java.util.List<pe.axiz.codegen.model.Structure>, java.util.List<pe.axiz.codegen.model.Stack>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, boolean, java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, java.util.List<pe.axiz.codegen.model.Extension>);
 public pe.axiz.codegen.model.Stack defaultStack();
 public pe.axiz.codegen.model.Structure defaultStructure();
+public static pe.axiz.codegen.model.Archetype$Builder builder();
+}
+
+public final class pe.axiz.codegen.model.Archetype$Builder {
+public pe.axiz.codegen.model.Archetype build();
+public pe.axiz.codegen.model.Archetype$Builder deployment(java.lang.String);
+public pe.axiz.codegen.model.Archetype$Builder extensions(java.util.List<pe.axiz.codegen.model.Extension>);
+public pe.axiz.codegen.model.Archetype$Builder kind(java.lang.String);
+public pe.axiz.codegen.model.Archetype$Builder name(java.lang.String);
+public pe.axiz.codegen.model.Archetype$Builder persistence(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Archetype$Builder properties(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.codegen.model.Archetype$Builder rest(boolean);
+public pe.axiz.codegen.model.Archetype$Builder role(java.lang.String);
+public pe.axiz.codegen.model.Archetype$Builder stacks(java.util.List<pe.axiz.codegen.model.Stack>);
+public pe.axiz.codegen.model.Archetype$Builder starters(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Archetype$Builder structures(java.util.List<pe.axiz.codegen.model.Structure>);
+}
+
+public final class pe.axiz.codegen.model.ArchitectureScopes extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String cardData();
+public java.lang.String tokenization();
+public pe.axiz.codegen.model.ArchitectureScopes(java.lang.String, java.lang.String);
+public static pe.axiz.codegen.model.ArchitectureScopes of(java.util.Collection<pe.axiz.codegen.model.Capability>);
 }
 
 public final class pe.axiz.codegen.model.Capability extends java.lang.Record {
@@ -207,6 +233,7 @@ public java.util.List<java.lang.String> dependencies();
 public java.util.List<java.lang.String> dependencies(java.lang.String);
 public java.util.List<java.lang.String> requires();
 public java.util.List<java.lang.String> requires(java.lang.String);
+public java.util.List<java.lang.String> requiresAnyOf();
 public java.util.List<java.lang.String> secrets();
 public java.util.List<java.lang.String> stores();
 public java.util.List<pe.axiz.codegen.model.Stack> stacks();
@@ -214,7 +241,25 @@ public java.util.Map<java.lang.String, java.lang.Object> localProperties();
 public java.util.Map<java.lang.String, java.lang.Object> properties();
 public java.util.Map<java.lang.String, java.lang.Object> properties(java.lang.String);
 public java.util.Map<java.lang.String, pe.axiz.codegen.model.Capability$Store> persistence();
-public pe.axiz.codegen.model.Capability(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.lang.Object>, java.util.Map<java.lang.String, java.lang.Object>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, java.util.Map<java.lang.String, pe.axiz.codegen.model.Capability$Store>, java.util.List<pe.axiz.codegen.model.Stack>);
+public pe.axiz.codegen.model.Capability(java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.lang.Object>, java.util.Map<java.lang.String, java.lang.Object>, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, java.util.Map<java.lang.String, pe.axiz.codegen.model.Capability$Store>, java.util.List<pe.axiz.codegen.model.Stack>);
+public static pe.axiz.codegen.model.Capability$Builder builder();
+}
+
+public final class pe.axiz.codegen.model.Capability$Builder {
+public pe.axiz.codegen.model.Capability build();
+public pe.axiz.codegen.model.Capability$Builder configMapKeys(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Capability$Builder dependencies(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Capability$Builder description(java.lang.String);
+public pe.axiz.codegen.model.Capability$Builder example(java.lang.String);
+public pe.axiz.codegen.model.Capability$Builder localProperties(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.codegen.model.Capability$Builder name(java.lang.String);
+public pe.axiz.codegen.model.Capability$Builder persistence(java.util.Map<java.lang.String, pe.axiz.codegen.model.Capability$Store>);
+public pe.axiz.codegen.model.Capability$Builder properties(java.util.Map<java.lang.String, java.lang.Object>);
+public pe.axiz.codegen.model.Capability$Builder requires(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Capability$Builder requiresAnyOf(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Capability$Builder secrets(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Capability$Builder stacks(java.util.List<pe.axiz.codegen.model.Stack>);
+public pe.axiz.codegen.model.Capability$Builder starter(java.lang.String);
 }
 
 public final class pe.axiz.codegen.model.Capability$Store extends java.lang.Record {
@@ -229,6 +274,7 @@ public pe.axiz.codegen.model.Capability$Store(java.util.Map<java.lang.String, ja
 }
 
 public final class pe.axiz.codegen.model.Catalog {
+public java.util.List<java.lang.String> missingAlternatives(java.util.Collection<pe.axiz.codegen.model.Capability>);
 public java.util.List<pe.axiz.codegen.model.Archetype> archetypes();
 public java.util.List<pe.axiz.codegen.model.Capability> capabilities();
 public java.util.List<pe.axiz.codegen.model.Capability> resolve(java.util.Collection<java.lang.String>);
@@ -275,10 +321,27 @@ public java.lang.String openApi();
 public java.lang.String persistence();
 public java.util.List<java.lang.String> capabilities();
 public java.util.List<pe.axiz.codegen.model.Extension> extensions();
-public pe.axiz.codegen.model.ProjectRequest(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.codegen.model.Structure, pe.axiz.codegen.model.Stack, java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.lang.String, java.lang.String);
 public pe.axiz.codegen.model.ProjectRequest(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.codegen.model.Structure, pe.axiz.codegen.model.Stack, java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.lang.String, java.lang.String, java.util.List<pe.axiz.codegen.model.Extension>);
 public pe.axiz.codegen.model.Stack stack();
 public pe.axiz.codegen.model.Structure structure();
+public static pe.axiz.codegen.model.ProjectRequest$Builder builder();
+}
+
+public final class pe.axiz.codegen.model.ProjectRequest$Builder {
+public pe.axiz.codegen.model.ProjectRequest build();
+public pe.axiz.codegen.model.ProjectRequest$Builder archetype(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder asyncApi(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder basePackage(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder capabilities(java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.ProjectRequest$Builder description(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder extensions(java.util.List<pe.axiz.codegen.model.Extension>);
+public pe.axiz.codegen.model.ProjectRequest$Builder frameworkVersion(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder groupId(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder name(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder openApi(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder persistence(java.lang.String);
+public pe.axiz.codegen.model.ProjectRequest$Builder stack(pe.axiz.codegen.model.Stack);
+public pe.axiz.codegen.model.ProjectRequest$Builder structure(pe.axiz.codegen.model.Structure);
 }
 
 public final class pe.axiz.codegen.model.Snapshots {
@@ -315,8 +378,7 @@ public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
 public java.util.List<java.lang.String> capabilities();
-public java.util.List<java.lang.String> jdbcTables();
-public pe.axiz.codegen.model.Style(java.util.List<java.lang.String>, java.util.List<java.lang.String>);
+public pe.axiz.codegen.model.Style(java.util.List<java.lang.String>);
 public static final java.util.List<java.lang.String> TABLES;
 public static final pe.axiz.codegen.model.Style NONE;
 }
@@ -344,6 +406,7 @@ public java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam> headerPar
 public java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam> queryParams();
 public pe.axiz.codegen.openapi.ApiOperation$Access access();
 public pe.axiz.codegen.openapi.ApiOperation(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, java.util.List<java.lang.String>, boolean, java.lang.String, java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam>, java.util.List<java.lang.String>, java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam>, java.util.List<java.lang.String>, pe.axiz.codegen.openapi.ApiOperation$Access);
+public static pe.axiz.codegen.openapi.ApiOperation$Builder builder();
 }
 
 public final class pe.axiz.codegen.openapi.ApiOperation$Access extends java.lang.Enum<pe.axiz.codegen.openapi.ApiOperation$Access> {
@@ -354,6 +417,26 @@ public static final pe.axiz.codegen.openapi.ApiOperation$Access UNDECLARED;
 public static final pe.axiz.codegen.openapi.ApiOperation$Access UNSUPPORTED;
 public static pe.axiz.codegen.openapi.ApiOperation$Access valueOf(java.lang.String);
 public static pe.axiz.codegen.openapi.ApiOperation$Access[] values();
+}
+
+public final class pe.axiz.codegen.openapi.ApiOperation$Builder {
+public pe.axiz.codegen.openapi.ApiOperation build();
+public pe.axiz.codegen.openapi.ApiOperation$Builder access(pe.axiz.codegen.openapi.ApiOperation$Access);
+public pe.axiz.codegen.openapi.ApiOperation$Builder headerParams(java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam>);
+public pe.axiz.codegen.openapi.ApiOperation$Builder method(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder operationId(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder paged(boolean);
+public pe.axiz.codegen.openapi.ApiOperation$Builder pagingParams(java.util.List<java.lang.String>);
+public pe.axiz.codegen.openapi.ApiOperation$Builder path(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder pathParams(java.util.List<java.lang.String>);
+public pe.axiz.codegen.openapi.ApiOperation$Builder queryParams(java.util.List<pe.axiz.codegen.openapi.ApiOperation$QueryParam>);
+public pe.axiz.codegen.openapi.ApiOperation$Builder requestExample(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder requestSchema(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder responseSchema(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder scopes(java.util.List<java.lang.String>);
+public pe.axiz.codegen.openapi.ApiOperation$Builder successStatus(int);
+public pe.axiz.codegen.openapi.ApiOperation$Builder summary(java.lang.String);
+public pe.axiz.codegen.openapi.ApiOperation$Builder tag(java.lang.String);
 }
 
 public final class pe.axiz.codegen.openapi.ApiOperation$QueryParam extends java.lang.Record {
@@ -378,6 +461,10 @@ public final java.lang.String toString();
 public java.lang.String location();
 public java.lang.String message();
 public pe.axiz.codegen.openapi.ContractDiff$Change(boolean, java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.codegen.openapi.Json {
+public static java.lang.String write(java.lang.Object);
 }
 
 public final class pe.axiz.codegen.openapi.LintFinding extends java.lang.Record {
@@ -433,6 +520,7 @@ public static java.nio.file.Path target(java.nio.file.Path, java.lang.String) th
 
 public final class pe.axiz.codegen.project.CapabilityAdder {
 public pe.axiz.codegen.project.CapabilityAdder$Result add(java.nio.file.Path, java.lang.String) throws java.io.IOException;
+public pe.axiz.codegen.project.CapabilityAdder$Result add(java.nio.file.Path, java.util.List<java.lang.String>) throws java.io.IOException;
 public pe.axiz.codegen.project.CapabilityAdder(pe.axiz.codegen.model.Catalog);
 public static boolean mergeYaml(java.nio.file.Path, java.util.Map<java.lang.String, java.lang.Object>) throws java.io.IOException;
 public static boolean mergeYaml(java.nio.file.Path, java.util.Map<java.lang.String, java.lang.Object>, java.util.List<java.lang.String>) throws java.io.IOException;
@@ -509,11 +597,28 @@ public pe.axiz.codegen.project.ProjectManifest withAxizVersion(java.lang.String)
 public pe.axiz.codegen.project.ProjectManifest withCapabilities(java.util.List<java.lang.String>);
 public pe.axiz.codegen.project.ProjectManifest withName(java.lang.String);
 public pe.axiz.codegen.project.ProjectManifest withOperations(java.util.List<java.lang.String>);
-public pe.axiz.codegen.project.ProjectManifest(java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.codegen.model.Structure, pe.axiz.codegen.model.Stack, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
 public pe.axiz.codegen.project.ProjectManifest(java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.codegen.model.Structure, pe.axiz.codegen.model.Stack, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<pe.axiz.codegen.model.Extension>);
 public static final java.lang.String PATH = ".axiz/project.yaml";
 public static pe.axiz.codegen.project.ProjectManifest read(java.nio.file.Path) throws java.io.IOException;
+public static pe.axiz.codegen.project.ProjectManifest$Builder builder();
 public void write(java.nio.file.Path) throws java.io.IOException;
+}
+
+public final class pe.axiz.codegen.project.ProjectManifest$Builder {
+public pe.axiz.codegen.project.ProjectManifest build();
+public pe.axiz.codegen.project.ProjectManifest$Builder archetype(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder asyncapi(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder axizVersion(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder basePackage(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder capabilities(java.util.List<java.lang.String>);
+public pe.axiz.codegen.project.ProjectManifest$Builder extensions(java.util.List<pe.axiz.codegen.model.Extension>);
+public pe.axiz.codegen.project.ProjectManifest$Builder groupId(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder name(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder openapi(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder operations(java.util.List<java.lang.String>);
+public pe.axiz.codegen.project.ProjectManifest$Builder persistence(java.lang.String);
+public pe.axiz.codegen.project.ProjectManifest$Builder stack(pe.axiz.codegen.model.Stack);
+public pe.axiz.codegen.project.ProjectManifest$Builder structure(pe.axiz.codegen.model.Structure);
 }
 
 public final class pe.axiz.codegen.project.ProjectRename {

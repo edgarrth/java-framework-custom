@@ -24,7 +24,7 @@ port 8087. Debits, credits and reversals belong to banking-core.
 
 - JDK 25 (Maven comes with the wrapper `./mvnw`)
 - Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- Access to the GitHub Packages repository that publishes axiz
 
 ## Build and test
 
@@ -144,9 +144,12 @@ The workflows use the immutable Axiz 2.0.0 contracts:
   manifest SHA-256, environment, full values commit and previous deployed manifest hash
   (`initial-deployment` for the first deployment). It reuses image/chart digests, updates GitOps
   and waits for Argo CD; deployment never rebuilds. Protected environments provide approval.
-- Build credentials are `NEXUS_READ_USERNAME/PASSWORD`, `BUILD_DESTINATION` and
-  `REGISTRY_BUILD_USERNAME/PASSWORD`. Deploy uses registry read credentials plus the GitOps App
-  and Argo read token. Use the same `BUILD_DESTINATION` for build, automatic resolution and deploy; configure `ARGOCD_SERVER` as a repository variable.
+- Compilation uses `GITHUB_TOKEN` with `packages: read`; optional `PACKAGES_READ_USERNAME` and
+  `PACKAGES_READ_TOKEN` allow reading dependencies from another repository. An isolated publisher
+  verifies the worker and uploads the original OCI/chart bytes with `packages: write`.
+  Pull requests compile and scan without publishing or signing. Deploy reads GHCR with its
+  `GITHUB_TOKEN` and uses the GitOps App and Argo read token. Use the same `BUILD_DESTINATION`
+  for build, automatic resolution and deploy; configure `ARGOCD_SERVER` as a repository variable.
 - `release.yaml`: release-please keeps a release pull request with the next version and the
   changelog; merging it creates the tag. `version.txt` and `.release-please-manifest.json` hold
   the last released version (`0.0.0`: nothing released yet); the pom holds the next one

@@ -6,9 +6,9 @@ import org.springframework.stereotype.Repository;
 import pe.axiz.core.api.Page;
 import pe.axiz.kit.dynamodb.DynamoRepository;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
-{{#fw.layered}}
+{{#fw.separateEntityPackage}}
 import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Item;
-{{/fw.layered}}
+{{/fw.separateEntityPackage}}
 
 /** Data access of {@link {{artifact.className}}Item} (table {@code <prefix>{{artifact.plural}}}). */
 @Repository

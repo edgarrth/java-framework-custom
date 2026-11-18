@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import pe.axiz.payments.process.api.model.ProcessRequest;
+import pe.axiz.payments.process.adapter.in.rest.model.ProcessRequest;
 import tools.jackson.databind.json.JsonMapper;
 
 /**

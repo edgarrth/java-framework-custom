@@ -2,9 +2,9 @@ package pe.axiz.payments.orders.adapter.in.rest;
 
 import java.time.ZoneOffset;
 import pe.axiz.core.api.Page;
-import pe.axiz.payments.orders.api.model.PaymentOrder;
-import pe.axiz.payments.orders.api.model.PaymentOrderPage;
-import pe.axiz.payments.orders.api.model.PaymentStatus;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrder;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentOrderPage;
+import pe.axiz.payments.orders.adapter.in.rest.model.PaymentStatus;
 
 /** Domain to API models. The creditor account always leaves masked. */
 final class PaymentOrderApiMapper {

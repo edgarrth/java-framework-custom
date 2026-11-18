@@ -26,6 +26,16 @@ class PipelineContractsTest(unittest.TestCase):
         deploy["jobs"]["deploy"]["steps"].append({"run": "helm push product.tgz oci://registry"})
         self.assertTrue(any("artifact registry" in error for error in validate(build, deploy)))
 
+    def test_source_execution_cannot_receive_package_publication_rights(self):
+        workflows = Path(__file__).resolve().parents[2] / "workflows"
+        build = yaml.safe_load((workflows / "service-build.yaml").read_text())
+        deploy = yaml.safe_load((workflows / "service-deploy.yaml").read_text())
+        self.assertEqual("read", build["jobs"]["build"]["permissions"]["packages"])
+        self.assertEqual("write", build["jobs"]["publish"]["permissions"]["packages"])
+        self.assertIn("github.event_name != 'pull_request'", build["jobs"]["publish"]["if"])
+        build["jobs"]["build"]["permissions"]["packages"] = "write"
+        self.assertTrue(any("cannot execute project" in error for error in validate(build, deploy)))
+
     def test_a_second_deploy_job_inside_build_is_rejected(self):
         self.build["jobs"]["publish"] = {"uses": "edgarrth/java-framework-custom/.github/workflows/lib-deploy.yaml@axiz-workflows-v2.0.0"}
         self.assertTrue(any("invoke a deploy" in error for error in validate(self.build, self.deploy)))
@@ -42,7 +52,7 @@ class PipelineContractsTest(unittest.TestCase):
         self.assertTrue(any("manifest-sha256" in error for error in validate(self.build, self.deploy)))
 
     def test_build_credentials_and_content_permissions_cannot_write_to_destinations(self):
-        self.build[True]["workflow_call"]["secrets"]["NEXUS_PUBLISH_PASSWORD"] = {"required": True}
+        self.build[True]["workflow_call"]["secrets"]["PACKAGES_PUBLISH_TOKEN"] = {"required": True}
         self.build["permissions"]["contents"] = "write"
         errors = validate(self.build, self.deploy)
         self.assertTrue(any("credential" in error for error in errors))

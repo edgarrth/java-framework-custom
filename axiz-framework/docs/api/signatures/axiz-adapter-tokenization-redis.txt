@@ -1,0 +1,13 @@
+public final class pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget implements pe.axiz.core.tokenization.vault.AsyncTokenBudget {
+public boolean distributed();
+public java.util.concurrent.CompletionStage<java.lang.Void> beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
+public java.util.concurrent.CompletionStage<pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit> acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
+public pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.AsyncRateLimiter);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudget implements pe.axiz.core.tokenization.vault.TokenBudget {
+public boolean distributed();
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.RateLimiter);
+public pe.axiz.core.tokenization.vault.TokenBudget$Permit acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
+public void beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
+}

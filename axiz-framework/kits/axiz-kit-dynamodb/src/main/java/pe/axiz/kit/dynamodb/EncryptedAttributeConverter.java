@@ -16,7 +16,10 @@ public abstract class EncryptedAttributeConverter implements AttributeConverter<
   private final FieldEncryptor encryptor;
 
   protected EncryptedAttributeConverter(FieldEncryptor encryptor) {
-    this.encryptor = Objects.requireNonNull(encryptor);
+    // Validate before Object construction, so invalid subclasses never become finalizable.
+    Objects.requireNonNull(encryptor);
+    super();
+    this.encryptor = encryptor;
   }
 
   protected abstract String context();

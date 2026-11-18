@@ -1,4 +1,4 @@
-package pe.axiz.payments.notifications.archive;
+package pe.axiz.payments.notifications.repository.archive;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -12,8 +12,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.lock.InMemoryDistributedLock;
-import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.lock.LockObserver;
+import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.storage.InMemoryObjectStorage;
 import pe.axiz.payments.notifications.event.AuditRecord;
 
@@ -23,7 +23,10 @@ class AuditArchiveTest {
   final AuditArchive archive =
       new AuditArchive(
           storage,
-          new LockTemplate(new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(2), LockObserver.NONE));
+          new LockTemplate(
+              new InMemoryDistributedLock(Clock.systemUTC()),
+              Duration.ofMillis(2),
+              LockObserver.NONE));
 
   static AuditRecord record(String id, String service) {
     return new AuditRecord(

@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.lock.InMemoryDistributedLock;
-import pe.axiz.core.lock.LockTemplate;
 import pe.axiz.core.lock.LockObserver;
+import pe.axiz.core.lock.LockTemplate;
 
 /** What a movement sees when its account lock is not obtained or the work fails. */
 class AccountLocksTest {
@@ -19,7 +19,10 @@ class AccountLocksTest {
   @Test
   void theWorkRunsUnderTheLockAndItsFailuresPassThrough() {
     LockTemplate locks =
-        new LockTemplate(new InMemoryDistributedLock(Clock.systemUTC()), Duration.ofMillis(5), LockObserver.NONE);
+        new LockTemplate(
+            new InMemoryDistributedLock(Clock.systemUTC()),
+            Duration.ofMillis(5),
+            LockObserver.NONE);
 
     assertThat(AccountLocks.with(locks, "account:1", () -> "done")).isEqualTo("done");
     IllegalStateException failure = new IllegalStateException("core down");
@@ -36,7 +39,8 @@ class AccountLocksTest {
 
   @Test
   void anInterruptedWaitIsAnUnavailableDependencyAndKeepsTheInterrupt() {
-    LockTemplate neverFree = new LockTemplate((_, _) -> Optional.empty(), Duration.ofMillis(5), LockObserver.NONE);
+    LockTemplate neverFree =
+        new LockTemplate((_, _) -> Optional.empty(), Duration.ofMillis(5), LockObserver.NONE);
 
     Thread.currentThread().interrupt();
     try {

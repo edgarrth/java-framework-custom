@@ -9,6 +9,7 @@
   <description>Explicit tokenization-vault-dynamodb integration for the generic token vault</description>
   <properties><axiz.module.name>pe.axiz.spring.tokenization.vault.dynamodb</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>test</scope></dependency>

@@ -11,8 +11,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pe.axiz.core.errors.NotFoundException;
-import pe.axiz.payments.process.api.model.ProcessRequest;
-import pe.axiz.payments.process.api.model.ProcessView;
+import pe.axiz.payments.process.adapter.in.rest.model.ProcessRequest;
+import pe.axiz.payments.process.adapter.in.rest.model.ProcessView;
 import pe.axiz.payments.process.application.usecase.Processes;
 import pe.axiz.spring.test.OpenApiResponses;
 

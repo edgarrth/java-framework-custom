@@ -43,9 +43,22 @@ public static pe.axiz.core.sensitive.MaskingPolicy defaults();
 public final class pe.axiz.core.sensitive.ObjectMasker {
 public boolean masksKey(java.lang.String, pe.axiz.core.sensitive.OutputChannel);
 public java.lang.Object describe(java.lang.Object, pe.axiz.core.sensitive.OutputChannel);
+public java.lang.Object describeNamed(java.lang.String, java.lang.Object, pe.axiz.core.sensitive.SensitiveField, pe.axiz.core.sensitive.OutputChannel);
+public java.lang.Object maskNumber(java.lang.Number, pe.axiz.core.sensitive.OutputChannel);
 public java.lang.String maskByKey(java.lang.String, java.lang.String, pe.axiz.core.sensitive.OutputChannel);
-public pe.axiz.core.sensitive.ObjectMasker(pe.axiz.core.sensitive.MaskingPolicy, pe.axiz.core.sensitive.SensitiveKeys);
+public java.lang.String maskText(java.lang.String, pe.axiz.core.sensitive.OutputChannel);
+public pe.axiz.core.sensitive.ObjectMasker$Description describeCounting(java.lang.String, java.lang.Object, pe.axiz.core.sensitive.SensitiveField, pe.axiz.core.sensitive.OutputChannel);
+public pe.axiz.core.sensitive.ObjectMasker(pe.axiz.core.sensitive.MaskingPolicy, pe.axiz.core.sensitive.SensitiveKeys, boolean);
 public static pe.axiz.core.sensitive.ObjectMasker defaults();
+}
+
+public final class pe.axiz.core.sensitive.ObjectMasker$Description extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int sanitized();
+public java.lang.Object value();
+public pe.axiz.core.sensitive.ObjectMasker$Description(java.lang.Object, int);
 }
 
 public final class pe.axiz.core.sensitive.OutputChannel extends java.lang.Enum<pe.axiz.core.sensitive.OutputChannel> {
@@ -54,6 +67,19 @@ public static final pe.axiz.core.sensitive.OutputChannel LOG;
 public static final pe.axiz.core.sensitive.OutputChannel RESPONSE;
 public static pe.axiz.core.sensitive.OutputChannel valueOf(java.lang.String);
 public static pe.axiz.core.sensitive.OutputChannel[] values();
+}
+
+public final class pe.axiz.core.sensitive.PanDetector {
+public static boolean containsPan(java.lang.String);
+public static boolean isPan(java.lang.String);
+public static final int MAX_DIGITS = 19;
+public static final int MIN_DIGITS = 12;
+public static java.lang.Object redactNumber(java.lang.Number);
+public static java.lang.String redact(java.lang.String);
+}
+
+public interface pe.axiz.core.sensitive.SelfMasking {
+public abstract java.lang.String masked();
 }
 
 public interface pe.axiz.core.sensitive.Sensitive extends java.lang.annotation.Annotation {

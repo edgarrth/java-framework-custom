@@ -24,12 +24,10 @@ on:
       AXIZ_WORKFLOWS_READ_TOKEN:
         description: Read-only token for private immutable release verification (optional for public repositories)
         required: false
-      NEXUS_URL:
-        required: true
-      NEXUS_USERNAME:
-        required: true
-      NEXUS_PASSWORD:
-        required: true
+      PACKAGES_READ_USERNAME:
+        required: false
+      PACKAGES_READ_TOKEN:
+        required: false
 
 permissions: {}
 
@@ -53,6 +51,7 @@ jobs:
 
   native:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
@@ -62,8 +61,8 @@ jobs:
         module: ${{ fromJSON(inputs.modules) }}
     runs-on: ${{ inputs.runner }}
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
       MODULE: ${{ matrix.module }}
       GENERATE: ${{ inputs.generate-script }}
     steps:
@@ -75,7 +74,7 @@ jobs:
       - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0 # x-release-please-version
         with:
           distribution: graalvm
-          nexus-url: ${{ secrets.NEXUS_URL }}
+          packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
       - name: Prepare
         if: inputs.generate-script != ''
         run: bash "$GENERATE"

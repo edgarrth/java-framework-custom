@@ -165,9 +165,16 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
   @Override
   public boolean exists(
       String customerId, String creditorCci, Money amount, LocalDate processingDate) {
-    return blindIndex.candidates(creditorCci, cciScope(customerId)).stream().anyMatch(candidate ->
-        repository.existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
-            customerId, candidate.encoded(), amount.amount(), processingDate, PaymentStatus.REJECTED.name()));
+    return blindIndex.candidates(creditorCci, cciScope(customerId)).stream()
+        .anyMatch(
+            candidate ->
+                repository
+                    .existsByCustomerIdAndCreditorCciIndexAndAmountAndProcessingDateAndStatusNot(
+                        customerId,
+                        candidate.encoded(),
+                        amount.amount(),
+                        processingDate,
+                        PaymentStatus.REJECTED.name()));
   }
 
   static PaymentOrder toDomain(PaymentOrderEntity e) {

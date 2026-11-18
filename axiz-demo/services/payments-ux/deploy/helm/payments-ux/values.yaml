@@ -1,7 +1,7 @@
 nameOverride: payments-ux
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/payments-ux
+  repository: ghcr.io/edgarrth/java-framework-custom/payments-ux
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

@@ -22,6 +22,7 @@
 
   <properties>
     <axiz.base-package>pe.axiz.payments.networkgateway</axiz.base-package>
+    <axiz.openapi.model-package>${axiz.base-package}.adapter.in.rest.model</axiz.openapi.model-package>
   </properties>
 
   <dependencies>

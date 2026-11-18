@@ -9,6 +9,8 @@
   <description>Idempotency integration for dynamodb</description>
   <properties><axiz.module.name>pe.axiz.spring.idempotency.dynamodb</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>auth</artifactId><scope>test</scope></dependency>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc-test</artifactId><scope>test</scope></dependency>
 <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-observation</artifactId></dependency>
 <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-core</artifactId></dependency>

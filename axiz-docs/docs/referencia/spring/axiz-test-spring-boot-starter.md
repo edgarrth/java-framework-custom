@@ -36,6 +36,15 @@ declare its environment and the permissions needed by its imported fixtures expl
 application tests do this in their own `@SpringBootTest` properties. TLS acceptance tests use their
 own TLS-enabled backends instead of these plaintext fixtures.
 
+## Kafka authentication selection
+
+When MSK is a dependency, set `axiz.messaging.kafka.authentication=configured` in
+`@SpringBootTest(properties = ...)` together with the explicit test transport settings.
+This selector must be available while Spring evaluates auto-configuration conditions.
+A `DynamicPropertyRegistrar` runs too late to undo an MSK configuration already selected
+from application YAML. The Kafka fixture then supplies the broker address and disables IAM;
+generated application tests include the early selector automatically.
+
 ## Local AWS credentials
 
 `LocalStackTestConfiguration` supplies a context-local `AwsCredentialsProvider` bean together

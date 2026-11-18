@@ -4,8 +4,8 @@ import org.springframework.stereotype.Component;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.HandlesEvent;
 import pe.axiz.core.messaging.TypedEventHandler;
-import pe.axiz.payments.notifications.archive.AuditArchive;
 import pe.axiz.payments.notifications.event.AuditRecord;
+import pe.axiz.payments.notifications.repository.archive.AuditArchive;
 
 /**
  * Archives the audit trail the services publish to the SQS audit queue ({@code

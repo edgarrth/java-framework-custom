@@ -1,0 +1,11 @@
+public class pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisAutoConfiguration {
+public pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisAutoConfiguration();
+}
+
+public final class pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String keyPrefix();
+public pe.axiz.spring.idempotency.redis.AxizIdempotencyRedisProperties(java.lang.String);
+}

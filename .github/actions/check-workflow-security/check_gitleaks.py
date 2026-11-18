@@ -24,6 +24,9 @@ def check(configuration):
                        '"keySha256": "' + digest + '", "api_key": "' + canary + '"\n')
         outside = root / "outside.json"
         outside.write_text('"api_key": "' + canary + '"\n')
+        registry = root / "registry.env"
+        registry.write_text("".join(name + '="' + canary + '"\n' for name in
+                            ("PACKAGES_READ_TOKEN", "GITHUB_TOKEN", "GHCR_PASSWORD", "NEXUS_PASSWORD")))
         result = subprocess.run([
             "docker", "run", "--rm", "--network", "none", "-w", "/scan",
             "-v", str(root) + ":/scan", "-v", str(configuration) + ":/configuration.toml:ro",
@@ -37,7 +40,8 @@ def check(configuration):
         locations = {(item["File"].removeprefix("./"), item["StartLine"]) for item in findings}
         required = {("docs/api/public-api.json", 2),
                     ("docs/api/public-api.json", 3),
-                    ("outside.json", 1)}
+                    ("outside.json", 1),
+                    *(("registry.env", line) for line in range(1, 5))}
         if not required.issubset(locations):
             raise RuntimeError("The effective gitleaks configuration hid a secret canary")
         forbidden = {("docs/api/public-api.json", 1)}

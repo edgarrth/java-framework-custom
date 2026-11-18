@@ -16,7 +16,6 @@ public pe.axiz.core.outbox.OutboxException(java.lang.String, java.lang.Throwable
 public final class pe.axiz.core.outbox.OutboxRecord extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
-public final java.lang.String toString();
 public int attempts();
 public java.lang.String aggregateId();
 public java.lang.String aggregateType();
@@ -26,14 +25,27 @@ public java.lang.String eventType();
 public java.lang.String id();
 public java.lang.String lastError();
 public java.lang.String leaseOwner();
+public java.lang.String toString();
 public java.time.Instant createdAt();
 public java.time.Instant leaseUntil();
 public java.time.Instant nextAttemptAt();
 public long aggregateSequence();
 public pe.axiz.core.messaging.EventEnvelope event();
+public pe.axiz.core.messaging.EventEnvelope event(pe.axiz.core.crypto.PayloadProtector);
 public pe.axiz.core.outbox.OutboxRecord$Status status();
-public pe.axiz.core.outbox.OutboxRecord(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.outbox.OutboxRecord$Status, int, java.time.Instant, java.time.Instant, java.lang.String);
 public pe.axiz.core.outbox.OutboxRecord(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, pe.axiz.core.outbox.OutboxRecord$Status, int, java.time.Instant, java.time.Instant, java.lang.String, long, java.lang.String, java.time.Instant);
+public static pe.axiz.core.outbox.OutboxRecord$Builder builder(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
+}
+
+public final class pe.axiz.core.outbox.OutboxRecord$Builder {
+public pe.axiz.core.outbox.OutboxRecord build();
+public pe.axiz.core.outbox.OutboxRecord$Builder aggregate(java.lang.String, java.lang.String);
+public pe.axiz.core.outbox.OutboxRecord$Builder aggregateSequence(long);
+public pe.axiz.core.outbox.OutboxRecord$Builder attempts(int);
+public pe.axiz.core.outbox.OutboxRecord$Builder lastError(java.lang.String);
+public pe.axiz.core.outbox.OutboxRecord$Builder lease(java.lang.String, java.time.Instant);
+public pe.axiz.core.outbox.OutboxRecord$Builder nextAttemptAt(java.time.Instant);
+public pe.axiz.core.outbox.OutboxRecord$Builder status(pe.axiz.core.outbox.OutboxRecord$Status);
 }
 
 public final class pe.axiz.core.outbox.OutboxRecord$Status extends java.lang.Enum<pe.axiz.core.outbox.OutboxRecord$Status> {
@@ -50,8 +62,18 @@ public final class pe.axiz.core.outbox.OutboxRelay {
 public boolean supportsDestination(java.lang.String);
 public int drain();
 public pe.axiz.core.outbox.OutboxRelay$RunResult relayOnce();
-public pe.axiz.core.outbox.OutboxRelay(pe.axiz.core.outbox.OutboxStore, pe.axiz.core.messaging.EventPublisher, pe.axiz.core.commons.tx.TransactionRunner, java.time.Clock, int, int, pe.axiz.core.resilience.Backoff, java.time.Duration, java.time.Duration);
-public pe.axiz.core.outbox.OutboxRelay(pe.axiz.core.outbox.OutboxStore, pe.axiz.core.messaging.EventPublisher, pe.axiz.core.commons.tx.TransactionRunner, java.time.Clock, int, int, pe.axiz.core.resilience.Backoff, java.time.Duration, java.time.Duration, pe.axiz.core.outbox.OutboxRelayListener);
+public static pe.axiz.core.outbox.OutboxRelay$Builder builder(pe.axiz.core.outbox.OutboxStore, pe.axiz.core.messaging.EventPublisher, pe.axiz.core.commons.tx.TransactionRunner, java.time.Clock);
+}
+
+public final class pe.axiz.core.outbox.OutboxRelay$Builder {
+public pe.axiz.core.outbox.OutboxRelay build();
+public pe.axiz.core.outbox.OutboxRelay$Builder backoff(pe.axiz.core.resilience.Backoff);
+public pe.axiz.core.outbox.OutboxRelay$Builder batchSize(int);
+public pe.axiz.core.outbox.OutboxRelay$Builder lease(java.time.Duration);
+public pe.axiz.core.outbox.OutboxRelay$Builder listener(pe.axiz.core.outbox.OutboxRelayListener);
+public pe.axiz.core.outbox.OutboxRelay$Builder maxAttempts(int);
+public pe.axiz.core.outbox.OutboxRelay$Builder protector(pe.axiz.core.crypto.PayloadProtector);
+public pe.axiz.core.outbox.OutboxRelay$Builder publishBudget(java.time.Duration);
 }
 
 public final class pe.axiz.core.outbox.OutboxRelay$RunResult extends java.lang.Record {
@@ -83,6 +105,7 @@ public abstract long countPending();
 public abstract long countSkipped();
 public abstract void append(pe.axiz.core.outbox.OutboxRecord);
 public abstract void verifySchema();
+public default java.lang.Object transactionResource();
 }
 
 public interface pe.axiz.core.outbox.OutboxWriteTracing {
@@ -91,7 +114,9 @@ public static final pe.axiz.core.outbox.OutboxWriteTracing NONE;
 }
 
 public final class pe.axiz.core.outbox.OutboxWriter {
+public java.lang.Object transactionResource();
 public pe.axiz.core.outbox.OutboxWriter(pe.axiz.core.outbox.OutboxStore, java.time.Clock);
 public pe.axiz.core.outbox.OutboxWriter(pe.axiz.core.outbox.OutboxStore, java.time.Clock, pe.axiz.core.outbox.OutboxWriteTracing);
+public pe.axiz.core.outbox.OutboxWriter(pe.axiz.core.outbox.OutboxStore, java.time.Clock, pe.axiz.core.outbox.OutboxWriteTracing, pe.axiz.core.crypto.PayloadProtector);
 public void write(java.lang.String, pe.axiz.core.messaging.EventEnvelope, java.lang.String);
 }

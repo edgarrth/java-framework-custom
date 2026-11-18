@@ -8,7 +8,9 @@ import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.lang.ArchRule;
 import java.util.List;
 
-/** Layered style: {@code controller -> service -> repository}, entities in {@code model}. */
+/**
+ * Layered style: {@code controller -> service -> repository}, persistence entities in repositories.
+ */
 public final class LayeredRules {
 
   private LayeredRules() {}

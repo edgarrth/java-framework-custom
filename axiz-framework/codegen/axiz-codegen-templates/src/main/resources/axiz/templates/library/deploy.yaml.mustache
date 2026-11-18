@@ -9,7 +9,7 @@ on:
       manifest-sha256: {description: External signed build manifest SHA256, type: string, required: true}
       environment: {type: choice, options: [dev, qa, prod], required: true}
       previous-manifest-sha256: {description: Current deployed manifest hash or initial-deployment, type: string, required: true}
-      destination: {type: choice, options: [maven-releases], required: true}
+      destination: {type: choice, options: [github-packages], required: true}
 permissions: {}
 jobs:
   axiz-workflows-trust:
@@ -31,6 +31,7 @@ jobs:
 
   deploy:
     permissions:
+      packages: write
       contents: write
       actions: read
       id-token: write
@@ -48,6 +49,3 @@ jobs:
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_PUBLISH_USERNAME: ${{ secrets.NEXUS_PUBLISH_USERNAME }}
-      NEXUS_PUBLISH_PASSWORD: ${{ secrets.NEXUS_PUBLISH_PASSWORD }}

@@ -11,8 +11,11 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.localstack.LocalStackContainer;
+import pe.axiz.spring.test.EphemeralSecrets;
 import pe.axiz.spring.test.KafkaTestConfiguration;
 import pe.axiz.spring.test.LocalStackTestConfiguration;
 
@@ -23,12 +26,17 @@ import pe.axiz.spring.test.LocalStackTestConfiguration;
 @SpringBootTest(
     properties = {
       "axiz.config.environment=test",
+      "axiz.messaging.kafka.authentication=configured",
       "axiz.transport.allow-plain-http=true",
       "axiz.transport.allow-insecure-data-stores=true"
     })
 @AutoConfigureMockMvc
 @Import({KafkaTestConfiguration.class, LocalStackTestConfiguration.class})
 class NotificationsProcessorApplicationTest {
+  @DynamicPropertySource
+  static void secrets(DynamicPropertyRegistry registry) {
+    EphemeralSecrets.register(registry, "field-key-v1");
+  }
 
   /**
    * The audit queue the service consumes ({@code axiz.messaging.sqs.queues}), created in LocalStack

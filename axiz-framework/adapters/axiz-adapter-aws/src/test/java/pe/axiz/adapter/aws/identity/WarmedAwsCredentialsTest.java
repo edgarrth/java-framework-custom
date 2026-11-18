@@ -20,6 +20,15 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 class WarmedAwsCredentialsTest {
+  @Test
+  void oneMillisecondIsTheMinimumAcceptedRefreshInterval() {
+    var source = new Source();
+    try (var warmed = new WarmedAwsCredentials(source.resource(), CLOCK, Duration.ofMillis(1))) {
+      assertEquals("initial", warmed.resolveCredentials().accessKeyId());
+    }
+    assertEquals(1, source.closes);
+  }
+
   static final Instant NOW = Instant.parse("2026-10-30T10:00:00Z");
   static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 

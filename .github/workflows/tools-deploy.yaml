@@ -24,7 +24,7 @@ name: tools-deploy
       destination:
         type: choice
         options:
-        - maven-releases
+        - github-packages
         required: true
       previous-manifest-sha256:
         description: Previous manifest hash or initial-deployment
@@ -50,6 +50,7 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   deploy:
     permissions:
+      packages: write
       contents: write
       actions: read
       id-token: write
@@ -65,6 +66,3 @@ jobs:
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_PUBLISH_USERNAME: ${{ secrets.NEXUS_PUBLISH_USERNAME }}
-      NEXUS_PUBLISH_PASSWORD: ${{ secrets.NEXUS_PUBLISH_PASSWORD }}

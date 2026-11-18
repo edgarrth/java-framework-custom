@@ -64,6 +64,7 @@ jobs:
 
   deploy:
     permissions:
+      packages: read
       contents: write
       actions: read
       id-token: write
@@ -83,8 +84,6 @@ jobs:
       BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       BUILD_READ_TOKEN: ${{ secrets.BUILD_READ_TOKEN }}
-      REGISTRY_READ_USERNAME: ${{ secrets.REGISTRY_READ_USERNAME }}
-      REGISTRY_READ_PASSWORD: ${{ secrets.REGISTRY_READ_PASSWORD }}
       GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
       GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
       ARGOCD_AUTH_TOKEN: ${{ secrets.ARGOCD_AUTH_TOKEN }}

@@ -90,6 +90,7 @@ jobs:
       working-directory: axiz-demo
   pr:
     permissions:
+      packages: read
       contents: read
       pull-requests: read
       security-events: write
@@ -99,12 +100,12 @@ jobs:
     uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
   service:
     permissions:
+      packages: write
       contents: read
       actions: read
       id-token: write
@@ -143,14 +144,12 @@ jobs:
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
       CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-      NEXUS_URL: ${{ secrets.NEXUS_URL }}
-      NEXUS_READ_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_READ_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
+      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
       BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
-      REGISTRY_BUILD_USERNAME: ${{ secrets.REGISTRY_BUILD_USERNAME }}
-      REGISTRY_BUILD_PASSWORD: ${{ secrets.REGISTRY_BUILD_PASSWORD }}
   coverage:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
@@ -163,12 +162,12 @@ jobs:
     # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
-        nexus-url: ${{ secrets.NEXUS_URL }}
-    - name: Capability coverage
+        packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
+    - name: Executable protected-data examples and capability coverage
       env:
-        NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-        NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
-      run: ./mvnw -B -pl coverage verify
+        PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+        PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
+      run: ./mvnw -B -Pquality -Daxiz.it.requireDocker=true -pl examples/protected-data,coverage verify
       working-directory: axiz-demo
   demo-pr-check:
     name: axiz-demo-pr

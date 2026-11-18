@@ -1,8 +1,5 @@
 public final class pe.axiz.spring.test.AxizContainers {
-public static final org.testcontainers.utility.DockerImageName KAFKA;
 public static final org.testcontainers.utility.DockerImageName LOCALSTACK;
-public static final org.testcontainers.utility.DockerImageName POSTGRES;
-public static final org.testcontainers.utility.DockerImageName VALKEY;
 public static org.testcontainers.containers.GenericContainer<?> valkey();
 public static org.testcontainers.kafka.KafkaContainer kafka();
 public static org.testcontainers.localstack.LocalStackContainer localstack();

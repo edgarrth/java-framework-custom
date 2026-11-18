@@ -34,18 +34,23 @@ final class FrameworkModules {
     String own = module(source);
     String other = module(target);
     if (own.equals(other) || other.equals("pe.axiz.spring.foundation")) return true;
-    String capability = own.substring("pe.axiz.spring.".length()).split("\\.")[0];
+    String capability =
+        own.startsWith("pe.axiz.spring.tokenization.vault")
+            ? "tokenization.vault"
+            : own.substring("pe.axiz.spring.".length()).split("\\.")[0];
     // An integration can depend on its base; the inverse and sibling dependencies are forbidden.
     if (!own.equals("pe.axiz.spring." + capability) && other.equals("pe.axiz.spring." + capability))
       return true;
     if (other.equals("pe.axiz.spring.aws"))
       return own.equals("pe.axiz.spring.dynamodb")
+          || own.equals("pe.axiz.spring.tokenization.vault.dynamodb")
           || !neutral(own)
               && own.matches("pe\\.axiz\\.spring\\.[^.]+\\.(aws|dynamodb|s3|sqs|sns|kms|msk)");
     if (other.equals("pe.axiz.spring.kafka"))
       return Set.of("pe.axiz.spring.audit.kafka", "pe.axiz.spring.messaging.kafka").contains(own);
     if (other.equals("pe.axiz.spring.messaging.kafka"))
       return own.equals("pe.axiz.spring.messaging.msk");
+    if (other.equals("pe.axiz.spring.httpclient")) return own.equals("pe.axiz.spring.tokenization");
     if (other.equals("pe.axiz.spring.sensitive")) return own.equals("pe.axiz.spring.httpclient");
     if (other.equals("pe.axiz.spring.jdbc"))
       return Set.of("pe.axiz.spring.jpa", "pe.axiz.spring.r2dbc").contains(own);

@@ -1,19 +1,25 @@
-public abstract class pe.axiz.structure.layered.spring.CrudController<T, I> {
-protected pe.axiz.structure.layered.spring.CrudController(pe.axiz.structure.layered.CrudService<T, I>, java.util.function.Function<T, I>);
-public T get(I);
-public T update(I, T);
-public org.springframework.http.ResponseEntity<T> create(T);
+public abstract class pe.axiz.structure.layered.spring.CrudController<RequestT, ResponseT, I> {
+protected pe.axiz.structure.layered.spring.CrudController(pe.axiz.structure.layered.CrudService<RequestT, ResponseT, I>, java.util.function.Function<ResponseT, I>);
+public ResponseT get(I);
+public ResponseT update(I, RequestT);
+public org.springframework.http.ResponseEntity<ResponseT> create(RequestT);
 public org.springframework.http.ResponseEntity<java.lang.Void> delete(I);
-public pe.axiz.core.api.PageResponse<T> list(pe.axiz.core.api.PageRequest);
+public pe.axiz.core.api.PageResponse<ResponseT> list(pe.axiz.core.api.PageRequest);
 }
 
-public abstract class pe.axiz.structure.layered.spring.JpaCrudService<T, I> implements pe.axiz.structure.layered.CrudService<T, I> {
-protected abstract void apply(T, T);
-protected pe.axiz.structure.layered.spring.JpaCrudService(org.springframework.data.jpa.repository.JpaRepository<T, I>, java.lang.String);
-public T create(T);
-public T update(I, T);
+public abstract class pe.axiz.structure.layered.spring.JpaCrudService<E, RequestT, ResponseT, I> implements pe.axiz.structure.layered.CrudService<RequestT, ResponseT, I> {
+protected abstract E newEntity(RequestT);
+protected abstract ResponseT toResponse(E);
+protected abstract java.lang.Object expectedVersion(RequestT);
+protected abstract java.util.Set<java.lang.String> sortableFields();
+protected abstract org.springframework.data.jpa.domain.Specification<E> listScope();
+protected abstract void apply(E, RequestT);
+protected abstract void authorize(pe.axiz.structure.layered.CrudAction, E);
+protected pe.axiz.structure.layered.spring.JpaCrudService(java.lang.Class<E>, org.springframework.data.jpa.repository.JpaRepository<E, I>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<E>, jakarta.persistence.EntityManager, java.lang.String);
+public ResponseT create(RequestT);
+public ResponseT update(I, RequestT);
 public java.lang.String resourceName();
-public java.util.Optional<T> find(I);
-public pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
+public java.util.Optional<ResponseT> find(I);
+public pe.axiz.core.api.Page<ResponseT> list(pe.axiz.core.api.PageRequest);
 public void delete(I);
 }

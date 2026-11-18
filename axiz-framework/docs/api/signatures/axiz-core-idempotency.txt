@@ -57,9 +57,18 @@ public pe.axiz.core.idempotency.IdempotencyRecord completed(pe.axiz.core.idempot
 public pe.axiz.core.idempotency.IdempotencyRecord renewed(java.time.Instant, java.time.Instant);
 public pe.axiz.core.idempotency.IdempotencyRecord unknown(java.lang.String);
 public pe.axiz.core.idempotency.IdempotencyRecord$Status status();
-public pe.axiz.core.idempotency.IdempotencyRecord(java.lang.String, java.lang.String, pe.axiz.core.idempotency.IdempotencyRecord$Status, java.lang.String, pe.axiz.core.idempotency.StoredResponse, java.time.Instant);
 public pe.axiz.core.idempotency.IdempotencyRecord(java.lang.String, java.lang.String, pe.axiz.core.idempotency.IdempotencyRecord$Status, java.lang.String, pe.axiz.core.idempotency.StoredResponse, java.time.Instant, java.time.Instant, long, java.lang.String);
 public pe.axiz.core.idempotency.StoredResponse response();
+public static pe.axiz.core.idempotency.IdempotencyRecord$Builder builder(java.lang.String, java.lang.String, java.time.Instant, java.time.Instant);
+}
+
+public final class pe.axiz.core.idempotency.IdempotencyRecord$Builder {
+public pe.axiz.core.idempotency.IdempotencyRecord build();
+public pe.axiz.core.idempotency.IdempotencyRecord$Builder failure(java.lang.String);
+public pe.axiz.core.idempotency.IdempotencyRecord$Builder owner(java.lang.String);
+public pe.axiz.core.idempotency.IdempotencyRecord$Builder resolutionVersion(long);
+public pe.axiz.core.idempotency.IdempotencyRecord$Builder response(pe.axiz.core.idempotency.StoredResponse);
+public pe.axiz.core.idempotency.IdempotencyRecord$Builder status(pe.axiz.core.idempotency.IdempotencyRecord$Status);
 }
 
 public final class pe.axiz.core.idempotency.IdempotencyRecord$Status extends java.lang.Enum<pe.axiz.core.idempotency.IdempotencyRecord$Status> {

@@ -54,7 +54,7 @@ Una divergencia bloquea el control; los permisos no se amplían automáticamente
 
 ## Primera publicación
 
-1. Configurar Nexus, el registro OCI, las GitHub Apps, los entornos protegidos y GitHub Pages
+1. Configurar GitHub Packages, el registro OCI, las GitHub Apps, los entornos protegidos y GitHub Pages
    según los productos que se publiquen.
 2. Exigir inicialmente `axiz-workflows-policy`, `axiz-security-pr` y `axiz-docs-site-pr`.
 3. En Actions → release-self → Run workflow, seleccionar `main`. Esto también permite reintentar

@@ -1,10 +1,15 @@
 package pe.axiz.spring.crypto.kms;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.Mockito.mock;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -16,6 +21,59 @@ import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 import software.amazon.awssdk.services.kms.KmsClient;
 
 class KmsConfigurationTest {
+  @Test
+  void immutableArnValidationRejectsMalformedComponentsAndAcceptsMultiRegionKeys() {
+    String multiRegion = OLD.substring(0, OLD.indexOf("key/")) + "key/mrk-" + "a".repeat(32);
+    assertThat(
+            new AxizCryptoKmsProperties(
+                    multiRegion, Duration.ofMinutes(5), 1000, Map.of("v1", multiRegion))
+                .writeRoute())
+        .isEqualTo("v1");
+    for (String invalid :
+        List.of(
+            OLD.replace("arn:", "bad:"),
+            OLD.replace("aws:", "other:"),
+            OLD.replace("aws:", "aws-:"),
+            OLD.replace("aws:", "aws--cn:"),
+            OLD.replace("aws:", "aws-CN:"),
+            OLD.replace(":kms:", ":s3:"),
+            OLD.replace("us-east-1", ""),
+            OLD.replace("us-east-1", "US-EAST-1"),
+            OLD.replace("123456789012", "12345678901"),
+            OLD.replace("key/", "alias/"),
+            OLD + ":trailing",
+            "arn:aws:kms")) {
+      assertThatThrownBy(
+              () ->
+                  new AxizCryptoKmsProperties(
+                      invalid, Duration.ofMinutes(5), 1000, Map.of("v1", invalid)))
+          .as("Malformed immutable ARN: %s", invalid)
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("immutable key ARNs");
+    }
+  }
+
+  @Test
+  void arnValidationAcceptsPartitionsAndRejectsLongInvalidSuffixWithoutBacktracking() {
+    for (String partition : new String[] {"aws", "aws-cn", "aws-us-gov", "aws-iso-e"}) {
+      String arn = OLD.replace("arn:aws:", "arn:" + partition + ":");
+      assertThat(
+              new AxizCryptoKmsProperties(arn, Duration.ofMinutes(5), 1000, Map.of("v1", arn))
+                  .writeRoute())
+          .isEqualTo("v1");
+    }
+    String invalid = "arn:aws" + "-a".repeat(20_000) + ":invalid";
+    assertTimeout(
+        Duration.ofSeconds(2),
+        () ->
+            assertThatThrownBy(
+                    () ->
+                        new AxizCryptoKmsProperties(
+                            invalid, Duration.ofMinutes(5), 1000, Map.of("v1", invalid)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("immutable key ARNs"));
+  }
+
   @Test
   void configuredBlankKmsKeyFailsInItsOwningIntegration() {
     new ApplicationContextRunner()

@@ -26,7 +26,7 @@ Event processor (EDA style, DynamoDB).
 
 - JDK 25 (Maven comes with the wrapper `./mvnw`)
 - Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- Access to the GitHub Packages repository that publishes axiz
 
 ## Build and test
 
@@ -117,3 +117,21 @@ The pipelines in `.github/workflows` call the shared axiz workflows, pinned to a
   changelog; merging it creates the tag.
 
 ## Decisions
+
+## Protected contacts and local seed
+
+`ContactItem` persists an `EncryptedValue` address. `CustomerContact` is the decrypted
+in-memory delivery model. Axiz `FieldEncryptor` authenticates the customer ID and the
+channel with each address; copying ciphertext to a different customer or channel fails.
+The customer profile writer must use the same context `notification.address` and the
+length-prefixed customer/channel binding (see `ContactItem.protect`). Keep old key
+versions available during rotation; the mounted secret is `field-key-v1`.
+
+The `local` profile explicitly enables `demo.local.seed-contacts`. `LocalContactSeed`
+requires a loopback AWS endpoint, environment `local` and table prefix `local-`. It
+inserts the two fictitious demo contacts with Axiz encryption, preserving existing rows
+on restart. Infrastructure scripts create tables without writing plaintext contacts.
+Run `local/dev-secrets.sh` before starting. Production profiles do not enable the seed.
+
+Legacy plaintext rows are rejected. Recreate disposable local data, or perform an
+authorized migration with the matching field key before upgrading persisted data.

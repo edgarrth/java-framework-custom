@@ -1,5 +1,5 @@
 public class pe.axiz.kit.jpa.AuditListener {
-public pe.axiz.kit.jpa.AuditListener();
+public pe.axiz.kit.jpa.AuditListener(pe.axiz.kit.jpa.AuditorProvider, java.time.Clock);
 public void onCreate(java.lang.Object);
 public void onUpdate(java.lang.Object);
 }
@@ -10,11 +10,6 @@ public java.lang.String getUpdatedBy();
 public java.time.Instant getCreatedAt();
 public java.time.Instant getUpdatedAt();
 public pe.axiz.kit.jpa.AuditableEntity();
-}
-
-public final class pe.axiz.kit.jpa.AuditingRegistry {
-public static void register(pe.axiz.kit.jpa.AuditorProvider, java.time.Clock);
-public static void reset();
 }
 
 public interface pe.axiz.kit.jpa.AuditorProvider {
@@ -38,6 +33,5 @@ public java.lang.Object convertToDatabaseColumn(java.lang.Object);
 public java.lang.Object convertToEntityAttribute(java.lang.Object);
 public java.lang.String convertToDatabaseColumn(java.lang.String);
 public java.lang.String convertToEntityAttribute(java.lang.String);
-public pe.axiz.kit.jpa.EncryptedConverter();
 public pe.axiz.kit.jpa.EncryptedConverter(pe.axiz.core.crypto.FieldEncryptor);
 }

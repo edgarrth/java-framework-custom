@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
+import pe.axiz.core.security.AsyncRateLimiter;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.vault.AsyncTokenBudget;
@@ -19,10 +19,10 @@ import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
-/** Native admission without blocking waits. Cancellation retains ownership of accepted I/O. */
+/** Native admission with an injected fail-closed limiter; cancellation retains accepted I/O. */
 public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
   private final RedisAsyncCommands<String, String> redis;
-  private final RedisAsyncRateLimiter limiter;
+  private final AsyncRateLimiter limiter;
   private final RedisBudgetProtocol protocol;
   private final SerialRedisDispatch dispatch;
 
@@ -30,13 +30,14 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
       StatefulRedisConnection<String, String> connection,
       String namespace,
       TokenBudgetPolicy policy,
-      TokenBudgetLeaseAlarm alarm) {
+      TokenBudgetLeaseAlarm alarm,
+      AsyncRateLimiter limiter) {
     protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm);
     dispatch =
         new SerialRedisDispatch(
             connection.getOptions().getRequestQueueSize(), connection.getTimeout());
     redis = connection.async();
-    limiter = new RedisAsyncRateLimiter(redis, "");
+    this.limiter = Objects.requireNonNull(limiter);
   }
 
   @Override

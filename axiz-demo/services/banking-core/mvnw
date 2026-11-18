@@ -1,7 +1,7 @@
 #!/bin/sh
 # Maven wrapper (script-only): downloads the Maven distribution declared in
 # .mvn/wrapper/maven-wrapper.properties into ~/.m2/wrapper and runs it.
-# Set MVNW_REPOURL to download from the Nexus proxy of Maven Central.
+# Set MVNW_REPOURL to download from an approved Maven distribution mirror.
 #
 # The distribution is always verified before it is used (fail closed):
 #   1. distributionSha512Sum (or distributionSha256Sum) pinned in the properties file, or

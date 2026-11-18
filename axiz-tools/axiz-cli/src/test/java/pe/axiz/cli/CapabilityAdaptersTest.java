@@ -98,4 +98,84 @@ class CapabilityAdaptersTest {
             CapabilityAdapters.align(
                 "<!DOCTYPE project SYSTEM 'file:///missing'><project/>", manifest));
   }
+
+  @Test
+  void libraryUpgradesNeverRequireProviderOrWorkflowChanges(@TempDir Path directory)
+      throws Exception {
+    var manifest =
+        new ProjectManifest(
+            "library",
+            "com.example",
+            "com.example",
+            "library",
+            pe.axiz.codegen.model.Structure.NONE,
+            pe.axiz.codegen.model.Stack.SERVLET,
+            "none",
+            "2.0.0",
+            null,
+            null,
+            java.util.List.of(),
+            java.util.List.of(),
+            java.util.List.of());
+    // Deliberately no service POM or workflow tree: these operations must be no-ops.
+    assertFalse(CapabilityAdapters.required(directory, manifest));
+    CapabilityAdapters.apply(directory, manifest);
+    assertFalse(WorkflowBindings.required(directory, manifest));
+    try (var files = Files.list(directory)) {
+      assertEquals(0, files.count());
+    }
+  }
+
+  @Test
+  void impliedEdaAndBatchProvidersMatchTheirStoresWithoutChangingClassifiedDependencies()
+      throws Exception {
+    for (var style :
+        java.util.List.of(
+            pe.axiz.codegen.model.Structure.EDA, pe.axiz.codegen.model.Structure.BATCH)) {
+      var manifest =
+          new ProjectManifest(
+              "worker",
+              "com.example",
+              "com.example.worker",
+              "event-processor",
+              style,
+              pe.axiz.codegen.model.Stack.SERVLET,
+              "aurora",
+              "2.0.0",
+              null,
+              null,
+              java.util.List.of(),
+              java.util.List.of(),
+              java.util.List.of());
+      var expected = CapabilityAdapters.expected(manifest);
+      assertTrue(
+          expected.contains(
+              style == pe.axiz.codegen.model.Structure.EDA
+                  ? "axiz-inbox-jdbc-spring-boot-starter"
+                  : "axiz-scheduling-jdbc-spring-boot-starter"),
+          expected.toString());
+      if (style == pe.axiz.codegen.model.Structure.EDA)
+        assertTrue(expected.contains("axiz-inbox-jdbc-spring-boot-starter"), expected.toString());
+      String artifact =
+          style == pe.axiz.codegen.model.Structure.EDA
+              ? "axiz-inbox-jdbc-spring-boot-starter"
+              : "axiz-scheduling-jdbc-spring-boot-starter";
+      String classified =
+          "<dependency><groupId>pe.axiz</groupId><artifactId>"
+              + artifact
+              + "</artifactId><classifier>tests</classifier><scope>test</scope></dependency>";
+      String before =
+          "<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion><dependencies>"
+              + classified
+              + "</dependencies></project>";
+      String aligned = CapabilityAdapters.align(before, manifest);
+      assertTrue(aligned.contains("<classifier>tests</classifier>"));
+      assertEquals(2, aligned.split("<artifactId>" + artifact + "</artifactId>", -1).length - 1);
+      assertFalse(aligned.startsWith("<?xml"));
+      assertEquals(aligned, CapabilityAdapters.align(aligned, manifest));
+      assertTrue(
+          CapabilityAdapters.align("<?xml version=\"1.0\"?>" + before, manifest)
+              .startsWith("<?xml"));
+    }
+  }
 }

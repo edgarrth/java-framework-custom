@@ -3,7 +3,7 @@ package pe.axiz.payments.ux.composition;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import pe.axiz.core.api.PageRequest;
-import pe.axiz.payments.ux.api.model.BeneficiaryList;
+import pe.axiz.payments.ux.composition.model.BeneficiaryList;
 import reactor.core.publisher.Mono;
 
 /** Beneficiary screens of the channels: the signed-in customer's list, masked. */

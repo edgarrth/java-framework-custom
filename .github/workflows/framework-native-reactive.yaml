@@ -4,12 +4,10 @@ name: framework-native-reactive
     secrets:
       AXIZ_WORKFLOWS_READ_TOKEN:
         required: false
-      NEXUS_URL:
-        required: true
-      NEXUS_READ_USERNAME:
-        required: true
-      NEXUS_READ_PASSWORD:
-        required: true
+      PACKAGES_READ_USERNAME:
+        required: false
+      PACKAGES_READ_TOKEN:
+        required: false
 permissions: {}
 jobs:
   axiz-workflows-trust:
@@ -30,14 +28,15 @@ jobs:
         jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
   acceptance:
     permissions:
+      packages: read
       contents: read
       actions: read
     needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
-      NEXUS_USERNAME: ${{ secrets.NEXUS_READ_USERNAME }}
-      NEXUS_PASSWORD: ${{ secrets.NEXUS_READ_PASSWORD }}
+      PACKAGES_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME || github.actor }}
+      PACKAGES_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN || github.token }}
     steps:
     - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
@@ -47,7 +46,7 @@ jobs:
     - uses: edgarrth/java-framework-custom/.github/actions/setup-maven@axiz-workflows-v2.0.0
       with:
         distribution: graalvm
-        nexus-url: ${{ secrets.NEXUS_URL }}
+        packages-url: ${{ vars.AXIZ_PACKAGES_URL || 'https://maven.pkg.github.com/edgarrth/java-framework-custom' }}
     - name: Verify generated reactive contracts and native runtime
       run: bash .github/scripts/reactive-native-sample.sh
       working-directory: axiz-framework

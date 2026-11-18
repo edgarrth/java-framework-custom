@@ -22,7 +22,8 @@ The aggregator inherits `axiz-parent` to share the tool versions; each child kee
 layer parent. `./mvnw verify` builds the three modules. `ci.yaml` uses the Axiz 2.0.0 `lib-build` contract to
 retain tested Maven bytes and a signed manifest. `deploy.yaml` independently promotes a completed
 successful run with its attempt, external manifest SHA-256, environment and predecessor hash.
-Builds use Nexus read credentials; promotion uses separate publish credentials. Release-please
+Builds use `GITHUB_TOKEN` with `packages: read`; isolated promotion uses its own job token
+with `packages: write`. Optional `PACKAGES_READ_USERNAME/TOKEN` enable cross-repository reads. Release-please
 prepares a draft which promotion publishes after retaining the verified signed manifest. `version.txt` and `.release-please-manifest.json` hold the last released version (`0.0.0`:
 nothing released yet); the pom holds the next one (`0.1.0-SNAPSHOT`). The first release is `0.1.0` (`initial-version` in
 `release-please-config.json`); later ones follow Conventional Commits.

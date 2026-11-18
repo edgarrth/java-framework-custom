@@ -7,12 +7,12 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import pe.axiz.payments.ux.api.model.BeneficiaryList;
-import pe.axiz.payments.ux.api.model.BeneficiaryView;
-import pe.axiz.payments.ux.api.model.PaymentView;
 import pe.axiz.payments.ux.client.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.ux.client.beneficiaries.model.BeneficiaryPage;
 import pe.axiz.payments.ux.client.paymentorders.model.PaymentOrder;
+import pe.axiz.payments.ux.composition.model.BeneficiaryList;
+import pe.axiz.payments.ux.composition.model.BeneficiaryView;
+import pe.axiz.payments.ux.composition.model.PaymentView;
 import pe.axiz.spring.test.BlockHoundExtension;
 
 @ExtendWith(BlockHoundExtension.class)
@@ -27,7 +27,7 @@ class ChannelViewsTest {
                 "next"));
 
     assertThat(list.getItems()).hasSize(1);
-    assertThat(list.getItems().getFirst().getHolderName()).isEqualTo("A** T*****");
+    assertThat(list.getItems().getFirst().getHolderName()).isEqualTo("****");
     assertThat(list.getItems().getFirst().getCreditorCci()).isEqualTo("****************9053");
     assertThat(list.getNextCursor()).isEqualTo("next");
   }

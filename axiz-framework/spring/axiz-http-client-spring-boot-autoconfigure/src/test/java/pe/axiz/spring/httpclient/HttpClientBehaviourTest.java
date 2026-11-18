@@ -119,6 +119,62 @@ class HttpClientBehaviourTest {
   }
 
   @Test
+  void managedReactiveClientsPreserveRawResponsesAndTranslateDeclarativeErrors() {
+    runner(
+            "axiz.http-client.clients.bank.base-url=" + base(),
+            "axiz.http-client.clients.bank.retry=NONE")
+        .run(
+            context -> {
+              var clients = context.getBean(AxizWebClients.class);
+              var raw = clients.exchangeClient("bank");
+              var response =
+                  raw.get()
+                      .uri("/rejected")
+                      .exchangeToMono(reply -> reply.toEntity(String.class))
+                      .block(Duration.ofSeconds(5));
+              assertEquals(422, response.getStatusCode().value());
+              assertEquals("{\"code\":\"LIMIT\",\"message\":\"daily limit\"}", response.getBody());
+              var builder = WebClient.builder();
+              clients.configure(
+                  context.getBean(HttpClientRegistry.class).find("bank").orElseThrow(), builder);
+              var translated = builder.build();
+              assertThrows(
+                  ExternalServiceException.class,
+                  () ->
+                      translated
+                          .get()
+                          .uri("/rejected")
+                          .retrieve()
+                          .bodyToMono(String.class)
+                          .block(Duration.ofSeconds(5)));
+              assertThrows(IllegalArgumentException.class, () -> clients.exchangeClient("missing"));
+              clients.close();
+              clients.close();
+              assertThrows(IllegalStateException.class, () -> clients.exchangeClient("bank"));
+              assertEquals(
+                  "{\"ok\":true}",
+                  context
+                      .getBean(AxizHttpClients.class)
+                      .restClient("bank")
+                      .get()
+                      .uri("/")
+                      .retrieve()
+                      .body(String.class));
+            });
+  }
+
+  @Test
+  void rawReactiveClientsRejectImplicitRetriesBeforeSendingAnyRequest() {
+    runner("axiz.http-client.clients.bank.base-url=" + base())
+        .run(
+            context ->
+                assertThrows(
+                    IllegalArgumentException.class,
+                    () -> context.getBean(AxizWebClients.class).exchangeClient("bank")));
+    assertTrue(calls.isEmpty());
+  }
+
+  @Test
   @ExtendWith(OutputCaptureExtension.class)
   void actualClientBuildersKeepTemplatesAndNeverLogExpandedPathsOrQueryValues(
       CapturedOutput output) {

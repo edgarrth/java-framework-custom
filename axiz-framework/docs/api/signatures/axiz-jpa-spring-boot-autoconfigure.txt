@@ -1,14 +1,3 @@
-public class pe.axiz.spring.jpa.AuditingRegistrar implements org.springframework.beans.factory.InitializingBean,org.springframework.beans.factory.DisposableBean {
-public pe.axiz.spring.jpa.AuditingRegistrar(pe.axiz.kit.jpa.AuditorProvider, java.time.Clock);
-public void afterPropertiesSet();
-public void destroy();
-}
-
-public final class pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory implements software.amazon.jdbc.ConnectionPluginFactory {
-public pe.axiz.spring.jpa.aws.AxizJdbcIamPluginFactory();
-public software.amazon.jdbc.ConnectionPlugin getInstance(software.amazon.jdbc.util.FullServicesContainer, java.util.Properties);
-}
-
 public class pe.axiz.spring.jpa.AxizJpaAutoConfiguration {
 public pe.axiz.spring.jpa.AxizJpaAutoConfiguration();
 }

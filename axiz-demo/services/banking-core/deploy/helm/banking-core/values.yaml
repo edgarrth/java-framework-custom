@@ -1,7 +1,7 @@
 nameOverride: banking-core
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/banking-core
+  repository: ghcr.io/edgarrth/java-framework-custom/banking-core
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent

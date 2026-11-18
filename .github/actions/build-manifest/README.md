@@ -7,7 +7,12 @@ of the downloaded bundle. A checksum inside the archive does not establish trust
 
 A bundle contains the canonical manifest, its cosign keyless signature bundle, gate evidence,
 SBOM and provenance. Libraries also include `maven/` with every staged file and `SHA256SUMS`.
-Nexus generates repository metadata; promotion must not overwrite its existing version index.
+GitHub Packages generates repository metadata; promotion must not overwrite its existing version index.
+
+Service workers only read packages. They transfer OCI archives and a packaged chart to an
+isolated publisher, which verifies Actions authority, file hashes and platform descriptors before
+uploading the original bytes to GHCR. It never executes project code. The signed product retains
+`compile-authority` evidence; pull requests compile and scan without publishing or signing.
 
 `consume-build` verifies the explicit producer run and attempt, the allowed immutable workflow
 release, the signature identity, the source repository and commit, every required gate and all
@@ -21,6 +26,6 @@ Run the regression suite in an isolated Python environment:
 
 ```sh
 python3 -m venv /tmp/axiz-manifest-tests
-/tmp/axiz-manifest-tests/bin/pip install -r actions/build-manifest/requirements.txt
-/tmp/axiz-manifest-tests/bin/python -m unittest discover -s actions/build-manifest -p 'test_*.py'
+/tmp/axiz-manifest-tests/bin/pip install --require-hashes -r .github/actions/build-manifest/requirements.txt
+/tmp/axiz-manifest-tests/bin/python -m unittest discover -s .github/actions/build-manifest -p 'test_*.py'
 ```

@@ -2,6 +2,11 @@ package pe.axiz.spring.messaging.sqs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.micrometer.observation.ObservationRegistry;
 import java.nio.charset.StandardCharsets;
@@ -16,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.messaging.ConsumerRetryPolicy;
 import pe.axiz.core.messaging.Deduplicator;
+import pe.axiz.core.messaging.DeliveryDecision;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
@@ -195,6 +201,35 @@ class SqsEventConsumerTest {
         };
     consumer(sqs, busy, new Handler()).process("https://sqs/q", message(validBody()));
     assertEquals(List.of("visibility:91"), sqs.calls, "never deleted while another holds it");
+  }
+
+  @Test
+  void dispatcherFailureRetriesAndPermanentDecisionsHonorBrokerRedriveOrExplicitDlq() {
+    var sqs = new FakeSqs();
+    var dispatcher = mock(ObservedDispatcher.class);
+    when(dispatcher.dispatch(anyString(), any(EventEnvelope.class), anyInt()))
+        .thenThrow(new IllegalStateException("dispatch unavailable"))
+        .thenReturn(new EventDispatcher.Outcome(DeliveryDecision.DEAD_LETTER, Duration.ZERO));
+    var consumer =
+        new SqsEventConsumer(
+            sqs,
+            dispatcher,
+            new AxizMessagingSqsProperties(
+                List.of(),
+                Map.of("https://sqs/q", "https://sqs/dlq"),
+                Duration.ofSeconds(20),
+                10,
+                Duration.ofSeconds(60)),
+            Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+    consumer.stop(); // A context may fail before start; stopping must be safe.
+    consumer.process("https://sqs/q", message(validBody()));
+    assertEquals(List.of("visibility:1"), sqs.calls);
+    sqs.calls.clear();
+    consumer.process("https://sqs/q", message(validBody()));
+    assertEquals(List.of("dlq", "delete"), sqs.calls);
+    sqs.calls.clear();
+    consumer.process("https://sqs/unmapped", message("invalid"));
+    assertEquals(List.of("visibility:0"), sqs.calls);
   }
 
   @Test

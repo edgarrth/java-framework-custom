@@ -6,9 +6,9 @@ import pe.axiz.core.api.Page;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepositories;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepository;
 import reactor.core.publisher.Mono;
-{{#fw.layered}}
+{{#fw.separateEntityPackage}}
 import {{project.basePackage}}.{{fw.entityPackage}}.{{artifact.className}}Item;
-{{/fw.layered}}
+{{/fw.separateEntityPackage}}
 
 /** Native asynchronous data access of {@link {{artifact.className}}Item}. */
 @Repository

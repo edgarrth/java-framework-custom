@@ -7,6 +7,15 @@ public pe.axiz.core.audit.AsyncAuditEventPublisher publisher();
 public pe.axiz.spring.audit.AsyncAuditSink(java.lang.String, pe.axiz.core.audit.AsyncAuditEventPublisher);
 }
 
+public final class pe.axiz.spring.audit.AsyncStrictAuditSink extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String name();
+public pe.axiz.core.audit.AsyncAuditEventPublisher publisher();
+public pe.axiz.spring.audit.AsyncStrictAuditSink(java.lang.String, pe.axiz.core.audit.AsyncAuditEventPublisher);
+}
+
 public interface pe.axiz.spring.audit.AuditContextResolver {
 public abstract pe.axiz.core.audit.AuditTrail$Context current(java.lang.String);
 public static pe.axiz.spring.audit.AuditContextResolver fromRequestContext();
@@ -37,8 +46,8 @@ public class pe.axiz.spring.audit.AxizAuditAutoConfiguration {
 public pe.axiz.spring.audit.AxizAuditAutoConfiguration();
 }
 
-public class pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration {
-public pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration();
+public class pe.axiz.spring.audit.AxizAuditCheckpointAutoConfiguration {
+public pe.axiz.spring.audit.AxizAuditCheckpointAutoConfiguration();
 }
 
 public final class pe.axiz.spring.audit.AxizAuditProperties extends java.lang.Record {
@@ -48,11 +57,11 @@ public final java.lang.String toString();
 public pe.axiz.spring.audit.AxizAuditProperties$Async async();
 public pe.axiz.spring.audit.AxizAuditProperties$Durable durable();
 public pe.axiz.spring.audit.AxizAuditProperties$Http http();
-public pe.axiz.spring.audit.AxizAuditProperties$Kafka kafka();
+public pe.axiz.spring.audit.AxizAuditProperties$Integrity integrity();
 public pe.axiz.spring.audit.AxizAuditProperties$Mode effectiveMode();
 public pe.axiz.spring.audit.AxizAuditProperties$Mode mode();
-public pe.axiz.spring.audit.AxizAuditProperties$Sqs sqs();
-public pe.axiz.spring.audit.AxizAuditProperties(pe.axiz.spring.audit.AxizAuditProperties$Async, pe.axiz.spring.audit.AxizAuditProperties$Http, pe.axiz.spring.audit.AxizAuditProperties$Kafka, pe.axiz.spring.audit.AxizAuditProperties$Sqs, pe.axiz.spring.audit.AxizAuditProperties$Durable, pe.axiz.spring.audit.AxizAuditProperties$Mode);
+public pe.axiz.spring.audit.AxizAuditProperties$Strict strict();
+public pe.axiz.spring.audit.AxizAuditProperties(pe.axiz.spring.audit.AxizAuditProperties$Async, pe.axiz.spring.audit.AxizAuditProperties$Http, pe.axiz.spring.audit.AxizAuditProperties$Durable, pe.axiz.spring.audit.AxizAuditProperties$Integrity, pe.axiz.spring.audit.AxizAuditProperties$Strict, pe.axiz.spring.audit.AxizAuditProperties$Mode);
 }
 
 public final class pe.axiz.spring.audit.AxizAuditProperties$Async extends java.lang.Record {
@@ -87,13 +96,14 @@ public java.util.List<java.lang.String> methods();
 public pe.axiz.spring.audit.AxizAuditProperties$Http(boolean, java.util.List<java.lang.String>, java.util.List<java.lang.String>, java.util.List<java.lang.String>);
 }
 
-public final class pe.axiz.spring.audit.AxizAuditProperties$Kafka extends java.lang.Record {
+public final class pe.axiz.spring.audit.AxizAuditProperties$Integrity extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
-public java.lang.String topic();
-public java.time.Duration timeout();
-public pe.axiz.spring.audit.AxizAuditProperties$Kafka(java.lang.String, java.time.Duration);
+public java.lang.String hmacKeyId();
+public java.lang.String hmacSecret();
+public pe.axiz.core.audit.AuditSealer$Mode mode();
+public pe.axiz.spring.audit.AxizAuditProperties$Integrity(pe.axiz.core.audit.AuditSealer$Mode, java.lang.String, java.lang.String);
 }
 
 public final class pe.axiz.spring.audit.AxizAuditProperties$Mode extends java.lang.Enum<pe.axiz.spring.audit.AxizAuditProperties$Mode> {
@@ -104,20 +114,31 @@ public static pe.axiz.spring.audit.AxizAuditProperties$Mode valueOf(java.lang.St
 public static pe.axiz.spring.audit.AxizAuditProperties$Mode[] values();
 }
 
-public final class pe.axiz.spring.audit.AxizAuditProperties$Sqs extends java.lang.Record {
+public final class pe.axiz.spring.audit.AxizAuditProperties$Strict extends java.lang.Record {
+public boolean enabled();
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
-public java.lang.String queueUrl();
-public pe.axiz.spring.audit.AxizAuditProperties$Sqs(java.lang.String);
+public int concurrency();
+public java.time.Duration checkpointInterval();
+public java.time.Duration timeout();
+public pe.axiz.spring.audit.AxizAuditProperties$Strict(boolean, pe.axiz.spring.audit.AxizAuditProperties$StrictMode, java.time.Duration, int, java.time.Duration);
+public pe.axiz.spring.audit.AxizAuditProperties$StrictMode mode();
 }
 
-public class pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration {
-public pe.axiz.spring.audit.sqs.AxizAuditSqsAutoConfiguration();
+public final class pe.axiz.spring.audit.AxizAuditProperties$StrictMode extends java.lang.Enum<pe.axiz.spring.audit.AxizAuditProperties$StrictMode> {
+public static final pe.axiz.spring.audit.AxizAuditProperties$StrictMode DIRECT;
+public static final pe.axiz.spring.audit.AxizAuditProperties$StrictMode DURABLE;
+public static pe.axiz.spring.audit.AxizAuditProperties$StrictMode valueOf(java.lang.String);
+public static pe.axiz.spring.audit.AxizAuditProperties$StrictMode[] values();
 }
 
 public class pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration {
 public pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration();
+}
+
+public class pe.axiz.spring.audit.AxizStrictAuditAutoConfiguration {
+public pe.axiz.spring.audit.AxizStrictAuditAutoConfiguration();
 }
 
 public class pe.axiz.spring.audit.HttpAuditFilter extends org.springframework.web.filter.OncePerRequestFilter implements org.springframework.core.Ordered {
@@ -158,18 +179,57 @@ public java.lang.Object invoke(org.aopalliance.intercept.MethodInvocation) throw
 public pe.axiz.spring.audit.ReactiveAuditableInterceptor(java.util.function.Supplier<pe.axiz.spring.audit.ReactiveAuditTrail>, java.util.function.Supplier<pe.axiz.spring.audit.AuditContextResolver>);
 }
 
-public final class pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher implements pe.axiz.spring.audit.ReactiveAuditPublisher {
+public final class pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher implements pe.axiz.spring.audit.ReactiveAuditPublisher,pe.axiz.core.audit.AuditIntegrityMetrics {
+public java.util.Map<java.lang.String, java.lang.Long> chainSequences();
+public long detailsSanitizedCount();
 public long notConfirmedCount();
-public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction);
-public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher(pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter, java.lang.String, pe.axiz.spring.audit.ReactiveAuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction, org.springframework.transaction.ReactiveTransactionManager, java.time.Duration, int);
 public reactor.core.publisher.Mono<java.lang.Void> publish(pe.axiz.core.audit.AuditEvent);
+public static pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder builder();
 }
 
-public final class pe.axiz.spring.audit.TransactionalAuditPublisher implements pe.axiz.core.audit.AuditPublisher,java.lang.AutoCloseable {
+public final class pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder {
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher build();
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder calculator(pe.axiz.core.audit.AuditSealCalculator);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder chain(java.lang.String);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder degradation(pe.axiz.core.audit.AuditSealer);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder destination(java.lang.String);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder failureConcurrency(int);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder failureTimeout(java.time.Duration);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder fallback(pe.axiz.spring.audit.ReactiveAuditPublisher);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder outbox(pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder outside(pe.axiz.spring.audit.AuditOutsideTransaction);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder state(pe.axiz.kit.reactor.audit.ReactiveAuditChainState);
+public pe.axiz.spring.audit.ReactiveTransactionalAuditPublisher$Builder transactions(org.springframework.transaction.ReactiveTransactionManager);
+}
+
+public final class pe.axiz.spring.audit.StrictAuditSink extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String name();
+public pe.axiz.core.audit.AuditPublisher publisher();
+public pe.axiz.spring.audit.StrictAuditSink(java.lang.String, pe.axiz.core.audit.AuditPublisher);
+}
+
+public final class pe.axiz.spring.audit.TransactionalAuditPublisher implements pe.axiz.core.audit.AuditPublisher,pe.axiz.core.audit.AuditPublisherDecorator,java.lang.AutoCloseable,pe.axiz.core.audit.AuditIntegrityMetrics {
+public java.util.Map<java.lang.String, java.lang.Long> chainSequences();
+public long detailsSanitizedCount();
 public long notConfirmedCount();
-public pe.axiz.core.audit.AuditPublisher fallback();
-public pe.axiz.spring.audit.TransactionalAuditPublisher(pe.axiz.core.outbox.OutboxWriter, java.lang.String, pe.axiz.core.audit.AuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction);
-public pe.axiz.spring.audit.TransactionalAuditPublisher(pe.axiz.core.outbox.OutboxWriter, java.lang.String, pe.axiz.core.audit.AuditPublisher, pe.axiz.spring.audit.AuditOutsideTransaction, org.springframework.transaction.PlatformTransactionManager, java.time.Duration, int);
+public pe.axiz.core.audit.AuditPublisher delegate();
+public static pe.axiz.spring.audit.TransactionalAuditPublisher$Builder builder();
 public void close() throws java.lang.Exception;
 public void publish(pe.axiz.core.audit.AuditEvent);
+}
+
+public final class pe.axiz.spring.audit.TransactionalAuditPublisher$Builder {
+public pe.axiz.spring.audit.TransactionalAuditPublisher build();
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder concurrency(int);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder degradation(pe.axiz.core.audit.AuditSealer);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder destination(java.lang.String);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder durable(pe.axiz.core.audit.AuditSealer);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder fallback(pe.axiz.core.audit.AuditPublisher);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder outbox(pe.axiz.core.outbox.OutboxWriter);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder outside(pe.axiz.spring.audit.AuditOutsideTransaction);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder timeout(java.time.Duration);
+public pe.axiz.spring.audit.TransactionalAuditPublisher$Builder transactions(org.springframework.transaction.PlatformTransactionManager);
 }

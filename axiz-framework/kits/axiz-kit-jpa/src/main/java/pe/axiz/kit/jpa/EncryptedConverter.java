@@ -18,7 +18,10 @@ public abstract class EncryptedConverter implements AttributeConverter<String, S
 
   /** The JPA provider must obtain converters through its dependency-injection integration. */
   public EncryptedConverter(FieldEncryptor encryptor) {
-    this.encryptor = Objects.requireNonNull(encryptor);
+    // Reject invalid dependencies before the instance can become finalizable.
+    Objects.requireNonNull(encryptor);
+    super();
+    this.encryptor = encryptor;
   }
 
   protected abstract String context();

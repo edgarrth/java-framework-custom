@@ -1,6 +1,5 @@
 package pe.axiz.spring.httpclient;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,11 +38,6 @@ public final class AxizExchangeFilter implements ExchangeFilterFunction {
 
   private static final Logger LOG = LoggerFactory.getLogger("axiz.http.client");
 
-  @SuppressFBWarnings(
-      value = "EI_EXPOSE_REP2",
-      justification =
-          "ClientResilience is an injected collaborator whose identity and lifecycle must be "
-              + "shared, not copied.")
   private final ClientResilience resilience;
 
   private final boolean translateErrors;

@@ -16,7 +16,6 @@ import pe.axiz.core.errors.ExternalServiceException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.errors.TechnicalException;
 import pe.axiz.core.money.Money;
-import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.payments.bankingcore.adapter.out.corebanking.model.CoreDebit;
 import pe.axiz.payments.bankingcore.adapter.out.corebanking.model.CoreMovement;
 import pe.axiz.payments.bankingcore.adapter.out.soap.CoreCreditGateway;
@@ -123,7 +122,6 @@ class CoreBankingAdapterTest {
             new SoapClients(
                 new AxizSoapProperties(Map.of()),
                 null,
-                ObjectMasker.defaults(),
                 ObservationRegistry.NOOP,
                 Clock.systemUTC(),
                 TransportSecurityPolicy.system())) {

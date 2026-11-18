@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
-import pe.axiz.payments.networkgateway.api.model.Transfer;
-import pe.axiz.payments.networkgateway.api.model.TransferRequest;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.Transfer;
+import pe.axiz.payments.networkgateway.adapter.in.rest.model.TransferRequest;
 import pe.axiz.payments.networkgateway.application.usecase.SendTransferUseCase;
 import pe.axiz.payments.networkgateway.domain.TransferStatus;
 

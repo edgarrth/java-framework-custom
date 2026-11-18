@@ -170,4 +170,30 @@ class WorkingProjectTest {
     assertEquals("external", Files.readString(external));
     assertEquals("local", Files.readString(source.resolve("local.txt")));
   }
+
+  @Test
+  void reviewPreservesExecutableModesAndFlagsInvalidUtf8WithoutChangingUntouchedFiles(
+      @TempDir Path root) throws Exception {
+    Path executable = root.resolve("mvnw");
+    Files.writeString(executable, "#!/bin/sh\nexit 0\n");
+    Files.setPosixFilePermissions(
+        executable, java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"));
+    Files.writeString(root.resolve("untouched.txt"), "unchanged\n");
+    Files.write(root.resolve("legacy.bin"), new byte[] {(byte) 0xc3, (byte) 0x28});
+    try (WorkingProject project = WorkingProject.create(root)) {
+      assertTrue(Files.isExecutable(project.directory().resolve("mvnw")));
+      Files.writeString(project.directory().resolve("mvnw"), "#!/bin/sh\nexit 1\n");
+      Files.write(project.directory().resolve("legacy.bin"), new byte[] {(byte) 0xc3, (byte) 0x29});
+      project.review();
+      String patch = Files.readString(root.resolve("target/rewrite/rewrite.patch"));
+      assertFalse(patch.contains("untouched.txt"));
+      assertTrue(patch.contains("Binary files differ: legacy.bin"));
+      assertTrue(patch.contains("-exit 0\n+#!/bin/sh\n+exit 1\n"), patch);
+      project.apply();
+      assertTrue(Files.isExecutable(executable));
+      assertEquals(
+          java.nio.file.attribute.PosixFilePermissions.fromString("rwx------"),
+          Files.getPosixFilePermissions(executable));
+    }
+  }
 }

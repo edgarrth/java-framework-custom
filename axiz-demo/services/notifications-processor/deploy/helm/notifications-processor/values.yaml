@@ -1,7 +1,7 @@
 nameOverride: ''
 environment: ""
 image:
-  repository: nexus-docker.axiz.internal/axiz/notifications-processor
+  repository: ghcr.io/edgarrth/java-framework-custom/notifications-processor
   tag: ''
   digest: ''
   pullPolicy: IfNotPresent
@@ -69,4 +69,4 @@ externalSecret:
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/notifications-processor
-  keys: []
+  keys: [field-key-v1]

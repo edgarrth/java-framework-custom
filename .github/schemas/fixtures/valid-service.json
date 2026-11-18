@@ -98,6 +98,14 @@
         "path": "reports/gates.json",
         "sha256": "2700165975f68815c97d605c56eca8e90d497ade1264b6282401d13fee99ac27"
       }
+    },
+    {
+      "name": "compile-authority",
+      "result": "passed",
+      "evidence": {
+        "path": "reports/gates.json",
+        "sha256": "2700165975f68815c97d605c56eca8e90d497ade1264b6282401d13fee99ac27"
+      }
     }
   ],
   "sbom": {

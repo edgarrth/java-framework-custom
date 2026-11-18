@@ -2,10 +2,11 @@ package pe.axiz.spring.audit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.kafka.clients.producer.MockProducer;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.ProducerFactory;
 import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.spring.audit.kafka.AxizAuditKafkaAutoConfiguration;
@@ -16,7 +17,8 @@ import pe.axiz.spring.aws.AxizAwsIdentityAutoConfiguration;
 class AuditProvidersTest {
   @Test
   void kafkaAndSqsSinksAreAddedOnlyWhenConfigured() {
-    ProducerFactory<String, String> producers = MockProducer::new;
+    ProducerFactory<String, String> producers =
+        new DefaultKafkaProducerFactory<>(Map.of("bootstrap.servers", "localhost:9092"));
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
@@ -32,7 +34,8 @@ class AuditProvidersTest {
             "axiz.transport.allow-plain-http=true",
             "axiz.transport.allow-insecure-data-stores=true",
             "axiz.audit.sqs.queue-url=http://localhost:4566/000000000000/audit",
-            "axiz.aws.region=us-east-1")
+            "axiz.aws.region=us-east-1",
+            "axiz.aws.endpoint=http://localhost:4566")
         .run(
             ctx -> {
               assertThat(ctx).hasNotFailed();

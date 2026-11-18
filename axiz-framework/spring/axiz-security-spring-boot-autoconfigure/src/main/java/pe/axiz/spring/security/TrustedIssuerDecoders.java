@@ -174,36 +174,45 @@ public final class TrustedIssuerDecoders implements AutoCloseable {
   }
 
   private ReactiveJwtDecoder buildReactive(TrustedIssuer issuer) {
-    var cached = new AtomicReference<@Nullable NimbusReactiveJwtDecoder>();
-    return token ->
-        Mono.defer(
-                () -> {
-                  var decoder = cached.get();
-                  if (decoder != null) return decoder.decode(token);
-                  return metadata
-                      .reactiveJwksUri(issuer)
-                      .flatMap(
-                          jwks -> {
-                            var built =
-                                NimbusReactiveJwtDecoder.withJwkSetUri(jwks.toString())
-                                    .validateType(false)
-                                    .webClient(transport.web(jwks))
-                                    .jwsAlgorithms(
-                                        set -> {
-                                          set.clear();
-                                          set.addAll(algorithms(issuer));
-                                        })
-                                    .build();
-                            built.setJwtValidator(validator(issuer));
-                            cached.compareAndSet(null, built);
-                            return Objects.requireNonNull(cached.get()).decode(token);
-                          });
-                })
-            .onErrorMap(
-                failure -> {
-                  var unavailable = IssuerUnavailableException.find(failure);
-                  return unavailable != null ? unavailable : failure;
-                });
+    return ReactiveDecoders.build(this, issuer);
+  }
+
+  // Keep Reactor lambda signatures out of the shared Spring bean. Bean post-processors inspect
+  // every declared method, including synthetic ones, on servlet applications without Reactor.
+  private static final class ReactiveDecoders {
+    static ReactiveJwtDecoder build(TrustedIssuerDecoders owner, TrustedIssuer issuer) {
+      var cached = new AtomicReference<@Nullable NimbusReactiveJwtDecoder>();
+      return token ->
+          Mono.defer(
+                  () -> {
+                    var decoder = cached.get();
+                    if (decoder != null) return decoder.decode(token);
+                    return owner
+                        .metadata
+                        .reactiveJwksUri(issuer)
+                        .flatMap(
+                            jwks -> {
+                              var built =
+                                  NimbusReactiveJwtDecoder.withJwkSetUri(jwks.toString())
+                                      .validateType(false)
+                                      .webClient(owner.transport.web(jwks))
+                                      .jwsAlgorithms(
+                                          set -> {
+                                            set.clear();
+                                            set.addAll(owner.algorithms(issuer));
+                                          })
+                                      .build();
+                              built.setJwtValidator(owner.validator(issuer));
+                              cached.compareAndSet(null, built);
+                              return Objects.requireNonNull(cached.get()).decode(token);
+                            });
+                  })
+              .onErrorMap(
+                  failure -> {
+                    var unavailable = IssuerUnavailableException.find(failure);
+                    return unavailable != null ? unavailable : failure;
+                  });
+    }
   }
 
   /** Non-blocking startup: retries failed discovery in owned virtual threads until closed. */

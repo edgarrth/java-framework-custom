@@ -48,7 +48,7 @@ class AutomaticServicePolicyTest(unittest.TestCase):
         self.assertTrue(any(step.get("uses", "").startswith("sigstore/cosign-installer@") for step in steps))
         for step in steps:
             self.assertNotIn("checkout@", step.get("uses", ""))
-            self.assertNotIn("NEXUS_PUBLISH", str(step))
+            self.assertNotIn("PACKAGES_PUBLISH", str(step))
             self.assertNotIn("GITOPS_APP_PRIVATE_KEY", str(step))
             self.assertNotIn("./mvnw", step.get("run", ""))
 

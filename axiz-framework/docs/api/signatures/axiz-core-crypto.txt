@@ -4,6 +4,7 @@ public static byte[] encrypt(javax.crypto.SecretKey, byte[], byte[]);
 public static final int KEY_BYTES = 32;
 public static javax.crypto.SecretKey key(byte[]);
 public static javax.crypto.SecretKey newKey();
+public static void initialize();
 }
 
 public interface pe.axiz.core.crypto.AsyncDataKeyProvider {
@@ -11,15 +12,36 @@ public abstract java.util.concurrent.CompletionStage<byte[]> decrypt(byte[], jav
 public abstract java.util.concurrent.CompletionStage<pe.axiz.core.crypto.DataKeyProvider$DataKey> generate(java.lang.String);
 }
 
-public final class pe.axiz.core.crypto.AsyncEnvelopeEncryptor {
+public final class pe.axiz.core.crypto.AsyncEnvelopeEncryptor implements java.lang.AutoCloseable {
 public java.util.concurrent.CompletionStage<byte[]> decrypt(byte[], java.lang.String);
+public java.util.concurrent.CompletionStage<byte[]> decrypt(byte[], java.lang.String, java.lang.String);
 public java.util.concurrent.CompletionStage<byte[]> encrypt(byte[], java.lang.String);
+public java.util.concurrent.CompletionStage<byte[]> encrypt(byte[], java.lang.String, java.lang.String);
 public pe.axiz.core.crypto.AsyncEnvelopeEncryptor(pe.axiz.core.crypto.AsyncDataKeyProvider, java.time.Duration, long, java.time.Clock);
+public void close();
 }
 
-public final class pe.axiz.core.crypto.BlindIndex {
-public java.lang.String index(java.lang.String, java.lang.String);
-public pe.axiz.core.crypto.BlindIndex(byte[], int);
+public final class pe.axiz.core.crypto.AsyncEnvelopePayloadProtector implements pe.axiz.core.crypto.AsyncPayloadProtector {
+public java.util.concurrent.CompletionStage<byte[]> protect(byte[], java.lang.String, java.lang.String);
+public java.util.concurrent.CompletionStage<byte[]> reveal(byte[], java.lang.String, java.lang.String);
+public pe.axiz.core.crypto.AsyncEnvelopePayloadProtector(pe.axiz.core.crypto.AsyncEnvelopeEncryptor);
+}
+
+public interface pe.axiz.core.crypto.AsyncPayloadProtector {
+public abstract java.util.concurrent.CompletionStage<byte[]> protect(byte[], java.lang.String, java.lang.String);
+public abstract java.util.concurrent.CompletionStage<byte[]> reveal(byte[], java.lang.String, java.lang.String);
+public default java.util.concurrent.CompletionStage<java.lang.String> protect(java.lang.String, java.lang.String, java.lang.String);
+public default java.util.concurrent.CompletionStage<java.lang.String> reveal(java.lang.String, java.lang.String, java.lang.String);
+public static final pe.axiz.core.crypto.AsyncPayloadProtector NONE;
+}
+
+public final class pe.axiz.core.crypto.BlindIndex implements java.lang.AutoCloseable {
+public java.util.List<pe.axiz.core.crypto.KeyedHash> candidates(java.lang.String, pe.axiz.core.crypto.IndexScope);
+public java.util.Set<java.lang.String> keyIds();
+public pe.axiz.core.crypto.BlindIndex(java.util.Map<java.lang.String, byte[]>, java.lang.String);
+public pe.axiz.core.crypto.KeyedHash index(java.lang.String, pe.axiz.core.crypto.IndexScope);
+public synchronized pe.axiz.core.crypto.KeyedHash index(java.lang.String, pe.axiz.core.crypto.IndexScope, java.lang.String);
+public synchronized void close();
 }
 
 public class pe.axiz.core.crypto.CryptoException extends java.lang.RuntimeException {
@@ -32,40 +54,88 @@ public abstract byte[] decrypt(byte[], java.lang.String);
 public abstract pe.axiz.core.crypto.DataKeyProvider$DataKey generate(java.lang.String);
 }
 
-public final class pe.axiz.core.crypto.DataKeyProvider$DataKey {
+public final class pe.axiz.core.crypto.DataKeyProvider$DataKey implements java.lang.AutoCloseable {
 public boolean equals(java.lang.Object);
 public byte[] encrypted();
-public byte[] plaintext();
 public int hashCode();
 public java.lang.String toString();
 public pe.axiz.core.crypto.DataKeyProvider$DataKey(byte[], byte[]);
+public synchronized byte[] plaintext();
+public synchronized void close();
+}
+
+public final class pe.axiz.core.crypto.EncryptedValue implements pe.axiz.core.sensitive.SelfMasking {
+public boolean equals(java.lang.Object);
+public int hashCode();
+public java.lang.String encoded();
+public java.lang.String keyId();
+public java.lang.String masked();
+public java.lang.String toString();
+public static pe.axiz.core.crypto.EncryptedValue parse(java.lang.String);
 }
 
 public final class pe.axiz.core.crypto.EncryptionContext {
 public static java.lang.String require(java.lang.String);
 }
 
-public final class pe.axiz.core.crypto.EncryptionRegistry {
-public static java.lang.String blindIndex(java.lang.String, java.lang.String);
-public static pe.axiz.core.crypto.FieldEncryptor encryptor();
-public static void register(pe.axiz.core.crypto.FieldEncryptor, pe.axiz.core.crypto.BlindIndex);
-public static void reset();
-}
-
-public final class pe.axiz.core.crypto.EnvelopeEncryptor {
+public final class pe.axiz.core.crypto.EnvelopeEncryptor implements java.lang.AutoCloseable {
 public byte[] decrypt(byte[], java.lang.String);
+public byte[] decrypt(byte[], java.lang.String, java.lang.String);
 public byte[] encrypt(byte[], java.lang.String);
+public byte[] encrypt(byte[], java.lang.String, java.lang.String);
 public pe.axiz.core.crypto.EnvelopeEncryptor(pe.axiz.core.crypto.DataKeyProvider, java.time.Duration, long, java.time.Clock);
 public static final int MAX_CACHED_KEYS = 1000;
+public void close();
+}
+
+public final class pe.axiz.core.crypto.EnvelopePayloadProtector implements pe.axiz.core.crypto.PayloadProtector {
+public byte[] protect(byte[], java.lang.String, java.lang.String);
+public byte[] reveal(byte[], java.lang.String, java.lang.String);
+public pe.axiz.core.crypto.EnvelopePayloadProtector(pe.axiz.core.crypto.EnvelopeEncryptor);
 }
 
 public final class pe.axiz.core.crypto.FieldEncryptor {
 public boolean isEncrypted(java.lang.String);
 public boolean needsRotation(java.lang.String);
 public java.lang.String decrypt(java.lang.String, java.lang.String);
+public java.lang.String decrypt(java.lang.String, java.lang.String, java.lang.String);
 public java.lang.String encrypt(java.lang.String, java.lang.String);
+public java.lang.String encrypt(java.lang.String, java.lang.String, java.lang.String);
 public java.lang.String reencrypt(java.lang.String, java.lang.String, java.lang.String);
+public long encryptions(java.lang.String);
 public pe.axiz.core.crypto.FieldEncryptor(pe.axiz.core.crypto.KeyProvider);
+}
+
+public final class pe.axiz.core.crypto.FieldProtectionPolicy extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int canonicalVersion();
+public java.lang.String fieldType();
+public java.lang.String profileId();
+public java.lang.String purpose();
+public java.util.function.UnaryOperator<java.lang.String> canonicalizer();
+public pe.axiz.core.crypto.FieldProtectionPolicy(java.lang.String, java.lang.String, java.lang.String, int, java.util.function.UnaryOperator<java.lang.String>);
+public static pe.axiz.core.crypto.FieldProtectionPolicy dniPe(java.lang.String);
+public static pe.axiz.core.crypto.FieldProtectionPolicy identity(java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.FieldProtector {
+public java.util.List<pe.axiz.core.crypto.KeyedHash> candidates(pe.axiz.core.secrets.SecretValue, pe.axiz.core.crypto.FieldScope);
+public pe.axiz.core.crypto.EncryptedValue encrypt(pe.axiz.core.secrets.SecretValue, pe.axiz.core.crypto.FieldScope, java.lang.String);
+public pe.axiz.core.crypto.FieldProtector(pe.axiz.core.crypto.FieldEncryptor, pe.axiz.core.crypto.BlindIndex, pe.axiz.core.crypto.FieldProtectionPolicy);
+public pe.axiz.core.crypto.KeyedHash index(pe.axiz.core.secrets.SecretValue, pe.axiz.core.crypto.FieldScope);
+public pe.axiz.core.crypto.ProtectedField protect(pe.axiz.core.secrets.SecretValue, pe.axiz.core.crypto.FieldScope, java.lang.String);
+public pe.axiz.core.secrets.SecretValue decrypt(pe.axiz.core.crypto.EncryptedValue, pe.axiz.core.crypto.FieldScope, java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.FieldScope extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String domain();
+public java.lang.String tenant();
+public pe.axiz.core.crypto.FieldScope(java.lang.String, java.lang.String);
 }
 
 public final class pe.axiz.core.crypto.Hashing {
@@ -77,6 +147,19 @@ public static byte[] sha512(byte[]);
 public static java.lang.String sha256Hex(java.lang.String);
 }
 
+public final class pe.axiz.core.crypto.IndexScope extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int canonicalVersion();
+public java.lang.String domain();
+public java.lang.String fieldType();
+public java.lang.String profileId();
+public java.lang.String purpose();
+public java.lang.String tenant();
+public pe.axiz.core.crypto.IndexScope(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int);
+}
+
 public interface pe.axiz.core.crypto.KeyProvider {
 public abstract java.lang.String currentKeyId();
 public abstract javax.crypto.SecretKey key(java.lang.String);
@@ -84,10 +167,58 @@ public default java.util.Optional<javax.crypto.SecretKey> find(java.lang.String)
 public default javax.crypto.SecretKey currentKey();
 }
 
+public final class pe.axiz.core.crypto.KeyedHash implements pe.axiz.core.sensitive.SelfMasking {
+public boolean equals(java.lang.Object);
+public byte[] digest();
+public int canonicalVersion();
+public int formatVersion();
+public int hashCode();
+public java.lang.String encoded();
+public java.lang.String keyId();
+public java.lang.String masked();
+public java.lang.String profileId();
+public java.lang.String toString();
+public static pe.axiz.core.crypto.KeyedHash parse(java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.KeyringAsyncDataKeyProvider implements pe.axiz.core.crypto.AsyncDataKeyProvider {
+public java.lang.String writeKeyId();
+public java.util.Set<java.lang.String> readKeyIds();
+public java.util.concurrent.CompletionStage<byte[]> decrypt(byte[], java.lang.String);
+public java.util.concurrent.CompletionStage<pe.axiz.core.crypto.DataKeyProvider$DataKey> generate(java.lang.String);
+public pe.axiz.core.crypto.KeyringAsyncDataKeyProvider(java.util.Map<java.lang.String, pe.axiz.core.crypto.AsyncDataKeyProvider>, java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.KeyringDataKeyProvider implements pe.axiz.core.crypto.DataKeyProvider {
+public byte[] decrypt(byte[], java.lang.String);
+public java.lang.String writeKeyId();
+public java.util.Set<java.lang.String> readKeyIds();
+public pe.axiz.core.crypto.DataKeyProvider$DataKey generate(java.lang.String);
+public pe.axiz.core.crypto.KeyringDataKeyProvider(java.util.Map<java.lang.String, pe.axiz.core.crypto.DataKeyProvider>, java.lang.String);
+public static java.lang.String envelopeKeyId(byte[]);
+}
+
 public interface pe.axiz.core.crypto.PasswordHasher {
 public abstract boolean matches(char[], java.lang.String);
 public abstract java.lang.String hash(char[]);
 public default boolean needsUpgrade(java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.PayloadProtectionMode extends java.lang.Enum<pe.axiz.core.crypto.PayloadProtectionMode> {
+public pe.axiz.core.crypto.AsyncPayloadProtector createAsync(java.util.function.Supplier<pe.axiz.core.crypto.AsyncEnvelopeEncryptor>);
+public pe.axiz.core.crypto.PayloadProtector create(java.util.function.Supplier<pe.axiz.core.crypto.EnvelopeEncryptor>);
+public static final pe.axiz.core.crypto.PayloadProtectionMode ENVELOPE;
+public static final pe.axiz.core.crypto.PayloadProtectionMode NONE;
+public static pe.axiz.core.crypto.PayloadProtectionMode valueOf(java.lang.String);
+public static pe.axiz.core.crypto.PayloadProtectionMode[] values();
+}
+
+public interface pe.axiz.core.crypto.PayloadProtector {
+public abstract byte[] protect(byte[], java.lang.String, java.lang.String);
+public abstract byte[] reveal(byte[], java.lang.String, java.lang.String);
+public default java.lang.String protect(java.lang.String, java.lang.String, java.lang.String);
+public default java.lang.String reveal(java.lang.String, java.lang.String, java.lang.String);
+public static final pe.axiz.core.crypto.PayloadProtector NONE;
 }
 
 public final class pe.axiz.core.crypto.Pbkdf2PasswordHasher implements pe.axiz.core.crypto.PasswordHasher {
@@ -100,6 +231,16 @@ public static final int MAX_ITERATIONS = 10000000;
 public static final int MIN_ITERATIONS = 100000;
 }
 
+public final class pe.axiz.core.crypto.ProtectedField extends java.lang.Record implements pe.axiz.core.sensitive.SelfMasking {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String masked();
+public java.lang.String toString();
+public pe.axiz.core.crypto.EncryptedValue ciphertext();
+public pe.axiz.core.crypto.KeyedHash index();
+public pe.axiz.core.crypto.ProtectedField(pe.axiz.core.crypto.EncryptedValue, pe.axiz.core.crypto.KeyedHash);
+}
+
 public final class pe.axiz.core.crypto.Rsa {
 public static boolean verify(java.security.PublicKey, byte[], byte[]);
 public static byte[] decrypt(java.security.PrivateKey, byte[]);
@@ -108,9 +249,16 @@ public static byte[] sign(java.security.PrivateKey, byte[]);
 public static java.security.KeyPair newKeyPair(int);
 }
 
-public final class pe.axiz.core.crypto.StaticKeyProvider implements pe.axiz.core.crypto.KeyProvider {
+public final class pe.axiz.core.crypto.SecureRandoms {
+public static java.security.SecureRandom drbg(java.lang.String);
+}
+
+public final class pe.axiz.core.crypto.StaticKeyProvider implements pe.axiz.core.crypto.KeyProvider,java.lang.AutoCloseable {
+public boolean containsKeyMaterial(byte[]);
 public java.lang.String currentKeyId();
 public javax.crypto.SecretKey key(java.lang.String);
 public pe.axiz.core.crypto.StaticKeyProvider(java.lang.String, java.util.Map<java.lang.String, javax.crypto.SecretKey>);
 public static pe.axiz.core.crypto.StaticKeyProvider fromBase64(java.lang.String, java.util.Map<java.lang.String, java.lang.String>);
+public static pe.axiz.core.crypto.StaticKeyProvider fromBytes(java.lang.String, java.util.Map<java.lang.String, byte[]>);
+public void close();
 }

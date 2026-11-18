@@ -77,7 +77,7 @@ class IrsaFixture:
 
     def environment(self):
         # Only OS/runtime settings reach the executable under test. In particular no CI token,
-        # registry/Nexus password, Python import path or injected JVM option is inherited.
+        # registry/package token, Python import path or injected JVM option is inherited.
         allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR",
                    "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG", "LC_ALL"}
         environment = {key: value for key, value in os.environ.items() if key in allowed}

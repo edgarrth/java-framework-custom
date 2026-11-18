@@ -1,0 +1,28 @@
+public class pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisAutoConfiguration {
+public pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisAutoConfiguration();
+}
+
+public final class pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties extends java.lang.Record {
+public boolean failOpen();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String namespace();
+public pe.axiz.core.tokenization.vault.TokenBudgetPolicy policy();
+public pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties$Redis connection();
+public pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties(java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties$Redis, boolean);
+}
+
+public final class pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties$Redis extends java.lang.Record {
+public boolean tls();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int port();
+public int queueCapacity();
+public java.lang.String host();
+public java.lang.String passwordSecret();
+public java.lang.String username();
+public java.time.Duration timeout();
+public pe.axiz.spring.tokenization.vault.redis.AxizTokenizationRedisProperties$Redis(java.lang.String, int, boolean, java.lang.String, java.lang.String, java.time.Duration, int);
+}

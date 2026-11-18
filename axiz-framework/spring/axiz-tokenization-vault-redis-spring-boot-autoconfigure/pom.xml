@@ -9,6 +9,9 @@
   <description>Dedicated Redis transport and distributed admission for the generic token vault</description>
   <properties><axiz.module.name>pe.axiz.spring.tokenization.vault.redis</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-adapter-security-redis</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>testcontainers</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-containers</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version></dependency>
 

@@ -26,7 +26,15 @@
     <spotbugs.includeTests>true</spotbugs.includeTests>
   </properties>
 
+  <build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId>
+    <configuration>
+      <!-- The catalog is a resource-only dependency, read and required by CapabilityCoverageTest. -->
+      <usedDependencies><usedDependency>pe.axiz:axiz-archetypes</usedDependency></usedDependencies>
+    </configuration>
+  </plugin></plugins></build>
   <dependencies>
+    <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
       <artifactId>axiz-archetypes</artifactId>

@@ -29,9 +29,12 @@
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-saga</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jpa</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-dynamodb</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>dynamodb-enhanced</artifactId><scope>test</scope></dependency>
 
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sensitive</artifactId><version>${project.version}</version></dependency>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>jakarta.persistence</groupId><artifactId>jakarta.persistence-api</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-web</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.springframework</groupId><artifactId>spring-context</artifactId><scope>test</scope></dependency>

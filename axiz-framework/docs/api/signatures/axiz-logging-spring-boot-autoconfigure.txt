@@ -40,7 +40,7 @@ public class pe.axiz.spring.logging.HttpLoggingFilter extends org.springframewor
 protected boolean shouldNotFilter(jakarta.servlet.http.HttpServletRequest);
 protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse, jakarta.servlet.FilterChain) throws jakarta.servlet.ServletException, java.io.IOException;
 public int getOrder();
-public pe.axiz.spring.logging.HttpLoggingFilter(pe.axiz.core.logging.HttpLogFormatter, pe.axiz.spring.logging.AxizLoggingProperties$Http);
+public pe.axiz.spring.logging.HttpLoggingFilter(pe.axiz.core.logging.HttpLogFormatter, pe.axiz.spring.logging.AxizLoggingProperties$Http, java.util.List<pe.axiz.core.api.HttpPayloadPolicy>);
 }
 
 public class pe.axiz.spring.logging.HttpLoggingWebFilter implements org.springframework.web.server.WebFilter,org.springframework.core.Ordered {

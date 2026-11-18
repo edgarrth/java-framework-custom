@@ -69,6 +69,42 @@ class TokenRedisBootstrapTest {
   }
 
   @Test
+  void rejectsMissingNamesCredentialsAndUnboundedQueuesBeforeIO() {
+    for (String host : new String[] {null, "", "x".repeat(254), "redis/password"})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new Redis(host, 6379, true, "vault", "ref", Duration.ofSeconds(1), 1));
+    for (int port : new int[] {0, 65536})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new Redis("redis", port, true, "vault", "ref", Duration.ofSeconds(1), 1));
+    for (String user : new String[] {null, "", "bad user"})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new Redis("redis", 6379, true, user, "ref", Duration.ofSeconds(1), 1));
+    for (String reference : new String[] {null, "", "bad reference"})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new Redis("redis", 6379, true, "vault", reference, Duration.ofSeconds(1), 1));
+    for (Duration timeout : new Duration[] {null, Duration.ZERO, Duration.ofNanos(999999)})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new Redis("redis", 6379, true, "vault", "ref", timeout, 1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new Redis("redis", 6379, true, "vault", "ref", Duration.ofSeconds(1), 0));
+    var valid = new Redis("redis", 65535, true, "vault", "ref", Duration.ofSeconds(3), 10000);
+    assertEquals(10000, valid.queueCapacity());
+    for (String namespace : new String[] {null, "", "INVALID"})
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new AxizTokenizationRedisProperties(namespace, null, valid, false));
+    assertThrows(
+        NullPointerException.class,
+        () -> new AxizTokenizationRedisProperties("vault", null, valid, false));
+  }
+
+  @Test
   void credentialsUseOwnedCopiesMaskTheirRepresentationAndCloseOnShutdownOrInvalidLength() {
     var secret = SecretValue.of("synthetic-password-canary");
     try (var credentials = new TokenRedisCredentials("vault", secret)) {

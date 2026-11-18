@@ -108,7 +108,7 @@ class PrepareBuildTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             (root / "reports").mkdir()
-            for name in ("verify.log", "mutation.log", "encapsulation.log", "bom.json", "scan.json", "contracts.log", "chart.log"):
+            for name in ("verify.log", "mutation.log", "encapsulation.log", "bom.json", "scan.json", "contracts.log", "chart.log", "compile-authority.json"):
                 (root / "reports" / name).write_text("passed\n")
             for kind in ("maven-library", "service"):
                 data = copy.deepcopy(fixture(kind))
@@ -116,7 +116,7 @@ class PrepareBuildTest(unittest.TestCase):
                 provenance = json.loads((root / data["provenance"]["path"]).read_text())
                 self.assertEqual("https://slsa.dev/provenance/v1", provenance["predicateType"])
                 self.assertEqual("a" * 40, provenance["predicate"]["buildDefinition"]["resolvedDependencies"][0]["digest"]["gitCommit"])
-                self.assertEqual(8 if kind == "service" else 6, len(data["gates"]))
+                self.assertEqual(9 if kind == "service" else 6, len(data["gates"]))
                 self.assertTrue(provenance["subject"])
             (root / "reports/mutation.log").write_text("")
             with self.assertRaises(ValueError):

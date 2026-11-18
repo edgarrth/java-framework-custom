@@ -28,7 +28,7 @@ Anti-corruption layer in front of the core banking system, simulated by WireMock
 
 - JDK 25 (Maven comes with the wrapper `./mvnw`)
 - Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- Access to the GitHub Packages repository that publishes axiz
 
 ## Build and test
 

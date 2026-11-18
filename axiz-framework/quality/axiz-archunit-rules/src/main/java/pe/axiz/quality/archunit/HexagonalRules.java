@@ -227,9 +227,12 @@ public final class HexagonalRules {
   }
 
   private static DescribedPredicate<JavaClass> neutralLanguageTypes() {
-    return new DescribedPredicate<>("pure language value helpers") {
+    return new DescribedPredicate<>("pure language value helpers or field-review metadata") {
       @Override
       public boolean test(JavaClass type) {
+        // Only this compile-time review annotation is allowed, not the whole commons package.
+        if (type.getBaseComponentType().getName().equals("pe.axiz.core.commons.ReviewedState"))
+          return true;
         return Set.of("Checks", "Strings", "Dates", "Result", "Result$Ok", "Result$Err").stream()
             .anyMatch(
                 name -> type.getBaseComponentType().getName().equals("pe.axiz.core.lang." + name));

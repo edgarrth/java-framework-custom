@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.idempotency.Idempotent;
-import pe.axiz.payments.ux.api.model.PaymentRequest;
-import pe.axiz.payments.ux.api.model.PaymentView;
 import pe.axiz.payments.ux.composition.PaymentsComposition;
+import pe.axiz.payments.ux.composition.model.PaymentRequest;
+import pe.axiz.payments.ux.composition.model.PaymentView;
 import reactor.core.publisher.Mono;
 
 /**

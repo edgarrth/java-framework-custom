@@ -4,11 +4,12 @@ import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
-import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.RateLimitedException;
+import pe.axiz.core.security.RateLimiter;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.vault.TokenBudget;
@@ -17,20 +18,21 @@ import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 import pe.axiz.core.tokenization.vault.TokenCaller;
 import pe.axiz.core.tokenization.vault.VaultScope;
 
-/** Distributed fail-closed budgets. Construct at bootstrap; the caller owns the connection. */
+/** Distributed budgets; inject a verified fail-closed limiter on the owned Redis connection. */
 public final class RedisTokenBudget implements TokenBudget {
   private final RedisCommands<String, String> redis;
-  private final RedisRateLimiter limiter;
+  private final RateLimiter limiter;
   private final RedisBudgetProtocol protocol;
 
   public RedisTokenBudget(
       StatefulRedisConnection<String, String> connection,
       String namespace,
       TokenBudgetPolicy policy,
-      TokenBudgetLeaseAlarm alarm) {
+      TokenBudgetLeaseAlarm alarm,
+      RateLimiter limiter) {
     protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm);
     redis = connection.sync();
-    limiter = new RedisRateLimiter(redis, "", false);
+    this.limiter = Objects.requireNonNull(limiter);
   }
 
   @Override

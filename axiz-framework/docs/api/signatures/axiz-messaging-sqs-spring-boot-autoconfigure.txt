@@ -1,0 +1,35 @@
+public class pe.axiz.spring.messaging.sqs.AxizMessagingSqsAutoConfiguration {
+public pe.axiz.spring.messaging.sqs.AxizMessagingSqsAutoConfiguration();
+}
+
+public final class pe.axiz.spring.messaging.sqs.AxizMessagingSqsClientProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.time.Duration apiCallTimeout();
+public pe.axiz.spring.messaging.sqs.AxizMessagingSqsClientProperties(java.time.Duration);
+}
+
+public final class pe.axiz.spring.messaging.sqs.AxizMessagingSqsProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int batchSize();
+public java.time.Duration visibilityTimeout();
+public java.time.Duration waitTime();
+public java.util.List<java.lang.String> queues();
+public java.util.Map<java.lang.String, java.lang.String> deadLetterQueues();
+public pe.axiz.spring.messaging.sqs.AxizMessagingSqsProperties(java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.lang.String>, java.time.Duration, int, java.time.Duration);
+}
+
+public class pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguration {
+public pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguration();
+}
+
+public final class pe.axiz.spring.messaging.sqs.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
+public boolean isRunning();
+public int getPhase();
+public pe.axiz.spring.messaging.sqs.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.sqs.AxizMessagingSqsProperties, pe.axiz.core.resilience.Backoff);
+public void start();
+public void stop();
+}

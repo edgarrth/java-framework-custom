@@ -16,7 +16,19 @@ public abstract java.util.concurrent.CompletionStage<pe.axiz.core.http.AccessTok
 }
 
 public interface pe.axiz.core.http.AsyncHttpExchange {
-public abstract java.util.concurrent.CompletionStage<pe.axiz.core.http.AsyncHttpExchange$Response> exchange(java.net.http.HttpRequest, long);
+public abstract java.util.concurrent.CompletionStage<pe.axiz.core.http.AsyncHttpExchange$Response> exchange(pe.axiz.core.http.AsyncHttpExchange$Request, long);
+}
+
+public final class pe.axiz.core.http.AsyncHttpExchange$Request extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public java.lang.String body();
+public java.lang.String method();
+public java.lang.String toString();
+public java.net.URI uri();
+public java.time.Duration timeout();
+public java.util.Map<java.lang.String, java.util.List<java.lang.String>> headers();
+public pe.axiz.core.http.AsyncHttpExchange$Request(java.net.URI, java.lang.String, java.util.Map<java.lang.String, java.util.List<java.lang.String>>, java.lang.String, java.time.Duration);
 }
 
 public final class pe.axiz.core.http.AsyncHttpExchange$Response extends java.lang.Record {
@@ -43,6 +55,19 @@ public java.util.List<java.lang.String> scopes();
 public pe.axiz.core.http.AuthSettings(pe.axiz.core.http.AuthType, java.net.URI, java.lang.String, java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.lang.String, java.lang.String);
 public pe.axiz.core.http.AuthType type();
 public static pe.axiz.core.http.AuthSettings none();
+public static pe.axiz.core.http.AuthSettings$Builder builder();
+}
+
+public final class pe.axiz.core.http.AuthSettings$Builder {
+public pe.axiz.core.http.AuthSettings build();
+public pe.axiz.core.http.AuthSettings$Builder apiKeyHeader(java.lang.String);
+public pe.axiz.core.http.AuthSettings$Builder apiKeyRef(java.lang.String);
+public pe.axiz.core.http.AuthSettings$Builder audience(java.lang.String);
+public pe.axiz.core.http.AuthSettings$Builder clientId(java.lang.String);
+public pe.axiz.core.http.AuthSettings$Builder clientSecretRef(java.lang.String);
+public pe.axiz.core.http.AuthSettings$Builder scopes(java.util.List<java.lang.String>);
+public pe.axiz.core.http.AuthSettings$Builder tokenUri(java.net.URI);
+public pe.axiz.core.http.AuthSettings$Builder type(pe.axiz.core.http.AuthType);
 }
 
 public final class pe.axiz.core.http.AuthType extends java.lang.Enum<pe.axiz.core.http.AuthType> {
@@ -57,12 +82,29 @@ public static pe.axiz.core.http.AuthType[] values();
 
 public final class pe.axiz.core.http.ClientCredentialsAsyncTokenProvider implements pe.axiz.core.http.AsyncAccessTokenProvider {
 public java.util.concurrent.CompletionStage<pe.axiz.core.http.AccessToken> token();
-public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider(pe.axiz.core.http.AsyncHttpExchange, java.net.URI, java.lang.String, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.String>>, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, java.time.Duration, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
+public static pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder builder();
 }
 
-public final class pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider implements pe.axiz.core.http.AccessTokenProvider {
-public pe.axiz.core.http.AccessToken token();
-public pe.axiz.adapter.http.jdk.ClientCredentialsTokenProvider(java.net.http.HttpClient, java.net.URI, java.lang.String, java.util.function.Supplier<java.lang.String>, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, java.time.Duration, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
+public final class pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder {
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider build();
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder audience(java.lang.String);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder clientId(java.lang.String);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder clientSecret(java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.String>>);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder clock(java.time.Clock);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder http(pe.axiz.core.http.AsyncHttpExchange);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder renewBefore(java.time.Duration);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder scopes(java.util.List<java.lang.String>);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder timeout(java.time.Duration);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder tokenUri(java.net.URI);
+public pe.axiz.core.http.ClientCredentialsAsyncTokenProvider$Builder transportSecurity(pe.axiz.core.commons.net.TransportSecurityPolicy);
+}
+
+public final class pe.axiz.core.http.ClientCredentialsExchange {
+public pe.axiz.core.http.AccessToken read(pe.axiz.core.http.AsyncHttpExchange$Response, java.time.Instant, java.time.Instant);
+public pe.axiz.core.http.AsyncHttpExchange$Request request(java.lang.String);
+public pe.axiz.core.http.ClientCredentialsExchange(java.net.URI, java.lang.String, java.util.List<java.lang.String>, java.lang.String, java.time.Duration, pe.axiz.core.commons.net.TransportSecurityPolicy);
+public static final long MAX_RESPONSE_BYTES = 65536l;
+public static java.lang.RuntimeException transport(java.lang.Throwable);
 }
 
 public final class pe.axiz.core.http.ClientSettings extends java.lang.Record {
@@ -82,6 +124,22 @@ public pe.axiz.core.http.ClientSettings$RetryMode retry();
 public pe.axiz.core.http.ClientSettings(java.lang.String, java.net.URI, pe.axiz.core.resilience.TimeoutSettings, pe.axiz.core.http.AuthSettings, pe.axiz.core.http.ClientSettings$RetryMode, int, java.lang.String, int, java.util.List<java.lang.String>, int, pe.axiz.core.commons.net.TransportSecurityPolicy);
 public pe.axiz.core.resilience.TimeoutSettings timeouts();
 public static pe.axiz.core.http.ClientSettings of(java.lang.String, java.net.URI);
+public static pe.axiz.core.http.ClientSettings$Builder builder();
+}
+
+public final class pe.axiz.core.http.ClientSettings$Builder {
+public pe.axiz.core.http.ClientSettings build();
+public pe.axiz.core.http.ClientSettings$Builder auth(pe.axiz.core.http.AuthSettings);
+public pe.axiz.core.http.ClientSettings$Builder baseUrl(java.net.URI);
+public pe.axiz.core.http.ClientSettings$Builder circuitBreaker(java.lang.String);
+public pe.axiz.core.http.ClientSettings$Builder maxAttempts(int);
+public pe.axiz.core.http.ClientSettings$Builder maxConcurrentCalls(int);
+public pe.axiz.core.http.ClientSettings$Builder maxConnections(int);
+public pe.axiz.core.http.ClientSettings$Builder name(java.lang.String);
+public pe.axiz.core.http.ClientSettings$Builder propagateHeaders(java.util.List<java.lang.String>);
+public pe.axiz.core.http.ClientSettings$Builder retry(pe.axiz.core.http.ClientSettings$RetryMode);
+public pe.axiz.core.http.ClientSettings$Builder timeouts(pe.axiz.core.resilience.TimeoutSettings);
+public pe.axiz.core.http.ClientSettings$Builder transportSecurity(pe.axiz.core.commons.net.TransportSecurityPolicy);
 }
 
 public final class pe.axiz.core.http.ClientSettings$RetryMode extends java.lang.Enum<pe.axiz.core.http.ClientSettings$RetryMode> {

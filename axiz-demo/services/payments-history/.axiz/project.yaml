@@ -15,6 +15,12 @@ contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: src/main/asyncapi/asyncapi.yaml
 capabilities:
+  - config-aws
+  - secrets-file
+  - secrets-aws
+  - r2dbc-aws
+  - messaging-msk
+  - crypto-kms
   - foundation
   - web
   - errors

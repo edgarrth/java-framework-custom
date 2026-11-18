@@ -25,7 +25,13 @@ import pe.axiz.kit.sql.SqlIdentifiers;
         "The table identifier passes SqlIdentifiers.require; all data is parameter-bound.")
 public final class JdbcAuditChainState implements AuditChainState {
   private final ConnectionProvider transactions;
+
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP2",
+      justification =
+          "Borrowed pool must retain the identity of the enlisted transaction resource.")
   private final DataSource committedConnections;
+
   private final String table;
   private final Dialect dialect;
   private final Clock clock;
@@ -52,6 +58,9 @@ public final class JdbcAuditChainState implements AuditChainState {
   }
 
   @Override
+  @SuppressFBWarnings(
+      value = "EI_EXPOSE_REP",
+      justification = "Port exposes resource identity so composition can reject non-atomic stores.")
   public Object transactionResource() {
     return committedConnections;
   }

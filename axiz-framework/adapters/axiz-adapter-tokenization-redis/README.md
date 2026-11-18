@@ -110,3 +110,12 @@ usa dos conexiones a Valkey real, carreras de admisión, separación de grupos, 
 identidad, reservas sin TTL y pausa efectiva del contenedor con fallo cerrado en ambos modelos.
 BlockHound instrumenta la ruta nativa. Esto verifica el contrato del adaptador; no reemplaza las
 pruebas integrales de auditoría, cifrado, DynamoDB, Spring, HTTP o la evaluación PCI del despliegue.
+
+## Composición de los limitadores
+
+Los constructores reciben `RateLimiter` o `AsyncRateLimiter` de `core-security`.
+La integración Spring de la bóveda crea los adaptadores Redis con la misma conexión
+privada y los inyecta; el adaptador de tokenización no depende del adaptador de seguridad.
+La composición manual debe suministrar un limitador distribuido que respete
+`failOpen=false`, con prefijo vacío porque la bóveda construye su propio namespace.
+Las pruebas con Valkey verifican ese contrato ante caída del almacén y entre réplicas.

@@ -6,11 +6,32 @@ import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 /** Negative fixtures are imported by ArchUnit, never executed. */
 public class BlockingOperations {
+  public String join(CompletableFuture<String> result) {
+    return result.join();
+  }
+
+  public String block(Mono<String> value) {
+    return value.block();
+  }
+
+  public Integer last(Flux<Integer> values) {
+    return values.blockLast();
+  }
+
+  public java.util.stream.Stream<Integer> stream(Flux<Integer> values) {
+    return values.toStream();
+  }
+
+  public Scheduler sharedOffload() {
+    return Schedulers.boundedElastic();
+  }
+
   public String waitFuture(Future<String> result) throws Exception {
     return result.get();
   }

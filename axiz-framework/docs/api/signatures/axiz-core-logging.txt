@@ -40,7 +40,7 @@ public interface pe.axiz.core.logging.NoLog extends java.lang.annotation.Annotat
 
 public final class pe.axiz.core.logging.OperationLogger {
 public pe.axiz.core.logging.OperationLogger(pe.axiz.core.sensitive.ObjectMasker);
-public void entry(java.lang.String, java.util.List<java.lang.String>, java.lang.Object[], boolean[], pe.axiz.core.logging.LogOperation$Level);
+public void entry(java.lang.String, java.util.List<java.lang.String>, java.lang.Object[], boolean[], pe.axiz.core.sensitive.SensitiveField[], pe.axiz.core.logging.LogOperation$Level);
 public void entry(java.lang.String, pe.axiz.core.logging.LogOperation$Level);
 public void failure(java.lang.String, java.time.Duration, java.lang.Throwable, boolean, java.lang.String);
 public void success(java.lang.String, java.time.Duration, java.lang.Object, boolean, pe.axiz.core.logging.LogOperation$Level);

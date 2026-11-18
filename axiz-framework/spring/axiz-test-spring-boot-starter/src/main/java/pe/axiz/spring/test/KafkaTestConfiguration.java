@@ -20,6 +20,7 @@ public class KafkaTestConfiguration {
   DynamicPropertyRegistrar axizKafkaProperties(KafkaContainer kafka) {
     return registry -> {
       registry.add("axiz.messaging.kafka.bootstrap-servers", kafka::getBootstrapServers);
+      registry.add("axiz.messaging.kafka.authentication", () -> "configured");
       registry.add("axiz.messaging.kafka.iam", () -> "false");
     };
   }

@@ -3,11 +3,14 @@ package pe.axiz.payments.beneficiaries.repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
 import pe.axiz.core.api.Page;
 import pe.axiz.core.api.PageMetadata;
+import pe.axiz.core.crypto.EncryptedValue;
+import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoRepository;
@@ -33,19 +36,24 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
   private static final Expression ACTIVE =
       Expression.builder().expression("attribute_not_exists(deletedAt)").build();
 
-  private final DynamoRepository<Beneficiary> items;
+  private final DynamoRepository<BeneficiaryItem> items;
+  private final FieldEncryptor encryptor;
   private final CursorCodec cursors;
   private final String table;
 
-  DynamoBeneficiaryRepository(DynamoRepositories repositories) {
-    this.items = repositories.create(TABLE, Beneficiary.class);
+  DynamoBeneficiaryRepository(DynamoRepositories repositories, FieldEncryptor encryptor) {
+    this.items = repositories.create(TABLE, BeneficiaryItem.class);
+    this.encryptor = encryptor;
     this.cursors = repositories.cursors();
     this.table = repositories.tableName(TABLE);
   }
 
   @Override
   public Optional<Beneficiary> findActive(String customerId, String beneficiaryId) {
-    return items.findById(customerId, beneficiaryId).filter(b -> !b.removed());
+    return items
+        .findById(customerId, beneficiaryId)
+        .filter(b -> b.getDeletedAt() == null)
+        .map(this::restore);
   }
 
   @Override
@@ -61,7 +69,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     }
     var page = items.table().query(request.build()).iterator().next();
     return new Page<>(
-        page.items(),
+        page.items().stream().map(this::restore).toList(),
         new PageMetadata(0, size, -1, -1),
         cursors.encode(page.lastEvaluatedKey(), binding(customerId)));
   }
@@ -77,18 +85,63 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
                 .filterExpression(ACTIVE)
                 .build())
         .items()
-        .forEach(out::add);
+        .forEach(item -> out.add(restore(item)));
     return out;
   }
 
   @Override
   public void insert(Beneficiary beneficiary) {
-    items.insert(beneficiary, "customerId");
+    items.insert(store(beneficiary), "customerId");
   }
 
   @Override
   public Beneficiary update(Beneficiary beneficiary) {
-    return items.update(beneficiary);
+    return restore(items.update(store(beneficiary)));
+  }
+
+  static String accountBinding(String customer, String beneficiary) {
+    return customer.length() + ":" + customer + beneficiary;
+  }
+
+  private BeneficiaryItem store(Beneficiary source) {
+    var target = new BeneficiaryItem();
+    target.setCustomerId(source.getCustomerId());
+    target.setBeneficiaryId(source.getBeneficiaryId());
+    target.setAlias(source.getAlias());
+    target.setHolderName(source.getHolderName());
+    target.setCurrency(source.getCurrency());
+    target.setCreatedAt(source.getCreatedAt());
+    target.setUpdatedAt(source.getUpdatedAt());
+    target.setDeletedAt(source.getDeletedAt());
+    target.setVersion(source.getVersion());
+    target.setCci(
+        EncryptedValue.parse(
+            Objects.requireNonNull(
+                encryptor.encrypt(
+                    source.getCci(),
+                    "beneficiaries.cci",
+                    accountBinding(source.getCustomerId(), source.getBeneficiaryId())))));
+    return target;
+  }
+
+  private Beneficiary restore(BeneficiaryItem source) {
+    var target = new Beneficiary();
+    target.setCustomerId(source.getCustomerId());
+    target.setBeneficiaryId(source.getBeneficiaryId());
+    target.setAlias(source.getAlias());
+    target.setHolderName(source.getHolderName());
+    target.setCurrency(source.getCurrency());
+    target.setCreatedAt(source.getCreatedAt());
+    target.setUpdatedAt(source.getUpdatedAt());
+    target.setDeletedAt(source.getDeletedAt());
+    target.setVersion(source.getVersion());
+    target.setCci(
+        Objects.requireNonNull(
+            encryptor.decrypt(
+                Objects.requireNonNull(source.getCci()).encoded(),
+                "beneficiaries.cci",
+                accountBinding(source.getCustomerId(), source.getBeneficiaryId()))));
+    return target;
   }
 
   private static QueryConditional partition(String customerId) {

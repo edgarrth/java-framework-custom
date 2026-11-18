@@ -66,5 +66,15 @@ class AwsSecretSourcesTest {
                     .getFailure()
                     .rootCause()
                     .hasMessageContaining("axiz.secrets.parameter-store.path is required"));
+    runner
+        .withPropertyValues(
+            "axiz.secrets.parameter-store.enabled=true", "axiz.secrets.parameter-store.path= ")
+        .run(
+            ctx ->
+                assertThat(ctx)
+                    .hasFailed()
+                    .getFailure()
+                    .rootCause()
+                    .hasMessageContaining("axiz.secrets.parameter-store.path is required"));
   }
 }

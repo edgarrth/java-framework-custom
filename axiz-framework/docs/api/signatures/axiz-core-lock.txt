@@ -47,10 +47,15 @@ public class pe.axiz.core.lock.LockLostException extends pe.axiz.core.errors.Axi
 public pe.axiz.core.lock.LockLostException(java.lang.String, java.lang.Throwable);
 }
 
+public interface pe.axiz.core.lock.LockObserver {
+public abstract void releaseFailed(java.lang.String, java.lang.RuntimeException);
+public static final pe.axiz.core.lock.LockObserver NONE;
+}
+
 public final class pe.axiz.core.lock.LockTemplate {
 public <T> T withLock(java.lang.String, java.time.Duration, java.time.Duration, java.util.concurrent.Callable<T>) throws java.lang.Exception;
 public <T> T withLock(java.lang.String, java.time.Duration, java.time.Duration, pe.axiz.core.lock.LockTemplate$LeasedWork<T>) throws java.lang.Exception;
-public pe.axiz.core.lock.LockTemplate(pe.axiz.core.lock.DistributedLock, java.time.Duration);
+public pe.axiz.core.lock.LockTemplate(pe.axiz.core.lock.DistributedLock, java.time.Duration, pe.axiz.core.lock.LockObserver);
 }
 
 public interface pe.axiz.core.lock.LockTemplate$LeasedWork<T> {

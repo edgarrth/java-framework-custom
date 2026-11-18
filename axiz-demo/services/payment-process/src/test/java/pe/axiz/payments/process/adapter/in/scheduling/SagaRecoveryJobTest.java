@@ -42,7 +42,16 @@ class SagaRecoveryJobTest {
                 Money.of("10.00", "PEN"),
                 "C-1001"));
     processes.store.create(
-        SagaState.builder().sagaId("O-91").sagaName(processes.saga.name()).status(SagaStatus.RUNNING).stepIndex(0).context(processes.codec.encode(context)).error(null).updatedAt(Instant.now()).version(0).build());
+        SagaState.builder()
+            .sagaId("O-91")
+            .sagaName(processes.saga.name())
+            .status(SagaStatus.RUNNING)
+            .stepIndex(0)
+            .context(processes.codec.encode(context))
+            .error(null)
+            .updatedAt(Instant.now())
+            .version(0)
+            .build());
 
     job.resumeStale();
 

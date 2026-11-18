@@ -232,7 +232,7 @@ class ProjectGeneratorTest {
         controller.contains("createOrderUseCase.execute(new CreateOrderUseCase.Input(")
             && controller.contains("mapper.convertValue(body,")
             && !p.text(base + "application/usecase/CreateOrderUseCase.java")
-                .contains(".api.model"));
+                .contains(".adapter.in.rest.model"));
     assertTrue(controller.contains("ResponseEntity.status(201)"));
     assertTrue(
         p.text(base + "application/usecase/ListOrdersUseCase.java")
@@ -336,7 +336,7 @@ class ProjectGeneratorTest {
         controller.contains("return commandBus.send(new CreateOrderCommand(")
             && controller.contains("mapper.convertValue(body,")
             && !p.text(base + "application/command/CreateOrderCommand.java")
-                .contains(".api.model"));
+                .contains(".adapter.in.rest.model"));
     assertFalse(controller.contains("Schedulers"), "no offloading: the pipeline is reactive");
     String handler = p.text(base + "application/command/CreateOrderHandler.java");
     assertTrue(handler.contains("implements ReactiveCommandHandler<CreateOrderCommand, Order>"));

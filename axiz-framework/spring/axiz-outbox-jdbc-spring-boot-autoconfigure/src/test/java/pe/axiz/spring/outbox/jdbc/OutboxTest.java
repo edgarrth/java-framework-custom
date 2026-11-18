@@ -53,6 +53,10 @@ class OutboxTest {
   void eventsAreStoredInTheTransactionAndRelayed() throws Exception {
     JdbcDataSource h2 = new JdbcDataSource();
     h2.setURL("jdbc:h2:mem:outbox;DB_CLOSE_DELAY=-1");
+    assertTransactionalRelay(h2);
+  }
+
+  static void assertTransactionalRelay(DataSource dataSource) {
     List<String> published = new CopyOnWriteArrayList<>();
     EventPublisher publisher =
         new EventPublisher() {
@@ -72,9 +76,12 @@ class OutboxTest {
             AutoConfigurations.of(
                 AxizOutboxAutoConfiguration.class, AxizOutboxJdbcAutoConfiguration.class))
         .withPropertyValues(
-            "axiz.outbox.relay.poll-interval=50ms", "axiz.outbox.relay.publish-budget=1s")
-        .withBean(DataSource.class, () -> h2)
-        .withBean(PlatformTransactionManager.class, () -> new DataSourceTransactionManager(h2))
+            "axiz.outbox.initialize-schema=ALWAYS",
+            "axiz.outbox.relay.poll-interval=50ms",
+            "axiz.outbox.relay.publish-budget=1s")
+        .withBean(DataSource.class, () -> dataSource)
+        .withBean(
+            PlatformTransactionManager.class, () -> new DataSourceTransactionManager(dataSource))
         .withBean(EventPublisher.class, () -> publisher)
         .withBean(
             EventFactory.class,

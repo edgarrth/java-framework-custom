@@ -11,7 +11,7 @@ import java.util.Objects;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import pe.axiz.payments.ux.api.model.PaymentRequest;
+import pe.axiz.payments.ux.composition.model.PaymentRequest;
 import pe.axiz.spring.test.BlockHoundExtension;
 import tools.jackson.databind.json.JsonMapper;
 

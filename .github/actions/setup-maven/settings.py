@@ -2,6 +2,7 @@
 """Generate Maven settings without storing credential values; isolate verified candidates."""
 import argparse
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -10,14 +11,22 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 
-def create(settings, nexus_url, temporary, candidate=None, expected_hash=None, repository=None):
-    url = urlsplit(nexus_url)
-    if url.scheme not in {"https", "http"} or not url.netloc or url.username or url.password or url.query or url.fragment:
-        raise ValueError("Nexus must be an HTTP(S) base URL without embedded credentials, query or fragment")
+def create(settings, packages_url, temporary, candidate=None, expected_hash=None, repository=None):
+    url = urlsplit(packages_url)
+    if (url.scheme != "https" or url.netloc != "maven.pkg.github.com"
+            or not re.fullmatch(r"/[a-z0-9][a-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*/?", url.path)
+            or url.query or url.fragment):
+        raise ValueError("GitHub Packages requires an HTTPS owner/repository URL without credentials")
     requested = [bool(candidate), bool(expected_hash), bool(repository)]
     if any(requested) and not all(requested):
         raise ValueError("Candidate bundle, external manifest hash and source repository must be supplied together")
     root = ET.Element("settings")
+    profiles = ET.SubElement(root, "profiles")
+    active = ET.SubElement(root, "activeProfiles")
+    profile = ET.SubElement(profiles, "profile")
+    ET.SubElement(profile, "id").text = "axiz-github"
+    repositories = {section: ET.SubElement(profile, section)
+                    for section in ["repositories", "pluginRepositories"]}
     candidate_copy = local = None
     if candidate is not None:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "build-manifest"))
@@ -38,11 +47,8 @@ def create(settings, nexus_url, temporary, candidate=None, expected_hash=None, r
         local = isolated / "m2"
         local.mkdir()
         ET.SubElement(root, "localRepository").text = str(local)
-        profiles = ET.SubElement(root, "profiles")
-        profile = ET.SubElement(profiles, "profile")
-        ET.SubElement(profile, "id").text = "axiz-candidate"
         for section, element in [("repositories", "repository"), ("pluginRepositories", "pluginRepository")]:
-            candidate_repo = ET.SubElement(ET.SubElement(profile, section), element)
+            candidate_repo = ET.SubElement(repositories[section], element)
             ET.SubElement(candidate_repo, "id").text = "axiz-candidate"
             ET.SubElement(candidate_repo, "url").text = candidate_copy.as_uri()
             for policy in ["releases", "snapshots"]:
@@ -50,18 +56,23 @@ def create(settings, nexus_url, temporary, candidate=None, expected_hash=None, r
                 ET.SubElement(policy_node, "enabled").text = "true"
                 ET.SubElement(policy_node, "updatePolicy").text = "always"
                 ET.SubElement(policy_node, "checksumPolicy").text = "fail"
-        ET.SubElement(ET.SubElement(root, "activeProfiles"), "activeProfile").text = "axiz-candidate"
-    mirror = ET.SubElement(ET.SubElement(root, "mirrors"), "mirror")
-    ET.SubElement(mirror, "id").text = "nexus"
-    ET.SubElement(mirror, "mirrorOf").text = "*,!axiz-candidate" if candidate is not None else "*"
-    ET.SubElement(mirror, "url").text = nexus_url.rstrip("/") + "/repository/maven-public/"
+    # Packages is a hosted Maven repository, not a proxy. Keep Maven Central available.
+    for section, element in [("repositories", "repository"), ("pluginRepositories", "pluginRepository")]:
+        remote = ET.SubElement(repositories[section], element)
+        ET.SubElement(remote, "id").text = "github"
+        ET.SubElement(remote, "url").text = packages_url.rstrip("/")
+        for policy in ["releases", "snapshots"]:
+            node = ET.SubElement(remote, policy)
+            ET.SubElement(node, "enabled").text = "true"
+            ET.SubElement(node, "checksumPolicy").text = "fail"
+    ET.SubElement(active, "activeProfile").text = "axiz-github"
     servers = ET.SubElement(root, "servers")
     # Build credentials are read-only; deploying workflows use separate destination credentials.
-    for server_id in ["nexus", "nexus-releases", "nexus-snapshots"]:
+    for server_id in ["github"]:
         server = ET.SubElement(servers, "server")
         ET.SubElement(server, "id").text = server_id
-        ET.SubElement(server, "username").text = "${env.NEXUS_USERNAME}"
-        ET.SubElement(server, "password").text = "${env.NEXUS_PASSWORD}"
+        ET.SubElement(server, "username").text = "${env.PACKAGES_USERNAME}"
+        ET.SubElement(server, "password").text = "${env.PACKAGES_TOKEN}"
     ET.indent(root)
     settings = Path(settings)
     settings.parent.mkdir(parents=True, exist_ok=True)
@@ -74,12 +85,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--settings", type=Path, required=True)
     parser.add_argument("--temporary", type=Path, required=True)
-    parser.add_argument("--nexus-url", required=True)
+    parser.add_argument("--packages-url", required=True)
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--manifest-sha256")
     parser.add_argument("--repository")
     args = parser.parse_args()
-    candidate, local = create(args.settings, args.nexus_url, args.temporary,
+    candidate, local = create(args.settings, args.packages_url, args.temporary,
                               args.candidate, args.manifest_sha256, args.repository)
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:

@@ -17,18 +17,18 @@
 
   <distributionManagement>
     <repository>
-      <id>nexus-releases</id>
-      <url>${axiz.nexus.url}/repository/maven-releases/</url>
+      <id>github</id>
+      <url>${axiz.packages.url}</url>
     </repository>
     <snapshotRepository>
-      <id>nexus-snapshots</id>
-      <url>${axiz.nexus.url}/repository/maven-snapshots/</url>
+      <id>github</id>
+      <url>${axiz.packages.url}</url>
     </snapshotRepository>
   </distributionManagement>
 
   <properties>
     <revision>2.0.0</revision>
-    <axiz.nexus.url>https://nexus.axiz.internal</axiz.nexus.url>
+    <axiz.packages.url>https://maven.pkg.github.com/edgarrth/java-framework-custom</axiz.packages.url>
 
     <!-- 4.1.2 manages Tomcat 11.0.27 (fixes of 11.0.25 to 11.0.27, see the Tomcat 11 security page) -->
     <spring-boot.version>4.1.2</spring-boot.version>

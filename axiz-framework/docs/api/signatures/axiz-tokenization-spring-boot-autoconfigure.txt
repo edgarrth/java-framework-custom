@@ -1,0 +1,54 @@
+public class pe.axiz.spring.tokenization.AxizTokenizationLocalAutoConfiguration {
+public pe.axiz.spring.tokenization.AxizTokenizationLocalAutoConfiguration();
+}
+
+public final class pe.axiz.spring.tokenization.AxizTokenizationProperties extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String mode();
+public pe.axiz.spring.tokenization.AxizTokenizationProperties$Remote remote();
+public pe.axiz.spring.tokenization.AxizTokenizationProperties(java.lang.String, pe.axiz.spring.tokenization.AxizTokenizationProperties$Remote);
+}
+
+public final class pe.axiz.spring.tokenization.AxizTokenizationProperties$Remote extends java.lang.Record {
+public boolean asyncFacade();
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String client();
+public pe.axiz.spring.tokenization.AxizTokenizationProperties$Remote(java.lang.String, boolean);
+}
+
+public class pe.axiz.spring.tokenization.AxizTokenizationRemoteAutoConfiguration {
+public pe.axiz.spring.tokenization.AxizTokenizationRemoteAutoConfiguration();
+}
+
+public final class pe.axiz.spring.tokenization.ReactiveRemoteTokenizer implements pe.axiz.spring.tokenization.ReactiveTokenizer {
+public pe.axiz.core.tokenization.TokenizerCapabilities capabilities();
+public pe.axiz.spring.tokenization.ReactiveRemoteTokenizer(org.springframework.web.reactive.function.client.WebClient, java.time.Duration);
+public reactor.core.publisher.Mono<java.lang.Boolean> delete(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public reactor.core.publisher.Mono<java.util.Optional<pe.axiz.core.tokenization.Token>> lookup(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public reactor.core.publisher.Mono<java.util.Optional<pe.axiz.core.tokenization.TokenDescriptor>> describe(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public reactor.core.publisher.Mono<pe.axiz.core.tokenization.SensitiveValue> detokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public reactor.core.publisher.Mono<pe.axiz.core.tokenization.TokenizationResult> tokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+}
+
+public interface pe.axiz.spring.tokenization.ReactiveTokenizer {
+public abstract pe.axiz.core.tokenization.TokenizerCapabilities capabilities();
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> delete(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public abstract reactor.core.publisher.Mono<java.util.Optional<pe.axiz.core.tokenization.Token>> lookup(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public abstract reactor.core.publisher.Mono<java.util.Optional<pe.axiz.core.tokenization.TokenDescriptor>> describe(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public abstract reactor.core.publisher.Mono<pe.axiz.core.tokenization.SensitiveValue> detokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public abstract reactor.core.publisher.Mono<pe.axiz.core.tokenization.TokenizationResult> tokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+}
+
+public final class pe.axiz.spring.tokenization.RemoteTokenizer implements pe.axiz.core.tokenization.Tokenizer {
+public boolean delete(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public java.util.Optional<pe.axiz.core.tokenization.Token> lookup(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public java.util.Optional<pe.axiz.core.tokenization.TokenDescriptor> describe(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain);
+public pe.axiz.core.tokenization.SensitiveValue detokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.Token, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public pe.axiz.core.tokenization.TokenizationResult tokenize(pe.axiz.core.tokenization.TokenType, pe.axiz.core.tokenization.SensitiveValue, pe.axiz.core.tokenization.TokenDomain, java.lang.String);
+public pe.axiz.core.tokenization.TokenizerCapabilities capabilities();
+public pe.axiz.spring.tokenization.RemoteTokenizer(org.springframework.web.client.RestClient, java.time.Duration);
+}

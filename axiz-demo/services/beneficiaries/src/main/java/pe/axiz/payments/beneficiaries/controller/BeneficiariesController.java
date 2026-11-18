@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.idempotency.Idempotent;
-import pe.axiz.payments.beneficiaries.api.model.Beneficiary;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryPage;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryRequest;
-import pe.axiz.payments.beneficiaries.api.model.BeneficiaryUpdate;
+import pe.axiz.payments.beneficiaries.model.api.Beneficiary;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryPage;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryRequest;
+import pe.axiz.payments.beneficiaries.model.api.BeneficiaryUpdate;
 import pe.axiz.payments.beneficiaries.service.BeneficiariesService;
 import pe.axiz.spring.web.Paging;
 

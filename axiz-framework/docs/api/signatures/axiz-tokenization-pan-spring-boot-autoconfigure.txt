@@ -1,0 +1,3 @@
+public class pe.axiz.spring.tokenization.pan.AxizTokenizationPanAutoConfiguration {
+public pe.axiz.spring.tokenization.pan.AxizTokenizationPanAutoConfiguration();
+}

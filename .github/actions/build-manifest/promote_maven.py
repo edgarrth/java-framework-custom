@@ -5,6 +5,7 @@ import base64
 import hashlib
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -18,19 +19,24 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise ValueError("Repository redirects are not allowed during artifact promotion")
 
 
-class Nexus:
+class GitHubMaven:
     def __init__(self, base, username, password, allow_local_test=False):
         parts = urllib.parse.urlsplit(base)
         if (parts.scheme != "https" and not (allow_local_test and parts.hostname in {"127.0.0.1", "localhost"})):
-            raise ValueError("Nexus promotion requires HTTPS")
+            raise ValueError("GitHub Packages promotion requires HTTPS")
         if not parts.netloc or parts.username or parts.password or parts.query or parts.fragment:
-            raise ValueError("Invalid Nexus base URL")
+            raise ValueError("Invalid GitHub Packages base URL")
+        if not allow_local_test and (parts.netloc != "maven.pkg.github.com" or
+                not re.fullmatch(r"/[a-z0-9][a-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*/?", parts.path)):
+            raise ValueError("Publication must target a GitHub Maven owner/repository")
+        if not username or not password:
+            raise ValueError("GitHub Packages credentials are required")
         self.base = base.rstrip("/")
         self.authorization = "Basic " + base64.b64encode((username + ":" + password).encode()).decode()
         self.opener = urllib.request.build_opener(NoRedirect())
 
     def url(self, path):
-        return self.base + "/repository/maven-releases/" + urllib.parse.quote(path, safe="/")
+        return self.base + "/" + urllib.parse.quote(path, safe="/")
 
     def current_hash(self, path):
         request = urllib.request.Request(self.url(path), headers={"Authorization": self.authorization})
@@ -43,11 +49,11 @@ class Nexus:
         except urllib.error.HTTPError as error:
             if error.code == 404:
                 return None
-            raise ValueError(f"Nexus preflight failed with HTTP {error.code}") from None
+            raise ValueError(f"GitHub Packages preflight failed with HTTP {error.code}") from None
 
     def upload(self, path, file):
-        # The hosted releases repository must enforce one-time deployment. A conflicting writer
-        # must be rejected by Nexus, rather than replacing immutable content between GET and PUT.
+        # Preserve approved bytes; never overwrite a conflicting published coordinate.
+        # The workflow serializes promotions and verifies the stored hash after every PUT.
         with file.open("rb") as content:
             request = urllib.request.Request(self.url(path), data=content, method="PUT", headers={
                 "Authorization": self.authorization, "Content-Length": str(file.stat().st_size),
@@ -56,10 +62,10 @@ class Nexus:
                 with self.opener.open(request, timeout=120):
                     pass
             except urllib.error.HTTPError as error:
-                raise ValueError(f"Nexus upload failed with HTTP {error.code}; retry the same verified build") from None
+                raise ValueError(f"GitHub Packages upload failed with HTTP {error.code}; retry the same verified build") from None
 
 
-def promote(data, bundle, nexus):
+def promote(data, bundle, registry):
     if data["kind"] != "maven-library" or "-" in data["version"]:
         raise ValueError("Only final Maven release coordinates can be promoted")
     pending = []
@@ -68,20 +74,30 @@ def promote(data, bundle, nexus):
         local = safe_file(Path(bundle) / "maven", item["path"])
         if hashlib.sha256(local.read_bytes()).hexdigest() != item["sha256"]:
             raise ValueError("Verified staging changed before promotion")
-        current = nexus.current_hash(item["path"])
+        current = registry.current_hash(item["path"])
         if current is not None and current != item["sha256"]:
             raise ValueError(f"Immutable artifact already exists with different bytes: {item['path']}")
         if current is None:
             pending.append(item)
-    for item in pending:
+    for item in sorted(pending, key=lambda item: (not item["path"].endswith(".pom"), item["path"])):
         file = safe_file(Path(bundle) / "maven", item["path"])
         # Keep verification immediately adjacent to each write as well as at bundle consumption.
         if hashlib.sha256(file.read_bytes()).hexdigest() != item["sha256"]:
             raise ValueError("Verified staging changed before promotion")
-        nexus.upload(item["path"], file)
-        if nexus.current_hash(item["path"]) != item["sha256"]:
-            raise ValueError("Nexus stored content differs from the approved build")
+        registry.upload(item["path"], file)
+        if registry.current_hash(item["path"]) != item["sha256"]:
+            raise ValueError("GitHub Packages stored content differs from the approved build")
     return len(pending)
+
+
+def publication_url(base, repository):
+    """Bind the publication destination to the authenticated source repository."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9][A-Za-z0-9_.-]*", repository):
+        raise ValueError("Invalid publication source repository")
+    expected = "https://maven.pkg.github.com/" + repository.lower()
+    if base.rstrip("/").lower() != expected:
+        raise ValueError("Maven publication destination differs from the source repository")
+    return expected
 
 
 def main():
@@ -91,8 +107,9 @@ def main():
     parser.add_argument("--repository", required=True)
     args = parser.parse_args()
     data = verify(args.bundle / "build-manifest.json", args.manifest_sha256, args.bundle, args.repository)
-    nexus = Nexus(os.environ["NEXUS_URL"], os.environ["NEXUS_USERNAME"], os.environ["NEXUS_PASSWORD"])
-    print(json.dumps({"uploaded": promote(data, args.bundle, nexus), "source": data["source"],
+    registry = GitHubMaven(publication_url(os.environ["PACKAGES_URL"], args.repository),
+                           os.environ["PACKAGES_USERNAME"], os.environ["PACKAGES_TOKEN"])
+    print(json.dumps({"uploaded": promote(data, args.bundle, registry), "source": data["source"],
                       "version": data["version"]}, sort_keys=True))
 
 

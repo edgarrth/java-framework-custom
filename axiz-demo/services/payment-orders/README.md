@@ -37,7 +37,7 @@ The local demo is disposable: `scripts/demo.sh down` removes local volumes and a
 
 - JDK 25 (Maven comes with the wrapper `./mvnw`)
 - Docker, for `docker compose` and the Testcontainers tests
-- Access to the Nexus repository that publishes axiz
+- Access to the GitHub Packages repository that publishes axiz
 
 ## Build and test
 

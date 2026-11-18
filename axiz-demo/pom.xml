@@ -24,6 +24,7 @@
     <module>services/notifications-processor</module>
     <module>services/settlement-batch</module>
     <module>services/payment-network-gateway</module>
+    <module>examples/protected-data</module>
     <module>coverage</module>
   </modules>
 </project>

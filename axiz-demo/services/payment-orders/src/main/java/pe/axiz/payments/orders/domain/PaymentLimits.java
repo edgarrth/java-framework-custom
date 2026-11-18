@@ -1,6 +1,7 @@
 package pe.axiz.payments.orders.domain;
 
 import java.util.Map;
+import pe.axiz.core.commons.ReviewedState;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.money.Money;
 
@@ -9,7 +10,11 @@ import pe.axiz.core.money.Money;
  *
  * @param daily maximum amount per day and currency code
  */
-public record PaymentLimits(Map<String, Money> daily) {
+public record PaymentLimits(
+    @ReviewedState(
+            reason =
+                "Map.copyOf snapshots configuration; Money and the published map are immutable")
+        Map<String, Money> daily) {
 
   public PaymentLimits {
     daily = Map.copyOf(daily);

@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import pe.axiz.core.api.Page;
+import pe.axiz.core.crypto.AesGcm;
+import pe.axiz.core.crypto.CryptoException;
+import pe.axiz.core.crypto.FieldEncryptor;
+import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
@@ -103,20 +107,29 @@ class DynamoBeneficiaryRepositoryTest {
               "test", Map.of("test", pe.axiz.core.crypto.AesGcm.newKey())),
           false);
   final Scripted dynamo = new Scripted();
+  final FieldEncryptor encryptor =
+      new FieldEncryptor(new StaticKeyProvider("test", Map.of("test", AesGcm.newKey())));
   final DynamoBeneficiaryRepository repository =
       new DynamoBeneficiaryRepository(
           new DynamoRepositories(
               DynamoDbEnhancedClient.builder().dynamoDbClient(dynamo).build(),
               "local-",
-              () -> cursors));
+              () -> cursors),
+          encryptor);
 
-  static Map<String, AttributeValue> row(String customer, String id, boolean removed) {
+  Map<String, AttributeValue> row(String customer, String id, boolean removed) {
     Map<String, AttributeValue> row = new HashMap<>();
     row.put("customerId", AttributeValue.fromS(customer));
     row.put("beneficiaryId", AttributeValue.fromS(id));
     row.put("alias", AttributeValue.fromS("Landlord"));
     row.put("holderName", AttributeValue.fromS("Ana Torres"));
-    row.put("cci", AttributeValue.fromS("00219100123456789053"));
+    row.put(
+        "cci",
+        AttributeValue.fromS(
+            encryptor.encrypt(
+                "00219100123456789053",
+                "beneficiaries.cci",
+                DynamoBeneficiaryRepository.accountBinding(customer, id))));
     row.put("currency", AttributeValue.fromS("PEN"));
     row.put("createdAt", AttributeValue.fromS(NOW.toString()));
     row.put("updatedAt", AttributeValue.fromS(NOW.toString()));
@@ -235,7 +248,14 @@ class DynamoBeneficiaryRepositoryTest {
     assertThat(put.tableName()).isEqualTo("local-beneficiaries");
     assertThat(put.conditionExpression()).contains("attribute_not_exists(#pk)");
     assertThat(put.expressionAttributeNames()).containsEntry("#pk", "customerId");
-    assertThat(put.item()).containsEntry("cci", AttributeValue.fromS("00219100123456789053"));
+    String stored = put.item().get("cci").s();
+    assertThat(stored).startsWith("axz1:").doesNotContain("00219100123456789053");
+    assertThat(
+            encryptor.decrypt(
+                stored,
+                "beneficiaries.cci",
+                DynamoBeneficiaryRepository.accountBinding("C-1", "B-1")))
+        .isEqualTo("00219100123456789053");
 
     dynamo.item = row("C-1", "B-1", false);
     b.setVersion(1L);
@@ -246,5 +266,25 @@ class DynamoBeneficiaryRepositoryTest {
     assertThat(update.key()).isEqualTo(key("C-1", "B-1"));
     assertThat(update.conditionExpression()).isNotBlank();
     assertThat(saved.getBeneficiaryId()).isEqualTo("B-1");
+  }
+
+  @Test
+  void plaintextAndCiphertextsCopiedAcrossRecordsAreRejected() {
+    var original = row("C-1", "B-1", false);
+    for (var destination : List.of(key("C-2", "B-1"), key("C-1", "B-2"))) {
+      var changed = new HashMap<>(original);
+      changed.putAll(destination);
+      dynamo.item = changed;
+      assertThatThrownBy(
+              () ->
+                  repository.findActive(
+                      destination.get("customerId").s(), destination.get("beneficiaryId").s()))
+          .isInstanceOf(CryptoException.class);
+    }
+    var plaintext = new HashMap<>(original);
+    plaintext.put("cci", AttributeValue.fromS("00219100123456789053"));
+    dynamo.item = plaintext;
+    assertThatThrownBy(() -> repository.findActive("C-1", "B-1"))
+        .isInstanceOf(CryptoException.class);
   }
 }

@@ -36,6 +36,7 @@ public final class pe.axiz.core.saga.SagaOrchestrator {
 public <C> pe.axiz.core.saga.SagaResult<C> resume(pe.axiz.core.saga.SagaDefinition<C>, pe.axiz.core.saga.ContextCodec<C>, java.lang.String);
 public <C> pe.axiz.core.saga.SagaResult<C> start(pe.axiz.core.saga.SagaDefinition<C>, pe.axiz.core.saga.ContextCodec<C>, java.lang.String, C);
 public pe.axiz.core.saga.SagaOrchestrator(pe.axiz.core.saga.SagaStateStore, pe.axiz.core.resilience.RetryPolicy, pe.axiz.core.resilience.RetryPolicy, pe.axiz.core.saga.SagaListener, java.time.Clock);
+public pe.axiz.core.saga.SagaOrchestrator(pe.axiz.core.saga.SagaStateStore, pe.axiz.core.resilience.RetryPolicy, pe.axiz.core.resilience.RetryPolicy, pe.axiz.core.saga.SagaListener, java.time.Clock, pe.axiz.core.crypto.PayloadProtector);
 }
 
 public final class pe.axiz.core.saga.SagaOrchestrator$Resolution$Continue<C> extends java.lang.Record implements pe.axiz.core.saga.SagaOrchestrator$Resolution<C> {
@@ -66,9 +67,9 @@ public C context();
 public boolean completed();
 public final boolean equals(java.lang.Object);
 public final int hashCode();
-public final java.lang.String toString();
 public java.lang.String failedStep();
 public java.lang.String sagaId();
+public java.lang.String toString();
 public pe.axiz.core.saga.SagaResult(java.lang.String, pe.axiz.core.saga.SagaStatus, C, java.lang.String);
 public pe.axiz.core.saga.SagaStatus status();
 }
@@ -76,16 +77,29 @@ public pe.axiz.core.saga.SagaStatus status();
 public final class pe.axiz.core.saga.SagaState extends java.lang.Record {
 public final boolean equals(java.lang.Object);
 public final int hashCode();
-public final java.lang.String toString();
 public int stepIndex();
 public java.lang.String context();
 public java.lang.String error();
 public java.lang.String sagaId();
 public java.lang.String sagaName();
+public java.lang.String toString();
 public java.time.Instant updatedAt();
 public long version();
 public pe.axiz.core.saga.SagaState(java.lang.String, java.lang.String, pe.axiz.core.saga.SagaStatus, int, java.lang.String, java.lang.String, java.time.Instant, long);
 public pe.axiz.core.saga.SagaStatus status();
+public static pe.axiz.core.saga.SagaState$Builder builder();
+}
+
+public final class pe.axiz.core.saga.SagaState$Builder {
+public pe.axiz.core.saga.SagaState build();
+public pe.axiz.core.saga.SagaState$Builder context(java.lang.String);
+public pe.axiz.core.saga.SagaState$Builder error(java.lang.String);
+public pe.axiz.core.saga.SagaState$Builder sagaId(java.lang.String);
+public pe.axiz.core.saga.SagaState$Builder sagaName(java.lang.String);
+public pe.axiz.core.saga.SagaState$Builder status(pe.axiz.core.saga.SagaStatus);
+public pe.axiz.core.saga.SagaState$Builder stepIndex(int);
+public pe.axiz.core.saga.SagaState$Builder updatedAt(java.time.Instant);
+public pe.axiz.core.saga.SagaState$Builder version(long);
 }
 
 public interface pe.axiz.core.saga.SagaStateStore {

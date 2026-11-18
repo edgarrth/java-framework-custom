@@ -22,11 +22,9 @@ on:
       AXIZ_WORKFLOWS_READ_TOKEN:
         description: Read-only token for private immutable release verification
         required: false
-      NEXUS_URL:
+      PACKAGES_READ_USERNAME:
         required: false
-      NEXUS_USERNAME:
-        required: false
-      NEXUS_PASSWORD:
+      PACKAGES_READ_TOKEN:
         required: false
       AXIZ_NAMING_GUARD:
         description: Forbidden identifiers, one extended regex per line (kept outside every repository)
@@ -118,6 +116,7 @@ jobs:
 
   security:
     permissions:
+      packages: read
       contents: read
     needs: axiz-workflows-trust
     runs-on: ${{ inputs.runner }}
@@ -138,18 +137,13 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.13"
-      - name: axiz Semgrep rules (from axiz-code-standards in Nexus)
-        env:
-          NEXUS_URL: ${{ secrets.NEXUS_URL }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+      - name: Axiz Semgrep rules from the verified immutable release
         run: |
-          if [ -z "$NEXUS_URL" ]; then echo "NEXUS_URL not available: public rule sets only"; exit 0; fi
-          mkdir -p "$RUNNER_TEMP/axiz"
-          curl -fsSL -u "$NEXUS_USERNAME:$NEXUS_PASSWORD" \
-            "$NEXUS_URL/service/rest/v1/search/assets/download?repository=maven-public&group=pe.axiz&name=axiz-code-standards&sort=version&maven.extension=jar" \
-            -o "$RUNNER_TEMP/axiz/standards.jar"
-          unzip -o -q "$RUNNER_TEMP/axiz/standards.jar" 'axiz/semgrep/*' -d "$RUNNER_TEMP/axiz"
+          set -euo pipefail
+          source=.axiz-trusted-workflows/axiz-framework/quality/axiz-code-standards/src/main/resources/axiz/semgrep
+          test -f "$source/axiz-rules.yaml"
+          mkdir -p "$RUNNER_TEMP/axiz/axiz/semgrep"
+          cp "$source/"* "$RUNNER_TEMP/axiz/axiz/semgrep/"
       - name: Static security analysis (Semgrep, public rule sets and axiz rules)
         env:
           CONFIG: ${{ inputs.semgrep-config }}

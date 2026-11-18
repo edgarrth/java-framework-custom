@@ -33,7 +33,7 @@ The [architecture guide](../axiz-docs/docs/arquitectura/capas.md) describes serv
 ./mvnw -Pquality -pl '!:axiz-dependencies,!:axiz-bom' spotless:apply  # format
 ```
 
-Requirements: JDK 25, Maven 3.9.x (wrapper included). Maven settings with the Nexus mirror and
+Requirements: JDK 25, Maven 3.9.x (wrapper included). Maven settings with the GitHub Packages repository and
 credentials come from the CI secrets or `~/.m2/settings.xml`, never from this repository.
 
 ## Core capabilities (layer 1)

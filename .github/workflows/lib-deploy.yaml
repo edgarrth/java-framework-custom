@@ -12,7 +12,7 @@ on:
         type: string
         required: true
       destination:
-        description: Immutable hosted Maven repository (maven-releases)
+        description: GitHub Maven repository associated with the caller
         type: string
         required: true
       environment:
@@ -28,13 +28,6 @@ on:
         required: false
       BUILD_READ_TOKEN:
         required: false
-      NEXUS_URL:
-        required: true
-      NEXUS_PUBLISH_USERNAME:
-        required: true
-      NEXUS_PUBLISH_PASSWORD:
-        required: true
-
 permissions: {}
 
 concurrency:
@@ -71,11 +64,12 @@ jobs:
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
           set -euo pipefail
-          [[ "$DESTINATION" == maven-releases ]]
+          [[ "$DESTINATION" == github-packages ]]
           [[ "$ENVIRONMENT" == dev || "$ENVIRONMENT" == qa || "$ENVIRONMENT" == prod ]]
 
   deploy:
     permissions:
+      packages: write
       contents: write
       actions: read
       id-token: write
@@ -107,7 +101,7 @@ jobs:
           EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
           ENVIRONMENT: ${{ inputs.environment }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          PACKAGES_URL: https://maven.pkg.github.com/${{ github.repository }}
         run: |
           set -euo pipefail
           version=$(jq -r .version "$BUNDLE/build-manifest.json")
@@ -122,12 +116,11 @@ jobs:
           [[ $(jq -r .type <<< "$object") == commit && $(jq -r .sha <<< "$object") == "$source_sha" ]]
           gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/approvals" > "$RUNNER_TEMP/approvals.json"
           jq -n --arg environment "$ENVIRONMENT" '[
-            {name:"nexus-username",ref:("environment:"+$environment+"/NEXUS_PUBLISH_USERNAME")},
-            {name:"nexus-password",ref:("environment:"+$environment+"/NEXUS_PUBLISH_PASSWORD")}
+            {name:"github-packages",ref:"job:GITHUB_TOKEN:packages-write"}
           ]' > "$RUNNER_TEMP/deploy-configuration.json"
           "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$EXPECTED_HASH" \
             --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" \
-            --destination "$NEXUS_URL/repository/maven-releases" --previous-manifest "$PREVIOUS" \
+            --destination "$PACKAGES_URL" --previous-manifest "$PREVIOUS" \
             --approvals "$RUNNER_TEMP/approvals.json" --configuration "$RUNNER_TEMP/deploy-configuration.json" \
             --result failed --output "$RUNNER_TEMP/deploy-record.json"
           "$PYTHON" "$TOOLS/release_manifest.py" --repository "$GITHUB_REPOSITORY" --tag "$tag" \
@@ -140,9 +133,9 @@ jobs:
           PYTHON: ${{ steps.build.outputs.python }}
           TOOLS: ${{ steps.build.outputs.tools-path }}
           EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
-          NEXUS_URL: ${{ secrets.NEXUS_URL }}
-          NEXUS_USERNAME: ${{ secrets.NEXUS_PUBLISH_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PUBLISH_PASSWORD }}
+          PACKAGES_URL: https://maven.pkg.github.com/${{ github.repository }}
+          PACKAGES_USERNAME: ${{ github.actor }}
+          PACKAGES_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           "$PYTHON" "$TOOLS/promote_maven.py" --bundle "$BUNDLE" \
@@ -171,7 +164,7 @@ jobs:
           EXPECTED_HASH: ${{ inputs.manifest-sha256 }}
           ENVIRONMENT: ${{ inputs.environment }}
           PREVIOUS: ${{ inputs.previous-manifest-sha256 }}
-          NEXUS_URL: ${{ secrets.NEXUS_URL }}
+          PACKAGES_URL: https://maven.pkg.github.com/${{ github.repository }}
           PROMOTION: ${{ steps.promote.outcome }}
           RETENTION: ${{ steps.retain.outcome }}
         run: |
@@ -180,7 +173,7 @@ jobs:
           if [[ "$PROMOTION" == success && ("$RETENTION" == success || "$RETENTION" == skipped) ]]; then result=succeeded; fi
           "$PYTHON" "$TOOLS/deploy_record.py" --bundle "$BUNDLE" --manifest-sha256 "$EXPECTED_HASH" \
             --repository "$GITHUB_REPOSITORY" --environment "$ENVIRONMENT" \
-            --destination "$NEXUS_URL/repository/maven-releases" --previous-manifest "$PREVIOUS" \
+            --destination "$PACKAGES_URL" --previous-manifest "$PREVIOUS" \
             --approvals "$RUNNER_TEMP/approvals.json" --configuration "$RUNNER_TEMP/deploy-configuration.json" \
             --result "$result" --output "$RUNNER_TEMP/deploy-record.json"
           cosign sign-blob --yes --bundle "$RUNNER_TEMP/deploy-record.sigstore.json" "$RUNNER_TEMP/deploy-record.json"

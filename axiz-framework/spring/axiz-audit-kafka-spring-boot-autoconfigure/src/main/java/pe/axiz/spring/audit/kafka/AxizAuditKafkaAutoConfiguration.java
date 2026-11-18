@@ -53,6 +53,7 @@ public class AxizAuditKafkaAutoConfiguration {
   /** Bind and validate destination settings before constructing transport resources. */
   public AxizAuditKafkaAutoConfiguration(AxizAuditKafkaProperties properties) {
     Objects.requireNonNull(properties);
+    super();
   }
 
   @Bean(destroyMethod = "close")

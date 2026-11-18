@@ -1,23 +1,20 @@
-public interface pe.axiz.structure.layered.CommandService<T, I> {
-public abstract T create(T);
-public abstract T update(I, T);
+public interface pe.axiz.structure.layered.CommandService<RequestT, ResponseT, I> {
+public abstract ResponseT create(RequestT);
+public abstract ResponseT update(I, RequestT);
 public abstract void delete(I);
 }
 
-public interface pe.axiz.structure.layered.CrudService<T, I> extends pe.axiz.structure.layered.QueryService<T, I>, pe.axiz.structure.layered.CommandService<T, I> {
+public final class pe.axiz.structure.layered.CrudAction extends java.lang.Enum<pe.axiz.structure.layered.CrudAction> {
+public static final pe.axiz.structure.layered.CrudAction CREATE;
+public static final pe.axiz.structure.layered.CrudAction DELETE;
+public static final pe.axiz.structure.layered.CrudAction LIST;
+public static final pe.axiz.structure.layered.CrudAction READ;
+public static final pe.axiz.structure.layered.CrudAction UPDATE;
+public static pe.axiz.structure.layered.CrudAction valueOf(java.lang.String);
+public static pe.axiz.structure.layered.CrudAction[] values();
 }
 
-public class pe.axiz.structure.layered.InMemoryCrudService<T, I extends java.lang.Comparable<I>> implements pe.axiz.structure.layered.CrudService<T, I> {
-public T create(T);
-public T update(I, T);
-public java.lang.Object update(java.lang.Object, java.lang.Object);
-public java.lang.String resourceName();
-public java.util.Optional find(java.lang.Object);
-public java.util.Optional<T> find(I);
-public pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
-public pe.axiz.structure.layered.InMemoryCrudService(java.lang.String, java.util.function.Function<T, I>, java.util.function.BiFunction<I, T, T>);
-public void delete(I);
-public void delete(java.lang.Object);
+public interface pe.axiz.structure.layered.CrudService<RequestT, ResponseT, I> extends pe.axiz.structure.layered.QueryService<ResponseT, I>, pe.axiz.structure.layered.CommandService<RequestT, ResponseT, I> {
 }
 
 public interface pe.axiz.structure.layered.QueryService<T, I> {

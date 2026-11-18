@@ -66,7 +66,13 @@ import pe.axiz.spring.test.RedisTestConfiguration;
  * configuration, migrations and health. Needs Docker.
  */
 @SpringBootTest(properties = {
+  "axiz.security.issuers[0].issuer=https://issuer.test",
+  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+  "axiz.security.issuers[0].audiences[0]=test",
     "axiz.config.environment=test",
+{{#infra.kafka}}
+    "axiz.messaging.kafka.authentication=configured",
+{{/infra.kafka}}
     "axiz.transport.allow-plain-http=true",
     "axiz.transport.allow-insecure-data-stores=true"{{#fw.batch}},
     "spring.batch.job.enabled=false"{{/fw.batch}}

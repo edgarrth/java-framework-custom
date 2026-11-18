@@ -10,6 +10,10 @@ server:
   port: 8080
   shutdown: graceful
 axiz:
+  crypto:
+    fields:
+      current-key-id: v1
+      key-ids: [v1]
   dynamodb:
     table-prefix: ${AXIZ_DYNAMODB_TABLE_PREFIX:local-}
     cursor:

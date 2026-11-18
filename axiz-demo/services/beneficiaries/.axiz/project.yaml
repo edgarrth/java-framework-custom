@@ -15,6 +15,10 @@ contract:
   openapi: src/main/openapi/openapi.yaml
   asyncapi: null
 capabilities:
+  - crypto
+  - config-aws
+  - secrets-file
+  - secrets-aws
   - foundation
   - web
   - errors
