@@ -88,3 +88,20 @@ Every rule must explicitly declare `axiz.security.rate-limit.rules[].fail-open` 
 is enabled; there is no global outage policy. A missing rule policy fails startup.
 `false` returns a 503 Problem if the store is unavailable; `true` allows the request. Exceeding a
 healthy store's quota still returns 429. The framework never interprets an outage as quota exhaustion.
+
+### Reactive problem rendering
+
+Synchronous message resolvers run on the context-owned `axizSecurityRenderingScheduler`:
+four workers and 64 queued tasks per worker, isolated from Reactor's shared pool. Override this
+named bean for measured capacity requirements; Spring disposes it at shutdown. These internal
+schedulers are not default autowiring candidates. Manual construction requires an explicit
+application-owned scheduler. Saturation returns a static RFC 9457 HTTP 503 with `no-store` and
+`Retry-After` of at least one second, preserving a longer quota or issuer pause already set on
+the response, without invoking the resolver on the event loop. The 503 fallback removes
+`WWW-Authenticate` because saturation is not an authentication or authorization decision.
+
+`ReactiveRenderContext` takes request metadata from Reactor, then the exchange, and the current
+Observation from Reactor's observation key. It never imports identity or trace IDs from the
+subscribing thread or a residual worker context. It clears MDC, opens that observation's scope,
+installs validated correlation/request IDs for rendering, and restores prior worker state in
+`finally`, including resolver failures. HTTP response writing follows the render scope.

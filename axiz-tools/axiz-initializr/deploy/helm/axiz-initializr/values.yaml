@@ -44,7 +44,7 @@ securityContext:
     drop: ["ALL"]
 
 replicaCount: 2
-terminationGracePeriodSeconds: 30
+terminationGracePeriodSeconds: 90
 service:
   port: 80
 probes:
@@ -84,3 +84,5 @@ externalSecret:
   keys:
     - spring.security.oauth2.client.registration.sso.client-secret
     - spring.security.oauth2.client.registration.github.client-secret
+    - axiz.initializr.publication-key
+    - spring.data.redis.password

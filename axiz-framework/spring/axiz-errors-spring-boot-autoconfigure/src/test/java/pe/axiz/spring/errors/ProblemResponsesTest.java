@@ -50,9 +50,44 @@ import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.Problem;
 import pe.axiz.core.errors.RateLimitedException;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /** Every failure reaches the client as an RFC 9457 problem with a stable code and no internals. */
 class ProblemResponsesTest {
+
+  @Test
+  void synchronousErrorTranslationDoesNotRunOnTheEventLoop() {
+    var calls = new java.util.concurrent.atomic.AtomicInteger();
+    runner
+        .withBean(
+            pe.axiz.core.errors.ErrorMessageResolver.class,
+            () ->
+                (key, locale, parameters) -> {
+                  assertFalse(reactor.core.scheduler.Schedulers.isInNonBlockingThread());
+                  calls.incrementAndGet();
+                  return java.util.Optional.of("Localized error");
+                })
+        .run(
+            ctx -> {
+              var exchange =
+                  MockServerWebExchange.from(
+                      MockServerHttpRequest.get("/restricted")
+                          .header("X-Correlation-Id", "render-correlation"));
+              var handler =
+                  new ProblemWebExceptionHandler(
+                      ctx.getBean(ProblemResponder.class), Schedulers.boundedElastic());
+              Mono.defer(
+                      () ->
+                          handler.handle(
+                              exchange, new BusinessException(CoreErrors.CONFLICT, "synthetic")))
+                  .subscribeOn(reactor.core.scheduler.Schedulers.parallel())
+                  .block(Duration.ofSeconds(5));
+              assertEquals(409, exchange.getResponse().getStatusCode().value());
+              assertEquals(1, calls.get());
+              assertThat(exchange.getResponse().getBodyAsString().block(Duration.ofSeconds(5)))
+                  .contains("Localized error", "render-correlation");
+            });
+  }
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
@@ -74,7 +109,7 @@ class ProblemResponsesTest {
           var dispatched = new ProblemErrorController(responder).error(request);
           assertEquals("2", dispatched.getHeaders().getFirst("Retry-After"));
           var exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/token"));
-          new ProblemWebExceptionHandler(responder)
+          new ProblemWebExceptionHandler(responder, Schedulers.boundedElastic())
               .handle(
                   exchange,
                   new RateLimitedException(
@@ -258,7 +293,8 @@ class ProblemResponsesTest {
     runner.run(
         ctx -> {
           ProblemWebExceptionHandler handler =
-              new ProblemWebExceptionHandler(ctx.getBean(ProblemResponder.class));
+              new ProblemWebExceptionHandler(
+                  ctx.getBean(ProblemResponder.class), Schedulers.boundedElastic());
           MockServerWebExchange exchange =
               MockServerWebExchange.from(
                   MockServerHttpRequest.get("/accounts/1").header("X-Correlation-Id", "corr-0007"));

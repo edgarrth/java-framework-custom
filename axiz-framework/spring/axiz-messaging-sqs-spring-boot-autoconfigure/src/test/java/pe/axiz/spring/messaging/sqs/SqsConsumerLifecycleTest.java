@@ -2,10 +2,14 @@ package pe.axiz.spring.messaging.sqs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,20 +37,142 @@ import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityRequest;
 import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 class SqsConsumerLifecycleTest {
+  @Test
+  void startupRequiresAnExplicitDlqOrNativeRedrivePolicy() {
+    var sqs = mock(SqsClient.class, CALLS_REAL_METHODS);
+    doReturn(GetQueueAttributesResponse.builder().attributes(Map.of()).build())
+        .when(sqs)
+        .getQueueAttributes(any(GetQueueAttributesRequest.class));
+    var consumer =
+        new SqsEventConsumer(
+            sqs,
+            mock(ObservedDispatcher.class),
+            new AxizMessagingSqsProperties(
+                List.of("queue"), Map.of(), Duration.ofSeconds(1), 10, Duration.ofSeconds(60)),
+            Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(2)));
+    assertThrows(IllegalStateException.class, consumer::start);
+    Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> !consumer.isRunning());
+    doReturn(
+            GetQueueAttributesResponse.builder()
+                .attributes(
+                    Map.of(
+                        QueueAttributeName.REDRIVE_POLICY,
+                        "{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:dlq\",\"maxReceiveCount\":3}"))
+                .build())
+        .when(sqs)
+        .getQueueAttributes(any(GetQueueAttributesRequest.class));
+    doAnswer(
+            call -> {
+              new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
+              return ReceiveMessageResponse.builder().build();
+            })
+        .when(sqs)
+        .receiveMessage(any(ReceiveMessageRequest.class));
+    consumer.start();
+    try {
+      assertTrue(consumer.isRunning());
+    } finally {
+      consumer.stop();
+    }
+  }
+
+  @Test
+  void heartbeatCannotOverwriteARetryBackoff() throws Exception {
+    var dispatchEntered = new CountDownLatch(1);
+    var dispatchRelease = new CountDownLatch(1);
+    var heartbeatEntered = new CountDownLatch(1);
+    var heartbeatRelease = new CountDownLatch(1);
+    var timeouts = new CopyOnWriteArrayList<Integer>();
+    var receives = new AtomicInteger();
+    var sqs = mock(SqsClient.class, CALLS_REAL_METHODS);
+    doAnswer(
+            call -> {
+              if (receives.incrementAndGet() == 1)
+                return ReceiveMessageResponse.builder()
+                    .messages(
+                        Message.builder()
+                            .messageId("m")
+                            .receiptHandle("r")
+                            .body(SqsEventConsumerTest.validBody())
+                            .build())
+                    .build();
+              new CountDownLatch(1).await(100, TimeUnit.MILLISECONDS);
+              return ReceiveMessageResponse.builder().build();
+            })
+        .when(sqs)
+        .receiveMessage(any(ReceiveMessageRequest.class));
+    doAnswer(
+            call -> {
+              ChangeMessageVisibilityRequest request = call.getArgument(0);
+              if (request.visibilityTimeout() == 60) {
+                heartbeatEntered.countDown();
+                if (!heartbeatRelease.await(5, TimeUnit.SECONDS))
+                  throw new IllegalStateException("heartbeat not released");
+              }
+              timeouts.add(request.visibilityTimeout());
+              return ChangeMessageVisibilityResponse.builder().build();
+            })
+        .when(sqs)
+        .changeMessageVisibility(any(ChangeMessageVisibilityRequest.class));
+    var dispatcher = mock(ObservedDispatcher.class);
+    when(dispatcher.dispatch(anyString(), any(EventEnvelope.class), anyInt()))
+        .thenAnswer(
+            call -> {
+              dispatchEntered.countDown();
+              if (!dispatchRelease.await(5, TimeUnit.SECONDS))
+                throw new IllegalStateException("handler not released");
+              return new EventDispatcher.Outcome(DeliveryDecision.RETRY, Duration.ofSeconds(3));
+            });
+    var consumer =
+        new SqsEventConsumer(
+            sqs,
+            dispatcher,
+            new AxizMessagingSqsProperties(
+                List.of("queue"),
+                Map.of("queue", "dlq"),
+                Duration.ofSeconds(1),
+                10,
+                Duration.ofSeconds(60)),
+            Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(2)));
+    consumer.start();
+    try {
+      assertTrue(dispatchEntered.await(5, TimeUnit.SECONDS));
+      Thread heartbeat = Thread.ofVirtual().start(consumer::renewVisibility);
+      assertTrue(heartbeatEntered.await(5, TimeUnit.SECONDS));
+      dispatchRelease.countDown();
+      Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> consumer.inFlightCount() == 0);
+      assertTrue(timeouts.isEmpty(), "Backoff must wait for an already running heartbeat");
+      heartbeatRelease.countDown();
+      heartbeat.join(Duration.ofSeconds(5));
+      Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> timeouts.size() == 2);
+      consumer.renewVisibility();
+      assertEquals(List.of(60, 1), timeouts);
+    } finally {
+      dispatchRelease.countDown();
+      heartbeatRelease.countDown();
+      consumer.stop();
+    }
+  }
+
   // --- AWS -----------------------------------------------------------------------------------
 
   /** Answers one message, then fails once, then has nothing more. */
   static final class ScriptedSqs implements SqsClient {
     final AtomicInteger receives = new AtomicInteger();
+    int expectedBatchSize = 10;
     final List<String> settled = new CopyOnWriteArrayList<>();
 
     @Override
     public ReceiveMessageResponse receiveMessage(ReceiveMessageRequest request) {
+      assertEquals(expectedBatchSize, request.maxNumberOfMessages());
       int n = receives.incrementAndGet();
       if (n == 1) {
         return ReceiveMessageResponse.builder()
@@ -82,6 +208,39 @@ class SqsConsumerLifecycleTest {
 
     @Override
     public void close() {}
+  }
+
+  @Test
+  void fifoPollingNeverAcquiresALaterGroupMemberWhileTheHeadIsInFlight() {
+    var sqs = new ScriptedSqs();
+    sqs.expectedBatchSize = 1;
+    var handler = new SqsEventConsumerTest.Handler();
+    var dispatcher =
+        new EventDispatcher(
+            "fifo",
+            List.of(handler),
+            SqsEventConsumerTest.CODEC,
+            Deduplicator.none(),
+            ConsumerRetryPolicy.defaults(),
+            false);
+    var consumer =
+        new SqsEventConsumer(
+            sqs,
+            new ObservedDispatcher(dispatcher, ObservationRegistry.NOOP, Clock.systemUTC()),
+            new AxizMessagingSqsProperties(
+                List.of("https://sqs/queue.fifo"),
+                Map.of("https://sqs/queue.fifo", "https://sqs/dlq.fifo"),
+                Duration.ofSeconds(1),
+                10,
+                Duration.ofSeconds(60)),
+            Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(2)));
+    consumer.start();
+    try {
+      Awaitility.await().atMost(Duration.ofSeconds(5)).until(() -> !sqs.settled.isEmpty());
+      assertEquals(List.of("hello"), handler.seen);
+    } finally {
+      consumer.stop();
+    }
   }
 
   @Test
@@ -154,7 +313,7 @@ class SqsConsumerLifecycleTest {
             dispatcher,
             new AxizMessagingSqsProperties(
                 List.of("https://sqs/q"),
-                Map.of(),
+                Map.of("https://sqs/q", "https://sqs/dlq"),
                 Duration.ofSeconds(1),
                 10,
                 Duration.ofSeconds(60)),
@@ -168,8 +327,11 @@ class SqsConsumerLifecycleTest {
       consumer.renewVisibility();
       assertEquals(4, renewals.get());
       Thread.currentThread().interrupt();
-      consumer.stop();
+      org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, consumer::stop);
       assertTrue(Thread.currentThread().isInterrupted());
+      assertTrue(
+          consumer.isRunning(),
+          "Interrupted shutdown cannot report a still-running handler as stopped");
     } finally {
       Thread.interrupted();
       release.countDown();
@@ -197,7 +359,7 @@ class SqsConsumerLifecycleTest {
             new ObservedDispatcher(dispatcher, ObservationRegistry.NOOP, Clock.systemUTC()),
             new AxizMessagingSqsProperties(
                 List.of("https://sqs.local/000000000000/payments"),
-                Map.of(),
+                Map.of("https://sqs.local/000000000000/payments", "https://sqs/dlq"),
                 Duration.ofSeconds(20),
                 10,
                 Duration.ofSeconds(4)),

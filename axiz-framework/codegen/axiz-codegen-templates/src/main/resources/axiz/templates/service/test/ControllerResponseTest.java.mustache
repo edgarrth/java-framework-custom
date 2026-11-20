@@ -1,0 +1,131 @@
+package {{project.basePackage}}.{{fw.restPackage}};
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+{{#stack.servlet}}
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
+import org.junit.jupiter.api.extension.ExtendWith;
+import pe.axiz.spring.test.BlockHoundExtension;
+{{/stack.reactive}}
+import org.junit.jupiter.api.Test;
+import org.springframework.test.json.JsonCompareMode;
+import java.io.IOException;
+import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import pe.axiz.spring.web.AxizWebAutoConfiguration;
+{{#caps.security}}
+import pe.axiz.spring.security.AxizSecurityAutoConfiguration;
+import org.springframework.security.core.authority.AuthorityUtils;
+{{#stack.servlet}}
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockJwt;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.ApplicationContext;
+{{/stack.reactive}}
+{{/caps.security}}
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
+
+/** Verifies successful HTTP status, model mapping and body through the real controller. */
+{{#stack.servlet}}@WebMvcTest{{/stack.servlet}}{{#stack.reactive}}@WebFluxTest{{/stack.reactive}}(controllers = {{item.className}}Controller.class, properties = {
+  "axiz.config.environment=test",
+  "axiz.security.issuers[0].issuer=https://issuer.test",
+  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+  "axiz.security.issuers[0].audiences[0]=test"
+})
+@ImportAutoConfiguration({AxizWebAutoConfiguration.class{{#caps.security}}, AxizSecurityAutoConfiguration.class{{/caps.security}}})
+{{#stack.reactive}}
+@ExtendWith(BlockHoundExtension.class)
+{{/stack.reactive}}
+class {{item.className}}ControllerResponseTest {
+  @Autowired {{#stack.servlet}}MockMvc{{/stack.servlet}}{{#stack.reactive}}WebTestClient{{/stack.reactive}} client;
+{{#caps.security}}
+{{#stack.reactive}}
+  @Autowired ApplicationContext context;
+
+  @BeforeEach
+  void configureSecurityTestSupport() {
+    client = WebTestClient.bindToApplicationContext(context)
+        .apply(springSecurity()).configureClient().build();
+  }
+{{/stack.reactive}}
+{{/caps.security}}
+  @Autowired JsonMapper mapper;
+  private <T> T response(String operation, TypeReference<T> type) throws IOException {
+    try (var input = getClass().getResourceAsStream("/response-examples/" + operation + ".json")) {
+      return mapper.readValue(Objects.requireNonNull(input), type);
+    }
+  }
+{{#item.fields}}
+  @MockitoBean {{qualifiedType}} {{name}};
+{{/item.fields}}
+{{#item.operations}}
+{{#boundaryTestable}}
+
+  @Test
+  void {{methodName}}MapsTheSuccessfulApplicationResult() throws Exception {
+{{#hasResponse}}
+    {{responseTypeQualified}} result = response("{{operationId}}", new TypeReference<{{responseTypeQualified}}>() {});
+    when({{mockTarget}}.{{{mockCall}}}).thenReturn({{#stack.reactive}}Mono.just({{/stack.reactive}}result{{#stack.reactive}}){{/stack.reactive}});
+{{/hasResponse}}
+{{^hasResponse}}
+{{#stack.reactive}}
+    when({{mockTarget}}.{{{mockCall}}}).thenReturn(Mono.empty());
+{{/stack.reactive}}
+{{/hasResponse}}
+{{#stack.servlet}}
+    client.perform(request(HttpMethod.{{httpMethod}}, "{{{testUri}}}")
+{{#caps.security}}
+        .with(jwt().authorities(AuthorityUtils.createAuthorityList({{{requiredAuthorities}}})))
+{{/caps.security}}
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).content("{{{example}}}")
+{{/hasRequest}}
+        ).andExpect(status().is({{status}}))
+{{#hasResponse}}
+        .andExpect(content().json(mapper.writeValueAsString(result), JsonCompareMode.STRICT))
+{{/hasResponse}}
+{{^hasResponse}}
+        .andExpect(content().string(""))
+{{/hasResponse}}
+        ;
+{{/stack.servlet}}
+{{#stack.reactive}}
+    client
+{{#caps.security}}
+        .mutateWith(mockJwt().authorities(AuthorityUtils.createAuthorityList({{{requiredAuthorities}}})))
+{{/caps.security}}
+        .method(HttpMethod.{{httpMethod}}).uri("{{{testUri}}}")
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).bodyValue("{{{example}}}")
+{{/hasRequest}}
+        .exchange().expectStatus().isEqualTo({{status}})
+{{#hasResponse}}
+        .expectBody().json(mapper.writeValueAsString(result), JsonCompareMode.STRICT);
+{{/hasResponse}}
+{{^hasResponse}}
+        .expectBody().isEmpty();
+{{/hasResponse}}
+{{/stack.reactive}}
+    verify({{mockTarget}}).{{{mockCall}}};
+  }
+{{/boundaryTestable}}
+{{/item.operations}}
+}

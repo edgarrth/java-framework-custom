@@ -34,6 +34,11 @@ logging, audit sanitization, error mapping and server response converter/encoder
 success, failure, timeout and rollback evidence; JPA services additionally trigger a real
 PostgreSQL constraint failure and rollback. Extend it with your DTOs and custom integrations.
 Never run a canary with real sensitive values.
+{{#fw.batch}}
+The application test imports a synthetic CSV from LocalStack S3 into PostgreSQL twice and
+checks normalization, filtered rows and duplicate suppression. Extend this acceptance test
+when changing your job; startup deliberately avoids the CronJob main that terminates the JVM.
+{{/fw.batch}}
 {{#hasExamples}}
 `ContractExamplesTest` checks that every request example of the contract is a valid request.
 {{/hasExamples}}
@@ -74,6 +79,12 @@ curl -s -d grant_type=client_credentials -d client_id=local-client -d client_sec
 `src/main/openapi/openapi.yaml` is the source of truth. Request and response models are generated at
 build time into `{{api.modelPackage}}` (never versioned). Controllers were generated once
 as skeletons that answer `501 Not Implemented` until each operation is implemented.
+The generated application tests exercise that explicit result with an authorized caller.
+Replace each 501 assertion with its business expectation as you implement the operation.
+Controller response tests separately verify successful status and body mapping with application
+collaborators replaced by test doubles; the full application tests use the actual collaborators.
+Hexagonal model tests check nullable collections and immutable collection access.
+Run `./mvnw -Pquality verify` before submitting changes: it is the same quality profile used by CI.
 
 - `axiz contract sync` adds skeletons for new operations, reports removed ones and checks breaking
   changes against the previous version (openapi-diff).

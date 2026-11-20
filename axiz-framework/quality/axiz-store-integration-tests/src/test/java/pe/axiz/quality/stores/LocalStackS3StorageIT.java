@@ -25,13 +25,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.storage.AsyncStoredObject;
 import pe.axiz.core.storage.ObjectMetadata;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.storage.ReactiveStorage;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -54,7 +54,7 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackS3StorageIT {
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("s3");
+      TestContainerImages.localstack().withServices("s3");
 
   private static final String BUCKET = "axiz-native-storage";
   private static AsyncAwsClients resources;

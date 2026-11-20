@@ -39,8 +39,9 @@ public final class pe.axiz.core.crypto.BlindIndex implements java.lang.AutoClose
 public java.util.List<pe.axiz.core.crypto.KeyedHash> candidates(java.lang.String, pe.axiz.core.crypto.IndexScope);
 public java.util.Set<java.lang.String> keyIds();
 public pe.axiz.core.crypto.BlindIndex(java.util.Map<java.lang.String, byte[]>, java.lang.String);
+public pe.axiz.core.crypto.KeyedHash index(char[], pe.axiz.core.crypto.IndexScope, java.lang.String);
 public pe.axiz.core.crypto.KeyedHash index(java.lang.String, pe.axiz.core.crypto.IndexScope);
-public synchronized pe.axiz.core.crypto.KeyedHash index(java.lang.String, pe.axiz.core.crypto.IndexScope, java.lang.String);
+public pe.axiz.core.crypto.KeyedHash index(java.lang.String, pe.axiz.core.crypto.IndexScope, java.lang.String);
 public synchronized void close();
 }
 

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -292,6 +293,26 @@ class ReactiveUseCaseWiringTest {
               StepVerifier.create(lookup.execute("late-error"))
                   .expectErrorMessage("late failure")
                   .verify(T);
+            });
+  }
+
+  @Test
+  void aNonWebWorkerStartsAndCommitsAReactiveTransactionForEachSubscription() {
+    var db = database();
+    new ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                AopAutoConfiguration.class,
+                AxizHexagonalAutoConfiguration.class,
+                AxizReactiveHexagonalAutoConfiguration.class))
+        .withBean(ReactiveTransactionManager.class, () -> new R2dbcTransactionManager(db))
+        .withBean(Lookup.class)
+        .run(
+            context -> {
+              var worker = context.getBean(Lookup.class);
+              assertTrue(AopUtils.isAopProxy(worker));
+              assertEquals("worker-result", worker.execute("worker-result").block(T));
+              assertTrue(db.events().stream().anyMatch(e -> e.startsWith("commit:")));
             });
   }
 

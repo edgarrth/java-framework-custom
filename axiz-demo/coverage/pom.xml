@@ -27,13 +27,26 @@
   </properties>
 
   <build><plugins><plugin>
-    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.11.0</version>
     <configuration>
       <!-- The catalog is a resource-only dependency, read and required by CapabilityCoverageTest. -->
-      <usedDependencies><usedDependency>pe.axiz:axiz-archetypes</usedDependency></usedDependencies>
+      <usedDependencies><usedDependency>pe.axiz:axiz-archetypes</usedDependency><usedDependency>pe.axiz.payments:payments-ux</usedDependency><usedDependency>pe.axiz.payments:payment-orders</usedDependency><usedDependency>pe.axiz.payments:beneficiaries</usedDependency><usedDependency>pe.axiz.payments:banking-core</usedDependency><usedDependency>pe.axiz.payments:payment-process</usedDependency><usedDependency>pe.axiz.payments:payments-history</usedDependency><usedDependency>pe.axiz.payments:notifications-processor</usedDependency><usedDependency>pe.axiz.payments:settlement-batch</usedDependency><usedDependency>pe.axiz.payments:payment-network-gateway</usedDependency><usedDependency>pe.axiz.payments:protected-data-example</usedDependency><usedDependency>pe.axiz.payments:provider-recipes-example</usedDependency><usedDependency>pe.axiz.payments:sqs-consumer-example</usedDependency></usedDependencies>
     </configuration>
   </plugin></plugins></build>
   <dependencies>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>sqs-consumer-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <!-- Reactor ordering only: no service code or transitive framework dependencies on this classpath. -->
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payments-ux</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-orders</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>beneficiaries</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>banking-core</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-process</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payments-history</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>notifications-processor</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>settlement-batch</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>payment-network-gateway</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>protected-data-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
+    <dependency><groupId>pe.axiz.payments</groupId><artifactId>provider-recipes-example</artifactId><version>${project.version}</version><type>pom</type><scope>test</scope><exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions></dependency>
     <dependency><groupId>org.jspecify</groupId><artifactId>jspecify</artifactId><scope>test</scope></dependency>
     <dependency>
       <groupId>pe.axiz</groupId>

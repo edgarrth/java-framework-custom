@@ -1,9 +1,12 @@
 package pe.axiz.initializr.config;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
@@ -27,9 +30,12 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.SupplierJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.web.util.HttpSessionMutexListener;
+import pe.axiz.core.security.RateLimiter;
 
 /**
  * Corporate SSO for everything: the web UI signs in with OpenID Connect (session, SPA CSRF cookie);
@@ -48,6 +54,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
  * provider issued for another API is rejected with 401.
  */
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(InitializrLimits.class)
 public class SecurityConfiguration {
 
   /** Registration that signs users in (corporate identity provider). */
@@ -70,19 +77,35 @@ public class SecurityConfiguration {
           + " connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'";
 
   @Bean
-  SecurityFilterChain initializrSecurity(HttpSecurity http) throws Exception {
+  ServletListenerRegistrationBean<HttpSessionMutexListener> sessionMutex() {
+    return new ServletListenerRegistrationBean<>(new HttpSessionMutexListener());
+  }
+
+  @Bean
+  EphemeralAuthorizedClients authorizedClients() {
+    return new EphemeralAuthorizedClients(Clock.systemUTC());
+  }
+
+  @Bean
+  SecurityFilterChain initializrSecurity(
+      HttpSecurity http,
+      EphemeralAuthorizedClients authorizedClients,
+      RateLimiter limiter,
+      InitializrLimits limits)
+      throws Exception {
     http.authorizeHttpRequests(
             a ->
                 // only the probes are anonymous: build details (info) need a session or token
                 a.requestMatchers("/actuator/health/**").permitAll().anyRequest().authenticated())
         .oauth2Login(
             o ->
-                o.loginPage(SSO_LOGIN)
+                o.authorizedClientRepository(authorizedClients)
+                    .loginPage(SSO_LOGIN)
                     .userInfoEndpoint(
                         u ->
                             u.userService(signInOnlyWithSso(new DefaultOAuth2UserService()))
                                 .oidcUserService(signInOnlyWithSso(new OidcUserService()))))
-        .oauth2Client(Customizer.withDefaults())
+        .oauth2Client(o -> o.authorizedClientRepository(authorizedClients))
         .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()))
         .csrf(c -> c.spa())
         .exceptionHandling(
@@ -94,6 +117,7 @@ public class SecurityConfiguration {
             h ->
                 h.contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
                     .referrerPolicy(r -> r.policy(ReferrerPolicy.NO_REFERRER)));
+    http.addFilterAfter(new InitializrQuotaFilter(limiter, limits), AuthorizationFilter.class);
     return http.build();
   }
 

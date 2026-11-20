@@ -1,0 +1,35 @@
+package {{project.basePackage}};
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Objects;
+import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
+import {{project.basePackage}}.application.model.{{item.name}};
+
+/** Owned model values round-trip without exposing mutable collections. */
+class {{item.name}}ApplicationModelTest {
+  private final JsonMapper mapper = JsonMapper.builder().build();
+
+  @Test
+  void absentOptionalCollectionsRemainAbsent() throws Exception {
+    var value = mapper.readValue("{{{item.requiredCollectionsJson}}}", {{item.name}}.class);
+    assertEquals(value, mapper.readValue(mapper.writeValueAsString(value), {{item.name}}.class));
+{{#item.collections}}
+{{#nullable}}
+    assertNull(value.{{name}}());
+{{/nullable}}
+{{/item.collections}}
+  }
+
+  @Test
+  void presentCollectionsCannotBeChangedThroughTheModel() throws Exception {
+    var value = mapper.readValue("{{{item.allCollectionsJson}}}", {{item.name}}.class);
+    assertEquals(value, mapper.readValue(mapper.writeValueAsString(value), {{item.name}}.class));
+{{#item.collections}}
+    assertThrows(UnsupportedOperationException.class, () -> Objects.requireNonNull(value.{{name}}()).clear());
+{{/item.collections}}
+  }
+}

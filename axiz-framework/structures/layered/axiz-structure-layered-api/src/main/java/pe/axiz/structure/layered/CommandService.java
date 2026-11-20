@@ -7,6 +7,9 @@ public interface CommandService<RequestT, ResponseT, I> {
   /** Updates an existing authorized resource using the request's expected version. */
   ResponseT update(I id, RequestT request);
 
-  /** Deletes an authorized resource; missing and forbidden objects both answer as absent. */
-  void delete(I id);
+  /**
+   * Deletes an authorized resource only at the expected version; missing/forbidden answer as
+   * absent.
+   */
+  void delete(I id, String expectedVersion);
 }

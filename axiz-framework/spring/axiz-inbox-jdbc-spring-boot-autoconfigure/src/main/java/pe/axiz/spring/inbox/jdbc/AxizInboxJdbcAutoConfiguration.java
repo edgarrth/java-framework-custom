@@ -1,6 +1,7 @@
 package pe.axiz.spring.inbox.jdbc;
 
 import java.time.Clock;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
@@ -35,7 +36,8 @@ public class AxizInboxJdbcAutoConfiguration {
 
   @Bean
   SchemaInitializer axizInboxSchema(DataSource dataSource, AxizInboxJdbcProperties p) {
-    return new SchemaInitializer(dataSource, "inbox", p.initializeSchema());
+    return new SchemaInitializer(
+        dataSource, "inbox", p.initializeSchema(), Map.of("axiz_inbox", p.table()));
   }
 
   @Bean

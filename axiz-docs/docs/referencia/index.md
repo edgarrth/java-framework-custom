@@ -39,9 +39,9 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-id`](core/axiz-core-id.md) | Time-ordered UUIDv7, ULID, correlation and idempotency ids. |
 | [`axiz-core-idempotency`](core/axiz-core-idempotency.md) | An authoritative resolver that confirms no effect releases the key and returns 409 |
 | [`axiz-core-identifiers`](core/axiz-core-identifiers.md) | Generic identifier SPI with validators (national documents, bank accounts, cards, contact data). |
-| [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer: processed-message registry with JDBC store. |
+| [`axiz-core-inbox`](core/axiz-core-inbox.md) | Idempotent consumer contracts and orchestration; storage belongs to the provider adapters. |
 | [`axiz-core-json`](core/axiz-core-json.md) | Strict bounded JSON parsing and serialization. |
-| [`axiz-core-lang`](core/axiz-core-lang.md) | Pure Java language helpers: `Checks`, `Strings`, `Dates` and `Result` (including `Ok` and `Err`). |
+| [`axiz-core-lang`](core/axiz-core-lang.md) | Pure Java language helpers: `Checks`, `Strings`, `Dates`, `ValueSnapshots` and `Result` (including `Ok` and `Err`). |
 | [`axiz-core-lock`](core/axiz-core-lock.md) | Distributed lock port with lease, background renewal and lock template; in-memory implementation. |
 | [`axiz-core-logging`](core/axiz-core-logging.md) | Structured logging fields, scoped MDC, operation logging and header allow-list. |
 | [`axiz-core-messaging`](core/axiz-core-messaging.md) | EventPublisher and EventHandler over CloudEvents 1.0, business headers, retry and DLQ policies. |

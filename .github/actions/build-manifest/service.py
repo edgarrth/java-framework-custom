@@ -119,9 +119,9 @@ def chart(data, oci, expected_digest, descriptor, metadata):
     return {"name": metadata["name"], "version": data["version"], "oci": oci, "digest": expected_digest}
 
 
-def inspect(reference, expression="{{json .}}"):
+def inspect(reference, expression="{{json .}}", *, env=None):
     return json.loads(subprocess.check_output(["docker", "buildx", "imagetools", "inspect", reference,
-                                              "--format", expression], text=True))
+                                              "--format", expression], text=True, timeout=120, env=env))
 
 
 def set_project_version(data, root):
@@ -158,7 +158,7 @@ def main():
         return
     image_ref = args.image_repository + "@" + digest(args.image_digest)
     chart_ref = args.chart_oci.removeprefix("oci://") + "@" + digest(args.chart_digest)
-    chart_metadata = yaml.safe_load(subprocess.check_output(["helm", "show", "chart", "oci://" + chart_ref], text=True))
+    chart_metadata = yaml.safe_load(subprocess.check_output(["helm", "show", "chart", "oci://" + chart_ref], text=True, timeout=120))
     data["artifacts"] = {
         "image": image(data, args.image_repository, args.image_tag, args.image_digest, inspect(image_ref)),
         "chart": chart(data, args.chart_oci, args.chart_digest, inspect(chart_ref, "{{json .Manifest}}"), chart_metadata)}

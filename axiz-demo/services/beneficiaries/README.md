@@ -19,8 +19,17 @@ Frequent beneficiaries of each customer (layered style on DynamoDB).
 - One active beneficiary per account and customer, at most `beneficiaries.max-per-customer`.
 - Logical removal (`deletedAt`): items are kept for audit and skipped by queries.
 - Cursor pagination over the DynamoDB partition; a cursor of another customer is rejected.
-- Single items cached (`beneficiaries`, 5 min) and evicted on every change; registration is
-  idempotent with the `Idempotency-Key` (DynamoDB store, shared by replicas).
+- Strongly consistent reads observe changes made by other replicas; authorization and revocation
+  decisions do not depend on a local cache. Registration is idempotent with the `Idempotency-Key`
+  (DynamoDB store, shared by replicas).
+- Registration checks the active set and commits the new row plus a per-customer directory
+  revision in one conditional DynamoDB transaction. Concurrent attempts cannot exceed the
+  customer limit or create two active entries for the same CCI. Updates/removals also advance
+  that revision. The CCI remains encrypted; uniqueness checks do not introduce an unkeyed hash.
+- The runtime IAM policy needs `dynamodb:TransactWriteItems` on the beneficiary table in addition
+  to its query/read permissions. The `!directory` control row shares that table and is excluded
+  from results. During an upgrade, stop old writers before enabling this protocol: mixed writers
+  that do not advance the directory revision would invalidate the concurrency guarantee.
 
 ## Requirements
 
@@ -100,9 +109,8 @@ as skeletons that answer `501 Not Implemented` until each operation is implement
 | `sensitive` | `axiz-sensitive-spring-boot-starter` | Masking of sensitive fields in responses, logs and audit by sensitivity level |
 | `security` | `axiz-security-spring-boot-starter` | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit |
 | `dynamodb` | `axiz-dynamodb-spring-boot-starter` | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking |
-| `cache` | `axiz-cache-spring-boot-starter` | @AxizCacheable with Mono/Flux support, L1 Caffeine |
 | `idempotency` | `axiz-idempotency-spring-boot-starter` | Idempotency-Key for POST/PATCH with stored responses (in memory only in local/test; shared environments need idempotency-redis or idempotency-dynamodb) |
-| `idempotency-dynamodb` | `axiz-idempotency-spring-boot-starter` | Idempotency store on DynamoDB (conditional writes and TTL) |
+| `idempotency-dynamodb` | `axiz-idempotency-dynamodb-spring-boot-starter` | Idempotency store on DynamoDB (conditional writes and TTL) |
 
 Add more with `axiz add <capability>`: it adds the starter, its properties, the ConfigMap keys and a
 usage example.

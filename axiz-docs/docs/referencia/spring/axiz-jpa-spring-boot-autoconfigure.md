@@ -8,7 +8,7 @@ Provider-neutral JPA conventions. Consumers select `axiz-jpa-spring-boot-starter
 
 - `AxizJpaAutoConfiguration`: context-owned entity listener, request auditor and clock;
   validates explicitly declared encryption contexts.
-- `RequestAuditorProvider`: authenticated subject or client ID; system identity when absent.
+- `RequestAuditorProvider`: authenticated subject or client ID; empty when absent; `AuditListener` marks the row `unattributed`.
 - `AxizJpaEnvironmentPostProcessor`: no open-session-in-view, UTC, batching, schema validation,
   Flyway locations and bounded Hikari pool defaults. PostgreSQL TLS uses `verify-full`.
 - Schema creation/update is restricted to explicit `local`, `test` or `ci` environments.
@@ -33,3 +33,6 @@ This neutral module does not pull the AWS SDK or JDBC wrapper.
 From `axiz-framework`, run `./mvnw -pl spring/axiz-jpa-spring-boot-autoconfigure -am test`.
 Generated JPA services also verify a real PostgreSQL constraint failure with
 `./mvnw -Dtest=SensitiveDataCanaryTest test` (Docker required).
+
+Background jobs should supply an explicit workload identity through their auditor provider;
+missing or blank identity is marked `unattributed`, never silently attributed to a trusted system.

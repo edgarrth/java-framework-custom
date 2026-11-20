@@ -216,7 +216,8 @@ class StructureBoundaryRegressionTest {
         List.of(
             "pe.axiz.structure.hexagonal.spring",
             "pe.axiz.adapter.future.vendor",
-            "vendor.client")) {
+            "vendor.client",
+            "io.micrometer.core.instrument")) {
       var imported =
           compile(
               Map.of(

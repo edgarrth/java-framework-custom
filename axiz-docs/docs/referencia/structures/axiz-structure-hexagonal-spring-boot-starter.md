@@ -28,3 +28,11 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/hexagonal/axiz-structure-hexagonal-spring-boot-starter verify`.
+
+## Reactive result contract
+
+`ReactiveUseCase` emits zero or one result, defers work until subscription and propagates
+cancellation. Returning the covariant `Flux` type does not change that contract: multiple values
+or a late publisher error fail the use case and roll back its transaction. This boundary is for
+one application operation; streaming multiple independent results belongs to a separate query
+or streaming API with explicit transaction semantics.

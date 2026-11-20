@@ -152,7 +152,7 @@ public final class EventMetrics {
               });
       return new ActiveCounter(level);
     } catch (RuntimeException ex) {
-      LOG.warn("Could not register active counter", ex);
+      LOG.warn("Could not register active counter; failureType={}", ex.getClass().getSimpleName());
       return new ActiveCounter(new AtomicLong());
     }
   }
@@ -171,7 +171,7 @@ public final class EventMetrics {
               .register(registry);
       return new InflightTask(timer.start());
     } catch (RuntimeException ex) {
-      LOG.warn("Could not start inflight timer", ex);
+      LOG.warn("Could not start inflight timer; failureType={}", ex.getClass().getSimpleName());
       return new InflightTask(null);
     }
   }
@@ -303,7 +303,7 @@ public final class EventMetrics {
           return r.get();
         }
       } catch (RuntimeException ex) {
-        LOG.debug("Failure classifier error", ex);
+        LOG.debug("Failure classifier error; failureType={}", ex.getClass().getSimpleName());
       }
     }
     return new FailureClassifier.Classification(Outcome.ERROR, "error");
@@ -313,7 +313,7 @@ public final class EventMetrics {
     try {
       source.describe(metric);
     } catch (RuntimeException ex) {
-      LOG.debug("MetricSource failed", ex);
+      LOG.debug("MetricSource failed; failureType={}", ex.getClass().getSimpleName());
     }
   }
 
@@ -372,7 +372,7 @@ public final class EventMetrics {
     try {
       action.run();
     } catch (RuntimeException ex) {
-      LOG.warn("Metric recording failed: {}", ex.toString());
+      LOG.warn("Metric recording failed: {}", ex.getClass().getSimpleName());
     }
   }
 

@@ -22,4 +22,16 @@ public record InitializrProperties(
     @DefaultValue("https://api.github.com") URI githubApi,
     @Nullable String githubOrganization,
     @DefaultValue("2000") int maxFiles,
-    @DefaultValue(SecurityConfiguration.DEFAULT_AUDIENCE) String audience) {}
+    @DefaultValue(SecurityConfiguration.DEFAULT_AUDIENCE) String audience) {
+  public InitializrProperties {
+    if (!"https".equals(githubApi.getScheme())
+        || githubApi.getHost() == null
+        || githubApi.getUserInfo() != null
+        || githubApi.getQuery() != null
+        || githubApi.getFragment() != null)
+      throw new IllegalArgumentException(
+          "GitHub API requires a configured HTTPS origin without credentials");
+    if (maxFiles < 1 || maxFiles > 10000 || audience.isBlank())
+      throw new IllegalArgumentException("Invalid Initializr limits or audience");
+  }
+}

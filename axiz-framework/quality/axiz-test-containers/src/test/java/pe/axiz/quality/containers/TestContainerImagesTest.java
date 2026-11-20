@@ -6,16 +6,36 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.utility.DockerImageName;
 
 class TestContainerImagesTest {
+  @Test
+  void applicationImagesRemainUntouchedAndEveryReaperBuildInputChangesItsIdentity() {
+    var original = DockerImageName.parse("registry.example.invalid/customer/service:1");
+    assertEquals(original, new PatchedRyukImageSubstitutor().apply(original));
+    var inputs = TestContainerImages.files("ryuk");
+    assertTrue(
+        inputs
+            .keySet()
+            .containsAll(List.of("Dockerfile", "go.mod", "go.sum", "sdk.patch", "LICENSE")));
+    String name = TestContainerImages.imageName("ryuk", inputs);
+    for (String key : inputs.keySet()) {
+      var modified = new LinkedHashMap<>(inputs);
+      modified.put(key, modified.get(key) + "\n");
+      assertNotEquals(name, TestContainerImages.imageName("ryuk", modified));
+    }
+  }
+
   @Test
   void containerDefinitionsDoNotNeedDockerOrChooseApplicationCredentials() {
     try (var postgres = TestContainerImages.postgres();
         var valkey = TestContainerImages.valkey();
         var wiremock = TestContainerImages.wiremock();
         var keycloak = TestContainerImages.keycloak();
+        var localstack = TestContainerImages.localstack();
         var kafka = TestContainerImages.kafka()) {
       assertEquals(List.of(5432), postgres.getExposedPorts());
       assertEquals(List.of(6379), valkey.getExposedPorts());
@@ -26,8 +46,25 @@ class TestContainerImagesTest {
       assertEquals("test", postgres.getDatabaseName());
       assertEquals("test", postgres.getUsername());
       assertFalse(kafka.isRunning());
+      assertFalse(localstack.isRunning());
       assertFalse(TestContainerImages.kafkaImage().isDone());
     }
+  }
+
+  @Test
+  void buildContextsIncludeEveryLockedResourceAndPreserveSingleFileImageIdentity() {
+    for (String recipe : List.of("ryuk", "localstack", "postgres", "kafka")) {
+      var files = TestContainerImages.files(recipe);
+      var image = TestContainerImages.image(recipe);
+      assertEquals(files.keySet(), image.getTransferables().keySet());
+      assertEquals(TestContainerImages.imageName(recipe, files), image.getDockerImageName());
+      assertFalse(image.isDeleteOnExit());
+    }
+    assertEquals(
+        "axiz-test/postgres:"
+            + TestContainerImages.fingerprint(TestContainerImages.recipe("postgres")),
+        TestContainerImages.imageName("postgres", TestContainerImages.files("postgres")));
+    assertTrue(new PatchedRyukImageSubstitutor().getDescription().contains("Ryuk"));
   }
 
   @Test

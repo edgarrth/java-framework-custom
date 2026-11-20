@@ -136,7 +136,12 @@ public class AxizReactiveCqrsAutoConfiguration {
             .toList(),
         AccessPolicies.none(),
         environment.getProperty(AxizCqrsAutoConfiguration.UNPROTECTED_PROPERTY, "fail"));
-    return new ReactiveBuses(reactive, behaviors.orderedStream().toList());
+    List<ReactivePipelineBehavior> pipeline = behaviors.orderedStream().toList();
+    if (!reactive.isEmpty()
+        && pipeline.stream().noneMatch(ReactiveBehaviors.Authorization.class::isInstance))
+      throw new IllegalStateException(
+          "Reactive CQRS handlers require native authorization and Spring Security");
+    return new ReactiveBuses(reactive, pipeline);
   }
 
   @Bean

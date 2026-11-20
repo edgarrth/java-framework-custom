@@ -21,12 +21,14 @@ class SchedulingTest {
   @Test
   void onlyOneHolderPerTask() {
     JdbcDataSource h2 = new JdbcDataSource();
-    h2.setURL("jdbc:h2:mem:shedlock;DB_CLOSE_DELAY=-1");
+    h2.setURL("jdbc:h2:mem:custom-shedlock;DB_CLOSE_DELAY=-1");
     new ApplicationContextRunner()
         .withConfiguration(
             AutoConfigurations.of(
                 AxizSchedulingAutoConfiguration.class, AxizSchedulingJdbcAutoConfiguration.class))
         .withBean(DataSource.class, () -> h2)
+        .withPropertyValues(
+            "axiz.scheduling.table=jobs_lock", "axiz.scheduling.initialize-schema=ALWAYS")
         .run(
             ctx -> {
               LockProvider provider = ctx.getBean(LockProvider.class);

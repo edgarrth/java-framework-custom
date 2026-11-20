@@ -4,10 +4,20 @@
 # axiz-demo/local/keycloak/axiz-realm.json; real environments mount it (AXIZ_SSO_CLIENT_SECRET).
 server:
   port: 8090
+  servlet:
+    session:
+      cookie:
+        secure: false
 spring:
   security:
     oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
       client:
+        provider:
+          sso:
+            issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
         registration:
           sso:
             client-secret: ${AXIZ_SSO_CLIENT_SECRET:local-only-initializr}

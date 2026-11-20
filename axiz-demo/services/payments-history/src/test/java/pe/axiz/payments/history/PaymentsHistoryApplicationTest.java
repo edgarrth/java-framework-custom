@@ -11,21 +11,25 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.messaging.EventFactory;
 import pe.axiz.core.messaging.EventPublisher;
+import pe.axiz.core.time.BusinessCalendar;
 import pe.axiz.extension.cqrs.spring.ReactiveQueryBus;
 import pe.axiz.payments.history.application.query.GetPaymentQuery;
 import pe.axiz.payments.history.domain.PaymentHistory;
@@ -44,6 +48,7 @@ import reactor.util.retry.Retry;
  * encrypted and money columns on PostgreSQL, reactive query. Needs Docker.
  */
 @SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
       "axiz.config.environment=test",
       "axiz.messaging.kafka.authentication=configured",
@@ -57,6 +62,7 @@ import reactor.util.retry.Retry;
   LocalStackTestConfiguration.class
 })
 @ExtendWith(BlockHoundExtension.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PaymentsHistoryApplicationTest {
   @AfterAll
   static void noBlockingCallWasHiddenByRetryOrErrorHandling() {
@@ -77,6 +83,8 @@ class PaymentsHistoryApplicationTest {
   @Autowired EventPublisher fixturePublisher;
   @Autowired ReactiveQueryBus queries;
   @Autowired DatabaseClient db;
+  @Autowired BusinessCalendar calendar;
+  @LocalServerPort int port;
 
   @Test
   void startsAndReportsHealth(@Autowired WebTestClient client) {
@@ -84,7 +92,7 @@ class PaymentsHistoryApplicationTest {
   }
 
   @Test
-  void projectsThePaymentOrderEvents() {
+  void projectsThePaymentOrderEvents(TestReporter evidence, @Autowired WebTestClient client) {
     String orderId = UUID.randomUUID().toString();
     fixturePublisher.publish(
         "kafka:payments",
@@ -152,6 +160,29 @@ class PaymentsHistoryApplicationTest {
                         ReactiveSecurityContextHolder.withAuthentication(customer("C-1002")))
                     .block(T))
         .isInstanceOf(NotFoundException.class);
+
+    WebTestClient.bindToServer()
+        .baseUrl("http://localhost:" + port)
+        .build()
+        .get()
+        .uri("/v1/payments/" + orderId)
+        .exchange()
+        .expectStatus()
+        .isUnauthorized()
+        .expectHeader()
+        .contentTypeCompatibleWith("application/problem+json")
+        .expectBody()
+        .jsonPath("$.status")
+        .isEqualTo(401);
+    assertThat(calendar.addBusinessDays(LocalDate.of(2026, 11, 20), 1))
+        .isEqualTo(LocalDate.of(2026, 11, 23));
+    evidence.publishEntry("axiz.capability.foundation", "reactive");
+    evidence.publishEntry("axiz.capability.web", "reactive");
+    evidence.publishEntry("axiz.capability.errors", "reactive");
+    evidence.publishEntry("axiz.capability.security", "reactive");
+    evidence.publishEntry("axiz.capability.r2dbc", "r2dbc,reactive");
+    evidence.publishEntry("axiz.capability.inbox", "r2dbc");
+    evidence.publishEntry("axiz.capability.messaging-kafka", "reactive");
   }
 
   private static Authentication customer(String id) {

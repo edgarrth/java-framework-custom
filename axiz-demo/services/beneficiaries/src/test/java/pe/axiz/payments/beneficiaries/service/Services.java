@@ -2,10 +2,7 @@ package pe.axiz.payments.beneficiaries.service;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
-import pe.axiz.core.cache.AxizCache;
-import pe.axiz.core.cache.InMemoryByteCache;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 import pe.axiz.core.metrics.EventMetrics;
 import pe.axiz.core.metrics.MetricsSettings;
@@ -26,12 +23,6 @@ public final class Services {
     AtomicInteger ids = new AtomicInteger();
     return new BeneficiariesService(
         repository,
-        new AxizCache(
-            "test",
-            "beneficiaries",
-            new InMemoryByteCache(100, clock),
-            new ReferenceCodec(),
-            Duration.ofMinutes(5)),
         IdentifierRegistry.withDiscoveredTypes(),
         () -> "B-" + ids.incrementAndGet(),
         new EventMetrics(meters, MetricsSettings.defaults()),

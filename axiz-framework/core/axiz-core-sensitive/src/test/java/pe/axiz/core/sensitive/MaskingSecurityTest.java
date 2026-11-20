@@ -18,6 +18,25 @@ class MaskingSecurityTest {
   private static final String MASKED = "411111******1111";
 
   @Test
+  void mutablePanDetectionMatchesTheStringBoundaryWithoutChangingOwnedInput() {
+    for (String input :
+        java.util.List.of(
+            "4111111111111111",
+            "4111-1111-1111-1111",
+            "x 4111 1111 1111 1111 y",
+            "not-a-pan",
+            "4111111111111112",
+            "123456789012345678901",
+            "",
+            "12 4111111111111111",
+            "4111--1111-1111-1111")) {
+      char[] owned = input.toCharArray();
+      assertEquals(PanDetector.containsPan(input), PanDetector.containsPan(owned));
+      org.junit.jupiter.api.Assertions.assertArrayEquals(input.toCharArray(), owned);
+    }
+  }
+
+  @Test
   void encodedCloudEventDataIsOpaqueInLogsAndAudit() {
     String encoded = "NDExMTExMTExMTExMTExMQ==";
     for (var channel : java.util.List.of(OutputChannel.LOG, OutputChannel.AUDIT)) {

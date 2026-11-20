@@ -184,12 +184,23 @@ class R2dbcOutboxStoreTest {
 
   @Test
   void aFailingStatementIsAnOutboxException() {
-    FakeR2dbc db = new FakeR2dbc().failOn("close");
-    db.onUpdate("^UPDATE", b -> 1L);
+    FakeR2dbc db = new FakeR2dbc();
+    db.onUpdate(
+        "^UPDATE",
+        b -> {
+          throw new IllegalStateException("Statement failed");
+        });
     R2dbcOutboxStore store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
     Assertions.assertThrows(
         OutboxException.class,
         () -> store.markPublished("e-1", "owner", Instant.parse("2026-10-11T12:00:00Z")));
+  }
+
+  @Test
+  void closeFailureDoesNotReplaceAConfirmedPublication() {
+    FakeR2dbc db = new FakeR2dbc().failOn("close").onUpdate("^UPDATE", b -> 1L);
+    var store = new R2dbcOutboxStore(new R2dbcSql(db), "axiz_outbox", TIMEOUT);
+    assertTrue(store.markPublished("e-1", "owner", Instant.parse("2026-10-11T12:00:00Z")));
   }
 
   @Test

@@ -23,6 +23,7 @@ spec:
       containers:
       - name: postgres
         image: axiz-local/postgres:17.12-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -110,6 +111,7 @@ spec:
       containers:
       - name: valkey
         image: axiz-local/valkey:8.1.8-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -170,6 +172,7 @@ spec:
       containers:
       - name: kafka
         image: axiz-local/kafka:4.2.2-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -248,6 +251,7 @@ spec:
       containers:
       - name: topics
         image: axiz-local/kafka:4.2.2-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -306,7 +310,8 @@ spec:
     spec:
       containers:
       - name: localstack
-        image: localstack/localstack:4.9
+        image: axiz-local/localstack:4.14.0-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -383,6 +388,7 @@ spec:
       containers:
       - name: wiremock
         image: axiz-local/wiremock:3.13.2-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -464,7 +470,8 @@ spec:
     spec:
       containers:
       - name: otel-lgtm
-        image: grafana/otel-lgtm:0.11.10
+        image: axiz-local/otel-lgtm:2026.11-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -505,9 +512,9 @@ spec:
         emptyDir: {}
       securityContext:
         runAsNonRoot: true
-        runAsUser: 1000
-        runAsGroup: 1000
-        fsGroup: 1000
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
 ---

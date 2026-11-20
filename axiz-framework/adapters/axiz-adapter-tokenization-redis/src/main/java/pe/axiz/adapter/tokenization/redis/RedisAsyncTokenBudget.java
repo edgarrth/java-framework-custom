@@ -32,7 +32,17 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
       TokenBudgetPolicy policy,
       TokenBudgetLeaseAlarm alarm,
       AsyncRateLimiter limiter) {
-    protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm);
+    this(connection, namespace, policy, alarm, limiter, TokenBudgetOwner.process());
+  }
+
+  public RedisAsyncTokenBudget(
+      StatefulRedisConnection<String, String> connection,
+      String namespace,
+      TokenBudgetPolicy policy,
+      TokenBudgetLeaseAlarm alarm,
+      AsyncRateLimiter limiter,
+      TokenBudgetOwner owner) {
+    protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm, owner);
     dispatch =
         new SerialRedisDispatch(
             connection.getOptions().getRequestQueueSize(), connection.getTimeout());
@@ -43,10 +53,20 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
   @Override
   public CompletionStage<Permit> acquire(
       TokenCaller caller, TokenOperation operation, VaultScope scope) {
+    return acquire(caller, operation, scope, protocol.newLease());
+  }
+
+  @Override
+  public CompletionStage<Permit> acquire(
+      TokenCaller caller, TokenOperation operation, VaultScope scope, UUID operationId) {
     CompletableFuture<Permit> result = new CompletableFuture<>();
     try {
       BudgetKeys keys = new BudgetKeys(protocol.namespace, caller, scope);
-      consume(keys.counters(protocol.policy, operation), 0, result, () -> reserve(keys, result));
+      consume(
+          keys.counters(protocol.policy, operation),
+          0,
+          result,
+          () -> reserve(keys, operationId, operation, result));
     } catch (RuntimeException failure) {
       result.completeExceptionally(TokenErrors.failure(TokenErrors.UNAVAILABLE));
     }
@@ -102,7 +122,11 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
     }
   }
 
-  private void reserve(BudgetKeys keys, CompletableFuture<Permit> result) {
+  private void reserve(
+      BudgetKeys keys,
+      UUID operationId,
+      TokenOperation operation,
+      CompletableFuture<Permit> result) {
     if (result.isDone()) return;
     UUID lease = protocol.newLease();
     String[] leases = keys.leases().toArray(String[]::new);
@@ -114,7 +138,7 @@ public final class RedisAsyncTokenBudget implements AsyncTokenBudget {
                       RedisBudgetProtocol.ACQUIRE,
                       ScriptOutputType.INTEGER,
                       leases,
-                      protocol.arguments(lease)))
+                      protocol.arguments(lease, operationId, operation, leases)))
           .whenComplete(
               (granted, failure) -> {
                 if (failure != null || granted == null || (granted != 0 && granted != 1)) {

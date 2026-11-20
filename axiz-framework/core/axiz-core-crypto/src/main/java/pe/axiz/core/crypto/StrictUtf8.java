@@ -11,7 +11,7 @@ import java.util.Arrays;
 final class StrictUtf8 {
   private StrictUtf8() {}
 
-  static byte[] encode(String value, int maximum) {
+  static byte[] encode(CharSequence value, int maximum) {
     if (value == null || value.length() > maximum) throw new CryptoException("Invalid text length");
     try {
       ByteBuffer buffer =

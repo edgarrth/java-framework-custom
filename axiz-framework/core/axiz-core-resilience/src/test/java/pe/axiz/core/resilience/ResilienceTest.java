@@ -13,12 +13,38 @@ import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import pe.axiz.core.commons.tx.CommittedTransactionOutcome;
+import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.core.errors.ExternalErrorDetail;
 import pe.axiz.core.errors.ExternalServiceException;
 
 class ResilienceTest {
+
+  @Test
+  void confirmedCommitVetoesRetriesEvenWhenAnOuterWrapperLooksTransient() {
+    class Committed extends RuntimeException implements CommittedTransactionOutcome {}
+    var failure = new SocketTimeoutException();
+    failure.initCause(new Committed());
+    assertFalse(RetryDecider.shouldRetry("POST", "idempotency-key", failure));
+    assertFalse(RetryDecider.isTransient(new CompletionException(new Committed())));
+  }
+
+  @Test
+  void unknownCommitMarkerVetoesRetriesDespiteItsTransportCause() {
+    class UnknownCommit extends RuntimeException implements UnknownTransactionOutcome {
+      UnknownCommit() {
+        super(new SocketTimeoutException("synthetic commit response lost"));
+      }
+    }
+    var unknown = new UnknownCommit();
+    assertFalse(RetryDecider.isTransient(unknown));
+    assertFalse(RetryDecider.shouldRetry("POST", "key", new CompletionException(unknown)));
+    var outerTimeout = new SocketTimeoutException();
+    outerTimeout.initCause(unknown);
+    assertFalse(RetryDecider.isTransient(outerTimeout));
+  }
 
   @Test
   void backoffGrowsAndIsCapped() {

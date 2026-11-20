@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-outbox</artifactId>
   <name>axiz :: core :: outbox</name>
-  <description>Transactional outbox: JDBC store and relay to any EventPublisher, at-least-once</description>
+  <description>Transactional outbox contracts and provider-independent at-least-once relay</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>

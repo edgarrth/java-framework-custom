@@ -9,9 +9,12 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
@@ -68,23 +71,55 @@ public final class R2dbcSql implements ReactiveSql {
    * Runs the work in one transaction: commit when it completes, rollback on error or cancel. Calls
    * of this instance inside the work use the transaction connection.
    *
-   * <p>The connection is closed exactly once in every outcome. A failed commit is the error of the
-   * returned {@code Mono}; a rollback or close failure after an error is added to that error as
-   * suppressed instead of replacing it.
+   * <p>The connection is closed once in every outcome. An unconfirmed commit has an explicit
+   * unknown outcome and is never reported as a rollback. Cleanup cannot change a confirmed result.
+   * Nested work for the same factory joins the transaction; only its owner commits.
    */
   public <T> Mono<T> inTransaction(Function<ReactiveSql, Mono<T>> work) {
-    return Mono.usingWhen(
-        Mono.from(connections.create()),
-        c ->
-            Mono.from(c.beginTransaction())
-                .then(Mono.defer(() -> work.apply(this)))
-                .contextWrite(ctx -> bind(ctx, c))
-                .map(Optional::of)
-                .defaultIfEmpty(Optional.empty())
-                .flatMap(result -> Mono.from(c.commitTransaction()).then(Mono.justOrEmpty(result))),
-        c -> Mono.from(c.close()),
-        (c, error) -> rollbackAndClose(c, error),
-        c -> rollbackAndClose(c, null));
+    return transaction(work, true);
+  }
+
+  /**
+   * Uses an independent connection and commit even inside an existing transaction. For durable
+   * reservations such as sequence blocks; the caller's transaction and other context are preserved.
+   */
+  public <T> Mono<T> inIndependentTransaction(Function<ReactiveSql, Mono<T>> work) {
+    return transaction(work, false);
+  }
+
+  private <T> Mono<T> transaction(Function<ReactiveSql, Mono<T>> work, boolean join) {
+    Objects.requireNonNull(work);
+    return Mono.deferContextual(
+        context -> {
+          if (join && shared(context) != null) return Mono.defer(() -> work.apply(this));
+          var committing = new AtomicBoolean();
+          return Mono.usingWhen(
+              Mono.defer(() -> Mono.from(connections.create())),
+              c ->
+                  Mono.defer(() -> Mono.from(c.beginTransaction()))
+                      .then(Mono.defer(() -> work.apply(this)))
+                      .contextWrite(ctx -> bind(ctx, c))
+                      .map(Optional::of)
+                      .defaultIfEmpty(Optional.empty())
+                      .flatMap(
+                          result ->
+                              Mono.defer(
+                                      () -> {
+                                        committing.set(true);
+                                        return Mono.from(c.commitTransaction());
+                                      })
+                                  .onErrorMap(CommitFailures::classify)
+                                  .then(Mono.justOrEmpty(result))),
+              c -> quietly(c::close, null),
+              (c, error) ->
+                  committing.get()
+                      ? quietly(() -> DiscardConnection.close(c), error)
+                      : rollbackAndClose(c, error),
+              c ->
+                  committing.get()
+                      ? quietly(() -> DiscardConnection.close(c), null)
+                      : rollbackAndClose(c, null));
+        });
   }
 
   /**
@@ -98,17 +133,29 @@ public final class R2dbcSql implements ReactiveSql {
   }
 
   static Mono<Void> rollbackAndClose(Connection c, @Nullable Throwable error) {
-    return quietly(c.rollbackTransaction(), error)
-        .then(Mono.defer(() -> quietly(c.close(), error)));
+    return Mono.defer(() -> Mono.from(c.rollbackTransaction()))
+        .thenReturn(true)
+        .onErrorResume(
+            failure -> {
+              if (error != null && error != failure) error.addSuppressed(failure);
+              LoggerFactory.getLogger(R2dbcSql.class)
+                  .warn("R2DBC rollback failed; discarding connection");
+              return Mono.just(false);
+            })
+        .flatMap(
+            rolledBack ->
+                quietly(() -> rolledBack ? c.close() : DiscardConnection.close(c), error));
   }
 
-  private static Mono<Void> quietly(Publisher<Void> step, @Nullable Throwable error) {
-    return Mono.from(step)
+  private static Mono<Void> quietly(Supplier<Publisher<Void>> step, @Nullable Throwable error) {
+    return Mono.defer(() -> Mono.from(step.get()))
         .onErrorResume(
             e -> {
               if (error != null && error != e) {
                 error.addSuppressed(e);
               }
+              LoggerFactory.getLogger(R2dbcSql.class)
+                  .warn("R2DBC cleanup failed; transaction outcome unchanged");
               return Mono.empty();
             });
   }
@@ -120,7 +167,12 @@ public final class R2dbcSql implements ReactiveSql {
           if (shared != null) {
             return work.apply(shared);
           }
-          return Flux.usingWhen(connections.create(), work, Connection::close);
+          return Flux.usingWhen(
+              connections.create(),
+              work,
+              c -> quietly(c::close, null),
+              (c, error) -> quietly(c::close, error),
+              c -> quietly(c::close, null));
         });
   }
 

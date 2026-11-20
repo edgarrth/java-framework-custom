@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,30 @@ class SpringJdbcAdaptersTest {
 
   private void createTable() {
     jdbc.execute("CREATE TABLE movements (id INT PRIMARY KEY)");
+  }
+
+  @Test
+  void rewritingTouchesIdentifiersButNeverCommentsOrLiteralValues() {
+    var initializer =
+        new SchemaInitializer(
+            dataSource,
+            "probe",
+            SchemaInitializer.Mode.ALWAYS,
+            Map.of("axiz_probe", "customer_probe"));
+    assertEquals(
+        "CREATE TABLE customer_probe (value TEXT DEFAULT 'axiz_probe'); -- axiz_probe\n"
+            + "/* axiz_probe */ CREATE INDEX customer_probe_idx ON customer_probe (value);",
+        initializer.configure(
+            "CREATE TABLE axiz_probe (value TEXT DEFAULT 'axiz_probe'); -- axiz_probe\n"
+                + "/* axiz_probe */ CREATE INDEX axiz_probe_idx ON axiz_probe (value);"));
+    var tooLong =
+        new SchemaInitializer(
+            dataSource,
+            "probe",
+            SchemaInitializer.Mode.ALWAYS,
+            Map.of("axiz_probe", "x".repeat(63)));
+    assertThrows(
+        IllegalArgumentException.class, () -> tooLong.configure("CREATE INDEX axiz_probe_stale"));
   }
 
   @Test
@@ -114,6 +139,36 @@ class SpringJdbcAdaptersTest {
     assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM axiz_probe", Integer.class));
     // the scripts are idempotent, so an ALWAYS run after a previous start is harmless
     new SchemaInitializer(dataSource, "probe", SchemaInitializer.Mode.ALWAYS).afterPropertiesSet();
+  }
+
+  @Test
+  void configuredNamesAreUsedAndUnsafeIdentifiersFailBeforeAnyDdl() {
+    new SchemaInitializer(
+            dataSource,
+            "probe",
+            SchemaInitializer.Mode.ALWAYS,
+            Map.of("axiz_probe", "business_probe"))
+        .afterPropertiesSet();
+    assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM business_probe", Integer.class));
+    assertThrows(
+        Exception.class,
+        () -> jdbc.queryForObject("SELECT COUNT(*) FROM axiz_probe", Integer.class));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new SchemaInitializer(
+                dataSource,
+                "probe",
+                SchemaInitializer.Mode.ALWAYS,
+                Map.of("axiz_probe", "x; DROP TABLE business_probe")));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new SchemaInitializer(
+                dataSource,
+                "probe",
+                SchemaInitializer.Mode.ALWAYS,
+                Map.of("axiz_probe", "x".repeat(64))));
   }
 
   @Test

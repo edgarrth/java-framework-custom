@@ -202,8 +202,11 @@ class ReaderAndAuditingTest {
               assertTrue(row.isNew());
               assertNull(row.getVersion());
               ctx.getBean(ReactiveIsNewAwareAuditingHandler.class).markAudited(row).block(T);
-              assertEquals("system", row.getCreatedBy(), "no request: the service itself");
-              assertEquals("system", row.getUpdatedBy());
+              assertEquals(
+                  "unattributed",
+                  row.getCreatedBy(),
+                  "no request: identity is explicitly unattributed");
+              assertEquals("unattributed", row.getUpdatedBy());
               assertEquals(Instant.parse("2026-10-23T10:15:30Z"), row.getCreatedAt());
               assertEquals(row.getCreatedAt(), row.getUpdatedAt());
             });

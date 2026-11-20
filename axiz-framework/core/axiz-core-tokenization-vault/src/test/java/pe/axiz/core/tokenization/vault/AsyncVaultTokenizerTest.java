@@ -223,6 +223,23 @@ class AsyncVaultTokenizerTest {
   }
 
   @Test
+  void confirmedMutationsWithUnavailableAuditRequireReconciliation() {
+    auditDown = true;
+    code(TokenErrors.UNCERTAIN.code().value(), tokenize("00883344", "one"));
+    assertEquals(
+        UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED,
+        uncertainties.getLast().reason());
+    var token = uncertainties.getLast().token();
+    assertEquals(1, store.records.size());
+    code(TokenErrors.UNCERTAIN.code().value(), engine.delete(caller("one"), DNI, token, DOMAIN));
+    assertTrue(store.records.isEmpty());
+    assertEquals(UncertainTokenOperation.Phase.DELETE, uncertainties.getLast().phase());
+    assertEquals(
+        UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED,
+        uncertainties.getLast().reason());
+  }
+
+  @Test
   void nativeProtocolDeduplicates100CallsAndKeepsExplicitCallerAcrossThreads() throws Exception {
     List<Future<TokenizationResult>> work = new ArrayList<>();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {

@@ -31,7 +31,8 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           .endpointOverride(localstack.getEndpoint())
           .region(Region.of(localstack.getRegion()))
           .credentialsProvider(credentials)
-          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          // LocalStack starts AWS services lazily; this client only provisions test resources.
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(60)))
           .build()) {
         queueUrl = sqs.createQueue(request -> request.queueName("{{project.name}}-audit")).queueUrl();
       }
@@ -42,7 +43,8 @@ class AuditTestConfiguration implements ApplicationContextInitializer<GenericApp
           .endpointOverride(localstack.getEndpoint())
           .region(Region.of(localstack.getRegion()))
           .credentialsProvider(credentials)
-          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(10)))
+          // LocalStack starts AWS services lazily; this client only provisions test resources.
+          .overrideConfiguration(config -> config.apiCallTimeout(Duration.ofSeconds(60)))
           .build()) {
         topicArn = sns.createTopic(request -> request.name("{{project.name}}-audit")).topicArn();
       }

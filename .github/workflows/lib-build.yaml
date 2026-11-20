@@ -183,6 +183,11 @@ jobs:
           set -euo pipefail
           "$PYTHON" "$TOOLS/../check-mutations/check_mutations.py" . 2>&1 | tee target/build-reports/mutation.log
           "$PYTHON" "$TOOLS/../check-encapsulation/check_encapsulation.py" . 2>&1 | tee target/build-reports/encapsulation.log
+          if [[ -f quality/axiz-coverage-report/pom.xml ]]; then
+            "$PYTHON" .github/scripts/check-coverage-aggregate.py --report \
+              quality/axiz-coverage-report/target/site/jacoco-aggregate/jacoco.xml . \
+              2>&1 | tee target/build-reports/module-coverage.log
+          fi
       - name: Sonar quality gate
         env:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
@@ -206,7 +211,8 @@ jobs:
         run: |
           set -euo pipefail
           mvn -B -ntp org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
-            "-Drevision=$VERSION" -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false
+            "-Drevision=$VERSION" -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false \
+            -DincludeTestScope=true -DincludeProvidedScope=true -DincludeSystemScope=true
           "$PYTHON" "$TOOLS/../check-sbom/check_sbom.py" target/bom.json pom.xml
           cp target/bom.json target/build-reports/bom.json
       - name: Scan the dependency inventory
@@ -217,7 +223,7 @@ jobs:
           scan-ref: ${{ inputs.project-directory }}/target/build-reports/bom.json
           format: json
           output: ${{ inputs.project-directory }}/target/build-reports/scan.json
-          severity: MEDIUM,HIGH,CRITICAL
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
           exit-code: '1'
       # Exact immutable internal release: evaluate code and schema cannot come from the PR.
       - name: Complete vulnerability evidence and protected risk deadlines

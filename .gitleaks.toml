@@ -29,3 +29,14 @@ regexTarget = "line"
 regexes = [
   '^\s*"(?:sha256|[A-Za-z]*Sha256)"\s*:\s*"[0-9a-f]{64}"\s*,?\s*$',
 ]
+
+[[rules.allowlists]]
+description = "Public Go module checksums in the two reviewed dependency patches, not OAuth credentials"
+condition = "AND"
+paths = [
+  '^(?:axiz-demo/local/images|axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images|axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/service/local/images)/otel-lgtm/(?:prometheus|tempo)-dependencies\.patch$',
+]
+regexTarget = "line"
+regexes = [
+  '^\s*[+\-]?golang\.org/x/oauth2 v0\.(?:36|37)\.0(?:/go\.mod)? h1:[A-Za-z0-9+/]{43}=\s*$',
+]

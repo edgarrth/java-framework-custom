@@ -517,15 +517,9 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
           && !(imported.startsWith("java.")
               || imported.startsWith("org.jspecify.annotations.")
               || imported.startsWith(manifest.basePackage() + ".domain.")
-              || List.of(
-                      "commons",
-                      "domain",
-                      "money",
-                      "errors",
-                      "id",
-                      "identifiers",
-                      "sensitive",
-                      "time")
+              || imported.equals("pe.axiz.core.commons.ReviewedState;")
+              || neutralLanguageImport(imported)
+              || List.of("domain", "money", "errors", "id", "identifiers", "sensitive", "time")
                   .stream()
                   .anyMatch(
                       capability -> imported.startsWith("pe.axiz.core." + capability + ".")))) {
@@ -533,5 +527,13 @@ class DoctorCommand extends BaseCommand implements Callable<Integer> {
       }
       if (problem != null) out.add(new Check(Level.ERROR, rel + ":" + (i + 1) + " " + problem));
     }
+  }
+
+  private static boolean neutralLanguageImport(String imported) {
+    return List.of(
+            "Checks", "Strings", "Dates", "ValueSnapshots", "Result", "Result.Ok", "Result.Err")
+        .stream()
+        .map(name -> "pe.axiz.core.lang." + name)
+        .anyMatch(name -> imported.equals(name + ";") || imported.startsWith(name + "."));
   }
 }

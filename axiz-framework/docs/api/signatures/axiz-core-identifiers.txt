@@ -1,5 +1,7 @@
 public final class pe.axiz.core.identifiers.CheckDigits {
+public static boolean allDigits(java.lang.CharSequence);
 public static boolean allDigits(java.lang.String);
+public static boolean luhn(java.lang.CharSequence);
 public static boolean luhn(java.lang.String);
 public static int alternatingWeights(java.lang.String);
 public static int mod11(java.lang.String, int[]);

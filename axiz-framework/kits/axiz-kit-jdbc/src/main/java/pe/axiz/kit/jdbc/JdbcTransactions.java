@@ -3,6 +3,8 @@ package pe.axiz.kit.jdbc;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLTransactionRollbackException;
 import java.util.IdentityHashMap;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -17,6 +19,16 @@ import pe.axiz.core.commons.tx.TransactionRunner;
  * #get()}.
  */
 public final class JdbcTransactions implements TransactionRunner, ConnectionProvider {
+
+  private static boolean rejectedCommit(SQLException failure) {
+    String state = failure.getSQLState();
+    if ("40003".equals(state)) return false;
+    return failure instanceof SQLTransactionRollbackException
+        || failure instanceof SQLIntegrityConstraintViolationException
+        || "40001".equals(state)
+        || "40P01".equals(state)
+        || (state != null && state.startsWith("23"));
+  }
 
   /**
    * Connections bound to the current thread, per data source (identity): every instance working on
@@ -67,6 +79,7 @@ public final class JdbcTransactions implements TransactionRunner, ConnectionProv
         connection.commit();
       } catch (SQLException | RuntimeException commit) {
         poisoned = true;
+        if (commit instanceof SQLException sql && rejectedCommit(sql)) throw sql;
         throw new TransactionOutcomeUnknownException(commit);
       }
       return result;

@@ -39,6 +39,7 @@ securityContext:
   capabilities:
     drop:
     - ALL
+terminationGracePeriodSeconds: 90
 cronjob:
   schedule: 0 2 * * *
   timeZone: America/Lima

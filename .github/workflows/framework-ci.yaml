@@ -202,6 +202,8 @@ jobs:
         python3 -m unittest discover -s .github/scripts -p 'test_build_inputs.py'
         python3 -m unittest discover -s .github/scripts -p 'test_api_compatibility.py'
         python3 -m unittest discover -s .github/scripts -p 'test_collect_test_evidence.py'
+        python3 -m unittest discover -s ../.github/scripts -p 'test_container_recipes.py'
+        python3 -m unittest discover -s ../.github/scripts -p 'test_wiremock_image.py'
         python3 .github/scripts/check-build-inputs.py .
       working-directory: axiz-framework
     - name: Publication consumes only an independent successful build
@@ -215,7 +217,7 @@ jobs:
         python3 .github/scripts/check-sample-workflows.py --workflows ../.github/workflows
       working-directory: axiz-framework
     - name: One version per third-party library, defined once
-      run: python3 .github/scripts/check-dependency-governance.py .
+      run: python3 .github/scripts/check-dependency-governance.py . ../axiz-tools ../axiz-demo
       working-directory: axiz-framework
     - name: Module names, parents and reactive dependency rules
       run: python3 .github/scripts/check-layer-structure.py .
@@ -275,12 +277,12 @@ jobs:
         npm ci --prefix .github/scripts/release-version --include=dev --no-audit --no-fund --ignore-scripts
         node .github/scripts/release-version/test.cjs target/samples/modules.json
       working-directory: axiz-framework
-    - name: Build every sample (verify)
+    - name: Build every sample with the consumer quality profile
       run: |
         failed=()
         for dir in target/samples/*/ target/audit-samples/*/; do
           echo "::group::${dir}"
-          (cd "$dir" && ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
+          (cd "$dir" && ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
           empty=()
           if [[ "$dir" == target/samples/axiz-sample-library/ ]]; then empty=(--allow-empty); fi
           python3 .github/scripts/collect-test-evidence.py "$dir" "${empty[@]}" \

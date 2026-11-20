@@ -249,7 +249,7 @@ class GenerationModelContractTest {
     assertEquals(List.of(), result.get("models"));
     assertEquals("", result.get("inputArguments"));
     assertEquals("", result.get("exampleJson"));
-    assertEquals("A safe * / description", result.get("summary"));
+    assertEquals("A safe *&#47; description", result.get("summary"));
   }
 
   @Test

@@ -21,6 +21,6 @@ public static boolean insertIgnoringDuplicate(java.sql.Connection, java.sql.Prep
 public static boolean isDuplicateKey(java.sql.SQLException);
 }
 
-public final class pe.axiz.kit.jdbc.TransactionOutcomeUnknownException extends java.sql.SQLException {
+public final class pe.axiz.kit.jdbc.TransactionOutcomeUnknownException extends java.sql.SQLException implements pe.axiz.core.commons.tx.UnknownTransactionOutcome {
 public pe.axiz.kit.jdbc.TransactionOutcomeUnknownException(java.lang.Throwable);
 }

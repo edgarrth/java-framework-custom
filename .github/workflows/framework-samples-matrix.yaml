@@ -53,7 +53,7 @@ jobs:
           (cd "$dir" && env -u AWS_REGION -u AWS_DEFAULT_REGION -u AWS_PROFILE \
             -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY -u AWS_SESSION_TOKEN \
             AWS_CONFIG_FILE=/dev/null AWS_SHARED_CREDENTIALS_FILE=/dev/null \
-            ./mvnw -B -ntp spotless:check verify) || failed+=("$dir")
+            ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
           echo "::endgroup::"
         done
         if [ "${#failed[@]}" -gt 0 ]; then

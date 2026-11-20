@@ -27,14 +27,14 @@
     <axiz.image.repository>${axiz.image.registry}/${project.artifactId}</axiz.image.repository>
     <!-- Base images by tag and digest: Renovate pins and updates the digest (customManagers of the
          axiz preset); a release image is only built from a pinned base (service-ci) -->
-    <!-- renovate: datasource=docker depName=eclipse-temurin -->
-    <axiz.image.base>eclipse-temurin:25-jre-noble</axiz.image.base>
+    <!-- renovate: datasource=docker depName=azul/zulu-openjdk-alpine -->
+    <axiz.image.base>azul/zulu-openjdk-alpine:25-jre@sha256:8eaca94dd76729a65ce7d693d8aa84c12f9ae656624ae3b118d6a8d411764cd8</axiz.image.base>
     <!-- BlockHound (reactive services) redefines JDK classes; ignored where the JVM lacks the flag -->
     <!-- native access: see Enable-Native-Access below; the tests start the same Netty servers -->
     <axiz.test.argLine>-XX:+IgnoreUnrecognizedVMOptions -XX:+AllowRedefinitionToAddDeleteMethods --enable-native-access=ALL-UNNAMED -Djava.security.egd=file:/dev/./urandom</axiz.test.argLine>
     <!-- native images: glibc base without a JVM, non-root -->
-    <!-- renovate: datasource=docker depName=gcr.io/distroless/base-debian12 -->
-    <axiz.image.native-base>gcr.io/distroless/base-debian12:nonroot</axiz.image.native-base>
+    <!-- renovate: datasource=docker depName=cgr.dev/chainguard/wolfi-base -->
+    <axiz.image.native-base>cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2</axiz.image.native-base>
     <jib-native-image-extension.version>0.1.0</jib-native-image-extension.version>
     <axiz.image.tag>${project.version}</axiz.image.tag>
     <!-- Contract-first: OpenAPI contract location and generated packages -->

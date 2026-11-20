@@ -363,7 +363,7 @@ class ProjectGeneratorTest {
     assertTrue(migration.contains("CREATE TABLE IF NOT EXISTS axiz_outbox"));
     assertTrue(p.text("compose.yaml").contains("postgres:"));
     assertTrue(
-        p.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTest.java")
+        p.text("src/test/java/pe/axiz/orders/orders/OrdersApplicationTestSupport.java")
             .contains("PostgresTestConfiguration"));
     assertTrue(p.text(".axiz/project.yaml").contains("r2dbc"));
   }

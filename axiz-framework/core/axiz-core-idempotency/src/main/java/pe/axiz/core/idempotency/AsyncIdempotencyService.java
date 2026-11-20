@@ -36,8 +36,8 @@ public final class AsyncIdempotencyService {
     this.retention = Objects.requireNonNull(retention);
     this.clock = Objects.requireNonNull(clock);
     this.resolver = resolver;
-    if (!inProgressTtl.isPositive())
-      throw new IllegalArgumentException("inProgressTtl must be positive");
+    if (inProgressTtl.compareTo(Duration.ofMillis(3)) < 0)
+      throw new IllegalArgumentException("inProgressTtl must be at least 3 milliseconds");
     if (retention.compareTo(inProgressTtl) <= 0)
       throw new IllegalArgumentException("retention must exceed the execution lease");
   }

@@ -8,7 +8,10 @@ Integración Spring Boot 4.1 para las capacidades del framework.
 - Las fachadas seleccionan el modelo servlet o reactivo y coordinan transacciones, métricas
   y cierre de recursos.
 
-Las capacidades se comunican mediante puertos core. Un starter no depende de otro starter;
-las aplicaciones importan contratos y fachadas, sin importar clases de autoconfiguración.
+Las capacidades se comunican mediante puertos core. Un starter de proveedor puede componer
+su starter base y las integraciones compartidas que necesita (por ejemplo, seguridad Redis
+sobre seguridad base). No incorpora lógica de negocio ni depende de capacidades ajenas por
+conveniencia. Las autoconfiguraciones coordinan implementaciones; las aplicaciones importan
+contratos y fachadas, sin importar clases de autoconfiguración.
 Las propiedades `axiz.<capacidad>.*` y las condiciones para reemplazar beans se describen en
 el README de cada módulo y en el [catálogo](../../axiz-docs/docs/capacidades/index.md).

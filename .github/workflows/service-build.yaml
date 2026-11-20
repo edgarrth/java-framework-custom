@@ -186,9 +186,22 @@ jobs:
           "$PYTHON" "$TOOLS/../check-mutations/check_mutations.py" . 2>&1 | tee target/build-reports/mutation.log
           "$PYTHON" "$TOOLS/../check-encapsulation/check_encapsulation.py" . 2>&1 | tee target/build-reports/encapsulation.log
           mvn -B -ntp -f "$MODULE/pom.xml" org.cyclonedx:cyclonedx-maven-plugin:2.9.2:makeAggregateBom \
-            -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false
+            -DoutputFormat=json -Dcyclonedx.skipNotDeployed=false \
+            -DincludeTestScope=true -DincludeProvidedScope=true -DincludeSystemScope=true
           "$PYTHON" "$TOOLS/../check-sbom/check_sbom.py" "$MODULE/target/bom.json" "$MODULE/pom.xml"
           cp "$MODULE/target/bom.json" target/build-reports/bom.json
+      - name: Scan all dependency scopes, including test and provided dependencies
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          scan-type: sbom
+          scan-ref: target/build-reports/bom.json
+          scanners: vuln
+          format: json
+          output: target/build-reports/dependency-scan.json
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: 'false'
       - name: Package the previously verified image and chart once
         id: product
         env:

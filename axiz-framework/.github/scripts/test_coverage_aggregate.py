@@ -56,5 +56,35 @@ class CoverageInventoryTest(unittest.TestCase):
             self.assertNotIn("core has code but is not in", output.getvalue())
 
 
+class ModuleCoverageTest(unittest.TestCase):
+    def test_aggregate_average_cannot_hide_an_uncovered_provider(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / 'jacoco.xml'
+            for missed, expected in ((0, 0), (1, 1)):
+                report.write_text(f'''<report>
+                  <group name="large"><package name="large"/><counter type="LINE" covered="9999" missed="0"/></group>
+                  <group name="provider"><package name="provider"/>
+                    <counter type="LINE" covered="{1-missed}" missed="{missed}"/>
+                    <counter type="BRANCH" covered="7" missed="3"/>
+                  </group><counter type="LINE" covered="9999" missed="1"/>
+                </report>''')
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(expected, gate.check_report(report))
+
+    def test_branch_threshold_and_missing_groups_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            report = Path(directory) / 'jacoco.xml'
+            report.write_text('''<report><package name="flat"/>
+              <counter type="LINE" covered="100" missed="0"/></report>''')
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(1, gate.check_report(report))
+            report.write_text('''<report><group name="provider"><package name="p"/>
+              <counter type="LINE" covered="8" missed="2"/>
+              <counter type="BRANCH" covered="6" missed="4"/>
+              </group><counter type="LINE" covered="8" missed="2"/></report>''')
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(1, gate.check_report(report))
+
+
 if __name__ == "__main__":
     unittest.main()

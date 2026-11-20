@@ -2,7 +2,10 @@ package pe.axiz.structure.layered.spring;
 
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.List;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,9 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pe.axiz.core.api.PageRequest;
 import pe.axiz.core.api.PageResponse;
+import pe.axiz.core.errors.FieldViolation;
+import pe.axiz.core.errors.ValidationException;
 import pe.axiz.structure.layered.CrudService;
 
 /**
@@ -28,6 +34,8 @@ import pe.axiz.structure.layered.CrudService;
  * @param <I> id type
  */
 public abstract class CrudController<RequestT, ResponseT, I> {
+
+  private static final Pattern STRONG_VERSION = Pattern.compile("\"[^\"\\r\\n\\\\]{1,128}\"");
 
   private final CrudService<RequestT, ResponseT, I> service;
   private final Function<ResponseT, I> idOf;
@@ -65,8 +73,13 @@ public abstract class CrudController<RequestT, ResponseT, I> {
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable("id") I id) {
-    service.delete(id);
+  public ResponseEntity<Void> delete(
+      @PathVariable("id") I id, @RequestHeader(HttpHeaders.IF_MATCH) String ifMatch) {
+    if (!STRONG_VERSION.matcher(ifMatch).matches())
+      throw new ValidationException(
+          List.of(
+              FieldViolation.of("If-Match", "StrongVersion", "One quoted version is required")));
+    service.delete(id, ifMatch.substring(1, ifMatch.length() - 1));
     return ResponseEntity.noContent().build();
   }
 }

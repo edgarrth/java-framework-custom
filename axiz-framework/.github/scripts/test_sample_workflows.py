@@ -26,7 +26,9 @@ class SampleWorkflowsTest(unittest.TestCase):
             for name in ['ci.yaml', 'samples-matrix.yaml']:
                 path = workflows / name
                 for goal, valid in [('verify', False), ('spotless:apply verify', False),
-                                    ('spotless:check verify', True)]:
+                                    ('spotless:check verify', False),
+                                    ('-Pquality spotless:apply verify', False),
+                                    ('-Pquality spotless:check verify', True)]:
                     document = {'jobs': {'samples': {'steps': [{'run':
                         'for dir in target/samples/*/ target/audit-samples/*/; do\n'
                         f'  (cd "$dir" && ./mvnw -B -ntp {goal})\n' + 'done'}]}}}

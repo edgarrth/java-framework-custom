@@ -150,6 +150,48 @@ class VaultMaintenanceBoundsTest {
   }
 
   @Test
+  void nestedMaintenanceKeepsIntegrityClassificationWithoutRetainingPrivateDetails() {
+    var events = new ArrayList<VaultMaintenanceEvent>();
+    var execution =
+        new VaultMaintenanceExecution(
+            (caller, action, keyset, scope) -> {},
+            events::add,
+            operation -> {},
+            operation -> {},
+            Clock.systemUTC(),
+            UUID::randomUUID,
+            "SCOPE_tokens:rotate");
+    var action = VaultMaintenanceEvent.Action.values()[0];
+    var failure =
+        assertThrows(
+            AxizException.class,
+            () ->
+                execution.run(
+                    ADMIN,
+                    action,
+                    DUAL,
+                    null,
+                    () ->
+                        execution.run(
+                            ADMIN,
+                            action,
+                            DUAL,
+                            null,
+                            () -> {
+                              throw new VaultIntegrityException();
+                            })));
+    assertEquals("AXZ-TOKEN-0503", failure.code().value());
+    assertEquals(null, failure.getCause());
+    assertEquals(
+        List.of(
+            VaultMaintenanceEvent.Result.STARTED,
+            VaultMaintenanceEvent.Result.STARTED,
+            VaultMaintenanceEvent.Result.INTEGRITY_FAILURE,
+            VaultMaintenanceEvent.Result.INTEGRITY_FAILURE),
+        events.stream().map(VaultMaintenanceEvent::result).toList());
+  }
+
+  @Test
   void sanitizedBudgetFailurePreservesOnlyTheBoundedDelay() {
     var original = TokenErrors.limited(Duration.ofMillis(1501));
     original.addSuppressed(new IllegalStateException("synthetic private provider detail"));

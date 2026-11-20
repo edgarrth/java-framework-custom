@@ -52,6 +52,7 @@ class LeaseAndFingerprintInvariantsTest {
     try (var lease =
         IdempotencyLease.start(
             Duration.ofMillis(1),
+            Duration.ofSeconds(5),
             () -> {
               entered.countDown();
               return renewal;
@@ -74,6 +75,7 @@ class LeaseAndFingerprintInvariantsTest {
       try (var lease =
           IdempotencyLease.start(
               Duration.ofMillis(1),
+              Duration.ofSeconds(5),
               () -> {
                 entered.countDown();
                 if (synchronousFailure) throw new IllegalStateException("driver unavailable");

@@ -146,6 +146,7 @@ class SafeIdempotencyTest {
     try (var lease =
         IdempotencyLease.start(
             Duration.ofMillis(1),
+            Duration.ofSeconds(5),
             () -> {
               attempts.incrementAndGet();
               return CompletableFuture.completedFuture(false);
@@ -276,7 +277,8 @@ class SafeIdempotencyTest {
     var unknown = new AtomicInteger();
     var lease =
         IdempotencyLease.start(
-            Duration.ZERO,
+            Duration.ofMillis(1),
+            Duration.ofSeconds(5),
             () -> {
               started.countDown();
               return pending;
@@ -297,6 +299,7 @@ class SafeIdempotencyTest {
     try (var lease =
         IdempotencyLease.start(
             Duration.ofMillis(1),
+            Duration.ofSeconds(5),
             () -> {
               throw new IllegalStateException("transport submission failed");
             },

@@ -102,14 +102,14 @@ public class CreatePaymentOrderHandler
             c.description(),
             processingDate,
             clock.instant());
-    orders.create(order, requestKey);
-    events.created(order);
+    PaymentOrder persisted = orders.create(order, requestKey);
+    events.created(persisted);
     metrics.record(
         MetricEvent.of("payment.order.created")
             .amount(amount)
             .outcome(Outcome.SUCCESS)
             .stage(cutoff.isBeforeCutoff(clock.instant()) ? "same-day" : "next-day"));
-    return order;
+    return persisted;
   }
 
   /** A retried request returns its order; the same key for another order is an error. */

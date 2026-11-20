@@ -35,9 +35,21 @@ def unique_object(pairs):
 def document(content):
     if len(content) > JSON_LIMIT:
         raise ValueError("OCI JSON exceeds its budget")
-    result = json.loads(content, object_pairs_hook=unique_object)
+    try:
+        result = json.loads(content, object_pairs_hook=unique_object)
+    except RecursionError:
+        raise ValueError("OCI JSON nesting exceeds its budget") from None
     if not isinstance(result, dict):
         raise ValueError("OCI metadata must be an object")
+    pending = [(result, 0)]
+    while pending:
+        value, depth = pending.pop()
+        if depth > 64:
+            raise ValueError("OCI JSON nesting exceeds its budget")
+        if isinstance(value, dict):
+            pending.extend((child, depth + 1) for child in value.values())
+        elif isinstance(value, list):
+            pending.extend((child, depth + 1) for child in value)
     return result
 
 
@@ -79,11 +91,13 @@ def archive(path, destination, platform):
     if metadata_file(destination / "oci-layout") != {"imageLayoutVersion": "1.0.0"}:
         raise ValueError("Unsupported OCI layout")
     index = metadata_file(destination / "index.json")
-    if index.get("schemaVersion") != 2 or len(index.get("manifests", [])) != 1:
+    if (index.get("schemaVersion") != 2 or not isinstance(index.get("manifests"), list)
+            or len(index["manifests"]) != 1):
         raise ValueError("Each build archive must contain exactly one image")
 
     def blob(descriptor, media=None):
-        if (not isinstance(descriptor, dict) or not DIGEST.fullmatch(descriptor.get("digest", ""))
+        if (not isinstance(descriptor, dict) or not isinstance(descriptor.get("digest"), str)
+                or not DIGEST.fullmatch(descriptor["digest"])
                 or type(descriptor.get("size")) is not int or descriptor["size"] < 0
                 or "urls" in descriptor or media and descriptor.get("mediaType") != media):
             raise ValueError("Invalid OCI descriptor")
@@ -99,16 +113,18 @@ def archive(path, destination, platform):
         raise ValueError("Unsupported OCI image manifest")
     config_path = blob(manifest.get("config"), CONFIG)
     config = metadata_file(config_path)
-    if config.get("os", "") + "/" + config.get("architecture", "") != platform:
+    if (not isinstance(config.get("os"), str) or not isinstance(config.get("architecture"), str)
+            or config["os"] + "/" + config["architecture"] != platform):
         raise ValueError("OCI image differs from the requested platform")
     layers = manifest.get("layers")
     if not isinstance(layers, list) or not layers:
         raise ValueError("Image must contain layers")
     blobs = [config_path]
     for layer in layers:
-        if layer.get("mediaType") not in {"application/vnd.oci.image.layer.v1.tar+gzip",
+        if (not isinstance(layer, dict) or not isinstance(layer.get("mediaType"), str)
+                or layer["mediaType"] not in {"application/vnd.oci.image.layer.v1.tar+gzip",
                                            "application/vnd.oci.image.layer.v1.tar",
-                                           "application/vnd.oci.image.layer.v1.tar+zstd"}:
+                                           "application/vnd.oci.image.layer.v1.tar+zstd"}):
             raise ValueError("Unsupported or external image layer")
         blobs.append(blob(layer))
     expected = {file.name for file in [manifest_path, *blobs]}

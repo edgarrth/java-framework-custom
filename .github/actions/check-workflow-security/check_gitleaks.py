@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Prove that the effective gitleaks configuration still detects secret canaries."""
 import argparse
+import base64
 import json
 import secrets
 import subprocess
@@ -27,6 +28,11 @@ def check(configuration):
         registry = root / "registry.env"
         registry.write_text("".join(name + '="' + canary + '"\n' for name in
                             ("PACKAGES_READ_TOKEN", "GITHUB_TOKEN", "GHCR_PASSWORD", "NEXUS_PASSWORD")))
+        patch = root / "axiz-demo/local/images/otel-lgtm/tempo-dependencies.patch"
+        patch.parent.mkdir(parents=True)
+        checksum = " golang.org/x/oauth2 v0.36.0 h1:" + base64.b64encode(secrets.token_bytes(32)).decode()
+        patch.write_text(checksum + '\napi_key="' + canary + '"\n'
+                         + checksum + ' api_key="' + canary + '"\n')
         result = subprocess.run([
             "docker", "run", "--rm", "--network", "none", "-w", "/scan",
             "-v", str(root) + ":/scan", "-v", str(configuration) + ":/configuration.toml:ro",
@@ -41,10 +47,12 @@ def check(configuration):
         required = {("docs/api/public-api.json", 2),
                     ("docs/api/public-api.json", 3),
                     ("outside.json", 1),
+                    (str(patch.relative_to(root)), 2),
+                    (str(patch.relative_to(root)), 3),
                     *(("registry.env", line) for line in range(1, 5))}
         if not required.issubset(locations):
             raise RuntimeError("The effective gitleaks configuration hid a secret canary")
-        forbidden = {("docs/api/public-api.json", 1)}
+        forbidden = {("docs/api/public-api.json", 1), (str(patch.relative_to(root)), 1)}
         if forbidden.intersection(locations):
             raise RuntimeError("A canonical metadata digest was not narrowly recognized")
         print("gitleaks canaries passed: digests allowed; secrets in, beside and outside metadata detected")

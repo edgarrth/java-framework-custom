@@ -1,4 +1,16 @@
 misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/ryuk/Dockerfile
+      - axiz-demo/local/images/ryuk/Dockerfile
+      - axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/service/local/images/ryuk/Dockerfile
+    expired_at: 2027-01-18
+    statement: >-
+      Testcontainers resource reaper only, never a production/application image.
+      It requires the runner Docker socket to clean up its test resources. The socket group
+      is host-dependent, so UID 0 is explicit; changing the UID does not remove daemon-level
+      authority from a process that can control Docker. Run only on isolated development/CI
+      workers. This does not suppress vulnerability scanning of Ryuk or its Go dependencies.
   - id: KSV-0109
     paths:
       - axiz-demo/kind/rendered/wiremock-mappings.yaml
@@ -9,3 +21,28 @@ misconfigurations:
       by the local WireMock debit/reversal fixtures. It grants access only to these stand-ins
       and is not a credential for any real service. Do not add actual credentials to the mappings.
       Acceptance renders this ConfigMap into its own file; other ConfigMaps remain scanned.
+  - id: KSV-0013
+    paths:
+      - .github/gitops/tests/resources.yaml
+    expired_at: 2027-02-12
+    statement: >-
+      Deliberately invalid admission test inputs, including latest and missing digests.
+      Kyverno tests must prove rejection. These resources are never deployment manifests.
+  - id: KSV-0125
+    paths:
+      - .github/gitops/tests/resources.yaml
+      - .github/gitops/tests/ephemeral/resources.yaml
+    expired_at: 2027-02-12
+    statement: >-
+      Offline admission fixtures use reserved .test registry domains, including foreign images
+      that must be rejected. No pull or deployment is performed by the policy test harness.
+  - id: KSV-0125
+    paths:
+      - axiz-demo/kind/deps/deps.yaml
+      - axiz-demo/kind/deps/keycloak.yaml
+    expired_at: 2027-02-12
+    statement: >-
+      Local kind stand-ins only. axiz-local images are built by kind/up.sh, loaded into the
+      cluster and use imagePullPolicy Never. The other images are the explicitly declared
+      LocalStack/Grafana development providers, covered by the infrastructure image CVE gate.
+      These files are not deployed to production; production uses verified GHCR artifacts.

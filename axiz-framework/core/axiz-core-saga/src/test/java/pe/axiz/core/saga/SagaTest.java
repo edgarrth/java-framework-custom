@@ -14,12 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
+import pe.axiz.core.lock.LockHandle;
 import pe.axiz.core.resilience.Backoff;
 import pe.axiz.core.resilience.RetryPolicy;
 
@@ -181,19 +183,8 @@ class SagaTest {
     Step b = new Step("send", log);
     SagaStateStore store = new InMemorySagaStateStore();
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
-    // simulate a crash after step 1 was persisted
+    // Simulate a crash after step 1 was durably persisted.
     store.create(
-        SagaState.builder()
-            .sagaId("s-4")
-            .sagaName("payment")
-            .status(SagaStatus.RUNNING)
-            .stepIndex(0)
-            .context("")
-            .error(null)
-            .updatedAt(Instant.EPOCH)
-            .version(0)
-            .build());
-    store.update(
         SagaState.builder()
             .sagaId("s-4")
             .sagaName("payment")
@@ -230,7 +221,8 @@ class SagaTest {
                     .error(null)
                     .updatedAt(Instant.EPOCH)
                     .version(1)
-                    .build()));
+                    .build(),
+                "non-owner"));
     assertThrows(
         IllegalArgumentException.class, () -> new SagaDefinition<List<String>>("x", List.of()));
   }
@@ -277,8 +269,8 @@ class SagaTest {
   /** Store whose n-th update fails once (database unavailable at that moment). */
   static final class FlakyStore implements SagaStateStore {
     final InMemorySagaStateStore delegate = new InMemorySagaStateStore();
-    int failOnUpdate;
-    int updates;
+    Predicate<SagaState> failWhen = state -> false;
+    boolean failed;
 
     @Override
     public void create(SagaState state) {
@@ -286,11 +278,17 @@ class SagaTest {
     }
 
     @Override
-    public void update(SagaState state) {
-      if (++updates == failOnUpdate) {
+    public Optional<LockHandle> tryAcquire(String resource, Duration lease) {
+      return delegate.tryAcquire(resource, lease);
+    }
+
+    @Override
+    public void update(SagaState state, String owner) {
+      if (!failed && failWhen.test(state)) {
+        failed = true;
         throw new IllegalStateException("database unavailable");
       }
-      delegate.update(state);
+      delegate.update(state, owner);
     }
 
     @Override
@@ -347,7 +345,7 @@ class SagaTest {
     Step b = new Step("debit", log);
     Step c = new Step("send", log);
     FlakyStore store = new FlakyStore();
-    store.failOnUpdate = 2; // 1: after reserve, 2: after debit
+    store.failWhen = s -> s.status() == SagaStatus.RUNNING && s.stepIndex() == 2;
     SagaResult<List<String>> r =
         orchestrator(store)
             .start(
@@ -369,8 +367,8 @@ class SagaTest {
     Step b = new Step("send", log);
     b.failExecute = 101;
     FlakyStore store = new FlakyStore();
-    // 1: after reserve, 2: COMPENSATING intent, 3: progress after undoing reserve
-    store.failOnUpdate = 3;
+    // Fail specifically when recording the completed compensation.
+    store.failWhen = s -> s.status() == SagaStatus.COMPENSATING && s.stepIndex() == -1;
     SagaDefinition<List<String>> def = new SagaDefinition<>("payment", List.of(a, b));
     assertThrows(
         IllegalStateException.class,
@@ -391,7 +389,7 @@ class SagaTest {
     Step b = new Step("send", log);
     b.failExecute = 101;
     FlakyStore store = new FlakyStore();
-    store.failOnUpdate = 2; // the COMPENSATING intent
+    store.failWhen = s -> s.status() == SagaStatus.COMPENSATING && s.stepIndex() == 0;
     assertThrows(
         IllegalStateException.class,
         () ->
@@ -402,7 +400,7 @@ class SagaTest {
                     "s-10",
                     new ArrayList<>()));
     assertEquals(List.of("do:reserve"), log);
-    assertEquals(SagaStatus.RUNNING, store.find("s-10").orElseThrow().status());
+    assertEquals(SagaStatus.IN_DOUBT, store.find("s-10").orElseThrow().status());
   }
 
   /** A remote step whose effect happens but whose response is lost (the report's scenario). */
@@ -473,12 +471,12 @@ class SagaTest {
   }
 
   @Test
-  void aVerifiedAbsenceCompensatesOnlyThePreviousSteps() {
+  void aVerifiedTerminalRejectionCompensatesOnlyThePreviousSteps() {
     List<String> log = new ArrayList<>();
     Step reserve = new Step("reserve", log);
     Step debit = new Step("debit", log);
     debit.failExecute = 1; // transient failure, no retries configured
-    debit.verification = StepCheck.notApplied();
+    debit.verification = StepCheck.rejected();
     SagaResult<List<String>> r =
         noRetry(new InMemorySagaStateStore())
             .start(

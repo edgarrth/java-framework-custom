@@ -9,7 +9,7 @@ import java.util.Objects;
 /** Fills the audit columns from the injected auditor provider and clock. */
 public class AuditListener {
 
-  static final String SYSTEM = "system";
+  static final String UNATTRIBUTED = "unattributed";
   private final AuditorProvider auditor;
   private final Clock clock;
 
@@ -25,14 +25,17 @@ public class AuditListener {
   public void onCreate(Object entity) {
     if (entity instanceof AuditableEntity e) {
       Instant now = clock.instant();
-      e.markCreated(now, auditor.currentAuditor().orElse(SYSTEM));
+      e.markCreated(
+          now, auditor.currentAuditor().filter(value -> !value.isBlank()).orElse(UNATTRIBUTED));
     }
   }
 
   @PreUpdate
   public void onUpdate(Object entity) {
     if (entity instanceof AuditableEntity e) {
-      e.markUpdated(clock.instant(), auditor.currentAuditor().orElse(SYSTEM));
+      e.markUpdated(
+          clock.instant(),
+          auditor.currentAuditor().filter(value -> !value.isBlank()).orElse(UNATTRIBUTED));
     }
   }
 }

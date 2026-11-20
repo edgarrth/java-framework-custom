@@ -118,10 +118,16 @@ def run_scans(scans, output):
     for index, scan in enumerate(scans):
         name = f"scan-{index}-{scan['kind']}.json"
         path = output / name
+        minutes = 30 if scan["kind"] == "source" else 10
         command = ["trivy", {"source": "fs", "sbom": "sbom", "image": "image"}[scan["kind"]],
                    "--config", str(empty_config), "--ignorefile", str(empty_ignore),
                    "--severity", ",".join(sorted(SEVERITIES)), "--ignore-unfixed=false",
-                   "--exit-code", "0", "--format", "json", "--output", str(path), "--timeout", "10m"]
+                   "--exit-code", "0", "--format", "json", "--output", str(path),
+                   "--timeout", f"{minutes}m"]
+        if scan["kind"] == "source":
+            # Local parent/BOM metadata is installed before scanning; runtime resolution is
+            # additionally checked by the build-generated, all-scopes Maven SBOM gate.
+            command += ["--offline-scan"]
         if scan["kind"] != "sbom":
             command += ["--scanners", "vuln"]
         if scan["kind"] == "image":
@@ -134,7 +140,7 @@ def run_scans(scans, output):
                 environment[key] = os.environ[key]
         with (output / (name + ".log")).open("w") as log:
             result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, env=environment,
-                                    check=False, timeout=660)
+                                    check=False, timeout=minutes * 60 + 60)
         if result.returncode != 0:
             raise ValueError("Scanner execution failed; see preserved scanner diagnostics")
         descriptor = {k: v for k, v in scan.items() if k != "sourceCommit"}

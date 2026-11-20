@@ -1,5 +1,4 @@
 public final class pe.axiz.spring.test.AxizContainers {
-public static final org.testcontainers.utility.DockerImageName LOCALSTACK;
 public static org.testcontainers.containers.GenericContainer<?> valkey();
 public static org.testcontainers.kafka.KafkaContainer kafka();
 public static org.testcontainers.localstack.LocalStackContainer localstack();

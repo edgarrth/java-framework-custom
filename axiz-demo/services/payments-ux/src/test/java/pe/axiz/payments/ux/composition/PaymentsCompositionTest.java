@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.BusinessException;
@@ -100,13 +101,15 @@ class PaymentsCompositionTest {
   }
 
   @Test
-  void dollarsNeedTheFeatureFlag() {
+  void dollarsNeedTheFeatureFlag(TestReporter evidence) {
     assertThatThrownBy(() -> as("C-1", composition.createPayment("k", request("B-02", "USD"))))
         .satisfies(e -> assertCode(e, ChannelErrors.CURRENCY_NOT_AVAILABLE));
 
     PaymentsComposition usdOn = composition(FlagDefinition.on("payments-usd"));
     assertThat(as("C-1", usdOn.createPayment("k", request("B-02", "USD"))).getCurrency())
         .isEqualTo("USD");
+
+    evidence.publishEntry("axiz.capability.featureflags", "default");
   }
 
   @Test

@@ -52,7 +52,10 @@ import pe.axiz.core.security.InMemoryRateLimiter;
 import pe.axiz.core.security.IssuerPolicy;
 import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
+import pe.axiz.spring.errors.AxizErrorsAutoConfiguration;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /** What is reachable without a token, and how the filters behave at the edges. */
 class SecurityDefaultsTest {
@@ -74,6 +77,30 @@ class SecurityDefaultsTest {
       new ReactiveWebApplicationContextRunner()
           .withConfiguration(AutoConfigurations.of(AxizSecurityAutoConfiguration.class))
           .withPropertyValues(ISSUER_PROPERTIES);
+
+  record SchedulerConsumer(Scheduler scheduler) {}
+
+  @Test
+  void presentationSchedulersDoNotCompeteWithApplicationInjection() {
+    var userScheduler = Schedulers.newSingle("application-owned");
+    try {
+      reactive
+          .withConfiguration(AutoConfigurations.of(AxizErrorsAutoConfiguration.class))
+          .withBean("applicationScheduler", Scheduler.class, () -> userScheduler)
+          .withBean(SchedulerConsumer.class)
+          .run(
+              ctx -> {
+                assertThat(ctx).hasNotFailed();
+                assertThat(ctx.getBean(SchedulerConsumer.class).scheduler())
+                    .isSameAs(userScheduler);
+                assertThat(ctx.getBean("axizErrorRenderingScheduler")).isNotSameAs(userScheduler);
+                assertThat(ctx.getBean("axizSecurityRenderingScheduler"))
+                    .isNotSameAs(userScheduler);
+              });
+    } finally {
+      userScheduler.dispose();
+    }
+  }
 
   @Test
   void claimBindingUsesSafeDefaultsAndRejectsLegacyUsernameHeuristics() {
@@ -398,7 +425,10 @@ class SecurityDefaultsTest {
             new InMemoryRateLimiter(Clock.systemUTC()), rules, new SecurityProblems(null));
     var async =
         new RateLimitWebFilter(
-            new InMemoryAsyncRateLimiter(Clock.systemUTC()), rules, new SecurityProblems(null));
+            new InMemoryAsyncRateLimiter(Clock.systemUTC()),
+            rules,
+            new SecurityProblems(null),
+            Schedulers.boundedElastic());
     SecurityContextHolder.clearContext();
     AtomicInteger servletCalls = new AtomicInteger();
     AtomicInteger reactiveCalls = new AtomicInteger();
@@ -448,7 +478,8 @@ class SecurityDefaultsTest {
         new RateLimitWebFilter(
             new InMemoryAsyncRateLimiter(Clock.systemUTC()),
             oneRequestPerMinute(true),
-            new SecurityProblems(null));
+            new SecurityProblems(null),
+            Schedulers.boundedElastic());
     AtomicInteger calls = new AtomicInteger();
     MockServerWebExchange first =
         MockServerWebExchange.from(MockServerHttpRequest.get("/payments/1"));
@@ -527,7 +558,11 @@ class SecurityDefaultsTest {
     for (boolean open : List.of(false, true)) {
       var exchange = MockServerWebExchange.from(MockServerHttpRequest.post("/payments/1"));
       var calls = new AtomicInteger();
-      new RateLimitWebFilter(down, oneRequestPerMinute(open), new SecurityProblems(null))
+      new RateLimitWebFilter(
+              down,
+              oneRequestPerMinute(open),
+              new SecurityProblems(null),
+              Schedulers.boundedElastic())
           .filter(exchange, e -> Mono.fromRunnable(calls::incrementAndGet))
           .contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication()))
           .block(Duration.ofSeconds(5));

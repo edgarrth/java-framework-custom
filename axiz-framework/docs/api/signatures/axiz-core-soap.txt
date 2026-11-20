@@ -6,6 +6,7 @@ public static org.w3c.dom.Document parse(java.lang.String);
 
 public final class pe.axiz.core.soap.SoapClient {
 public org.w3c.dom.Element call(java.lang.String, java.lang.String);
+public org.w3c.dom.Element call(java.lang.String, java.lang.String, pe.axiz.core.soap.SoapEnvelope$Credentials);
 public static pe.axiz.core.soap.SoapClient$Builder builder();
 }
 
@@ -25,14 +26,15 @@ public final class pe.axiz.core.soap.SoapEnvelope {
 public static java.lang.String wrap(pe.axiz.core.soap.SoapVersion, java.lang.String, pe.axiz.core.soap.SoapEnvelope$Credentials, java.time.Instant);
 }
 
-public final class pe.axiz.core.soap.SoapEnvelope$Credentials {
+public final class pe.axiz.core.soap.SoapEnvelope$Credentials implements java.lang.AutoCloseable {
 public boolean equals(java.lang.Object);
-public char[] password();
 public int hashCode();
 public java.lang.String toString();
 public java.lang.String username();
 public pe.axiz.core.soap.SoapEnvelope$Credentials(java.lang.String, char[], pe.axiz.core.soap.WsSecurity$Mode);
 public pe.axiz.core.soap.WsSecurity$Mode mode();
+public synchronized char[] password();
+public synchronized void close();
 }
 
 public class pe.axiz.core.soap.SoapException extends java.lang.RuntimeException {

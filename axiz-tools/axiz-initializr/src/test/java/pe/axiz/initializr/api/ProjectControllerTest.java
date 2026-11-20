@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.core.security.InMemoryRateLimiter;
+import pe.axiz.core.security.RateLimiter;
 import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.config.SecurityConfiguration;
 import pe.axiz.initializr.service.GenerationService;
@@ -31,13 +34,18 @@ import tools.jackson.databind.json.JsonMapper;
 
 @WebMvcTest(
     controllers = {ProjectController.class, MetadataController.class},
-    properties = "axiz.config.environment=test")
+    properties = {"axiz.config.environment=test", "AXIZ_SSO_ISSUER=https://sso.example.test"})
 @Import({SecurityConfiguration.class, ApiExceptionHandler.class, ProjectControllerTest.Beans.class})
 class ProjectControllerTest {
 
   @TestConfiguration
   @EnableConfigurationProperties(InitializrProperties.class)
   static class Beans {
+    @Bean
+    RateLimiter limiter() {
+      return new InMemoryRateLimiter(Clock.systemUTC());
+    }
+
     @Bean
     GenerationService generationService() {
       return new GenerationService(new SimpleMeterRegistry());

@@ -3,14 +3,15 @@ package pe.axiz.core.saga;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import pe.axiz.core.lock.DistributedLock;
 
 /** Persistence of saga state with optimistic locking. */
-public interface SagaStateStore {
+public interface SagaStateStore extends DistributedLock {
 
   void create(SagaState state);
 
-  /** Saves the new state only if the stored version is {@code state.version() - 1}. */
-  void update(SagaState state);
+  /** Atomically checks version, execution owner and unexpired lease before saving progress. */
+  void update(SagaState state, String owner);
 
   Optional<SagaState> find(String sagaId);
 

@@ -73,4 +73,37 @@ and other applications must also be accounted for by the operator.
 A lost storage acknowledgement produces `AXZ-TOKEN-0504` and restricted durable reconciliation.
 There is no automatic retry of that uncertain mutation. If reconciliation fails, a technical
 alarm is raised and the outcome remains uncertain. A failed audit after a confirmed write does
-not compensate by deleting or rolling back the durable association.
+not compensate by deleting or rolling back the durable association. It returns the same
+`AXZ-TOKEN-0504` uncertainty outcome and records `COMMITTED_AUDIT_UNCONFIRMED`, including the
+operation ID and restricted token reference for audit repair; it does not encourage repeating the
+write. Maintenance reconciliation distinguishes a missing storage acknowledgement (`UNCERTAIN`)
+from a confirmed `SUCCESS`/`CONFLICT` whose terminal audit was not acknowledged. This applies to
+both imperative and native asynchronous tokenization. A reconciliation failure raises the
+mandatory alarm while preserving the uncertain response.
+
+## Association integrity and resource cleanup
+
+Lookup and deduplicating tokenization decrypt the candidate inside the vault, verify every stored
+fingerprint against the canonical plaintext and scope with its registered key, and recompute the
+profile metadata. Detokenization performs the same authentication before exposing plaintext.
+A candidate returned after a uniqueness race is checked too. Copied references/fingerprints or
+metadata cannot make a different value look like the requested value; failures deny disclosure
+and audit integrity failure. Temporary plaintext/encoded comparison buffers are erased.
+
+The envelope authenticates the value and its existing token/scope AAD. This does not provide
+cryptographic anti-rollback of an entire database snapshot or authenticate every storage header:
+creation/expiry/revision consistency also relies on trusted storage IAM, conditional writes,
+retention controls and reconciliation of restores. Never claim protection against arbitrary
+privileged storage rollback from AEAD or the fingerprint check alone.
+
+Once the business result and required audit are confirmed, failure to release a Redis permit does
+not replace that result or emit a second contradictory business outcome. The reservation remains
+conservative and the provider raises its administrative reconciliation alarm. Confirming business
+success does not claim that capacity was released. Sync and native async engines share this rule.
+
+Internal PAN detection and blind-index authentication now borrow mutable character arrays and
+wipe temporary buffers instead of calling `SensitiveValue.reveal()`. `BlindIndex` also accepts
+an owned `char[]` without changing the persisted index format. Erasure remains best effort in the
+JVM: request parsing, a custom canonicalization profile, or an explicit `reveal()` can create
+immutable plaintext strings. Configure the JVM/host to protect heap/core dumps and avoid retaining
+request bodies; this API does not certify end-to-end absence of plaintext from memory.

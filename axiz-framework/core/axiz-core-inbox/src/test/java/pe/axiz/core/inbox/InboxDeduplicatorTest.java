@@ -116,5 +116,10 @@ class InboxDeduplicatorTest {
           IllegalArgumentException.class,
           () -> new InboxDeduplicator(store, invalid, RETENTION, Clock.systemUTC()));
     assertThrows(NullPointerException.class, () -> new InboxStore.Acquisition(null, null));
+    for (var invalid : List.of(Duration.ofSeconds(-1), Duration.ZERO, LEASE.minusNanos(1), LEASE))
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> new InboxDeduplicator(store, LEASE, invalid, Clock.systemUTC()));
+    new InboxDeduplicator(store, LEASE, LEASE.plusNanos(1), Clock.systemUTC());
   }
 }

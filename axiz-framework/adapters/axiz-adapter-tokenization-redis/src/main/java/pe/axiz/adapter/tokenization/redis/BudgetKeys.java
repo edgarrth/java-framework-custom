@@ -20,13 +20,18 @@ final class BudgetKeys {
 
   BudgetKeys(String namespace, TokenCaller caller, VaultScope scope) {
     if (!caller.tenant().equals(scope.tenant())) throw TokenErrors.failure(TokenErrors.DENIED);
-    String tag = hash(namespace, scope.tenant(), scope.type().value(), scope.domain().value());
-    String prefix = "axiz:token-budget:{" + tag + "}:";
+    String prefix = prefix(namespace, scope);
     dimensions =
         List.of(
             prefix + "subject:" + hash(caller.subject()),
             prefix + "client:" + hash(caller.clientId()),
             prefix + "tenant");
+  }
+
+  static String prefix(String namespace, VaultScope scope) {
+    return "axiz:token-budget:{"
+        + hash(namespace, scope.tenant(), scope.type().value(), scope.domain().value())
+        + "}:";
   }
 
   List<String> leases() {

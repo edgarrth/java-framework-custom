@@ -101,11 +101,11 @@ public class AxizAuditKafkaAutoConfiguration {
   @Bean(destroyMethod = "close")
   @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
   BoundedAsyncDispatcher axizKafkaAuditDispatcher(
-      AxizAuditKafkaProperties p, Environment env, ObjectProvider<MeterRegistry> registries) {
+      AxizAuditKafkaProperties p, ObjectProvider<MeterRegistry> registries) {
     return new BoundedAsyncDispatcher(
         "kafka-audit",
-        env.getProperty("axiz.audit.kafka.send-workers", Integer.class, 2),
-        env.getProperty("axiz.audit.kafka.send-queue-capacity", Integer.class, 256),
+        p.sendWorkers(),
+        p.sendQueueCapacity(),
         p.timeout(),
         registries.getIfAvailable());
   }

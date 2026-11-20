@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 DESTINATION = ROOT / 'axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/wiremock'

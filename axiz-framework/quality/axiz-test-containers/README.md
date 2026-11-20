@@ -1,7 +1,7 @@
 # axiz-test-containers
 
 Herramientas para contenedores de pruebas, independientes de Spring y del core de producción.
-`TestContainerImages.postgres()`, `valkey()`, `kafka()`, `wiremock()` y `keycloak()` devuelven contenedores sin
+`TestContainerImages.postgres()`, `valkey()`, `kafka()`, `wiremock()`, `keycloak()` y `localstack()` devuelven contenedores sin
 contactar Docker hasta `start()`. Importar este artefacto solamente con alcance `test`; el
 starter de pruebas lo incorpora para sus configuraciones de PostgreSQL, Redis y Kafka.
 
@@ -16,7 +16,8 @@ Las recetas en `src/main/resources/pe/axiz/quality/containers/images` son la fue
 Fijan la imagen base por digest. PostgreSQL reemplaza `gosu` por `su-exec`; Valkey actualiza
 los paquetes afectados y fija las versiones corregidas. Los paquetes y sus metadatos se
 conservan para que los escáneres puedan inspeccionarlos. La imagen local lleva el SHA-256
-completo de la receta, evitando reutilizar una imagen de otra revisión. Kafka utiliza la
+completo de todos los archivos enumerados en `files.list` (o del Dockerfile para recetas de
+un solo archivo), evitando reutilizar una imagen de otra revisión. Kafka utiliza la
 distribución JVM 4.2.2 con Jackson Core/Databind, Snappy y LZ4 corregidos y descargados con
 SHA-256 fijado. Su prueba publica y consume mensajes con ambos códecs. La distribución JVM
 permite inspeccionar los JAR incluidos; un escaneo del sistema operativo de la variante nativa
@@ -44,9 +45,51 @@ el hash resuelto, importa un realm, valida criptográficamente un JWT contra su 
 rechazar credenciales incorrectas. Estas son imágenes derivadas mantenidas en este repositorio
 para desarrollo y pruebas; `keycloak()` arranca con `start-dev`.
 
+LocalStack Community 4.14.0 se reconstruye con Python 3.13 y Java 25 sobre Wolfi.
+Los cambios Python tienen hashes en `requirements.lock`; el inventario Java está en
+`libraries.lock.json`, con los SHA-256 de cada descarga comprobados durante el build.
+Conserva DynamoDB, S3, SQS, SNS, KMS, Secrets Manager, Parameter Store, STS e IAM;
+no es un emulador genérico de todos los servicios AWS. No necesita una cuenta AWS ni
+licencia remota. El primer arranque puede tardar por las descargas; los siguientes
+reutilizan la imagen identificada por el contenido de la receta.
+Ejecuta como UID/GID 1000, con código y ejecutables no modificables por ese usuario.
+Los datos y la caché se escriben en `/var/lib/localstack` y los temporales en `/tmp`.
+
+Para migrar desde `AxizContainers.LOCALSTACK`, usar `AxizContainers.localstack()` o
+`TestContainerImages.localstack()` y aplicar `withServices(...)` al contenedor.
+La constante anterior se retiró para impedir que las pruebas sigan usando la imagen
+sin corregir. No sustituirla por un nombre de imagen fijo en cada consumidor.
+
+Testcontainers mantiene activo Ryuk. `PatchedRyukImageSubstitutor` construye su
+fuente oficial 0.14.0 con Go 1.27.4 y el cliente Docker mantenido; la preparación
+evita inicializar recursivamente el recolector de recursos. El binario no usa UPX,
+de modo que el escáner puede inventariar sus dependencias Go. La limpieza al salir
+de la JVM se conserva y se verifica con contenedores reales.
+Ryuk es un controlador de infraestructura de pruebas: necesita acceso al socket Docker
+del trabajador y ejecuta explícitamente como UID 0 porque el grupo del socket varía por host.
+Ese acceso ya permite administrar el daemon. Debe quedar en trabajadores locales/CI aislados,
+sin compartir el socket con aplicaciones. La clasificación puntual DS-0002 de sus tres
+recetas está documentada y vence en `.trivyignore.yaml`; ningún CVE queda excluido.
+
+La receta `otel-lgtm` se comparte con Compose y los arquetipos. Construye Grafana,
+Loki, Tempo, Prometheus y un colector OTLP mínimo con fuentes y dependencias fijadas;
+no requiere Go en la máquina del consumidor. El frontend de Grafana corresponde al
+mismo release del servidor. Mantiene métricas, logs, trazas y dashboards; no incluye
+un backend de perfiles. Se ejecuta como UID 10001; solamente `/data` y `/tmp`
+necesitan escritura. Los puertos internos de los backends escuchan en loopback.
+`python3 .github/scripts/check_observability_image.py axiz-local/otel-lgtm:2026.11-r1
+--report /tmp/axiz-observability.json` inicia un contenedor efímero, envía las tres señales
+por OTLP, las consulta a través de Grafana y comprueba ejecución sin privilegios con el
+sistema de archivos de solo lectura. CI ejecuta esa misma prueba.
+Grafana permite lectura anónima para esta demo local; no desplegar esta configuración
+de desarrollo como plataforma de observabilidad de producción.
+
 Los entornos Compose de la demo y de los proyectos generados publican sus puertos únicamente
 en `127.0.0.1`. Sus credenciales de desarrollo no autorizan exposición a otras máquinas.
 
+Preparar un entorno Python con `python3 -m venv .venv` y
+`.venv/bin/python -m pip install --require-hashes -r axiz-framework/.github/scripts/requirements.txt`;
+activarlo con `source .venv/bin/activate`.
 Desde la raíz del repositorio, ejecutar `python3 .github/scripts/sync_container_recipes.py`
 para actualizar las copias de la demo y los generadores; `--check` detecta diferencias.
 Para actualizar WireMock, resolver primero el SBOM CycloneDX del módulo con alcance de
@@ -67,6 +110,20 @@ SNAPSHOT. La sincronización verifica que la receta corresponda al lock. Actuali
 principal de WireMock requiere además verificar y fijar el hash del lanzador original.
 El resultado de cada construcción debe pasar el escaneo M/H/C con una base vigente de
 vulnerabilidades. Una receta corregida hoy no garantiza que futuras vulnerabilidades no la afecten.
+
+CI conserva el escaneo bruto y el resultado VEX. La única clasificación de código ya
+corregido está en `.github/policies/tempo-fixed.openvex.json`: dos CVE de Tempo que el
+escáner atribuye a una pseudo-versión anterior a v2, cuyo commit ya contiene ambos
+parches oficiales. La declaración identifica CVE y PURL/version exactos, enlaces a
+los commits y fecha límite de revisión. No autoriza aceptar una vulnerabilidad
+existente ni omitir dependencias. El gate rechaza revisiones vencidas, supresiones
+sin prueba de parche y cualquier otra vulnerabilidad MEDIUM/HIGH/CRITICAL/UNKNOWN,
+incluso cuando todavía no haya una versión corregida.
+Los módulos Go internos de los workspaces de Grafana/Loki no tienen tags independientes.
+`sources.lock.json` registra su módulo, ruta, hash de `go.mod`, release y archivo fuente
+verificado. El hash del inventario queda en una etiqueta de la imagen. El gate exige esa
+coincidencia para reconocerlos y rechaza cualquier dependencia sin versión ajena a ese
+inventario; conserva intacta la salida original del escáner.
 
 Validación: `mvn -f axiz-framework/pom.xml -pl quality/axiz-test-containers -am -Pquality
 -Daxiz.it.requireDocker=true verify`. Las pruebas de integración inicializan las bases,

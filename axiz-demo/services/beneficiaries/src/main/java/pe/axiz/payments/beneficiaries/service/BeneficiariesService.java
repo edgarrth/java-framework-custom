@@ -1,13 +1,10 @@
 package pe.axiz.payments.beneficiaries.service;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import pe.axiz.core.api.Page;
-import pe.axiz.core.cache.AxizCache;
-import pe.axiz.core.cache.CacheKeys;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.NotFoundException;
 import pe.axiz.core.id.IdGenerator;
@@ -23,8 +20,8 @@ import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
 /**
  * Business operations on beneficiaries: CCI validation, one active beneficiary per account and
- * customer, a maximum per customer, logical removal and a read-through cache of single items
- * (evicted on every change).
+ * customer, a maximum per customer and logical removal. Payment validation always reads the
+ * authoritative directory; local caches cannot enforce revocation across replicas.
  */
 @Service
 public class BeneficiariesService {
@@ -32,7 +29,6 @@ public class BeneficiariesService {
   static final String RESOURCE = "beneficiary";
 
   private final BeneficiaryRepository repository;
-  private final AxizCache cache;
   private final IdentifierRegistry identifiers;
   private final IdGenerator ids;
   private final EventMetrics metrics;
@@ -41,14 +37,12 @@ public class BeneficiariesService {
 
   public BeneficiariesService(
       BeneficiaryRepository repository,
-      AxizCache beneficiariesCache,
       IdentifierRegistry identifiers,
       IdGenerator ids,
       EventMetrics metrics,
       Clock clock,
       BeneficiaryPolicy policy) {
     this.repository = repository;
-    this.cache = beneficiariesCache;
     this.identifiers = identifiers;
     this.ids = ids;
     this.metrics = metrics;
@@ -67,36 +61,23 @@ public class BeneficiariesService {
       reject("invalid-account");
       throw new BusinessException(BeneficiaryErrors.INVALID_ACCOUNT, "invalid cci", Map.of());
     }
-    List<Beneficiary> current = repository.allActive(customerId);
-    if (current.stream().anyMatch(b -> b.sameAccount(data.cci()))) {
-      reject("duplicate");
-      throw new BusinessException(
-          BeneficiaryErrors.DUPLICATE_ACCOUNT, "duplicate account", Map.of());
-    }
-    if (current.size() >= maxPerCustomer) {
-      reject("limit");
-      throw new BusinessException(
-          BeneficiaryErrors.LIMIT_REACHED,
-          "limit reached",
-          Map.of("max", Integer.toString(maxPerCustomer)));
-    }
     Beneficiary created = Beneficiary.register(customerId, ids.newId(), data, clock.instant());
-    repository.insert(created);
+    try {
+      repository.insert(created, maxPerCustomer);
+    } catch (BusinessException failure) {
+      reject(
+          failure.definition().equals(BeneficiaryErrors.DUPLICATE_ACCOUNT)
+              ? "duplicate"
+              : "limit-or-conflict");
+      throw failure;
+    }
     metrics.record(MetricEvent.of("beneficiary.registered").outcome(Outcome.SUCCESS));
     return created;
   }
 
-  /** The active beneficiary (cached). */
+  /** Authoritative active beneficiary; changes on another replica are visible immediately. */
   public Beneficiary get(String customerId, String beneficiaryId) {
-    Beneficiary found =
-        cache.getOrLoad(
-            key(customerId, beneficiaryId),
-            Beneficiary.class,
-            () -> repository.findActive(customerId, beneficiaryId).orElse(null));
-    if (found == null) {
-      throw new NotFoundException(RESOURCE, beneficiaryId);
-    }
-    return found;
+    return active(customerId, beneficiaryId);
   }
 
   /** Changes the alias. */
@@ -104,7 +85,6 @@ public class BeneficiariesService {
     Beneficiary current = active(customerId, beneficiaryId);
     current.rename(alias, clock.instant());
     Beneficiary saved = repository.update(current);
-    cache.evict(key(customerId, beneficiaryId));
     return saved;
   }
 
@@ -113,7 +93,6 @@ public class BeneficiariesService {
     Beneficiary current = active(customerId, beneficiaryId);
     current.remove(clock.instant());
     repository.update(current);
-    cache.evict(key(customerId, beneficiaryId));
     metrics.record(MetricEvent.of("beneficiary.removed").outcome(Outcome.SUCCESS));
   }
 
@@ -126,9 +105,5 @@ public class BeneficiariesService {
   private void reject(String reason) {
     metrics.record(
         MetricEvent.of("beneficiary.registered").outcome(Outcome.REJECTED).reason(reason));
-  }
-
-  private static String key(String customerId, String beneficiaryId) {
-    return CacheKeys.of(customerId, beneficiaryId);
   }
 }

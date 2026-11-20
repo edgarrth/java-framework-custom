@@ -3,6 +3,16 @@ extends:
   - [spectral:oas, recommended]
   - [spectral:asyncapi, recommended]
 rules:
+  axiz-safe-parameter-names:
+    description: Parameter names must be safe for generated Java annotations and identifiers.
+    severity: error
+    given:
+      - $.paths[*].parameters[*].name
+      - $.paths[*][get,put,post,delete,patch].parameters[*].name
+      - $.components.parameters[*].name
+    then:
+      function: pattern
+      functionOptions: { match: "^[A-Za-z][A-Za-z0-9_.-]{0,63}$" }
   axiz-operation-id-camel-case:
     description: operationId must be lowerCamelCase (it names the generated use case / handler).
     severity: error

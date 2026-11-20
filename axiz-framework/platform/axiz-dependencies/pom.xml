@@ -83,6 +83,8 @@
     <jetty.version>12.1.14</jetty.version>
     <!-- 3.0.6 supports the Jackson 3.1 line managed by Spring Boot. -->
     <json-schema-validator.version>3.0.6</json-schema-validator.version>
+    <!-- Testcontainers 2.0.5 transport API used by the cleanup-image builder. -->
+    <docker-java.version>3.7.1</docker-java.version>
     <blockhound.version>1.0.16.RELEASE</blockhound.version>
     <picocli.version>4.7.7</picocli.version>
     <jmustache.version>1.16</jmustache.version>
@@ -100,6 +102,7 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency><groupId>com.github.docker-java</groupId><artifactId>docker-java-api</artifactId><version>${docker-java.version}</version></dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm</artifactId>

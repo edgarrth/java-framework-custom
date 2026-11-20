@@ -70,6 +70,7 @@ public static pe.axiz.core.sensitive.OutputChannel[] values();
 }
 
 public final class pe.axiz.core.sensitive.PanDetector {
+public static boolean containsPan(char[]);
 public static boolean containsPan(java.lang.String);
 public static boolean isPan(java.lang.String);
 public static final int MAX_DIGITS = 19;

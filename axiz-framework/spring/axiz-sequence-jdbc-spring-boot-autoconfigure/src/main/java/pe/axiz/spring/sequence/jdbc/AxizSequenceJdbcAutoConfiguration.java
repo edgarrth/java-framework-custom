@@ -1,5 +1,6 @@
 package pe.axiz.spring.sequence.jdbc;
 
+import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,7 +50,11 @@ public class AxizSequenceJdbcAutoConfiguration {
   @Bean
   SchemaInitializer axizSequenceSchema(
       JdbcSequenceConnections resources, AxizSequenceJdbcProperties p) {
-    return new SchemaInitializer(resources.connections(), "sequence", p.initializeSchema());
+    return new SchemaInitializer(
+        resources.connections(),
+        "sequence",
+        p.initializeSchema(),
+        Map.of("axiz_sequence", p.table()));
   }
 
   @Bean

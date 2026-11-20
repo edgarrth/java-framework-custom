@@ -10,6 +10,11 @@ public final class CheckDigits {
   private CheckDigits() {}
 
   public static boolean allDigits(String value) {
+    return allDigits((CharSequence) value);
+  }
+
+  /** Validates borrowed character storage without creating an immutable copy. */
+  public static boolean allDigits(CharSequence value) {
     if (value.isEmpty()) {
       return false;
     }
@@ -24,6 +29,11 @@ public final class CheckDigits {
 
   /** Luhn (mod 10) validation over the full number including its check digit. */
   public static boolean luhn(String digits) {
+    return luhn((CharSequence) digits);
+  }
+
+  /** Luhn over borrowed character storage, including its check digit. */
+  public static boolean luhn(CharSequence digits) {
     if (!allDigits(digits)) {
       return false;
     }

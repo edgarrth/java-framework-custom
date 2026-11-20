@@ -87,10 +87,12 @@ public final class OutboundAuth implements AutoCloseable {
                   .tokenUri(Objects.requireNonNull(a.tokenUri()))
                   .clientId(Objects.requireNonNull(a.clientId()))
                   .clientSecret(
-                      () ->
-                          s.resolve(ref)
-                              .orElseThrow(() -> new SecretNotFoundException(ref))
-                              .reveal())
+                      () -> {
+                        try (var secret =
+                            s.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref))) {
+                          return secret.reveal();
+                        }
+                      })
                   .scopes(a.scopes())
                   .audience(a.audience())
                   .renewBefore(renewBefore)
@@ -166,9 +168,11 @@ public final class OutboundAuth implements AutoCloseable {
                   .clientId(Objects.requireNonNull(a.clientId()))
                   .clientSecret(
                       () ->
-                          Stages.map(
+                          Stages.consume(
                               source.require(Objects.requireNonNull(a.clientSecretRef())),
-                              value -> value.reveal()))
+                              SecretValue::reveal,
+                              SecretValue::close,
+                              ignored -> {}))
                   .scopes(a.scopes())
                   .audience(a.audience())
                   .renewBefore(renewBefore)
@@ -199,17 +203,24 @@ public final class OutboundAuth implements AutoCloseable {
               if (asyncTokens == null)
                 throw new IllegalStateException(
                     "Reactive OAuth credentials require OutboundAuth.createAsync");
-              yield Stages.map(
+              yield Stages.consume(
                   asyncTokens.token(),
-                  token -> Map.of("Authorization", SecretValue.of("Bearer " + token.value())));
+                  token -> Map.of("Authorization", SecretValue.of("Bearer " + token.value())),
+                  ignored -> {},
+                  OutboundAuth::closeHeaders);
             }
             case API_KEY -> {
               if (asyncSecrets == null)
                 throw new IllegalStateException(
                     "Reactive API key credentials require AsyncSecretResolver");
-              yield Stages.map(
+              yield Stages.consume(
                   asyncSecrets.require(Objects.requireNonNull(settings.apiKeyRef())),
-                  value -> Map.of(Objects.requireNonNull(settings.apiKeyHeader()), value));
+                  value ->
+                      Map.of(
+                          Objects.requireNonNull(settings.apiKeyHeader()),
+                          value.use(SecretValue::of)),
+                  SecretValue::close,
+                  OutboundAuth::closeHeaders);
             }
             default -> CompletableFuture.completedFuture(Map.of());
           };
@@ -227,6 +238,10 @@ public final class OutboundAuth implements AutoCloseable {
     } finally {
       if (nativeHttp != null) nativeHttp.close();
     }
+  }
+
+  private static void closeHeaders(Map<String, SecretValue> headers) {
+    headers.values().forEach(SecretValue::close);
   }
 
   /** The secret resolver an authenticated client needs, or an error naming the client. */
@@ -257,9 +272,10 @@ public final class OutboundAuth implements AutoCloseable {
         if (secrets == null)
           throw new IllegalStateException("Native API key credentials must use headers()");
         String ref = Objects.requireNonNull(settings.apiKeyRef());
-        header.accept(
-            Objects.requireNonNull(settings.apiKeyHeader()),
-            secrets.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref)).reveal());
+        try (var secret =
+            secrets.resolve(ref).orElseThrow(() -> new SecretNotFoundException(ref))) {
+          header.accept(Objects.requireNonNull(settings.apiKeyHeader()), secret.reveal());
+        }
       }
       case TOKEN_RELAY -> {
         String token = SECURITY ? Relay.current() : null;

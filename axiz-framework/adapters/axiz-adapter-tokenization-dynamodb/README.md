@@ -67,3 +67,14 @@ mvn -Pquality -pl quality/axiz-store-integration-tests -am \
 
 LocalStack exercises actual SDK requests and transactions. It does not certify AWS IAM,
 KMS operation, production durability, PCI compliance or the independent audit/rate-limit integrations.
+
+## Provider errors and uncertain writes
+
+An SDK client/transport failure does not establish that DynamoDB did not receive a mutation.
+`SdkClientException`, lost acknowledgements and generic provider errors after dispatch remain
+`VaultUncertainException`; the engine records restricted reconciliation and does not retry them
+as a token collision. Only confirmed conditional transaction cancellation reasons are classified
+as collisions/contention, and local validation that occurs before dispatch cannot have written.
+Do not broadly translate client errors into a not-applied result. `DynamoDbVaultTest` exercises lost
+acknowledgements with both clients and verifies exactly one transaction dispatch; the core vault
+suite checks reconciliation/audit behavior. These tests do not claim a live AWS outage experiment.

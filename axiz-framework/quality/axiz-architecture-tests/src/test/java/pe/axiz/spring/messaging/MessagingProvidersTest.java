@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -18,6 +19,9 @@ import pe.axiz.spring.messaging.sqs.AxizMessagingSqsAutoConfiguration;
 import pe.axiz.spring.messaging.sqs.SqsEventConsumer;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesRequest;
+import software.amazon.awssdk.services.sqs.model.GetQueueAttributesResponse;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
@@ -25,6 +29,16 @@ class MessagingProvidersTest {
   /** An SQS client whose queues are always empty. */
   static final class EmptySqs implements SqsClient {
     final AtomicInteger polls = new AtomicInteger();
+
+    @Override
+    public GetQueueAttributesResponse getQueueAttributes(GetQueueAttributesRequest request) {
+      return GetQueueAttributesResponse.builder()
+          .attributes(
+              Map.of(
+                  QueueAttributeName.REDRIVE_POLICY,
+                  "{\"deadLetterTargetArn\":\"arn:aws:sqs:us-east-1:000000000000:dlq\",\"maxReceiveCount\":\"3\"}"))
+          .build();
+    }
 
     @Override
     public ReceiveMessageResponse receiveMessage(ReceiveMessageRequest request) {

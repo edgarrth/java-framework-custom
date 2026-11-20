@@ -142,7 +142,11 @@ public final class VaultRotator {
                             VaultPolicy.ENCRYPTION_CONTEXT,
                             row.scope().binding(row.token()));
                     try (SensitiveValue value = VaultText.decode(plaintext)) {
-                      verifyFingerprints(row, value.reveal());
+                      value.use(
+                          chars -> {
+                            verifyFingerprints(row, chars);
+                            return true;
+                          });
                     } finally {
                       Arrays.fill(plaintext, (byte) 0);
                     }
@@ -172,7 +176,7 @@ public final class VaultRotator {
     }
   }
 
-  private void verifyFingerprints(VaultRecord row, String canonical) {
+  private void verifyFingerprints(VaultRecord row, char[] canonical) {
     for (KeyedHash stored : row.fingerprints())
       if (!stored.equals(indexes.index(canonical, row.scope().indexScope(), stored.keyId())))
         throw new VaultIntegrityException();
@@ -334,9 +338,12 @@ public final class VaultRotator {
           source.decrypt(
               ciphertext, VaultPolicy.ENCRYPTION_CONTEXT, row.scope().binding(row.token()));
       try (SensitiveValue value = VaultText.decode(plaintext)) {
-        String canonical = value.reveal();
-        verifyFingerprints(row, canonical);
-        var write = indexes.index(canonical, row.scope().indexScope(), state.writeKeyId());
+        var write =
+            value.use(
+                chars -> {
+                  verifyFingerprints(row, chars);
+                  return indexes.index(chars, row.scope().indexScope(), state.writeKeyId());
+                });
         if (target == null && row.fingerprints().contains(write)) return MigrationOutcome.UNCHANGED;
         hashes = new ArrayList<>(row.fingerprints());
         if (target == null) hashes.add(write);

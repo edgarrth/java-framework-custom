@@ -21,8 +21,8 @@ for s in "${services[@]}"; do
 done
 
 # infrastructure stand-ins
-docker compose -f "$root/local/compose.yaml" build postgres valkey kafka wiremock keycloak
-kind load docker-image axiz-local/postgres:17.12-r1 axiz-local/valkey:8.1.8-r1 axiz-local/kafka:4.2.2-r1 axiz-local/wiremock:3.13.2-r1 axiz-local/keycloak:26.8.2-r1 --name axiz-demo
+docker compose -f "$root/local/compose.yaml" build postgres valkey kafka wiremock keycloak localstack otel-lgtm
+kind load docker-image axiz-local/postgres:17.12-r1 axiz-local/valkey:8.1.8-r1 axiz-local/kafka:4.2.2-r1 axiz-local/wiremock:3.13.2-r1 axiz-local/keycloak:26.8.2-r1 axiz-local/localstack:4.14.0-r1 axiz-local/otel-lgtm:2026.11-r1 --name axiz-demo
 kubectl apply -k "$here/deps"
 kubectl -n $ns wait --for=condition=available deploy --all --timeout=300s
 kubectl -n $ns wait --for=condition=complete job/kafka-topics --timeout=300s

@@ -37,10 +37,14 @@ client.setOptions(ClientOptions.builder()
     .requestQueueSize(1000)
     .disconnectedBehavior(ClientOptions.DisconnectedBehavior.REJECT_COMMANDS)
     .build());
+var owner = new TokenBudgetOwner("pod-immutable-uid", UUID.randomUUID());
 var connection = client.connect();
 connection.setTimeout(Duration.ofMillis(500));
-var budget = new RedisTokenBudget(connection, "vault-production", policy, leaseAlarm);
-var nativeBudget = new RedisAsyncTokenBudget(connection, "vault-production", policy, leaseAlarm);
+var budget = new RedisTokenBudget(connection, "vault-production", policy, leaseAlarm,
+    new RedisRateLimiter(connection.sync(), "", false), owner);
+// Use a separate connection for the native budget.
+var nativeBudget = new RedisAsyncTokenBudget(nativeConnection, "vault-production", policy, leaseAlarm,
+    new RedisAsyncRateLimiter(nativeConnection.async(), ""), owner);
 ```
 
 Timeout permitido: 1 ms–3 s por comando. Cola: 1–10 000 comandos. Mantener auto-flush activo.
@@ -72,7 +76,13 @@ las claves para un mismo slot. El adaptador actual recibe `StatefulRedisConnecti
 de Cluster: esto no acredita soporte de topología Cluster ni failover.
 [Semántica de scripts](https://redis.io/docs/latest/develop/programmability/eval-intro/).
 
-Las reservas son hashes de UUID y hora del servidor, **sin expiración automática**. Se liberan
+Las reservas son hashes con UUID, instancia de despliegue, encarnación del proceso,
+UUID de operación auditada, clase de operación, claves seudónimas de las tres dimensiones y
+hora del servidor, **sin expiración automática**. No contienen valor, token, índice ni identidad
+literal del sujeto. Los motores entregan su `operationId` al presupuesto; la sobrecarga antigua
+genera uno para llamadas manuales. La integración Spring registra la identidad del propietario
+al arrancar y permite `axiz.tokenization.vault.redis.instance-id` (usar el UID inmutable del pod,
+no un nombre reutilizable). La encarnación cambia con cada JVM, también al reiniciar el mismo pod. Se liberan
 solo al terminar realmente la operación. Un timeout no demuestra que el trabajo haya terminado.
 Una cancelación antes de recibir el permiso conserva el I/O aceptado; si llega una concesión
 tardía se libera y se observa su resultado. Cancelar el observador de una liberación no cancela
@@ -80,11 +90,36 @@ su comando. Repetir `close`/`release` conserva el resultado y no envía otra lib
 
 Un acuse perdido de concesión/liberación puede dejar capacidad reservada. La alarma recibe solo
 namespace y UUID para conciliación. No reintentar la admisión automáticamente para ese permiso.
-Un crash también puede dejar reservas: el operador debe recorrer de forma acotada el namespace
-con credenciales de mantenimiento, localizar el UUID y demostrar que su propietario terminó
-antes de retirar sus tres entradas. No usar `FLUSHDB`, comodines de borrado o TTL para recuperar
-capacidad. Una reserva activa de otro propietario se conserva. La indisponibilidad que produce
-esta política es intencional y debe contemplarse en monitorización y procedimientos operativos.
+Un crash también puede dejar reservas. `RedisTokenBudgetRecovery` es una capacidad administrativa
+bloqueante sobre conexión/ACL de mantenimiento separada, nunca un endpoint de la API de tokens.
+`inspect(scope, cursor)` recorre un tenant/tipo/dominio configurado con `HSCAN COUNT 100`, devuelve
+cursor, cantidad y hora Redis, reservas trazables y entradas antiguas sin metadatos. `COUNT` es
+una sugerencia Redis (los hashes compactos pueden devolver más); se rechazan páginas superiores
+a 4096 entradas. No usar `KEYS`, barridos sin presupuesto ni hashes como etiquetas de métricas.
+Un ciclo no es una instantánea: deduplicar UUID y repetir para alertar sobre cantidad/edad.
+
+`reconcile(scope, reservation, evidenceId)` exige dos integraciones explícitas del operador:
+
+1. `TerminationVerifier` verifica evidencia durable ligada al namespace, scope, reserva,
+   instancia/encarnación y operación. Debe demostrar ejecución permanentemente detenida/fenced
+   **y** fin o conciliación de todo I/O aceptado, incluyendo efectos tardíos y comandos Redis.
+   Un pod desaparecido, una conexión cerrada, un timeout o la antigüedad no bastan. Si el servicio
+   no puede obtener esa prueba de sus participantes, se conserva el cupo y se escala el incidente.
+2. `RecoveryJournal` guarda la intención antes del script y su resultado (`RELEASED`,
+   `ALREADY_RELEASED`, `CONFLICT` o `UNKNOWN`) en una auditoría administrativa durable. Si no puede
+   registrar la intención, no se toca Redis. Un fallo después exige verificar el resultado.
+
+El script compara **las tres entradas completas** con la reserva inspeccionada antes de retirar
+ninguna. Un cambio de propietario/metadatos o una reserva parcial da `CONFLICT`; una retirada
+repetida da `ALREADY_RELEASED`. Ninguna reserva de otro propietario se libera. El framework no
+trae un verificador permisivo ni convierte evidencia textual suministrada por el cliente en prueba.
+Estas interfaces aíslan los contratos del control de procesos y la conciliación de cada despliegue.
+
+Para reservas del formato antiguo, detener admisiones, drenar/reconciliar las operaciones con los
+participantes y obtener prueba por otros registros: la API las inventaría pero no permite su borrado
+automático. No fabricar metadatos para habilitarlo. Nunca usar `FLUSHDB`, comodines de borrado o TTL.
+Tras pérdida/eviction de datos tampoco se reconstruye capacidad a partir de hashes incompletos.
+La alerta de edad es solo detección de posible huérfano, nunca autorización de recuperación.
 
 Redis es infraestructura de control, no caché descartable: exigir aislamiento/ACL, TLS según
 entorno, `noeviction`, persistencia y una política de recuperación probada. El código no puede
@@ -107,7 +142,9 @@ mvn -Pquality -pl quality/axiz-store-integration-tests -am \
 
 Las pruebas unitarias fuerzan concesión tardía, cancelación y pérdida de acuses. La integración
 usa dos conexiones a Valkey real, carreras de admisión, separación de grupos, agregados por
-identidad, reservas sin TTL y pausa efectiva del contenedor con fallo cerrado en ambos modelos.
+identidad, reservas sin TTL y pausa efectiva del contenedor con fallo cerrado en ambos modelos. La prueba de recuperación
+mata una JVM después del acuse de reserva, rechaza su liberación solo por muerte del proceso y
+requiere evidencia terminal antes de recuperar; comprueba que otra instancia mantiene su cupo.
 BlockHound instrumenta la ruta nativa. Esto verifica el contrato del adaptador; no reemplaza las
 pruebas integrales de auditoría, cifrado, DynamoDB, Spring, HTTP o la evaluación PCI del despliegue.
 
@@ -119,3 +156,8 @@ privada y los inyecta; el adaptador de tokenización no depende del adaptador de
 La composición manual debe suministrar un limitador distribuido que respete
 `failOpen=false`, con prefijo vacío porque la bóveda construye su propio namespace.
 Las pruebas con Valkey verifican ese contrato ante caída del almacén y entre réplicas.
+
+Malformed inventory entries are reported only by key digest and are never eligible for automatic
+recovery; valid entries on the page and the scan cursor remain available. Alert on both legacy and
+invalid entries. Reconciliation refuses changed or partially missing dimension hashes and journals
+unknown Redis outcomes before reporting an error. A failed durable intent journal prevents deletion.

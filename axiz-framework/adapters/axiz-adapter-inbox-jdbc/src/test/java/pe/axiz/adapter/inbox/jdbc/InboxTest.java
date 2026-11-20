@@ -52,6 +52,31 @@ class InboxTest {
   }
 
   @Test
+  void retentionCannotPurgeInProgressRowsAndTakeoverRenewsRetention() {
+    Instant now = clock.instant();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> store.tryAcquire("c", "e", "owner", now, now.plusSeconds(60), now.plusSeconds(30)));
+    store.tryAcquire("c", "e", "owner", now, now.plusSeconds(30), now.plusSeconds(60));
+    assertEquals(0, store.purgeExpired(now.plusSeconds(120)));
+    assertEquals(
+        InboxStore.Acquisition.Status.ACQUIRED,
+        store
+            .tryAcquire(
+                "c",
+                "e",
+                "successor",
+                now.plusSeconds(120),
+                now.plusSeconds(150),
+                now.plusSeconds(300))
+            .status());
+    assertFalse(store.markProcessed("c", "e", "owner", now.plusSeconds(121)));
+    assertTrue(store.markProcessed("c", "e", "successor", now.plusSeconds(121)));
+    assertEquals(0, store.purgeExpired(now.plusSeconds(200)));
+    assertEquals(1, store.purgeExpired(now.plusSeconds(301)));
+  }
+
+  @Test
   void processesOncePerConsumer() {
     InboxDeduplicator dedup =
         new InboxDeduplicator(store, Duration.ofMinutes(5), Duration.ofDays(7), clock);
@@ -157,6 +182,8 @@ class InboxTest {
                 "c", "e-3", "o", clock.now, clock.now.plusSeconds(60), clock.now.plusSeconds(120))
             .status());
     assertEquals(0, store.purgeExpired(clock.now));
+    assertEquals(0, store.purgeExpired(clock.now.plusSeconds(121)));
+    assertTrue(store.markProcessed("c", "e-3", "o", clock.now.plusSeconds(30)));
     assertEquals(1, store.purgeExpired(clock.now.plusSeconds(121)));
     JdbcTransactions noDb = new JdbcTransactions(new JdbcDataSource());
     JdbcInboxStore broken = new JdbcInboxStore(noDb, "axiz_inbox");

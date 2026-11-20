@@ -24,10 +24,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `SagaDefinition` | Ordered steps of a saga. |
 | `SagaListener` | Observes saga progress (metrics, traces, alerts). |
 | `SagaOrchestrator` | Runs sagas: executes steps in order (with retries for transient failures), persists state after every step and, when a step fails, compensates the completed steps in reverse order. |
-| `SagaRecovery` | Resumes sagas left unfinished by a crash or a redeploy: non-terminal sagas not updated for a while are resumed from their persisted state (steps are idempotent, so repeating the last one is safe). |
+| `SagaRecovery` | Resumes sagas left unfinished by a crash or a redeploy: stale non-terminal sagas are acquired exclusively and uncertain effects are verified before proceeding. |
 | `SagaResult` | Outcome of running a saga. |
 | `SagaState` | Persisted state of a saga instance. |
-| `SagaStateStore` | Persistence of saga state with optimistic locking. |
+| `SagaStateStore` | Persistence of saga state with ownership leases and versioned updates. |
 | `SagaStatus` | Saga lifecycle. |
 | `SagaStep` | One step of a saga: an action, its compensation and, for remote effects, how to verify an uncertain outcome. |
 | `SagaStepRejectedException` | Definite answer of a participant: the step was rejected and its effect does not exist (for example insufficient funds). |
@@ -44,3 +44,25 @@ The JDBC implementation and SQL resources now live in `axiz-adapter-saga-jdbc`; 
 framework-neutral contracts and orchestration. `TransactionRunner` remains in
 `pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
 `runtime` scope in a service. See [JDBC migration](../../arquitectura/jdbc.md).
+
+## Execution ownership and uncertain effects
+
+Each execution owns a renewable lease in the same store as saga state. `start`, `resume`,
+verification and compensation use the same ownership boundary; an active lease excludes another
+runner. Every write checks the owner, lease deadline and state version atomically. A rejected
+lease cannot be renewed or used to write. JDBC uses database time and committed independent
+connections; do not wrap orchestration in a caller transaction.
+
+Before calling a participant the orchestrator persists `IN_DOUBT` intent. `SagaStepExecution`
+provides the saga id, step name and increasing state version as a fencing value. Participants
+must enforce fencing and idempotency in their own durable write boundary; passing a number
+alone does not stop a delayed external effect. Legacy steps remain responsible for idempotency.
+
+`StepCheck.notApplied()` means only that an effect is not currently visible: the saga stays
+`IN_DOUBT`. `StepCheck.rejected()` may be returned only when the participant durably guarantees
+that the effect will never arrive (including queued attempts), for example with a cancellation
+tombstone. This is a deliberate behavioral migration: replace `notApplied()` with `rejected()`
+only when that stronger contract is true. Unknown work is never automatically compensated.
+
+`axiz.saga.execution-lease` defaults to 30 seconds (100 ms–10 minutes). Lease renewal and
+expiration permit recovery but cannot prove remote work ended. Monitor old `IN_DOUBT` states.

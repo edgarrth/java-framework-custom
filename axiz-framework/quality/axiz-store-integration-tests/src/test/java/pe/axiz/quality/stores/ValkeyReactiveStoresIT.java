@@ -275,7 +275,13 @@ class ValkeyReactiveStoresIT {
         .untilAsserted(
             () ->
                 StepVerifier.create(
-                        call(() -> cache.put("reconnected", new byte[] {4}, Duration.ofSeconds(30)))
+                        call(() -> strings.async().ping())
+                            .doOnNext(reply -> assertEquals("PONG", reply))
+                            .then(
+                                call(
+                                    () ->
+                                        cache.put(
+                                            "reconnected", new byte[] {4}, Duration.ofSeconds(30))))
                             .then(call(() -> cache.get("reconnected"))))
                     .assertNext(found -> assertArrayEquals(new byte[] {4}, found.orElseThrow()))
                     .expectComplete()

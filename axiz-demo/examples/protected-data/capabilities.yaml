@@ -1,9 +1,10 @@
-# Executable examples, not a deployable service manifest.
 capabilities:
-- secrets-aws
+- crypto
+- crypto-kms
 - carddata
+- secrets-aws
 - tokenization
+- tokenization-pan
 - tokenization-vault
 - tokenization-vault-dynamodb
 - tokenization-vault-redis
-- tokenization-pan

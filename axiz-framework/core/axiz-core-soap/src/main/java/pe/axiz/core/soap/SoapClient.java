@@ -59,7 +59,13 @@ public final class SoapClient {
    * @return response payload element
    */
   public Element call(String soapAction, String payloadXml) {
-    String envelope = SoapEnvelope.wrap(version, payloadXml, credentials, clock.instant());
+    return call(soapAction, payloadXml, credentials);
+  }
+
+  /** Per-request credentials remain owned by the caller and must be closed after this call. */
+  public Element call(
+      String soapAction, String payloadXml, SoapEnvelope.@Nullable Credentials requestCredentials) {
+    String envelope = SoapEnvelope.wrap(version, payloadXml, requestCredentials, clock.instant());
     long start = System.nanoTime();
     try {
       SoapTransport.Reply response =

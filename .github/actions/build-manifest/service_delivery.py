@@ -106,6 +106,14 @@ def publish(data, public, root, output):
     output.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix="axiz-service-data-", dir=os.environ["RUNNER_TEMP"]) as temporary:
         temporary = Path(temporary)
+        # CLI credentials are private to this invocation and removed on success and failure.
+        credentials = temporary / "credentials"
+        credentials.mkdir(mode=0o700)
+        docker_config = credentials / "docker"
+        docker_config.mkdir(mode=0o700)
+        cli_env = {**{key: value for key, value in os.environ.items()
+                       if key in {"PATH", "HOME", "TMPDIR", "LANG", "LC_ALL", "SSL_CERT_FILE", "SSL_CERT_DIR"}}, "DOCKER_CONFIG": str(docker_config),
+                   "HELM_REGISTRY_CONFIG": str(credentials / "helm-registry.json")}
         transfer = download(receipt, f"service-transfer-{service}-{variant}-{data['build']['run_attempt']}",
                             receipt["producer_job"], temporary / "transfer")
         images, chart = validate_transfer(transfer, data, temporary / "oci")
@@ -114,19 +122,19 @@ def publish(data, public, root, output):
                                       os.environ["REGISTRY_USERNAME"], os.environ["REGISTRY_PASSWORD"])
         image_digest = oci_publish.publish(client, images, tag)
         subprocess.run(["helm", "registry", "login", "ghcr.io", "--username", os.environ["REGISTRY_USERNAME"],
-                        "--password-stdin"], input=os.environ["REGISTRY_PASSWORD"].encode(), check=True, timeout=60)
+                        "--password-stdin"], input=os.environ["REGISTRY_PASSWORD"].encode(), check=True, timeout=60, env=cli_env)
         result = subprocess.run(["helm", "push", str(chart), chart_ref.rsplit("/", 1)[0]],
-                                check=True, text=True, capture_output=True, timeout=180)
+                                check=True, text=True, capture_output=True, timeout=180, env=cli_env)
         match = re.findall(r"(?m)^Digest: (sha256:[0-9a-f]{64})$", result.stdout + result.stderr)
         if len(match) != 1:
             raise ValueError("Missing published chart identity")
         subprocess.run(["docker", "login", "ghcr.io", "--username", os.environ["REGISTRY_USERNAME"],
-                        "--password-stdin"], input=os.environ["REGISTRY_PASSWORD"].encode(), check=True, timeout=60)
+                        "--password-stdin"], input=os.environ["REGISTRY_PASSWORD"].encode(), check=True, timeout=60, env=cli_env)
         from service import image as image_record, chart as chart_record, inspect
-        metadata = yaml.safe_load(subprocess.check_output(["helm", "show", "chart", chart_ref + "@" + match[0]], text=True))
+        metadata = yaml.safe_load(subprocess.check_output(["helm", "show", "chart", chart_ref + "@" + match[0]], text=True, timeout=120, env=cli_env))
         data["artifacts"] = {
-            "image": image_record(data, image, tag, image_digest, inspect(image + "@" + image_digest)),
-            "chart": chart_record(data, chart_ref, match[0], inspect(chart_ref[6:] + "@" + match[0], "{{json .Manifest}}"), metadata)}
+            "image": image_record(data, image, tag, image_digest, inspect(image + "@" + image_digest, env=cli_env)),
+            "chart": chart_record(data, chart_ref, match[0], inspect(chart_ref[6:] + "@" + match[0], "{{json .Manifest}}", env=cli_env), metadata)}
         shutil.copytree(transfer / "reports", root / "target/build-reports")
         (root / "target/build-reports/compile-authority.json").write_bytes(rfc8785.dumps(receipt))
         (output / "metadata.json").write_bytes(rfc8785.dumps(data))

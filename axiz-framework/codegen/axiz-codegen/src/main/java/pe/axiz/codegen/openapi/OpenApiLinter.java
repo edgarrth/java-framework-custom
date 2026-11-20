@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
  */
 public final class OpenApiLinter {
 
+  private static final Pattern PARAMETER = Pattern.compile("^[A-Za-z][A-Za-z0-9_.-]{0,63}$");
   private static final Pattern CAMEL = Pattern.compile("^[a-z][a-zA-Z0-9]*$");
   // One path segment: kebab-case or a {parameter}. Checked segment by segment, so the match is
   // linear in the length of the path (no nested repetition).
@@ -64,6 +65,7 @@ public final class OpenApiLinter {
                 "$.paths['" + path + "']",
                 "Paths must start with /v<n>/"));
       }
+      checkParameters(doc.raw(), OpenApiDocument.map(p.getValue()), "$.paths['" + path + "']", out);
       for (Map.Entry<String, Object> m : OpenApiDocument.map(p.getValue()).entrySet()) {
         if (!METHODS.contains(m.getKey())) {
           continue;
@@ -94,7 +96,7 @@ public final class OpenApiLinter {
                   "Duplicate operationId " + id));
         }
         checkResponses(op, loc, out);
-        checkParameters(op, loc, out);
+        checkParameters(doc.raw(), op, loc, out);
         if ("post".equals(m.getKey()) && !declaresIdempotencyKey(op)) {
           out.add(
               new LintFinding(
@@ -151,10 +153,24 @@ public final class OpenApiLinter {
     }
   }
 
-  private static void checkParameters(Map<String, Object> op, String loc, List<LintFinding> out) {
+  public static boolean safeParameterName(String name) {
+    return PARAMETER.matcher(name).matches();
+  }
+
+  private static void checkParameters(
+      Map<String, Object> root, Map<String, Object> op, String loc, List<LintFinding> out) {
     if (op.get("parameters") instanceof List<?> params) {
       for (Object p : params) {
-        Map<String, Object> param = OpenApiDocument.map(p);
+        Map<String, Object> param = OpenApiDocument.deref(root, OpenApiDocument.map(p));
+        if (!param.isEmpty()
+            && !safeParameterName(String.valueOf(param.getOrDefault("name", "")))) {
+          out.add(
+              new LintFinding(
+                  "axiz-safe-parameter-names",
+                  "error",
+                  loc + ".parameters",
+                  "Parameter names must match [A-Za-z][A-Za-z0-9_.-]{0,63}"));
+        }
         if ("query".equals(param.get("in"))
             && SENSITIVE_QUERY.matcher(String.valueOf(param.get("name"))).matches()) {
           out.add(

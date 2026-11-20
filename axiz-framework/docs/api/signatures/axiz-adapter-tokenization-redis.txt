@@ -2,12 +2,87 @@ public final class pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget impl
 public boolean distributed();
 public java.util.concurrent.CompletionStage<java.lang.Void> beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
 public java.util.concurrent.CompletionStage<pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit> acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
+public java.util.concurrent.CompletionStage<pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit> acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope, java.util.UUID);
 public pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.AsyncRateLimiter);
+public pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.AsyncRateLimiter, pe.axiz.adapter.tokenization.redis.TokenBudgetOwner);
 }
 
 public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudget implements pe.axiz.core.tokenization.vault.TokenBudget {
 public boolean distributed();
 public pe.axiz.adapter.tokenization.redis.RedisTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.RateLimiter);
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudget(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.core.tokenization.vault.TokenBudgetPolicy, pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm, pe.axiz.core.security.RateLimiter, pe.axiz.adapter.tokenization.redis.TokenBudgetOwner);
 public pe.axiz.core.tokenization.vault.TokenBudget$Permit acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
+public pe.axiz.core.tokenization.vault.TokenBudget$Permit acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope, java.util.UUID);
 public void beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery {
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Inventory inspect(pe.axiz.core.tokenization.vault.VaultScope, java.lang.String);
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage reconcile(pe.axiz.core.tokenization.vault.VaultScope, pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation, java.util.UUID);
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery(io.lettuce.core.api.StatefulRedisConnection<java.lang.String, java.lang.String>, java.lang.String, pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$TerminationVerifier, pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$RecoveryJournal);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Inventory extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String nextCursor();
+public java.time.Instant observedAt();
+public java.util.List<java.lang.String> invalidEntryDigests();
+public java.util.List<java.util.UUID> legacyReservations();
+public java.util.List<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation> reservations();
+public long total();
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Inventory(java.lang.String, long, java.time.Instant, java.util.List<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation>, java.util.List<java.util.UUID>, java.util.List<java.lang.String>);
+}
+
+public interface pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$RecoveryJournal {
+public abstract void record(pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage, pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation, java.util.UUID);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String encoded();
+public java.time.Duration age(java.time.Instant);
+public java.time.Instant acquiredAt();
+public java.util.UUID lease();
+public java.util.UUID operationId();
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation(pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$ScopeIdentity, java.util.UUID, pe.axiz.adapter.tokenization.redis.TokenBudgetOwner, java.util.UUID, pe.axiz.core.tokenization.TokenOperation, java.time.Instant, java.lang.String);
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$ScopeIdentity scope();
+public pe.axiz.adapter.tokenization.redis.TokenBudgetOwner owner();
+public pe.axiz.core.tokenization.TokenOperation operation();
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$ScopeIdentity extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String key();
+public java.lang.String namespace();
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$ScopeIdentity(java.lang.String, java.lang.String);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage extends java.lang.Enum<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage> {
+public static final pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage ALREADY_RELEASED;
+public static final pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage CONFLICT;
+public static final pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage RELEASED;
+public static final pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage REQUESTED;
+public static final pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage UNKNOWN;
+public static pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage valueOf(java.lang.String);
+public static pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Stage[] values();
+}
+
+public interface pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$TerminationVerifier {
+public abstract boolean terminated(pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation, java.util.UUID);
+}
+
+public final class pe.axiz.adapter.tokenization.redis.TokenBudgetOwner extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public java.lang.String instance();
+public java.util.UUID incarnation();
+public pe.axiz.adapter.tokenization.redis.TokenBudgetOwner(java.lang.String, java.util.UUID);
+public static pe.axiz.adapter.tokenization.redis.TokenBudgetOwner process();
 }

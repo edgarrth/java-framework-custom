@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -55,6 +56,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
   LocalStackTestConfiguration.class,
   PaymentNetworkGatewayApplicationTest.AuditQueue.class
 })
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PaymentNetworkGatewayApplicationTest {
   @TestConfiguration(proxyBeanMethods = false)
   static class AuditQueue {

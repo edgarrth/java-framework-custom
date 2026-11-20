@@ -14,11 +14,14 @@ public java.time.Duration retention();
 public pe.axiz.spring.inbox.AxizInboxProperties(java.lang.String, java.time.Duration, java.time.Duration, java.time.Duration, java.lang.String);
 }
 
-public class pe.axiz.spring.inbox.InboxPurger implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.inbox.InboxPurger implements org.springframework.context.SmartLifecycle,pe.axiz.spring.foundation.lifecycle.WorkerStatus {
 public boolean isRunning();
+public java.time.Duration shutdownGrace();
+public pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot workerSnapshot();
 public pe.axiz.spring.inbox.InboxPurger(pe.axiz.core.inbox.InboxStore, java.time.Duration, java.time.Clock);
 public void start();
 public void stop();
+public void stop(java.lang.Runnable);
 }
 
 public interface pe.axiz.spring.inbox.ReactiveInbox {

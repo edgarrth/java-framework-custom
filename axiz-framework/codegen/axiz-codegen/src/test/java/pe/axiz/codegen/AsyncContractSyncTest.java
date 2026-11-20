@@ -82,7 +82,8 @@ class AsyncContractSyncTest {
     String record = project.text("src/main/java/pe/axiz/orders/domain/event/OrderCreatedV1.java");
     assertTrue(record.contains("String id"), record);
     assertTrue(record.contains("List<Map<String, Object>> lines"), record);
-    assertTrue(record.contains("List.copyOf(lines)"));
+    assertTrue(record.contains("ValueSnapshots.map(element0)"));
+    assertTrue(record.contains("element0 == null ? null"));
     assertFalse(record.contains("org.jspecify"));
     assertFalse(record.contains("@Nullable"));
     assertTrue(

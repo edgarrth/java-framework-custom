@@ -14,6 +14,7 @@ import pe.axiz.core.security.RateLimitUnavailableException;
 import pe.axiz.core.security.RateLimiter;
 import pe.axiz.spring.foundation.ReactiveStages;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 
 /** Reactive rate limit; the limiter uses native asynchronous I/O. */
 public final class RateLimitWebFilter implements WebFilter {
@@ -21,9 +22,14 @@ public final class RateLimitWebFilter implements WebFilter {
   private final AsyncRateLimiter limiter;
   private final RateLimitRules rules;
   private final SecurityProblems problems;
+  private final Scheduler scheduler;
 
   public RateLimitWebFilter(
-      AsyncRateLimiter limiter, RateLimitRules rules, SecurityProblems problems) {
+      AsyncRateLimiter limiter,
+      RateLimitRules rules,
+      SecurityProblems problems,
+      Scheduler scheduler) {
+    this.scheduler = Objects.requireNonNull(scheduler);
     this.limiter = Objects.requireNonNull(limiter);
     this.rules = Objects.requireNonNull(rules);
     this.problems = Objects.requireNonNull(problems);
@@ -65,10 +71,12 @@ public final class RateLimitWebFilter implements WebFilter {
 
   private Mono<Void> unavailable(ServerWebExchange exchange) {
     return ReactiveProblemHandlers.write(
+        scheduler,
         exchange,
         HttpStatus.SERVICE_UNAVAILABLE,
-        problems.unavailable(
-            ReactiveProblemHandlers.locale(exchange), exchange.getRequest().getPath().value()));
+        () ->
+            problems.unavailable(
+                ReactiveProblemHandlers.locale(exchange), exchange.getRequest().getPath().value()));
   }
 
   private Mono<Void> decide(
@@ -79,10 +87,13 @@ public final class RateLimitWebFilter implements WebFilter {
           .getHeaders()
           .set("Retry-After", Long.toString(Math.max(1, d.retryAfter().toSeconds())));
       return ReactiveProblemHandlers.write(
+          scheduler,
           exchange,
           HttpStatus.TOO_MANY_REQUESTS,
-          problems.tooManyRequests(
-              ReactiveProblemHandlers.locale(exchange), exchange.getRequest().getPath().value()));
+          () ->
+              problems.tooManyRequests(
+                  ReactiveProblemHandlers.locale(exchange),
+                  exchange.getRequest().getPath().value()));
     }
     exchange.getResponse().getHeaders().set("RateLimit-Remaining", Long.toString(d.remaining()));
     return chain.filter(exchange);

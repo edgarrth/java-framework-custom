@@ -61,7 +61,7 @@ def check_inventory(root):
     return errors
 
 
-def check_report(path):
+def check_report(path, root=None):
     if not os.path.isfile(path):
         print(f'::error::{path} missing')
         return 1
@@ -74,11 +74,37 @@ def check_report(path):
     if not packages or covered == 0:
         print(f'::error::{path}: the aggregated report has no classes or no line counters')
         return 1
-    print(f'{len(packages)} packages, {covered} lines in the aggregated report')
-    return 0
+    groups = tree.findall('group')
+    errors = 0
+    if not groups:
+        print(f'::error::{path}: no module groups; aggregate percentages cannot replace module gates')
+        return 1
+    names = [group.get('name') for group in groups]
+    if len(names) != len(set(names)):
+        print('::error::Duplicate module groups in coverage report')
+        errors += 1
+    if root is not None:
+        for missing in sorted(modules_with_code(root) - set(names)):
+            print(f'::error::Missing coverage module {missing}')
+            errors += 1
+    for group in groups:
+        counters = {counter.get('type'): counter for counter in group.findall('counter')}
+        for kind, minimum in (('LINE', 80), ('BRANCH', 70)):
+            counter = counters.get(kind)
+            if counter is None:
+                continue  # Ports with no executable instructions/branches have no denominator.
+            hit, missed = int(counter.get('covered')), int(counter.get('missed'))
+            if hit < 0 or missed < 0:
+                raise ValueError('Negative coverage counter')
+            total = hit + missed
+            if total and hit * 100 < minimum * total:
+                print(f'::error::{group.get("name")}: {kind} {hit}/{total} below {minimum}%')
+                errors += 1
+    print(f'{len(groups)} modules, {len(packages)} packages, {covered} lines; {errors} coverage violations')
+    return errors
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3 and sys.argv[1] == '--report':
-        sys.exit(1 if check_report(sys.argv[2]) else 0)
+    if len(sys.argv) in (3, 4) and sys.argv[1] == '--report':
+        sys.exit(1 if check_report(sys.argv[2], sys.argv[3] if len(sys.argv) == 4 else None) else 0)
     sys.exit(1 if check_inventory(sys.argv[1] if len(sys.argv) > 1 else '.') else 0)

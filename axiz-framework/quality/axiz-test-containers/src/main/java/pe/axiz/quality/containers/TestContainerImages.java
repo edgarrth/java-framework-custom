@@ -7,14 +7,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Future;
+import java.util.regex.Pattern;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.localstack.LocalStackContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.TestcontainersConfiguration;
 
 /**
  * Builds patched test images from the same recipes as generated local environments. Construction is
@@ -29,22 +35,32 @@ public final class TestContainerImages {
     var container =
         new PostgreSQLContainer(
             DockerImageName.parse(base(recipe)).asCompatibleSubstituteFor("postgres"));
-    container.setImage(image("postgres", recipe));
+    container.setImage(image("postgres"));
     return container;
   }
 
   public static GenericContainer<?> valkey() {
-    return new GenericContainer<>(image("valkey", recipe("valkey"))).withExposedPorts(6379);
+    return new GenericContainer<>(image("valkey")).withExposedPorts(6379);
+  }
+
+  /** AWS emulator built from the same locked distribution used in local demos. */
+  public static LocalStackContainer localstack() {
+    var container =
+        new LocalStackContainer(
+            DockerImageName.parse(base(recipe("localstack")))
+                .asCompatibleSubstituteFor("localstack/localstack"));
+    container.setImage(image("localstack"));
+    return container;
   }
 
   public static GenericContainer<?> wiremock() {
-    return new GenericContainer<>(image("wiremock", recipe("wiremock")))
+    return new GenericContainer<>(image("wiremock"))
         .withExposedPorts(8080)
         .waitingFor(Wait.forHttp("/__admin/mappings"));
   }
 
   public static GenericContainer<?> keycloak() {
-    return new GenericContainer<>(image("keycloak", recipe("keycloak")))
+    return new GenericContainer<>(image("keycloak"))
         .withExposedPorts(8080)
         .withCommand("start-dev")
         .waitingFor(Wait.forHttp("/realms/master/.well-known/openid-configuration"))
@@ -61,19 +77,62 @@ public final class TestContainerImages {
 
   /** Lazy image for custom KafkaContainer subclasses, including TLS listener fixtures. */
   public static Future<String> kafkaImage() {
-    return image("kafka", recipe("kafka"));
+    return image("kafka");
   }
 
-  private static ImageFromDockerfile image(String name, String recipe) {
-    return new ImageFromDockerfile("axiz-test/" + name + ":" + fingerprint(recipe), false)
-        .withFileFromString("Dockerfile", recipe);
+  static ImageFromDockerfile image(String name) {
+    requirePatchedReaper(TestcontainersConfiguration.getInstance().getImageSubstitutorClassName());
+    var files = files(name);
+    var image = new ImageFromDockerfile(imageName(name, files), false);
+    files.forEach(image::withFileFromString);
+    return image;
+  }
+
+  static void requirePatchedReaper(String configured) {
+    if (!PatchedRyukImageSubstitutor.class.getName().equals(configured))
+      throw new IllegalStateException(
+          "Axiz containers require image.substitutor="
+              + PatchedRyukImageSubstitutor.class.getName());
+  }
+
+  static Map<String, String> files(String name) {
+    var files = new LinkedHashMap<String, String>();
+    for (String file : manifest(name)) {
+      if (!file.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+        throw new IllegalStateException("Invalid container recipe resource");
+      }
+      files.put(file, resource(name + "/" + file));
+    }
+    return files;
+  }
+
+  private static List<String> manifest(String name) {
+    try (var input =
+        TestContainerImages.class.getResourceAsStream("images/" + name + "/files.list")) {
+      if (input == null) return List.of("Dockerfile");
+      return new String(input.readAllBytes(), StandardCharsets.UTF_8)
+          .lines()
+          .filter(line -> !line.isBlank())
+          .toList();
+    } catch (IOException failure) {
+      throw new UncheckedIOException("Cannot read container recipe manifest", failure);
+    }
+  }
+
+  static String imageName(String name, Map<String, String> files) {
+    if (files.size() == 1 && files.containsKey("Dockerfile")) {
+      return "axiz-test/" + name + ":" + fingerprint(files.get("Dockerfile"));
+    }
+    var content = new StringBuilder();
+    files.forEach((path, value) -> content.append(path).append('\0').append(value).append('\0'));
+    return "axiz-test/" + name + ":" + fingerprint(content.toString());
   }
 
   static String base(String recipe) {
     return recipe
         .lines()
         .filter(line -> line.startsWith("FROM "))
-        .map(line -> line.substring(5).strip())
+        .flatMap(line -> Pattern.compile("\\s+").splitAsStream(line.substring(5).strip()).limit(1))
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("Container recipe requires FROM"));
   }
@@ -89,9 +148,12 @@ public final class TestContainerImages {
   }
 
   static String recipe(String name) {
+    return resource(name + "/Dockerfile");
+  }
+
+  private static String resource(String path) {
     // The names come exclusively from these factories, never from user-controlled paths.
-    try (var input =
-        TestContainerImages.class.getResourceAsStream("images/" + name + "/Dockerfile")) {
+    try (var input = TestContainerImages.class.getResourceAsStream("images/" + path)) {
       return new String(
           Objects.requireNonNull(input, "Missing container recipe").readAllBytes(),
           StandardCharsets.UTF_8);

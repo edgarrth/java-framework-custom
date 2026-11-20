@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-inbox</artifactId>
   <name>axiz :: core :: inbox</name>
-  <description>Idempotent consumer: processed-message registry with JDBC store</description>
+  <description>Idempotent consumer contracts and provider-independent delivery coordination</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>

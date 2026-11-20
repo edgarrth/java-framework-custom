@@ -13,6 +13,10 @@ public static void collect(pe.axiz.core.domain.AggregateRoot<?>);
 public static void raise(java.util.Collection<? extends pe.axiz.core.domain.DomainEvent>);
 }
 
+public final class pe.axiz.structure.hexagonal.PostCommitPublicationException extends pe.axiz.core.errors.BusinessException implements pe.axiz.core.commons.tx.CommittedTransactionOutcome {
+public pe.axiz.structure.hexagonal.PostCommitPublicationException();
+}
+
 public interface pe.axiz.structure.hexagonal.ReactiveDomainEventSink {
 public abstract org.reactivestreams.Publisher<java.lang.Void> publish(java.util.Collection<? extends pe.axiz.core.domain.DomainEvent>);
 }

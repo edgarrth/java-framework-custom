@@ -50,10 +50,11 @@ public final class SoapEnvelope {
    * WS-Security credentials. The password is copied on the way in and out, so the caller can clear
    * its own array; it never appears in {@link #toString()}.
    */
-  public static final class Credentials {
+  public static final class Credentials implements AutoCloseable {
     private final String username;
     private final char[] password;
     private final WsSecurity.Mode mode;
+    private boolean closed;
 
     /**
      * Creates the credentials.
@@ -73,8 +74,19 @@ public final class SoapEnvelope {
     }
 
     /** A copy of the password; clear it after use. */
-    public char[] password() {
+    public synchronized char[] password() {
+      if (closed) throw new IllegalStateException("SOAP credentials are closed");
       return password.clone();
+    }
+
+    @Override
+    public synchronized void close() {
+      Arrays.fill(password, '\0');
+      closed = true;
+    }
+
+    private synchronized char @Nullable [] snapshot() {
+      return closed ? null : password.clone();
     }
 
     public WsSecurity.Mode mode() {
@@ -83,10 +95,17 @@ public final class SoapEnvelope {
 
     @Override
     public boolean equals(@Nullable Object o) {
-      return o instanceof Credentials c
-          && username.equals(c.username)
-          && mode == c.mode
-          && Arrays.equals(password, c.password);
+      if (this == o) return true;
+      if (!(o instanceof Credentials c) || !username.equals(c.username) || mode != c.mode)
+        return false;
+      char[] left = snapshot();
+      char[] right = c.snapshot();
+      try {
+        return left != null && right != null && Arrays.equals(left, right);
+      } finally {
+        if (left != null) Arrays.fill(left, '\0');
+        if (right != null) Arrays.fill(right, '\0');
+      }
     }
 
     @Override

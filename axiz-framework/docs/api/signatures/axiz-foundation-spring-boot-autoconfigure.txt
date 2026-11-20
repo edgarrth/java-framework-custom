@@ -105,8 +105,15 @@ public abstract java.lang.String message();
 public abstract java.lang.String type();
 }
 
+public final class pe.axiz.spring.foundation.WorkerHealthEnvironmentPostProcessor implements org.springframework.boot.EnvironmentPostProcessor,org.springframework.core.Ordered {
+public int getOrder();
+public pe.axiz.spring.foundation.WorkerHealthEnvironmentPostProcessor();
+public void postProcessEnvironment(org.springframework.core.env.ConfigurableEnvironment, org.springframework.boot.SpringApplication);
+}
+
 public final class pe.axiz.spring.foundation.jdbc.SchemaInitializer implements org.springframework.beans.factory.InitializingBean {
 public pe.axiz.spring.foundation.jdbc.SchemaInitializer(javax.sql.DataSource, java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
+public pe.axiz.spring.foundation.jdbc.SchemaInitializer(javax.sql.DataSource, java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode, java.util.Map<java.lang.String, java.lang.String>);
 public void afterPropertiesSet();
 }
 
@@ -136,4 +143,41 @@ public pe.axiz.spring.foundation.jdbc.SpringTransactionRunner(org.springframewor
 public final class pe.axiz.spring.foundation.jdbc.SqlDialects {
 public static boolean isH2(javax.sql.DataSource);
 public static java.lang.String product(javax.sql.DataSource);
+}
+
+public final class pe.axiz.spring.foundation.lifecycle.WorkerLifecycle implements org.springframework.context.SmartLifecycle,pe.axiz.spring.foundation.lifecycle.WorkerStatus {
+public boolean accepting();
+public boolean isRunning();
+public java.time.Duration shutdownGrace();
+public pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State state();
+public pe.axiz.spring.foundation.lifecycle.WorkerLifecycle(java.lang.String, java.time.Duration, java.util.function.Supplier<java.util.List<java.lang.Runnable>>, java.lang.Runnable);
+public synchronized pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot workerSnapshot();
+public synchronized void start();
+public void stop();
+public void stop(java.lang.Runnable);
+}
+
+public final class pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State extends java.lang.Enum<pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State> {
+public static final pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State FAILED;
+public static final pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State RUNNING;
+public static final pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State STOPPED;
+public static final pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State STOPPING;
+public static pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State valueOf(java.lang.String);
+public static pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State[] values();
+}
+
+public interface pe.axiz.spring.foundation.lifecycle.WorkerStatus {
+public abstract java.time.Duration shutdownGrace();
+public abstract pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot workerSnapshot();
+}
+
+public final class pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot extends java.lang.Record {
+public final boolean equals(java.lang.Object);
+public final int hashCode();
+public final java.lang.String toString();
+public int alive();
+public int expected();
+public java.lang.String name();
+public pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State state();
+public pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot(java.lang.String, pe.axiz.spring.foundation.lifecycle.WorkerLifecycle$State, int, int);
 }

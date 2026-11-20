@@ -20,11 +20,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `ReactiveInbox` | Deferred application facade over native DynamoDB or R2DBC; preserves cancellation and Reactor transaction context. |
 | `AxizInboxAutoConfiguration` | Inbox: the messaging dispatcher skips event ids a consumer already processed. |
-| `AxizInboxDynamoDbAutoConfiguration` | DynamoDB inbox (`axiz.inbox.store=dynamodb`); expired items are removed by the table TTL. |
 | `AxizInboxProperties` | Idempotent consumption (`axiz.inbox.*`): processed message ids per consumer. |
-| `AxizInboxR2dbcAutoConfiguration` | Aurora inbox over R2DBC (`axiz.inbox.store=r2dbc`) for reactive services. |
-| `InboxPurger` | Deletes expired inbox rows periodically on a virtual thread (JDBC and R2DBC stores). |
+| `InboxPurger` | Deletes expired completed inbox rows periodically on a virtual thread (JDBC and R2DBC stores). |
 
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl spring/axiz-inbox-spring-boot-autoconfigure verify`.
+
+Provider wiring lives in its own JDBC, R2DBC or DynamoDB autoconfigure module. This base module
+requires a coherent lease/retention window (`retention > lease > 0`) and a positive purge interval.
+See the [inbox contract](../core/axiz-core-inbox.md) for takeover and TTL migration.

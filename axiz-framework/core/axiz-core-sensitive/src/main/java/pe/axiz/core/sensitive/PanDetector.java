@@ -2,6 +2,8 @@ package pe.axiz.core.sensitive;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.CharBuffer;
+import java.util.Arrays;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.core.identifiers.CheckDigits;
 
@@ -117,6 +119,29 @@ public final class PanDetector {
   /** Whether the bounded digit scanner finds any PAN-like candidate. */
   public static boolean containsPan(String text) {
     return !text.equals(redact(text));
+  }
+
+  /** Detects the same bounded digit groups without allocating immutable plaintext copies. */
+  public static boolean containsPan(char[] text) {
+    char[] digits = new char[MAX_DIGITS];
+    try {
+      for (int start = 0; start < text.length; start++) {
+        if (!digit(text[start]) || (start > 0 && digit(text[start - 1]))) continue;
+        int count = 0;
+        for (int j = start; j < text.length && count < MAX_DIGITS; j++) {
+          char c = text[j];
+          if (digit(c)) {
+            digits[count++] = c;
+            if ((j + 1 == text.length || !digit(text[j + 1]))
+                && count >= MIN_DIGITS
+                && CheckDigits.luhn(CharBuffer.wrap(digits, 0, count))) return true;
+          } else if (!((c == ' ' || c == '-') && j + 1 < text.length && digit(text[j + 1]))) break;
+        }
+      }
+      return false;
+    } finally {
+      Arrays.fill(digits, '\0');
+    }
   }
 
   private static boolean digit(char c) {

@@ -17,4 +17,5 @@ public record AxizSagaProperties(
     @DefaultValue("3") int stepAttempts,
     @DefaultValue("5") int compensationAttempts,
     @DefaultValue("200ms") Duration initialDelay,
-    @DefaultValue("5s") Duration maxDelay) {}
+    @DefaultValue("5s") Duration maxDelay,
+    @DefaultValue("30s") Duration executionLease) {}

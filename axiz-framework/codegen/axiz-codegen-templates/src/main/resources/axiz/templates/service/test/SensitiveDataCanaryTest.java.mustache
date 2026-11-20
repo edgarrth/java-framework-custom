@@ -56,7 +56,7 @@ import pe.axiz.core.sensitive.SensitivityLevel;
 
 /** Synthetic values only. Uses the running service's masking, logging and response configuration. */
 @ExtendWith(OutputCaptureExtension.class)
-class SensitiveDataCanaryTest extends {{project.className}}ApplicationTest {
+class SensitiveDataCanaryTest extends {{project.className}}ApplicationTestSupport {
   private static final String PAN = "4111111111111111";
   private static final String CVV = "986";
   private static final String PASSWORD = "synthetic-canary-" + UUID.randomUUID();

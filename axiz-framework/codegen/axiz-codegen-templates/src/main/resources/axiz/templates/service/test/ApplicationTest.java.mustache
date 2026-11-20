@@ -1,101 +1,80 @@
 package {{project.basePackage}};
 
 import static org.assertj.core.api.Assertions.assertThat;
-{{#auditResources.required}}
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.annotation.DirtiesContext;
-{{/auditResources.required}}
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 {{^caps.web}}
 {{^fw.batch}}
 import org.springframework.context.ConfigurableApplicationContext;
 {{/fw.batch}}
 {{/caps.web}}
 {{#caps.web}}
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import org.springframework.boot.test.web.server.LocalServerPort;
 {{#stack.servlet}}
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-{{/stack.servlet}}
-{{/caps.web}}
-
-import org.junit.jupiter.api.Test;
-{{#stack.reactive}}
-import org.junit.jupiter.api.extension.ExtendWith;
-{{/stack.reactive}}
-{{#fw.batch}}
-import org.springframework.batch.core.job.Job;
-{{/fw.batch}}
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-{{#caps.web}}
-{{#stack.servlet}}
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-{{/stack.servlet}}
-{{#stack.reactive}}
-import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
-{{/stack.reactive}}
-{{/caps.web}}
-{{#infra.any}}
-import org.springframework.context.annotation.Import;
-{{/infra.any}}
-{{#caps.web}}
-{{#stack.servlet}}
 import org.springframework.test.web.servlet.MockMvc;
 {{/stack.servlet}}
 {{#stack.reactive}}
 import org.springframework.test.web.reactive.server.WebTestClient;
 {{/stack.reactive}}
-{{/caps.web}}
-{{#stack.reactive}}
-import pe.axiz.spring.test.BlockHoundExtension;
-{{/stack.reactive}}
-{{#infra.kafka}}
-import pe.axiz.spring.test.KafkaTestConfiguration;
-{{/infra.kafka}}
-{{#infra.sharedLocalstack}}
-import pe.axiz.spring.test.LocalStackTestConfiguration;
-{{/infra.sharedLocalstack}}
-{{#infra.postgres}}
-import pe.axiz.spring.test.PostgresTestConfiguration;
-{{/infra.postgres}}
-{{#infra.redis}}
-import pe.axiz.spring.test.RedisTestConfiguration;
-{{/infra.redis}}
-
-/**
- * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
- * configuration, migrations and health. Needs Docker.
- */
-@SpringBootTest(properties = {
-  "axiz.security.issuers[0].issuer=https://issuer.test",
-  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
-  "axiz.security.issuers[0].audiences[0]=test",
-    "axiz.config.environment=test",
-{{#infra.kafka}}
-    "axiz.messaging.kafka.authentication=configured",
-{{/infra.kafka}}
-    "axiz.transport.allow-plain-http=true",
-    "axiz.transport.allow-insecure-data-stores=true"{{#fw.batch}},
-    "spring.batch.job.enabled=false"{{/fw.batch}}
-})
-{{#auditResources.required}}
-@ContextConfiguration(initializers = AuditTestConfiguration.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-{{/auditResources.required}}
-{{#caps.web}}
+{{#hasOperations}}
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+{{#caps.security}}
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import org.springframework.security.oauth2.jwt.Jwt;
+import pe.axiz.spring.security.AxizAuthentication;
+import pe.axiz.spring.security.AxizJwtConverter;
 {{#stack.servlet}}
-@AutoConfigureMockMvc
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 {{/stack.servlet}}
 {{#stack.reactive}}
-@AutoConfigureWebTestClient
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.mockAuthentication;
+import static org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity;
+import org.springframework.context.ApplicationContext;
 {{/stack.reactive}}
+{{/caps.security}}
+{{/hasOperations}}
 {{/caps.web}}
-{{#infra.any}}
-@Import({{infra.importList}})
-{{/infra.any}}
-{{#stack.reactive}}
-@ExtendWith(BlockHoundExtension.class)
-{{/stack.reactive}}
-class {{project.className}}ApplicationTest {
+{{#fw.batch}}
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.parameters.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.testcontainers.localstack.LocalStackContainer;
+import pe.axiz.core.storage.ObjectStorage;
+import pe.axiz.core.storage.ObjectMetadata;
+{{/fw.batch}}
+
+/** Startup and unfinished-operation contracts, independent of the sensitive-data canary. */
+class {{project.className}}ApplicationTest extends {{project.className}}ApplicationTestSupport {
+
+{{#caps.web}}
+{{#hasOperations}}
+{{#caps.security}}
+  @Autowired AxizJwtConverter jwtConverter;
+
+  private AxizAuthentication caller(String... authorities) {
+    String scopes = Arrays.stream(authorities).map(authority -> authority.substring("SCOPE_".length()))
+        .collect(Collectors.joining(" "));
+    return jwtConverter.convert(Jwt.withTokenValue("synthetic-test-token").header("alg", "RS256")
+        .subject("test-user").claim("client_id", "test-client").issuer("https://issuer.test")
+        .claim("scope", scopes).build());
+  }
+{{/caps.security}}
+{{/hasOperations}}
+{{/caps.web}}
 
 {{^caps.web}}
 {{^fw.batch}}
@@ -107,23 +86,87 @@ class {{project.className}}ApplicationTest {
 {{/caps.web}}
 
 {{#caps.web}}
-{{#stack.servlet}}
+  @LocalServerPort int port;
+
   @Test
-  void startsAndReportsHealth(@Autowired MockMvc mvc) throws Exception {
-    mvc.perform(get("/actuator/health")).andExpect(status().isOk());
+  void startsAndReportsHealthOverRealHttp() throws Exception {
+    try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
+      var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/actuator/health"))
+          .timeout(Duration.ofSeconds(5)).GET().build();
+      assertThat(client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(200);
+    }
   }
+{{/caps.web}}
+{{#caps.web}}
+{{#operations}}
+{{#boundaryTestable}}
+{{#requiresScopes}}
+  @Test
+  void {{methodName}}RejectsAnonymousOverRealHttp() throws Exception {
+    try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
+      var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "{{{testUri}}}"))
+          .timeout(Duration.ofSeconds(5)).method("{{httpMethod}}", HttpRequest.BodyPublishers.noBody()).build();
+      assertThat(client.send(request, HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(401);
+    }
+  }
+{{/requiresScopes}}
+
+  /** Replace this 501 assertion with the business contract when implementing this operation. */
+  @Test
+  void {{methodName}}ExplicitlyReportsItsUnimplementedContract(
+      @Autowired {{#stack.servlet}}MockMvc{{/stack.servlet}}{{#stack.reactive}}{{#caps.security}}ApplicationContext{{/caps.security}}{{^caps.security}}WebTestClient{{/caps.security}}{{/stack.reactive}} client) throws Exception {
+{{#stack.servlet}}
+    client.perform(request(HttpMethod.{{httpMethod}}, "{{{testUri}}}")
+{{#caps.security}}
+        .with(authentication(caller({{{requiredAuthorities}}})))
+{{/caps.security}}
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).content("{{{example}}}")
+{{/hasRequest}}
+        ).andExpect(status().isNotImplemented());
 {{/stack.servlet}}
 {{#stack.reactive}}
-  @Test
-  void startsAndReportsHealth(@Autowired WebTestClient client) {
-    client.get().uri("/actuator/health").exchange().expectStatus().isOk();
-  }
+    {{#caps.security}}WebTestClient.bindToApplicationContext(client)
+        .apply(springSecurity()).configureClient().build(){{/caps.security}}{{^caps.security}}client{{/caps.security}}
+{{#caps.security}}
+        .mutateWith(mockAuthentication(caller({{{requiredAuthorities}}})))
+{{/caps.security}}
+        .method(HttpMethod.{{httpMethod}}).uri("{{{testUri}}}")
+{{#hasRequest}}
+        .contentType(MediaType.APPLICATION_JSON).bodyValue("{{{example}}}")
+{{/hasRequest}}
+        .exchange().expectStatus().isEqualTo(501);
 {{/stack.reactive}}
+  }
+{{/boundaryTestable}}
+{{/operations}}
 {{/caps.web}}
 {{#fw.batch}}
   @Test
-  void definesTheJob(@Autowired Job {{project.camelName}}Job) {
+  void importsTheFileAndIgnoresDuplicateReferences(
+      @Autowired Job {{project.camelName}}Job, @Autowired JobOperator jobs,
+      @Autowired ObjectStorage storage, @Autowired JdbcTemplate jdbc,
+      @Autowired LocalStackContainer localstack,
+      @org.springframework.beans.factory.annotation.Value("${axiz.storage.bucket}") String bucket) throws Exception {
     assertThat({{project.camelName}}Job.getName()).isEqualTo("{{project.name}}");
+    assertThat(localstack.execInContainer("awslocal", "s3", "mb", "s3://" + bucket)
+        .getExitCode()).isZero();
+    byte[] csv = "reference;value\n first ; 10 \n;ignored\nfirst;duplicate\nsecond;20\n"
+        .getBytes(StandardCharsets.UTF_8);
+    storage.put("in/input.csv", new ByteArrayInputStream(csv), ObjectMetadata.of("text/csv", csv.length));
+    for (int attempt = 0; attempt < 2; attempt++) {
+      var execution = jobs.start({{project.camelName}}Job,
+          new JobParametersBuilder().addString("run", UUID.randomUUID().toString()).toJobParameters());
+      assertThat(execution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
+      assertThat(execution.getStepExecutions()).singleElement().satisfies(step -> {
+        assertThat(step.getReadCount()).isEqualTo(4);
+        assertThat(step.getFilterCount()).isEqualTo(1);
+      });
+      assertThat(jdbc.queryForList("SELECT reference FROM input_line ORDER BY reference", String.class))
+          .containsExactly("first", "second");
+      assertThat(jdbc.queryForObject("SELECT line_value FROM input_line WHERE reference = 'first'", String.class))
+          .isEqualTo("10");
+    }
   }
 {{/fw.batch}}
 }

@@ -32,7 +32,6 @@ capabilities:
   - dynamodb
   - secrets
   - dynamodb-cursor
-  - cache
   - idempotency
   - idempotency-dynamodb
 operations:

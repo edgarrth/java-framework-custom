@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
  * Auditor of {@code createdBy}/{@code updatedBy} for reactive code: the end user, or the calling
  * application for machine-to-machine requests, read from the request metadata that the web and
  * security starters put in the Reactor context (or the thread-local of a consumer thread); {@code
- * system} otherwise.
+ * unattributed} otherwise.
  */
 public class RequestReactiveAuditor implements ReactiveAuditorAware<String> {
 
@@ -25,11 +25,13 @@ public class RequestReactiveAuditor implements ReactiveAuditorAware<String> {
 
   static String auditor(@Nullable RequestMetadata m) {
     if (m == null) {
-      return "system";
+      return "unattributed";
     }
-    if (m.subject() != null) {
-      return m.subject();
+    String subject = m.subject();
+    if (subject != null && !subject.isBlank()) {
+      return subject;
     }
-    return m.clientId() != null ? m.clientId() : "system";
+    String clientId = m.clientId();
+    return clientId != null && !clientId.isBlank() ? clientId : "unattributed";
   }
 }

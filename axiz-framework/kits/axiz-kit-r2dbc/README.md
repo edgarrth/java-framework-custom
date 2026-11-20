@@ -39,3 +39,26 @@ outbox continue to use the caller's Reactor transaction context through `Reactiv
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl kits/axiz-kit-r2dbc verify`.
 
 AWS IAM signing is provided by `axiz-adapter-database-auth-aws`. This kit has no AWS SDK dependency.
+
+`R2dbcSql.inTransaction` joins an existing connection for the same factory;
+`inIndependentTransaction` explicitly suspends that binding for a separate committed reservation.
+Sequence allocation uses the latter. Size the pool above the maximum simultaneous outer business
+transactions that may reserve a block, or configure a dedicated sequence factory; a saturated
+single-connection pool cannot service an independent reservation. Keep pool acquisition timeouts
+finite. Cleanup failures do not rewrite confirmed work; a lost commit acknowledgement raises
+`TransactionOutcomeUnknownException` and forbids automatic replay. Explicit server rollback
+(serialization/deadlock or integrity rejection) preserves the driver's exception; SQLState 40003
+still means unknown completion.
+
+An uncertain transaction closes the physical connection before releasing a pool wrapper. If the
+driver reports a close error but local validation confirms the connection is closed, the wrapper
+is released so the pool can evict it. If the connection remains live or its state cannot be
+confirmed, it is not returned for reuse: the R2DBC SPI has no generic pool-invalidation operation.
+Monitor pool acquisition failures and configure finite acquisition timeouts; persistent driver
+failures may require recreating the affected pool. This deliberately preserves transaction
+isolation instead of returning a connection whose transaction outcome is unknown.
+
+A failed physical close with a live or unverified connection emits the constant error code
+`AXIZ_R2DBC_CONNECTION_QUARANTINED`. Alert on this signal and monitor pool acquisition capacity.
+It deliberately logs no driver exception message or connection identifier. A closed physical
+connection is evicted and its pool slot can be acquired again, including after a failed commit.

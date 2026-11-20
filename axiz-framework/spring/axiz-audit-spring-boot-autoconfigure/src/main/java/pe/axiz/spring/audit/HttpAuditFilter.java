@@ -67,7 +67,8 @@ public class HttpAuditFilter extends OncePerRequestFilter implements Ordered {
             record.success();
           }
         } catch (RuntimeException e) {
-          logger.warn("Audit event could not be recorded", e);
+          logger.warn(
+              "Audit event could not be recorded; failureType=" + e.getClass().getSimpleName());
         }
       }
     }

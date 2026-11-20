@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.spring.test.RedisTestConfiguration;
@@ -26,6 +27,7 @@ import pe.axiz.spring.test.RedisTestConfiguration;
 @AutoConfigureWebTestClient
 @Import({RedisTestConfiguration.class})
 @ExtendWith(BlockHoundExtension.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PaymentsUxApplicationTest {
   @AfterAll
   static void noBlockingCallWasHiddenByRetryOrErrorHandling() {

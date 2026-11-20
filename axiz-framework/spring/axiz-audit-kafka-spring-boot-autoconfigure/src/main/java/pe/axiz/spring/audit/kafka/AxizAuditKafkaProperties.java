@@ -8,8 +8,14 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 /** KAFKA audit destination and its transport policy. */
 @ConfigurationProperties("axiz.audit.kafka")
 public record AxizAuditKafkaProperties(
-    @Nullable String topic, @DefaultValue("5s") Duration timeout) {
+    @Nullable String topic,
+    @DefaultValue("5s") Duration timeout,
+    @DefaultValue("2") int sendWorkers,
+    @DefaultValue("256") int sendQueueCapacity) {
   public AxizAuditKafkaProperties {
+    if (sendWorkers < 1 || sendWorkers > 64 || sendQueueCapacity < 0 || sendQueueCapacity > 65_536)
+      throw new IllegalArgumentException(
+          "Audit Kafka workers must be 1..64 and queue capacity 0..65536");
     if (topic != null && (topic.isBlank() || topic.contains("${")))
       throw new IllegalArgumentException(
           "axiz.audit.kafka.topic must not be blank or unresolved when configured");

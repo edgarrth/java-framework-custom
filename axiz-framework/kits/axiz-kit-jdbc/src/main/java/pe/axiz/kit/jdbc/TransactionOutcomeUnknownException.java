@@ -1,12 +1,14 @@
 package pe.axiz.kit.jdbc;
 
 import java.sql.SQLException;
+import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 
 /**
  * The database did not confirm commit. The caller must reconcile the outcome before retrying: the
  * transaction may already have committed.
  */
-public final class TransactionOutcomeUnknownException extends SQLException {
+public final class TransactionOutcomeUnknownException extends SQLException
+    implements UnknownTransactionOutcome {
   private static final long serialVersionUID = 1L;
 
   public TransactionOutcomeUnknownException(Throwable cause) {

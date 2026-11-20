@@ -18,6 +18,7 @@ spec:
       initContainers:
       - name: prepare-keycloak-runtime
         image: axiz-local/keycloak:26.8.2-r1
+        imagePullPolicy: Never
         command: ["/bin/sh", "-ec", "cp -R /opt/keycloak/lib/quarkus/. /work/quarkus/"]
         securityContext:
           allowPrivilegeEscalation: false
@@ -33,6 +34,7 @@ spec:
       containers:
       - name: keycloak
         image: axiz-local/keycloak:26.8.2-r1
+        imagePullPolicy: Never
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true

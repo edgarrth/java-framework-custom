@@ -28,6 +28,7 @@ public pe.axiz.kit.r2dbc.R2dbcRow(io.r2dbc.spi.Row);
 
 public final class pe.axiz.kit.r2dbc.R2dbcSql implements pe.axiz.kit.r2dbc.ReactiveSql {
 public <T> reactor.core.publisher.Flux<T> query(java.lang.String, pe.axiz.kit.r2dbc.SqlParams, pe.axiz.kit.r2dbc.RowMapper<T>);
+public <T> reactor.core.publisher.Mono<T> inIndependentTransaction(java.util.function.Function<pe.axiz.kit.r2dbc.ReactiveSql, reactor.core.publisher.Mono<T>>);
 public <T> reactor.core.publisher.Mono<T> inTransaction(java.util.function.Function<pe.axiz.kit.r2dbc.ReactiveSql, reactor.core.publisher.Mono<T>>);
 public <T> reactor.core.publisher.Mono<T> withCallingTransaction(reactor.core.publisher.Mono<T>);
 public java.lang.Object transactionResource();
@@ -91,4 +92,8 @@ public pe.axiz.kit.r2dbc.SqlParams$Param(java.lang.String, java.lang.Object, jav
 public interface pe.axiz.kit.r2dbc.SqlRow {
 public abstract <T> T get(java.lang.String, java.lang.Class<T>);
 public default <T> T require(java.lang.String, java.lang.Class<T>);
+}
+
+public final class pe.axiz.kit.r2dbc.TransactionOutcomeUnknownException extends io.r2dbc.spi.R2dbcNonTransientResourceException implements pe.axiz.core.commons.tx.UnknownTransactionOutcome {
+public pe.axiz.kit.r2dbc.TransactionOutcomeUnknownException(java.lang.Throwable);
 }

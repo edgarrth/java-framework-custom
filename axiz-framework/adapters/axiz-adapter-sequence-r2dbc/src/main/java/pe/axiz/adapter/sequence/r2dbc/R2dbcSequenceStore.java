@@ -22,7 +22,7 @@ public final class R2dbcSequenceStore implements ReactiveSequenceStore {
         () -> {
           if (increment <= 0)
             return Mono.error(new IllegalArgumentException("increment must be positive"));
-          return sql.inTransaction(
+          return sql.inIndependentTransaction(
               reserved ->
                   reserved
                       .query(

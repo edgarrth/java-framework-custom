@@ -1,13 +1,28 @@
 import copy
 import json
 import unittest
+from unittest.mock import patch
+from pathlib import Path
+import tempfile
+from defusedxml.common import EntitiesForbidden
 
-from update_wiremock_image import LOCK, render
+from update_wiremock_image import LOCK, render, settings
 
 
 class WireMockImageTest(unittest.TestCase):
     def setUp(self):
         self.lock = json.loads(LOCK.read_text())
+
+    def test_platform_xml_entities_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            pom = root / 'axiz-framework/platform/axiz-dependencies/pom.xml'
+            pom.parent.mkdir(parents=True)
+            pom.write_text('<!DOCTYPE project [<!ENTITY x "synthetic">]>'
+                           '<project xmlns="http://maven.apache.org/POM/4.0.0">'
+                           '<properties><wiremock.version>&x;</wiremock.version></properties></project>')
+            with patch('update_wiremock_image.ROOT', root), self.assertRaises(EntitiesForbidden):
+                settings()
 
     def test_every_runtime_jar_is_downloaded_and_verified_individually(self):
         recipe = render(self.lock)

@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import pe.axiz.core.tokenization.SensitiveValue;
 
@@ -45,6 +46,15 @@ final class VaultText {
     } finally {
       Arrays.fill(buffer, '\0');
       if (result != null) Arrays.fill(result, '\0');
+    }
+  }
+
+  static boolean matches(SensitiveValue expected, byte[] actual) {
+    byte[] encoded = encode(expected);
+    try {
+      return MessageDigest.isEqual(encoded, actual);
+    } finally {
+      Arrays.fill(encoded, (byte) 0);
     }
   }
 }

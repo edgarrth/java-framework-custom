@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ class SagaConcurrencyInvariantsTest {
             .updatedAt(now)
             .version(1)
             .build();
+    var owner = store.tryAcquire("id", Duration.ofMinutes(1)).orElseThrow();
     var start = new CountDownLatch(1);
     var advanced = new AtomicInteger();
     var conflicts = new AtomicInteger();
@@ -54,7 +56,7 @@ class SagaConcurrencyInvariantsTest {
                 () -> {
                   assertTrue(start.await(5, TimeUnit.SECONDS));
                   try {
-                    store.update(next);
+                    store.update(next, owner.token());
                     advanced.incrementAndGet();
                   } catch (SagaConcurrencyException expected) {
                     conflicts.incrementAndGet();
@@ -67,8 +69,10 @@ class SagaConcurrencyInvariantsTest {
     assertEquals(1, advanced.get());
     assertEquals(15, conflicts.get());
     assertEquals(next, store.find("id").orElseThrow());
+    owner.close();
     assertTrue(store.findStale(now, 10).isEmpty());
     assertEquals(List.of(next), store.findStale(now.plusNanos(1), 10));
+    var successor = store.tryAcquire("id", Duration.ofMinutes(1)).orElseThrow();
     store.update(
         SagaState.builder()
             .sagaId("id")
@@ -79,7 +83,9 @@ class SagaConcurrencyInvariantsTest {
             .error(null)
             .updatedAt(now)
             .version(2)
-            .build());
+            .build(),
+        successor.token());
+    successor.close();
     assertTrue(store.findStale(now.plusSeconds(1), 10).isEmpty());
   }
 }

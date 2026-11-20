@@ -8,16 +8,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -31,7 +35,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
@@ -83,6 +86,7 @@ import pe.axiz.core.tokenization.vault.VaultRotator;
 import pe.axiz.core.tokenization.vault.VaultScope;
 import pe.axiz.core.tokenization.vault.VaultTokenizer;
 import pe.axiz.core.tokenization.vault.WrappingKeyState;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Flux;
@@ -162,8 +166,7 @@ class LocalStackTokenVaultIT {
   static void start() {
     Docker.require(); // Do not resolve or start images before this check.
     ReactiveInfrastructureBootstrap.initialize();
-    container =
-        new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
+    container = TestContainerImages.localstack().withServices("dynamodb");
     container.start();
     var credentials =
         StaticCredentialsProvider.create(
@@ -409,26 +412,7 @@ class LocalStackTokenVaultIT {
             "SCOPE_tokens:",
             clock);
     final VaultTokenizer engine = sync(store, random);
-    final AsyncVaultTokenizer nativeEngine =
-        AsyncVaultTokenizer.builder()
-            .policy(policy)
-            .vault(nativeStore)
-            .encryption(nativeEncryption)
-            .tokens(random)
-            .budget(nativeBudget)
-            .audit(
-                event -> {
-                  audit.add(event);
-                  return CompletableFuture.completedFuture(null);
-                })
-            .reconciliation(
-                operation -> {
-                  reconciliation.add(operation);
-                  return CompletableFuture.completedFuture(null);
-                })
-            .alarm(operation -> alarms.incrementAndGet())
-            .operationIds(random::operationId)
-            .build();
+    final AsyncVaultTokenizer nativeEngine = nativeEngine(nativeStore);
 
     final DynamoDbVaultMaintenance maintenance =
         new DynamoDbVaultMaintenance(client, TABLE, REQUEST_TIMEOUT);
@@ -491,6 +475,28 @@ class LocalStackTokenVaultIT {
         assertTrue(
             maintenance.initializeWrapping(
                 new WrappingKeyState(keyset, 1, "dek-old", List.of("dek-old"))));
+    }
+
+    AsyncVaultTokenizer nativeEngine(DynamoDbAsyncTokenVault adapter) {
+      return AsyncVaultTokenizer.builder()
+          .policy(policy)
+          .vault(adapter)
+          .encryption(nativeEncryption)
+          .tokens(random)
+          .budget(nativeBudget)
+          .audit(
+              event -> {
+                audit.add(event);
+                return CompletableFuture.completedFuture(null);
+              })
+          .reconciliation(
+              operation -> {
+                reconciliation.add(operation);
+                return CompletableFuture.completedFuture(null);
+              })
+          .alarm(operation -> alarms.incrementAndGet())
+          .operationIds(random::operationId)
+          .build();
     }
 
     VaultTokenizer sync(DynamoDbTokenVault store, TokenGenerator generator) {
@@ -785,6 +791,116 @@ class LocalStackTokenVaultIT {
     }
   }
 
+  @Test
+  void forgedPersistedAssociationFailsForBothEnginesIncludingConflictWinner() {
+    try (var f = new Fixture()) {
+      Token source = f.tokenize("00883344", DNI).token();
+      Token victim = f.tokenize("00883345", DNI).token();
+      var sourceRow =
+          client
+              .getItem(
+                  b ->
+                      b.tableName(TABLE)
+                          .key(Map.of("pk", s("T#" + source.reveal())))
+                          .consistentRead(true))
+              .item();
+      client.updateItem(
+          b ->
+              b.tableName(TABLE)
+                  .key(Map.of("pk", s("T#" + victim.reveal())))
+                  .updateExpression("SET fingerprints = :hashes")
+                  .expressionAttributeValues(Map.of(":hashes", sourceRow.get("fingerprints"))));
+      var sourceRecord = f.store.find(f.scope(DNI), source).orElseThrow();
+      for (var hash : sourceRecord.fingerprints()) {
+        String fingerprint =
+            "F#"
+                + f.scope(DNI).encoded()
+                + "#"
+                + hash.keyId()
+                + "#"
+                + Base64.getUrlEncoder().withoutPadding().encodeToString(hash.digest());
+        client.updateItem(
+            b ->
+                b.tableName(TABLE)
+                    .key(Map.of("pk", s(fingerprint)))
+                    .updateExpression("SET #token = :victim")
+                    .expressionAttributeNames(Map.of("#token", "token"))
+                    .expressionAttributeValues(Map.of(":victim", s(victim.reveal()))));
+      }
+      int before = f.audit.size();
+      try (var input = SensitiveValue.of("00883344")) {
+        assertEquals(
+            "AXZ-TOKEN-0503",
+            assertThrows(
+                    AxizException.class,
+                    () -> f.engine.lookup(f.caller, DNI, input, DOMAIN, "support"))
+                .code()
+                .value());
+        assertEquals(
+            "AXZ-TOKEN-0503",
+            assertThrows(AxizException.class, () -> f.tokenize("00883344", DNI)).code().value());
+        assertEquals(
+            "AXZ-TOKEN-0503",
+            assertThrows(
+                    AxizException.class,
+                    () -> f.engine.detokenize(f.caller, DNI, victim, DOMAIN, "support"))
+                .code()
+                .value());
+        StepVerifier.create(
+                Mono.fromCompletionStage(
+                    f.nativeEngine.lookup(f.caller, DNI, input, DOMAIN, "support")))
+            .expectErrorMatches(LocalStackTokenVaultIT::integrityFailure)
+            .verify(REQUEST_TIMEOUT);
+        StepVerifier.create(Mono.fromCompletionStage(f.nativeTokenize("00883344")))
+            .expectErrorMatches(LocalStackTokenVaultIT::integrityFailure)
+            .verify(REQUEST_TIMEOUT);
+        StepVerifier.create(
+                Mono.fromCompletionStage(
+                    f.nativeEngine.detokenize(f.caller, DNI, victim, DOMAIN, "support")))
+            .expectErrorMatches(LocalStackTokenVaultIT::integrityFailure)
+            .verify(REQUEST_TIMEOUT);
+        // Force a first read that precedes the competing write; real DynamoDB rejects the
+        // duplicate.
+        var racingStore = spy(f.store);
+        doReturn(Optional.empty())
+            .doCallRealMethod()
+            .when(racingStore)
+            .findByFingerprint(any(), any());
+        var racingEngine = f.sync(racingStore, f.random);
+        assertEquals(
+            "AXZ-TOKEN-0503",
+            assertThrows(
+                    AxizException.class,
+                    () ->
+                        racingEngine.tokenize(
+                            f.caller, DNI, input, DOMAIN, f.random.operationId().toString()))
+                .code()
+                .value());
+        var racingNative = spy(f.nativeStore);
+        doReturn(CompletableFuture.completedFuture(Optional.empty()))
+            .doCallRealMethod()
+            .when(racingNative)
+            .findByFingerprint(any(), any());
+        StepVerifier.create(
+                Mono.fromCompletionStage(
+                    f.nativeEngine(racingNative)
+                        .tokenize(f.caller, DNI, input, DOMAIN, f.random.operationId().toString())))
+            .expectErrorMatches(LocalStackTokenVaultIT::integrityFailure)
+            .verify(REQUEST_TIMEOUT);
+        verify(racingStore).putIfAbsent(any(), any(), any());
+        verify(racingNative).putIfAbsent(any(), any(), any());
+      }
+      assertEquals(8, f.audit.size() - before);
+      assertTrue(
+          f.audit.subList(before, f.audit.size()).stream()
+              .allMatch(event -> event.result() == TokenAuditEntry.Result.INTEGRITY_FAILURE));
+    }
+  }
+
+  private static boolean integrityFailure(Throwable failure) {
+    return failure instanceof AxizException error && error.code().value().equals("AXZ-TOKEN-0503");
+  }
+
   static void walk(Function<String, VaultMaintenanceBatch> action) {
     String cursor = null;
     int pages = 0;
@@ -910,7 +1026,16 @@ class LocalStackTokenVaultIT {
       } finally {
         Arrays.fill(plaintext, (byte) 0);
       }
-      assertEquals(token, f.tokenize("00883344", DNI).token());
+      assertEquals(
+          "AXZ-TOKEN-0503",
+          assertThrows(AxizException.class, () -> f.tokenize("00883344", DNI)).code().value());
+      try (var value = SensitiveValue.of("00883344")) {
+        assertEquals(
+            token,
+            f.sync(f.store, f.random, target)
+                .tokenize(f.caller, DNI, value, DOMAIN, f.random.operationId().toString())
+                .token());
+      }
     }
   }
 

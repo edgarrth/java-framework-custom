@@ -5,17 +5,88 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Properties;
 import org.junit.jupiter.api.Test;
+import pe.axiz.codegen.ArtifactGenerator.Options;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class ArtifactGeneratorTest {
+
+  @Test
+  void rejectsUnsafeSubpackagesAndQualifiedMapperTypesBeforeRendering() throws Exception {
+    var project = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    for (String invalid :
+        List.of("a;evil", "a*/evil", "a\\u002e", "class", "a..b", "../outside", "1invalid")) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () -> generator.generate(project, "test", invalid + ".Payment", Options.none(), null));
+      for (boolean source : List.of(false, true)) {
+        var options =
+            new ArtifactGenerator.Options(
+                null,
+                null,
+                source ? invalid + ".Source" : "example.Source",
+                source ? "example.Target" : invalid + ".Target");
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> generator.generate(project, "mapper", "payment", options, null));
+      }
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "test", ".Payment", Options.none(), null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "test", "example.", Options.none(), null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> generator.generate(project, "dto", "123payment", Options.none(), null));
+    var valid = generator.generate(project, "test", "account.payment", Options.none(), null);
+    assertTrue(
+        valid.created().keySet().stream()
+            .anyMatch(path -> path.endsWith("account/PaymentTest.java")));
+    JavaSourceSafetyTest.assertJavaSyntax(valid.created());
+    assertEquals("example.Source", ArtifactGenerator.typeName(" example.Source "));
+    assertEquals("CreatePayment", ArtifactGenerator.typeName("create-payment"));
+  }
+
+  @Test
+  void artifactTitlesAreEncodedForJavaAndPropertyBundles() throws Exception {
+    var project = project(Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    for (String title : JavaSourceSafetyTest.COMMENT_INPUTS) {
+      var options = new ArtifactGenerator.Options(null, title, null, null);
+      for (String type : List.of("usecase", "dto", "controller", "entity", "error-code")) {
+        var generated = generator.generate(project, type, "safe-artifact", options, null);
+        JavaSourceSafetyTest.assertJavaSyntax(generated.created());
+        if (type.equals("error-code")) {
+          var properties = new Properties();
+          properties.load(
+              new StringReader(generated.appended().get("src/main/resources/messages.properties")));
+          assertEquals(title, properties.getProperty("error.ORDERS-ORDERS-0001"));
+          String errors = text(generated, "OrdersErrors.java");
+          var appended = generator.generate(project, type, "second-artifact", options, errors);
+          JavaSourceSafetyTest.assertJavaSyntax(appended.updated());
+        }
+      }
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            generator.generate(
+                project,
+                "migration",
+                "unsafe",
+                new ArtifactGenerator.Options(null, "title\nDROP TABLE test", null, null),
+                null));
+  }
 
   private final ArtifactGenerator generator =
       new ArtifactGenerator(Clock.fixed(Instant.parse("2026-10-01T10:00:00Z"), ZoneOffset.UTC));

@@ -1,133 +1,414 @@
-# Where the demo uses each axiz capability: service, file (relative to services/<service>) and a
-# text that proves the use. CapabilityCoverageTest fails when a catalog capability has no entry or
-# an entry no longer matches the code, so the demo keeps showing every capability.
+# Every claim requires an executed operation, current JUnit evidence and catalog artifacts.
 foundation:
-  - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/config/PaymentsConfiguration.java, contains: CutoffTime}
-web:
-  - {service: beneficiaries, file: src/main/java/pe/axiz/payments/beneficiaries/controller/BeneficiariesController.java, contains: "@Paging"}
-errors:
-  - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/domain/IntegrationErrors.java, contains: ErrorDefinition.of}
-logging:
-  - {service: payment-orders, file: src/main/resources/application.yaml, contains: "logging:"}
-observability:
-  - {service: payments-ux, file: src/main/resources/application.yaml, contains: "otlp:"}
-metrics:
-  - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementSummaryTasklet.java, contains: MetricEvent.of("settlement.file")}
-config:
-  - {service: payment-orders, file: deploy/helm/payment-orders/templates/configmap.yaml, contains: mounted in /etc/axiz/config/service}
-config-aws:
-  - {service: payment-orders, file: deploy/helm/payment-orders/templates/_helpers.tpl, contains: AXIZ_CONFIG_PARAMETER_STORE_ENABLED}
-i18n:
-  - {service: payments-ux, file: src/main/resources/messages_en.properties, contains: error.PAYMENTS-PAYMENTSUX-0001}
-sensitive:
-  - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/ChannelViews.java, contains: MaskType.NAME}
-security:
-  - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/Customer.java, contains: m.subject()}
-security-redis:
-  - {service: payments-ux, file: src/main/resources/application.yaml, contains: "store: redis"}
-http-client:
-  - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/adapter/out/corebanking/CoreBankingClientConfiguration.java, contains: "@ImportHttpServices"}
-resilience:
-  - {service: payment-process, file: src/main/resources/application.yaml, contains: "resilience:"}
-soap:
-  - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/adapter/out/soap/CoreCreditGateway.java, contains: SoapClients}
-secrets:
-  - {service: banking-core, file: deploy/helm/banking-core/values.yaml, contains: core-banking-client-secret}
-secrets-file:
-  - {service: banking-core, file: src/main/resources/application.yaml, contains: "directory: /var/run/secrets/axiz"}
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: servlet
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: reactive
 jpa:
-  - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/persistence/PaymentOrderEntity.java, contains: AuditableEntity}
-jpa-aws:
-  - {service: payment-orders, file: src/main/resources/application.yaml, contains: "iam: ${AXIZ_JPA_IAM:false}"}
-r2dbc:
-  - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRow.java, contains: AuditableRow}
-  - {service: payments-history, file: src/main/java/pe/axiz/payments/history/adapter/out/persistence/PaymentHistoryRepository.java, contains: ReactiveCrudRepository}
-r2dbc-aws:
-  - {service: payments-history, file: src/main/resources/application.yaml, contains: "enabled: ${AXIZ_R2DBC_IAM:false}"}
-dynamodb:
-  - {service: beneficiaries, file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java, contains: CursorCodec}
-cache:
-  - {service: beneficiaries, file: src/main/java/pe/axiz/payments/beneficiaries/service/BeneficiariesService.java, contains: getOrLoad}
-cache-redis:
-  - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/BeneficiaryDirectory.java, contains: "@AxizCacheable"}
-storage-s3:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: ObjectStorage}
-sequence:
-  - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/sequence/OperationNumberAdapter.java, contains: Sequences}
-messaging-kafka:
-  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/messaging/PaymentOrderCreatedHandler.java, contains: EventHandler}
-messaging-msk:
-  - {service: payment-process, file: src/main/resources/application.yaml, contains: "authentication: ${AXIZ_KAFKA_AUTHENTICATION:msk}"}
-messaging-sqs:
-  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "queues:"}
-messaging-sns:
-  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "arn:aws:sns"}
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: aurora,servlet
 outbox:
-  - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/messaging/PaymentEventsOutboxAdapter.java, contains: TransactionalEvents}
-inbox:
-  - {service: notifications-processor, file: src/main/resources/application.yaml, contains: "inbox:"}
-  - {service: payments-history, file: src/main/resources/application.yaml, contains: "store: r2dbc"}
-idempotency:
-  - {service: beneficiaries, file: src/main/java/pe/axiz/payments/beneficiaries/controller/BeneficiariesController.java, contains: "@Idempotent"}
-idempotency-redis:
-  - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/controller/PaymentsController.java, contains: "@Idempotent"}
-idempotency-dynamodb:
-  - {service: beneficiaries, file: local/localstack/init.sh, contains: axiz-idempotency}
-saga:
-  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/application/saga/PaymentSaga.java, contains: SagaDefinition}
-lock:
-  - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/application/usecase/AccountLocks.java, contains: LockTemplate}
-lock-redis:
-  - {service: banking-core, file: src/main/resources/application.yaml, contains: "store: redis"}
-lock-dynamodb:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: withLock}
-scheduling:
-  - {service: payment-process, file: src/main/java/pe/axiz/payments/process/adapter/in/scheduling/SagaRecoveryJob.java, contains: "@SchedulerLock"}
-  - {service: settlement-batch, file: src/main/java/pe/axiz/payments/settlement/job/SettlementRunner.java, contains: LockingTaskExecutor}
-audit:
-  - {service: banking-core, file: src/main/java/pe/axiz/payments/bankingcore/application/usecase/DebitAccountUseCase.java, contains: "@Auditable"}
-audit-kafka:
-  - {service: payment-orders, file: deploy/helm/payment-orders/values-prod.yaml, contains: "topic: axiz-audit"}
-audit-sqs:
-  - {service: banking-core, file: deploy/helm/banking-core/values-prod.yaml, contains: "queue-url: https://sqs.us-east-1.amazonaws.com/333333333333/axiz-demo-audit-prod"}
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: aurora,servlet
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RelationalRecipesTest.java
+  test: pe.axiz.demo.providers.RelationalRecipesTest#r2dbcOutboxCommitsWithBusinessDataAndRollsBackTogether
+  level: integration
+  variant: r2dbc,reactive
 crypto:
-  - {service: payment-orders, file: src/main/java/pe/axiz/payments/orders/adapter/out/persistence/PaymentOrderPersistenceAdapter.java, contains: BlindIndex}
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
 crypto-kms:
-  - {service: payment-orders, file: src/main/resources/application.yaml, contains: "key-id: ${AXIZ_KMS_KEY_ID:alias/local}"}
-tenancy:
-  - {service: payment-process, file: src/main/resources/application.yaml, contains: "tenancy:"}
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
+web:
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: servlet
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: reactive
+errors:
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: servlet
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: reactive
+security:
+- service: payment-orders
+  file: src/test/java/pe/axiz/payments/orders/PaymentOrdersApplicationTest.java
+  test: pe.axiz.payments.orders.PaymentOrdersApplicationTest#createsAnEncryptedOrderAndReplaysWithoutDuplicatingItsOutboxEvent
+  level: integration
+  variant: servlet
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: reactive
+logging:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java
+  test: pe.axiz.demo.providers.CrossCuttingRecipesTest#operationLoggingProtectsArgumentsAndResults
+  level: consumer-contract
+  variant: servlet,reactive
+observability:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java
+  test: pe.axiz.demo.providers.CrossCuttingRecipesTest#observationsExportOutcomesWithoutSensitiveAttributes
+  level: consumer-contract
+  variant: servlet,reactive
+i18n:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java
+  test: pe.axiz.demo.providers.CrossCuttingRecipesTest#serviceMessagesFollowTheSupportedLanguage
+  level: consumer-contract
+  variant: servlet,reactive
+config:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#parameterStoreBootstrapLoadsApplicationConfigurationBeforeBeansExist
+  level: integration
+  variant: servlet,reactive
+config-aws:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#parameterStoreBootstrapLoadsApplicationConfigurationBeforeBeansExist
+  level: integration
+  variant: servlet,reactive
+metrics:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/PolicyRecipesTest.java
+  test: pe.axiz.demo.providers.PolicyRecipesTest#maskingMetricsAndFlagsExecuteInBothApplicationTypes
+  level: consumer-contract
+  variant: servlet,reactive
+sensitive:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/PolicyRecipesTest.java
+  test: pe.axiz.demo.providers.PolicyRecipesTest#maskingMetricsAndFlagsExecuteInBothApplicationTypes
+  level: consumer-contract
+  variant: servlet,reactive
 featureflags:
-  - {service: payments-ux, file: src/main/java/pe/axiz/payments/ux/composition/PaymentsComposition.java, contains: flags.isEnabled}
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/PolicyRecipesTest.java
+  test: pe.axiz.demo.providers.PolicyRecipesTest#maskingMetricsAndFlagsExecuteInBothApplicationTypes
+  level: consumer-contract
+  variant: servlet,reactive
+http-client:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/OutboundRecipesTest.java
+  test: pe.axiz.demo.providers.OutboundRecipesTest#httpRetriesSafeOperationsButNeverReplaysAnUnkeyedPayment
+  level: integration
+  variant: servlet,reactive
+soap:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/OutboundRecipesTest.java
+  test: pe.axiz.demo.providers.OutboundRecipesTest#soapReadsRotatedSecretsOnEveryInvocation
+  level: integration
+  variant: servlet
+resilience:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/OutboundRecipesTest.java
+  test: pe.axiz.demo.providers.OutboundRecipesTest#httpRetriesSafeOperationsButNeverReplaysAnUnkeyedPayment
+  level: integration
+  variant: servlet,reactive
+saga:
+- service: payment-process
+  file: src/test/java/pe/axiz/payments/process/application/saga/PaymentSagaTest.java
+  test: pe.axiz.payments.process.application.saga.PaymentSagaTest#aTransferWithALostAnswerNeverReversesTheDebit
+  level: consumer-contract
+  variant: servlet
 notification:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/handler/PaymentNotificationHandler.java, contains: NotificationSender}
-
-# Base ports are shown separately from their selected transport implementations.
-storage:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/repository/archive/AuditArchive.java, contains: ObjectStorage}
-messaging:
-  - {service: notifications-processor, file: src/main/java/pe/axiz/payments/notifications/handler/PaymentNotificationHandler.java, contains: EventHandler}
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#snsEventsAndSqsAuditReachTheirIndependentDestinations
+  level: integration
+  variant: servlet,reactive
+r2dbc:
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: r2dbc,reactive
+inbox:
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: r2dbc
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoInboxIdempotencyAndLocksKeepOwnershipAcrossBothStacks
+  level: integration
+  variant: servlet,reactive,dynamodb
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RelationalRecipesTest.java
+  test: pe.axiz.demo.providers.RelationalRecipesTest#jdbcInboxRejectsAnotherOwnerAndRemembersCommittedDelivery
+  level: integration
+  variant: aurora
+messaging-kafka:
+- service: payments-history
+  file: src/test/java/pe/axiz/payments/history/PaymentsHistoryApplicationTest.java
+  test: pe.axiz.payments.history.PaymentsHistoryApplicationTest#projectsThePaymentOrderEvents
+  level: integration
+  variant: reactive
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#servletKafkaPublisherReceivesBrokerAcknowledgementAndPreservesEnvelope
+  level: integration
+  variant: servlet
+dynamodb:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoRepositoriesPersistAndPageWithQueryBoundCursorsOnBothStacks
+  level: integration
+  variant: servlet,reactive
 dynamodb-cursor:
-  - service: beneficiaries
-    file: src/main/java/pe/axiz/payments/beneficiaries/repository/DynamoBeneficiaryRepository.java
-    contains: cursors
-
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoRepositoriesPersistAndPageWithQueryBoundCursorsOnBothStacks
+  level: integration
+  variant: servlet,reactive
+storage:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#s3SyncAndNativeStreamingRoundTripAndDelete
+  level: integration
+  variant: servlet,reactive
+storage-s3:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#s3SyncAndNativeStreamingRoundTripAndDelete
+  level: integration
+  variant: servlet,reactive
+secrets:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#secretsManagerAndParameterStoreSupportBothStacksAndCloseValues
+  level: integration
+  variant: servlet,reactive,secrets-manager,parameter-store
 secrets-aws:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizSecretsAwsAutoConfiguration.class}
-
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#secretsManagerAndParameterStoreSupportBothStacksAndCloseValues
+  level: integration
+  variant: servlet,reactive,secrets-manager,parameter-store
+secrets-file:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/IdentityRecipesTest.java
+  test: pe.axiz.demo.providers.IdentityRecipesTest#mountedSecretsAreReadByBothStacksAndNeverRemainUsableAfterClose
+  level: integration
+  variant: servlet,reactive
+jpa-aws:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/IdentityRecipesTest.java
+  test: pe.axiz.demo.providers.IdentityRecipesTest#jdbcIamOwnsAPoolScopedCredentialProfileWithoutEmbeddingSecrets
+  level: local-identity-contract
+  variant: servlet
+r2dbc-aws:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/IdentityRecipesTest.java
+  test: pe.axiz.demo.providers.IdentityRecipesTest#r2dbcIamSignsAnExpiringPasswordWithTheSelectedApplicationIdentity
+  level: local-identity-contract
+  variant: reactive
+messaging-msk:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/IdentityRecipesTest.java
+  test: pe.axiz.demo.providers.IdentityRecipesTest#mskCallbackUsesSelectedTemporaryCredentialsAndRequiresTls
+  level: local-identity-contract
+  variant: servlet,reactive
+cache:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+cache-redis:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+idempotency:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+idempotency-redis:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+lock:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+lock-redis:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+security-redis:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RedisRecipesTest.java
+  test: pe.axiz.demo.providers.RedisRecipesTest#distributedProvidersWorkOnBothStacksAndCannotBeReplacedByDeclarations
+  level: integration
+  variant: servlet,reactive,redis
+idempotency-dynamodb:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoInboxIdempotencyAndLocksKeepOwnershipAcrossBothStacks
+  level: integration
+  variant: servlet,reactive,dynamodb
+lock-dynamodb:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoInboxIdempotencyAndLocksKeepOwnershipAcrossBothStacks
+  level: integration
+  variant: servlet,reactive,dynamodb
+sequence:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RelationalRecipesTest.java
+  test: pe.axiz.demo.providers.RelationalRecipesTest#jdbcSequenceReservationSurvivesBusinessRollback
+  level: integration
+  variant: aurora,servlet
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RelationalRecipesTest.java
+  test: pe.axiz.demo.providers.RelationalRecipesTest#r2dbcSequenceHasNoBlockingPortAndDoesNotReuseRolledBackNumbers
+  level: integration
+  variant: r2dbc,reactive
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoSequencesShareCounterAcrossImperativeAndNativeConsumers
+  level: integration
+  variant: dynamodb,servlet,reactive
+scheduling:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RelationalRecipesTest.java
+  test: pe.axiz.demo.providers.RelationalRecipesTest#schedulingProvidersExcludeCompetingWorkers
+  level: integration
+  variant: aurora,r2dbc,servlet,reactive
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CloudRecipesTest.java
+  test: pe.axiz.demo.providers.CloudRecipesTest#dynamoSchedulerExcludesCompetingWorkers
+  level: integration
+  variant: dynamodb
+messaging:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#snsEventsAndSqsAuditReachTheirIndependentDestinations
+  level: integration
+  variant: servlet,reactive
+messaging-sns:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#snsEventsAndSqsAuditReachTheirIndependentDestinations
+  level: integration
+  variant: servlet,reactive
+messaging-sqs:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#sqsProvidersPublishAndReceiveOnBothStacks
+  level: integration
+  variant: servlet,reactive
+- example: sqs-consumer
+  file: src/test/java/pe/axiz/demo/sqs/SqsConsumerExampleTest.java
+  test: pe.axiz.demo.sqs.SqsConsumerExampleTest#discoveredStarterConsumesRetriesDeadLettersAndPreservesFifoOnBothStacks
+  level: integration
+  variant: servlet,reactive,consumer,retry,dlq,redrive,fifo,fifo-dlq,discovery
+audit:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#snsEventsAndSqsAuditReachTheirIndependentDestinations
+  level: integration
+  variant: servlet,reactive
+audit-sqs:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#snsEventsAndSqsAuditReachTheirIndependentDestinations
+  level: integration
+  variant: servlet,reactive
+audit-kafka:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java
+  test: pe.axiz.demo.providers.MessagingRecipesTest#kafkaAuditPublishesSanitizedEventsOnBothStacks
+  level: integration
+  variant: servlet,reactive
 carddata:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: invalidPan}
-
-tokenization:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: created.token()}
-
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
 tokenization-vault:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationVaultAutoConfiguration.class}
-
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
 tokenization-vault-dynamodb:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationDynamoDbAutoConfiguration.class}
-
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
 tokenization-vault-redis:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationRedisAutoConfiguration.class}
-
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
 tokenization-pan:
-  - {example: protected-data, file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java, contains: AxizTokenizationPanAutoConfiguration.class}
+- example: protected-data
+  file: src/test/java/pe/axiz/demo/protecteddata/ProtectedDataExampleTest.java
+  test: pe.axiz.demo.protecteddata.ProtectedDataExampleTest#tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni
+  level: integration
+  variant: servlet,reactive
+tokenization:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/RemoteTokenClientRecipeTest.java
+  test: pe.axiz.demo.providers.RemoteTokenClientRecipeTest#remoteConsumersSendIdentityAndReceiveOnlyOpaqueTokensOnBothStacks
+  level: consumer-contract
+  variant: servlet,reactive
+tenancy:
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java
+  test: pe.axiz.demo.providers.CrossCuttingRecipesTest#servletTenantComesFromValidatedIdentityAndIsClearedAfterTheRequest
+  level: consumer-contract
+  variant: servlet
+- example: provider-recipes
+  file: src/test/java/pe/axiz/demo/providers/CrossCuttingRecipesTest.java
+  test: pe.axiz.demo.providers.CrossCuttingRecipesTest#reactiveTenantPropagatesInTheSubscriberContext
+  level: consumer-contract
+  variant: reactive

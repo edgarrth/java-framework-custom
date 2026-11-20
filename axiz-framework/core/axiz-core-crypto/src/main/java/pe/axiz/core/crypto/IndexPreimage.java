@@ -10,8 +10,8 @@ final class IndexPreimage {
 
   private IndexPreimage() {}
 
-  static byte[] of(String canonicalValue, IndexScope scope, String keyId) {
-    String[] parts = {
+  static byte[] of(CharSequence canonicalValue, IndexScope scope, String keyId) {
+    CharSequence[] parts = {
       scope.purpose(),
       scope.fieldType(),
       scope.tenant(),

@@ -84,6 +84,18 @@ class PromotionTest(unittest.TestCase):
         for item in self.data["artifacts"]["maven"]:
             self.assertEqual(item["sha256"], hashlib.sha256(self.files[self.url(item)]).hexdigest())
 
+    def test_original_inode_changes_after_verification_cannot_change_the_upload(self):
+        approved = {item['path']: (self.root / 'maven' / item['path']).read_bytes()
+                    for item in self.data['artifacts']['maven']}
+        real_upload = self.client.upload
+        def concurrent_change(path, snapshot):
+            (self.root / 'maven' / path).write_bytes(b'changed after verification')
+            real_upload(path, snapshot)
+        with patch.object(self.client, 'upload', side_effect=concurrent_change):
+            self.assertEqual(2, promote_maven.promote(self.data, self.root, self.client))
+        for path, expected in approved.items():
+            self.assertEqual(expected, self.files['/' + path])
+
     def test_conflict_in_later_file_aborts_before_any_write(self):
         second = self.data["artifacts"]["maven"][1]
         self.files[self.url(second)] = b"another candidate with the same coordinates"
@@ -99,7 +111,7 @@ class PromotionTest(unittest.TestCase):
         self.assertEqual([], self.uploads)
 
     def test_interrupted_promotion_can_resume_without_replacing_an_uploaded_file(self):
-        self.reject = self.url(self.data["artifacts"]["maven"][0])
+        self.reject = self.url(next(item for item in self.data["artifacts"]["maven"] if item["path"].endswith(".pom")))
         with self.assertRaisesRegex(ValueError, "503"):
             promote_maven.promote(self.data, self.root, self.client)
         self.assertEqual(1, len(self.uploads))

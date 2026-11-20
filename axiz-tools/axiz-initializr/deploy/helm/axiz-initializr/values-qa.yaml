@@ -40,3 +40,7 @@ config:
   # axiz.initializr.github-organization: <organization>
 
 errors: []
+
+# The ingress must keep session affinity if it bypasses the ClusterIP Service.
+# Set spring.data.redis.host, port and username in the environment ConfigMap; password and
+# axiz.initializr.publication-key come from the ExternalSecret. Allow TLS Redis egress.

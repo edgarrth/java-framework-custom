@@ -64,9 +64,9 @@ class DataStoreTlsIT {
     postgres.withCommand(
         "sh",
         "-c",
-        "chown postgres:postgres /tmp/axiz-server.key && chmod 600 /tmp/axiz-server.key"
+        "umask 077 && cp /tmp/axiz-server.key /tmp/axiz-owned-server.key"
             + " && exec docker-entrypoint.sh postgres -c ssl=on"
-            + " -c ssl_cert_file=/tmp/axiz-server.crt -c ssl_key_file=/tmp/axiz-server.key");
+            + " -c ssl_cert_file=/tmp/axiz-server.crt -c ssl_key_file=/tmp/axiz-owned-server.key");
     return postgres;
   }
 

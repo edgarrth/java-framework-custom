@@ -24,3 +24,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/layered/axiz-structure-layered-spring-boot-starter verify`.
+
+## Conditional deletion
+
+`CommandService.delete(id, expectedVersion)` requires the version previously read by the client.
+`CrudController` accepts it as one strong quoted `If-Match` value, for example `If-Match: "3"`.
+Missing/invalid headers return 400; a stale version returns 412 and preserves the resource.
+Wildcard, weak and multiple validators are rejected. Ownership authorization runs before the
+version comparison, and JPA optimistic locking still protects concurrent transactional writes.
+Update retains the expected version in its request DTO. Clients obtain the version from their
+application response DTO; the generic controller does not invent an ETag for arbitrary DTOs.

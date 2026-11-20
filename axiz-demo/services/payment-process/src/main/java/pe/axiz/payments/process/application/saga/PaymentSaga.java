@@ -81,9 +81,9 @@ public final class PaymentSaga {
                     return c;
                   } catch (RuntimeException e) {
                     LOG.error(
-                        "Order {} paid but not completed; settlement reconciliation will do it",
+                        "Order {} paid but not completed; settlement reconciliation will do it; failureType={}",
                         c.instruction().orderId(),
-                        e);
+                        e.getClass().getSimpleName());
                     return c.pendingCompletion();
                   }
                 },
@@ -107,8 +107,9 @@ public final class PaymentSaga {
    * A step. With {@code verifiable}, an uncertain failure (timeout, 5xx, lost answer) is verified
    * by repeating the call with the same idempotency key: every participant (payment-orders,
    * banking-core and through it the core and the network) returns the first outcome for a key it
-   * already processed, and applies the request if it never arrived. A definite rejection means the
-   * effect does not exist; another failure leaves the process VERIFYING.
+   * already processed, and applies the request if it never arrived. A rejection observed during
+   * verification does not prove an earlier in-flight call can never apply: absent a durable
+   * participant cancellation contract, it remains IN_DOUBT.
    */
   static SagaStep<PaymentContext> step(String name, Action action, boolean verifiable, Undo undo) {
     return new SagaStep<>() {

@@ -167,7 +167,8 @@ class VaultRetentionTest {
             });
     var error =
         assertThrows(AxizException.class, () -> finalAuditFails.purge(ADMIN, STATE, null, 1));
-    assertEquals(TokenErrors.UNAVAILABLE.code(), error.code());
+    assertEquals(TokenErrors.UNCERTAIN.code(), error.code());
+    assertEquals(Result.SUCCESS, reconciliation.getFirst().event().result());
     verify(store, times(1)).delete(expired);
   }
 

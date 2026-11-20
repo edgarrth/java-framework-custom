@@ -94,7 +94,8 @@ public class SettlementRunner implements ApplicationRunner, ExitCodeGenerator {
               new LockConfiguration(
                   clock.instant(), LOCK, properties.maxDuration(), Duration.ZERO));
     } catch (Throwable e) {
-      LOG.error("Settlement job could not run for {}", key, e);
+      LOG.error(
+          "Settlement job could not run for {}; failureType={}", key, e.getClass().getSimpleName());
       return 1;
     }
     if (!result.wasExecuted()) {

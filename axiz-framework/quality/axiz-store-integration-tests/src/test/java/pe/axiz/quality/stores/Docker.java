@@ -10,9 +10,6 @@ import org.testcontainers.DockerClientFactory;
  */
 final class Docker {
 
-  /** AWS emulator; PostgreSQL and Valkey use the shared TestContainerImages recipes. */
-  static final String LOCALSTACK = "localstack/localstack:4.9";
-
   private Docker() {}
 
   static void require() {

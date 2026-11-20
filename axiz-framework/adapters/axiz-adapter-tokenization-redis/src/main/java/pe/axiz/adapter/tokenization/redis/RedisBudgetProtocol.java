@@ -6,7 +6,9 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.LoggerFactory;
 import pe.axiz.core.crypto.SecureRandoms;
+import pe.axiz.core.tokenization.TokenOperation;
 import pe.axiz.core.tokenization.vault.TokenBudgetLeaseAlarm;
 import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
 
@@ -20,13 +22,19 @@ final class RedisBudgetProtocol {
         if kind ~= 'none' and kind ~= 'hash' then return -1 end
         owned = owned + redis.call('HEXISTS', KEYS[i], ARGV[1])
       end
-      if owned == 3 then return 1 end
+      if owned == 3 then
+        for i = 1, 3 do
+          local value = redis.call('HGET', KEYS[i], ARGV[1])
+          if string.sub(value, 1, string.len(ARGV[5])) ~= ARGV[5] then return -1 end
+        end
+        return 1
+      end
       if owned ~= 0 then return -1 end
       for i = 1, 3 do
         if redis.call('HLEN', KEYS[i]) >= tonumber(ARGV[i+1]) then return 0 end
       end
       local now = redis.call('TIME')
-      local stamp = now[1] .. '.' .. now[2]
+      local stamp = ARGV[5] .. now[1] .. '|' .. now[2]
       for i = 1, 3 do redis.call('HSET', KEYS[i], ARGV[1], stamp) end
       return 1
       """;
@@ -40,6 +48,7 @@ final class RedisBudgetProtocol {
       for i = 1, 3 do removed = removed + redis.call('HDEL', KEYS[i], ARGV[1]) end
       return removed
       """;
+  final TokenBudgetOwner owner;
   final String namespace;
   final TokenBudgetPolicy policy;
   private final TokenBudgetLeaseAlarm alarm;
@@ -50,9 +59,27 @@ final class RedisBudgetProtocol {
       String namespace,
       TokenBudgetPolicy policy,
       TokenBudgetLeaseAlarm alarm) {
-    Objects.requireNonNull(connection);
+    this(connection, namespace, policy, alarm, TokenBudgetOwner.process());
+  }
+
+  RedisBudgetProtocol(
+      StatefulRedisConnection<String, String> connection,
+      String namespace,
+      TokenBudgetPolicy policy,
+      TokenBudgetLeaseAlarm alarm,
+      TokenBudgetOwner owner) {
+    this.owner = Objects.requireNonNull(owner);
+    validateConnection(connection);
+
     if (namespace == null || !namespace.matches("[a-z][a-z0-9.-]{0,63}"))
       throw new IllegalArgumentException("Invalid token budget namespace");
+    this.namespace = namespace;
+    this.policy = Objects.requireNonNull(policy);
+    this.alarm = Objects.requireNonNull(alarm);
+  }
+
+  static void validateConnection(StatefulRedisConnection<String, String> connection) {
+    Objects.requireNonNull(connection);
     Duration timeout = connection.getTimeout();
     var options = connection.getOptions();
     if (timeout.compareTo(Duration.ofMillis(1)) < 0
@@ -64,9 +91,6 @@ final class RedisBudgetProtocol {
         || options.getDisconnectedBehavior() != DisconnectedBehavior.REJECT_COMMANDS)
       throw new IllegalArgumentException(
           "Token budgets require bounded native Redis timeouts and queues");
-    this.namespace = namespace;
-    this.policy = Objects.requireNonNull(policy);
-    this.alarm = Objects.requireNonNull(alarm);
   }
 
   UUID newLease() {
@@ -75,12 +99,25 @@ final class RedisBudgetProtocol {
     return new UUID(high, low);
   }
 
-  String[] arguments(UUID lease) {
+  String[] arguments(UUID lease, UUID operationId, TokenOperation operation, String[] keys) {
     return new String[] {
       lease.toString(),
       Integer.toString(policy.subjectConcurrent()),
       Integer.toString(policy.clientConcurrent()),
-      Integer.toString(policy.tenantConcurrent())
+      Integer.toString(policy.tenantConcurrent()),
+      "v2|"
+          + owner.instance()
+          + "|"
+          + owner.incarnation()
+          + "|"
+          + Objects.requireNonNull(operationId)
+          + "|"
+          + operation.name()
+          + "|"
+          + keys[0]
+          + "|"
+          + keys[1]
+          + "|"
     };
   }
 
@@ -89,8 +126,8 @@ final class RedisBudgetProtocol {
       alarm.uncertain(namespace, lease);
     } catch (RuntimeException unavailable) {
       // Fail-closed admission/release still fails; never log a provider exception or identities.
-      System.getLogger(RedisBudgetProtocol.class.getName())
-          .log(System.Logger.Level.ERROR, "Token budget lease reconciliation alarm unavailable");
+      LoggerFactory.getLogger(RedisBudgetProtocol.class)
+          .error("Token budget lease reconciliation alarm unavailable");
     }
   }
 }

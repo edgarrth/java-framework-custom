@@ -19,10 +19,13 @@ import pe.axiz.core.messaging.DeliveryDecision;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.resilience.Backoff;
+import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
+import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 import pe.axiz.spring.messaging.ObservedDispatcher;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
+import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 
 /**
@@ -35,16 +38,25 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
  * the infrastructure around a valid message (inbox, tracing) is retried. While a batch is being
  * processed, the visibility of every message received and not yet settled is renewed, so messages
  * waiting for their turn (or a slow handler) are not redelivered to another replica. Stopping lets
- * the current batch finish (up to {@code shutdownTimeout}) before interrupting the pollers.
+ * the currently executing handler finish (up to 15 seconds) before interrupting the pollers.
  */
-public final class SqsEventConsumer implements SmartLifecycle {
+public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
 
   private static final Logger LOG = LoggerFactory.getLogger(SqsEventConsumer.class);
   private static final int MAX_VISIBILITY_SECONDS = 43_200;
-  private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(30);
+  private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(15);
 
   /** A received message not yet settled. */
-  private record InFlight(String queue, String receiptHandle) {}
+  private static final class InFlight {
+    final String queue;
+    final String receiptHandle;
+    boolean settled;
+
+    InFlight(String queue, String receiptHandle) {
+      this.queue = queue;
+      this.receiptHandle = receiptHandle;
+    }
+  }
 
   @SuppressFBWarnings(
       value = "EI_EXPOSE_REP2",
@@ -57,8 +69,7 @@ public final class SqsEventConsumer implements SmartLifecycle {
   private final AxizMessagingSqsProperties settings;
   private final Backoff backoff;
   private final Map<String, InFlight> inFlight = new ConcurrentHashMap<>();
-  private volatile boolean running;
-  private List<Thread> workers = List.of();
+  private final WorkerLifecycle lifecycle;
   private @Nullable ScheduledExecutorService heartbeat;
   private @Nullable ScheduledFuture<?> heartbeatTask;
 
@@ -71,11 +82,23 @@ public final class SqsEventConsumer implements SmartLifecycle {
     this.dispatcher = Objects.requireNonNull(dispatcher);
     this.settings = Objects.requireNonNull(settings);
     this.backoff = Objects.requireNonNull(backoff);
+    this.lifecycle =
+        new WorkerLifecycle("axiz-sqs", SHUTDOWN_TIMEOUT, this::pollers, this::closeHeartbeat);
   }
 
-  @Override
-  public void start() {
-    running = true;
+  private List<Runnable> pollers() {
+    for (String queue : settings.queues()) {
+      if (!settings.deadLetterQueues().containsKey(queue)) {
+        String policy =
+            sqs.getQueueAttributes(
+                    b -> b.queueUrl(queue).attributeNames(QueueAttributeName.REDRIVE_POLICY))
+                .attributes()
+                .get(QueueAttributeName.REDRIVE_POLICY);
+        if (policy == null || policy.isBlank())
+          throw new IllegalStateException(
+              "SQS consumers require an explicit DLQ or native redrive policy");
+      }
+    }
     long period = Math.max(1, settings.visibilityTimeout().toSeconds() / 2);
     ScheduledExecutorService hb =
         Executors.newSingleThreadScheduledExecutor(
@@ -83,48 +106,60 @@ public final class SqsEventConsumer implements SmartLifecycle {
     heartbeatTask =
         hb.scheduleWithFixedDelay(this::renewVisibilitySafely, period, period, TimeUnit.SECONDS);
     heartbeat = hb;
-    workers =
-        settings.queues().stream()
-            .map(
-                q ->
-                    Thread.ofVirtual()
-                        .name("axiz-sqs-" + q.substring(q.lastIndexOf('/') + 1))
-                        .start(() -> poll(q)))
-            .toList();
+    return settings.queues().stream().map(q -> (Runnable) () -> poll(q)).toList();
+  }
+
+  private void closeHeartbeat() {
+    ScheduledFuture<?> task = heartbeatTask;
+    if (task != null) task.cancel(false);
+    ScheduledExecutorService hb = heartbeat;
+    if (hb != null) {
+      hb.shutdownNow();
+      boolean interrupted = false;
+      try {
+        while (!hb.isTerminated()) {
+          try {
+            hb.awaitTermination(1, TimeUnit.SECONDS);
+          } catch (InterruptedException failure) {
+            interrupted = true;
+          }
+        }
+      } finally {
+        if (interrupted) Thread.currentThread().interrupt();
+      }
+    }
+    heartbeatTask = null;
+    heartbeat = null;
+  }
+
+  @Override
+  public WorkerStatus.Snapshot workerSnapshot() {
+    return lifecycle.workerSnapshot();
+  }
+
+  @Override
+  public Duration shutdownGrace() {
+    return lifecycle.shutdownGrace();
+  }
+
+  @Override
+  public void start() {
+    lifecycle.start();
   }
 
   @Override
   public void stop() {
-    running = false;
-    long deadline = System.nanoTime() + SHUTDOWN_TIMEOUT.toNanos();
-    for (Thread w : workers) {
-      try {
-        long left = deadline - System.nanoTime();
-        if (left <= 0 || !w.join(Duration.ofNanos(left))) {
-          w.interrupt(); // still blocked: give up on it
-        }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        workers.forEach(Thread::interrupt);
-        break;
-      }
-    }
-    ScheduledFuture<?> task = heartbeatTask;
-    if (task != null) {
-      task.cancel(false);
-    }
-    ScheduledExecutorService hb = heartbeat;
-    if (hb != null) {
-      hb.shutdownNow();
-    }
-    if (!inFlight.isEmpty()) {
-      LOG.warn("{} SQS messages left unsettled at shutdown; SQS redelivers them", inFlight.size());
-    }
+    lifecycle.stop();
+  }
+
+  @Override
+  public void stop(Runnable callback) {
+    lifecycle.stop(callback);
   }
 
   @Override
   public boolean isRunning() {
-    return running;
+    return lifecycle.isRunning();
   }
 
   @Override
@@ -136,28 +171,32 @@ public final class SqsEventConsumer implements SmartLifecycle {
     ReceiveMessageRequest request =
         ReceiveMessageRequest.builder()
             .queueUrl(queue)
-            .maxNumberOfMessages(Math.min(10, Math.max(1, settings.batchSize())))
+            // A FIFO head must be settled before another message from its group is delivered.
+            // One receipt avoids acknowledging later group members while the head backs off.
+            .maxNumberOfMessages(queue.endsWith(".fifo") ? 1 : Math.min(10, settings.batchSize()))
             .waitTimeSeconds((int) Math.min(20, settings.waitTime().toSeconds()))
             // Receive long-polling has a different bound from short publisher API calls.
             .overrideConfiguration(c -> c.apiCallTimeout(settings.waitTime().plusSeconds(10)))
             .visibilityTimeout((int) settings.visibilityTimeout().toSeconds())
-            .messageSystemAttributeNames(MessageSystemAttributeName.APPROXIMATE_RECEIVE_COUNT)
+            .messageSystemAttributeNames(
+                MessageSystemAttributeName.APPROXIMATE_RECEIVE_COUNT,
+                MessageSystemAttributeName.MESSAGE_GROUP_ID)
             .build();
-    while (running && !Thread.currentThread().isInterrupted()) {
+    while (lifecycle.accepting() && !Thread.currentThread().isInterrupted()) {
       List<Message> batch;
       try {
         batch = sqs.receiveMessage(request).messages();
       } catch (RuntimeException e) {
-        if (!running) {
+        if (!lifecycle.accepting()) {
           return;
         }
-        LOG.warn("SQS receive failed for {}: {}", queue, e.toString());
+        LOG.warn("SQS receive failed for {}: {}", queue, e.getClass().getSimpleName());
         sleep(Duration.ofSeconds(5));
         continue;
       }
       batch.forEach(m -> inFlight.put(m.messageId(), new InFlight(queue, m.receiptHandle())));
       for (Message m : batch) {
-        if (!running) {
+        if (!lifecycle.accepting()) {
           // shutting down: leave the rest of the batch to SQS (visible again soon)
           batch.forEach(left -> inFlight.remove(left.messageId()));
           return;
@@ -165,7 +204,8 @@ public final class SqsEventConsumer implements SmartLifecycle {
         try {
           process(queue, m);
         } catch (RuntimeException e) {
-          LOG.warn("Could not settle SQS message {}: {}", m.messageId(), e.toString());
+          LOG.warn(
+              "Could not settle SQS message {}: {}", m.messageId(), e.getClass().getSimpleName());
         } finally {
           inFlight.remove(m.messageId());
         }
@@ -181,7 +221,9 @@ public final class SqsEventConsumer implements SmartLifecycle {
     try {
       renewVisibility();
     } catch (RuntimeException e) {
-      LOG.warn("SQS visibility heartbeat failed; it runs again on the next period", e);
+      LOG.warn(
+          "SQS visibility heartbeat failed; it runs again on the next period; failureType={}",
+          e.getClass().getSimpleName());
     }
   }
 
@@ -189,12 +231,15 @@ public final class SqsEventConsumer implements SmartLifecycle {
   void renewVisibility() {
     int seconds = (int) Math.min(MAX_VISIBILITY_SECONDS, settings.visibilityTimeout().toSeconds());
     for (InFlight f : List.copyOf(inFlight.values())) {
-      try {
-        sqs.changeMessageVisibility(
-            b -> b.queueUrl(f.queue()).receiptHandle(f.receiptHandle()).visibilityTimeout(seconds));
-      } catch (RuntimeException e) {
-        // the message may become visible again and be delivered twice (the inbox absorbs it)
-        LOG.warn("Could not extend visibility on {}: {}", f.queue(), e.toString());
+      synchronized (f) {
+        if (f.settled) continue;
+        try {
+          sqs.changeMessageVisibility(
+              b -> b.queueUrl(f.queue).receiptHandle(f.receiptHandle).visibilityTimeout(seconds));
+        } catch (RuntimeException e) {
+          // The inbox absorbs duplicates when visibility cannot be extended.
+          LOG.warn("Could not extend visibility on {}: {}", f.queue, e.getClass().getSimpleName());
+        }
       }
     }
   }
@@ -210,8 +255,9 @@ public final class SqsEventConsumer implements SmartLifecycle {
       envelope = SqsEnvelopes.from(m);
     } catch (RuntimeException e) {
       // a message that cannot be read never will be: permanent
-      LOG.warn("Unreadable message {} on {}: {}", m.messageId(), queue, e.toString());
-      deadLetter(queue, m, null);
+      LOG.warn(
+          "Unreadable message {} on {}: {}", m.messageId(), queue, e.getClass().getSimpleName());
+      settle(m, () -> deadLetter(queue, m, null));
       return;
     }
     EventDispatcher.Outcome outcome;
@@ -219,7 +265,8 @@ public final class SqsEventConsumer implements SmartLifecycle {
       outcome = dispatcher.dispatch(queue, envelope, attempt);
     } catch (RuntimeException e) {
       // infrastructure around a valid message (tracing, context): transient
-      LOG.warn("Dispatch of {} on {} failed: {}", envelope.id(), queue, e.toString());
+      LOG.warn(
+          "Dispatch of {} on {} failed: {}", envelope.id(), queue, e.getClass().getSimpleName());
       outcome = new EventDispatcher.Outcome(DeliveryDecision.RETRY, Duration.ZERO);
     }
     EventDispatcher.Outcome decided = outcome;
@@ -231,7 +278,20 @@ public final class SqsEventConsumer implements SmartLifecycle {
           case DEFER -> () -> delay(queue, m, decided.retryAfter().plusSeconds(1));
           case DEAD_LETTER -> () -> deadLetter(queue, m, envelope);
         };
-    action.run();
+    settle(m, action);
+  }
+
+  private void settle(Message message, Runnable action) {
+    InFlight flight = inFlight.remove(message.messageId());
+    if (flight == null) {
+      action.run();
+      return;
+    }
+    synchronized (flight) {
+      // A heartbeat that already copied this receipt must finish before the final visibility.
+      flight.settled = true;
+      action.run();
+    }
   }
 
   private void delay(String queue, Message m, Duration delay) {
@@ -249,10 +309,18 @@ public final class SqsEventConsumer implements SmartLifecycle {
       return;
     }
     sqs.sendMessage(
-        b ->
-            b.queueUrl(dlq)
-                .messageBody(m.body())
-                .messageAttributes(Map.copyOf(m.messageAttributes())));
+        b -> {
+          b.queueUrl(dlq)
+              .messageBody(m.body())
+              .messageAttributes(Map.copyOf(m.messageAttributes()));
+          if (dlq.endsWith(".fifo")) {
+            b.messageGroupId(
+                    m.attributes()
+                        .getOrDefault(
+                            MessageSystemAttributeName.MESSAGE_GROUP_ID, "axiz-dead-letter"))
+                .messageDeduplicationId(m.messageId());
+          }
+        });
     delete(queue, m);
     LOG.warn(
         "Event {} moved to dead-letter queue", envelope != null ? envelope.id() : m.messageId());

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
@@ -34,6 +33,7 @@ import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.json.JsonReader;
 import pe.axiz.core.observability.AxizObservations;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.audit.AxizAuditAutoConfiguration;
 import pe.axiz.spring.audit.AxizNativeAuditAutoConfiguration;
 import pe.axiz.spring.audit.ReactiveAuditTrail;
@@ -59,7 +59,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 class LocalStackAuditIT {
   private static final Duration T = Duration.ofSeconds(20);
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("sqs");
+      TestContainerImages.localstack().withServices("sqs");
   private static final ObservationRegistry OBSERVATIONS = ObservationRegistry.create();
   private static final List<Observation.Context> CONTEXTS = new CopyOnWriteArrayList<>();
   private static final AtomicInteger REFRESHES = new AtomicInteger();

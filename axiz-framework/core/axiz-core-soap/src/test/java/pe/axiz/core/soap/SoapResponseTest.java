@@ -98,6 +98,18 @@ class SoapResponseTest {
   }
 
   @Test
+  void closedCredentialsAreErasedAndCannotBeReusedOrCompareEqualToAnotherSecret() {
+    var a = new SoapEnvelope.Credentials("ana", "secret".toCharArray(), WsSecurity.Mode.TEXT);
+    var b = new SoapEnvelope.Credentials("ana", "secret".toCharArray(), WsSecurity.Mode.TEXT);
+    a.close();
+    a.close();
+    assertThrows(IllegalStateException.class, a::password);
+    assertNotEquals(a, b);
+    b.close();
+    assertNotEquals(a, b);
+  }
+
+  @Test
   void credentialsCompareByContentAndNeverPrintThePassword() {
     SoapEnvelope.Credentials a =
         new SoapEnvelope.Credentials("ana", "s3cret".toCharArray(), WsSecurity.Mode.TEXT);

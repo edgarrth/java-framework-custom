@@ -60,9 +60,9 @@ public interface InboxStore {
       Instant expiresAt);
 
   /**
-   * Marks the message processed.
+   * Marks the message processed only while its owner lease and retention remain live.
    *
-   * @return false when {@code owner} no longer holds the registration
+   * @return false when {@code owner} no longer holds a live registration at {@code at}
    */
   boolean markProcessed(String consumer, String messageId, String owner, Instant at);
 
@@ -74,7 +74,14 @@ public interface InboxStore {
    */
   boolean release(String consumer, String messageId, String owner);
 
-  /** Deletes entries past their retention; returns how many. */
+  /** Validates the persistence window before any I/O, including direct store consumers. */
+  static void validateWindow(Instant now, Instant leaseUntil, Instant expiresAt) {
+    if (!leaseUntil.isAfter(now) || !expiresAt.isAfter(leaseUntil))
+      throw new IllegalArgumentException(
+          "Inbox retention must outlive a positive processing lease");
+  }
+
+  /** Deletes completed entries past their retention; never deletes an in-progress registration. */
   int purgeExpired(Instant now);
 
   /**

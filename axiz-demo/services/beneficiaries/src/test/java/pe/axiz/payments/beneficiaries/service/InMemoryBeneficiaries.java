@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 import pe.axiz.core.api.Page;
 import pe.axiz.core.api.PageMetadata;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
+import pe.axiz.payments.beneficiaries.model.BeneficiaryPolicy;
 import pe.axiz.payments.beneficiaries.repository.BeneficiaryRepository;
 
 /** In-memory repository with the same semantics as DynamoDB (active only, insertion order). */
@@ -45,7 +46,8 @@ public final class InMemoryBeneficiaries implements BeneficiaryRepository {
   }
 
   @Override
-  public void insert(Beneficiary b) {
+  public synchronized void insert(Beneficiary b, int maximum) {
+    new BeneficiaryPolicy(maximum).checkRegistration(allActive(b.getCustomerId()), b.getCci());
     if (rows.putIfAbsent(b.getCustomerId() + "/" + b.getBeneficiaryId(), b) != null) {
       throw new IllegalStateException("exists");
     }

@@ -96,12 +96,36 @@ class ContractSyncTest {
   @Test
   void generatesNewOperationsAndProposesControllers(@TempDir Path tmp) throws Exception {
     Path dir = project(tmp);
+    String tests = "src/test/java/pe/axiz/orders/orders/";
+    Files.delete(dir.resolve(tests + "OrdersApplicationTestSupport.java"));
+    Files.delete(dir.resolve(tests + "adapter/in/rest/OrdersControllerResponseTest.java"));
+    Files.delete(dir.resolve("src/test/resources/response-examples/getOrder.json"));
+    Path applicationTest = dir.resolve(tests + "OrdersApplicationTest.java");
+    String authoredTest =
+        Files.readString(applicationTest) + "\n// Existing consumer assertions.\n";
+    Files.writeString(applicationTest, authoredTest);
     Path contract = dir.resolve("src/main/openapi/openapi.yaml");
     String text = Files.readString(contract);
     Files.writeString(contract, text.replace("components:\n", NEW_OPERATION + "components:\n"));
     ContractSync.Result r = sync.sync(dir, false);
     assertTrue(r.applied(), r.toString());
     assertEquals(List.of("refundOrder"), r.added());
+    assertTrue(r.created().contains(tests + "OrdersApplicationTestSupport.java"));
+    assertTrue(
+        r.proposed()
+            .contains(
+                tests
+                    + "adapter/in/rest/OrdersControllerResponseTest.java"
+                    + ContractSync.PROPOSAL));
+    assertFalse(
+        Files.exists(dir.resolve(tests + "adapter/in/rest/OrdersControllerResponseTest.java")));
+    assertTrue(
+        r.proposed()
+            .contains(
+                "src/test/resources/response-examples/getOrder.json" + ContractSync.PROPOSAL));
+    assertFalse(Files.exists(dir.resolve("src/test/resources/response-examples/getOrder.json")));
+    assertTrue(r.proposed().contains(tests + "OrdersApplicationTest.java" + ContractSync.PROPOSAL));
+    assertEquals(authoredTest, Files.readString(applicationTest));
     String base = "src/main/java/pe/axiz/orders/orders/";
     assertTrue(
         r.created().contains(base + "application/usecase/RefundOrderUseCase.java"),

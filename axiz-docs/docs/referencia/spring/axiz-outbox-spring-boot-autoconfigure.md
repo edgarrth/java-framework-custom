@@ -46,3 +46,9 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 `EnvelopeEncryptor` and fails startup when it is absent. Protected records cannot
 be read in `none` mode; migration and retained read keys must be planned before
 changing the mode. See [technical storage protection](../../guias/proteccion-de-almacenes-tecnicos.md).
+
+`axiz.outbox.relay.shutdown-grace` defaults to 15 seconds (0–5 minutes allowed). Stop refuses a new
+batch, allows the current batch to finish within that budget, then interrupts outstanding work.
+The stop callback runs only when every worker and resource has actually terminated. A failed
+cleanup or unfinished stop rejects restart; it never silently creates another worker group.
+Delivery remains at-least-once, including uncertain sends interrupted after the grace period.

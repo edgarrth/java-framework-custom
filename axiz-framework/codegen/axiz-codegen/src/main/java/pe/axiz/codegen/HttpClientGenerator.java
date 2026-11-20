@@ -17,6 +17,7 @@ import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
+import pe.axiz.codegen.render.JavaSourceText;
 
 /**
  * {@code axiz generate http-client <name> --contract <openapi>}: a declarative client
@@ -116,7 +117,11 @@ public final class HttpClientGenerator {
       List<String> params = new ArrayList<>();
       for (String p : op.pathParams()) {
         imports.add("org.springframework.web.bind.annotation.PathVariable");
-        params.add("@PathVariable(\"" + p + "\") String " + Names.identifier(p));
+        params.add(
+            "@PathVariable("
+                + JavaSourceText.parameterLiteral(p)
+                + ") String "
+                + Names.identifier(p));
       }
       for (ApiOperation.QueryParam q : op.queryParams()) {
         imports.add("org.springframework.web.bind.annotation.RequestParam");
@@ -124,9 +129,9 @@ public final class HttpClientGenerator {
           imports.add("org.jspecify.annotations.Nullable");
         }
         params.add(
-            "@RequestParam(name = \""
-                + q.name()
-                + "\", required = "
+            "@RequestParam(name = "
+                + JavaSourceText.parameterLiteral(q.name())
+                + ", required = "
                 + q.required()
                 + ") "
                 + (q.required() ? "" : "@Nullable ")
@@ -137,9 +142,9 @@ public final class HttpClientGenerator {
         imports.add("org.springframework.web.bind.annotation.RequestParam");
         imports.add("org.jspecify.annotations.Nullable");
         params.add(
-            "@RequestParam(name = \""
-                + p
-                + "\", required = false) @Nullable "
+            "@RequestParam(name = "
+                + JavaSourceText.parameterLiteral(p)
+                + ", required = false) @Nullable "
                 + (p.equals("sort") ? "String " : "Integer ")
                 + p);
       }
@@ -149,9 +154,9 @@ public final class HttpClientGenerator {
           imports.add("org.jspecify.annotations.Nullable");
         }
         params.add(
-            "@RequestHeader(name = \""
-                + h.name()
-                + "\", required = "
+            "@RequestHeader(name = "
+                + JavaSourceText.parameterLiteral(h.name())
+                + ", required = "
                 + h.required()
                 + ") "
                 + (h.required() ? "" : "@Nullable ")
@@ -183,17 +188,17 @@ public final class HttpClientGenerator {
       }
       methods
           .append("\n  /** ")
-          .append(op.summary().replace("*/", "* /"))
+          .append(JavaSourceText.javadoc(op.summary()))
           .append(" (")
           .append(op.method())
           .append(' ')
-          .append(op.path())
+          .append(JavaSourceText.javadoc(op.path()))
           .append("). */\n")
           .append("  @")
           .append(Names.pascal(op.method().toLowerCase(Locale.ROOT)))
-          .append("Exchange(\"")
-          .append(op.path())
-          .append("\")\n")
+          .append("Exchange(")
+          .append(JavaSourceText.literal(op.path()))
+          .append(")\n")
           .append("  ")
           .append(returns)
           .append(' ')
@@ -206,9 +211,9 @@ public final class HttpClientGenerator {
     imports.forEach(i -> client.append("import ").append(i).append(";\n"));
     client
         .append("\n/**\n * Client of the ")
-        .append(contract.title())
+        .append(JavaSourceText.javadoc(contract.title()))
         .append(contract.title().matches("(?i).*\\bapi$") ? " (" : " API (")
-        .append(contract.version())
+        .append(JavaSourceText.javadoc(contract.version()))
         .append("), HTTP service group {@code ")
         .append(name)
         .append("}: base URL, timeouts, retries,\n")
@@ -277,10 +282,14 @@ public final class HttpClientGenerator {
         b.append("import com.fasterxml.jackson.annotation.JsonProperty;\n\n");
       }
       b.append("/** ").append(name).append(" values. */\npublic enum ").append(name).append(" {\n");
+      Set<String> constants = new LinkedHashSet<>();
       for (int i = 0; i < values.size(); i++) {
         String v = String.valueOf(values.get(i));
+        if (!constants.add(constant(v))) {
+          throw new IllegalArgumentException("Enum values produce duplicate Java names in " + name);
+        }
         if (!constant(v).equals(v)) {
-          b.append("  @JsonProperty(\"").append(v.replace("\"", "\\\"")).append("\")\n");
+          b.append("  @JsonProperty(").append(JavaSourceText.literal(v)).append(")\n");
         }
         b.append("  ").append(constant(v)).append(i == values.size() - 1 ? "\n" : ",\n");
       }
@@ -295,6 +304,7 @@ public final class HttpClientGenerator {
     }
     Set<String> imports = new TreeSet<>();
     List<String> components = new ArrayList<>();
+    Set<String> componentNames = new LinkedHashSet<>();
     List<String> copies = new ArrayList<>();
     StringBuilder doc = new StringBuilder();
     map(schema.get("properties"))
@@ -302,10 +312,14 @@ public final class HttpClientGenerator {
             (prop, def) -> {
               String javaType = propertyType(map(def), imports, schemas);
               String id = Names.identifier(prop);
+              if (!componentNames.add(id)) {
+                throw new IllegalArgumentException(
+                    "Properties produce duplicate Java names in " + name);
+              }
               String annotations = "";
               if (!id.equals(prop)) {
                 imports.add("com.fasterxml.jackson.annotation.JsonProperty");
-                annotations += "@JsonProperty(\"" + prop + "\") ";
+                annotations += "@JsonProperty(" + JavaSourceText.literal(prop) + ") ";
               }
               if (!required.contains(prop)) {
                 imports.add("org.jspecify.annotations.Nullable");
@@ -333,9 +347,8 @@ public final class HttpClientGenerator {
                   .append(id)
                   .append(' ')
                   .append(
-                      description == null
-                          ? prop
-                          : String.valueOf(description).replace("*/", "* /").replace('\n', ' '))
+                      JavaSourceText.javadoc(
+                          description == null ? prop : String.valueOf(description)))
                   .append('\n');
             });
     StringBuilder b = new StringBuilder("package " + pkg + ";\n\n");
@@ -438,7 +451,7 @@ public final class HttpClientGenerator {
 
   private static String packageInfo(String pkg, String description) {
     return "/** "
-        + description
+        + JavaSourceText.javadoc(description)
         + " */\n@NullMarked\npackage "
         + pkg
         + ";\n\nimport org.jspecify.annotations.NullMarked;\n";

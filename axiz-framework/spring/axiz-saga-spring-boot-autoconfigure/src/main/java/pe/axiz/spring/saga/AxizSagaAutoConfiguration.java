@@ -41,7 +41,8 @@ public class AxizSagaAutoConfiguration {
         RetryPolicy.transientFailures(p.compensationAttempts(), backoff),
         listener.getIfAvailable(SagaListener::none),
         clock.getIfAvailable(Clock::systemUTC),
-        protection.contextProtection().create(envelope::getObject));
+        protection.contextProtection().create(envelope::getObject),
+        p.executionLease());
   }
 
   /** Resumption of sagas interrupted by a crash; services register their definitions on it. */

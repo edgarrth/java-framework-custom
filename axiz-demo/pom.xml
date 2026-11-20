@@ -25,6 +25,8 @@
     <module>services/settlement-batch</module>
     <module>services/payment-network-gateway</module>
     <module>examples/protected-data</module>
+    <module>examples/provider-recipes</module>
+    <module>examples/sqs-consumer</module>
     <module>coverage</module>
   </modules>
 </project>

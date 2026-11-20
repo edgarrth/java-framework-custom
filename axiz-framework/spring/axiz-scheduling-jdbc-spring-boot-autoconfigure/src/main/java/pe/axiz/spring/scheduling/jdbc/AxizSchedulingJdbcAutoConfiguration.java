@@ -1,5 +1,6 @@
 package pe.axiz.spring.scheduling.jdbc;
 
+import java.util.Map;
 import javax.sql.DataSource;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
@@ -32,7 +33,8 @@ public class AxizSchedulingJdbcAutoConfiguration {
 
   @Bean
   SchemaInitializer axizShedlockSchema(DataSource dataSource, AxizSchedulingJdbcProperties p) {
-    return new SchemaInitializer(dataSource, "shedlock", p.initializeSchema());
+    return new SchemaInitializer(
+        dataSource, "shedlock", p.initializeSchema(), Map.of("shedlock", p.table()));
   }
 
   @Bean

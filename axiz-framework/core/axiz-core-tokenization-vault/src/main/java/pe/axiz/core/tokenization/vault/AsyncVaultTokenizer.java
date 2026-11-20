@@ -12,6 +12,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import pe.axiz.core.concurrent.Stages;
 import pe.axiz.core.crypto.AsyncEnvelopeEncryptor;
 import pe.axiz.core.errors.AxizException;
@@ -101,15 +102,20 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                 flow.active();
                 if (found.isPresent()) {
                   VaultRecord existing = policy.checked(request, found.get(), fingerprints.all());
-                  if (!policy.expired(existing)) {
-                    tokenResult(flow, existing, false);
-                    return;
-                  }
-                  flow.await(
-                      () -> budget.beforeWrite(request.caller(), request.scope()),
-                      ignored -> {
-                        flow.active();
-                        deleteRecord(flow, existing, removed -> tokenize(flow, attempt + 1));
+                  authenticate(
+                      flow,
+                      existing,
+                      () -> {
+                        if (!policy.expired(existing)) {
+                          tokenResult(flow, existing, false);
+                          return;
+                        }
+                        flow.await(
+                            () -> budget.beforeWrite(request.caller(), request.scope()),
+                            ignored -> {
+                              flow.active();
+                              deleteRecord(flow, existing, removed -> tokenize(flow, attempt + 1));
+                            });
                       });
                   return;
                 }
@@ -154,14 +160,19 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                                                       request, won.get(), fingerprints.all());
                                               if (!checked.token().equals(winner.token()))
                                                 throw new VaultIntegrityException();
-                                              if (!policy.expired(checked)) {
-                                                tokenResult(flow, checked, false);
-                                                return;
-                                              }
-                                              deleteRecord(
+                                              authenticate(
                                                   flow,
                                                   checked,
-                                                  removed -> tokenize(flow, attempt + 1));
+                                                  () -> {
+                                                    if (!policy.expired(checked)) {
+                                                      tokenResult(flow, checked, false);
+                                                      return;
+                                                    }
+                                                    deleteRecord(
+                                                        flow,
+                                                        checked,
+                                                        removed -> tokenize(flow, attempt + 1));
+                                                  });
                                             } else tokenize(flow, attempt + 1);
                                           });
                                     }
@@ -180,6 +191,24 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                           });
                     });
               });
+        });
+  }
+
+  private void authenticate(Invocation<?> flow, VaultRecord record, Runnable next) {
+    flow.await(
+        () ->
+            encryption.decrypt(
+                record.ciphertext(),
+                VaultPolicy.ENCRYPTION_CONTEXT,
+                record.scope().binding(record.token())),
+        plaintext -> {
+          try {
+            flow.active();
+            policy.authenticate(flow.request(), record, plaintext, flow.canonical);
+          } finally {
+            Arrays.fill(plaintext, (byte) 0);
+          }
+          next.run();
         });
   }
 
@@ -220,14 +249,25 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                     () -> vault.findByFingerprint(request.scope(), fingerprints.all()),
                     found -> {
                       flow.active();
-                      Optional<VaultRecord> visible =
-                          found
-                              .map(record -> policy.checked(request, record, fingerprints.all()))
-                              .filter(record -> !policy.expired(record));
-                      flow.confirm(
-                          visible.isPresent() ? Result.FOUND : Result.ABSENT,
-                          visible.map(VaultRecord::token).orElse(null),
-                          () -> flow.finish(visible.map(VaultRecord::token), null));
+                      if (found.isEmpty()) {
+                        flow.confirm(
+                            Result.ABSENT, null, () -> flow.finish(Optional.empty(), null));
+                        return;
+                      }
+                      VaultRecord record = policy.checked(request, found.get(), fingerprints.all());
+                      authenticate(
+                          flow,
+                          record,
+                          () -> {
+                            Optional<Token> token =
+                                policy.expired(record)
+                                    ? Optional.empty()
+                                    : Optional.of(record.token());
+                            flow.confirm(
+                                token.isPresent() ? Result.FOUND : Result.ABSENT,
+                                token.orElse(null),
+                                () -> flow.finish(token, null));
+                          });
                     });
               });
         });
@@ -260,6 +300,7 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
                     plaintext -> {
                       try {
                         flow.active();
+                        policy.authenticate(request, record, plaintext, null);
                         flow.revealed = VaultText.decode(plaintext);
                       } finally {
                         Arrays.fill(plaintext, (byte) 0);
@@ -290,14 +331,23 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
               found -> {
                 flow.active();
                 Optional<VaultRecord> visible = visible(request, token, found);
-                flow.confirm(
-                    visible.isPresent() ? Result.FOUND : Result.ABSENT,
-                    visible.isPresent() ? token : null,
+                if (visible.isEmpty()) {
+                  flow.confirm(Result.ABSENT, null, () -> flow.finish(Optional.empty(), null));
+                  return;
+                }
+                VaultRecord record = visible.get();
+                authenticate(
+                    flow,
+                    record,
                     () ->
-                        flow.finish(
-                            visible.map(
-                                record -> new TokenDescriptor(token, type, record.metadata())),
-                            null));
+                        flow.confirm(
+                            Result.FOUND,
+                            token,
+                            () ->
+                                flow.finish(
+                                    Optional.of(
+                                        new TokenDescriptor(token, type, record.metadata())),
+                                    null)));
               });
         });
     return flow.result;
@@ -430,7 +480,7 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
         checked = policy.authorize(caller, operation, type, domain, id, purpose);
         if (value != null) input = value.copy();
         await(
-            () -> budget.acquire(caller, operation, request().scope()),
+            () -> budget.acquire(caller, operation, request().scope(), request().operationId()),
             acquired -> {
               permit = Objects.requireNonNull(acquired);
               active();
@@ -462,7 +512,33 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
       await(
           () -> audit.publishConfirmed(policy.audit(request(), outcome, token)),
           ignored -> next.run(),
-          failed -> fail(TokenErrors.failure(TokenErrors.UNAVAILABLE)));
+          failed -> {
+            if (outcome != Result.CREATED && outcome != Result.DELETED) {
+              fail(TokenErrors.failure(TokenErrors.UNAVAILABLE));
+              return;
+            }
+            var evidence =
+                new UncertainTokenOperation(
+                    id,
+                    request().scope(),
+                    outcome == Result.CREATED
+                        ? UncertainTokenOperation.Phase.CREATE
+                        : UncertainTokenOperation.Phase.DELETE,
+                    token,
+                    policy.clock().instant(),
+                    UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED);
+            await(
+                () -> reconciliation.recordConfirmed(evidence),
+                ignored -> fail(TokenErrors.failure(TokenErrors.UNCERTAIN)),
+                logFailure -> {
+                  try {
+                    alarm.failed(evidence);
+                  } catch (RuntimeException alertFailure) {
+                    /* Preserve the committed outcome. */
+                  }
+                  fail(TokenErrors.failure(TokenErrors.UNCERTAIN));
+                });
+          });
     }
 
     <V> void await(Supplier<CompletionStage<V>> work, Consumer<V> next) {
@@ -536,10 +612,14 @@ public final class AsyncVaultTokenizer implements AsyncVaultOperations {
         await(
             acquired::release,
             ignored -> dispose(answer, failure),
-            releaseFailure ->
-                dispose(
-                    answer,
-                    failure == null ? TokenErrors.failure(TokenErrors.UNAVAILABLE) : failure));
+            releaseFailure -> {
+              LoggerFactory.getLogger(AsyncVaultTokenizer.class)
+                  .warn(
+                      "Token budget cleanup failed; operationId={}, failureType={}",
+                      id,
+                      releaseFailure.getClass().getSimpleName());
+              dispose(answer, failure);
+            });
     }
 
     void dispose(@Nullable T answer, @Nullable Throwable failure) {

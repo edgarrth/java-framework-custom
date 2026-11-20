@@ -1,7 +1,9 @@
 # Public API review for the initial 2.0.0 release
 
-Review date: 2026-11-18. The inventory contains 241 published JAR coordinates: 90 additions,
-57 changed signature sets and no removed coordinates relative to the previous design snapshot.
+Review date: 2026-11-18. The inventory contains 241 published JAR coordinates. The initial module
+review added 90 coordinates and changed 57 signature sets relative to the older design snapshot.
+The subsequent integral-review corrections change 19 signature sets, with no coordinates added
+or removed from the baseline commit `de594c9ed37b`.
 This is a review of the initial API, not a claim of compatibility with a published baseline.
 The GitHub publication gate must still verify the actual registry before allowing first-release mode.
 
@@ -55,3 +57,70 @@ Esto elimina la dependencia de producción entre adaptadores de capacidades dist
 sin duplicar el algoritmo de ventanas. Los consumidores de los starters no cambian;
 los constructores programáticos deben inyectar el limitador correspondiente.
 La integración real valida agotamiento, aislamiento, caída del almacén y cancelación.
+
+## Correcciones de concurrencia y recuperación de la candidata
+
+La revisión integral incorpora estos contratos antes de publicar la primera 2.0.0:
+
+- Saga exige dueño en las actualizaciones persistidas; desaparece la variante sin propietario.
+  El participante recibe identidad de ejecución y fence y debe aplicarlos al efecto externo.
+  `notApplied` permite observar de nuevo; un rechazo duradero se expresa con `rejected`.
+  Los consumidores programáticos deben migrar sus stores y participantes, además de actualizar
+  el esquema JDBC de propiedad. La implementación en memoria usa un monitor privado.
+- La recuperación de presupuestos Redis expone propietario, encarnación, operación e inventario.
+  Conciliar exige prueba externa de terminación/cercado y un journal; la edad o muerte de una JVM
+  no autorizan por sí solas a liberar una reserva. Los nuevos overloads conservan los constructores
+  existentes y permiten aportar identidad de operación explícita.
+- `AsyncIdempotencyCas` reúne el protocolo compartido. Los proveedores remotos deben delegar con
+  un reloj fresco en cada intento; `false` significa resultado no confirmado, incluida contención.
+  No constituye permiso para repetir un efecto ni prueba suficiente de pérdida de propietario.
+- Inbox exige retención mayor que lease y rechaza marcar procesado al vencer el lease, incluso
+  sin takeover. No garantiza cercado de efectos externos ni retención desde la finalización.
+- `WorkerStatus` y los snapshots de `WorkerLifecycle` permiten comprobar salud sin exponer tareas
+  ni excepciones. `axizWorkers` se integra en readiness por defecto cuando Boot health está presente.
+  Grupos personalizados deben conservar ese miembro si requieren esa garantía.
+  `InboxPurger` es final: su extensión se realiza componiendo el puerto de almacenamiento, sin
+  permitir un finalizador de subclase sobre una instancia cuya validación de construcción falló.
+- Los records `AxizSagaProperties` y `AxizOutboxProperties.Relay` agregan `executionLease` y
+  `shutdownGrace`: los constructores posicionales cambian; la configuración Spring y el builder
+  de Relay aportan los valores predeterminados.
+- El grace predeterminado de outbox/SQS es 15s; Spring valida un margen adicional de 5s contra
+  el timeout por fase. La configuración que antes excedía ese presupuesto ahora falla al arrancar.
+  Los charts conceden 90s y quien agregue fases o hooks debe ajustar el presupuesto total.
+- BlindIndex y PanDetector admiten buffers `char[]`; CheckDigits admite `CharSequence`.
+  Conservan las variantes String y el formato de los índices; el consumidor decide la propiedad
+  y borrado de sus buffers.
+- JDBC/R2DBC separan el rechazo definitivo de commit del resultado desconocido; un cleanup
+  posterior no transforma un commit confirmado en un fallo reintentable. La API de transacción
+  independiente de R2DBC permite que una secuencia no reutilice identificadores tras rollback externo.
+
+Estos cambios se aceptan sobre la candidata no publicada. No se declara compatibilidad binaria
+con instantáneas de diseño anteriores ni se omite la comprobación del registro remoto.
+
+## Cierre AXV-01–20 (19 de noviembre de 2026)
+
+Se revisaron las diferencias de firmas de diez artefactos contra los JAR compilados:
+
+- `CommittedTransactionOutcome`, `POST_COMMIT_PUBLICATION` y `PostCommitPublicationException`
+  distinguen un commit confirmado cuya publicación posterior falló. Los adaptadores no deben
+  traducirlo a rollback ni autorizar la repetición del efecto de negocio.
+- `UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED` distingue una creación o
+  eliminación persistida cuyo registro de auditoría no confirmó. Exige conciliación y no autoriza
+  repetir el efecto; los consumidores con switches exhaustivos deben contemplar la nueva razón.
+- `IdempotencyLease.start` admite un presupuesto explícito para renovación. Conserva el overload
+  anterior; un timeout produce incertidumbre y no prueba que el proveedor haya cancelado el trabajo.
+- `SoapClient.call` acepta credenciales por operación. `SoapEnvelope.Credentials` implementa
+  `AutoCloseable` y sincroniza acceso/borrado del buffer. El llamador conserva la responsabilidad
+  de cerrar las credenciales que construye; `SoapClients` lo hace para las que resuelve.
+- `AxizSoapProperties.Client` incorpora `sslBundle` y construcción por opciones nombradas;
+  conserva el constructor anterior. `SoapClients` acepta un registro de bundles opcional.
+  La credencial WS-Security se resuelve por llamada; cambiar certificados requiere recrear
+  la fábrica o reiniciar gradualmente, no se promete recarga automática del transporte.
+- `SchemaInitializer` admite el mapa de nombres SQL validados manteniendo el constructor original.
+- Las imágenes de prueba se crean mediante fábricas: se retira `AxizContainers.LOCALSTACK`
+  y se usa `AxizContainers.localstack()`/`TestContainerImages.localstack().withServices(...)`.
+  `PatchedRyukImageSubstitutor` es el SPI público requerido por Testcontainers para cargar el
+  recolector corregido; no es una capacidad de producción del core.
+
+El inventario sólo actualiza esos diez contratos revisados. La verificación autenticada de
+GitHub Packages sigue siendo obligatoria para confirmar que corresponde al primer release.

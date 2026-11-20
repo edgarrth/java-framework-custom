@@ -97,7 +97,7 @@ public final class VaultPolicy {
         || policy.profile().cardData() != request.cardData())
       throw TokenErrors.failure(TokenErrors.UNAVAILABLE);
     boolean guard = !request.cardData() && policy.panException() == null;
-    if (guard && PanDetector.containsPan(input.reveal()))
+    if (guard && input.use(PanDetector::containsPan))
       throw TokenErrors.failure(TokenErrors.INVALID);
     SensitiveValue canonical;
     try {
@@ -107,7 +107,7 @@ public final class VaultPolicy {
     }
     if (canonical == input) throw TokenErrors.failure(TokenErrors.INVALID);
     try {
-      if (guard && PanDetector.containsPan(canonical.reveal()))
+      if (guard && canonical.use(PanDetector::containsPan))
         throw TokenErrors.failure(TokenErrors.INVALID);
       return canonical;
     } catch (RuntimeException failure) {
@@ -120,13 +120,14 @@ public final class VaultPolicy {
     if (!state.keysetId().equals(request.policy().keysetId())) throw new VaultIntegrityException();
     if (!indexes.keyIds().containsAll(state.readKeyIds()))
       throw TokenErrors.failure(TokenErrors.UNAVAILABLE);
-    String value = canonical.reveal();
-    KeyedHash write = indexes.index(value, request.scope().indexScope(), state.writeKeyId());
+    KeyedHash write =
+        canonical.use(
+            value -> indexes.index(value, request.scope().indexScope(), state.writeKeyId()));
     List<KeyedHash> all = new ArrayList<>();
     all.add(write);
     for (String key : state.readKeyIds())
       if (!key.equals(state.writeKeyId()))
-        all.add(indexes.index(value, request.scope().indexScope(), key));
+        all.add(canonical.use(value -> indexes.index(value, request.scope().indexScope(), key)));
     return new Fingerprints(write, List.copyOf(all));
   }
 
@@ -169,6 +170,22 @@ public final class VaultPolicy {
 
   boolean expired(VaultRecord record) {
     return !record.expiresAt().isAfter(clock.instant());
+  }
+
+  /** Checks the stored indexes against authenticated plaintext, never against each other alone. */
+  void authenticate(
+      Request request, VaultRecord record, byte[] plaintext, @Nullable SensitiveValue expected) {
+    if (expected != null && !VaultText.matches(expected, plaintext))
+      throw new VaultIntegrityException();
+    try (SensitiveValue value = VaultText.decode(plaintext)) {
+      for (KeyedHash stored : record.fingerprints()) {
+        if (!indexes.keyIds().contains(stored.keyId())) throw new VaultIntegrityException();
+        KeyedHash computed =
+            value.use(chars -> indexes.index(chars, record.scope().indexScope(), stored.keyId()));
+        if (!computed.equals(stored)) throw new VaultIntegrityException();
+      }
+      if (!metadata(request, value).equals(record.metadata())) throw new VaultIntegrityException();
+    }
   }
 
   TokenAuditEntry audit(Request request, TokenAuditEntry.Result outcome, @Nullable Token token) {

@@ -1,7 +1,9 @@
 public final class pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore implements pe.axiz.core.idempotency.AsyncIdempotencyStore {
 public java.util.concurrent.CompletionStage<java.lang.Boolean> compareAndSet(pe.axiz.core.idempotency.IdempotencyRecord, pe.axiz.core.idempotency.IdempotencyRecord);
 public java.util.concurrent.CompletionStage<java.lang.Boolean> complete(java.lang.String, java.lang.String, pe.axiz.core.idempotency.StoredResponse, java.time.Instant);
+public java.util.concurrent.CompletionStage<java.lang.Boolean> markUnknown(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
 public java.util.concurrent.CompletionStage<java.lang.Boolean> release(java.lang.String, java.lang.String);
+public java.util.concurrent.CompletionStage<java.lang.Boolean> renew(java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
 public java.util.concurrent.CompletionStage<java.lang.Boolean> tryStart(pe.axiz.core.idempotency.IdempotencyRecord);
 public java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.idempotency.IdempotencyRecord>> find(java.lang.String, java.time.Instant);
 public pe.axiz.adapter.idempotency.dynamodb.DynamoDbAsyncIdempotencyStore(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String, java.time.Clock);

@@ -170,7 +170,7 @@ public final class LockTemplate {
       handle.release();
     } catch (RuntimeException e) {
       // the store expires it anyway; releasing only shortens the wait of the next owner
-      LOG.debug("Lock on {} not released: {}", handle.resource(), e.toString());
+      LOG.debug("Lock on {} not released: {}", handle.resource(), e.getClass().getSimpleName());
     }
   }
 
@@ -200,7 +200,10 @@ public final class LockTemplate {
         held.lose(null);
       } catch (RuntimeException e) {
         if (attempt - held.heldUntil < 0) {
-          LOG.warn("Lock on {} not renewed, retrying: {}", held.resource(), e.toString());
+          LOG.warn(
+              "Lock on {} not renewed, retrying: {}",
+              held.resource(),
+              e.getClass().getSimpleName());
           continue;
         }
         held.lose(e);

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,7 @@ class JpaTest {
   @Test
   void auditorFromCaller() {
     RequestAuditorProvider p = new RequestAuditorProvider();
-    assertEquals("system", p.currentAuditor().orElseThrow());
+    assertTrue(p.currentAuditor().isEmpty());
     try (RequestContext.Scope s =
         RequestContext.open(
             RequestMetadata.builder("corr-12345678", "req-12345678")
@@ -115,7 +116,28 @@ class JpaTest {
     }
     try (RequestContext.Scope s =
         RequestContext.open(RequestMetadata.builder("corr-12345678", "req-12345678").build())) {
-      assertEquals("system", p.currentAuditor().orElseThrow());
+      assertTrue(p.currentAuditor().isEmpty());
+    }
+  }
+
+  @Test
+  void blankIdentitiesAreNotRecordedAsAuditors() {
+    RequestAuditorProvider provider = new RequestAuditorProvider();
+    try (RequestContext.Scope scope =
+        RequestContext.open(
+            RequestMetadata.builder("corr-12345678", "req-12345678")
+                .subject(" ")
+                .clientId("batch-app")
+                .build())) {
+      assertEquals("batch-app", provider.currentAuditor().orElseThrow());
+    }
+    try (RequestContext.Scope scope =
+        RequestContext.open(
+            RequestMetadata.builder("corr-12345678", "req-12345678")
+                .subject(" ")
+                .clientId("\t")
+                .build())) {
+      assertTrue(provider.currentAuditor().isEmpty());
     }
   }
 

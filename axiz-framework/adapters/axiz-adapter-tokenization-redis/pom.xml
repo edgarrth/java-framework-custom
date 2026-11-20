@@ -9,6 +9,7 @@
   <description>Distributed fail-closed token budgets with native Redis admission and owned concurrency permits</description>
   <properties><axiz.module.name>pe.axiz.adapter.tokenization.redis</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-security</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-crypto</artifactId><version>${project.version}</version></dependency>

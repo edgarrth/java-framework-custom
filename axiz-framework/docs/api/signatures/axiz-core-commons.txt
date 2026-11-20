@@ -46,6 +46,12 @@ public void validate(java.net.URI, java.lang.String);
 public void validateTarget(java.net.URI, java.net.URI, boolean, java.lang.String);
 }
 
+public interface pe.axiz.core.commons.tx.CommittedTransactionOutcome {
+}
+
 public interface pe.axiz.core.commons.tx.TransactionRunner {
 public abstract <T> T inTransaction(java.util.concurrent.Callable<T>) throws java.lang.Exception;
+}
+
+public interface pe.axiz.core.commons.tx.UnknownTransactionOutcome {
 }

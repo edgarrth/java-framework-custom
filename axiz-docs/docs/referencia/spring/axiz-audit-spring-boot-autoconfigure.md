@@ -126,7 +126,8 @@ Servlet publication keeps its synchronous adapter. In reactive applications the 
 wait inside `send()`. Completion means broker acknowledgement; there is no wait for that ack on a
 worker or Reactor thread. The standard Kafka client is retained.
 
-`axiz.audit.kafka.send-workers` defaults to 2 and `send-queue-capacity` to 256. Admission is
+`axiz.audit.kafka.send-workers` defaults to 2 (range 1..64) and `send-queue-capacity` to 256
+(range 0..65536). Typed properties validate these limits before creating the dispatcher. Admission is
 bounded across queued work and unacknowledged sends; exhaustion fails immediately rather than
 running on the caller. The existing Kafka timeout bounds submission plus acknowledgement and
 `max.block.ms`. Metrics `axiz.transport.pending`, `.queued`, `.rejected`, and `.latency` carry the

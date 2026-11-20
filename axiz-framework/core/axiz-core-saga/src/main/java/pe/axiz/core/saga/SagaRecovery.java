@@ -55,7 +55,10 @@ public final class SagaRecovery {
       } catch (SagaConcurrencyException e) {
         LOG.info("Saga {} is being resumed by another instance", s.sagaId());
       } catch (RuntimeException e) {
-        LOG.error("Saga {} could not be resumed", s.sagaId(), e);
+        LOG.error(
+            "Saga {} could not be resumed; failureType={}",
+            s.sagaId(),
+            e.getClass().getSimpleName());
       }
     }
     return resumed;

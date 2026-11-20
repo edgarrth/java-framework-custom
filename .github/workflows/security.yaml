@@ -82,7 +82,7 @@ jobs:
   filesystem:
     needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
@@ -90,14 +90,30 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Java and local Maven metadata for source dependency resolution
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Install this checkout's parent and BOM metadata
+        run: >-
+          mvn -B -ntp -f axiz-framework/pom.xml
+          -pl :axiz-bom,:axiz-parent,:axiz-parent-core,:axiz-parent-api,:axiz-parent-test,:axiz-parent-tooling,:axiz-parent-technology,:axiz-parent-spring,:axiz-parent-service
+          install
       - name: Trivy 0.76.2 on the complete checkout
+        env:
+          # Maven SBOM gates resolve the complete dependency graph during the build.
+          # Source scanning must not query public Maven Central for private pe.axiz parents.
+          TRIVY_OFFLINE_SCAN: 'true'
+          TRIVY_TIMEOUT: 20m
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           version: v0.76.2
           scan-type: fs
           scan-ref: .
           scanners: vuln,secret,misconfig
-          severity: MEDIUM,HIGH,CRITICAL
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
           format: sarif
           limit-severities-for-sarif: true
           output: trivy.sarif
@@ -121,7 +137,7 @@ jobs:
           retention-days: 90
   infrastructure-images:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 90
     permissions:
       contents: read
     strategy:
@@ -132,20 +148,25 @@ jobs:
           - {name: postgres, image: 'axiz-local/postgres:17.12-r1', recipe: postgres}
           - {name: valkey, image: 'axiz-local/valkey:8.1.8-r1', recipe: valkey}
           - {name: kafka, image: 'axiz-local/kafka:4.2.2-r1', recipe: kafka}
-          - {name: localstack, image: 'localstack/localstack:4.9', recipe: ''}
+          - {name: localstack, image: 'axiz-local/localstack:4.14.0-r1', recipe: localstack}
           - {name: keycloak, image: 'axiz-local/keycloak:26.8.2-r1', recipe: keycloak}
           - {name: wiremock, image: 'axiz-local/wiremock:3.13.2-r1', recipe: wiremock}
-          - {name: otel-lgtm, image: 'grafana/otel-lgtm:0.11.10', recipe: ''}
-          - {name: ryuk, image: 'testcontainers/ryuk:0.14.0', recipe: ''}
-          - {name: java-runtime, image: 'eclipse-temurin:25-jre-noble', recipe: ''}
-          - {name: initializr-runtime, image: 'eclipse-temurin:25-jdk-noble', recipe: ''}
-          - {name: native-runtime, image: 'gcr.io/distroless/base-debian12:nonroot', recipe: ''}
+          - {name: otel-lgtm, image: 'axiz-local/otel-lgtm:2026.11-r1', recipe: otel-lgtm}
+          - {name: ryuk, image: 'axiz-local/ryuk:0.14.0-r1', recipe: ryuk}
+          - {name: java-runtime, image: 'azul/zulu-openjdk-alpine:25-jre@sha256:8eaca94dd76729a65ce7d693d8aa84c12f9ae656624ae3b118d6a8d411764cd8', recipe: ''}
+          - {name: initializr-runtime, image: 'azul/zulu-openjdk-alpine:25@sha256:fe4cdf0a179283ac4b6a6c262cce2282e39208c3cf869cb2f627288bac4127e0', recipe: ''}
+          - {name: native-runtime, image: 'cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2', recipe: ''}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
       - name: Verify the canonical container recipes
-        run: python3 .github/scripts/sync_container_recipes.py --check
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/axiz-image-policy"
+          "$RUNNER_TEMP/axiz-image-policy/bin/python" -m pip install --require-hashes --quiet \
+            -r axiz-framework/.github/scripts/requirements.txt
+          "$RUNNER_TEMP/axiz-image-policy/bin/python" .github/scripts/sync_container_recipes.py --check
       - name: Build the patched infrastructure image
         if: matrix.recipe != ''
         env:
@@ -153,16 +174,25 @@ jobs:
           IMAGE: ${{ matrix.image }}
         run: |
           set -euo pipefail
-          case "$RECIPE" in postgres|valkey|kafka|wiremock|keycloak) ;; *) exit 1 ;; esac
+          case "$RECIPE" in postgres|valkey|kafka|wiremock|keycloak|localstack|ryuk|otel-lgtm) ;; *) exit 1 ;; esac
           docker build --pull --tag "$IMAGE" "axiz-demo/local/images/$RECIPE"
+      - name: Verify actual ingestion and querying of all three observability signals
+        if: matrix.recipe == 'otel-lgtm'
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: python3 .github/scripts/check_observability_image.py "$IMAGE" --report observability-runtime.json
       - name: Scan the actual infrastructure image, including OS and embedded libraries
+        env:
+          TRIVY_VEX: .github/policies/tempo-fixed.openvex.json
+          TRIVY_SHOW_SUPPRESSED: 'true'
+          TRIVY_LIST_ALL_PKGS: 'true'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           version: v0.76.2
           scan-type: image
           image-ref: ${{ matrix.image }}
           scanners: vuln
-          severity: MEDIUM,HIGH,CRITICAL
+          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
           format: json
           output: infrastructure.json
           exit-code: '1'
@@ -170,6 +200,7 @@ jobs:
       - name: Reject incomplete or empty image inventories
         if: always()
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           IMAGE: ${{ matrix.image }}
           RECIPE: ${{ matrix.recipe }}
         run: |
@@ -178,7 +209,21 @@ jobs:
           if [[ "$RECIPE" == wiremock ]]; then
             options+=(--maven-lock axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/wiremock/libraries.lock.json)
           fi
-          python3 .github/scripts/check_image_scan.py infrastructure.json "$IMAGE" "${options[@]}"
+          if [[ "$RECIPE" == localstack ]]; then
+            options+=(--require-type jar --require-type python-pkg --maven-lock axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/localstack/libraries.lock.json)
+          fi
+          if [[ "$RECIPE" == ryuk || "$RECIPE" == otel-lgtm ]]; then
+            options+=(--require-type gobinary)
+          fi
+          if [[ "$RECIPE" == otel-lgtm ]]; then
+            options+=(--go-sources axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/otel-lgtm/sources.lock.json)
+          fi
+          python3 .github/scripts/check_image_scan.py infrastructure.json "$IMAGE" --expected-image-id "$(docker image inspect --format '{{.Id}}' "$IMAGE")" --vex .github/policies/tempo-fixed.openvex.json "${options[@]}"
+      - name: Preserve the unfiltered vulnerability report
+        if: always()
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: trivy image --scanners vuln --format json --output infrastructure-raw.json --exit-code 0 "$IMAGE"
       - name: Convert the original scan to SARIF
         if: always()
         run: trivy convert --format sarif --output infrastructure.sarif infrastructure.json
@@ -188,7 +233,10 @@ jobs:
           name: security-infrastructure-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             infrastructure.json
+            infrastructure-raw.json
             infrastructure.sarif
+            observability-runtime.json
+            .github/policies/tempo-fixed.openvex.json
           if-no-files-found: error
           retention-days: 90
   publish-sarif:

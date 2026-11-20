@@ -1,5 +1,5 @@
 import unittest
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from pathlib import Path
 
 import yaml
@@ -8,6 +8,25 @@ from sync_container_recipes import ROOT, SOURCE, sync
 
 
 class ContainerRecipesTest(unittest.TestCase):
+    def test_service_and_library_builds_scan_test_and_provided_dependencies(self):
+        for filename in ('lib-build.yaml', 'service-build.yaml'):
+            workflow = yaml.safe_load((ROOT / '.github/workflows' / filename).read_text())
+            steps = [step for job in workflow['jobs'].values() for step in job.get('steps', [])]
+            generators = [step for step in steps if 'cyclonedx-maven-plugin' in step.get('run', '')]
+            self.assertTrue(generators, filename)
+            for step in generators:
+                for scope in ('Test', 'Provided', 'System'):
+                    self.assertIn('-Dinclude' + scope + 'Scope=true', step['run'], filename)
+            scans = [step for step in steps if step.get('with', {}).get('scan-type') == 'sbom']
+            self.assertTrue(scans, filename)
+            for step in scans:
+                self.assertEqual('1', step['with']['exit-code'])
+                self.assertTrue({'UNKNOWN', 'MEDIUM', 'HIGH', 'CRITICAL'}.issubset(
+                    step['with']['severity'].split(',')))
+            if filename == 'service-build.yaml':
+                package = next(step for step in steps if step.get('id') == 'product')
+                self.assertLess(steps.index(scans[0]), steps.index(package))
+
     def test_development_services_are_exposed_only_on_loopback(self):
         for compose in [ROOT / 'axiz-demo/local/compose.yaml',
                         *sorted((ROOT / 'axiz-demo/services').glob('*/compose.yaml'))]:
@@ -19,6 +38,19 @@ class ContainerRecipesTest(unittest.TestCase):
             if line.strip().startswith('ports:'):
                 for port in yaml.safe_load(line)['ports']:
                     self.assertTrue(port.startswith('127.0.0.1:'), f'Generated service: {port}')
+
+    def test_local_images_start_unprivileged_and_kind_never_pulls_local_names(self):
+        for name, user in [('postgres', 'postgres'), ('valkey', 'valkey')]:
+            recipe = (SOURCE / name / 'Dockerfile').read_text().splitlines()
+            self.assertEqual('USER ' + user, next(line for line in reversed(recipe) if line.startswith('USER ')))
+        for path in (ROOT / 'axiz-demo/kind/deps').glob('*.yaml'):
+            for doc in yaml.safe_load_all(path.read_text()):
+                if not isinstance(doc, dict):
+                    continue
+                spec = doc.get('spec', {}).get('template', {}).get('spec', {})
+                for container in spec.get('containers', []) + spec.get('initContainers', []):
+                    if container.get('image', '').startswith('axiz-local/'):
+                        self.assertEqual('Never', container.get('imagePullPolicy'), str(path))
 
     def test_demo_and_generated_recipes_match_the_canonical_test_artifact(self):
         sync(check=True)
@@ -53,7 +85,7 @@ class ContainerRecipesTest(unittest.TestCase):
                 self.assertIn(service['image'], images, str(compose))
         scanner = next(step['with'] for step in job['steps']
                        if step.get('uses', '').startswith('aquasecurity/trivy-action@'))
-        self.assertEqual({'MEDIUM', 'HIGH', 'CRITICAL'}, set(scanner['severity'].split(',')))
+        self.assertEqual({'UNKNOWN', 'MEDIUM', 'HIGH', 'CRITICAL'}, set(scanner['severity'].split(',')))
         self.assertEqual('1', scanner['exit-code'])
         self.assertEqual('false', scanner['ignore-unfixed'])
         self.assertEqual('json', scanner['format'])

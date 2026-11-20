@@ -233,11 +233,27 @@ class VaultTokenizerTest {
     code(
         "AXZ-TOKEN-0503",
         () -> engine.detokenize(caller("one"), DNI, token, DOMAIN, "customer-support"));
-    code("AXZ-TOKEN-0503", () -> tokenize("00112233", DNI, "one"));
+    code(TokenErrors.UNCERTAIN.code().value(), () -> tokenize("00112233", DNI, "one"));
+    assertEquals(
+        UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED, uncertain.getLast().reason());
     assertEquals(
         2, store.records.size()); // Confirmed mutation is never rolled back as audit compensation.
     auditDown = false;
     assertFalse(tokenize("00112233", DNI, "one").created());
+  }
+
+  @Test
+  void confirmedDeleteWithMissingAuditIsReconciledWithoutRepeatingTheMutation() {
+    var token = tokenize("00883344", DNI, "one").token();
+    auditDown = true;
+    code(
+        TokenErrors.UNCERTAIN.code().value(),
+        () -> engine.delete(caller("one"), DNI, token, DOMAIN));
+    assertTrue(store.records.isEmpty());
+    assertEquals(UncertainTokenOperation.Phase.DELETE, uncertain.getLast().phase());
+    assertEquals(
+        UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED, uncertain.getLast().reason());
+    assertEquals(token, uncertain.getLast().token());
   }
 
   @Test

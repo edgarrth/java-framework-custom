@@ -6,6 +6,11 @@ evalúa `.github/policies/vulnerabilities-v2.json` según su esquema. No aplica 
 ni filtros de severidad o exclusión aportados por el PR. Una ejecución fallida, evidencia
 ausente/incompleta, plataforma equivocada o digest distinto bloquea la puerta.
 
+El escaneo de fuentes dispone de 30 minutos y resuelve metadatos Maven locales sin consultas
+remotas del escáner. En el monorepo, el pipeline instala primero los POM padre y el BOM del
+checkout. El SBOM generado por Maven valida además el grafo efectivo de todos los alcances.
+Los escaneos de SBOM e imágenes conservan un presupuesto de 10 minutos por artefacto.
+
 Se invoca desde PR, seguridad programada, construcción de biblioteca y construcción de
 servicio. `source` cubre fuentes; `sbom`, el CycloneDX del reactor; `service`, fuentes y cada
 imagen final por plataforma y digest. El conjunto esperado deriva de parámetros y metadata
@@ -66,3 +71,9 @@ python3 -m unittest discover -s .github/actions/check-vulnerabilities
 Las pruebas cubren plazos, clasificación, explotación, versiones/scopes, caducidad, historia
 inmutable, alias, plataformas, corrupción de evidencia, filtros heredados y protección remota
 simulada. El escaneo y la protección reales necesitan verificarse también en el entorno final.
+
+For exact-version OpenVEX fixes, the image gate queries the GitHub advisory API and requires the
+same CVE/GHSA plus both the vendor advisory and the exact patch commit among its references.
+It separately recomputes commit ancestry and binds the result to the scanned immutable image ID.
+Missing references, upstream verification failures and changed image identity fail the gate.
+Source review remains responsible for patch semantics; a commit URL alone never proves a fix.

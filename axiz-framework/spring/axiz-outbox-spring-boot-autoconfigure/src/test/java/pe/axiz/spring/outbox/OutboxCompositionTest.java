@@ -159,10 +159,16 @@ class OutboxCompositionTest {
                   .hasSingleBean(ReactiveTransactionalEvents.class);
               verify(valid).verifySchema();
               assertThat(c.getBean(OutboxRelayRunner.class).isRunning()).isTrue();
+              c.getBean(OutboxRelayRunner.class).stop();
+              long priorClaims =
+                  meters.find("axiz.outbox.relay.claim.duration").timer() == null
+                      ? 0
+                      : meters.get("axiz.outbox.relay.claim.duration").timer().count();
               var listener = c.getBean(OutboxRelayListener.class);
               listener.onClaim(Duration.ofMillis(25), 2);
               listener.onBudgetExhausted(1);
-              assertEquals(1, meters.get("axiz.outbox.relay.claim.duration").timer().count());
+              assertEquals(
+                  priorClaims + 1, meters.get("axiz.outbox.relay.claim.duration").timer().count());
               assertEquals(1, meters.get("axiz.outbox.relay.budget.exhausted").counter().count());
               c.getBeansOfType(MeterBinder.class).values().forEach(binder -> binder.bindTo(meters));
               assertThat(meters.get("axiz.outbox.blocked.aggregates").gauge()).isNotNull();

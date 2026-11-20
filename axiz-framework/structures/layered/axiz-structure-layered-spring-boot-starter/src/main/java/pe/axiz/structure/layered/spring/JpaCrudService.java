@@ -143,8 +143,14 @@ public abstract class JpaCrudService<E, RequestT, ResponseT, I>
   }
 
   @Override
-  public void delete(I id) {
+  public void delete(I id, String expectedVersion) {
     E current = load(id, CrudAction.DELETE);
+    if (expectedVersion == null || expectedVersion.isBlank())
+      throw new ValidationException(
+          List.of(FieldViolation.of("version", "Required", "Expected version is required")));
+    if (!expectedVersion.equals(String.valueOf(persistence.getVersion(current))))
+      throw new BusinessException(
+          CoreErrors.PRECONDITION_FAILED, "Resource version precondition failed");
     entityManager.lock(current, LockModeType.OPTIMISTIC);
     repository.delete(current);
     entityManager.flush();

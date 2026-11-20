@@ -14,6 +14,7 @@ import javax.tools.ToolProvider;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pe.axiz.core.lang.ValueSnapshots;
 
 class HexagonalIsolationTest {
   @TempDir Path directory;
@@ -39,6 +40,25 @@ class HexagonalIsolationTest {
             .run(null, null, null, arguments.toArray(String[]::new));
     Assertions.assertEquals(0, code);
     return new ClassFileImporter().importPath(compilation);
+  }
+
+  @Test
+  void pureValueSnapshotsAreAllowedWithoutOpeningJsonSerializationToTheDomain() throws Exception {
+    assertFalse(
+        violates(
+            Map.of(
+                "sample.domain.Event",
+                "package sample.domain; public record Event(java.util.Map<String,Object> values) {"
+                    + " public Event { values = "
+                    + ValueSnapshots.class.getName()
+                    + ".map(values); } }")));
+    assertTrue(
+        violates(
+            Map.of(
+                "sample.domain.Event",
+                "package sample.domain; public class Event { pe.axiz.core.json.JsonCodec codec; }",
+                "pe.axiz.core.json.JsonCodec",
+                "package pe.axiz.core.json; public class JsonCodec {}")));
   }
 
   @Test

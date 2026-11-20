@@ -19,11 +19,12 @@ public final class InMemoryPaymentOrders implements PaymentOrders {
   public final Map<String, Money> reserved = new HashMap<>();
 
   @Override
-  public void create(PaymentOrder order, @Nullable String requestKey) {
+  public PaymentOrder create(PaymentOrder order, @Nullable String requestKey) {
     rows.put(order.id(), order);
     if (requestKey != null) {
       requestKeys.put(order.customerId() + "|" + requestKey, order.id());
     }
+    return order;
   }
 
   @Override

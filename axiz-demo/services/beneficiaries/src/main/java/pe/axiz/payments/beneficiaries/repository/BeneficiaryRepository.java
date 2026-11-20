@@ -22,8 +22,8 @@ public interface BeneficiaryRepository {
   /** Every active beneficiary of a customer (bounded by the per-customer limit). */
   List<Beneficiary> allActive(String customerId);
 
-  /** Inserts a new beneficiary; fails if the key already exists. */
-  void insert(Beneficiary beneficiary);
+  /** Atomically enforces account uniqueness and the customer limit while inserting a new key. */
+  void insert(Beneficiary beneficiary, int maxPerCustomer);
 
   /** Writes a change with optimistic locking. */
   Beneficiary update(Beneficiary beneficiary);

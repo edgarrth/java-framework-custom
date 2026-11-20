@@ -1,5 +1,6 @@
 package pe.axiz.core.crypto;
 
+import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -35,7 +36,22 @@ public final class BlindIndex implements AutoCloseable {
     return index(canonicalValue, scope, currentKeyId);
   }
 
-  public synchronized KeyedHash index(String canonicalValue, IndexScope scope, String keyId) {
+  public KeyedHash index(String canonicalValue, IndexScope scope, String keyId) {
+    return compute(canonicalValue, scope, keyId);
+  }
+
+  /** Creates no immutable plaintext String; private working copies are erased after hashing. */
+  public KeyedHash index(char[] canonicalValue, IndexScope scope, String keyId) {
+    char[] owned = canonicalValue.clone();
+    try {
+      return compute(CharBuffer.wrap(owned), scope, keyId);
+    } finally {
+      Arrays.fill(owned, '\0');
+    }
+  }
+
+  private synchronized KeyedHash compute(
+      CharSequence canonicalValue, IndexScope scope, String keyId) {
     if (closed) throw new CryptoException("Index keyring has been closed");
     byte[] key = keys.get(keyId);
     if (key == null) throw new CryptoException("Required index key is unavailable");

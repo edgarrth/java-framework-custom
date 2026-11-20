@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.springframework.batch.core.job.Job;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import pe.axiz.core.storage.ObjectMetadata;
 import pe.axiz.core.storage.ObjectStorage;
 import pe.axiz.payments.settlement.job.SettlementJobConfiguration;
@@ -32,6 +34,7 @@ import software.amazon.awssdk.services.s3.S3Client;
       "settlement.run-on-startup=false"
     })
 @Import({PostgresTestConfiguration.class, LocalStackTestConfiguration.class})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class SettlementBatchApplicationTest {
 
   private static final String KEY = "in/settlement/NET-SETTLE-APPTEST.txt";
@@ -51,7 +54,7 @@ class SettlementBatchApplicationTest {
   }
 
   @Test
-  void loadsAFileOnceAndWritesItsSummary() throws Exception {
+  void loadsAFileOnceAndWritesItsSummary(TestReporter evidence) throws Exception {
     s3.createBucket(b -> b.bucket(bucket));
     byte[] file = new ClassPathResource("settlement/NET-SETTLE-SAMPLE.txt").getContentAsByteArray();
     storage.put(KEY, new ByteArrayInputStream(file), ObjectMetadata.of("text/plain", file.length));
@@ -69,6 +72,8 @@ class SettlementBatchApplicationTest {
     assertThat(runner.load(KEY)).isZero();
     assertThat(storage.head(SUMMARY)).isPresent();
     assertThat(lines()).isEqualTo(3);
+
+    evidence.publishEntry("axiz.capability.metrics", "default");
   }
 
   private Integer lines() {

@@ -98,7 +98,7 @@ public final class EventDispatcher {
       claim = deduplicator.claim(consumer, key);
     } catch (RuntimeException e) {
       // the inbox is unavailable: the message is fine, try again later
-      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), e.toString());
+      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), e.getClass().getSimpleName());
       return Outcome.of(DeliveryDecision.RETRY);
     }
     // exhaustive: a new claim status must decide here what happens to the delivery
@@ -130,7 +130,7 @@ public final class EventDispatcher {
           envelope.id(),
           envelope.type(),
           attempt,
-          e.toString(),
+          e.getClass().getSimpleName(),
           decision);
       return Outcome.of(decision);
     }
@@ -146,7 +146,8 @@ public final class EventDispatcher {
       }
     } catch (RuntimeException e) {
       // the effects happened: acknowledge; the registration expires with its retention
-      LOG.warn("Could not mark event {} processed: {}", envelope.id(), e.toString());
+      LOG.warn(
+          "Could not mark event {} processed: {}", envelope.id(), e.getClass().getSimpleName());
     }
     return Outcome.of(DeliveryDecision.ACK);
   }
@@ -156,7 +157,10 @@ public final class EventDispatcher {
       deduplicator.failed(consumer, key, claim.token());
     } catch (RuntimeException e) {
       // the lease expires on its own; a redelivery then takes it over
-      LOG.warn("Could not release inbox claim of event {}: {}", envelope.id(), e.toString());
+      LOG.warn(
+          "Could not release inbox claim of event {}: {}",
+          envelope.id(),
+          e.getClass().getSimpleName());
     }
   }
 

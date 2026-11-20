@@ -1,5 +1,6 @@
 package pe.axiz.spring.saga.jdbc;
 
+import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
@@ -22,7 +23,8 @@ import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
 public class AxizSagaJdbcAutoConfiguration {
   @Bean
   SchemaInitializer axizSagaSchema(DataSource dataSource, AxizSagaJdbcProperties p) {
-    return new SchemaInitializer(dataSource, "saga", p.initializeSchema());
+    return new SchemaInitializer(
+        dataSource, "saga", p.initializeSchema(), Map.of("axiz_saga", p.table()));
   }
 
   @Bean

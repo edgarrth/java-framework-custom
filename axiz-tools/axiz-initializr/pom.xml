@@ -20,12 +20,17 @@
   <description>Generates axiz services from an OpenAPI contract: web UI and REST API with corporate SSO</description>
 
   <properties>
-    <!-- renovate: datasource=docker depName=eclipse-temurin -->
-    <axiz.initializr.base-image>eclipse-temurin:25-jdk-noble</axiz.initializr.base-image>
+    <!-- renovate: datasource=docker depName=azul/zulu-openjdk-alpine -->
+    <axiz.initializr.base-image>azul/zulu-openjdk-alpine:25@sha256:fe4cdf0a179283ac4b6a6c262cce2282e39208c3cf869cb2f627288bac4127e0</axiz.initializr.base-image>
     <axiz.base-package>pe.axiz.initializr</axiz.base-package>
   </properties>
 
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-security</artifactId></dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-security-redis-spring-boot-starter</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>

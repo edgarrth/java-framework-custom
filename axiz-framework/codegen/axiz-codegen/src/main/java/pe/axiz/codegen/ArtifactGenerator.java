@@ -14,12 +14,14 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.lang.model.SourceVersion;
 import org.jspecify.annotations.Nullable;
 import pe.axiz.codegen.model.Extension;
 import pe.axiz.codegen.model.Snapshots;
 import pe.axiz.codegen.model.Structure;
 import pe.axiz.codegen.project.ProjectManifest;
 import pe.axiz.codegen.render.JavaFormatter;
+import pe.axiz.codegen.render.JavaSourceText;
 import pe.axiz.codegen.render.TemplateSet;
 
 /**
@@ -212,7 +214,7 @@ public final class ArtifactGenerator {
     Map<String, Object> a =
         (Map<String, Object>) Objects.requireNonNull(c.get("artifact"), "artifact");
     Map<String, String> appended = new LinkedHashMap<>();
-    String line = "error." + a.get("code") + "=" + a.get("title") + "\n";
+    String line = "error." + a.get("code") + "=" + a.get("titleProperties") + "\n";
     appended.put("src/main/resources/messages.properties", line);
     appended.put("src/main/resources/messages_en.properties", line);
     if (existingErrors == null) {
@@ -230,6 +232,26 @@ public final class ArtifactGenerator {
         .forEach(
             path -> out.put(path, JavaFormatter.format(updated).getBytes(StandardCharsets.UTF_8)));
     return new Result(Map.of(), out, appended, List.of(), List.of());
+  }
+
+  /**
+   * Persistence acceptance recipe for a generated sample. Requires its generated application test
+   * support; ordinary artifact generation remains independent of that support for existing
+   * projects.
+   */
+  public Map<String, byte[]> persistenceAcceptanceTest(ProjectManifest project, String name) {
+    generate(project, "repository", name, Options.none(), null);
+    var context = context(project, "repository", name, Options.none(), null, null);
+    String source =
+        TemplateSet.load("artifacts")
+            .renderTemplate("test/PersistenceAcceptanceTest.java.mustache", context);
+    String path =
+        "src/test/java/"
+            + Names.packagePath(project.basePackage())
+            + "/"
+            + Names.pascal(name)
+            + "PersistenceTest.java";
+    return JavaFormatter.formatAll(Map.of(path, source.getBytes(StandardCharsets.UTF_8)));
   }
 
   /** Categories accepted by {@code error-code} (see {@code ErrorCategory}). */
@@ -318,8 +340,14 @@ public final class ArtifactGenerator {
     String simple = name.contains(".") ? name.substring(name.lastIndexOf('.') + 1) : name;
     String subPackage =
         name.contains(".") ? name.substring(0, name.lastIndexOf('.')).toLowerCase(Locale.ROOT) : "";
+    if (name.contains(".") && !Names.isPackage(subPackage)) {
+      throw new IllegalArgumentException("Artifact subpackage must be a valid Java package");
+    }
     Map<String, Object> a = new LinkedHashMap<>();
     String className = Names.pascal(simple);
+    if (!SourceVersion.isName(className)) {
+      throw new IllegalArgumentException("Artifact name must produce a valid Java type");
+    }
     a.put("name", simple);
     a.put("className", className);
     a.put("camel", Names.camel(simple));
@@ -349,9 +377,15 @@ public final class ArtifactGenerator {
     a.put(
         "category",
         requestedCategory == null ? "UNPROCESSABLE" : requestedCategory.toUpperCase(Locale.ROOT));
-    String title = options.title();
-    a.put(
-        "title", title == null ? String.join(" ", Names.words(simple)) : title.replace("\"", "'"));
+    String requestedTitle = options.title();
+    String title = requestedTitle == null ? String.join(" ", Names.words(simple)) : requestedTitle;
+    if (title.length() > 800 || title.chars().anyMatch(Character::isISOControl))
+      throw new IllegalArgumentException(
+          "Artifact title must be a single line of at most 800 characters");
+    a.put("title", title);
+    a.put("titleJavadoc", JavaSourceText.javadoc(title));
+    a.put("titleLiteral", JavaSourceText.literal(title));
+    a.put("titleProperties", title.replace("\\", "\\\\").replaceFirst("^ ", "\\\\ "));
     a.put("constant", Names.snake(simple).toUpperCase(Locale.ROOT));
     a.put(
         "code",
@@ -372,7 +406,11 @@ public final class ArtifactGenerator {
       return "";
     }
     String t = type.strip();
-    return t.contains(".") ? t : Names.pascal(t);
+    String result = t.contains(".") ? t : Names.pascal(t);
+    if (!SourceVersion.isName(result)) {
+      throw new IllegalArgumentException("Mapper type must be a valid Java type name");
+    }
+    return result;
   }
 
   private static Map<String, Object> paths(Map<String, Object> fw) {

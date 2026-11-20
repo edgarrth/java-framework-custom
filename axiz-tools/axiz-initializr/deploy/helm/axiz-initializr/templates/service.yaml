@@ -6,6 +6,11 @@ metadata:
     {{- include "service.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
+  # Servlet sessions are local. Ingresses routing directly to pods must also enable affinity.
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 900
   ports:
     - name: http
       port: {{ .Values.service.port }}

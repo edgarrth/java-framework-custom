@@ -63,7 +63,7 @@ public class ProblemResponder {
   /**
    * Zero means no explicit delay; never use an arbitrary provider message or parameter as a header.
    */
-  private long retryAfterSeconds(Throwable failure) {
+  static long retryAfterSeconds(Throwable failure) {
     Throwable current = failure;
     for (int depth = 0; current != null && depth < 64; depth++) {
       if (current instanceof AxizException)

@@ -32,3 +32,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl structures/hexagonal/axiz-structure-hexagonal-api verify`.
+
+## Failure after commit
+
+With a direct nontransactional event sink, delivery can fail after the business transaction has
+committed. The runner emits an operational ERROR containing only event count and failure class,
+then throws `PostCommitPublicationException` (`CommittedTransactionOutcome`, code
+`AXZ-CORE-0410`). The numeric suffix is a catalog identifier, not HTTP 410. Never replay the
+business operation to repair this error. Direct delivery has no durability guarantee; select the
+transactional outbox sink when eventual delivery and operator reconciliation are required.

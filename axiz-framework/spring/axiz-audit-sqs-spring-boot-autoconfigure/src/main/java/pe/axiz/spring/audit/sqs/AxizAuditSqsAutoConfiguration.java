@@ -34,7 +34,7 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
- * Dedicated SQS audit clients use optional audit/service/global identity identity and framework AWS
+ * Dedicated SQS audit clients use optional audit/service/global identity and framework AWS
  * transport conventions. Their named, non-default identity allow a separate audit account without
  * becoming messaging's client. Applications may replace them by the explicit audit bean name.
  */

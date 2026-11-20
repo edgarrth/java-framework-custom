@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.sqs.model.ChangeMessageVisibilityResponse
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
@@ -42,6 +43,7 @@ class SqsEventConsumerTest {
   /** Records what the consumer asks SQS to do. */
   static final class FakeSqs implements SqsClient {
     final List<String> calls = new CopyOnWriteArrayList<>();
+    final List<SendMessageRequest> sent = new CopyOnWriteArrayList<>();
 
     @Override
     public ChangeMessageVisibilityResponse changeMessageVisibility(
@@ -60,6 +62,9 @@ class SqsEventConsumerTest {
 
     @Override
     public SendMessageResponse sendMessage(Consumer<SendMessageRequest.Builder> b) {
+      var request = SendMessageRequest.builder();
+      b.accept(request);
+      sent.add(request.build());
       calls.add("dlq");
       return SendMessageResponse.builder().build();
     }
@@ -142,6 +147,44 @@ class SqsEventConsumerTest {
             10,
             Duration.ofSeconds(60)),
         Backoff.exponential(Duration.ofSeconds(1), Duration.ofMinutes(5)));
+  }
+
+  @Test
+  void fifoDeadLettersKeepTheirGroupAndRetryWithAStableDeduplicationId() {
+    var sqs = new FakeSqs();
+    var dispatcher =
+        new EventDispatcher(
+            "c",
+            List.of(new Handler()),
+            CODEC,
+            Deduplicator.none(),
+            ConsumerRetryPolicy.defaults(),
+            false);
+    var consumer =
+        new SqsEventConsumer(
+            sqs,
+            new ObservedDispatcher(dispatcher, ObservationRegistry.NOOP, Clock.systemUTC()),
+            new AxizMessagingSqsProperties(
+                List.of("https://sqs/q.fifo"),
+                Map.of("https://sqs/q.fifo", "https://sqs/dlq.fifo"),
+                Duration.ofSeconds(1),
+                1,
+                Duration.ofSeconds(5)),
+            Backoff.exponential(Duration.ofSeconds(1), Duration.ofSeconds(2)));
+    var poison =
+        message("not-json").toBuilder()
+            .attributes(Map.of(MessageSystemAttributeName.MESSAGE_GROUP_ID, "customer-1"))
+            .build();
+    consumer.process("https://sqs/q.fifo", poison);
+    consumer.process("https://sqs/q.fifo", poison);
+    for (var request : sqs.sent) {
+      assertEquals("customer-1", request.messageGroupId());
+      assertEquals("m-1", request.messageDeduplicationId());
+      assertEquals("not-json", request.messageBody());
+    }
+    assertEquals(List.of("dlq", "delete", "dlq", "delete"), sqs.calls);
+    consumer.process("https://sqs/q.fifo", message("not-json"));
+    assertEquals("axiz-dead-letter", sqs.sent.getLast().messageGroupId());
   }
 
   @Test

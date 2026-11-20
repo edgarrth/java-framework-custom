@@ -150,13 +150,19 @@ public final class ContractSync {
                               || file.equals(c + "Command.java")
                               || file.equals(c + "Query.java")
                               || file.equals(c + "Handler.java"))
-              || added.stream().anyMatch(id -> path.endsWith("contract-examples/" + id + ".json"));
+              || added.stream().anyMatch(id -> path.endsWith("contract-examples/" + id + ".json"))
+              || path.contains("/response-examples/");
       boolean adapterFile =
           path.contains("/application/model/")
               || (path.contains("/application/command/") && file.endsWith("Command.java"))
               || (path.contains("/application/query/") && file.endsWith("Query.java"))
               || file.equals("CqrsAuthorizationConfiguration.java")
               || file.endsWith("AuthorizationTest.java")
+              || file.endsWith("ControllerResponseTest.java")
+              || file.endsWith("ApplicationModelTest.java")
+              || file.endsWith("ApplicationTest.java")
+              || file.endsWith("ApplicationTestSupport.java")
+              || file.equals("SensitiveDataCanaryTest.java")
               || file.endsWith("Controller.java")
               || file.equals("ContractExamplesTest.java")
               || (file.endsWith("Service.java") && path.contains("/service/"))
@@ -177,7 +183,12 @@ public final class ContractSync {
       String path = e.getKey();
       boolean adapterFile = adapterPaths.contains(path);
       Path target = SafePaths.target(dir, path);
-      if (!Files.exists(target)) {
+      boolean ownedTest = path.endsWith("Test.java") || path.contains("/response-examples/");
+      if (ownedTest
+          && (!Files.exists(target) || !Arrays.equals(Files.readAllBytes(target), e.getValue()))) {
+        SafePaths.write(dir, path + PROPOSAL, e.getValue(), true);
+        proposed.add(path + PROPOSAL);
+      } else if (!Files.exists(target)) {
         SafePaths.write(dir, path, e.getValue(), false);
         created.add(path);
       } else if (adapterFile && !Arrays.equals(Files.readAllBytes(target), e.getValue())) {

@@ -18,6 +18,7 @@ import pe.axiz.core.outbox.OutboxRelay;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.kit.reactor.audit.ReactiveAuditChainState;
 import pe.axiz.kit.reactor.outbox.ReactiveOutboxWriter;
+import reactor.core.publisher.Mono;
 
 class AuditDestinationValidationTest {
   private static OutboxWriter writer() {
@@ -30,6 +31,23 @@ class AuditDestinationValidationTest {
     var writer = mock(ReactiveOutboxWriter.class);
     when(writer.transactionResource()).thenReturn(AuditTestTransactions.RESOURCE);
     return writer;
+  }
+
+  @Test
+  void unprovenReactiveWriterCannotParticipateInStrictDurableAudit() {
+    ReactiveOutboxWriter unattested = (destination, event, aggregate) -> Mono.empty();
+    new ReactiveWebApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
+        .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
+        .withBean(ReactiveOutboxWriter.class, () -> unattested)
+        .withBean(ReactiveAuditChainState.class, AuditTestTransactions::reactiveState)
+        .withBean(ReactiveTransactionManager.class, () -> mock(ReactiveTransactionManager.class))
+        .run(
+            context ->
+                assertThat(context.getStartupFailure())
+                    .hasStackTraceContaining("must use the same transaction resource"));
   }
 
   @Test

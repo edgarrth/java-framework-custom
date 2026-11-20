@@ -5,12 +5,20 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.tokenization.TokenErrors;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Action;
 import pe.axiz.core.tokenization.vault.VaultMaintenanceEvent.Result;
 
 /** Shared authorization, confirmed audit and uncertainty handling for privileged vault jobs. */
 final class VaultMaintenanceExecution {
+  /** Preserves classification through nested jobs without retaining the provider failure. */
+  private static final class IntegrityFailure extends BusinessException {
+    IntegrityFailure() {
+      super(TokenErrors.UNAVAILABLE, "Vault maintenance integrity verification failed");
+    }
+  }
+
   private final VaultMaintenanceAccess access;
   private final VaultMaintenanceAudit audit;
   private final VaultMaintenanceReconciliation reconciliation;
@@ -74,6 +82,7 @@ final class VaultMaintenanceExecution {
       @Nullable VaultRecord row,
       Supplier<T> work) {
     UUID id = Objects.requireNonNull(ids.get());
+    Result confirmed = null;
     try {
       authorize(caller, action, state.keysetId(), row);
       audit.publishConfirmed(event(caller, action, state, row, id, Result.STARTED));
@@ -82,17 +91,24 @@ final class VaultMaintenanceExecution {
           Boolean.FALSE.equals(result)
               || result == MigrationOutcome.CHANGED
               || result == DeleteOutcome.CHANGED;
-      audit.publishConfirmed(
-          event(caller, action, state, row, id, conflict ? Result.CONFLICT : Result.SUCCESS));
+      confirmed = conflict ? Result.CONFLICT : Result.SUCCESS;
+      audit.publishConfirmed(event(caller, action, state, row, id, confirmed));
       return result;
     } catch (RuntimeException failure) {
       boolean uncertain =
-          failure instanceof VaultUncertainException
+          confirmed != null
+              || failure instanceof VaultUncertainException
               || VaultPolicy.safeFailure(failure).code().equals(TokenErrors.UNCERTAIN.code());
-      if (failure instanceof VaultUncertainException) {
+      if (confirmed != null || failure instanceof VaultUncertainException) {
         var operation =
             new UncertainVaultMaintenance(
-                event(caller, action, state, row, id, Result.UNCERTAIN),
+                event(
+                    caller,
+                    action,
+                    state,
+                    row,
+                    id,
+                    confirmed == null ? Result.UNCERTAIN : confirmed),
                 row == null ? null : row.token());
         try {
           reconciliation.recordConfirmed(operation);
@@ -107,7 +123,7 @@ final class VaultMaintenanceExecution {
       Result result =
           uncertain
               ? Result.UNCERTAIN
-              : failure instanceof VaultIntegrityException
+              : failure instanceof VaultIntegrityException || failure instanceof IntegrityFailure
                   ? Result.INTEGRITY_FAILURE
                   : VaultPolicy.safeFailure(failure).code().equals(TokenErrors.DENIED.code())
                       ? Result.DENIED
@@ -117,6 +133,7 @@ final class VaultMaintenanceExecution {
       } catch (RuntimeException auditFailure) {
         if (!uncertain) throw TokenErrors.failure(TokenErrors.UNAVAILABLE);
       }
+      if (result == Result.INTEGRITY_FAILURE) throw new IntegrityFailure();
       throw uncertain
           ? TokenErrors.failure(TokenErrors.UNCERTAIN)
           : VaultPolicy.safeFailure(failure);

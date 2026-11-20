@@ -6,6 +6,10 @@ spring:
   threads:
     virtual:
       enabled: true
+  data:
+    redis:
+      connect-timeout: 1s
+      timeout: 1s
   servlet:
     multipart:
       max-file-size: 2MB
@@ -14,7 +18,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+          issuer-uri: ${AXIZ_SSO_ISSUER}
       client:
         registration:
           sso:
@@ -28,13 +32,20 @@ spring:
             client-id: ${AXIZ_GITHUB_CLIENT_ID:axiz-initializr-local}
             client-secret: ${AXIZ_GITHUB_CLIENT_SECRET:}
             redirect-uri: "{baseUrl}/authorized/{registrationId}"
-            scope: [repo]
+            scope: [repo, workflow]
         provider:
           sso:
-            issuer-uri: ${AXIZ_SSO_ISSUER:http://localhost:8180/realms/axiz}
+            issuer-uri: ${AXIZ_SSO_ISSUER}
 server:
   port: 8080
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 15m
+      cookie:
+        http-only: true
+        secure: true
+        same-site: lax
   tomcat:
     max-swallow-size: 6MB
     max-http-form-post-size: 6MB
@@ -48,10 +59,19 @@ management:
       probes:
         enabled: true
 axiz:
+  security:
+    # Initializr defines its own SSO/OAuth security chain; the provider starter supplies quotas.
+    enabled: false
+    rate-limit:
+      enabled: true
+      store: redis
+      redis:
+        key-prefix: "axiz:initializr:quota:v1:"
   initializr:
+    publication-key: ${AXIZ_INITIALIZR_PUBLICATION_KEY:}
     framework-version: ${AXIZ_FRAMEWORK_VERSION:2.0.0}
     github-organization: ${AXIZ_GITHUB_ORGANIZATION:}
     # bearer tokens of the CLI and automations must name this API in their audience
     audience: ${AXIZ_INITIALIZR_AUDIENCE:axiz-initializr}
   audit:
-    mode: ASYNC
+    mode: SYNC

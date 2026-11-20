@@ -15,6 +15,7 @@ public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
 public java.lang.String passwordRef();
+public java.lang.String sslBundle();
 public java.lang.String username();
 public java.net.URI endpoint();
 public java.time.Duration connectTimeout();
@@ -22,10 +23,24 @@ public java.time.Duration timeout();
 public pe.axiz.core.soap.SoapVersion version();
 public pe.axiz.core.soap.WsSecurity$Mode passwordMode();
 public pe.axiz.spring.soap.AxizSoapProperties$Client(java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, java.time.Duration, java.lang.String, java.lang.String, pe.axiz.core.soap.WsSecurity$Mode);
+public pe.axiz.spring.soap.AxizSoapProperties$Client(java.net.URI, pe.axiz.core.soap.SoapVersion, java.time.Duration, java.time.Duration, java.lang.String, java.lang.String, pe.axiz.core.soap.WsSecurity$Mode, java.lang.String);
+public static pe.axiz.spring.soap.AxizSoapProperties$Client$Builder builder(java.net.URI);
+}
+
+public final class pe.axiz.spring.soap.AxizSoapProperties$Client$Builder {
+public pe.axiz.spring.soap.AxizSoapProperties$Client build();
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder connectTimeout(java.time.Duration);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder passwordMode(pe.axiz.core.soap.WsSecurity$Mode);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder passwordRef(java.lang.String);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder sslBundle(java.lang.String);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder timeout(java.time.Duration);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder username(java.lang.String);
+public pe.axiz.spring.soap.AxizSoapProperties$Client$Builder version(pe.axiz.core.soap.SoapVersion);
 }
 
 public class pe.axiz.spring.soap.SoapClients implements java.lang.AutoCloseable {
 public org.w3c.dom.Element call(java.lang.String, java.lang.String, java.lang.String);
 public pe.axiz.spring.soap.SoapClients(pe.axiz.spring.soap.AxizSoapProperties, pe.axiz.core.secrets.SecretResolver, io.micrometer.observation.ObservationRegistry, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy);
+public pe.axiz.spring.soap.SoapClients(pe.axiz.spring.soap.AxizSoapProperties, pe.axiz.core.secrets.SecretResolver, io.micrometer.observation.ObservationRegistry, java.time.Clock, pe.axiz.core.commons.net.TransportSecurityPolicy, org.springframework.boot.ssl.SslBundles);
 public void close();
 }

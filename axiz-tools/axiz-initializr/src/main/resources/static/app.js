@@ -75,10 +75,10 @@
     asyncApi: await readFile(form.asyncapiFile),
   });
 
-  const post = (url, body) => fetch(url, {
+  const post = (url, body, headers = {}) => fetch(url, {
     method: 'POST',
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrf() },
+    headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': csrf(), ...headers },
     body: JSON.stringify(body),
   });
 
@@ -132,8 +132,26 @@
     });
   });
 
+  const publicationKey = 'axiz-initializr-publication';
+  let resumeAfterAuthorization = new URLSearchParams(window.location.search).get('github') === 'authorized';
+  form.addEventListener('input', () => { resumeAfterAuthorization = false; });
   document.getElementById('github').addEventListener('click', () => busy(async () => {
-    const response = await post('/v1/projects/github', await request());
+    let pending;
+    try { pending = JSON.parse(sessionStorage.getItem(publicationKey) || 'null'); }
+    catch { sessionStorage.removeItem(publicationKey); }
+    const body = resumeAfterAuthorization && pending ? pending.body : await request();
+    if (body.description && body.description.length > 160) {
+      show('Para publicar en GitHub, la descripción debe tener como máximo 160 caracteres.', true);
+      return;
+    }
+    const operationId = pending && JSON.stringify(pending.body) === JSON.stringify(body)
+      ? pending.operationId : crypto.randomUUID();
+    try { sessionStorage.setItem(publicationKey, JSON.stringify({ operationId, body })); }
+    catch {
+      show('No hay espacio para conservar esta publicación durante OAuth. Reduce los contratos o libera almacenamiento de esta pestaña y reintenta.', true);
+      return;
+    }
+    const response = await post('/v1/projects/github', body, { 'Idempotency-Key': operationId });
     // GitHub not authorized yet: 403 with the URL that starts the authorization; the browser comes
     // back to /?github=authorized and the user creates the repository again
     if (response.status === 403) {
@@ -142,6 +160,8 @@
     }
     if (!response.ok) return problem(response);
     const r = await response.json();
+    sessionStorage.removeItem(publicationKey);
+    resumeAfterAuthorization = false;
     result.replaceChildren();
     const p = document.createElement('p');
     p.className = 'ok';

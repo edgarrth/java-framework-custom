@@ -4,7 +4,9 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.random.RandomGenerator;
 import java.util.regex.Pattern;
 
 /**
@@ -19,12 +21,19 @@ public final class Ulid implements IdGenerator {
   private static final Ulid DEFAULT = new Ulid(Clock.systemUTC());
 
   private final Clock clock;
+  private final RandomGenerator entropy;
   private final AtomicReference<State> state = new AtomicReference<>(new State(-1L, 0, 0));
 
   private record State(long millis, long high, long low) {}
 
   private Ulid(Clock clock) {
-    this.clock = clock;
+    this(clock, RANDOM);
+  }
+
+  // Package-private deterministic seam; public generators always use SecureRandom.
+  Ulid(Clock clock, RandomGenerator entropy) {
+    this.clock = Objects.requireNonNull(clock);
+    this.entropy = Objects.requireNonNull(entropy);
   }
 
   /** Independent generator over the given clock (monotonic per generator). */
@@ -52,7 +61,7 @@ public final class Ulid implements IdGenerator {
           throw new IllegalStateException("ULID random component overflow");
         reserved = new State(previous.millis(), high, low);
       } else {
-        reserved = new State(millis, RANDOM.nextInt(1 << 16), RANDOM.nextLong());
+        reserved = new State(millis, entropy.nextInt(1 << 16), entropy.nextLong());
       }
     } while (!state.compareAndSet(previous, reserved));
     return encode(reserved.millis(), reserved.high(), reserved.low());

@@ -83,7 +83,9 @@ class JpaSupportTest {
     later.onUpdate(c);
     assertEquals(t1, c.getCreatedAt());
     assertEquals(t2, c.getUpdatedAt());
-    assertEquals(AuditListener.SYSTEM, c.getUpdatedBy());
+    assertEquals(AuditListener.UNATTRIBUTED, c.getUpdatedBy());
+    new AuditListener(() -> Optional.of(" "), Clock.fixed(t2, ZoneOffset.UTC)).onUpdate(c);
+    assertEquals(AuditListener.UNATTRIBUTED, c.getUpdatedBy());
     Customer independent = new Customer();
     listener.onCreate(independent);
     assertEquals("user-1", independent.getCreatedBy());

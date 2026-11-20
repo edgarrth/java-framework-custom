@@ -48,10 +48,10 @@ securityContext:
   readOnlyRootFilesystem: true
   capabilities:
     drop: ["ALL"]
+terminationGracePeriodSeconds: 90
 {{#archetype.deployment}}
 
 replicaCount: 2
-terminationGracePeriodSeconds: 30
 service:
   port: 80
 probes:

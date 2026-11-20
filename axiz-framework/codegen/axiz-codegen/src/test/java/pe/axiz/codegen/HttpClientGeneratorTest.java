@@ -19,9 +19,98 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.model.Stack;
 import pe.axiz.codegen.model.Structure;
+import pe.axiz.codegen.openapi.Json;
 import pe.axiz.codegen.project.ProjectManifest;
 
 class HttpClientGeneratorTest {
+  @Test
+  void thirdPartyClientRejectsUnsafeParameterNamesInEveryLocation() {
+    for (String location : List.of("path", "query", "header")) {
+      for (String name :
+          List.of("x\") String injected) { } //", "x\nvalue", "x\\u0022", "x\\uuu0022")) {
+        String path = location.equals("path") ? "/records/{" + name + "}" : "/records";
+        String contract =
+            Json.write(
+                Map.of(
+                    "openapi",
+                    "3.1.0",
+                    "info",
+                    Map.of("x-axiz-archetype", "business"),
+                    "paths",
+                    Map.of(
+                        path,
+                        Map.of(
+                            "get",
+                            Map.of(
+                                "operationId",
+                                "getRecord",
+                                "parameters",
+                                List.of(
+                                    Map.of(
+                                        "name",
+                                        name,
+                                        "in",
+                                        location,
+                                        "schema",
+                                        Map.of("type", "string"))),
+                                "responses",
+                                Map.of("204", Map.of("description", "ok")))))));
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                HttpClientGenerator.generate(
+                    project(Structure.HEXAGONAL, Stack.SERVLET), "vendor", contract));
+      }
+    }
+  }
+
+  @Test
+  void thirdPartyPathsCommentsAndModelWireNamesStayData() throws Exception {
+    for (String text : JavaSourceSafetyTest.COMMENT_INPUTS) {
+      String path = "/vendor/\"quoted\"/\\u0022/";
+      String property = "wire\"\\value";
+      String contract =
+          Json.write(
+              Map.of(
+                  "openapi",
+                  "3.1.0",
+                  "info",
+                  Map.of("x-axiz-archetype", "business", "title", text, "version", text),
+                  "paths",
+                  Map.of(
+                      path,
+                      Map.of(
+                          "get",
+                          Map.of(
+                              "operationId",
+                              "getRecord",
+                              "summary",
+                              text,
+                              "responses",
+                              Map.of("204", Map.of("description", "ok"))))),
+                  "components",
+                  Map.of(
+                      "schemas",
+                      Map.of(
+                          "Record",
+                          Map.of(
+                              "type",
+                              "object",
+                              "properties",
+                              Map.of(property, Map.of("type", "string", "description", text))),
+                          "State",
+                          Map.of("type", "string", "enum", List.of("wire\"\\u0022"))))));
+      var generated =
+          HttpClientGenerator.generate(
+              project(Structure.HEXAGONAL, Stack.SERVLET), "vendor", contract);
+      JavaSourceSafetyTest.assertJavaSyntax(generated.files());
+      assertTrue(
+          file(generated, "VendorClient.java").contains("@GetExchange(" + Json.write(path) + ")"));
+      assertTrue(
+          file(generated, "model/Record.java")
+              .contains("@JsonProperty(" + Json.write(property) + ")"));
+    }
+  }
 
   @Test
   void wireEnumValuesKeepTheirSerializedNamesAndUseValidJavaIdentifiers() {
@@ -41,6 +130,30 @@ class HttpClientGeneratorTest {
     assertEquals(
         "package example;\n\n/** State values. */\npublic enum State {\n  READY\n}\n", plain);
     assertNull(HttpClientGenerator.model("example", "Scalar", Map.of("type", "string"), Map.of()));
+  }
+
+  @Test
+  void rejectsModelNamesThatCollideAfterJavaNormalization() {
+    var enumFailure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                HttpClientGenerator.model(
+                    "example", "State", Map.of("enum", List.of("paid-ok", "paid_ok")), Map.of()));
+    assertTrue(enumFailure.getMessage().contains("duplicate Java names in State"));
+    var properties = new LinkedHashMap<String, Object>();
+    properties.put("account-id", Map.of("type", "string"));
+    properties.put("account_id", Map.of("type", "string"));
+    var recordFailure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                HttpClientGenerator.model(
+                    "example",
+                    "Account",
+                    Map.of("type", "object", "properties", properties),
+                    Map.of()));
+    assertTrue(recordFailure.getMessage().contains("duplicate Java names in Account"));
   }
 
   @Test

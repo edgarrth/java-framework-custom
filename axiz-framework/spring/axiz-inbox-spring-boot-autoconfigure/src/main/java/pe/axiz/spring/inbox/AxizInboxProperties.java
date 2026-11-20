@@ -22,6 +22,10 @@ public record AxizInboxProperties(
     @DefaultValue("1h") Duration purgeInterval,
     @DefaultValue("auto") String transactional) {
   public AxizInboxProperties {
+    if (lease.isZero() || lease.isNegative() || retention.compareTo(lease) <= 0)
+      throw new IllegalArgumentException("Inbox retention must exceed a positive processing lease");
+    if (purgeInterval.isZero() || purgeInterval.isNegative())
+      throw new IllegalArgumentException("Inbox purge interval must be positive");
     if (!Set.of("auto", "true", "false").contains(transactional))
       throw new IllegalArgumentException("axiz.inbox.transactional must be auto, true or false");
   }

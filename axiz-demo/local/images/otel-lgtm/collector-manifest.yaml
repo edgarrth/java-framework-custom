@@ -1,0 +1,18 @@
+dist:
+  module: pe.axiz/dev/otelcol
+  name: axiz-otelcol
+  description: Local demo collector for OTLP logs, metrics and traces
+  version: 0.165.0
+  output_path: ./build
+receivers:
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.165.0
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.165.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.165.0
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.165.0
+  - gomod: go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.165.0
+providers:
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.71.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.71.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.71.0

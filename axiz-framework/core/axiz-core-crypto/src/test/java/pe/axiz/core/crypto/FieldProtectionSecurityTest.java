@@ -21,6 +21,19 @@ class FieldProtectionSecurityTest {
   private final FieldScope scope = new FieldScope("t1", "customer");
 
   @Test
+  void mutableBlindIndexPreservesTheStoredWireFormatAndDoesNotModifyCallerBuffers() {
+    for (String value : java.util.List.of("00123456", "identidad-á", "customer-😀")) {
+      char[] owned = value.toCharArray();
+      assertEquals(index.index(value, SCOPE, "i1"), index.index(owned, SCOPE, "i1"));
+      org.junit.jupiter.api.Assertions.assertArrayEquals(value.toCharArray(), owned);
+    }
+    char[] malformed = {'x', '\ud800'};
+    assertThrows(CryptoException.class, () -> index.index(malformed, SCOPE, "i1"));
+    org.junit.jupiter.api.Assertions.assertArrayEquals(new char[] {'x', '\ud800'}, malformed);
+    assertThrows(CryptoException.class, () -> index.index(new char[8193], SCOPE, "i1"));
+  }
+
+  @Test
   void framingHasNoDelimiterOrMalformedUnicodeAliases() {
     IndexScope shifted = new IndexScope("search|DNI_PE", "t1", "customer", "identity", "x", 1);
     assertNotEquals(index.index("x|00123456", SCOPE), index.index("00123456", shifted));

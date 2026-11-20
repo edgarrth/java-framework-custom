@@ -154,6 +154,8 @@ public final class SampleProjects {
       }
       Files.writeString(layout.pom(), pom, StandardCharsets.UTF_8);
     }
+    for (var entry : artifacts.persistenceAcceptanceTest(manifest, "validation-record").entrySet())
+      SafePaths.write(directory, layout.relative(entry.getKey()), entry.getValue(), false);
   }
 
   private static List<ProjectRequest> requests(

@@ -1,5 +1,6 @@
 package pe.axiz.payments.orders.adapter.out.persistence;
 
+import jakarta.persistence.EntityManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,20 +41,26 @@ public class PaymentOrderPersistenceAdapter implements PaymentOrders {
 
   private final PaymentOrderJpaRepository repository;
   private final BlindIndex blindIndex;
+  private final EntityManager entityManager;
 
   public PaymentOrderPersistenceAdapter(
-      PaymentOrderJpaRepository repository, BlindIndex blindIndex) {
+      PaymentOrderJpaRepository repository, BlindIndex blindIndex, EntityManager entityManager) {
     this.repository = repository;
     this.blindIndex = blindIndex;
+    this.entityManager = entityManager;
   }
 
   @Override
-  public void create(PaymentOrder order, @Nullable String requestKey) {
+  public PaymentOrder create(PaymentOrder order, @Nullable String requestKey) {
     PaymentOrderEntity entity = newEntity(order);
     entity.requestKey(requestKey);
     entity.status(order.status().name(), order.statusReason());
     try {
-      repository.saveAndFlush(entity);
+      var stored = repository.saveAndFlush(entity);
+      // The audit listener assigns creation time and PostgreSQL persists microsecond precision.
+      // Return that exact representation so the initial response and an idempotent replay agree.
+      entityManager.refresh(stored);
+      return toDomain(stored);
     } catch (DataIntegrityViolationException e) {
       // the transaction is aborted now: classify by constraint, the client retries and gets
       // the order the other request stored

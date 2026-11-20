@@ -44,7 +44,18 @@ public final class UseCaseRunner {
                 return value;
               });
       if (!afterCommit.get().isEmpty()) {
-        sink.publish(afterCommit.get());
+        try {
+          sink.publish(afterCommit.get());
+        } catch (RuntimeException publicationFailure) {
+          System.getLogger(UseCaseRunner.class.getName())
+              .log(
+                  System.Logger.Level.ERROR,
+                  "Business transaction committed; direct event publication requires reconciliation; "
+                      + "eventCount={0}, failureType={1}. Do not retry the business operation.",
+                  afterCommit.get().size(),
+                  publicationFailure.getClass().getName());
+          throw new PostCommitPublicationException();
+        }
       }
       return result;
     } finally {

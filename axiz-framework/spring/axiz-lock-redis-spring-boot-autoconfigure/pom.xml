@@ -9,6 +9,7 @@
   <description>Lock integration for redis</description>
   <properties><axiz.module.name>pe.axiz.spring.lock.redis</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+<dependency><groupId>org.springframework</groupId><artifactId>spring-webflux</artifactId><scope>test</scope></dependency>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-data-redis</artifactId></dependency>
 <dependency><groupId>io.lettuce</groupId><artifactId>lettuce-core</artifactId></dependency>
 <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>

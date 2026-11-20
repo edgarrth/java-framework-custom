@@ -33,9 +33,13 @@ public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultV
       @DefaultValue("1h") Duration purgeInterval,
       @DefaultValue("3m") Duration leaseDuration,
       @DefaultValue("2s") Duration claimAllowance,
-      @Nullable Duration publishBudget) {
+      @Nullable Duration publishBudget,
+      @DefaultValue("15s") Duration shutdownGrace) {
     @ConstructorBinding
     public Relay {
+      if (shutdownGrace.isNegative() || shutdownGrace.compareTo(Duration.ofMinutes(5)) > 0)
+        throw new IllegalArgumentException(
+            "outbox shutdown grace must be between zero and five minutes");
       if (leaseDuration.toNanos() <= 0)
         throw new IllegalArgumentException("outbox lease must be positive");
       if (claimAllowance.toNanos() <= 0 || (publishBudget != null && publishBudget.toNanos() <= 0))
@@ -61,6 +65,7 @@ public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultV
       private @Nullable Duration leaseDuration = null;
       private @Nullable Duration claimAllowance = null;
       private @Nullable Duration publishBudget = null;
+      private Duration shutdownGrace = Duration.ofSeconds(15);
 
       private Builder() {}
 
@@ -119,6 +124,11 @@ public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultV
         return this;
       }
 
+      public Builder shutdownGrace(Duration value) {
+        this.shutdownGrace = value;
+        return this;
+      }
+
       public Relay build() {
         return new Relay(
             enabled,
@@ -131,7 +141,8 @@ public record AxizOutboxProperties(@DefaultValue("jdbc") String store, @DefaultV
             Objects.requireNonNull(purgeInterval, "purgeInterval"),
             Objects.requireNonNull(leaseDuration, "leaseDuration"),
             Objects.requireNonNull(claimAllowance, "claimAllowance"),
-            publishBudget);
+            publishBudget,
+            shutdownGrace);
       }
     }
   }

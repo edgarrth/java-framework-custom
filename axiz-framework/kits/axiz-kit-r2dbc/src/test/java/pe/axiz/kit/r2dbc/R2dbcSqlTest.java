@@ -41,7 +41,7 @@ class R2dbcSqlTest {
   }
 
   @Test
-  void rollbackAndCloseFailuresNeverHideThePrimaryFailureOrLeakTheThreadBinding() {
+  void rollbackAndCloseFailuresNeverHideThePrimaryFailureOrLeakTheThreadBinding() throws Exception {
     var db = new FakeR2dbc().failOn("rollback").failOn("close");
     var runner = new R2dbcTransactionRunner(db, Duration.ofSeconds(5));
     var primary = new IllegalArgumentException("work failed");
@@ -60,10 +60,7 @@ class R2dbcSqlTest {
     assertNull(BoundConnection.current(db));
     var onlyClose = new FakeR2dbc().failOn("close");
     var closeRunner = new R2dbcTransactionRunner(onlyClose, Duration.ofSeconds(5));
-    assertEquals(
-        "close failed",
-        assertThrows(IllegalStateException.class, () -> closeRunner.inTransaction(() -> "done"))
-            .getMessage());
+    assertEquals("done", closeRunner.inTransaction(() -> "done"));
     assertNull(BoundConnection.current(onlyClose));
   }
 
@@ -321,15 +318,16 @@ class R2dbcSqlTest {
   void aFailedCommitClosesTheConnectionExactlyOnceAndPropagates() {
     FakeR2dbc db = new FakeR2dbc().onUpdate("^UPDATE", b -> 1L).failOn("commit");
     R2dbcSql sql = new R2dbcSql(db);
-    IllegalStateException e =
+    TransactionOutcomeUnknownException e =
         assertThrows(
-            IllegalStateException.class,
+            TransactionOutcomeUnknownException.class,
             () -> sql.inTransaction(tx -> tx.update("UPDATE t SET a = 1", SqlParams.of())).block());
-    assertEquals("commit failed", e.getMessage());
+    assertEquals("08007", e.getSqlState());
+    assertEquals("commit failed", e.getCause().getMessage());
     assertEquals(
-        List.of("open:1", "begin:1", "commit:1", "rollback:1", "close:1"),
+        List.of("open:1", "begin:1", "commit:1", "close:1"),
         db.events(),
-        "rollback attempted after the failed commit, connection closed once");
+        "an uncertain commit is not reported as a rollback; connection closed once");
   }
 
   @Test
@@ -349,11 +347,11 @@ class R2dbcSqlTest {
   @Test
   void aFailedCloseAfterAFailedCommitIsSuppressedNotLost() {
     FakeR2dbc db = new FakeR2dbc().failOn("commit").failOn("close");
-    IllegalStateException e =
+    TransactionOutcomeUnknownException e =
         assertThrows(
-            IllegalStateException.class,
+            TransactionOutcomeUnknownException.class,
             () -> new R2dbcSql(db).inTransaction(tx -> Mono.just(1)).block());
-    assertEquals("commit failed", e.getMessage());
+    assertEquals("commit failed", e.getCause().getMessage());
     assertEquals("close failed", e.getSuppressed()[0].getMessage());
     assertEquals(1, db.events().stream().filter("close:1"::equals).count());
   }
@@ -362,7 +360,7 @@ class R2dbcSqlTest {
   void theBlockingRunnerClosesOnceWhenCommitFails() {
     FakeR2dbc db = new FakeR2dbc().failOn("commit");
     R2dbcTransactionRunner runner = new R2dbcTransactionRunner(db, Duration.ofSeconds(5));
-    assertThrows(IllegalStateException.class, () -> runner.inTransaction(() -> 1));
+    assertThrows(TransactionOutcomeUnknownException.class, () -> runner.inTransaction(() -> 1));
     assertEquals(List.of("open:1", "begin:1", "commit:1", "close:1"), db.events());
   }
 }

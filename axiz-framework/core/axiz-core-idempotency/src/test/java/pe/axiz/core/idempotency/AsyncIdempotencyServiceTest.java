@@ -114,6 +114,81 @@ class AsyncIdempotencyServiceTest {
   }
 
   @Test
+  void sharedCompletionRechecksRetentionAfterEveryFailedCasAndRemainsBounded() {
+    var clock = new IdempotencyTest.TestClock();
+    var record =
+        IdempotencyRecord.builder(
+                KEY,
+                "fingerprint",
+                clock.instant().plusSeconds(10),
+                clock.instant().plusSeconds(60))
+            .owner("owner")
+            .build();
+    AtomicInteger reads = new AtomicInteger();
+    AtomicInteger writes = new AtomicInteger();
+    RaceStore expiring =
+        new RaceStore() {
+          @Override
+          public CompletionStage<Optional<IdempotencyRecord>> find(String key, Instant now) {
+            reads.incrementAndGet();
+            return CompletableFuture.completedFuture(
+                record.liveAt(now) ? Optional.of(record) : Optional.empty());
+          }
+
+          @Override
+          public CompletionStage<Boolean> compareAndSet(
+              IdempotencyRecord expected, IdempotencyRecord replacement) {
+            writes.incrementAndGet();
+            clock.now = clock.now.plusSeconds(61);
+            return CompletableFuture.completedFuture(false);
+          }
+        };
+    assertFalse(
+        AsyncIdempotencyCas.complete(
+                expiring, KEY, "owner", RESPONSE, clock.instant().plusSeconds(3600), clock)
+            .toCompletableFuture()
+            .join());
+    assertEquals(2, reads.get());
+    assertEquals(1, writes.get());
+    reads.set(0);
+    writes.set(0);
+    RaceStore contended =
+        new RaceStore() {
+          @Override
+          public CompletionStage<Optional<IdempotencyRecord>> find(String key, Instant now) {
+            reads.incrementAndGet();
+            return CompletableFuture.completedFuture(Optional.of(record));
+          }
+
+          @Override
+          public CompletionStage<Boolean> compareAndSet(
+              IdempotencyRecord expected, IdempotencyRecord replacement) {
+            writes.incrementAndGet();
+            return CompletableFuture.completedFuture(false);
+          }
+        };
+    assertFalse(
+        AsyncIdempotencyCas.complete(
+                contended, KEY, "owner", RESPONSE, clock.instant().plusSeconds(3600), clock)
+            .toCompletableFuture()
+            .join());
+    assertEquals(16, reads.get());
+    assertEquals(16, writes.get());
+    writes.set(0);
+    assertFalse(
+        AsyncIdempotencyCas.complete(
+                contended,
+                KEY,
+                "different-owner",
+                RESPONSE,
+                clock.instant().plusSeconds(3600),
+                clock)
+            .toCompletableFuture()
+            .join());
+    assertEquals(0, writes.get());
+  }
+
+  @Test
   void expirationBetweenAcquireAndLookupNeverAutomaticallyReexecutes() {
     var clock = new IdempotencyTest.TestClock();
     var race = new RaceStore();

@@ -1,0 +1,70 @@
+package {{project.basePackage}};
+
+import org.springframework.boot.test.context.SpringBootTest;
+{{#auditResources.required}}
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.annotation.DirtiesContext;
+{{/auditResources.required}}
+{{#caps.web}}
+{{#stack.servlet}}
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+{{/stack.servlet}}
+{{#stack.reactive}}
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+{{/stack.reactive}}
+{{/caps.web}}
+{{#infra.any}}
+import org.springframework.context.annotation.Import;
+{{/infra.any}}
+{{#stack.reactive}}
+import org.junit.jupiter.api.extension.ExtendWith;
+import pe.axiz.spring.test.BlockHoundExtension;
+{{/stack.reactive}}
+{{#infra.kafka}}
+import pe.axiz.spring.test.KafkaTestConfiguration;
+{{/infra.kafka}}
+{{#infra.sharedLocalstack}}
+import pe.axiz.spring.test.LocalStackTestConfiguration;
+{{/infra.sharedLocalstack}}
+{{#infra.postgres}}
+import pe.axiz.spring.test.PostgresTestConfiguration;
+{{/infra.postgres}}
+{{#infra.redis}}
+import pe.axiz.spring.test.RedisTestConfiguration;
+{{/infra.redis}}
+
+/**
+ * Starts the whole service against real dependencies in containers (Testcontainers): wiring,
+ * configuration, migrations and health. Needs Docker.
+ */
+@SpringBootTest({{#caps.web}}webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, {{/caps.web}}{{^archetype.cronjob}}useMainMethod = SpringBootTest.UseMainMethod.ALWAYS, {{/archetype.cronjob}}properties = {
+  "axiz.security.issuers[0].issuer=https://issuer.test",
+  "axiz.security.issuers[0].jwk-set-uri=https://issuer.test/jwks",
+  "axiz.security.issuers[0].audiences[0]=test",
+    "axiz.config.environment=test",
+{{#infra.kafka}}
+    "axiz.messaging.kafka.authentication=configured",
+{{/infra.kafka}}
+    "axiz.transport.allow-plain-http=true",
+    "axiz.transport.allow-insecure-data-stores=true"{{#fw.batch}},
+    "spring.batch.job.enabled=false"{{/fw.batch}}
+})
+{{#auditResources.required}}
+@ContextConfiguration(initializers = AuditTestConfiguration.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+{{/auditResources.required}}
+{{#caps.web}}
+{{#stack.servlet}}
+@AutoConfigureMockMvc
+{{/stack.servlet}}
+{{#stack.reactive}}
+@AutoConfigureWebTestClient
+{{/stack.reactive}}
+{{/caps.web}}
+{{#infra.any}}
+@Import({{infra.importList}})
+{{/infra.any}}
+{{#stack.reactive}}
+@ExtendWith(BlockHoundExtension.class)
+{{/stack.reactive}}
+abstract class {{project.className}}ApplicationTestSupport {}

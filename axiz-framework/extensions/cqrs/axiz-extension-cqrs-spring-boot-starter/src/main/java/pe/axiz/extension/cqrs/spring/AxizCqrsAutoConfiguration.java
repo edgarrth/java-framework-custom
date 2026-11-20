@@ -44,8 +44,8 @@ public class AxizCqrsAutoConfiguration {
 
   /**
    * What to do at startup with commands and queries that nothing protects (no {@code
-   * RequiresAuthority}, {@code AccessPolicy} or {@code OpenAccess}): {@code warn} (default), {@code
-   * fail} (recommended for financial services) or {@code allow}.
+   * RequiresAuthority}, {@code AccessPolicy} or {@code OpenAccess}): {@code fail} (default), {@code
+   * warn} (explicit warning-only policy) or {@code allow}. Unknown values reject startup.
    */
   public static final String UNPROTECTED_PROPERTY = "axiz.cqrs.authorization.unprotected";
 
@@ -115,7 +115,12 @@ public class AxizCqrsAutoConfiguration {
         registrations.stream().<Class<?>>map(Buses.Registration::requestType).toList(),
         new AccessPolicies(policies.orderedStream().toList()),
         environment.getProperty(UNPROTECTED_PROPERTY, "fail"));
-    return new Buses(registrations, behaviors.orderedStream().toList());
+    List<PipelineBehavior> pipeline = behaviors.orderedStream().toList();
+    if (!registrations.isEmpty()
+        && pipeline.stream().noneMatch(AuthorizationBehavior.class::isInstance))
+      throw new IllegalStateException(
+          "CQRS handlers require an AuthorizationBehavior and Spring Security");
+    return new Buses(registrations, pipeline);
   }
 
   @Bean

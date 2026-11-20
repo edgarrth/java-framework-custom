@@ -24,6 +24,7 @@ public record UncertainTokenOperation(
   /** Closed technical reason catalog. */
   public enum Reason {
     STORAGE_ACK_UNKNOWN,
+    COMMITTED_AUDIT_UNCONFIRMED,
     CANCELLED_DURING_WRITE
   }
 

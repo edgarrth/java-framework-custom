@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import pe.axiz.core.errors.BusinessException;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorDefinition;
@@ -242,12 +243,14 @@ class PaymentSagaTest {
   }
 
   @Test
-  void aTransferWithALostAnswerNeverReversesTheDebit() {
+  void aTransferWithALostAnswerNeverReversesTheDebit(TestReporter evidence) {
     downstream.transientFailures.put("transfer:pp-O-9-transfer", 4);
 
     PaymentProcess p = run("O-9");
 
     assertThat(p.status()).isEqualTo(ProcessStatus.VERIFYING);
     assertThat(downstream.calls).doesNotContain("reverse:MV-1");
+
+    evidence.publishEntry("axiz.capability.saga", "servlet");
   }
 }

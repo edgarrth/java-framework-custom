@@ -22,7 +22,8 @@ import org.testcontainers.images.builder.Transferable;
 
 class PatchedKeycloakIT {
   @Test
-  @Timeout(180)
+  // Includes a cold image build; HTTP startup retains the separate two-minute deadline.
+  @Timeout(300)
   void importedRealmIssuesSignedTokensAndRejectsWrongCredentialsAsNonRoot() throws Exception {
     boolean available = DockerClientFactory.instance().isDockerAvailable();
     if (Boolean.getBoolean("axiz.it.requireDocker")) assertTrue(available, "Docker is required");

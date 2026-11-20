@@ -2,10 +2,14 @@ package pe.axiz.spring.foundation;
 
 import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.MonthDay;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -13,8 +17,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.boot.health.contributor.Health;
+import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import pe.axiz.core.id.IdGenerator;
 import pe.axiz.core.identifiers.IdentifierRegistry;
 import pe.axiz.core.identifiers.IdentifierType;
@@ -22,12 +30,62 @@ import pe.axiz.core.time.BusinessCalendar;
 import pe.axiz.core.time.CutoffTime;
 import pe.axiz.core.time.DueDates;
 import pe.axiz.core.time.TimeSettings;
+import pe.axiz.spring.foundation.lifecycle.WorkerLifecycle;
+import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 
 /** Clock, business calendar, id generation, identifier registry and Money JSON support. */
 @AutoConfiguration(
     beforeName = "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration")
 @EnableConfigurationProperties(AxizFoundationProperties.class)
 public class AxizFoundationAutoConfiguration {
+
+  @Bean
+  SmartInitializingSingleton axizWorkerShutdownBudget(
+      ObjectProvider<WorkerStatus> workers, Environment environment) {
+    return () -> {
+      Duration phase =
+          Binder.get(environment)
+              .bind("spring.lifecycle.timeout-per-shutdown-phase", Duration.class)
+              .orElse(Duration.ofSeconds(30));
+      workers.forEach(
+          worker -> {
+            if (worker.shutdownGrace().plusSeconds(5).compareTo(phase) > 0)
+              throw new IllegalStateException(
+                  "Worker shutdown grace plus 5s must fit "
+                      + "spring.lifecycle.timeout-per-shutdown-phase");
+          });
+    };
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @ConditionalOnClass(name = "org.springframework.boot.health.contributor.HealthIndicator")
+  static class WorkerHealthConfiguration {
+    @Bean
+    @ConditionalOnMissingBean(name = "axizWorkersHealthIndicator")
+    HealthIndicator axizWorkersHealthIndicator(ObjectProvider<WorkerStatus> workers) {
+      return () -> {
+        Map<String, Object> details = new LinkedHashMap<>();
+        boolean ready = true;
+        for (WorkerStatus worker : workers) {
+          WorkerStatus.Snapshot snapshot = worker.workerSnapshot();
+          ready &=
+              snapshot.state() == WorkerLifecycle.State.RUNNING
+                  && snapshot.expected() > 0
+                  && snapshot.alive() == snapshot.expected();
+          details.put(
+              snapshot.name(),
+              Map.of(
+                  "state",
+                  snapshot.state().name(),
+                  "expected",
+                  snapshot.expected(),
+                  "alive",
+                  snapshot.alive()));
+        }
+        return (ready ? Health.up() : Health.down()).withDetails(details).build();
+      };
+    }
+  }
 
   @Bean
   @ConditionalOnMissingBean

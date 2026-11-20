@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -19,6 +20,8 @@ import pe.axiz.core.errors.ErrorDefinition;
 import pe.axiz.core.errors.ErrorMessageResolver;
 import pe.axiz.core.errors.ExceptionMapper;
 import pe.axiz.core.errors.ProblemFactory;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * RFC 9457 error responses for servlet and reactive applications, backed by the error catalog.
@@ -102,11 +105,18 @@ public class AxizErrorsAutoConfiguration {
   @ConditionalOnClass(name = "org.springframework.web.reactive.DispatcherHandler")
   static class ReactiveConfiguration {
 
+    @Bean(destroyMethod = "dispose", defaultCandidate = false)
+    @ConditionalOnMissingBean(name = "axizErrorRenderingScheduler")
+    Scheduler axizErrorRenderingScheduler() {
+      return Schedulers.newBoundedElastic(4, 64, "axiz-error-render", 60, true);
+    }
+
     @Bean
     @Order(-2)
     @ConditionalOnMissingBean
-    ProblemWebExceptionHandler axizProblemWebExceptionHandler(ProblemResponder responder) {
-      return new ProblemWebExceptionHandler(responder);
+    ProblemWebExceptionHandler axizProblemWebExceptionHandler(
+        ProblemResponder responder, @Qualifier("axizErrorRenderingScheduler") Scheduler scheduler) {
+      return new ProblemWebExceptionHandler(responder, scheduler);
     }
   }
 }

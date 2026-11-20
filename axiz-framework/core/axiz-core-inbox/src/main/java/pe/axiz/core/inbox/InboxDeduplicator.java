@@ -26,6 +26,9 @@ public final class InboxDeduplicator implements Deduplicator {
     if (lease.isNegative() || lease.isZero()) {
       throw new IllegalArgumentException("lease must be positive");
     }
+    if (retention.compareTo(lease) <= 0) {
+      throw new IllegalArgumentException("retention must exceed the processing lease");
+    }
   }
 
   @Override

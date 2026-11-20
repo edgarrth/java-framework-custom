@@ -316,14 +316,15 @@ class CrudAcceptanceIT {
     POSTGRES.stop();
   }
 
-  private static HttpResponse<String> call(String method, String path, String token, String body)
-      throws Exception {
+  private static HttpResponse<String> call(
+      String method, String path, String token, String body, String... headers) throws Exception {
     var request =
         HttpRequest.newBuilder(URI.create(endpoint + path))
             .timeout(Duration.ofSeconds(10))
             .header("Content-Type", "application/json")
             .method(method, HttpRequest.BodyPublishers.ofString(body));
     if (!token.isEmpty()) request.header("Authorization", "Bearer " + token);
+    if (headers.length > 0) request.headers(headers);
     return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
   }
 
@@ -352,7 +353,7 @@ class CrudAcceptanceIT {
       expect(call("GET", path + "/" + id, "", ""), 401);
       expect(call("GET", path + "/" + id, noScope, ""), 403);
       expect(call("GET", path + "/" + id, mallory, ""), 404);
-      expect(call("DELETE", path + "/" + id, mallory, ""), 404);
+      expect(call("DELETE", path + "/" + id, mallory, "", "If-Match", "\"0\""), 404);
       expect(call("PUT", path + "/" + id, mallory, "{\"name\":\"stolen\",\"version\":0}"), 404);
       var attempted =
           call(
@@ -394,6 +395,26 @@ class CrudAcceptanceIT {
           List.of(
               "{", "[]", "{\"name\":null}", "{\"name\":\"\"}", "{\"name\":\"bad\\u0000value\"}"))
         expect(call("POST", path, alice, body), 400);
+    }
+  }
+
+  @Test
+  void deleteRequiresOneCurrentStrongVersionOverRealHttp() throws Exception {
+    String alice = bearer("alice", "maintenance:write");
+    for (String resource : List.of("accounts", "limits")) {
+      String collection = "/v1/" + resource;
+      var created = expect(call("POST", collection, alice, "{\"name\":\"delete-guard\"}"), 201);
+      String path = collection + "/" + created.get("id");
+      expect(call("DELETE", path, alice, ""), 400);
+      for (String invalid : List.of("W/\"0\"", "*", "\"0\", \"1\"", "0"))
+        expect(call("DELETE", path, alice, "", "If-Match", invalid), 400);
+      expect(call("PUT", path, alice, "{\"name\":\"updated\",\"version\":0}"), 200);
+      expect(call("DELETE", path, alice, "", "If-Match", "\"0\""), 412);
+      var remaining = expect(call("GET", path, alice, ""), 200);
+      assertEquals("updated", remaining.get("name"));
+      assertEquals(1L, ((Number) remaining.get("version")).longValue());
+      expect(call("DELETE", path, alice, "", "If-Match", "\"1\""), 204);
+      expect(call("GET", path, alice, ""), 404);
     }
   }
 }

@@ -5,7 +5,8 @@ name: payments-ux
 services:
   # Grafana, Tempo, Loki, Prometheus and an OpenTelemetry collector (OTLP 4317/4318)
   otel-lgtm:
-    image: grafana/otel-lgtm:0.11.10
+    image: axiz-local/otel-lgtm:2026.11-r1
+    build: {context: ../../local/images/otel-lgtm}
     ports: ["127.0.0.1:3000:3000", "127.0.0.1:4317:4317", "127.0.0.1:4318:4318"]
 
   redis:

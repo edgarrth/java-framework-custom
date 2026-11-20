@@ -76,3 +76,18 @@ Para PostgreSQL/SCRAM se configura el DRBG estándar con
 `-Djava.security.egd=file:/dev/./urandom` y se inicializa al arrancar. Los servicios reactive
 validan esta condición; el parent, Jib y Helm generado incluyen la opción. Esta ruta ya se
 comprobó con PostgreSQL real y BlockHound; la variante native requiere validación propia.
+
+## Traducción de respuestas de error
+
+El puerto de presentación `ErrorMessageResolver` es síncrono y puede cargar un ResourceBundle
+o implementar una traducción de la aplicación. Sólo esa construcción de la respuesta de error
+se aísla en schedulers dedicados y acotados de errors/security. No es un adaptador de negocio
+reactivo ni habilita usar SDKs bloqueantes en CQRS, repositorios o clientes salientes. ArchUnit
+autoriza únicamente los cinco constructores/fábricas de esos handlers; cualquier otro sitio
+sigue prohibido. Saturación rechaza trabajo sin ejecutarlo en el event loop y los schedulers
+se cierran con Spring. Los tests comprueban aislamiento, saturación, restauración de contexto/MDC
+y que otros clientes no hereden esta excepción.
+
+El arranque también descubre los codecs nativos opcionales Zstd/Brotli de Netty cuando están
+en el classpath. La extracción inicial de bibliotecas desde JAR ocurre antes de las peticiones,
+sin nuevas excepciones en BlockHound.

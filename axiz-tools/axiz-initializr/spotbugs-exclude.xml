@@ -6,4 +6,10 @@
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="meters"/>
   </Match>
+  <!-- Session authorization boundary is deliberately shared with Spring Security, not copied. -->
+  <Match>
+    <Class name="pe.axiz.initializr.api.GitHubController"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="authorizedClients"/>
+  </Match>
 </FindBugsFilter>

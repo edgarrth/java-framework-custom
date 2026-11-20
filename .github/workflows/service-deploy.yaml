@@ -126,6 +126,10 @@ jobs:
           chmod 700 "$DOCKER_CONFIG" "$(dirname "$HELM_REGISTRY_CONFIG")"
           mapfile -t registries < <(jq -r '[.artifacts.image.repository,.artifacts.chart.oci|sub("^oci://";"")|split("/")[0]]|unique[]' "$BUNDLE/build-manifest.json")
           for registry in "${registries[@]}"; do
+            if [[ "$registry" != ghcr.io ]]; then
+              echo "::error::Deployment registry must be ghcr.io"
+              exit 1
+            fi
             printf '%s' "$PASSWORD" | docker login "$registry" --username "$USERNAME" --password-stdin
             printf '%s' "$PASSWORD" | helm registry login "$registry" --username "$USERNAME" --password-stdin
           done

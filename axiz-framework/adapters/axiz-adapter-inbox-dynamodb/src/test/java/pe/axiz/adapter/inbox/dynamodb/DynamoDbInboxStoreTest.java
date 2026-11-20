@@ -58,10 +58,16 @@ class DynamoDbInboxStoreTest {
     @Override
     public UpdateItemResponse updateItem(UpdateItemRequest r) {
       Map<String, AttributeValue> item = items.get(r.key().get("pk").s());
-      if (!owned(item, r.expressionAttributeValues())) {
+      if (!owned(item, r.expressionAttributeValues())
+          || (r.conditionExpression().contains("attribute_exists(expiresAt)")
+              && !item.containsKey("expiresAt"))
+          || (r.conditionExpression().contains("leaseUntil > :at")
+              && Long.parseLong(item.get("leaseUntil").n())
+                  <= Long.parseLong(r.expressionAttributeValues().get(":at").n()))) {
         throw ConditionalCheckFailedException.builder().message("not owner").build();
       }
       item.put("status", r.expressionAttributeValues().get(":processed"));
+      item.put("ttl", item.get("expiresAt"));
       return UpdateItemResponse.builder().build();
     }
 
@@ -117,6 +123,22 @@ class DynamoDbInboxStoreTest {
             .status());
     assertEquals(0, store.purgeExpired(now));
     assertEquals("c#e-1", DynamoDbInboxStore.key("c", "e-1"));
+  }
+
+  @Test
+  void retentionTtlIsEnabledOnlyAfterCompletionAndMissingMigrationFailsClosed() {
+    var dynamo = new FakeDynamo();
+    var store = new DynamoDbInboxStore(dynamo, "axiz-inbox");
+    Instant now = Instant.parse("2026-01-01T00:00:00Z");
+    store.tryAcquire("ttl", "event", "owner", now, now.plusSeconds(60), now.plusSeconds(3600));
+    var item = dynamo.items.get("ttl#event");
+    assertFalse(item.containsKey("ttl"));
+    var expiration = item.remove("expiresAt");
+    assertFalse(store.markProcessed("ttl", "event", "owner", now.plusSeconds(1)));
+    assertEquals("IN_PROGRESS", item.get("status").s());
+    item.put("expiresAt", expiration);
+    assertTrue(store.markProcessed("ttl", "event", "owner", now.plusSeconds(1)));
+    assertEquals(expiration, item.get("ttl"));
   }
 
   @TestFactory
@@ -200,7 +222,8 @@ class DynamoDbInboxStoreTest {
     InboxException acquire =
         assertThrows(
             InboxException.class,
-            () -> store.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(60)));
+            () ->
+                store.tryAcquire("c", "e-1", "a", now, now.plusSeconds(60), now.plusSeconds(120)));
     assertInstanceOf(SdkException.class, acquire.getCause());
     assertThrows(InboxException.class, () -> store.markProcessed("c", "e-1", "a", now));
     assertThrows(InboxException.class, () -> store.release("c", "e-1", "a"));

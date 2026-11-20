@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
@@ -22,6 +21,7 @@ import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.StaticKeyProvider;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoAsyncRepository;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.dynamodb.ReactiveDynamoRepository;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -53,7 +53,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 class LocalStackDynamoRepositoryIT {
   private static final SecretKey CURSOR_KEY = AesGcm.newKey();
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("dynamodb");
+      TestContainerImages.localstack().withServices("dynamodb");
   private static AsyncAwsClients resources;
   private static DynamoDbAsyncClient client;
   private static DynamoAsyncRepository<Item> nativeRepository;

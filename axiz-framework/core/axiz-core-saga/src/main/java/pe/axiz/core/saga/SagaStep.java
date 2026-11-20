@@ -14,8 +14,25 @@ public interface SagaStep<C> {
   /** Executes the step and returns the (possibly enriched) context. */
   C execute(C context) throws Exception;
 
+  /**
+   * Executes with a monotonically increasing fence. Participants that support fencing must
+   * atomically reject older fences and bind retries to the stable saga/step idempotency key. The
+   * compatibility default requires the original execute operation to be idempotent.
+   */
+  default C execute(C context, SagaStepExecution execution) throws Exception {
+    return execute(context);
+  }
+
   /** Undoes the step after a later step failed. */
   void compensate(C context) throws Exception;
+
+  default void compensate(C context, SagaStepExecution execution) throws Exception {
+    compensate(context);
+  }
+
+  default StepCheck<C> verify(C context, SagaStepExecution execution) throws Exception {
+    return verify(context);
+  }
 
   /**
    * Asks the participant whether the effect of {@link #execute} exists, after it failed without a

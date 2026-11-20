@@ -127,3 +127,37 @@ The regular `samples` and nightly `samples-matrix` jobs verify six extra consume
 reactive, each with outbox/SQS, outbox/SNS and `audit-sqs`. Their manifest is separate from the
 nine default archetypes so native module selection keeps its explicit scope. The HTTP acceptance
 job also exercises scoped, authenticated-only and public requests in both stacks.
+
+## Executable generated recipes
+
+Generated services share an abstract application test configuration. Web services start on a
+random port; JDK HTTP tests exercise health and anonymous authorization through the actual server
+(and reactive event loop with BlockHound). Separate in-process tests invoke application
+collaborators with a synthetic authorized caller and initially expect the explicit 501 contract; replace that expectation when implementing the operation. Separate controller tests
+exercise successful status and JSON mapping with test doubles and typed synthetic fixtures.
+Hexagonal model tests verify nullable and immutable collections. The startup test invokes the
+real main method except for CronJobs, whose main terminates the JVM.
+
+Batch acceptance loads a synthetic CSV from LocalStack S3 into PostgreSQL twice, checking
+normalization, filtering and duplicate suppression. The CI sample generator adds an entity,
+repository and real persistence acceptance recipe to every persistence variant: create, read,
+update and delete, plus DynamoDB partition queries and version advancement. Ephemeral cursor
+keys exist only in that test context; no shared secret is embedded in generated sources.
+
+Both sample workflows require `-Pquality`, matching the service build pipeline. Contract sync
+creates missing shared test support. New or changed test classes and response fixtures always
+become `.axiz-new` proposals, including fixtures deliberately removed by the user. Merge these
+with their controller proposals before executing new operation tests. JSON response comparisons
+are STRICT, including extra fields and array order.
+
+OpenAPI parameter names at path, operation and local-reference level must match
+`^[A-Za-z][A-Za-z0-9_.-]{0,63}$`; Java annotation literals are encoded after validation. Lint rejects
+quotes, control characters, Unicode escape sequences and names outside the bound before generation.
+
+### Safe artifact names
+
+Artifact subpackages and qualified mapper source/target types must be valid Java names.
+Invalid package syntax is rejected before rendering or writing files. Simple artifact/type
+names retain their documented kebab-case to PascalCase conversion. HTTP client models reject
+enum values or properties that normalize to the same Java identifier instead of generating
+source that cannot compile.

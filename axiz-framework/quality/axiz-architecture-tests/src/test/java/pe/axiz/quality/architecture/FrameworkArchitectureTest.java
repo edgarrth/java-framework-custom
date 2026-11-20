@@ -133,25 +133,70 @@ class FrameworkArchitectureTest {
                 }
               });
 
+  // Only presentation text rendering may use bounded workers; business/provider I/O remains native.
+  private static final Set<String> ERROR_TEXT_RENDERING_BOUNDARIES =
+      Set.of(
+          "pe.axiz.spring.errors.ProblemWebExceptionHandler.handle("
+              + "org.springframework.web.server.ServerWebExchange, java.lang.Throwable)",
+          "pe.axiz.spring.errors.AxizErrorsAutoConfiguration$ReactiveConfiguration.axizErrorRenderingScheduler()",
+          "pe.axiz.spring.security.ReactiveProblemHandlers.write(reactor.core.scheduler.Scheduler, "
+              + "org.springframework.web.server.ServerWebExchange, "
+              + "org.springframework.http.HttpStatus, java.util.function.Supplier)",
+          "pe.axiz.spring.security.AxizSecurityAutoConfiguration$ReactiveConfiguration."
+              + "axizSecurityRenderingScheduler()");
+
   /** Request/event code cannot disguise blocking I/O with a worker scheduler. */
   @ArchTest
   static final ArchRule FRAMEWORK_DOES_NOT_OFFLOAD_BLOCKING_IO =
       noClasses()
           .that()
-          .resideInAnyPackage("pe.axiz.spring..", "pe.axiz.structure..", "pe.axiz.extension..")
+          .resideInAnyPackage(
+              "pe.axiz.spring..",
+              "pe.axiz.structure..",
+              "pe.axiz.extension..",
+              "pe.axiz.kit..",
+              "pe.axiz.adapter..")
           .should()
           .callMethodWhere(
-              new DescribedPredicate<>("create or use an elastic worker scheduler") {
+              new DescribedPredicate<>("create or use an I/O offloading scheduler") {
                 @Override
                 public boolean test(JavaMethodCall call) {
-                  return call.getTargetOwner().getName().equals("reactor.core.scheduler.Schedulers")
-                      && Set.of("boundedElastic", "newBoundedElastic", "elastic", "newElastic")
-                          .contains(call.getName());
+                  String owner = call.getTargetOwner().getName();
+                  boolean factory =
+                      owner.equals("reactor.core.scheduler.Schedulers")
+                          && Set.of(
+                                  "boundedElastic",
+                                  "newBoundedElastic",
+                                  "elastic",
+                                  "newElastic",
+                                  "fromExecutor",
+                                  "fromExecutorService")
+                              .contains(call.getName());
+                  boolean publisher =
+                      Set.of(
+                              "reactor.core.publisher.Mono",
+                              "reactor.core.publisher.Flux",
+                              "reactor.core.publisher.ParallelFlux")
+                          .contains(owner);
+                  boolean offload =
+                      publisher
+                          && (Set.of("subscribeOn", "publishOn", "runOn").contains(call.getName())
+                              || call.getTarget().getRawParameterTypes().stream()
+                                  .anyMatch(
+                                      type ->
+                                          type.isAssignableTo("reactor.core.scheduler.Scheduler")));
+                  boolean scheduled =
+                      (call.getTargetOwner().isAssignableTo("reactor.core.scheduler.Scheduler")
+                              || call.getTargetOwner()
+                                  .isAssignableTo("reactor.core.scheduler.Scheduler$Worker"))
+                          && call.getName().startsWith("schedule");
+                  return (factory || offload || scheduled)
+                      && !ERROR_TEXT_RENDERING_BOUNDARIES.contains(call.getOrigin().getFullName());
                 }
               })
           .because(
               "The reactive execution model requires native asynchronous I/O, including CQRS and"
-                  + " outbound authentication");
+                  + " outbound authentication; only the named error-text rendering boundaries are isolated");
 
   @ArchTest
   static final ArchRule LANGUAGE_KERNEL_HAS_NO_FRAMEWORK_DEPENDENCIES =
@@ -313,7 +358,6 @@ class FrameworkArchitectureTest {
                   || name.equals("edu.umd.cs.findbugs.annotations.SuppressFBWarnings")
                   || name.equals("edu.umd.cs.findbugs.annotations.SuppressMatchType")
                   || name.startsWith("org.slf4j.")
-                  || name.startsWith("io.micrometer.")
                   || name.startsWith("org.reactivestreams.")
                   || name.startsWith("pe.axiz.core.")
                   || !own.isEmpty() && own.equals(other)

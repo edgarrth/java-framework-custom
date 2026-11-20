@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
+import pe.axiz.adapter.tokenization.redis.TokenBudgetOwner;
 import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
 import pe.axiz.core.secrets.SecretValue;
 import pe.axiz.core.tokenization.vault.TokenBudgetPolicy;
@@ -58,12 +59,14 @@ class TokenRedisResourcesIT {
         assertThat(resources.connection().sync().ping()).isEqualTo("PONG");
         assertThat(
                 configuration
-                    .axizRedisTokenBudget(resources, properties, (namespace, id) -> {})
+                    .axizRedisTokenBudget(
+                        resources, properties, (namespace, id) -> {}, TokenBudgetOwner.process())
                     .distributed())
             .isTrue();
         assertThat(
                 configuration
-                    .axizRedisAsyncTokenBudget(resources, properties, (namespace, id) -> {})
+                    .axizRedisAsyncTokenBudget(
+                        resources, properties, (namespace, id) -> {}, TokenBudgetOwner.process())
                     .distributed())
             .isTrue();
       }

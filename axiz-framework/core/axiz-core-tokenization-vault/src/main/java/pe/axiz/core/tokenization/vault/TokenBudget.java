@@ -1,5 +1,6 @@
 package pe.axiz.core.tokenization.vault;
 
+import java.util.UUID;
 import pe.axiz.core.tokenization.TokenOperation;
 
 /**
@@ -7,6 +8,12 @@ import pe.axiz.core.tokenization.TokenOperation;
  */
 public interface TokenBudget {
   Permit acquire(TokenCaller caller, TokenOperation operation, VaultScope scope);
+
+  /** Associates admission with the audit operation; providers can retain this recovery identity. */
+  default Permit acquire(
+      TokenCaller caller, TokenOperation operation, VaultScope scope, UUID operationId) {
+    return acquire(caller, operation, scope);
+  }
 
   void beforeWrite(TokenCaller caller, VaultScope scope);
 

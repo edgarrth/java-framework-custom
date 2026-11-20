@@ -23,7 +23,6 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
@@ -41,6 +40,7 @@ import pe.axiz.adapter.storage.s3.S3AsyncObjectStorage;
 import pe.axiz.core.audit.AuditEvent;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.EventEnvelope;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
 import reactor.core.publisher.Mono;
@@ -70,7 +70,7 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
 class LocalStackAsyncResilienceIT {
   private static final Duration T = Duration.ofSeconds(80);
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK))
+      TestContainerImages.localstack()
           .withServices("dynamodb", "sqs", "sns", "s3", "kms", "secretsmanager", "ssm");
   private static final List<SdkAutoCloseable> CLIENTS = new ArrayList<>();
   private static final List<Operation> OPERATIONS = new ArrayList<>();

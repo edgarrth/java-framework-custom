@@ -20,8 +20,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `CommandService` | Write operations of a resource. |
 | `CrudService` | Read and write operations of a simple resource (catalogs, parameters, maintenance tables). |
-| `InMemoryCrudService` | Map-backed `CrudService` for tests, prototypes and the local profile. |
 | `QueryService` | Read operations of a resource. |
+
+Test doubles such as `pe.axiz.test.support.layered.InMemoryCrudService` are provided by
+`axiz-test-support`; declare that module in test scope.
 
 ## Tests
 

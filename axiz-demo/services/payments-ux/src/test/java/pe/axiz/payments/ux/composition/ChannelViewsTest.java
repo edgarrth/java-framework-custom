@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.junit.jupiter.api.extension.ExtendWith;
 import pe.axiz.payments.ux.client.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.ux.client.beneficiaries.model.BeneficiaryPage;
@@ -19,7 +20,7 @@ import pe.axiz.spring.test.BlockHoundExtension;
 class ChannelViewsTest {
 
   @Test
-  void masksHolderNamesAndAccounts() {
+  void masksHolderNamesAndAccounts(TestReporter evidence) {
     BeneficiaryList list =
         ChannelViews.beneficiaries(
             new BeneficiaryPage(
@@ -30,6 +31,8 @@ class ChannelViewsTest {
     assertThat(list.getItems().getFirst().getHolderName()).isEqualTo("****");
     assertThat(list.getItems().getFirst().getCreditorCci()).isEqualTo("****************9053");
     assertThat(list.getNextCursor()).isEqualTo("next");
+
+    evidence.publishEntry("axiz.capability.sensitive", "default");
   }
 
   @Test

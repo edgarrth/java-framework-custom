@@ -9,6 +9,7 @@
   <description>JDBC scheduling integration</description>
   <properties><axiz.module.name>pe.axiz.spring.scheduling.jdbc</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+<dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version></dependency>
 <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
 <dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId></dependency>
 <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>

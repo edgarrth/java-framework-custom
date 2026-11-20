@@ -146,7 +146,9 @@ class CrudLayersTest {
       assertThrows(
           NotFoundException.class,
           () -> alice.update(theirs.id(), new Change("stolen", theirs.version())));
-      assertThrows(NotFoundException.class, () -> alice.delete(theirs.id()));
+      assertThrows(
+          NotFoundException.class,
+          () -> alice.delete(theirs.id(), String.valueOf(theirs.version())));
       assertEquals(List.of(mine), alice.list(PageRequest.of(0, 10)).content());
       assertThrows(
           ValidationException.class,
@@ -162,7 +164,18 @@ class CrudLayersTest {
               BusinessException.class,
               () -> alice.update(mine.id(), new Change("lost update", mine.version())));
       assertEquals(CoreErrors.CONFLICT.code(), stale.code());
-      alice.delete(mine.id());
+      var staleDelete =
+          assertThrows(
+              BusinessException.class,
+              () -> alice.delete(mine.id(), String.valueOf(mine.version())));
+      assertEquals(CoreErrors.PRECONDITION_FAILED.code(), staleDelete.code());
+      assertTrue(alice.find(mine.id()).isPresent());
+      assertThrows(ValidationException.class, () -> alice.delete(mine.id(), ""));
+      assertThrows(ValidationException.class, () -> alice.delete(mine.id(), null));
+      var controller = new BranchController(alice);
+      for (String invalid : List.of("*", "W/\"1\"", "1", "\"1\",\"2\"", "\"bad\nversion\""))
+        assertThrows(ValidationException.class, () -> controller.delete(mine.id(), invalid));
+      alice.delete(mine.id(), String.valueOf(alice.get(mine.id()).version()));
       assertTrue(alice.find(mine.id()).isEmpty());
       em.getTransaction().commit();
     }
@@ -251,7 +264,12 @@ class CrudLayersTest {
         assertEquals(created, controller.get(created.id()));
         assertEquals(
             "New", controller.update(created.id(), new Change("New", created.version())).name());
-        assertEquals(204, controller.delete(created.id()).getStatusCode().value());
+        assertEquals(
+            204,
+            controller
+                .delete(created.id(), "\"" + controller.get(created.id()).version() + "\"")
+                .getStatusCode()
+                .value());
       } finally {
         RequestContextHolder.resetRequestAttributes();
       }

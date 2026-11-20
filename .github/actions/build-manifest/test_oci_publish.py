@@ -35,6 +35,10 @@ def write_archive(path, entries):
 
 
 class ArchiveTest(unittest.TestCase):
+    def test_excessive_json_nesting_is_a_validation_error(self):
+        with self.assertRaisesRegex(ValueError, "nesting"):
+            oci.document(b'{"nested":' + b'[' * 2000 + b'0' + b']' * 2000 + b'}')
+
     def test_preserves_manifest_and_layer_bytes_and_rejects_wrong_platform(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -64,6 +68,36 @@ class ArchiveTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     oci.archive(root / "image.tar", root / "output", "linux/amd64")
                 self.assertFalse((root / "outside").exists())
+
+    def test_invalid_json_types_are_validation_failures(self):
+        cases = [('manifests', None), ('manifests', 1), ('manifests', [False]),
+                 ('os', []), ('architecture', 1), ('layers', [None]), ('layers', ['layer']),
+                 ('layer_media', {}), ('digest', []), ('digest', None)]
+        for field, value in cases:
+            with self.subTest(field=field, value=value), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                entries = image_entries()
+                index = json.loads(entries['index.json'])
+                original_manifest = 'blobs/sha256/' + index['manifests'][0]['digest'][7:]
+                metadata = json.loads(entries.pop(original_manifest))
+                if field in ('os', 'architecture'):
+                    original_config = 'blobs/sha256/' + metadata['config']['digest'][7:]
+                    config = json.loads(entries.pop(original_config))
+                    config[field] = value
+                    encoded = json.dumps(config).encode()
+                    metadata['config'].update(digest=oci.digest(encoded), size=len(encoded))
+                    entries['blobs/sha256/' + oci.digest(encoded)[7:]] = encoded
+                elif field == 'layers': metadata['layers'] = value
+                elif field == 'layer_media': metadata['layers'][0]['mediaType'] = value
+                encoded = json.dumps(metadata).encode()
+                entries['blobs/sha256/' + oci.digest(encoded)[7:]] = encoded
+                index['manifests'][0].update(digest=oci.digest(encoded), size=len(encoded))
+                if field == 'manifests': index['manifests'] = value
+                elif field == 'digest': index['manifests'][0]['digest'] = value
+                entries['index.json'] = json.dumps(index).encode()
+                write_archive(root / 'image.tar', entries)
+                with self.assertRaises(ValueError):
+                    oci.archive(root / 'image.tar', root / 'output', 'linux/amd64')
 
     def test_archive_links_are_never_followed(self):
         with tempfile.TemporaryDirectory() as tmp:

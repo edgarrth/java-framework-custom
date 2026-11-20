@@ -32,3 +32,43 @@ All SOAP endpoints are validated at startup, including clients without WS-Securi
 HTTPS is required. Local HTTP peers need the common `axiz.transport.allow-plain-http=true` setting
 and an explicit local/test/ci environment. There is no per-client plaintext selector. Managed
 SOAP transports do not follow automatic redirects and retain normal certificate verification.
+
+## Credentials, mutual TLS and rotation
+
+```yaml
+axiz.soap.clients.bank:
+  endpoint: https://bank.example.invalid/soap
+  connect-timeout: 2s
+  timeout: 10s
+  username: integration-client
+  password-ref: bank/soap/password
+  password-mode: TEXT
+  ssl-bundle: bank-client
+```
+
+Declare the `bank-client` Spring SSL bundle with its trust certificates and, for mutual TLS,
+client certificate/private key. Store key material outside the application artifact and use
+the deployment's secret mechanism. Trust, enabled protocols and ciphers are isolated per
+named client; hostname verification remains enabled. An unknown bundle fails client creation.
+
+WS-Security resolves `password-ref` on every call, closes the returned `SecretValue` and
+clears the temporary credential buffer after the request, including failures. Freshness still
+depends on the selected secret resolver's cache/TTL: rotate or invalidate that cache as needed.
+The transport and its SSL context are reused. Certificate/trust rotation requires replacing
+the `SoapClients` bean (or a rolling application restart); automatic SSL-bundle reload is not
+claimed. Drain requests, create the replacement with the new bundle and close the previous
+factory. Closing releases owned HTTP clients and rejects subsequent calls.
+
+Programmatic consumers can use `AxizSoapProperties.Client.builder(endpoint).sslBundle("bank-client")`
+and named options before `build()`. The result is immutable; defaults are SOAP 1.1, a 2-second
+connection timeout and a 10-second request timeout. Select `LEGACY_SHA1_DIGEST` only when the
+counterparty explicitly requires that legacy WS-Security profile, always over TLS.
+
+`SoapTest` covers secret refresh and cleanup, invalid configuration and builder defaults;
+`SoapTlsTest` checks isolated TLS/mTLS with an actual TLS peer. The demo's provider recipes
+illustrate consumption through the public starter.
+
+Configured credential combinations (username, explicit password mode, secret reference and
+SecretResolver availability) are validated when the factory is constructed. This does not fetch
+secrets or create network connections. Secret existence and its current value are checked for
+each invocation, so rotation remains effective without caching plaintext in the SOAP factory.

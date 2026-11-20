@@ -83,7 +83,7 @@ class LockTest {
                 () ->
                     template.withLock(
                         "account:9",
-                        Duration.ofMillis(300),
+                        Duration.ofSeconds(5),
                         Duration.ofSeconds(5),
                         () -> {
                           maxConcurrent.accumulateAndGet(concurrent.incrementAndGet(), Math::max);
@@ -111,10 +111,10 @@ class LockTest {
     String result =
         template.withLock(
             "r",
-            Duration.ofMillis(60),
+            Duration.ofSeconds(1),
             Duration.ofSeconds(1),
             () -> {
-              Thread.sleep(200); // longer than the lease: the renewer keeps it
+              Thread.sleep(1500); // longer than the lease: the renewer keeps it
               assertTrue(lock.tryAcquire("r", Duration.ofSeconds(1)).isEmpty());
               return "done";
             });

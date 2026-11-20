@@ -26,10 +26,13 @@ public class pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguratio
 public pe.axiz.spring.messaging.sqs.AxizNativeMessagingSqsAutoConfiguration();
 }
 
-public final class pe.axiz.spring.messaging.sqs.SqsEventConsumer implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.messaging.sqs.SqsEventConsumer implements org.springframework.context.SmartLifecycle,pe.axiz.spring.foundation.lifecycle.WorkerStatus {
 public boolean isRunning();
 public int getPhase();
+public java.time.Duration shutdownGrace();
+public pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot workerSnapshot();
 public pe.axiz.spring.messaging.sqs.SqsEventConsumer(software.amazon.awssdk.services.sqs.SqsClient, pe.axiz.spring.messaging.ObservedDispatcher, pe.axiz.spring.messaging.sqs.AxizMessagingSqsProperties, pe.axiz.core.resilience.Backoff);
 public void start();
 public void stop();
+public void stop(java.lang.Runnable);
 }

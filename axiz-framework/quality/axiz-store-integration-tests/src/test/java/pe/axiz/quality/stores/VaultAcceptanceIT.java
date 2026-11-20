@@ -45,7 +45,6 @@ import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.audit.sqs.SqsAsyncAuditPublisher;
 import pe.axiz.adapter.audit.sqs.SqsAuditPublisher;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
@@ -137,9 +136,7 @@ class VaultAcceptanceIT {
   static void start() throws Exception {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
-    aws =
-        new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK))
-            .withServices("dynamodb", "kms", "sqs");
+    aws = TestContainerImages.localstack().withServices("dynamodb", "kms", "sqs");
     aws.start();
     redis =
         TestContainerImages.valkey()
@@ -637,7 +634,10 @@ class VaultAcceptanceIT {
     assertTrue(auditCount >= 20, "Operations must be durably acknowledged and sealed");
     sqs.deleteQueue(b -> b.queueUrl(f.queue));
     var denied = http.send("/v1/tokens", allowed, valueBody("DNI", "00883344", false));
-    expect(denied, 503);
+    // Persistence committed, but durable audit acknowledgement failed: the overall operation
+    // is uncertain. Preserve the association and require reconciliation, never a fresh replay.
+    expect(denied, 504);
+    assertThat(denied.body()).contains("AXZ-TOKEN-0504");
     assertThat(denied.body()).doesNotContain("00883344", "QueueDoesNotExist", "aws");
     var scope =
         new VaultScope(new TokenType("DNI"), "tenant-a", new TokenDomain("payments"), "dni.pe", 1);
@@ -653,7 +653,11 @@ class VaultAcceptanceIT {
                 scope, List.of(f.indexes.index("00883344", scope.indexScope(), "index")))
             .orElseThrow();
     int rowsBeforeRetry = db.scan(b -> b.tableName(f.table).consistentRead(true)).count();
-    expect(http.send("/v1/tokens", allowed, valueBody("DNI", "00883344", false)), 503);
+    // A later request finds the existing association without writing. Its failed read audit is
+    // unavailability, not a new uncertain mutation; it still cannot return the token.
+    var retry = http.send("/v1/tokens", allowed, valueBody("DNI", "00883344", false));
+    expect(retry, 503);
+    assertThat(retry.body()).contains("AXZ-TOKEN-0503").doesNotContain(committed.token().reveal());
     assertEquals(rowsBeforeRetry, db.scan(b -> b.tableName(f.table).consistentRead(true)).count());
     var retried =
         f.vault

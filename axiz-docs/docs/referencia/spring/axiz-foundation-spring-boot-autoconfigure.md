@@ -113,3 +113,31 @@ identity, native transport and the optional context registry. No registry means 
 Spring's direct dependency graph closes consumers before the identity manager. When a lazy
 application provider is selected, the manager records that actual provider dependency internally,
 so it also survives cleanup of failed pools. It does not scan unrelated beans in creation.
+
+## Worker lifecycle and readiness
+
+Inbox purging, outbox relaying and SQS consumers expose immutable worker snapshots.
+With Boot health present, `axizWorkers` is DOWN for failed/stopped groups or missing workers;
+uncaught worker failures are logged by type without raw messages, and stop the remaining group.
+The default readiness group includes `readinessState,axizWorkers`. Applications overriding group
+membership must retain `axizWorkers` to reject traffic when a required worker is unavailable.
+
+Outbox and SQS drain for 15s by default. Startup rejects a worker grace plus the 5s termination
+margin that exceeds `spring.lifecycle.timeout-per-shutdown-phase` (generated services: 20s).
+Generated charts allow 90s for sequential shutdown phases; adjust the pod budget when adding
+phases, hooks or larger grace periods. Uncooperative I/O never receives a false stopped callback.
+
+### Operación de workers fallidos
+
+`axizWorkers=DOWN` retira readiness; no reinicia por sí solo un pod. Configure una alerta de
+readiness/estado del worker y un procedimiento de diagnóstico y reemplazo del pod. Antes de
+repetir una operación externa, concilie su resultado mediante el mecanismo del proveedor.
+Un worker terminado conserva `FAILED` para health y rechaza reinicio en la misma instancia.
+Si todos los workers y su cleanup terminaron, `stop(callback)` sí confirma la parada y
+`isRunning()` devuelve false, sin esperar innecesariamente el timeout de fase de Spring.
+Si el cleanup falla o queda I/O vivo, no se confirma la parada ni se habilita un nuevo worker.
+
+`ReactiveRenderContext` scopes synchronous presentation work to the explicit Reactor request and
+Observation, with MDC and thread-local restoration. Optional Netty codecs are initialized before
+traffic: a missing optional class is allowed, but an installed incompatible class fails startup
+with its linkage error instead of deferring an invalid classpath failure to a request.

@@ -54,7 +54,7 @@ axiz:
 
 - **Timeouts obligatorios**: no existe un valor "infinito" por defecto.
 - **Reintentos solo seguros**: métodos idempotentes o requests con `Idempotency-Key`, con backoff
-  exponencial con jitter, dentro del presupuesto total. Los decide solo el structure: los
+  exponencial con jitter, dentro del presupuesto total. Los decide solo Axiz: los
   reintentos automáticos de Apache HttpClient están apagados, porque reenviarían un `POST`
   respondido con 429 o 503.
 - **Headers propagados**: correlación y `Accept-Language` siempre; los demás solo si están en la
@@ -63,6 +63,9 @@ axiz:
 - **Errores**: las respuestas de error se convierten en `ExternalServiceException` con el detalle del
   proveedor, para que el adaptador las traduzca al dominio.
 - **Secretos por referencia** (`*-ref`), resueltos con `SecretResolver` desde Secrets Manager.
+  El cliente cierra cada `SecretValue` resuelto al terminar su uso, también ante errores o
+  cancelación. Un consumidor que llama al puerto de secretos directamente debe usar
+  `try` con recursos; no debe guardar ni registrar el valor en texto plano.
 - **Token relay** (`TOKEN_RELAY`): reenvía el token de la request entrante. En servlet se toma del
   contexto de seguridad del hilo; en reactivo, del contexto de Reactor de la request, así que
   funciona igual aunque la llamada cambie de hilo.
@@ -79,6 +82,12 @@ log enmascarado. UsernameToken es autenticación legacy, por eso:
 - Con credenciales el endpoint debe ser `https://`; `allow-plain-http: true` existe solo para los
   sustitutos locales (docker compose, kind).
 - Si la contraparte lo soporta, se prefiere un perfil moderno (TLS mutuo, X.509 o tokens).
+- `SoapClients` conserva el transporte, pero resuelve `password-ref` en cada invocación y cierra
+  la credencial al terminar. Una rotación se observa en la próxima resolución; si el proveedor
+  de secretos usa caché, su TTL o invalidación determina cuándo entrega la versión nueva.
+- `ssl-bundle` selecciona un bundle de Spring Boot para truststore y, si se requiere mTLS,
+  certificado y clave de cliente. Se conserva la verificación del nombre del servidor. Un
+  bundle inexistente falla; no se acepta una configuración que confíe en cualquier certificado.
 
 ```yaml
 axiz:
@@ -90,7 +99,11 @@ axiz:
         username: core-integration
         password-ref: core-soap-password
         password-mode: LEGACY_SHA1_DIGEST   # lo exige el core de créditos
+        ssl-bundle: core-credit             # definido en spring.ssl.bundle.pem o .jks
 ```
 
-En el demo, `core-integration` usa los tres modos: REST con client credentials (core bancario),
-REST con API key (red de pagos) y SOAP con WS-Security (core de créditos).
+En la demo, `banking-core` usa REST con client credentials y SOAP con WS-Security;
+`payment-network-gateway` usa REST con API key. `examples/provider-recipes` ejecuta llamadas
+HTTP reales con reintentos seguros y llamadas SOAP que observan una rotación de credencial.
+Los servidores de esas recetas son sustitutos de loopback con valores sintéticos. El permiso
+de HTTP local no corresponde a una configuración de despliegue.

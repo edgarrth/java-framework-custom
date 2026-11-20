@@ -15,7 +15,7 @@ All names, accounts and data are fictitious. Local credentials are placeholders 
 |---|---|---|---|
 | [payments-ux](services/payments-ux) | ux / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
 | [payment-orders](services/payment-orders) | business / hexagonal + cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
-| [beneficiaries](services/beneficiaries) | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, optimistic locking, cache, idempotency on DynamoDB |
+| [beneficiaries](services/beneficiaries) | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, atomic registration, strongly consistent reads, idempotency on DynamoDB |
 | [banking-core](services/banking-core) | core / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
 | [payment-network-gateway](services/payment-network-gateway) | gateway / hexagonal / servlet | – | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
 | [payment-process](services/payment-process) | business / hexagonal + saga / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
@@ -103,7 +103,7 @@ reason and the last warnings of the services involved when a check fails.
 
 | Group | What it checks |
 |---|---|
-| `beneficiaries` | CCI check digits, one active beneficiary per account, rename (cache evicted), soft delete, idempotency on DynamoDB, cursor pages, masking in the channel |
+| `beneficiaries` | CCI check digits, one active beneficiary per account, rename (strongly consistent reads), soft delete, idempotency on DynamoDB, cursor pages, masking in the channel |
 | `payment` | a payment end to end: channel, saga, process view, history, order |
 | `idempotency` | replay with the same key, same key with another body, missing key |
 | `rules` | duplicate payment, daily limit, USD feature flag (Spanish and English messages), currency mismatch |
@@ -168,8 +168,14 @@ channel flow, M2M calls to business, process and banking-core, and error cases
 ./mvnw verify            # every service (tests, linters, architecture rules) + capability coverage
 ```
 
+The application integration tests own their Spring context and Testcontainers resources.
+`@DirtiesContext(classMode = AFTER_CLASS)` closes them after the test class, while JUnit is
+still running, so container cleanup finishes before the test JVM exits. Generated application
+tests use the same lifecycle.
+
 - `coverage/`: fails when a capability of the axiz catalog is no longer used by the demo, or when
-  the evidence listed in `coverage.yaml` disappears from the code.
+  its successful JUnit evidence is missing, skipped or stale, or a required provider/stack variant is absent.
+  See the [executable capability matrix](coverage/CAPABILITIES.md) and [gate rules](coverage/README.md).
 - `.github/workflows/ci.yaml`: each service through the shared `service-build` pipeline (build,
   Spotless, Checkstyle, Error Prone + NullAway, SpotBugs, tests, OpenAPI lint and breaking
   changes, Helm validation, image, SBOM); `e2e.yaml`: the whole demo in kind every night.
@@ -185,3 +191,9 @@ The kind end-to-end workflow deploys an ephemeral test environment as part of it
 The [protected-data executable examples](examples/protected-data/README.md) demonstrate
 PAN/DNI tokenization and independent encrypted DNI lookup with LocalStack and Valkey.
 They run as part of the demo reactor and are not deployed with the payment services.
+
+El ejemplo [`sqs-consumer`](examples/sqs-consumer/README.md) tiene un classpath mínimo y usa
+descubrimiento automático del starter. Ejecuta consumo, reintentos, DLQ, redrive y FIFO en ambas
+pilas. La [matriz ejecutable](coverage/CAPABILITIES.md) exige las pilas del catálogo y las
+variantes de persistencia; la prueba HTTP de `payments-history` abre un servidor real en un puerto
+aleatorio y verifica el 401 RFC 9457 con BlockHound activo.

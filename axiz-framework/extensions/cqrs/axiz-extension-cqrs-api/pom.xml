@@ -23,18 +23,9 @@
   <dependencies>
     <dependency>
       <groupId>pe.axiz</groupId>
-      <artifactId>axiz-structure-hexagonal-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
-      <artifactId>axiz-core-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>pe.axiz</groupId>
       <artifactId>axiz-core-errors</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <!-- Publisher only, for reactive handlers; no Reactor or Spring types in the API -->
     <dependency>

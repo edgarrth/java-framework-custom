@@ -34,7 +34,7 @@ Unit tests live in `src/test/java` and document the expected behavior; run them 
 
 ## Streaming contract
 
-The core depends on JDK types only. Upload publishers must honor demand and support replay if the
+Its public flow contracts use JDK types; the module follows the core dependency exceptions for JSpecify and shared core types. Upload publishers must honor demand and support replay if the
 remote backend retries. A cancelled operation attempts to cancel the active native request; it
 cannot undo a write already committed by the backend. Download chunks are read-only and remain
 valid after delivery. Always consume or close a returned `AsyncStoredObject`, even if no body

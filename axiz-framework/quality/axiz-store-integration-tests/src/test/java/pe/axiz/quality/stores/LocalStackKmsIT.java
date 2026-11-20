@@ -26,7 +26,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.identity.AwsCredentialSource;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
@@ -38,6 +37,7 @@ import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.core.crypto.KeyringAsyncDataKeyProvider;
 import pe.axiz.core.crypto.KeyringDataKeyProvider;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.crypto.ReactiveEnvelopeEncryption;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.test.BlockHoundExtension;
@@ -80,8 +80,7 @@ class LocalStackKmsIT {
   static void start() {
     Docker.require();
     ReactiveInfrastructureBootstrap.initialize();
-    localstack =
-        new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("kms");
+    localstack = TestContainerImages.localstack().withServices("kms");
     localstack.start();
     var credentials =
         StaticCredentialsProvider.create(

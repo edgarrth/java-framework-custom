@@ -1,0 +1,592 @@
+--- /dev/null
++++ b/docker_compatibility.go
+@@ -0,0 +1,58 @@
++package main
++
++import (
++	"context"
++	"github.com/moby/moby/api/types/container"
++	"github.com/moby/moby/api/types/image"
++	"github.com/moby/moby/api/types/network"
++	"github.com/moby/moby/api/types/volume"
++	"github.com/moby/moby/client"
++)
++
++// Keep Ryuk's resource-cleanup interface while using the maintained split Docker SDK.
++// No archived github.com/docker/docker implementation is linked into the executable.
++type dockerCompatibility struct{ *client.Client }
++
++func newDockerClient() (*dockerCompatibility, error) {
++	c, err := client.New(client.FromEnv)
++	if err != nil {
++		return nil, err
++	}
++	return &dockerCompatibility{c}, nil
++}
++func (c *dockerCompatibility) ContainerList(ctx context.Context, o client.ContainerListOptions) ([]container.Summary, error) {
++	r, e := c.Client.ContainerList(ctx, o)
++	return r.Items, e
++}
++func (c *dockerCompatibility) ContainerRemove(ctx context.Context, id string, o client.ContainerRemoveOptions) error {
++	_, e := c.Client.ContainerRemove(ctx, id, o)
++	return e
++}
++func (c *dockerCompatibility) ImageList(ctx context.Context, o client.ImageListOptions) ([]image.Summary, error) {
++	r, e := c.Client.ImageList(ctx, o)
++	return r.Items, e
++}
++func (c *dockerCompatibility) ImageRemove(ctx context.Context, id string, o client.ImageRemoveOptions) ([]image.DeleteResponse, error) {
++	r, e := c.Client.ImageRemove(ctx, id, o)
++	return r.Items, e
++}
++func (c *dockerCompatibility) NetworkList(ctx context.Context, o client.NetworkListOptions) ([]network.Summary, error) {
++	r, e := c.Client.NetworkList(ctx, o)
++	return r.Items, e
++}
++func (c *dockerCompatibility) NetworkRemove(ctx context.Context, id string) error {
++	_, e := c.Client.NetworkRemove(ctx, id, client.NetworkRemoveOptions{})
++	return e
++}
++func (c *dockerCompatibility) VolumeList(ctx context.Context, o client.VolumeListOptions) (volume.ListResponse, error) {
++	r, e := c.Client.VolumeList(ctx, o)
++	return volume.ListResponse{Volumes: r.Items, Warnings: r.Warnings}, e
++}
++func (c *dockerCompatibility) VolumeRemove(ctx context.Context, id string, force bool) error {
++	_, e := c.Client.VolumeRemove(ctx, id, client.VolumeRemoveOptions{Force: force})
++	return e
++}
++func (c *dockerCompatibility) Ping(ctx context.Context) (client.PingResult, error) {
++	return c.Client.Ping(ctx, client.PingOptions{NegotiateAPIVersion: true})
++}
++func (c *dockerCompatibility) NegotiateAPIVersion(ctx context.Context) { _, _ = c.Ping(ctx) }
+--- a/interfaces.go
++++ b/interfaces.go
+@@ -2,24 +2,24 @@
+ 
+ import (
+ 	"context"
++	"github.com/moby/moby/client"
+ 
+-	"github.com/docker/docker/api/types"
+-	"github.com/docker/docker/api/types/container"
+-	"github.com/docker/docker/api/types/image"
+-	"github.com/docker/docker/api/types/network"
+-	"github.com/docker/docker/api/types/volume"
++	"github.com/moby/moby/api/types/container"
++	"github.com/moby/moby/api/types/image"
++	"github.com/moby/moby/api/types/network"
++	"github.com/moby/moby/api/types/volume"
+ )
+ 
+ // dockerClient is an interface that represents the reapers required Docker methods.
+ type dockerClient interface {
+-	ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error)
+-	ContainerRemove(ctx context.Context, containerID string, options container.RemoveOptions) error
+-	ImageList(ctx context.Context, options image.ListOptions) ([]image.Summary, error)
+-	ImageRemove(ctx context.Context, imageID string, options image.RemoveOptions) ([]image.DeleteResponse, error)
+-	NetworkList(ctx context.Context, options network.ListOptions) ([]network.Summary, error)
++	ContainerList(ctx context.Context, options client.ContainerListOptions) ([]container.Summary, error)
++	ContainerRemove(ctx context.Context, containerID string, options client.ContainerRemoveOptions) error
++	ImageList(ctx context.Context, options client.ImageListOptions) ([]image.Summary, error)
++	ImageRemove(ctx context.Context, imageID string, options client.ImageRemoveOptions) ([]image.DeleteResponse, error)
++	NetworkList(ctx context.Context, options client.NetworkListOptions) ([]network.Summary, error)
+ 	NetworkRemove(ctx context.Context, networkID string) error
+-	VolumeList(ctx context.Context, options volume.ListOptions) (volume.ListResponse, error)
++	VolumeList(ctx context.Context, options client.VolumeListOptions) (volume.ListResponse, error)
+ 	VolumeRemove(ctx context.Context, volumeID string, force bool) error
+-	Ping(ctx context.Context) (types.Ping, error)
++	Ping(ctx context.Context) (client.PingResult, error)
+ 	NegotiateAPIVersion(ctx context.Context)
+ }
+--- a/mock_test.go
++++ b/mock_test.go
+@@ -2,12 +2,12 @@
+ 
+ import (
+ 	"context"
++	"github.com/moby/moby/client"
+ 
+-	"github.com/docker/docker/api/types"
+-	"github.com/docker/docker/api/types/container"
+-	"github.com/docker/docker/api/types/image"
+-	"github.com/docker/docker/api/types/network"
+-	"github.com/docker/docker/api/types/volume"
++	"github.com/moby/moby/api/types/container"
++	"github.com/moby/moby/api/types/image"
++	"github.com/moby/moby/api/types/network"
++	"github.com/moby/moby/api/types/volume"
+ 	"github.com/stretchr/testify/mock"
+ )
+ 
+@@ -17,27 +17,27 @@
+ 	mock.Mock
+ }
+ 
+-func (c *mockClient) ContainerList(ctx context.Context, options container.ListOptions) ([]container.Summary, error) {
++func (c *mockClient) ContainerList(ctx context.Context, options client.ContainerListOptions) ([]container.Summary, error) {
+ 	args := c.Called(ctx, options)
+ 	return args.Get(0).([]container.Summary), args.Error(1)
+ }
+ 
+-func (c *mockClient) ContainerRemove(ctx context.Context, containerID string, options container.RemoveOptions) error {
++func (c *mockClient) ContainerRemove(ctx context.Context, containerID string, options client.ContainerRemoveOptions) error {
+ 	args := c.Called(ctx, containerID, options)
+ 	return args.Error(0)
+ }
+ 
+-func (c *mockClient) ImageList(ctx context.Context, options image.ListOptions) ([]image.Summary, error) {
++func (c *mockClient) ImageList(ctx context.Context, options client.ImageListOptions) ([]image.Summary, error) {
+ 	args := c.Called(ctx, options)
+ 	return args.Get(0).([]image.Summary), args.Error(1)
+ }
+ 
+-func (c *mockClient) ImageRemove(ctx context.Context, imageID string, options image.RemoveOptions) ([]image.DeleteResponse, error) {
++func (c *mockClient) ImageRemove(ctx context.Context, imageID string, options client.ImageRemoveOptions) ([]image.DeleteResponse, error) {
+ 	args := c.Called(ctx, imageID, options)
+ 	return args.Get(0).([]image.DeleteResponse), args.Error(1)
+ }
+ 
+-func (c *mockClient) NetworkList(ctx context.Context, options network.ListOptions) ([]network.Summary, error) {
++func (c *mockClient) NetworkList(ctx context.Context, options client.NetworkListOptions) ([]network.Summary, error) {
+ 	args := c.Called(ctx, options)
+ 	return args.Get(0).([]network.Summary), args.Error(1)
+ }
+@@ -47,7 +47,7 @@
+ 	return args.Error(0)
+ }
+ 
+-func (c *mockClient) VolumeList(ctx context.Context, options volume.ListOptions) (volume.ListResponse, error) {
++func (c *mockClient) VolumeList(ctx context.Context, options client.VolumeListOptions) (volume.ListResponse, error) {
+ 	args := c.Called(ctx, options)
+ 	return args.Get(0).(volume.ListResponse), args.Error(1)
+ }
+@@ -57,9 +57,9 @@
+ 	return args.Error(0)
+ }
+ 
+-func (c *mockClient) Ping(ctx context.Context) (types.Ping, error) {
++func (c *mockClient) Ping(ctx context.Context) (client.PingResult, error) {
+ 	args := c.Called(ctx)
+-	return args.Get(0).(types.Ping), args.Error(1)
++	return args.Get(0).(client.PingResult), args.Error(1)
+ }
+ 
+ func (c *mockClient) NegotiateAPIVersion(ctx context.Context) {
+--- a/reaper.go
++++ b/reaper.go
+@@ -3,6 +3,7 @@
+ import (
+ 	"bufio"
+ 	"context"
++	"encoding/json"
+ 	"errors"
+ 	"fmt"
+ 	"log/slog"
+@@ -13,12 +14,7 @@
+ 	"time"
+ 
+ 	"github.com/containerd/errdefs"
+-	"github.com/docker/docker/api/types/container"
+-	"github.com/docker/docker/api/types/filters"
+-	"github.com/docker/docker/api/types/image"
+-	"github.com/docker/docker/api/types/network"
+-	"github.com/docker/docker/api/types/volume"
+-	"github.com/docker/docker/client"
++	"github.com/moby/moby/client"
+ )
+ 
+ //nolint:gochecknoglobals // Reusable options are fine as globals.
+@@ -27,10 +23,10 @@
+ 	errChangesDetected = errors.New("changes detected")
+ 
+ 	// containerRemoveOptions are the options we use to remove a container.
+-	containerRemoveOptions = container.RemoveOptions{RemoveVolumes: true, Force: true}
++	containerRemoveOptions = client.ContainerRemoveOptions{RemoveVolumes: true, Force: true}
+ 
+ 	// imageRemoveOptions are the options we use to remove an image.
+-	imageRemoveOptions = image.RemoveOptions{PruneChildren: true}
++	imageRemoveOptions = client.ImageRemoveOptions{PruneChildren: true}
+ 
+ 	// volumeRemoveForce is the force option we use to remove a volume.
+ 	volumeRemoveForce = true
+@@ -48,7 +44,7 @@
+ 	connected    chan string
+ 	disconnected chan string
+ 	shutdown     chan struct{}
+-	filters      map[string]filters.Args
++	filters      map[string]client.Filters
+ 	logger       *slog.Logger
+ 	mtx          sync.Mutex
+ }
+@@ -92,7 +88,7 @@
+ func newReaper(ctx context.Context, options ...reaperOption) (*reaper, error) {
+ 	logLevel := &slog.LevelVar{}
+ 	r := &reaper{
+-		filters:      make(map[string]filters.Args),
++		filters:      make(map[string]client.Filters),
+ 		connected:    make(chan string), // Must be unbuffered to ensure correct behaviour.
+ 		disconnected: make(chan string),
+ 		shutdown:     make(chan struct{}),
+@@ -111,7 +107,7 @@
+ 	var err error
+ 	if r.client == nil {
+ 		// Default client configured from the environment.
+-		r.client, err = client.NewClientWithOpts(client.FromEnv)
++		r.client, err = newDockerClient()
+ 		if err != nil {
+ 			return nil, fmt.Errorf("new client: %w", err)
+ 		}
+@@ -436,12 +432,12 @@
+ // affectedContainers returns a slice of container IDs that match the filters.
+ // If a matching container was created after since, an error is returned and
+ // the container is not included in the list.
+-func (r *reaper) affectedContainers(since time.Time, args filters.Args) ([]string, error) {
++func (r *reaper) affectedContainers(since time.Time, args client.Filters) ([]string, error) {
+ 	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.RequestTimeout)
+ 	defer cancel()
+ 
+ 	// List all containers including stopped ones.
+-	options := container.ListOptions{All: true, Filters: args}
++	options := client.ContainerListOptions{All: true, Filters: args}
+ 	r.logger.Debug("listing containers", "filter", options)
+ 
+ 	containers, err := r.client.ContainerList(ctx, options)
+@@ -490,11 +486,11 @@
+ // affectedNetworks returns a list of network IDs that match the filters.
+ // If a matching network was created after since, an error is returned and
+ // the network is not included in the list.
+-func (r *reaper) affectedNetworks(since time.Time, args filters.Args) ([]string, error) {
++func (r *reaper) affectedNetworks(since time.Time, args client.Filters) ([]string, error) {
+ 	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.RequestTimeout)
+ 	defer cancel()
+ 
+-	options := network.ListOptions{Filters: args}
++	options := client.NetworkListOptions{Filters: args}
+ 	r.logger.Debug("listing networks", "options", options)
+ 
+ 	report, err := r.client.NetworkList(ctx, options)
+@@ -530,11 +526,11 @@
+ // affectedVolumes returns a list of volume names that match the filters.
+ // If a matching volume was created after since, an error is returned and
+ // the volume is not included in the list.
+-func (r *reaper) affectedVolumes(since time.Time, args filters.Args) ([]string, error) {
++func (r *reaper) affectedVolumes(since time.Time, args client.Filters) ([]string, error) {
+ 	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.RequestTimeout)
+ 	defer cancel()
+ 
+-	options := volume.ListOptions{Filters: args}
++	options := client.VolumeListOptions{Filters: args}
+ 	r.logger.Debug("listing volumes", "filter", options)
+ 
+ 	report, err := r.client.VolumeList(ctx, options)
+@@ -577,11 +573,11 @@
+ // affectedImages returns a list of image IDs that match the filters.
+ // If a matching image was created after since, an error is returned and
+ // the image is not included in the list.
+-func (r *reaper) affectedImages(since time.Time, args filters.Args) ([]string, error) {
++func (r *reaper) affectedImages(since time.Time, args client.Filters) ([]string, error) {
+ 	ctx, cancel := context.WithTimeout(context.Background(), r.cfg.RequestTimeout)
+ 	defer cancel()
+ 
+-	options := image.ListOptions{Filters: args}
++	options := client.ImageListOptions{Filters: args}
+ 	r.logger.Debug("listing images", "filter", options)
+ 
+ 	report, err := r.client.ImageList(ctx, options)
+@@ -623,7 +619,7 @@
+ 		return fmt.Errorf("parse query: %w", err)
+ 	}
+ 
+-	args := filters.NewArgs()
++	args := make(client.Filters)
+ 
+ 	for filterType, values := range query {
+ 		r.logger.Info("adding filter", "type", filterType, "values", values)
+@@ -634,7 +630,7 @@
+ 	}
+ 
+ 	// We can't use msg as it could be in any order.
+-	data, err := args.MarshalJSON()
++	data, err := json.Marshal(args)
+ 	if err != nil {
+ 		return fmt.Errorf("marshal json: %w", err)
+ 	}
+@@ -657,11 +653,11 @@
+ 
+ // filterArgs returns a slice of filter.Args to check against.
+ // Safe to call concurrently.
+-func (r *reaper) filterArgs() []filters.Args {
++func (r *reaper) filterArgs() []client.Filters {
+ 	r.mtx.Lock()
+ 	defer r.mtx.Unlock()
+ 
+-	filters := make([]filters.Args, 0, len(r.filters))
++	filters := make([]client.Filters, 0, len(r.filters))
+ 	for _, args := range r.filters {
+ 		filters = append(filters, args)
+ 	}
+--- a/reaper_test.go
++++ b/reaper_test.go
+@@ -17,16 +17,14 @@
+ 	"time"
+ 
+ 	"github.com/containerd/errdefs"
+-	"github.com/docker/docker/api/types"
+-	"github.com/docker/docker/api/types/build"
+-	"github.com/docker/docker/api/types/container"
+-	"github.com/docker/docker/api/types/filters"
+-	"github.com/docker/docker/api/types/image"
+-	"github.com/docker/docker/api/types/network"
+-	"github.com/docker/docker/api/types/volume"
+-	"github.com/docker/docker/client"
+-	"github.com/docker/docker/pkg/jsonmessage"
+ 	"github.com/moby/go-archive"
++	"github.com/moby/moby/api/types/build"
++	"github.com/moby/moby/api/types/container"
++	"github.com/moby/moby/api/types/image"
++	"github.com/moby/moby/api/types/jsonstream"
++	"github.com/moby/moby/api/types/network"
++	"github.com/moby/moby/api/types/volume"
++	"github.com/moby/moby/client"
+ 	"github.com/stretchr/testify/mock"
+ 	"github.com/stretchr/testify/require"
+ )
+@@ -107,7 +105,7 @@
+ 
+ 	t.Run("with-client", func(t *testing.T) {
+ 		cli := &mockClient{}
+-		cli.On("Ping", mockContext).Return(types.Ping{}, nil)
++		cli.On("Ping", mockContext).Return(client.PingResult{}, nil)
+ 		cli.On("NegotiateAPIVersion", mockContext).Return()
+ 		r, err := newReaper(ctx, discardLogger, testConfig, withClient(cli))
+ 		require.NoError(t, err)
+@@ -185,8 +183,8 @@
+ }
+ 
+ // filterArgs returns a new filter args for the given labels.
+-func filterArgs(labels map[string]string) filters.Args {
+-	args := filters.NewArgs()
++func filterArgs(labels map[string]string) client.Filters {
++	args := make(client.Filters)
+ 	for k, v := range labels {
+ 		args.Add("label", k+"="+v)
+ 	}
+@@ -197,20 +195,20 @@
+ // newMockClient returns a new mock client for the given test case.
+ func newMockClient(tc *runTest) *mockClient {
+ 	cli := &mockClient{}
+-	cli.On("Ping", mock.Anything).Return(types.Ping{}, tc.pingErr)
++	cli.On("Ping", mock.Anything).Return(client.PingResult{}, tc.pingErr)
+ 	cli.On("NegotiateAPIVersion", mockContext).Return()
+ 
+ 	// Mock the container list and remove calls.
+ 	filters1 := filterArgs(testLabels1)
+ 	filters2 := filterArgs(testLabels2)
+ 
+-	cli.On("ContainerList", mockContext, container.ListOptions{All: true, Filters: filters1}).Return([]container.Summary{
++	cli.On("ContainerList", mockContext, client.ContainerListOptions{All: true, Filters: filters1}).Return([]container.Summary{
+ 		{
+ 			ID:      containerID1,
+ 			Created: tc.createdAt1.Unix(),
+ 			Image:   "testcontainers/test1:latest",
+ 			Names:   []string{"test1"},
+-			Ports: []container.Port{{
++			Ports: []container.PortSummary{{
+ 				PrivatePort: 1001,
+ 				PublicPort:  8081,
+ 				Type:        "tcp",
+@@ -219,13 +217,13 @@
+ 			Labels: testLabels1,
+ 		},
+ 	}, tc.containerListErr)
+-	cli.On("ContainerList", mockContext, container.ListOptions{All: true, Filters: filters2}).Return([]container.Summary{
++	cli.On("ContainerList", mockContext, client.ContainerListOptions{All: true, Filters: filters2}).Return([]container.Summary{
+ 		{
+ 			ID:      containerID2,
+ 			Created: tc.containerCreated2.Unix(),
+ 			Image:   "testcontainers/test2:latest",
+ 			Names:   []string{"test2"},
+-			Ports: []container.Port{{
++			Ports: []container.PortSummary{{
+ 				PrivatePort: 1002,
+ 				PublicPort:  8082,
+ 				Type:        "tcp",
+@@ -241,11 +239,11 @@
+ 		Return(tc.containerRemoveErr2)
+ 
+ 	// Mock the network list and remove calls.
+-	cli.On("NetworkList", mockContext, network.ListOptions{Filters: filters1}).
++	cli.On("NetworkList", mockContext, client.NetworkListOptions{Filters: filters1}).
+ 		Return([]network.Summary{
+ 			{ID: networkID1, Created: tc.createdAt1},
+ 		}, tc.networkListErr)
+-	cli.On("NetworkList", mockContext, network.ListOptions{Filters: filters2}).
++	cli.On("NetworkList", mockContext, client.NetworkListOptions{Filters: filters2}).
+ 		Return([]network.Summary{
+ 			{ID: networkID2, Created: tc.networkCreated2},
+ 		}, tc.networkListErr)
+@@ -255,15 +253,15 @@
+ 		Return(tc.networkRemoveErr2)
+ 
+ 	// Mock the volume list and remove calls.
+-	cli.On("VolumeList", mockContext, volume.ListOptions{Filters: filters1}).
++	cli.On("VolumeList", mockContext, client.VolumeListOptions{Filters: filters1}).
+ 		Return(volume.ListResponse{
+-			Volumes: []*volume.Volume{
++			Volumes: []volume.Volume{
+ 				{Name: volumeName1, CreatedAt: tc.createdAt1.Format(time.RFC3339)},
+ 			},
+ 		}, tc.volumeListErr)
+-	cli.On("VolumeList", mockContext, volume.ListOptions{Filters: filters2}).
++	cli.On("VolumeList", mockContext, client.VolumeListOptions{Filters: filters2}).
+ 		Return(volume.ListResponse{
+-			Volumes: []*volume.Volume{
++			Volumes: []volume.Volume{
+ 				{Name: volumeName2, CreatedAt: tc.volumeCreated2.Format(time.RFC3339)},
+ 			},
+ 		}, tc.volumeListErr)
+@@ -273,10 +271,10 @@
+ 		Return(tc.volumeRemoveErr2)
+ 
+ 	// Mock the image list and remove calls.
+-	cli.On("ImageList", mockContext, image.ListOptions{Filters: filters1}).Return([]image.Summary{
++	cli.On("ImageList", mockContext, client.ImageListOptions{Filters: filters1}).Return([]image.Summary{
+ 		{ID: imageID1, Created: tc.createdAt1.Unix()},
+ 	}, tc.imageListErr)
+-	cli.On("ImageList", mockContext, image.ListOptions{Filters: filters2}).Return([]image.Summary{
++	cli.On("ImageList", mockContext, client.ImageListOptions{Filters: filters2}).Return([]image.Summary{
+ 		{ID: imageID2, Created: tc.imageCreated2.Unix()},
+ 	}, tc.imageListErr)
+ 	cli.On("ImageRemove", mockContext, imageID1, imageRemoveOptions).
+@@ -740,12 +738,12 @@
+ 			Labels: labels,
+ 		}
+ 
+-		resp, err := cli.ContainerCreate(ctx, config, nil, nil, nil, testID())
++		resp, err := cli.ContainerCreate(ctx, client.ContainerCreateOptions{Config: config, Name: testID()})
+ 		if errdefs.IsNotFound(err) {
+ 			// Image not found, pull it.
+ 			var rc io.ReadCloser
+ 
+-			rc, err = cli.ImagePull(ctx, testImage, image.PullOptions{})
++			rc, err = cli.ImagePull(ctx, testImage, client.ImagePullOptions{})
+ 			require.NoError(t, err)
+ 			t.Cleanup(func() {
+ 				require.NoError(t, rc.Close())
+@@ -753,7 +751,7 @@
+ 
+ 			_, err = io.Copy(io.Discard, rc)
+ 			require.NoError(t, err)
+-			resp, err = cli.ContainerCreate(ctx, config, nil, nil, nil, testID())
++			resp, err = cli.ContainerCreate(ctx, client.ContainerCreateOptions{Config: config, Name: testID()})
+ 		}
+ 
+ 		require.NoError(t, err)
+@@ -762,7 +760,7 @@
+ 
+ 		t.Cleanup(func() {
+ 			// Ensure the container was / is removed.
+-			err = cli.ContainerRemove(ctx, resp.ID, container.RemoveOptions{})
++			err = cli.ContainerRemove(ctx, resp.ID, client.ContainerRemoveOptions{})
+ 			require.Error(t, err)
+ 			require.True(t, errdefs.IsNotFound(err))
+ 		})
+@@ -789,7 +787,7 @@
+ 
+ 	ids := make([]string, 2)
+ 	for i, labels := range []map[string]string{testLabels1, testLabels2} {
+-		resp, err := cli.NetworkCreate(ctx, testID(), network.CreateOptions{
++		resp, err := cli.NetworkCreate(ctx, testID(), client.NetworkCreateOptions{
+ 			Labels: labels,
+ 		})
+ 		require.NoError(t, err)
+@@ -820,16 +818,16 @@
+ 
+ 	ids := make([]string, 2)
+ 	for i, labels := range []map[string]string{testLabels1, testLabels2} {
+-		resp, err := cli.VolumeCreate(ctx, volume.CreateOptions{
++		resp, err := cli.VolumeCreate(ctx, client.VolumeCreateOptions{
+ 			Labels: labels,
+ 		})
+ 		require.NoError(t, err)
+ 
+-		ids[i] = resp.Name
++		ids[i] = resp.Volume.Name
+ 
+ 		t.Cleanup(func() {
+ 			// Ensure the volume was / is removed.
+-			err = cli.VolumeRemove(ctx, resp.Name, false)
++			err = cli.VolumeRemove(ctx, resp.Volume.Name, false)
+ 			require.Error(t, err)
+ 			require.True(t, errdefs.IsNotFound(err))
+ 		})
+@@ -855,7 +853,7 @@
+ 		require.NoError(t, err)
+ 
+ 		arg1 := strconv.Itoa(i)
+-		resp, err := cli.ImageBuild(ctx, context, build.ImageBuildOptions{
++		resp, err := cli.ImageBuild(ctx, context, client.ImageBuildOptions{
+ 			Version: build.BuilderBuildKit,
+ 			BuildArgs: map[string]*string{
+ 				"arg1": &arg1,
+@@ -871,26 +869,27 @@
+ 		// errors and get the image ID.
+ 		var imageID string
+ 
+-		auxCallback := func(msg jsonmessage.JSONMessage) {
+-			if msg.ID != imageBuildResult {
+-				return
++		decoder := json.NewDecoder(resp.Body)
++		for {
++			var message jsonstream.Message
++			err = decoder.Decode(&message)
++			if errors.Is(err, io.EOF) {
++				break
+ 			}
+-
+-			var result build.Result
+-
+-			err = json.Unmarshal(*msg.Aux, &result)
+ 			require.NoError(t, err)
+-
+-			imageID = result.ID
++			require.Nil(t, message.Error)
++			if message.ID == imageBuildResult && message.Aux != nil {
++				var result build.Result
++				require.NoError(t, json.Unmarshal(*message.Aux, &result))
++				imageID = result.ID
++			}
+ 		}
+-		err = jsonmessage.DisplayJSONMessagesStream(resp.Body, io.Discard, 0, false, auxCallback)
+-		require.NoError(t, err)
+ 		require.NotEmpty(t, imageID)
+ 		ids[i] = imageID
+ 
+ 		t.Cleanup(func() {
+ 			// Ensure the image was / is removed.
+-			resp, errc := cli.ImageRemove(ctx, imageID, image.RemoveOptions{})
++			resp, errc := cli.ImageRemove(ctx, imageID, client.ImageRemoveOptions{})
+ 			require.Error(t, errc)
+ 			require.Empty(t, resp)
+ 		})
+@@ -909,13 +908,10 @@
+ }
+ 
+ // testClient returns a new docker client for testing.
+-func testClient(t *testing.T) *client.Client {
++func testClient(t *testing.T) *dockerCompatibility {
+ 	t.Helper()
+ 
+-	cli, err := client.NewClientWithOpts(
+-		client.FromEnv,
+-		client.WithAPIVersionNegotiation(),
+-	)
++	cli, err := newDockerClient()
+ 	require.NoError(t, err)
+ 	t.Cleanup(func() {
+ 		require.NoError(t, cli.Close())
+--- a/reaper_test.go
++++ b/reaper_test.go
+@@ -852,1 +852,1 @@
+-		context, err := archive.Tar("testdata", archive.Uncompressed)
++		context, err := archive.TarWithOptions("testdata", &archive.TarOptions{})

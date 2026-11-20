@@ -52,7 +52,21 @@ resolutions have one winner. Completed responses are immutable and replayed. Onl
 certified no-effect outcome (`RejectedBeforeEffect`/`Resolution.withoutEffect()`) can release a key.
 
 Owned virtual workers renew leases every third of the configured TTL. A failed renewal makes the
-outcome uncertain. Spring validates `retention >= client-retry-window + in-progress-ttl`; defaults
+outcome uncertain. Direct `IdempotencyLease` construction requires a renewal interval of at least
+1 ms and a positive renewal timeout; sub-millisecond intervals are rejected rather than rounded.
+Spring validates `retention >= client-retry-window + in-progress-ttl`; defaults
 are 24 h, 23 h and 30 s. This guarantee is bounded by retention: a process pause/crash that prevents
 renewal beyond remaining retention can expire the record. Set the retry window for actual clients;
 expired retention does not provide indefinite deduplication.
+
+CAS adapters share `AsyncIdempotencyCas` as a provider utility; it is not part of the request-facing
+store interface. Redis and DynamoDB supply their injected clock for completion, renewal and unknown
+marking, and recheck retention after contention. `false` means the mutation was not confirmed,
+including bounded contention exhaustion; it must never authorize a replay or assert ownership loss
+without rereading the record. The in-memory default accepts an explicit trusted timestamp and
+executes its compare-and-set locally.
+
+The execution TTL must be at least 3 milliseconds: renewal runs every third of the lease and its
+minimum interval is 1 millisecond. Both synchronous and asynchronous constructors reject shorter
+TTLs before any reservation can be created. This is a representable minimum, not a production
+recommendation; choose leases and renewal deadlines above observed store/network latencies.

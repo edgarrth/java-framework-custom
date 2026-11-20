@@ -1,3 +1,9 @@
+public final class pe.axiz.core.idempotency.AsyncIdempotencyCas {
+public static java.util.concurrent.CompletionStage<java.lang.Boolean> complete(pe.axiz.core.idempotency.AsyncIdempotencyStore, java.lang.String, java.lang.String, pe.axiz.core.idempotency.StoredResponse, java.time.Instant, java.time.Clock);
+public static java.util.concurrent.CompletionStage<java.lang.Boolean> markUnknown(pe.axiz.core.idempotency.AsyncIdempotencyStore, java.lang.String, java.lang.String, java.lang.String, java.time.Clock);
+public static java.util.concurrent.CompletionStage<java.lang.Boolean> renew(pe.axiz.core.idempotency.AsyncIdempotencyStore, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Clock);
+}
+
 public interface pe.axiz.core.idempotency.AsyncIdempotencyResolver {
 public abstract java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.idempotency.Resolution>> resolve(java.lang.String, pe.axiz.core.idempotency.IdempotencyRecord);
 }
@@ -35,6 +41,7 @@ public static final pe.axiz.core.errors.ErrorDefinition RESOLVED_WITHOUT_EFFECT;
 }
 
 public final class pe.axiz.core.idempotency.IdempotencyLease implements java.lang.AutoCloseable {
+public static pe.axiz.core.idempotency.IdempotencyLease start(java.time.Duration, java.time.Duration, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.Boolean>>, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.Boolean>>);
 public static pe.axiz.core.idempotency.IdempotencyLease start(java.time.Duration, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.Boolean>>, java.util.function.Supplier<java.util.concurrent.CompletionStage<java.lang.Boolean>>);
 public void close();
 }

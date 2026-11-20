@@ -6,4 +6,11 @@
     <Bug pattern="EI_EXPOSE_REP2"/>
     <Field name="events"/>
   </Match>
+  <!-- Spring injects a transaction-scoped EntityManager proxy. It must retain identity;
+       copying it would lose the current persistence context. The field is never exposed. -->
+  <Match>
+    <Class name="pe.axiz.payments.orders.adapter.out.persistence.PaymentOrderPersistenceAdapter"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+    <Field name="entityManager"/>
+  </Match>
 </FindBugsFilter>

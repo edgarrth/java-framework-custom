@@ -12,17 +12,21 @@ import pe.axiz.core.api.PageMetadata;
 import pe.axiz.core.crypto.EncryptedValue;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.CoreErrors;
 import pe.axiz.kit.dynamodb.CursorCodec;
 import pe.axiz.kit.dynamodb.DynamoRepository;
 import pe.axiz.kit.dynamodb.InvalidCursorException;
 import pe.axiz.payments.beneficiaries.model.Beneficiary;
 import pe.axiz.payments.beneficiaries.model.BeneficiaryErrors;
+import pe.axiz.payments.beneficiaries.model.BeneficiaryPolicy;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
+import software.amazon.awssdk.enhanced.dynamodb.model.TransactPutItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
  * DynamoDB implementation on the {@code beneficiaries} table (prefixed per environment). Removed
@@ -34,15 +38,19 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
 
   static final String TABLE = "beneficiaries";
   private static final Expression ACTIVE =
-      Expression.builder().expression("attribute_not_exists(deletedAt)").build();
+      Expression.builder()
+          .expression("attribute_not_exists(deletedAt) AND attribute_exists(cci)")
+          .build();
 
   private final DynamoRepository<BeneficiaryItem> items;
+  private final DynamoRepository<DirectoryVersion> directories;
   private final FieldEncryptor encryptor;
   private final CursorCodec cursors;
   private final String table;
 
   DynamoBeneficiaryRepository(DynamoRepositories repositories, FieldEncryptor encryptor) {
     this.items = repositories.create(TABLE, BeneficiaryItem.class);
+    this.directories = repositories.create(TABLE, DirectoryVersion.class);
     this.encryptor = encryptor;
     this.cursors = repositories.cursors();
     this.table = repositories.tableName(TABLE);
@@ -52,7 +60,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
   public Optional<Beneficiary> findActive(String customerId, String beneficiaryId) {
     return items
         .findById(customerId, beneficiaryId)
-        .filter(b -> b.getDeletedAt() == null)
+        .filter(b -> b.getDeletedAt() == null && b.getCci() != null)
         .map(this::restore);
   }
 
@@ -61,6 +69,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     QueryEnhancedRequest.Builder request =
         QueryEnhancedRequest.builder()
             .queryConditional(partition(customerId))
+            .consistentRead(true)
             .filterExpression(ACTIVE)
             .limit(size);
     Map<String, AttributeValue> start = startKey(customerId, cursor);
@@ -82,6 +91,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
         .query(
             QueryEnhancedRequest.builder()
                 .queryConditional(partition(customerId))
+                .consistentRead(true)
                 .filterExpression(ACTIVE)
                 .build())
         .items()
@@ -90,13 +100,90 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
   }
 
   @Override
-  public void insert(Beneficiary beneficiary) {
-    items.insert(store(beneficiary), "customerId");
+  public void insert(Beneficiary beneficiary, int maxPerCustomer) {
+    var policy = new BeneficiaryPolicy(maxPerCustomer);
+    String customer = beneficiary.getCustomerId();
+    for (int attempt = 0; attempt < 8; attempt++) {
+      long revision = directoryRevision(customer);
+      List<Beneficiary> active = allActive(customer);
+      // No stale snapshot may reject a request or escape into a transaction.
+      if (directoryRevision(customer) != revision) continue;
+      policy.checkRegistration(active, beneficiary.getCci());
+      if (write(beneficiary, revision, true)) return;
+    }
+    throw conflict();
   }
 
   @Override
   public Beneficiary update(Beneficiary beneficiary) {
-    return restore(items.update(store(beneficiary)));
+    String customer = beneficiary.getCustomerId();
+    for (int attempt = 0; attempt < 8; attempt++) {
+      long revision = directoryRevision(customer);
+      var current =
+          findActive(customer, beneficiary.getBeneficiaryId())
+              .orElseThrow(DynamoBeneficiaryRepository::conflict);
+      if (!Objects.equals(current.getVersion(), beneficiary.getVersion())
+          || !current.sameAccount(beneficiary.getCci())) throw conflict();
+      if (write(beneficiary, revision, false)) {
+        beneficiary.setVersion(
+            Math.incrementExact(Objects.requireNonNull(beneficiary.getVersion())));
+        return beneficiary;
+      }
+    }
+    throw conflict();
+  }
+
+  private long directoryRevision(String customer) {
+    return directories
+        .findById(customer, DirectoryVersion.KEY)
+        .map(DirectoryVersion::getRevision)
+        .orElse(0L);
+  }
+
+  /** Every change advances the customer fence atomically with the versioned beneficiary row. */
+  private boolean write(Beneficiary beneficiary, long revision, boolean insert) {
+    var fence =
+        Expression.builder()
+            .expression(revision == 0 ? "attribute_not_exists(#pk)" : "#revision = :expected")
+            .expressionNames(
+                revision == 0 ? Map.of("#pk", "customerId") : Map.of("#revision", "revision"))
+            .expressionValues(
+                revision == 0
+                    ? Map.of()
+                    : Map.of(":expected", AttributeValue.fromN(Long.toString(revision))))
+            .build();
+    var row =
+        TransactPutItemEnhancedRequest.builder(BeneficiaryItem.class).item(store(beneficiary));
+    if (insert)
+      row.conditionExpression(
+          Expression.builder()
+              .expression("attribute_not_exists(#pk)")
+              .expressionNames(Map.of("#pk", "customerId"))
+              .build());
+    try {
+      items.transact(
+          tx ->
+              tx.addPutItem(
+                      directories.table(),
+                      TransactPutItemEnhancedRequest.builder(DirectoryVersion.class)
+                          .item(DirectoryVersion.next(beneficiary.getCustomerId(), revision))
+                          .conditionExpression(fence)
+                          .build())
+                  .addPutItem(items.table(), row.build()));
+      return true;
+    } catch (TransactionCanceledException cancelled) {
+      var reasons = cancelled.cancellationReasons();
+      if (reasons.size() == 2
+          && ("ConditionalCheckFailed".equals(reasons.getFirst().code())
+              || reasons.stream().anyMatch(reason -> "TransactionConflict".equals(reason.code()))))
+        return false;
+      throw conflict();
+    }
+  }
+
+  private static BusinessException conflict() {
+    return new BusinessException(
+        CoreErrors.CONFLICT, "Beneficiary directory changed; reload before retrying");
   }
 
   static String accountBinding(String customer, String beneficiary) {

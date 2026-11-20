@@ -29,12 +29,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.observability.aws.AwsObservability;
 import pe.axiz.core.observability.AxizAttributes;
 import pe.axiz.core.secrets.SecretNotFoundException;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.secrets.AxizSecretsAutoConfiguration;
 import pe.axiz.spring.secrets.ReactiveSecrets;
@@ -63,8 +63,7 @@ import software.amazon.awssdk.services.ssm.model.ParameterType;
 @ExtendWith(BlockHoundExtension.class)
 class LocalStackSecretsIT {
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK))
-          .withServices("secretsmanager", "ssm");
+      TestContainerImages.localstack().withServices("secretsmanager", "ssm");
   private static final ObservationRegistry OBSERVATIONS = ObservationRegistry.create();
   private static final AtomicInteger MANAGER_GETS = new AtomicInteger();
   private static final AtomicInteger PARAMETER_GETS = new AtomicInteger();

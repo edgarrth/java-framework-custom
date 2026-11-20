@@ -9,7 +9,7 @@ import java.util.Objects;
  * @param <C> saga context type
  */
 public sealed interface StepCheck<C>
-    permits StepCheck.Applied, StepCheck.NotApplied, StepCheck.Unknown {
+    permits StepCheck.Applied, StepCheck.NotApplied, StepCheck.Rejected, StepCheck.Unknown {
 
   /**
    * The effect exists; the saga continues with this context (for example with the movement id the
@@ -23,8 +23,18 @@ public sealed interface StepCheck<C>
     }
   }
 
-  /** The participant confirms the effect does not exist: the step does not need compensation. */
+  /** An observation of absence only. Pending calls may still apply; recovery stays IN_DOUBT. */
   record NotApplied<C>() implements StepCheck<C> {}
+
+  /**
+   * The participant has durably rejected/cancelled this operation's idempotency key and guarantees
+   * that no pending or future attempt with that key can apply. A 404/read miss is insufficient.
+   */
+  record Rejected<C>() implements StepCheck<C> {}
+
+  static <C> StepCheck<C> rejected() {
+    return new Rejected<>();
+  }
 
   /** Still uncertain: the saga stays IN_DOUBT and recovery asks again later. */
   record Unknown<C>() implements StepCheck<C> {}

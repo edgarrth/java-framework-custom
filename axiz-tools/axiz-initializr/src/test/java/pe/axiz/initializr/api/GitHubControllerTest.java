@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.net.URI;
+import java.time.Clock;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,19 +27,28 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pe.axiz.core.security.InMemoryRateLimiter;
+import pe.axiz.core.security.RateLimiter;
 import pe.axiz.initializr.config.InitializrProperties;
 import pe.axiz.initializr.config.SecurityConfiguration;
 import pe.axiz.initializr.service.GenerationService;
 import pe.axiz.initializr.service.GitHubPublisher;
 
 /** Sign-in only through the SSO, and the GitHub authorization as an API answer, not a redirect. */
-@WebMvcTest(controllers = GitHubController.class, properties = "axiz.config.environment=test")
+@WebMvcTest(
+    controllers = GitHubController.class,
+    properties = {"axiz.config.environment=test", "AXIZ_SSO_ISSUER=https://sso.example.test"})
 @Import({SecurityConfiguration.class, ApiExceptionHandler.class, GitHubControllerTest.Beans.class})
 class GitHubControllerTest {
 
   @TestConfiguration
   @EnableConfigurationProperties(InitializrProperties.class)
   static class Beans {
+    @Bean
+    RateLimiter limiter() {
+      return new InMemoryRateLimiter(Clock.systemUTC());
+    }
+
     @Bean
     GenerationService generationService() {
       return new GenerationService(new SimpleMeterRegistry());
@@ -104,6 +114,7 @@ class GitHubControllerTest {
   void missingGitHubAuthorizationIsAProblemNotARedirect() throws Exception {
     mvc.perform(
             post("/v1/projects/github")
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
                 .with(jwt())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -113,6 +124,81 @@ class GitHubControllerTest {
         .andExpect(header().doesNotExist("Location"))
         .andExpect(jsonPath("$.registration").value("github"))
         .andExpect(jsonPath("$.authorize").value("/oauth2/authorization/github"));
+  }
+
+  @Test
+  void invalidOperationHeaderAndLongDescriptionAreFieldErrors() throws Exception {
+    String body =
+        "{\"name\":\"orders\",\"groupId\":\"pe.axiz.orders\","
+            + "\"basePackage\":\"pe.axiz.orders\",\"archetype\":\"business\"}";
+    mvc.perform(
+            post("/v1/projects/github")
+                .with(jwt().jwt(j -> j.subject("missing-header")))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest());
+    mvc.perform(
+            post("/v1/projects/github")
+                .with(jwt().jwt(j -> j.subject("invalid-header")))
+                .header("Idempotency-Key", "not-a-uuid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isBadRequest());
+    mvc.perform(
+            post("/v1/projects/github")
+                .with(jwt().jwt(j -> j.subject("long-description")))
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    body.substring(0, body.length() - 1)
+                        + ",\"description\":\""
+                        + "x".repeat(161)
+                        + "\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.field").value("description"));
+    org.mockito.Mockito.verifyNoInteractions(publisher);
+  }
+
+  @Test
+  void validationFailureKeepsTheSessionGrantForACorrectedRequest() throws Exception {
+    var identity =
+        org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+            .authenticated("preserved-grant", "unused", java.util.List.of());
+    var sessionRequest = new org.springframework.mock.web.MockHttpServletRequest();
+    var response = new org.springframework.mock.web.MockHttpServletResponse();
+    var clients = new pe.axiz.initializr.config.EphemeralAuthorizedClients(Clock.systemUTC());
+    var registration =
+        CommonOAuth2Provider.GITHUB
+            .getBuilder("github")
+            .clientId("test-client")
+            .clientSecret("test-only")
+            .build();
+    var now = java.time.Instant.now();
+    var grant =
+        new org.springframework.security.oauth2.client.OAuth2AuthorizedClient(
+            registration,
+            identity.getName(),
+            new org.springframework.security.oauth2.core.OAuth2AccessToken(
+                org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType.BEARER,
+                "test-only-token",
+                now,
+                now.plusSeconds(3600)));
+    clients.saveAuthorizedClient(grant, identity, sessionRequest, response);
+    var session = (org.springframework.mock.web.MockHttpSession) sessionRequest.getSession();
+    mvc.perform(
+            post("/v1/projects/github")
+                .session(session)
+                .with(jwt().jwt(j -> j.subject(identity.getName())))
+                .header("Idempotency-Key", java.util.UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"name\":\"orders\",\"groupId\":\"pe.axiz.orders\","
+                        + "\"basePackage\":\"pe.axiz.orders\",\"archetype\":\"business\",\"description\":\""
+                        + "x".repeat(161)
+                        + "\"}"))
+        .andExpect(status().isBadRequest());
+    assertThat(clients.consume(identity, sessionRequest, response)).isSameAs(grant);
+    org.mockito.Mockito.verifyNoInteractions(publisher);
   }
 
   @Test

@@ -72,7 +72,7 @@ class DoctorCommandTest {
     try (var files = Files.walk(project.resolve("src/test/java"))) {
       application =
           files
-              .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+              .filter(path -> path.getFileName().toString().endsWith("ApplicationTestSupport.java"))
               .findFirst()
               .orElseThrow();
     }
@@ -141,6 +141,8 @@ class DoctorCommandTest {
         import org.springframework.stereotype.Component;
         import pe.axiz.kit.jpa.JpaRepositories;
         import pe.axiz.adapter.cache.redis.RedisByteCache;
+        import pe.axiz.core.lang.JsonSnapshots;
+        import pe.axiz.core.commons.net.DataTransportSecurityPolicy;
         """);
     Files.writeString(
         domain.resolve("Good.java"),
@@ -150,6 +152,10 @@ class DoctorCommandTest {
         import org.jspecify.annotations.Nullable;
         import pe.axiz.orders.domain.Order;
         import pe.axiz.core.money.Money;
+        import pe.axiz.core.lang.ValueSnapshots;
+        import static pe.axiz.core.lang.ValueSnapshots.map;
+        import pe.axiz.core.lang.Checks;
+        import pe.axiz.core.commons.ReviewedState;
         """);
     Path persistence = Files.createDirectories(sources.resolve("adapter/out/persistence"));
     Files.writeString(

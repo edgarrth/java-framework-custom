@@ -12,15 +12,20 @@ import io.lettuce.core.ClientOptions.DisconnectedBehavior;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.TimeoutOptions;
 import io.lettuce.core.api.StatefulRedisConnection;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,6 +35,8 @@ import pe.axiz.adapter.security.redis.RedisAsyncRateLimiter;
 import pe.axiz.adapter.security.redis.RedisRateLimiter;
 import pe.axiz.adapter.tokenization.redis.RedisAsyncTokenBudget;
 import pe.axiz.adapter.tokenization.redis.RedisTokenBudget;
+import pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery;
+import pe.axiz.adapter.tokenization.redis.TokenBudgetOwner;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.RateLimitedException;
 import pe.axiz.core.tokenization.TokenDomain;
@@ -135,6 +142,169 @@ class ValkeyTokenBudgetIT {
   }
 
   @Test
+  void crashedProcessReservationsNeedTerminalEvidenceAndRecoveryDoesNotFreeOtherOwners()
+      throws Exception {
+    String namespace = "crash-budget-" + NAMES.incrementAndGet();
+    UUID operation = UUID.randomUUID();
+    AtomicBoolean terminal = new AtomicBoolean();
+    List<RedisTokenBudgetRecovery.Stage> journal = new ArrayList<>();
+    Process process =
+        new ProcessBuilder(
+                Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp",
+                System.getProperty(
+                    "surefire.test.class.path", System.getProperty("java.class.path")),
+                CrashingOwner.class.getName(),
+                "redis://127.0.0.1:" + valkey.getMappedPort(6379),
+                namespace,
+                operation.toString())
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start();
+    try {
+      var recovery =
+          new RedisTokenBudgetRecovery(
+              first,
+              namespace,
+              (reservation, evidence) ->
+                  !process.isAlive()
+                      && terminal.get()
+                      && reservation.operationId().equals(operation),
+              (stage, reservation, evidence) -> journal.add(stage));
+      Awaitility.await()
+          .atMost(DEADLINE)
+          .until(
+              () -> {
+                assertTrue(
+                    process.isAlive(), "Reservation owner must remain alive until the crash");
+                return recovery.inspect(SCOPE, "0").total() == 1;
+              });
+      var inventory = recovery.inspect(SCOPE, "0");
+      assertEquals(1L, inventory.total());
+      var abandoned = inventory.reservations().getFirst();
+      assertEquals("crash-test-instance", abandoned.owner().instance());
+      assertEquals(operation, abandoned.operationId());
+      assertEquals(TokenOperation.LOOKUP, abandoned.operation());
+      assertTrue(abandoned.age(inventory.observedAt()).compareTo(Duration.ofMinutes(1)) < 0);
+      UUID evidence = UUID.randomUUID();
+      assertThrows(
+          IllegalStateException.class, () -> recovery.reconcile(SCOPE, abandoned, evidence));
+      process.destroyForcibly();
+      assertTrue(process.waitFor(5, TimeUnit.SECONDS));
+      // Process death alone does not prove that accepted remote effects have ended.
+      assertThrows(
+          IllegalStateException.class, () -> recovery.reconcile(SCOPE, abandoned, evidence));
+      assertTrue(journal.isEmpty());
+      var activeBudget =
+          new RedisTokenBudget(
+              second,
+              namespace,
+              policy(HIGH_LIMITS, 2),
+              (n, id) -> ALARMS.incrementAndGet(),
+              new RedisRateLimiter(second.sync(), "", false),
+              new TokenBudgetOwner("surviving-instance", UUID.randomUUID()));
+      var active = activeBudget.acquire(CALLER, TokenOperation.LOOKUP, SCOPE);
+      try {
+        terminal.set(true); // Represents the trusted verifier's durable provider reconciliation.
+        assertEquals(
+            RedisTokenBudgetRecovery.Stage.RELEASED,
+            recovery.reconcile(SCOPE, abandoned, evidence));
+        assertEquals(
+            RedisTokenBudgetRecovery.Stage.ALREADY_RELEASED,
+            recovery.reconcile(SCOPE, abandoned, evidence));
+        var remaining = recovery.inspect(SCOPE, "0");
+        assertEquals(1L, remaining.total());
+        assertEquals("surviving-instance", remaining.reservations().getFirst().owner().instance());
+        assertEquals(
+            List.of(
+                RedisTokenBudgetRecovery.Stage.REQUESTED,
+                RedisTokenBudgetRecovery.Stage.RELEASED,
+                RedisTokenBudgetRecovery.Stage.REQUESTED,
+                RedisTokenBudgetRecovery.Stage.ALREADY_RELEASED),
+            journal);
+      } finally {
+        active.close();
+      }
+      assertEquals(0L, recovery.inspect(SCOPE, "0").total());
+    } finally {
+      if (process.isAlive()) process.destroyForcibly();
+      assertTrue(process.waitFor(5, TimeUnit.SECONDS));
+    }
+  }
+
+  @Test
+  void reconciliationNeverDeletesChangedOrPartialReservationsAndRequiresJournal() {
+    for (boolean partial : List.of(false, true)) {
+      String namespace = "conflict-budget-" + NAMES.incrementAndGet();
+      var budget =
+          new RedisTokenBudget(
+              first,
+              namespace,
+              policy(HIGH_LIMITS, 2),
+              (n, id) -> ALARMS.incrementAndGet(),
+              new RedisRateLimiter(first.sync(), "", false));
+      var permit = budget.acquire(CALLER, TokenOperation.LOOKUP, SCOPE);
+      try {
+        var recovery =
+            new RedisTokenBudgetRecovery(second, namespace, (r, e) -> true, (s, r, e) -> {});
+        var reservation = recovery.inspect(SCOPE, "0").reservations().getFirst();
+        String[] fields = reservation.encoded().split("\\|", -1);
+        String lease = reservation.lease().toString();
+        String tenantKey = reservation.scope().key() + "tenant:leases";
+        var unavailableJournal =
+            new RedisTokenBudgetRecovery(
+                second,
+                namespace,
+                (r, e) -> true,
+                (stage, r, e) -> {
+                  throw new IllegalStateException("Journal unavailable");
+                });
+        assertThrows(
+            IllegalStateException.class,
+            () -> unavailableJournal.reconcile(SCOPE, reservation, UUID.randomUUID()));
+        assertEquals(reservation.encoded(), first.sync().hget(tenantKey, lease));
+        if (partial) first.sync().hdel(fields[5], lease);
+        else first.sync().hset(fields[5], lease, "changed-owner");
+        assertEquals(
+            RedisTokenBudgetRecovery.Stage.CONFLICT,
+            recovery.reconcile(SCOPE, reservation, UUID.randomUUID()));
+        assertEquals(reservation.encoded(), first.sync().hget(fields[6], lease));
+        assertEquals(reservation.encoded(), first.sync().hget(tenantKey, lease));
+        if (partial) assertNull(first.sync().hget(fields[5], lease));
+        else assertEquals("changed-owner", first.sync().hget(fields[5], lease));
+        // Restore only this deliberately corrupted fixture before normal owner cleanup.
+        first.sync().hset(fields[5], lease, reservation.encoded());
+      } finally {
+        permit.close();
+      }
+    }
+  }
+
+  /** Isolated JVM killed by its parent after Redis acknowledges the reservation. */
+  public static final class CrashingOwner {
+    public static void main(String[] args) throws Exception {
+      RedisClient owned = RedisClient.create(args[0]);
+      owned.setOptions(
+          ClientOptions.builder()
+              .timeoutOptions(TimeoutOptions.enabled())
+              .requestQueueSize(1000)
+              .disconnectedBehavior(DisconnectedBehavior.REJECT_COMMANDS)
+              .build());
+      StatefulRedisConnection<String, String> connection = owned.connect();
+      connection.setTimeout(Duration.ofMillis(500));
+      var budget =
+          new RedisTokenBudget(
+              connection,
+              args[1],
+              policy(HIGH_LIMITS, 2),
+              (n, id) -> {},
+              new RedisRateLimiter(connection.sync(), "", false),
+              new TokenBudgetOwner("crash-test-instance", UUID.randomUUID()));
+      budget.acquire(CALLER, TokenOperation.LOOKUP, SCOPE, UUID.fromString(args[2]));
+      new CountDownLatch(1).await();
+    }
+  }
+
+  @Test
   void queryAndTokenizeShareBudgetsAcrossConnectionsAndIdentityDimensions() {
     Windows two = new Windows(2, 2, 2);
     for (int dimension = 0; dimension < 3; dimension++) {
@@ -194,6 +364,7 @@ class ValkeyTokenBudgetIT {
 
   @Test
   void concurrencyIsAtomicAcrossReplicasAndHeldUntilOwnerRelease() {
+    int alarmsBefore = ALARMS.get();
     String namespace = "test-budget-" + NAMES.incrementAndGet();
     var policy = policy(HIGH_LIMITS, 3);
     var sync =
@@ -235,7 +406,11 @@ class ValkeyTokenBudgetIT {
         .verify(DEADLINE);
     assertEquals(2, admitted.size());
     assertEquals(62, limited.get());
-    for (String key : first.sync().keys("axiz:token-budget:*:leases")) {
+    var recovery = new RedisTokenBudgetRecovery(first, namespace, (r, e) -> false, (s, r, e) -> {});
+    var inventory = recovery.inspect(SCOPE, "0");
+    assertEquals(3L, inventory.total());
+    String keyPattern = inventory.reservations().getFirst().scope().key() + "*:leases";
+    for (String key : first.sync().keys(keyPattern)) {
       assertEquals(-1L, first.sync().pttl(key));
       assertEquals(3L, first.sync().hlen(key));
     }
@@ -249,8 +424,8 @@ class ValkeyTokenBudgetIT {
             Flux.fromIterable(admitted).concatMap(permit -> call(permit::release)).then())
         .expectComplete()
         .verify(DEADLINE);
-    assertEquals(0, first.sync().keys("axiz:token-budget:*:leases").size());
-    assertEquals(0, ALARMS.get());
+    assertEquals(0, first.sync().keys(keyPattern).size());
+    assertEquals(alarmsBefore, ALARMS.get());
   }
 
   @Test

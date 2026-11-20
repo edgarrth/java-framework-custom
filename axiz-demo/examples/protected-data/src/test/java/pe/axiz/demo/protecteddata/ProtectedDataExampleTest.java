@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestReporter;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.audit.sqs.SqsAuditPublisher;
@@ -21,6 +22,7 @@ import pe.axiz.core.crypto.AesGcm;
 import pe.axiz.core.crypto.BlindIndex;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.EncryptedValue;
+import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.core.crypto.FieldEncryptor;
 import pe.axiz.core.crypto.FieldProtectionPolicy;
 import pe.axiz.core.crypto.FieldProtector;
@@ -62,8 +64,10 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.BillingMode;
+import software.amazon.awssdk.services.dynamodb.model.CreateTableRequest;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
+import software.amazon.awssdk.services.dynamodb.model.ResourceInUseException;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 import software.amazon.awssdk.services.kms.KmsClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
@@ -76,7 +80,7 @@ class ProtectedDataExampleTest {
   private static final TokenDomain DOMAIN = new TokenDomain("payments");
 
   @Test
-  void tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni() {
+  void tokenizePanAndDniAndIndependentlyProtectSearchAndDecryptDni(TestReporter evidence) {
     String password = UUID.randomUUID().toString();
     try (var aws = AxizContainers.localstack();
         var redis =
@@ -123,6 +127,9 @@ class ProtectedDataExampleTest {
                   .build()) {
         provision(db);
         String keyArn = kms.createKey().keyMetadata().arn();
+        String nextKeyArn = kms.createKey().keyMetadata().arn();
+        String maintenanceQueue =
+            sqs.createQueue(b -> b.queueName("demo-vault-maintenance")).queueUrl();
         String audit = sqs.createQueue(b -> b.queueName("demo-vault-audit")).queueUrl();
         String reconcile =
             sqs.createQueue(b -> b.queueName("demo-vault-reconciliation")).queueUrl();
@@ -139,6 +146,10 @@ class ProtectedDataExampleTest {
             "audit-key-v1",
             Base64.getEncoder().encodeToString(AesGcm.newKey().getEncoded()));
         secret(secrets, "redis-password", password);
+        secret(
+            secrets,
+            "index-key-v2",
+            Base64.getEncoder().encodeToString(AesGcm.newKey().getEncoded()));
         var properties =
             new ArrayList<>(
                 List.of(
@@ -154,8 +165,10 @@ class ProtectedDataExampleTest {
                     "axiz.crypto.fields.key-ids[0]=v1",
                     "axiz.crypto.fields.index-current-key-id=index",
                     "axiz.crypto.fields.index-secrets.index=index-key-v1",
+                    "axiz.crypto.fields.index-secrets.index2=index-key-v2",
                     "axiz.crypto.kms.key-id=" + keyArn,
                     "axiz.crypto.kms.key-ring.kek=" + keyArn,
+                    "axiz.crypto.kms.key-ring.kek2=" + nextKeyArn,
                     "axiz.audit.mode=SYNC",
                     "axiz.audit.strict.enabled=true",
                     "axiz.audit.strict.timeout=10s",
@@ -181,94 +194,119 @@ class ProtectedDataExampleTest {
           if (type.equals("PAN")) properties.add(p + "metadata-keys[0]=last4");
         }
         budget(properties, redis.getHost(), redis.getMappedPort(6379));
-        new ApplicationContextRunner()
-            .withConfiguration(
-                AutoConfigurations.of(
-                    AxizAwsIdentityAutoConfiguration.class,
-                    AxizSecretsAwsAutoConfiguration.class,
-                    AxizSecretsAutoConfiguration.class,
-                    AxizCryptoAutoConfiguration.class,
-                    AxizCryptoKmsAutoConfiguration.class,
-                    AxizAuditAutoConfiguration.class,
-                    AxizStrictAuditAutoConfiguration.class,
-                    AxizTokenizationVaultAutoConfiguration.class,
-                    AxizTokenizationDynamoDbAutoConfiguration.class,
-                    AxizTokenizationRedisAutoConfiguration.class,
-                    AxizTokenizationPanAutoConfiguration.class))
-            .withPropertyValues(properties.toArray(String[]::new))
-            .withBean(AwsCredentialsProvider.class, () -> credentials)
-            .withBean(
-                StrictAuditSink.class,
-                () -> new StrictAuditSink("sqs", new SqsAuditPublisher(sqs, audit)))
-            .withBean(
-                TokenAccessPolicy.class,
-                () ->
-                    (caller, operation, type, domain, purpose) -> {
-                      if (!caller.clientId().equals("customer-service"))
-                        throw TokenErrors.failure(TokenErrors.DENIED);
-                    })
-            .withBean(
-                TokenReconciliationLog.class,
-                () ->
-                    operation -> {
-                      var token = operation.token();
-                      String body =
-                          JsonWriter.writeCanonical(
-                              Map.of(
-                                  "id",
-                                  operation.operationId().toString(),
-                                  "scope",
-                                  operation.scope().encoded(),
-                                  "phase",
-                                  operation.phase().name(),
-                                  "reason",
-                                  operation.reason().name(),
-                                  "token",
-                                  token == null ? "none" : token.reveal(),
-                                  "at",
-                                  operation.at().toString()));
-                      var sent = sqs.sendMessage(b -> b.queueUrl(reconcile).messageBody(body));
-                      if (sent.messageId() == null)
-                        throw new IllegalStateException("Reconciliation was not acknowledged");
-                    })
-            .withBean(
-                TokenReconciliationAlarm.class,
-                () ->
-                    operation -> {
-                      throw new IllegalStateException(
-                          "Example requires reconciliation; inspect its durable queue");
-                    })
-            .withBean(
-                TokenBudgetLeaseAlarm.class,
-                () ->
-                    (namespace, lease) -> {
-                      throw new IllegalStateException("Example budget lease was lost");
-                    })
-            .run(
-                context -> {
-                  assertThat(context).hasNotFailed();
-                  demonstrateTokens(context.getBean(VaultOperations.class), db);
-                  demonstrateIndependentFields(
-                      new FieldProtector(
-                          context.getBean(FieldEncryptor.class),
-                          context.getBean(BlindIndex.class),
-                          FieldProtectionPolicy.dniPe("customer-search")),
-                      db);
-                  var messages =
-                      sqs.receiveMessage(
-                              b -> b.queueUrl(audit).maxNumberOfMessages(10).waitTimeSeconds(1))
-                          .messages();
-                  assertThat(messages).isNotEmpty();
-                  for (var message : messages) {
-                    var envelope = CloudEventJson.read(message.body());
-                    assertThat(envelope.type()).isEqualTo("pe.axiz.audit.event.v1");
-                    String body = new String(envelope.data(), StandardCharsets.UTF_8);
-                    assertThat(body).doesNotContain("4111111111111111", "00123456");
-                    assertThat(AuditEventJson.read(body).integrity()).isNotNull();
-                  }
-                });
+        var runner =
+            new ApplicationContextRunner()
+                .withConfiguration(configurations())
+                .withPropertyValues(properties.toArray(String[]::new))
+                .withBean(AwsCredentialsProvider.class, () -> credentials)
+                .withBean(
+                    StrictAuditSink.class,
+                    () -> new StrictAuditSink("sqs", new SqsAuditPublisher(sqs, audit)))
+                .withBean(
+                    TokenAccessPolicy.class,
+                    () ->
+                        (caller, operation, type, domain, purpose) -> {
+                          if (!caller.clientId().equals("customer-service"))
+                            throw TokenErrors.failure(TokenErrors.DENIED);
+                        })
+                .withBean(
+                    TokenReconciliationLog.class,
+                    () ->
+                        operation -> {
+                          var token = operation.token();
+                          String body =
+                              JsonWriter.writeCanonical(
+                                  Map.of(
+                                      "id",
+                                      operation.operationId().toString(),
+                                      "scope",
+                                      operation.scope().encoded(),
+                                      "phase",
+                                      operation.phase().name(),
+                                      "reason",
+                                      operation.reason().name(),
+                                      "token",
+                                      token == null ? "none" : token.reveal(),
+                                      "at",
+                                      operation.at().toString()));
+                          var sent = sqs.sendMessage(b -> b.queueUrl(reconcile).messageBody(body));
+                          if (sent.messageId() == null)
+                            throw new IllegalStateException("Reconciliation was not acknowledged");
+                        })
+                .withBean(
+                    TokenReconciliationAlarm.class,
+                    () ->
+                        operation -> {
+                          throw new IllegalStateException(
+                              "Example requires reconciliation; inspect its durable queue");
+                        })
+                .withBean(
+                    TokenBudgetLeaseAlarm.class,
+                    () ->
+                        (namespace, lease) -> {
+                          throw new IllegalStateException("Example budget lease was lost");
+                        });
+        ReactiveVaultRecipe.demonstrate(
+            properties, credentials, aws.getEndpoint(), region, audit, reconcile);
+        recordVaultEvidence(evidence, "reactive");
+        runner.run(
+            context -> {
+              assertThat(context).hasNotFailed();
+              var envelopeEncryption = context.getBean(EnvelopeEncryptor.class);
+              byte[] clear = "synthetic protected statement".getBytes(StandardCharsets.UTF_8);
+              byte[] cipher = envelopeEncryption.encrypt(clear, "statement:tenant-a");
+              assertThat(cipher).isNotEqualTo(clear);
+              assertThat(envelopeEncryption.decrypt(cipher, "statement:tenant-a")).isEqualTo(clear);
+              demonstrateTokens(context.getBean(VaultOperations.class), db);
+              VaultMaintenanceRecipe.demonstrate(
+                  context, runner, db, kms, keyArn, nextKeyArn, sqs, maintenanceQueue);
+              demonstrateIndependentFields(
+                  new FieldProtector(
+                      context.getBean(FieldEncryptor.class),
+                      context.getBean(BlindIndex.class),
+                      FieldProtectionPolicy.dniPe("customer-search")),
+                  db);
+              var messages =
+                  sqs.receiveMessage(
+                          b -> b.queueUrl(audit).maxNumberOfMessages(10).waitTimeSeconds(1))
+                      .messages();
+              assertThat(messages).isNotEmpty();
+              for (var message : messages) {
+                var envelope = CloudEventJson.read(message.body());
+                assertThat(envelope.type()).isEqualTo("pe.axiz.audit.event.v1");
+                String body = new String(envelope.data(), StandardCharsets.UTF_8);
+                assertThat(body).doesNotContain("4111111111111111", "00123456");
+                assertThat(AuditEventJson.read(body).integrity()).isNotNull();
+              }
+              recordVaultEvidence(evidence, "servlet");
+            });
       }
     }
+  }
+
+  private static void recordVaultEvidence(TestReporter evidence, String stack) {
+    evidence.publishEntry("axiz.capability.crypto", stack);
+    evidence.publishEntry("axiz.capability.crypto-kms", stack);
+    evidence.publishEntry("axiz.capability.carddata", stack);
+    evidence.publishEntry("axiz.capability.tokenization-vault", stack);
+    evidence.publishEntry("axiz.capability.tokenization-vault-dynamodb", stack);
+    evidence.publishEntry("axiz.capability.tokenization-vault-redis", stack);
+    evidence.publishEntry("axiz.capability.tokenization-pan", stack);
+  }
+
+  static AutoConfigurations configurations() {
+    return AutoConfigurations.of(
+        AxizAwsIdentityAutoConfiguration.class,
+        AxizSecretsAwsAutoConfiguration.class,
+        AxizSecretsAutoConfiguration.class,
+        AxizCryptoAutoConfiguration.class,
+        AxizCryptoKmsAutoConfiguration.class,
+        AxizAuditAutoConfiguration.class,
+        AxizStrictAuditAutoConfiguration.class,
+        AxizTokenizationVaultAutoConfiguration.class,
+        AxizTokenizationDynamoDbAutoConfiguration.class,
+        AxizTokenizationRedisAutoConfiguration.class,
+        AxizTokenizationPanAutoConfiguration.class);
   }
 
   private static void secret(SecretsManagerClient secrets, String name, String value) {
@@ -276,7 +314,8 @@ class ProtectedDataExampleTest {
   }
 
   private static void provision(DynamoDbClient db) {
-    db.createTable(
+    createTable(
+        db,
         b ->
             b.tableName(VAULT)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -287,7 +326,8 @@ class ProtectedDataExampleTest {
                         .build())
                 .keySchema(
                     KeySchemaElement.builder().attributeName("pk").keyType(KeyType.HASH).build()));
-    db.createTable(
+    createTable(
+        db,
         b ->
             b.tableName(DOCUMENTS)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -320,7 +360,24 @@ class ProtectedDataExampleTest {
         .isTrue();
   }
 
-  private static TokenCaller caller(String tenant) {
+  private static void createTable(
+      DynamoDbClient db, java.util.function.Consumer<CreateTableRequest.Builder> configure) {
+    var builder = CreateTableRequest.builder();
+    configure.accept(builder);
+    var request = builder.build();
+    try {
+      db.createTable(request);
+    } catch (ResourceInUseException existing) {
+      // A timed-out create may already have committed. Accept only the expected table shape.
+      db.waiter().waitUntilTableExists(b -> b.tableName(request.tableName()));
+      var table = db.describeTable(b -> b.tableName(request.tableName())).table();
+      assertThat(table.keySchema()).containsExactlyElementsOf(request.keySchema());
+      assertThat(table.attributeDefinitions())
+          .containsExactlyInAnyOrderElementsOf(request.attributeDefinitions());
+    }
+  }
+
+  static TokenCaller caller(String tenant) {
     return new TokenCaller(
         "demo-operator",
         "customer-service",

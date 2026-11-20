@@ -54,6 +54,21 @@ resources. Provision production tables, queues, topics, keys and buckets through
 LocalStack tests exercise behavior but do not attest deployed IAM or service durability.
 Never place long-lived credentials in generated YAML.
 
+For an explicit FIFO dead-letter queue, the consumer preserves the source message group and
+uses the source SQS message ID as a stable deduplication ID across delivery retries. When a
+standard source has no group, the destination uses `axiz-dead-letter`. Acknowledgement of the
+original message follows acknowledgement of the dead-letter send. The executable
+`axiz-demo/examples/sqs-consumer` recipe covers standard/FIFO consumption, transient retries,
+explicit DLQ delivery and native redrive in LocalStack on both web stacks.
+
+FIFO queues receive one message per poll, so a retry/defer cannot process a later message in the
+same group from a prefetched batch. This conservative strategy preserves order at the cost of
+batch throughput; standard queues still receive up to ten messages. Visibility renewal and
+settlement coordinate per receipt, so a heartbeat cannot overwrite retry backoff or redrive.
+Startup requires either an explicit dead-letter destination or a native SQS redrive policy.
+Grant `sqs:GetQueueAttributes` when relying on native redrive. Missing policy or inaccessible
+queue fails startup instead of creating an endless poison-message redelivery loop.
+
 ## Verification
 
 From `axiz-framework`:

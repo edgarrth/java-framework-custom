@@ -9,7 +9,7 @@
   <description>Explicit tokenization-pan integration for the generic token vault</description>
   <properties><axiz.module.name>pe.axiz.spring.tokenization.pan</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity><axiz.provider.boundaries.skip>false</axiz.provider.boundaries.skip></properties>
   <dependencies>
-    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version><scope>test</scope></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-vault</artifactId><version>${project.version}</version><scope>test</scope></dependency>
 
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-tokenization-pan</artifactId><version>${project.version}</version></dependency>

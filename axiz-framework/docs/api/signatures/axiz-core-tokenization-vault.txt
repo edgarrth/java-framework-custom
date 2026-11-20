@@ -2,6 +2,7 @@ public interface pe.axiz.core.tokenization.vault.AsyncTokenBudget {
 public abstract boolean distributed();
 public abstract java.util.concurrent.CompletionStage<java.lang.Void> beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
 public abstract java.util.concurrent.CompletionStage<pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit> acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
+public default java.util.concurrent.CompletionStage<pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit> acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope, java.util.UUID);
 }
 
 public interface pe.axiz.core.tokenization.vault.AsyncTokenBudget$Permit {
@@ -178,6 +179,7 @@ public interface pe.axiz.core.tokenization.vault.TokenBudget {
 public abstract boolean distributed();
 public abstract pe.axiz.core.tokenization.vault.TokenBudget$Permit acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope);
 public abstract void beforeWrite(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.vault.VaultScope);
+public default pe.axiz.core.tokenization.vault.TokenBudget$Permit acquire(pe.axiz.core.tokenization.vault.TokenCaller, pe.axiz.core.tokenization.TokenOperation, pe.axiz.core.tokenization.vault.VaultScope, java.util.UUID);
 }
 
 public interface pe.axiz.core.tokenization.vault.TokenBudget$Permit extends java.lang.AutoCloseable {
@@ -344,6 +346,7 @@ public static pe.axiz.core.tokenization.vault.UncertainTokenOperation$Phase[] va
 
 public final class pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason extends java.lang.Enum<pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason> {
 public static final pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason CANCELLED_DURING_WRITE;
+public static final pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason COMMITTED_AUDIT_UNCONFIRMED;
 public static final pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason STORAGE_ACK_UNKNOWN;
 public static pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason valueOf(java.lang.String);
 public static pe.axiz.core.tokenization.vault.UncertainTokenOperation$Reason[] values();

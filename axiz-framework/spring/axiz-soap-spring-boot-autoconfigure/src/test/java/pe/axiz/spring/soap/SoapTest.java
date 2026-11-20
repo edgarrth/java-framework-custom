@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
@@ -17,8 +20,50 @@ import org.w3c.dom.Element;
 import pe.axiz.core.secrets.SecretNotFoundException;
 import pe.axiz.core.secrets.SecretResolver;
 import pe.axiz.core.secrets.SecretValue;
+import pe.axiz.core.soap.SoapVersion;
+import pe.axiz.core.soap.WsSecurity;
 
 class SoapTest {
+
+  @Test
+  void programmaticClientsKeepBindingDefaultsAndNamedOverrides() {
+    URI endpoint = URI.create("https://bank.example/ws");
+    var defaults = AxizSoapProperties.Client.builder(endpoint).build();
+    assertThat(defaults)
+        .isEqualTo(
+            new AxizSoapProperties.Client(
+                endpoint,
+                SoapVersion.SOAP_11,
+                Duration.ofSeconds(2),
+                Duration.ofSeconds(10),
+                null,
+                null,
+                null,
+                null));
+    var builder =
+        AxizSoapProperties.Client.builder(endpoint)
+            .version(SoapVersion.SOAP_12)
+            .connectTimeout(Duration.ofSeconds(3))
+            .timeout(Duration.ofSeconds(15))
+            .username("service")
+            .passwordRef("bank-credential")
+            .passwordMode(WsSecurity.Mode.TEXT)
+            .sslBundle("bank-mtls");
+    var configured = builder.build();
+    assertThat(configured)
+        .isEqualTo(
+            new AxizSoapProperties.Client(
+                endpoint,
+                SoapVersion.SOAP_12,
+                Duration.ofSeconds(3),
+                Duration.ofSeconds(15),
+                "service",
+                "bank-credential",
+                WsSecurity.Mode.TEXT,
+                "bank-mtls"));
+    builder.sslBundle("another-bundle");
+    assertThat(configured.sslBundle()).isEqualTo("bank-mtls");
+  }
 
   @Test
   void unauthenticatedSoapEndpointsAlsoFailAtStartupWithoutTls() {
@@ -108,14 +153,14 @@ class SoapTest {
   void credentialsNeedAnExplicitPasswordModeAndTls() throws Exception {
     withCredentials("https://core.example/ws")
         .run(
-            ctx -> {
-              IllegalStateException e =
-                  Assertions.assertThrows(
-                      IllegalStateException.class,
-                      () ->
-                          ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
-              assertThat(e).hasMessageContaining("password-mode is required");
-            });
+            ctx ->
+                assertThat(ctx)
+                    .hasFailed()
+                    .getFailure()
+                    .hasRootCauseMessage(
+                        "axiz.soap.clients.core.password-mode is required with a username: "
+                            + "TEXT (over TLS) or LEGACY_SHA1_DIGEST (only when the counterparty demands it)"));
+
     withCredentials(
             "http://core.example/ws",
             "axiz.soap.clients.core.password-mode=TEXT",
@@ -157,6 +202,68 @@ class SoapTest {
   }
 
   @Test
+  void eachCallReadsRotatedCredentialsAndClosesResolvedSecrets() throws Exception {
+    var request = new AtomicReference<String>();
+    var issued = new ArrayList<SecretValue>();
+    var current = new AtomicReference<>("first-password");
+    var server = server(request);
+    try {
+      new ApplicationContextRunner()
+          .withConfiguration(AutoConfigurations.of(AxizSoapAutoConfiguration.class))
+          .withBean(
+              SecretResolver.class,
+              () ->
+                  name -> {
+                    var value = SecretValue.of(current.get());
+                    issued.add(value);
+                    return Optional.of(value);
+                  })
+          .withPropertyValues(
+              "axiz.config.environment=test",
+              "axiz.transport.allow-plain-http=true",
+              "axiz.soap.clients.core.endpoint=http://127.0.0.1:"
+                  + server.getAddress().getPort()
+                  + "/ws",
+              "axiz.soap.clients.core.username=service",
+              "axiz.soap.clients.core.password-ref=soap-password",
+              "axiz.soap.clients.core.password-mode=TEXT")
+          .run(
+              context -> {
+                var clients = context.getBean(SoapClients.class);
+                clients.call("core", "urn:balance", "<Balance/>");
+                assertTrue(request.get().contains("first-password"));
+                current.set("rotated-password");
+                clients.call("core", "urn:balance", "<Balance/>");
+                assertTrue(request.get().contains("rotated-password"));
+                assertEquals(2, issued.size());
+                issued.forEach(
+                    secret -> Assertions.assertThrows(IllegalStateException.class, secret::reveal));
+              });
+    } finally {
+      server.stop(0);
+    }
+  }
+
+  @Test
+  void aConfiguredSslBundleMustExist() {
+    new ApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizSoapAutoConfiguration.class))
+        .withPropertyValues(
+            "axiz.soap.clients.core.endpoint=https://localhost/ws",
+            "axiz.soap.clients.core.ssl-bundle=bank")
+        .run(
+            context ->
+                assertThat(
+                        Assertions.assertThrows(
+                            IllegalStateException.class,
+                            () ->
+                                context
+                                    .getBean(SoapClients.class)
+                                    .call("core", "urn:balance", "<Balance/>")))
+                    .hasMessageContaining("SSL bundles"));
+  }
+
+  @Test
   void misconfiguredClientsFailOnFirstUseWithTheSettingToFix() {
     new ApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizSoapAutoConfiguration.class))
@@ -190,13 +297,12 @@ class SoapTest {
             "axiz.soap.clients.core.password-ref=core-pw",
             "axiz.soap.clients.core.password-mode=TEXT")
         .run(
-            ctx -> {
-              IllegalStateException e =
-                  Assertions.assertThrows(
-                      IllegalStateException.class,
-                      () ->
-                          ctx.getBean(SoapClients.class).call("core", "a", "<A xmlns=\"urn:x\"/>"));
-              assertThat(e).hasMessageContaining("axiz-secrets-spring-boot-starter");
-            });
+            ctx ->
+                assertThat(ctx)
+                    .hasFailed()
+                    .getFailure()
+                    .hasRootCauseMessage(
+                        "axiz.soap.clients.core.password-ref needs a SecretResolver: "
+                            + "add axiz-secrets-spring-boot-starter"));
   }
 }

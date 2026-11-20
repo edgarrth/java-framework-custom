@@ -1,0 +1,229 @@
+[
+  {
+    "name": "grafana",
+    "version": "12.4.15",
+    "url": "https://codeload.github.com/grafana/grafana/tar.gz/refs/tags/v12.4.15",
+    "sha256": "e4ec779cdda4c2cb9f8c550fde952f485440b751efeaf02159e7da25ace1bc07",
+    "changed": [
+      "go.mod",
+      "go.sum",
+      "go.work.sum"
+    ],
+    "workspaceModules": [
+      {
+        "module": "github.com/grafana/grafana/apps/advisor",
+        "path": "apps/advisor",
+        "goModSha256": "fd5c38dbee9fcfd2beb9828123e3b064a0a71c7c343dab338a2d2507312655b1"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/alerting/alertenrichment",
+        "path": "apps/alerting/alertenrichment",
+        "goModSha256": "315b1d14d396fbb6596058d802a33fa8dc475f40ec53f086c8d7451a8efd0e47"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/alerting/historian",
+        "path": "apps/alerting/historian",
+        "goModSha256": "4a5cf8e32bae071ca148464217694d0aa4af7524d8a3c6a396565c7d1f275c7b"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/alerting/notifications",
+        "path": "apps/alerting/notifications",
+        "goModSha256": "ff58c8f29bdd7f890a886a5b9c77e5600a03e56d9c45acacaa79b0fadb453ce1"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/alerting/rules",
+        "path": "apps/alerting/rules",
+        "goModSha256": "de7941997c9d3682c961cca0d0f210c337cce7e3685bf7c1692e18f448e35d50"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/annotation",
+        "path": "apps/annotation",
+        "goModSha256": "ed6c4fe84d17a8a89f603e0a6719c4baede371cc2ab1225bc9df691345add2e2"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/collections",
+        "path": "apps/collections",
+        "goModSha256": "7568687ef3c52467918d95fcbb2ceee63805a0751f0c94b07451fe6df94c71a1"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/correlations",
+        "path": "apps/correlations",
+        "goModSha256": "27a897843e0d6060d115cf3c5d8e65d1f6b638ccf937aa04a648a2ed921dd6e3"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/dashboard",
+        "path": "apps/dashboard",
+        "goModSha256": "723e592fa117ead497cb5f984167fd7042f5b4776a55e5ce0a95d4dc5584a0ac"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/dashvalidator",
+        "path": "apps/dashvalidator",
+        "goModSha256": "a11e4cea06058afb8d3191f384d6e7d02dcba855ff6410a401d30eb96aa706d2"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/example",
+        "path": "apps/example",
+        "goModSha256": "60dbe7efd47607c06b7e21546a7eff4b3ecf4c63250bdf4fbb54ba305d157b07"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/folder",
+        "path": "apps/folder",
+        "goModSha256": "8e54f206a6a18e8f74dc744c19bff535ae7ae7d7fc87f5b86e0717b4209980eb"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/iam",
+        "path": "apps/iam",
+        "goModSha256": "c14e1a7cc9712aceaa009911558ada910e567f699840d904e6dd9a88035c312f"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/live",
+        "path": "apps/live",
+        "goModSha256": "1e1df8429581fde5da6b6a8d9170350ecd1e5cc4261975e36a461c500c287e7d"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/logsdrilldown",
+        "path": "apps/logsdrilldown",
+        "goModSha256": "48962ceddc22f34326144de48a9d348df621c253c80c1863430e9eeaa91b8954"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/playlist",
+        "path": "apps/playlist",
+        "goModSha256": "3d35447ca5bb65748986af2c9bd8673731d65480965041e3437b903f0cb2dfcb"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/plugins",
+        "path": "apps/plugins",
+        "goModSha256": "c99b27d25d4b830501aa899bf36d576eb84b7035ba6d7fbdebda18df6b55f7fa"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/preferences",
+        "path": "apps/preferences",
+        "goModSha256": "7d77cc103297ed03f31bd813a2e64812496443a7345be8c15bc95b5f25d9999d"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/provisioning",
+        "path": "apps/provisioning",
+        "goModSha256": "f0f2ae352e35c2fba361dd960d5378780e0cf53fa470eb682311919fd5b5d791"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/quotas",
+        "path": "apps/quotas",
+        "goModSha256": "d0450b6c59c4e4a1c7783da7025197d70fbc1758bb56d0a5867ffeeea66f518f"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/scope",
+        "path": "apps/scope",
+        "goModSha256": "472c682478327cf1c6a9435483931fd0c293bd1ce8eb105eb37e133a63c31271"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/secret",
+        "path": "apps/secret",
+        "goModSha256": "ec30b4952fc2e8a4ca64b955b7cc6767b7155980baac563d1ae012dc5d464e0a"
+      },
+      {
+        "module": "github.com/grafana/grafana/apps/shorturl",
+        "path": "apps/shorturl",
+        "goModSha256": "2dd61763162b48b6ab3e0f244e2441e011b078c3ab490e72b33bbdeea8b1efe1"
+      },
+      {
+        "module": "github.com/grafana/grafana/hack",
+        "path": "hack",
+        "goModSha256": "bcae0646e6160c5d2f6dcbd97abfcab3063ee8bad08fedaee74845c0fdedbaab"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/aggregator",
+        "path": "pkg/aggregator",
+        "goModSha256": "ed84b7a4c9086741823a1b789f2f54d4368304fa8bc0535f7f98ffaea82f641a"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/apimachinery",
+        "path": "pkg/apimachinery",
+        "goModSha256": "4946640f6ce6c70aa0ab6af8eed9c17c2c5dd0ce6aeeccebcd5aa43fba5951e9"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/apiserver",
+        "path": "pkg/apiserver",
+        "goModSha256": "7232cf8b2bac3b4e2865f0f401d42f03415e60f4492819db352806e911336ca7"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/build/wire",
+        "path": "pkg/build/wire",
+        "goModSha256": "7516d5d5b552c08ee04aad123fed5f0c3b2383662665426acf691f9b8917d9d6"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/codegen",
+        "path": "pkg/codegen",
+        "goModSha256": "d4a6f56f977ae1c57788034b09860126d9318f2e897793b2043fee1f3ac6e468"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/plugins",
+        "path": "pkg/plugins",
+        "goModSha256": "6620a0f41840b9e30e31d3051578604f88b838f66f44ccc64be5696b9ebc2e42"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/plugins/codegen",
+        "path": "pkg/plugins/codegen",
+        "goModSha256": "8f6cea016783548cbd7dbee8b7c806a9633271f49f4ee46a041bd47d5ecdd98d"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/promlib",
+        "path": "pkg/promlib",
+        "goModSha256": "3a1d85ea5be51e6061100c557dce9f4506e36a3413d293216406fd628e1b2936"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/semconv",
+        "path": "pkg/semconv",
+        "goModSha256": "5696bb8979898fc92685b926d05ec2966aa4b77c72e1dece0be2677a2362363e"
+      },
+      {
+        "module": "github.com/grafana/grafana/pkg/storage/unified/resource/kv",
+        "path": "pkg/storage/unified/resource/kv",
+        "goModSha256": "45eefdaf7f47ff1ea9198b525ead2b65944a5a2e25b4a8f74183b459e256465a"
+      },
+      {
+        "module": "github.com/grafana/grafana/scripts/go-workspace",
+        "path": "scripts/go-workspace",
+        "goModSha256": "e842e02e192da24e32f9d39f23b89db5371a3a9d6c3fb0b4dae5cf77a1f7c5da"
+      },
+      {
+        "module": "github.com/grafana/grafana/scripts/modowners",
+        "path": "scripts/modowners",
+        "goModSha256": "02291e5962d77dfd3dbf8ea30eaccf592465d54fe32869599d550f0a32c714a9"
+      }
+    ]
+  },
+  {
+    "name": "loki",
+    "version": "3.7.10",
+    "url": "https://codeload.github.com/grafana/loki/tar.gz/refs/tags/v3.7.10",
+    "sha256": "52e1a821de73d634a152e6737f7a4629dae830240015a2d6f244ccaaf3b13357",
+    "changed": [],
+    "workspaceModules": [
+      {
+        "module": "github.com/grafana/loki/pkg/push",
+        "path": "pkg/push",
+        "goModSha256": "e81ec7a0e0c4aa2cd01c8d237312025941bdf5a2b2e86eb0dd9d03e4371c6e83"
+      }
+    ]
+  },
+  {
+    "name": "tempo",
+    "version": "2.10.10",
+    "url": "https://codeload.github.com/grafana/tempo/tar.gz/refs/tags/v2.10.10",
+    "sha256": "9a4ecf9f2d9c245704965b2844a35d6769e0ed97fdfc3d44663f90d307c5d466",
+    "changed": [
+      "go.mod",
+      "go.sum"
+    ]
+  },
+  {
+    "name": "prometheus",
+    "version": "3.16.0",
+    "url": "https://codeload.github.com/prometheus/prometheus/tar.gz/refs/tags/v3.16.0",
+    "sha256": "2709a3bd43f9d15e0cecfc33ab473d011e2a69ab29265b91398cc1b8561403c0",
+    "changed": [
+      "go.mod",
+      "go.sum"
+    ]
+  }
+]

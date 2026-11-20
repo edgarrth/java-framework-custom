@@ -1,6 +1,7 @@
 package pe.axiz.spring.outbox.jdbc;
 
 import java.time.Clock;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -43,7 +44,11 @@ import pe.axiz.spring.outbox.OutboxRelayTransactions;
 public class AxizOutboxJdbcAutoConfiguration {
   @Bean
   SchemaInitializer axizOutboxSchema(DataSource dataSource, AxizOutboxJdbcProperties p) {
-    return new SchemaInitializer(dataSource, "outbox", p.initializeSchema());
+    return new SchemaInitializer(
+        dataSource,
+        "outbox",
+        p.initializeSchema(),
+        Map.of("axiz_outbox", p.table(), "axiz_audit_chain", p.auditChainTable()));
   }
 
   @Bean

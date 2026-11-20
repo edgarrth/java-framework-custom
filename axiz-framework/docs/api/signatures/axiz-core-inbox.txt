@@ -23,6 +23,7 @@ public abstract boolean release(java.lang.String, java.lang.String, java.lang.St
 public abstract int purgeExpired(java.time.Instant);
 public abstract pe.axiz.core.inbox.InboxStore$Acquisition tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
 public default void verifySchema();
+public static void validateWindow(java.time.Instant, java.time.Instant, java.time.Instant);
 }
 
 public final class pe.axiz.core.inbox.InboxStore$Acquisition extends java.lang.Record {

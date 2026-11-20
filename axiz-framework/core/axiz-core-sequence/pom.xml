@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-sequence</artifactId>
   <name>axiz :: core :: sequence</name>
-  <description>Atomic formatted sequences with JDBC (atomic counter blocks) store</description>
+  <description>Atomic sequence contracts, formatting and provider-independent counter allocation</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>

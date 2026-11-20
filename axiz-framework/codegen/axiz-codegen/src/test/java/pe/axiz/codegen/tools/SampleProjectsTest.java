@@ -118,7 +118,8 @@ class SampleProjectsTest {
         try (var sources = Files.walk(tmp.resolve(name).resolve("src/test/java"))) {
           var boot =
               sources
-                  .filter(path -> path.getFileName().toString().endsWith("ApplicationTest.java"))
+                  .filter(
+                      path -> path.getFileName().toString().endsWith("ApplicationTestSupport.java"))
                   .findFirst()
                   .orElseThrow();
           String testSource = Files.readString(boot);
@@ -134,6 +135,22 @@ class SampleProjectsTest {
                 testSource.contains(setting),
                 name + " must declare its test transport policy: " + setting);
           }
+        }
+      }
+      if (!project.persistence().equals("none")) {
+        Path acceptance =
+            tmp.resolve(name)
+                .resolve("src/test/java")
+                .resolve(project.basePackage().replace('.', '/'))
+                .resolve("ValidationRecordPersistenceTest.java");
+        String persistenceTest = Files.readString(acceptance);
+        assertTrue(persistenceTest.contains("storesReadsUpdatesAndDeletes"), name);
+        assertTrue(persistenceTest.contains("repository.findById"), name);
+        if (project.persistence().equals("dynamodb")) {
+          assertTrue(persistenceTest.contains("byPartition"), name);
+          assertTrue(persistenceTest.contains("isGreaterThan(version)"), name);
+        } else {
+          assertTrue(persistenceTest.contains("rename(\"updated\")"), name);
         }
       }
       if (project.cqrs()

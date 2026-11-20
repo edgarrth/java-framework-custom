@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLTransactionRollbackException;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,7 @@ class JdbcTransactionOutcomeTest {
     int closes;
     int acquisitions;
     final JdbcTransactions transactions;
+    SQLException commitFailure = new SQLException("unknown");
 
     Fixture(Failure failure) {
       var connection =
@@ -45,7 +47,7 @@ class JdbcTransactionOutcomeTest {
                         return null;
                       case "commit":
                         commits++;
-                        if (failure == Failure.COMMIT) throw new SQLException("unknown");
+                        if (failure == Failure.COMMIT) throw commitFailure;
                         return null;
                       case "rollback":
                         rollbacks++;
@@ -103,6 +105,26 @@ class JdbcTransactionOutcomeTest {
     assertEquals(1, fixture.aborts);
     fixture.transactions.get();
     assertEquals(2, fixture.acquisitions);
+  }
+
+  @Test
+  void definitiveServerRollbackKeepsItsClassificationBut40003StaysUnknown() {
+    for (String state : new String[] {"40001", "40P01", "23505"}) {
+      var fixture = new Fixture(Failure.COMMIT);
+      fixture.commitFailure = new SQLException("synthetic server rollback", state);
+      assertSame(
+          fixture.commitFailure,
+          assertThrows(
+              SQLException.class, () -> fixture.transactions.inTransaction(() -> "rejected")));
+      assertEquals(1, fixture.commits);
+      assertEquals(1, fixture.aborts);
+      assertEquals(0, fixture.restores);
+    }
+    var fixture = new Fixture(Failure.COMMIT);
+    fixture.commitFailure = new SQLTransactionRollbackException("unknown", "40003");
+    assertThrows(
+        TransactionOutcomeUnknownException.class,
+        () -> fixture.transactions.inTransaction(() -> "unknown"));
   }
 
   @Test

@@ -12,7 +12,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import pe.axiz.core.api.Page;
 import pe.axiz.core.api.PageRequest;
+import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.CoreErrors;
+import pe.axiz.core.errors.FieldViolation;
 import pe.axiz.core.errors.NotFoundException;
+import pe.axiz.core.errors.ValidationException;
 import pe.axiz.structure.layered.CrudService;
 
 /**
@@ -27,6 +31,7 @@ public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudServ
   private final String resourceName;
   private final Function<T, I> idOf;
   private final BiFunction<I, T, T> withId;
+  private final Function<T, String> versionOf;
   private final Map<I, T> items = new ConcurrentHashMap<>();
 
   /**
@@ -34,17 +39,23 @@ public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudServ
    *
    * @param resourceName name used in errors
    * @param idOf extracts the id of a resource
-   * @param withId returns the resource with the given id (for updates)
+   * @param withId returns the resource with the given id and advanced version (for updates)
+   * @param versionOf extracts the version used for update and delete preconditions
    */
   @SuppressFBWarnings(
       value = "CT_CONSTRUCTOR_THROW",
       justification =
           "Rejects invalid construction; no finalizer or publication of this. The overridable "
               + "Spring SPI remains extensible; this constructor acquires no external resource.")
-  public InMemoryCrudService(String resourceName, Function<T, I> idOf, BiFunction<I, T, T> withId) {
+  public InMemoryCrudService(
+      String resourceName,
+      Function<T, I> idOf,
+      BiFunction<I, T, T> withId,
+      Function<T, String> versionOf) {
     this.resourceName = Objects.requireNonNull(resourceName);
     this.idOf = Objects.requireNonNull(idOf);
     this.withId = Objects.requireNonNull(withId);
+    this.versionOf = Objects.requireNonNull(versionOf);
   }
 
   @Override
@@ -79,14 +90,29 @@ public class InMemoryCrudService<T, I extends Comparable<I>> implements CrudServ
         id,
         (key, current) -> {
           if (current == null) throw new NotFoundException(resourceName, id);
+          String expectedVersion = versionOf.apply(resource);
+          if (expectedVersion == null || expectedVersion.isBlank())
+            throw new ValidationException(
+                List.of(FieldViolation.of("version", "Required", "Version is required")));
+          if (!expectedVersion.equals(versionOf.apply(current)))
+            throw new BusinessException(CoreErrors.CONFLICT, "Resource version conflict");
           return withId.apply(id, resource);
         });
   }
 
   @Override
-  public void delete(I id) {
-    if (items.remove(id) == null) {
-      throw new NotFoundException(resourceName, id);
-    }
+  public void delete(I id, String expectedVersion) {
+    items.compute(
+        id,
+        (key, current) -> {
+          if (current == null) throw new NotFoundException(resourceName, id);
+          if (expectedVersion == null || expectedVersion.isBlank())
+            throw new ValidationException(
+                List.of(FieldViolation.of("version", "Required", "Version is required")));
+          if (!expectedVersion.equals(versionOf.apply(current)))
+            throw new BusinessException(
+                CoreErrors.PRECONDITION_FAILED, "Resource version precondition failed");
+          return null;
+        });
   }
 }

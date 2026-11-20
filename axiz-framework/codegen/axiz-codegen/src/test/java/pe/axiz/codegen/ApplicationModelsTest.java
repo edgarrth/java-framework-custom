@@ -3,6 +3,7 @@ package pe.axiz.codegen;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import pe.axiz.codegen.openapi.OpenApiDocument;
+import pe.axiz.core.lang.ValueSnapshots;
 
 class ApplicationModelsTest {
   private static String models(String schemas) {
@@ -68,7 +70,7 @@ class ApplicationModelsTest {
           "@Nullable BigDecimal amount",
           "Boolean enabled",
           "@Nullable List<Item> children",
-          "@Nullable Map<String, Object> attributes"
+          "@Nullable Map<String, @Nullable Object> attributes"
         }) {
       assertTrue(result.contains(expected), expected + ": " + result);
     }
@@ -182,7 +184,14 @@ class ApplicationModelsTest {
                 null,
                 null,
                 "-classpath",
-                annotations,
+                annotations
+                    + File.pathSeparator
+                    + Path.of(
+                        ValueSnapshots.class
+                            .getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI()),
                 "-d",
                 directory.toString(),
                 source.toString()));
@@ -193,11 +202,19 @@ class ApplicationModelsTest {
       var items = new ArrayList<>();
       var metadata = new HashMap<String, Object>();
       metadata.put("status", "created");
+      var nested = new HashMap<String, Object>();
+      nested.put("state", "original");
+      metadata.put("nested", List.of(nested));
+      items.add(null);
       Object item = constructor.newInstance(null, items, null, metadata);
       items.add("changed");
       metadata.clear();
-      Assertions.assertEquals(List.of(), type.getMethod("items").invoke(item));
-      Assertions.assertEquals(Map.of("status", "created"), type.getMethod("metadata").invoke(item));
+      nested.clear();
+      Assertions.assertEquals(
+          java.util.Collections.singletonList(null), type.getMethod("items").invoke(item));
+      Assertions.assertEquals(
+          Map.of("status", "created", "nested", List.of(Map.of("state", "original"))),
+          type.getMethod("metadata").invoke(item));
       Object absent = constructor.newInstance(null, null, null, null);
       Assertions.assertNull(type.getMethod("items").invoke(absent));
       Assertions.assertNull(type.getMethod("metadata").invoke(absent));

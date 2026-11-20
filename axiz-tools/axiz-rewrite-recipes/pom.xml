@@ -10,7 +10,7 @@
 
   <parent>
     <groupId>pe.axiz</groupId>
-    <artifactId>axiz-parent</artifactId>
+    <artifactId>axiz-parent-tooling</artifactId>
     <version>2.0.0</version>
     <relativePath/>
   </parent>
@@ -23,20 +23,10 @@
   <properties>
     <axiz.module.name>pe.axiz.rewrite</axiz.module.name>
     <rewrite-recipe-bom.version>3.20.0</rewrite-recipe-bom.version>
-    <!-- versions the OpenRewrite modules disagree on, aligned on the newest one they request -->
-    <asm.version>9.9</asm.version>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <!-- rewrite-java asks for ASM 9.9; gizmo (rewrite-core) still for 9.3 -->
-      <dependency>
-        <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-bom</artifactId>
-        <version>${asm.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <!-- error_prone_annotations and org.jetbrains:annotations, which the OpenRewrite modules
            request in different versions, are managed by axiz-dependencies -->
       <dependency>
@@ -125,13 +115,6 @@
 
   <build>
     <plugins>
-      <!-- This tool owns a module identity while deliberately inheriting the general parent. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId>
-        <configuration><archive><manifestEntries>
-          <Automatic-Module-Name>${axiz.module.name}</Automatic-Module-Name>
-        </manifestEntries></archive></configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>

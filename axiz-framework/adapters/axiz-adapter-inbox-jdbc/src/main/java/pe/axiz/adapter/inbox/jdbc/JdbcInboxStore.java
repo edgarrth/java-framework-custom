@@ -48,6 +48,7 @@ public final class JdbcInboxStore implements InboxStore {
       Instant now,
       Instant leaseUntil,
       Instant expiresAt) {
+    InboxStore.validateWindow(now, leaseUntil, expiresAt);
     Connection c = null;
     try {
       c = connections.get();
@@ -72,14 +73,15 @@ public final class JdbcInboxStore implements InboxStore {
           c.prepareStatement(
               "UPDATE "
                   + table
-                  + " SET owner = ?, lease_until = ?, received_at = ? WHERE consumer = ? AND"
+                  + " SET owner = ?, lease_until = ?, received_at = ?, expires_at = ? WHERE consumer = ? AND"
                   + " message_id = ? AND status = 'IN_PROGRESS' AND lease_until < ?")) {
         ps.setString(1, owner);
         ps.setTimestamp(2, Timestamp.from(leaseUntil));
         ps.setTimestamp(3, Timestamp.from(now));
-        ps.setString(4, consumer);
-        ps.setString(5, messageId);
-        ps.setTimestamp(6, Timestamp.from(now));
+        ps.setTimestamp(4, Timestamp.from(expiresAt));
+        ps.setString(5, consumer);
+        ps.setString(6, messageId);
+        ps.setTimestamp(7, Timestamp.from(now));
         if (ps.executeUpdate() == 1) {
           return Acquisition.acquired();
         }
@@ -115,11 +117,15 @@ public final class JdbcInboxStore implements InboxStore {
             "UPDATE "
                 + table
                 + " SET status = 'PROCESSED', processed_at = ? WHERE consumer = ? AND message_id ="
-                + " ? AND owner = ? AND status = 'IN_PROGRESS'",
-            at,
-            consumer,
-            messageId,
-            owner)
+                + " ? AND owner = ? AND status = 'IN_PROGRESS' AND lease_until > ? AND expires_at > ?",
+            ps -> {
+              ps.setTimestamp(1, Timestamp.from(at));
+              ps.setString(2, consumer);
+              ps.setString(3, messageId);
+              ps.setString(4, owner);
+              ps.setTimestamp(5, Timestamp.from(at));
+              ps.setTimestamp(6, Timestamp.from(at));
+            })
         == 1;
   }
 
@@ -129,16 +135,19 @@ public final class JdbcInboxStore implements InboxStore {
             "DELETE FROM "
                 + table
                 + " WHERE consumer = ? AND message_id = ? AND owner = ? AND status = 'IN_PROGRESS'",
-            null,
-            consumer,
-            messageId,
-            owner)
+            ps -> {
+              ps.setString(1, consumer);
+              ps.setString(2, messageId);
+              ps.setString(3, owner);
+            })
         == 1;
   }
 
   @Override
   public int purgeExpired(Instant now) {
-    return update("DELETE FROM " + table + " WHERE expires_at < ?", now, null, null, null);
+    return update(
+        "DELETE FROM " + table + " WHERE expires_at < ? AND status <> 'IN_PROGRESS'",
+        ps -> ps.setTimestamp(1, Timestamp.from(now)));
   }
 
   @SuppressFBWarnings(
@@ -147,25 +156,12 @@ public final class JdbcInboxStore implements InboxStore {
           "Only table identifiers validated by SqlIdentifiers.require enter SQL text; row "
               + "values use PreparedStatement bindings. This private SQL path accepts no "
               + "caller-provided SQL.")
-  private int update(
-      String sql,
-      @Nullable Instant at,
-      @Nullable String consumer,
-      @Nullable String messageId,
-      @Nullable String owner) {
+  private int update(String sql, StatementBindings bindings) {
     Connection c = null;
     try {
       c = connections.get();
       try (PreparedStatement ps = c.prepareStatement(sql)) {
-        int i = 1;
-        if (at != null) {
-          ps.setTimestamp(i++, Timestamp.from(at));
-        }
-        if (consumer != null) {
-          ps.setString(i++, consumer);
-          ps.setString(i++, messageId);
-          ps.setString(i, owner);
-        }
+        bindings.apply(ps);
         return ps.executeUpdate();
       }
     } catch (SQLException e) {
@@ -198,6 +194,11 @@ public final class JdbcInboxStore implements InboxStore {
     } finally {
       close(c);
     }
+  }
+
+  @FunctionalInterface
+  private interface StatementBindings {
+    void apply(PreparedStatement statement) throws SQLException;
   }
 
   /** Message of a missing or outdated inbox table. */

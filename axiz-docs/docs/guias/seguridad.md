@@ -203,8 +203,8 @@ public class GetPaymentOrderAccess implements AccessPolicy<GetPaymentOrderQuery>
 - Los comandos internos que no nombran recursos de un tercero, por ejemplo los que proyectan
   eventos, se marcan con `@OpenAccess(reason = "...")`. El motivo queda en el código y se revisa.
 - `axiz.cqrs.authorization.unprotected` decide qué hacer con los comandos y consultas sin política
-  ni `@OpenAccess`: `warn` (por defecto) solo registra un aviso, `fail` impide arrancar y `allow` no
-  hace nada. Los servicios de dominio usan `fail`.
+  ni `@OpenAccess`: `warn` solo registra un aviso, `fail` (por defecto) impide arrancar y `allow` no
+  hace nada. Un valor desconocido impide arrancar, incluso si aún no hay handlers. Los servicios de dominio usan `fail`.
 
 En HTTP, `@PreAuthorize` y las políticas se evalúan antes de que la idempotencia devuelva una
 respuesta guardada. Así, un replay nunca entrega datos a quien ya no tiene permiso (ver

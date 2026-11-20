@@ -54,7 +54,7 @@ public class DebitAccountUseCase
 }
 ```
 
-(Del demo, `core-integration`.) La anotación `@UseCase` y la interfaz `UseCase` comparten nombre:
+(De la demo, `banking-core`.) La anotación `@UseCase` y la interfaz `UseCase` comparten nombre:
 se importa la anotación y la interfaz se escribe calificada, como en el código generado.
 
 Cada clase `@UseCase` corre con:
@@ -65,6 +65,20 @@ Cada clase `@UseCase` corre con:
   confirmar. Con la capacidad `outbox`, `OutboxDomainEventSink` los escribe en el outbox dentro de
   la misma transacción (se publican si y solo si el cambio se confirma); sin outbox se publican en
   proceso después del commit.
+
+Si la publicación en proceso falla **después de confirmar**, `UseCaseRunner` lanza
+`PostCommitPublicationException` con el código `AXZ-CORE-0410`, HTTP 409 y semántica no
+reintentable. Implementa `CommittedTransactionOutcome`, y la política de reintentos reconoce
+ese marcador incluso si otra excepción lo envuelve. El cambio de negocio ya existe: el
+consumidor debe consultar su resultado o reconciliar la publicación pendiente. Volver a
+ejecutar el comando como si hubiera hecho rollback puede duplicar efectos. Para entrega durable,
+seleccionar outbox mantiene la escritura del evento dentro de la transacción.
+
+La composición reactiva también funciona en procesos sin servidor web. Una aplicación worker
+puede seleccionar el stack reactivo y suministrar su `ReactiveTransactionManager`; la
+autoconfiguración no depende de que exista un contexto web de tipo REACTIVE. Debe ejecutar el
+flujo mediante la composición de Axiz, preservando el contexto de Reactor, y no llamar a
+`block()` dentro del hilo de eventos.
 
 ## Puertos y adaptadores
 

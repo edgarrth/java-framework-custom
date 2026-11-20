@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import org.jspecify.annotations.Nullable;
+import pe.axiz.core.commons.tx.CommittedTransactionOutcome;
+import pe.axiz.core.commons.tx.UnknownTransactionOutcome;
 import pe.axiz.core.errors.AxizException;
 
 /**
@@ -34,6 +36,8 @@ public final class RetryDecider {
     boolean transientFailure = false;
     for (Throwable t = failure; t != null; t = t.getCause()) {
       if (seen.size() >= 64 || seen.put(t, Boolean.TRUE) != null) return false;
+      if (t instanceof UnknownTransactionOutcome || t instanceof CommittedTransactionOutcome)
+        return false;
       if (t instanceof AxizException axiz) {
         if (!axiz.category().retryable()) return false;
         transientFailure = true;

@@ -17,6 +17,14 @@ public final class CoreErrors {
       ErrorDefinition.of("AXZ-CORE-0405", ErrorCategory.METHOD_NOT_ALLOWED, "Method not allowed");
   public static final ErrorDefinition CONFLICT =
       ErrorDefinition.of("AXZ-CORE-0409", ErrorCategory.CONFLICT, "Conflict with current state");
+
+  /** The business change committed; repeating it would duplicate its effects. */
+  public static final ErrorDefinition POST_COMMIT_PUBLICATION =
+      ErrorDefinition.of(
+          "AXZ-CORE-0410",
+          ErrorCategory.CONFLICT,
+          "Operation committed; event delivery requires reconciliation");
+
   public static final ErrorDefinition PRECONDITION_FAILED =
       ErrorDefinition.of("AXZ-CORE-0412", ErrorCategory.PRECONDITION_FAILED, "Precondition failed");
   public static final ErrorDefinition PAYLOAD_TOO_LARGE =
@@ -57,6 +65,7 @@ public final class CoreErrors {
         NOT_FOUND,
         METHOD_NOT_ALLOWED,
         CONFLICT,
+        POST_COMMIT_PUBLICATION,
         PRECONDITION_FAILED,
         PAYLOAD_TOO_LARGE,
         UNSUPPORTED_MEDIA_TYPE,

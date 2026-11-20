@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ReactiveWebApplicationContextRunner;
 import org.testcontainers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import pe.axiz.adapter.aws.transport.AsyncAwsClients;
 import pe.axiz.adapter.aws.transport.AsyncAwsTransportSettings;
 import pe.axiz.adapter.messaging.sns.SnsEventPublisher;
@@ -43,6 +42,7 @@ import pe.axiz.core.notification.EventNotificationSender;
 import pe.axiz.core.notification.NotificationChannel;
 import pe.axiz.core.notification.NotificationRequest;
 import pe.axiz.core.observability.AxizObservations;
+import pe.axiz.quality.containers.TestContainerImages;
 import pe.axiz.spring.foundation.ReactiveInfrastructureBootstrap;
 import pe.axiz.spring.messaging.AxizMessagingAutoConfiguration;
 import pe.axiz.spring.messaging.AxizNativeMessagingAutoConfiguration;
@@ -70,7 +70,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 class LocalStackMessagingIT {
   private static final Duration T = Duration.ofSeconds(20);
   private static final LocalStackContainer LOCALSTACK =
-      new LocalStackContainer(DockerImageName.parse(Docker.LOCALSTACK)).withServices("sqs", "sns");
+      TestContainerImages.localstack().withServices("sqs", "sns");
   private static final ObservationRegistry OBSERVATIONS = ObservationRegistry.create();
   private static final List<Observation.Context> CONTEXTS = new CopyOnWriteArrayList<>();
   private static final AtomicInteger REFRESHES = new AtomicInteger();

@@ -19,12 +19,13 @@ public interface PaymentOrders {
 
   /**
    * Inserts a new order together with the client's request key, unique per customer, and writes it
-   * immediately so a concurrent request with the same key fails here.
+   * immediately so a concurrent request with the same key fails here. Returns the authoritative
+   * persisted representation, including its creation timestamp at database precision.
    *
    * @throws pe.axiz.core.errors.BusinessException {@code CONCURRENT_REQUEST} when another request
    *     with the same key was stored first
    */
-  void create(PaymentOrder order, @Nullable String requestKey);
+  PaymentOrder create(PaymentOrder order, @Nullable String requestKey);
 
   /** The order a customer registered with a request key, if any. */
   Optional<PaymentOrder> findByRequestKey(String customerId, String requestKey);

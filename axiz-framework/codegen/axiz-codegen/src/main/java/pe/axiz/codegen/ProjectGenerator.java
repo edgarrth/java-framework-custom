@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import pe.axiz.codegen.openapi.ApiOperation;
 import pe.axiz.codegen.openapi.OpenApiDocument;
 import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.codegen.render.JavaFormatter;
+import pe.axiz.codegen.render.JavaSourceText;
 import pe.axiz.codegen.render.TemplateSet;
 import pe.axiz.codegen.render.YamlProperties;
 
@@ -269,6 +271,10 @@ public final class ProjectGenerator {
 
     List<Map<String, Object>> operations = new ArrayList<>();
     Map<String, List<Map<String, Object>>> byTag = new LinkedHashMap<>();
+    var applicationModels =
+        r.structure() == Structure.HEXAGONAL && contract != null
+            ? ApplicationModels.records(contract)
+            : List.<Map<String, Object>>of();
     if (contract != null) {
       for (ApiOperation op : contract.operations()) {
         if (!op.scopes().isEmpty()
@@ -284,12 +290,49 @@ public final class ProjectGenerator {
         if (r.cqrs()) {
           o.put("modelPackage", r.basePackage() + ".application.model");
         }
+        String responsePackage =
+            r.structure() == Structure.HEXAGONAL
+                ? r.basePackage() + ".application.model"
+                : apiModelPackage;
+        String responseModel = String.valueOf(o.get("responseModel"));
+        String responseType =
+            responseModel.isEmpty() ? "java.lang.Void" : responsePackage + "." + responseModel;
+        o.put(
+            "responseTypeQualified",
+            Boolean.TRUE.equals(o.get("responseIsList"))
+                ? "java.util.List<" + responseType + ">"
+                : responseType);
+        o.put("responseFixtureJson", ResponseExamples.json(contract, op.responseSchema()));
+        String mockTarget;
+        String mockCall;
+        if (r.cqrs()) {
+          mockTarget = op.readOnly() ? "queryBus" : "commandBus";
+          String role = op.readOnly() ? "query" : "command";
+          String type = String.valueOf(o.get(op.readOnly() ? "queryName" : "commandName"));
+          mockCall =
+              (op.readOnly() ? "ask" : "send")
+                  + "(any("
+                  + r.basePackage()
+                  + ".application."
+                  + role
+                  + "."
+                  + type
+                  + ".class))";
+        } else if (r.structure() == Structure.HEXAGONAL) {
+          mockTarget = o.get("methodName") + "UseCase";
+          mockCall = "execute(any())";
+        } else {
+          mockTarget = r.structure() == Structure.BFF ? "composition" : "service";
+          mockCall = o.get("methodName") + "(" + o.get("mockArguments") + ")";
+        }
+        o.put("mockTarget", mockTarget);
+        o.put("mockCall", mockCall);
         operations.add(o);
         byTag.computeIfAbsent(op.tag(), t -> new ArrayList<>()).add(o);
       }
     }
     if ((r.structure() == Structure.HEXAGONAL) && contract != null) {
-      c.put("applicationModels", ApplicationModels.records(contract));
+      c.put("applicationModels", applicationModels);
     }
     c.put("operations", operations);
     c.put(
@@ -519,7 +562,7 @@ public final class ProjectGenerator {
 
   /** Javadoc text: HTML-escaped (doclint) and without a comment terminator. */
   static String javadoc(String text) {
-    return xmlText(text).replace("*/", "*&#47;").replace("@", "&#64;");
+    return JavaSourceText.javadoc(text);
   }
 
   /**
@@ -775,7 +818,7 @@ public final class ProjectGenerator {
     o.put("mapping", Names.pascal(op.method().toLowerCase(Locale.ROOT)) + "Mapping");
     o.put("path", op.path());
     o.put("tag", op.tag());
-    o.put("summary", op.summary().replace("*/", "* /"));
+    o.put("summary", JavaSourceText.javadoc(op.summary()));
     o.put("readOnly", op.readOnly());
     o.put("write", !op.readOnly());
     o.put("authorizationExpression", op.authorizationExpression());
@@ -834,7 +877,8 @@ public final class ProjectGenerator {
       String p = op.pathParams().get(i);
       String javaName = Names.identifier(p);
       params.add(Map.of("name", p, "javaName", javaName, "last", i == op.pathParams().size() - 1));
-      declarations.add("@PathVariable(\"" + p + "\") String " + javaName);
+      declarations.add(
+          "@PathVariable(" + JavaSourceText.parameterLiteral(p) + ") String " + javaName);
       components.add("String " + javaName);
       arguments.add(javaName);
     }
@@ -843,9 +887,9 @@ public final class ProjectGenerator {
       String javaName = Names.identifier(q.name());
       query.add(Map.of("name", q.name(), "javaName", javaName, "required", q.required()));
       declarations.add(
-          "@RequestParam(name = \""
-              + q.name()
-              + "\", required = "
+          "@RequestParam(name = "
+              + JavaSourceText.parameterLiteral(q.name())
+              + ", required = "
               + q.required()
               + ") "
               + (q.required() ? "" : "@Nullable ")
@@ -872,6 +916,7 @@ public final class ProjectGenerator {
     o.put("controllerParams", String.join(", ", declarations));
     o.put("inputComponents", String.join(", ", components));
     o.put("inputArguments", String.join(", ", arguments));
+    o.put("mockArguments", String.join(", ", Collections.nCopies(arguments.size(), "any()")));
     List<String> hexagonalArguments = new ArrayList<>(arguments);
     if (request != null) {
       String applicationType =
@@ -888,6 +933,7 @@ public final class ProjectGenerator {
     o.put("queryName", className + "Query");
     String example = op.requestExample();
     o.put("hasExample", example != null);
+    o.put("boundaryTestable", request == null || example != null);
     o.put("exampleJson", example == null ? "" : example);
     o.put("exampleTestable", example != null && request != null && !request.startsWith("List<"));
     o.put("example", example == null ? "" : example.replace("\\", "\\\\").replace("\"", "\\\""));

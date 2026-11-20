@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.LoggerFactory;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
 import pe.axiz.core.tokenization.SensitiveValue;
 import pe.axiz.core.tokenization.Token;
@@ -79,6 +80,7 @@ public final class VaultTokenizer implements VaultOperations {
                   vault.findByFingerprint(request.scope(), fingerprints.all());
               if (found.isPresent()) {
                 VaultRecord existing = policy.checked(request, found.get(), fingerprints.all());
+                authenticate(request, existing, canonical);
                 if (!policy.expired(existing)) return result(request, existing, false);
                 // TTL alone cannot delete unique references. A conditional, coordinated removal is
                 // required.
@@ -121,6 +123,7 @@ public final class VaultTokenizer implements VaultOperations {
                     VaultRecord checked = policy.checked(request, won.get(), fingerprints.all());
                     if (!checked.token().equals(winner.token()))
                       throw new VaultIntegrityException();
+                    authenticate(request, checked, canonical);
                     if (!policy.expired(checked)) return result(request, checked, false);
                     deleteRecord(request, checked);
                   }
@@ -160,6 +163,7 @@ public final class VaultTokenizer implements VaultOperations {
                 vault
                     .findByFingerprint(request.scope(), fingerprints.all())
                     .map(record -> policy.checked(request, record, fingerprints.all()))
+                    .map(record -> authenticate(request, record, canonical))
                     .filter(record -> !policy.expired(record));
             audit.publishConfirmed(
                 policy.audit(
@@ -191,6 +195,7 @@ public final class VaultTokenizer implements VaultOperations {
                   request.scope().binding(token));
           SensitiveValue revealed;
           try {
+            policy.authenticate(request, record, plaintext, null);
             revealed = VaultText.decode(plaintext);
           } finally {
             Arrays.fill(plaintext, (byte) 0);
@@ -216,7 +221,8 @@ public final class VaultTokenizer implements VaultOperations {
         null,
         null,
         request -> {
-          Optional<VaultRecord> found = visible(request, token);
+          Optional<VaultRecord> found =
+              visible(request, token).map(record -> authenticate(request, record, null));
           audit.publishConfirmed(
               policy.audit(
                   request,
@@ -244,11 +250,21 @@ public final class VaultTokenizer implements VaultOperations {
           if (found.isPresent() && !found.get().token().equals(token))
             throw new VaultIntegrityException();
           boolean removed = found.isPresent() && deleteRecord(request, found.get());
-          audit.publishConfirmed(
-              policy.audit(
+          try {
+            audit.publishConfirmed(
+                policy.audit(
+                    request,
+                    removed ? Result.DELETED : Result.ABSENT,
+                    found.isPresent() ? token : null));
+          } catch (RuntimeException failed) {
+            if (removed)
+              throw uncertain(
                   request,
-                  removed ? Result.DELETED : Result.ABSENT,
-                  found.isPresent() ? token : null));
+                  found.orElseThrow(),
+                  UncertainTokenOperation.Phase.DELETE,
+                  UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED);
+            throw failed;
+          }
           return removed;
         });
   }
@@ -262,6 +278,21 @@ public final class VaultTokenizer implements VaultOperations {
               return policy.checked(request, record, null);
             })
         .filter(record -> !policy.expired(record));
+  }
+
+  private VaultRecord authenticate(
+      Request request, VaultRecord record, @Nullable SensitiveValue expected) {
+    byte[] plaintext =
+        encryption.decrypt(
+            record.ciphertext(),
+            VaultPolicy.ENCRYPTION_CONTEXT,
+            record.scope().binding(record.token()));
+    try {
+      policy.authenticate(request, record, plaintext, expected);
+      return record;
+    } finally {
+      Arrays.fill(plaintext, (byte) 0);
+    }
   }
 
   private boolean deleteRecord(Request request, VaultRecord record) {
@@ -280,14 +311,32 @@ public final class VaultTokenizer implements VaultOperations {
   }
 
   private TokenizationResult result(Request request, VaultRecord record, boolean created) {
-    audit.publishConfirmed(
-        policy.audit(request, created ? Result.CREATED : Result.FOUND, record.token()));
+    try {
+      audit.publishConfirmed(
+          policy.audit(request, created ? Result.CREATED : Result.FOUND, record.token()));
+    } catch (RuntimeException failed) {
+      if (created)
+        throw uncertain(
+            request,
+            record,
+            UncertainTokenOperation.Phase.CREATE,
+            UncertainTokenOperation.Reason.COMMITTED_AUDIT_UNCONFIRMED);
+      throw failed;
+    }
     return new TokenizationResult(
         record.token(), record.scope().type(), created, record.metadata());
   }
 
   private RuntimeException uncertain(
       Request request, VaultRecord record, UncertainTokenOperation.Phase phase) {
+    return uncertain(request, record, phase, UncertainTokenOperation.Reason.STORAGE_ACK_UNKNOWN);
+  }
+
+  private RuntimeException uncertain(
+      Request request,
+      VaultRecord record,
+      UncertainTokenOperation.Phase phase,
+      UncertainTokenOperation.Reason reason) {
     var operation =
         new UncertainTokenOperation(
             request.operationId(),
@@ -295,7 +344,7 @@ public final class VaultTokenizer implements VaultOperations {
             phase,
             record.token(),
             policy.clock().instant(),
-            UncertainTokenOperation.Reason.STORAGE_ACK_UNKNOWN);
+            reason);
     try {
       reconciliation.recordConfirmed(operation);
     } catch (RuntimeException failure) {
@@ -323,11 +372,20 @@ public final class VaultTokenizer implements VaultOperations {
     try {
       if (externalId != null) id = VaultIdentifiers.operationId(externalId);
       request = policy.authorize(caller, operation, type, domain, id, purpose);
-      permit = budget.acquire(caller, operation, request.scope());
+      permit = budget.acquire(caller, operation, request.scope(), request.operationId());
       result = work.apply(request);
       TokenBudget.Permit held = permit;
       permit = null;
-      held.close();
+      try {
+        held.close();
+      } catch (RuntimeException cleanupFailure) {
+        // The business result and audit are already confirmed. The budget retains uncertain leases.
+        LoggerFactory.getLogger(VaultTokenizer.class)
+            .warn(
+                "Token budget cleanup failed after confirmed outcome; operationId={}, failureType={}",
+                id,
+                cleanupFailure.getClass().getSimpleName());
+      }
       return result;
     } catch (RuntimeException failure) {
       if (result instanceof SensitiveValue sensitive) sensitive.close();
@@ -358,6 +416,11 @@ public final class VaultTokenizer implements VaultOperations {
           permit.close();
         } catch (RuntimeException releaseFailure) {
           /* The operation is already failing; do not overwrite its outcome. */
+          LoggerFactory.getLogger(VaultTokenizer.class)
+              .warn(
+                  "Token budget cleanup failed; operationId={}, failureType={}",
+                  id,
+                  releaseFailure.getClass().getSimpleName());
         }
       }
     }

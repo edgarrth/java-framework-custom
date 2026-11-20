@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -72,6 +73,8 @@ import pe.axiz.core.security.RateLimiter;
 import pe.axiz.core.security.TrustedIssuer;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * OAuth2 resource server for servlet and reactive services: issuer allow-list with per-issuer JWKS,
@@ -369,6 +372,11 @@ public class AxizSecurityAutoConfiguration {
   @EnableWebFluxSecurity
   @EnableReactiveMethodSecurity
   static class ReactiveConfiguration {
+    @Bean(destroyMethod = "dispose", defaultCandidate = false)
+    @ConditionalOnMissingBean(name = "axizSecurityRenderingScheduler")
+    Scheduler axizSecurityRenderingScheduler() {
+      return Schedulers.newBoundedElastic(4, 64, "axiz-security-render", 60, true);
+    }
 
     @Bean
     ApplicationListener<ApplicationReadyEvent> axizReactiveAuthorizationCoverage(
@@ -427,9 +435,10 @@ public class AxizSecurityAutoConfiguration {
         AxizSecurityProperties p,
         JwtIssuerReactiveAuthenticationManagerResolver resolver,
         SecurityProblems problems,
-        ObjectProvider<AsyncRateLimiter> limiter) {
+        ObjectProvider<AsyncRateLimiter> limiter,
+        @Qualifier("axizSecurityRenderingScheduler") Scheduler scheduler) {
       String actuator = actuatorBase(env);
-      ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems);
+      ReactiveProblemHandlers handlers = new ReactiveProblemHandlers(problems, scheduler);
       http.csrf(ServerHttpSecurity.CsrfSpec::disable)
           .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
           .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
@@ -487,7 +496,8 @@ public class AxizSecurityAutoConfiguration {
       AsyncRateLimiter rl = limiter.getIfAvailable();
       if (p.rateLimit().enabled() && rl != null) {
         http.addFilterAfter(
-            new RateLimitWebFilter(rl, new RateLimitRules(p.rateLimit().rules()), problems),
+            new RateLimitWebFilter(
+                rl, new RateLimitRules(p.rateLimit().rules()), problems, scheduler),
             SecurityWebFiltersOrder.AUTHORIZATION);
       }
       return new VerifiedReactiveSecurityChain(http.build());

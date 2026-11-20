@@ -11,6 +11,7 @@
     <axiz.test.argLine>-XX:+AllowRedefinitionToAddDeleteMethods</axiz.test.argLine>
   </properties>
   <dependencies>
+    <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-errors</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sensitive</artifactId><version>${project.version}</version></dependency>
 

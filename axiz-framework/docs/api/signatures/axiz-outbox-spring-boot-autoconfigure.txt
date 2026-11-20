@@ -30,7 +30,8 @@ public java.time.Duration pollInterval();
 public java.time.Duration publishBudget();
 public java.time.Duration purgeInterval();
 public java.time.Duration retention();
-public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
+public java.time.Duration shutdownGrace();
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay(boolean, java.time.Duration, int, int, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration, java.time.Duration);
 public static pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder builder();
 }
 
@@ -47,6 +48,7 @@ public pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder pollInterval(jav
 public pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder publishBudget(java.time.Duration);
 public pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder purgeInterval(java.time.Duration);
 public pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder retention(java.time.Duration);
+public pe.axiz.spring.outbox.AxizOutboxProperties$Relay$Builder shutdownGrace(java.time.Duration);
 }
 
 public final class pe.axiz.spring.outbox.AxizOutboxProtectionProperties extends java.lang.Record {
@@ -69,12 +71,15 @@ public class pe.axiz.spring.outbox.OutboxBlockedMetrics {
 public pe.axiz.spring.outbox.OutboxBlockedMetrics();
 }
 
-public final class pe.axiz.spring.outbox.OutboxRelayRunner implements org.springframework.context.SmartLifecycle {
+public final class pe.axiz.spring.outbox.OutboxRelayRunner implements org.springframework.context.SmartLifecycle,pe.axiz.spring.foundation.lifecycle.WorkerStatus {
 public boolean isRunning();
 public int runOnce();
+public java.time.Duration shutdownGrace();
+public pe.axiz.spring.foundation.lifecycle.WorkerStatus$Snapshot workerSnapshot();
 public pe.axiz.spring.outbox.OutboxRelayRunner(pe.axiz.core.outbox.OutboxRelay, pe.axiz.core.outbox.OutboxStore, io.micrometer.observation.ObservationRegistry, pe.axiz.spring.outbox.AxizOutboxProperties$Relay, java.time.Clock);
 public void start();
 public void stop();
+public void stop(java.lang.Runnable);
 }
 
 public final class pe.axiz.spring.outbox.OutboxRelayTransactions extends java.lang.Record {

@@ -34,6 +34,7 @@ public static final pe.axiz.core.errors.ErrorDefinition NOT_FOUND;
 public static final pe.axiz.core.errors.ErrorDefinition NOT_IMPLEMENTED;
 public static final pe.axiz.core.errors.ErrorDefinition OUTCOME_UNKNOWN;
 public static final pe.axiz.core.errors.ErrorDefinition PAYLOAD_TOO_LARGE;
+public static final pe.axiz.core.errors.ErrorDefinition POST_COMMIT_PUBLICATION;
 public static final pe.axiz.core.errors.ErrorDefinition PRECONDITION_FAILED;
 public static final pe.axiz.core.errors.ErrorDefinition TOO_MANY_REQUESTS;
 public static final pe.axiz.core.errors.ErrorDefinition UNAUTHENTICATED;

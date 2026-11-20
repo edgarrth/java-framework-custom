@@ -48,6 +48,9 @@ public final class InboxStoreContract {
     checks.add(new ContractCheck("only the owner completes", () -> complete(backend)));
     checks.add(
         new ContractCheck(
+            "expired owners cannot complete without a takeover", () -> lateCompletion(backend)));
+    checks.add(
+        new ContractCheck(
             "the same id from two sources is two messages", () -> sourceAndId(backend)));
     checks.add(new ContractCheck("only the owner releases", () -> release(backend)));
     checks.add(
@@ -94,6 +97,20 @@ public final class InboxStoreContract {
         "processed is recognized, also after the lease");
     Expect.isFalse(store.release("contract", id, "a"), "processed entries are kept");
     Expect.isFalse(store.markProcessed("contract", id, "a", now), "completing twice");
+  }
+
+  private static void lateCompletion(Backend backend) {
+    InboxStore store = backend.create();
+    Instant now = backend.start();
+    String id = id();
+    acquire(store, id, "old", now);
+    Expect.isFalse(store.markProcessed("contract", id, "old", now.plus(LEASE)), "lease boundary");
+    Expect.isFalse(
+        store.markProcessed("contract", id, "old", now.plus(RETENTION)), "retention boundary");
+    Instant later = now.plus(RETENTION).plusMillis(1);
+    Expect.equal(
+        Acquisition.Status.ACQUIRED, acquire(store, id, "new", later).status(), "takeover");
+    Expect.isTrue(store.markProcessed("contract", id, "new", later), "new live owner");
   }
 
   private static void sourceAndId(Backend backend) {

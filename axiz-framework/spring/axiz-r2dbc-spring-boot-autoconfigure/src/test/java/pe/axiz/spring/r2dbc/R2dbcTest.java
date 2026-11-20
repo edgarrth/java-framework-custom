@@ -192,7 +192,7 @@ class R2dbcTest {
   @Test
   void auditorIsTheCallerOfTheRequest() {
     RequestReactiveAuditor auditor = new RequestReactiveAuditor();
-    assertEquals("system", auditor.getCurrentAuditor().block(T));
+    assertEquals("unattributed", auditor.getCurrentAuditor().block(T));
     RequestMetadata user =
         RequestMetadata.builder("corr-12345678", "req-12345678")
             .clientId("app")
@@ -206,6 +206,31 @@ class R2dbcTest {
     try (RequestContext.Scope s = RequestContext.open(machine)) {
       assertEquals("batch-app", auditor.getCurrentAuditor().block(T));
     }
+  }
+
+  @Test
+  void blankIdentitiesAreExplicitlyUnattributed() {
+    RequestReactiveAuditor auditor = new RequestReactiveAuditor();
+    RequestMetadata machine =
+        RequestMetadata.builder("corr-12345678", "req-12345678")
+            .subject(" ")
+            .clientId("batch-app")
+            .build();
+    assertEquals(
+        "batch-app",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, machine)).block(T));
+    RequestMetadata blank =
+        RequestMetadata.builder("corr-12345678", "req-12345678")
+            .subject(" ")
+            .clientId("\t")
+            .build();
+    assertEquals(
+        "unattributed",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, blank)).block(T));
+    RequestMetadata missing = RequestMetadata.builder("corr-12345678", "req-12345678").build();
+    assertEquals(
+        "unattributed",
+        auditor.getCurrentAuditor().contextWrite(Context.of(RequestContext.KEY, missing)).block(T));
   }
 
   @Test

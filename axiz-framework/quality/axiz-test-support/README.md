@@ -9,6 +9,7 @@ Test fixtures for layer 1: mutable clock, recording publisher, metric assertions
 <dependency>
   <groupId>pe.axiz</groupId>
   <artifactId>axiz-test-support</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -19,6 +20,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `MetricAssertions` | Reads generic event metrics in tests without depending on a test framework. |
+| `InMemoryCrudService` | Map-backed CRUD fixture with atomic update/delete version checks. |
 | `MutableClock` | Clock that tests can move forward or set. |
 | `RecordingEventPublisher` | Publisher that records events; can be switched to fail to test retries. |
 | `FakeR2dbc` | In-memory R2DBC driver for unit tests, reporting itself as PostgreSQL (`$n` bind markers): statements are matched by a regular expression on their SQL and answered by scripted functions of the bound values; every execution, bind and transaction event is recorded for assertions. |
@@ -33,3 +35,8 @@ fixture verifies local credential selection and signing; it does not authenticat
 ## Tests
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl quality/axiz-test-support verify`.
+
+`InMemoryCrudService` requires a version extractor in addition to its ID and update functions.
+Update and delete check the supplied expected version atomically: missing versions are invalid,
+stale updates conflict and stale deletes fail their precondition. The update function should
+advance the fixture's version. This test double does not provide production authorization.

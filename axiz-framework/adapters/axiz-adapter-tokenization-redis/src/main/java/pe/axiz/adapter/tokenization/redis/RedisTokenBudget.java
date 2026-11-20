@@ -30,13 +30,29 @@ public final class RedisTokenBudget implements TokenBudget {
       TokenBudgetPolicy policy,
       TokenBudgetLeaseAlarm alarm,
       RateLimiter limiter) {
-    protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm);
+    this(connection, namespace, policy, alarm, limiter, TokenBudgetOwner.process());
+  }
+
+  public RedisTokenBudget(
+      StatefulRedisConnection<String, String> connection,
+      String namespace,
+      TokenBudgetPolicy policy,
+      TokenBudgetLeaseAlarm alarm,
+      RateLimiter limiter,
+      TokenBudgetOwner owner) {
+    protocol = new RedisBudgetProtocol(connection, namespace, policy, alarm, owner);
     redis = connection.sync();
     this.limiter = Objects.requireNonNull(limiter);
   }
 
   @Override
   public Permit acquire(TokenCaller caller, TokenOperation operation, VaultScope scope) {
+    return acquire(caller, operation, scope, protocol.newLease());
+  }
+
+  @Override
+  public Permit acquire(
+      TokenCaller caller, TokenOperation operation, VaultScope scope, UUID operationId) {
     BudgetKeys keys = new BudgetKeys(protocol.namespace, caller, scope);
     consume(keys.counters(protocol.policy, operation));
     UUID lease = protocol.newLease();
@@ -48,7 +64,7 @@ public final class RedisTokenBudget implements TokenBudget {
               RedisBudgetProtocol.ACQUIRE,
               ScriptOutputType.INTEGER,
               leases,
-              protocol.arguments(lease));
+              protocol.arguments(lease, operationId, operation, leases));
       if (granted == null || (granted != 0 && granted != 1))
         throw TokenErrors.failure(TokenErrors.UNAVAILABLE);
     } catch (RuntimeException failure) {

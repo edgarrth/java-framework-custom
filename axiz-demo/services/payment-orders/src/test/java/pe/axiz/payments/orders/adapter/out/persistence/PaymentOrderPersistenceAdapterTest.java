@@ -2,7 +2,9 @@ package pe.axiz.payments.orders.adapter.out.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
+import jakarta.persistence.EntityManager;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
@@ -116,7 +118,7 @@ class PaymentOrderPersistenceAdapterTest {
   final BlindIndex blindIndex =
       new BlindIndex(Map.of("i1", "k".repeat(32).getBytes(StandardCharsets.UTF_8)), "i1");
   final PaymentOrderPersistenceAdapter adapter =
-      new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex);
+      new PaymentOrderPersistenceAdapter(rows.repository(), blindIndex, mock(EntityManager.class));
 
   static PaymentOrder order(UUID id, String customer) {
     return PaymentOrder.register(

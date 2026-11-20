@@ -29,7 +29,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `DatabaseClientReactiveSql` | `ReactiveSql` over Spring's `DatabaseClient`: statements join the reactive transaction of the caller (`@Transactional` or `TransactionalOperator`) and are observed by the R2DBC instrumentation. |
 | `FlywayPasswordCustomizer` | Gives Flyway a JDBC connection authenticated with an IAM token (the migration runs once at startup, well within the token's lifetime). |
 | `ReaderDatabase` | The reader endpoint of the Aurora cluster (`axiz.r2dbc.reader.url`): a separate pool for queries that tolerate replica lag. |
-| `RequestReactiveAuditor` | Auditor of `createdBy`/`updatedBy` for reactive code: the end user, or the calling application for machine-to-machine requests, read from the request metadata that the web and security starters put in the Reactor context (or the thread-local of a consumer thread); `system` otherwise. |
+| `RequestReactiveAuditor` | Auditor of `createdBy`/`updatedBy` for reactive code: the end user, or the calling application for machine-to-machine requests, read from the request metadata that the web and security starters put in the Reactor context (or the thread-local of a consumer thread); `unattributed` otherwise. |
 
 ## Tests
 
@@ -50,3 +50,6 @@ its decorators. PostgreSQL uses `sslMode=verify-full` (or native `ssl=true` with
 mode). Opaque TLS context, engine, parameter or hostname-verifier callbacks are rejected by this
 validator because their later behavior cannot be inferred from the mode. Configure the native
 CA option for each destination instead of installing a callback that replaces peer validation.
+
+Background jobs should supply an explicit workload identity through their auditor provider;
+missing or blank identity is marked `unattributed`, never silently attributed to a trusted system.
