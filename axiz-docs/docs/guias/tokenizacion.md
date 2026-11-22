@@ -132,7 +132,7 @@ la tabla o las claves. PITR/SSE no sustituyen el cifrado del campo. Las polític
 usar los contextos enrutados completos, incluyendo la ruta y el propósito codificado.
 
 `VaultRotator` migra HMAC y sobres por lotes con barreras de versión, reservas permanentes de
-identificadores y auditoría confirmada. Mantener lectores antiguos hasta terminar la migración
+identificadores y auditoría confirmada. Los lectores de la versión de clave saliente se mantienen hasta terminar la rotación
 y comprobar referencias. `VaultRetention` elimina registros vencidos e índices mediante la misma
 transacción condicionada, sin descifrar; respeta autorización por fila y límites de página/tiempo.
 No reutilizar identificadores retirados. Respaldos y restauraciones necesitan su propio plan de

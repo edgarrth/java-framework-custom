@@ -27,12 +27,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-inbox verify`.
 
-## JDBC extraction in 2.0
+## JDBC
 
-The JDBC implementation and SQL resources now live in `axiz-adapter-inbox-jdbc`; this module contains
-framework-neutral contracts and orchestration. `TransactionRunner` remains in
-`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
-`runtime` scope in a service. See [JDBC migration](../../docs/architecture/JDBC.md).
+The JDBC implementation and SQL resources live in `axiz-adapter-inbox-jdbc`; this module contains
+framework-neutral contracts and orchestration, and `TransactionRunner` lives in
+`pe.axiz.core.commons.tx`. A service adds the JDBC adapter of a capability with `axiz add` (or the
+Initializr); see [JDBC boundaries](../../docs/architecture/JDBC.md).
 
 ## Retention and recovery
 
@@ -43,15 +43,8 @@ lease, never deleted by retention. A handler must finish within its lease or enf
 fencing/idempotency itself; the inbox does not cancel a late external effect.
 
 DynamoDB keeps `expiresAt` for in-progress records and adds `ttl` only when processing completes.
-When upgrading a table with legacy in-progress `ttl` attributes, stop consumers, disable TTL and
-wait for DynamoDB to finish disabling it. Copy each legacy retention deadline to `expiresAt`
-and remove `ttl` in the same conditional update, checking the status and original values.
-Reconcile records with missing deadlines or retention that does not outlive the lease;
-do not invent a new retention horizon. Then re-enable TTL on `ttl` and resume.
-Completion requires `expiresAt`; partially migrated records fail closed.
-TTL deletions already in progress cannot be undone; reconcile
-those messages before reopening. This migration is operated by the table owner, never silently
-executed by the framework. Monitor and recover abandoned in-progress records explicitly.
+Completion requires `expiresAt`; a record without it fails closed. Monitor and recover abandoned
+in-progress records explicitly.
 
 The retention horizon is measured from successful acquisition/takeover, not from completion.
 The supported processing window ends before the lease deadline, which is strictly earlier than

@@ -191,12 +191,12 @@ public static java.lang.String key(pe.axiz.spring.security.AxizSecurityPropertie
 }
 
 public final class pe.axiz.spring.security.RateLimitWebFilter implements org.springframework.web.server.WebFilter {
-public pe.axiz.spring.security.RateLimitWebFilter(pe.axiz.core.security.AsyncRateLimiter, pe.axiz.spring.security.RateLimitRules, pe.axiz.spring.security.SecurityProblems);
+public pe.axiz.spring.security.RateLimitWebFilter(pe.axiz.core.security.AsyncRateLimiter, pe.axiz.spring.security.RateLimitRules, pe.axiz.spring.security.SecurityProblems, reactor.core.scheduler.Scheduler);
 public reactor.core.publisher.Mono<java.lang.Void> filter(org.springframework.web.server.ServerWebExchange, org.springframework.web.server.WebFilterChain);
 }
 
 public final class pe.axiz.spring.security.ReactiveProblemHandlers implements org.springframework.security.web.server.ServerAuthenticationEntryPoint,org.springframework.security.web.server.authorization.ServerAccessDeniedHandler {
-public pe.axiz.spring.security.ReactiveProblemHandlers(pe.axiz.spring.security.SecurityProblems);
+public pe.axiz.spring.security.ReactiveProblemHandlers(pe.axiz.spring.security.SecurityProblems, reactor.core.scheduler.Scheduler);
 public reactor.core.publisher.Mono<java.lang.Void> commence(org.springframework.web.server.ServerWebExchange, org.springframework.security.core.AuthenticationException);
 public reactor.core.publisher.Mono<java.lang.Void> handle(org.springframework.web.server.ServerWebExchange, org.springframework.security.access.AccessDeniedException);
 }

@@ -33,7 +33,22 @@ public final class AxizCli {
                 .println(commandLine.getColorScheme().errorText("error: " + e.getMessage()));
             return ExitCodes.PROBLEMS;
           }
-          throw e;
+          if (environment.env().containsKey("AXIZ_DEBUG")) throw e;
+          // a defect of the CLI or of its templates: one actionable line, the trace on demand
+          commandLine
+              .getErr()
+              .println(
+                  commandLine
+                      .getColorScheme()
+                      .errorText(
+                          "error: axiz "
+                              + Version.cli()
+                              + " failed unexpectedly ("
+                              + e.getClass().getSimpleName()
+                              + (e.getMessage() == null ? "" : ": " + e.getMessage())
+                              + "). Report it with the command you ran; set AXIZ_DEBUG=1 to"
+                              + " print the stack trace."));
+          return ExitCodes.INTERNAL;
         });
     return cli;
   }

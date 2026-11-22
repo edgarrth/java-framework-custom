@@ -6,7 +6,7 @@ Frequent beneficiaries of each customer.
 |---|---|
 | Archetype | `business`: Business rules and ownership of domain data |
 | Structure | `layered` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `dynamodb` |
 | axiz | `2.0.0` |

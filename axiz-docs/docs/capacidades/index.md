@@ -12,54 +12,54 @@ Catálogo de lo que `axiz add <capacidad>` (y el initializr) agrega a un servici
 | [`observability`](observability.md) | OpenTelemetry traces and metrics through Micrometer (OTLP), no Java agent | business, core, gateway, ux, support, event-processor, batch |
 | [`metrics`](metrics.md) | Generic event metrics (count, duration, amounts by currency, values) with bounded tags | business, core, gateway, ux, support, event-processor, batch |
 | [`config`](config.md) | ConfigMaps mounted as files (axiz-common, &lt;app&gt;, &lt;app&gt;-errors; no Kubernetes API access), required keys check | business, core, gateway, ux, support, event-processor, batch |
-| [`config-aws`](config-aws.md) | Opt-in AWS Parameter Store bootstrap with process-selected environment and destination | – |
+| [`config-aws`](config-aws.md) | Opt-in AWS Parameter Store bootstrap with process-selected environment and destination | ninguno |
 | [`i18n`](i18n.md) | Localized messages and problem details (es-PE by default) from messages*.properties | business, core, ux, support |
 | [`sensitive`](sensitive.md) | Masking of sensitive fields in responses, logs and audit by sensitivity level | business, core, gateway, ux, support, event-processor, batch |
 | [`security`](security.md) | OAuth2 resource server (trusted issuers, audiences, claims), caller context, rate limit | business, core, gateway, ux, support, event-processor |
-| [`security-redis`](security-redis.md) | Shared rate limits using Redis with the managed TLS transport | – |
+| [`security-redis`](security-redis.md) | Shared rate limits using Redis with the managed TLS transport | ninguno |
 | [`http-client`](http-client.md) | Declarative HTTP clients per name with timeouts, retries, circuit breaker, OAuth2 client credentials and header propagation | core, gateway, ux |
 | [`resilience`](resilience.md) | Timeouts, retry with backoff, circuit breaker and bulkhead policies by name | core, gateway, ux |
-| [`soap`](soap.md) | SOAP 1.1/1.2 clients with WS-Security, timeouts and observations | – |
-| [`secrets`](secrets.md) | Ordered secret sources and bounded TTL cache, independent of the provider | business, core, gateway |
-| [`secrets-file`](secrets-file.md) | Mounted secret files and environment variables, with native refreshed snapshots | – |
-| [`secrets-aws`](secrets-aws.md) | Explicit Secrets Manager and Parameter Store sources with shared AWS identity | – |
-| [`jpa`](jpa.md) | PostgreSQL with JPA, Flyway, auditing and encrypted columns | – |
-| [`jpa-aws`](jpa-aws.md) | AWS JDBC wrapper for Aurora failover and optional IAM authentication | – |
-| [`r2dbc`](r2dbc.md) | Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, auditing, encrypted and money columns, reader endpoint | – |
-| [`r2dbc-aws`](r2dbc-aws.md) | AWS IAM authentication with independent writer and reader credentials | – |
-| [`dynamodb`](dynamodb.md) | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking | – |
-| [`dynamodb-cursor`](dynamodb-cursor.md) | Authenticated DynamoDB cursors bound to the query, with shared rotating keys | – |
+| [`soap`](soap.md) | SOAP 1.1/1.2 clients with WS-Security, timeouts and observations | ninguno |
+| [`secrets`](secrets.md) | Ordered secret sources and bounded TTL cache, independent of the provider | business, core, gateway, batch |
+| [`secrets-file`](secrets-file.md) | Mounted secret files and environment variables, with native refreshed snapshots | ninguno |
+| [`secrets-aws`](secrets-aws.md) | Explicit Secrets Manager and Parameter Store sources with shared AWS identity | ninguno |
+| [`jpa`](jpa.md) | PostgreSQL with JPA, Flyway, auditing and encrypted columns | ninguno |
+| [`jpa-aws`](jpa-aws.md) | AWS JDBC wrapper for Aurora failover and optional IAM authentication | ninguno |
+| [`r2dbc`](r2dbc.md) | Aurora PostgreSQL for reactive services over R2DBC (non-blocking), Flyway, auditing, encrypted and money columns, reader endpoint | ninguno |
+| [`r2dbc-aws`](r2dbc-aws.md) | AWS IAM authentication with independent writer and reader credentials | ninguno |
+| [`dynamodb`](dynamodb.md) | DynamoDB enhanced client, repositories with cursor pagination and optimistic locking | ninguno |
+| [`dynamodb-cursor`](dynamodb-cursor.md) | Authenticated DynamoDB cursors bound to the query, with shared rotating keys | ninguno |
 | [`cache`](cache.md) | @AxizCacheable with Mono/Flux support, L1 Caffeine | ux |
-| [`cache-redis`](cache-redis.md) | L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages | – |
+| [`cache-redis`](cache-redis.md) | L2 cache on ElastiCache (Redis/Valkey), tolerant to Redis outages | ninguno |
 | [`storage`](storage.md) | Synchronous and native asynchronous object storage ports and Spring facades | batch |
 | [`messaging`](messaging.md) | CloudEvents ports, handlers, routes and Spring facade | event-processor |
 | [`storage-s3`](storage-s3.md) | Object storage on S3 (streaming, presigned URLs, metadata), observed | batch |
-| [`sequence`](sequence.md) | Business sequences (prefix, width, daily or monthly reset) on JDBC, native R2DBC or DynamoDB | – |
+| [`sequence`](sequence.md) | Business sequences (prefix, width, daily or monthly reset) on JDBC, native R2DBC or DynamoDB | ninguno |
 | [`messaging-kafka`](messaging-kafka.md) | CloudEvents over Kafka with retries, DLQ and trace propagation | event-processor |
-| [`messaging-msk`](messaging-msk.md) | MSK IAM authentication through the shared AWS credential policy | – |
-| [`messaging-sqs`](messaging-sqs.md) | CloudEvents over SQS (standard and FIFO) consumers and publishers with DLQ | – |
-| [`messaging-sns`](messaging-sns.md) | CloudEvents publishing to SNS topics (fan-out) | – |
-| [`outbox`](outbox.md) | Transactional outbox in Aurora (JDBC or R2DBC) with a relay to MSK, SNS or SQS (at least once) | – |
+| [`messaging-msk`](messaging-msk.md) | MSK IAM authentication through the shared AWS credential policy | ninguno |
+| [`messaging-sqs`](messaging-sqs.md) | CloudEvents over SQS (standard and FIFO) consumers and publishers with DLQ | ninguno |
+| [`messaging-sns`](messaging-sns.md) | CloudEvents publishing to SNS topics (fan-out) | ninguno |
+| [`outbox`](outbox.md) | Transactional outbox in Aurora (JDBC or R2DBC) with a relay to MSK, SNS or SQS (at least once) | ninguno |
 | [`inbox`](inbox.md) | Consumer de-duplication (inbox) with leases and retention, JDBC, R2DBC or DynamoDB | event-processor |
 | [`idempotency`](idempotency.md) | Idempotency-Key for POST/PATCH with stored responses (in memory only in local/test; shared environments need idempotency-redis or idempotency-dynamodb) | gateway |
-| [`idempotency-redis`](idempotency-redis.md) | Idempotency store on ElastiCache (Redis/Valkey) | – |
-| [`idempotency-dynamodb`](idempotency-dynamodb.md) | Idempotency store on DynamoDB (conditional writes and TTL) | – |
-| [`saga`](saga.md) | Orchestrated sagas with persisted state, step retries and compensations | – |
-| [`lock`](lock.md) | Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb) | – |
-| [`lock-redis`](lock-redis.md) | Distributed locks on ElastiCache (Redis/Valkey) | – |
-| [`lock-dynamodb`](lock-dynamodb.md) | Distributed locks on DynamoDB (leases) | – |
-| [`scheduling`](scheduling.md) | @Scheduled jobs with ShedLock (JDBC, R2DBC or DynamoDB) so only one replica runs them | – |
-| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery | business, core, gateway, batch |
-| [`audit-kafka`](audit-kafka.md) | Audit events published to MSK | – |
-| [`audit-sqs`](audit-sqs.md) | Audit events published to SQS | – |
-| [`crypto`](crypto.md) | Field encryption, blind indices with independent rotation, and password hashing | – |
-| [`crypto-kms`](crypto-kms.md) | Envelope encryption with AWS KMS and bounded data-key reuse | – |
-| [`carddata`](carddata.md) | Semantic PAN and transient authentication-data types; masking by default, no vault | – |
-| [`tokenization`](tokenization.md) | Authenticated remote token client without vault storage, keys or provider SDKs | – |
-| [`tokenization-vault`](tokenization-vault.md) | Central token vault with explicit policies, durable audit and distributed budgets | – |
-| [`tokenization-vault-dynamodb`](tokenization-vault-dynamodb.md) | Explicit central vault table, atomic uniqueness and key-rotation controls | – |
-| [`tokenization-vault-redis`](tokenization-vault-redis.md) | Dedicated authenticated TLS connection for distributed fail-closed token budgets | – |
-| [`tokenization-pan`](tokenization-pan.md) | PAN profile for the generic vault; independent from DNI-only deployments | – |
-| [`tenancy`](tenancy.md) | Multi-tenancy from the token or a trusted header, propagated to logs, metrics and data | – |
-| [`featureflags`](featureflags.md) | Feature flags (OpenFeature) by percentage, channel, tenant and rules, from the ConfigMap | – |
-| [`notification`](notification.md) | Templated notifications (email, SMS, push) published as events | – |
+| [`idempotency-redis`](idempotency-redis.md) | Idempotency store on ElastiCache (Redis/Valkey) | ninguno |
+| [`idempotency-dynamodb`](idempotency-dynamodb.md) | Idempotency store on DynamoDB (conditional writes and TTL) | ninguno |
+| [`saga`](saga.md) | Orchestrated sagas with persisted state, step retries and compensations | ninguno |
+| [`lock`](lock.md) | Distributed locks (in memory only in local/test; shared environments need lock-redis or lock-dynamodb) | ninguno |
+| [`lock-redis`](lock-redis.md) | Distributed locks on ElastiCache (Redis/Valkey) | ninguno |
+| [`lock-dynamodb`](lock-dynamodb.md) | Distributed locks on DynamoDB (leases) | ninguno |
+| [`scheduling`](scheduling.md) | @Scheduled jobs with ShedLock (JDBC, R2DBC or DynamoDB) so only one replica runs them | ninguno |
+| [`audit`](audit.md) | @Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery and a keyed HMAC chain outside local/test/ci | business, core, gateway, batch |
+| [`audit-kafka`](audit-kafka.md) | Audit events published to MSK | ninguno |
+| [`audit-sqs`](audit-sqs.md) | Audit events published to SQS | ninguno |
+| [`crypto`](crypto.md) | Field encryption, blind indices with independent rotation, and password hashing | ninguno |
+| [`crypto-kms`](crypto-kms.md) | Envelope encryption with AWS KMS and bounded data-key reuse | ninguno |
+| [`carddata`](carddata.md) | Semantic PAN and transient authentication-data types; masking by default, no vault | ninguno |
+| [`tokenization`](tokenization.md) | Authenticated remote token client without vault storage, keys or provider SDKs | ninguno |
+| [`tokenization-vault`](tokenization-vault.md) | Central token vault with explicit policies, durable audit and distributed budgets | ninguno |
+| [`tokenization-vault-dynamodb`](tokenization-vault-dynamodb.md) | Explicit central vault table, atomic uniqueness and key-rotation controls | ninguno |
+| [`tokenization-vault-redis`](tokenization-vault-redis.md) | Dedicated authenticated TLS connection for distributed fail-closed token budgets | ninguno |
+| [`tokenization-pan`](tokenization-pan.md) | PAN profile for the generic vault; independent from DNI-only deployments | ninguno |
+| [`tenancy`](tenancy.md) | Multi-tenancy from the token or a trusted header, propagated to logs, metrics and data | ninguno |
+| [`featureflags`](featureflags.md) | Feature flags (OpenFeature) by percentage, channel, tenant and rules, from the ConfigMap | ninguno |
+| [`notification`](notification.md) | Templated notifications (email, SMS, push) published as events | ninguno |

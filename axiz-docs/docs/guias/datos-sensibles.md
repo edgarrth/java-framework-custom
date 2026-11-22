@@ -20,7 +20,7 @@ public record BeneficiaryView(
 | `CRITICAL` | CVV, PIN, contraseñas, secretos: siempre enmascarado completo |
 
 Máscaras: `EMAIL`, `PHONE`, `DOCUMENT`, `CARD`, `PARTIAL`, `NAME` (inicial de cada palabra:
-`Ana Torres → A** T*****`), `FULL` y `NONE`.
+`Ana Torres -> A** T*****`), `FULL` y `NONE`.
 
 ## Dónde se enmascara
 
@@ -63,19 +63,28 @@ igual que un cuerpo que no es JSON válido.
 ## Logs
 
 - JSON estructurado con traza, span, correlación, tenant y headers de negocio del contexto.
-- Log HTTP de entrada y salida con **lista blanca de headers** (nunca `Authorization` ni `Cookie`) y
-  cuerpos enmascarados y truncados.
+- Log HTTP de entrada y salida con **lista blanca de headers** (nunca `Authorization` ni `Cookie`).
+  Los cuerpos (`axiz.logging.http.bodies=true`, enmascarados y truncados) solo se permiten en
+  `local`, `test` y `ci`: en cualquier otro ambiente el servicio no arranca, porque un cuerpo libre
+  puede llevar datos de autenticación que ningún enmascarador garantiza detectar.
 - `@LogOperation` registra entrada y salida de un método con duración, resultado y argumentos
   enmascarados cuando se solicitan; `logArguments=false` y `logResult=false` por defecto.
   `@NoLog` excluye un parámetro, un resultado o un método.
 - Prohibido `System.out` y `printStackTrace` (ArchUnit y Checkstyle).
 
 La [clasificación de claves](../referencia/clasificacion-sensible.md) se genera desde el código.
-El reconocimiento separa camelCase, guiones y separadores y compara la clave completa, las
-últimas dos palabras y la última palabra, incluida su variante sin dígitos finales. Así cubre
-`customerPassword` y `billing_card_number`; no identifica cualquier abreviatura del negocio.
-Amplía `axiz.sensitive.keys` para esos nombres. La detección por valor de PAN complementa las
-claves y no se puede desactivar en ambientes desplegados; no identifica contraseñas arbitrarias.
+El reconocimiento separa camelCase, guiones y separadores y busca cada término sensible en
+**cualquier posición** del nombre, con o sin dígitos finales: cubre `customerPassword`,
+`billing_card_number`, `cvvCode`, `pinCode`, `passwordConfirmation` y `privateKeyPem`. Un término
+seguido de una palabra que describe metadatos suyos (`tokenCount`, `pinAttempts`, `passwordPolicy`,
+`tokenUrl`, `secretArn`) no se considera sensible; si coinciden varios términos decide el más
+sensible. No identifica cualquier abreviatura del negocio: amplía `axiz.sensitive.keys` para esos
+nombres. La regla ArchUnit de datos de tarjeta usa el mismo reconocimiento.
+
+La detección por valor de PAN complementa las claves y no se puede desactivar en ambientes
+desplegados. Reconoce 12 a 19 dígitos que cumplen Luhn, con dígitos Unicode (por ejemplo de ancho
+completo) y grupos separados por hasta dos espacios, tabuladores, espacios no separables, guiones o
+rayas, `.`, `/` o `_`. No identifica contraseñas arbitrarias.
 
 Hibernate puede imprimir el valor rechazado por una restricción. El starter JPA desactiva la
 impresión SQL directa y los loggers SQL/JDBC de Hibernate, incluidos errores, bindings y valores

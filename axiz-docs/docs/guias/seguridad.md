@@ -56,6 +56,15 @@ authorities quedan como `SCOPE_<scope>` y `ROLE_<ROL>`:
 @PreAuthorize("hasAuthority('SCOPE_payments:write')")
 ```
 
+Spring lee y valida el cuerpo de la petición antes de que el interceptor de `@PreAuthorize` del
+controlador se ejecute; sin más, un llamante sin el scope recibiría un `400` con la lista de campos
+del contrato. Axiz evalúa antes de leer el cuerpo toda expresión `@PreAuthorize` del controlador
+(de método o de clase) que no lea argumentos: `HandlerInterceptor` en servlet y `WebFilter`
+posterior a la cadena de seguridad en WebFlux. El llamante sin permiso recibe `403` sin conocer el
+contrato (OWASP API5). Las expresiones que leen argumentos (`#id`, `#p0`) solo pueden decidirse
+después del binding y conservan ese orden; para endpoints sensibles, autoriza primero por scope y
+deja la comprobación de argumentos en el caso de uso.
+
 **Personas y aplicaciones.** Un token de client credentials es de una aplicación, no de una
 persona, y las políticas de acceso dependen de esa diferencia (`Caller.isMachine()`). El framework
 lo reconoce de tres formas:
@@ -216,7 +225,7 @@ La demo aplica esta matriz en payments-business:
 |---|---|---|---|
 | Crear orden | solo para sí mismo | no | no |
 | Cambiar estado | no | sí | no |
-| Ver una orden | solo las suyas (otras → 404) | sí | sí |
+| Ver una orden | solo las suyas (otras -> 404) | sí | sí |
 | Listar órdenes | solo las suyas | sí | sí |
 
 `PaymentAccessMatrixTest` cubre cada celda de la tabla. Además, core-integration envía el titular
@@ -280,7 +289,7 @@ control del escritor. Una métrica local o un enqueue exitoso no acredita recepc
 ## Llamadas salientes
 
 - **Client credentials** con token en caché y renovación anticipada.
-- **Token relay** solo dentro de la misma cadena de audiencias (BFF → dominio).
+- **Token relay** solo dentro de la misma cadena de audiencias (BFF -> dominio).
 - **API key** y **mTLS** con material desde Secrets Manager o SSL bundles.
 
 Ver [Clientes HTTP y SOAP](clientes.md).

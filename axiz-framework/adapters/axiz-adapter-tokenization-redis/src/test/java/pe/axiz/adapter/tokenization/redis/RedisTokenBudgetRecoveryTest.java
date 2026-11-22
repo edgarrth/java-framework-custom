@@ -59,14 +59,16 @@ class RedisTokenBudgetRecoveryTest {
           + ":leases|1700000000|123456";
 
   @Test
-  void inventorySeparatesLegacyAndBindsIdentityWithoutTurningAgeIntoPermission() {
+  void inventoryFlagsUnknownFormatsAndBindsIdentityWithoutTurningAgeIntoPermission() {
     var f = new Fixture();
-    UUID legacy = UUID.randomUUID();
-    f.page(Map.of(LEASE.toString(), ENCODED, legacy.toString(), "1700000000.123456"));
+    UUID unknown = UUID.randomUUID();
+    f.page(Map.of(LEASE.toString(), ENCODED, unknown.toString(), "1700000000.123456"));
     var inventory = f.recovery.inspect(SCOPE, "0");
     assertEquals("0", inventory.nextCursor());
     assertEquals(2, inventory.total());
-    assertEquals(List.of(legacy), inventory.legacyReservations());
+    assertEquals(
+        List.of(pe.axiz.core.crypto.Hashing.sha256Hex(unknown.toString())),
+        inventory.invalidEntryDigests());
     var reservation = inventory.reservations().getFirst();
     assertEquals(new TokenBudgetOwner("worker-7", INCARNATION), reservation.owner());
     assertEquals(OPERATION, reservation.operationId());

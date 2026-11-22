@@ -1,7 +1,7 @@
 # Infraestructura de la bóveda
 
 `vault.cloudformation.json` define la tabla central de esquema 1, sin índices secundarios,
-réplicas ni TTL. Activa cifrado SSE con una clave KMS del operador, PITR de 1–35 días,
+réplicas ni TTL. Activa cifrado SSE con una clave KMS del operador, PITR de 1 a 35 días,
 protección de borrado y conservación de recursos al eliminar o sustituir el stack.
 No se despliega al arrancar la aplicación. El nombre, cuenta, región y claves son del operador.
 

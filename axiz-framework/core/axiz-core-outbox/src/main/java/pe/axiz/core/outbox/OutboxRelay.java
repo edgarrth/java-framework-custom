@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import pe.axiz.core.commons.tx.TransactionRunner;
 import pe.axiz.core.concurrent.LeaseTiming;
 import pe.axiz.core.crypto.PayloadProtector;
+import pe.axiz.core.errors.Failures;
 import pe.axiz.core.messaging.EventPublisher;
 import pe.axiz.core.resilience.Backoff;
 
@@ -230,11 +231,11 @@ public final class OutboxRelay {
         if (giveUp) {
           failed++;
           LOG.error(
-              "Outbox entry {} ({}) failed permanently after {} attempts; failureType={}",
+              "Outbox entry {} ({}) failed permanently after {} attempts; failure={}",
               r.id(),
               r.eventType(),
               attempts,
-              e.getClass().getSimpleName());
+              Failures.describe(e));
         } else {
           retried++;
           LOG.warn(

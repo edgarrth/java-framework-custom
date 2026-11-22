@@ -43,7 +43,7 @@ public class AxizReactiveHexagonalAutoConfiguration {
 
   @Bean
   @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-  Advisor axizReactiveUseCaseAdvisor(
+  static Advisor axizReactiveUseCaseAdvisor(
       ObjectProvider<ReactiveTransactionManager> tx,
       ObjectProvider<ObservationRegistry> observations) {
     var pointcut =
@@ -60,7 +60,8 @@ public class AxizReactiveHexagonalAutoConfiguration {
         new DefaultPointcutAdvisor(
             pointcut,
             new ReactiveUseCaseInterceptor(
-                tx::getIfAvailable, observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
+                tx::getIfAvailable,
+                () -> observations.getIfAvailable(() -> ObservationRegistry.NOOP)));
     advisor.setOrder(50);
     return advisor;
   }

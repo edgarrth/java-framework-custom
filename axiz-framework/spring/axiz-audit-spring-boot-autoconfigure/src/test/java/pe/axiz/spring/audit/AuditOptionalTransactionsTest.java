@@ -35,6 +35,7 @@ class AuditOptionalTransactionsTest {
   void imperativeAuditWorksWhenTheTransactionCapabilityIsAbsent() {
     var events = new ArrayList<AuditEvent>();
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withClassLoader(new FilteredClassLoader("org.springframework.transaction"))
         .withConfiguration(
             AutoConfigurations.of(AopAutoConfiguration.class, AxizAuditAutoConfiguration.class))
@@ -55,6 +56,7 @@ class AuditOptionalTransactionsTest {
   void nativeAuditWorksWhenTheTransactionCapabilityIsAbsent() {
     var events = new ArrayList<AuditEvent>();
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withClassLoader(new FilteredClassLoader("org.springframework.transaction"))
         .withConfiguration(
             AutoConfigurations.of(

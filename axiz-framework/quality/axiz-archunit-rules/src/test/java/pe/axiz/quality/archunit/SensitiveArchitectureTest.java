@@ -21,8 +21,11 @@ class SensitiveArchitectureTest {
   @Test
   void cardNamesRequireSemanticTypesAndUnsupportedDataCannotBeModeled() {
     for (Class<?> bad :
-        List.of(DataShapes.RawPan.class, DataShapes.NumericPan.class, DataShapes.Unsupported.class))
-      assertTrue(fails(CardDataScope.EDGE, bad), bad.getName());
+        List.of(
+            DataShapes.RawPan.class,
+            DataShapes.NumericPan.class,
+            DataShapes.Unsupported.class,
+            DataShapes.InnerTerms.class)) assertTrue(fails(CardDataScope.EDGE, bad), bad.getName());
     for (Class<?> good :
         List.of(DataShapes.TypedPan.class, DataShapes.Truncated.class, DataShapes.CardToken.class))
       assertFalse(fails(CardDataScope.EDGE, good), good.getName());

@@ -19,11 +19,11 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizSequenceAutoConfiguration` | Atomic business sequences on Aurora (counter table) or DynamoDB (atomic counter). |
-| `AxizSequenceDynamoDbAutoConfiguration` | DynamoDB atomic counters (`axiz.sequence.store=dynamodb`). |
-| `AxizSequenceR2dbcAutoConfiguration` | Independent native PostgreSQL counter reservations for reactive services. |
 | `AxizSequenceProperties` | Business sequences (`axiz.sequence.*`), e.g. |
 | `Sequences` | Generators for the configured sequences; unknown names fail fast. |
 | `ReactiveSequences` | Deferred `Mono<String>` facade over native asynchronous allocation. |
+
+Related types: `AxizSequenceDynamoDbAutoConfiguration` live in `axiz-sequence-dynamodb-spring-boot-autoconfigure`; `AxizSequenceR2dbcAutoConfiguration` live in `axiz-sequence-r2dbc-spring-boot-autoconfigure`.
 
 ## Stack and transaction boundaries
 

@@ -79,3 +79,11 @@ CREATE TABLE payment_daily_usage (
 
 CREATE UNIQUE INDEX payment_order_request_key ON payment_order (customer_id, request_key)
   WHERE request_key IS NOT NULL;
+
+-- Durable audit seal: committed in the same transaction as the order and its outbox records.
+CREATE TABLE IF NOT EXISTS axiz_audit_chain (
+    chain_id VARCHAR(256) PRIMARY KEY,
+    last_sequence BIGINT NOT NULL CHECK (last_sequence >= 0),
+    last_hash VARCHAR(64) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL
+);

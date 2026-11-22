@@ -38,12 +38,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-saga verify`.
 
-## JDBC extraction in 2.0
+## JDBC
 
-The JDBC implementation and SQL resources now live in `axiz-adapter-saga-jdbc`; this module contains
-framework-neutral contracts and orchestration. `TransactionRunner` remains in
-`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
-`runtime` scope in a service. See [JDBC migration](../../docs/architecture/JDBC.md).
+The JDBC implementation and SQL resources live in `axiz-adapter-saga-jdbc`; this module contains
+framework-neutral contracts and orchestration, and `TransactionRunner` lives in
+`pe.axiz.core.commons.tx`. A service adds the JDBC adapter of a capability with `axiz add` (or the
+Initializr); see [JDBC boundaries](../../docs/architecture/JDBC.md).
 
 ## Execution ownership and uncertain effects
 
@@ -56,13 +56,12 @@ connections; do not wrap orchestration in a caller transaction.
 Before calling a participant the orchestrator persists `IN_DOUBT` intent. `SagaStepExecution`
 provides the saga id, step name and increasing state version as a fencing value. Participants
 must enforce fencing and idempotency in their own durable write boundary; passing a number
-alone does not stop a delayed external effect. Legacy steps remain responsible for idempotency.
+alone does not stop a delayed external effect. Steps remain responsible for idempotency.
 
 `StepCheck.notApplied()` means only that an effect is not currently visible: the saga stays
 `IN_DOUBT`. `StepCheck.rejected()` may be returned only when the participant durably guarantees
 that the effect will never arrive (including queued attempts), for example with a cancellation
-tombstone. This is a deliberate behavioral migration: replace `notApplied()` with `rejected()`
-only when that stronger contract is true. Unknown work is never automatically compensated.
+tombstone. Return `rejected()` only when that stronger contract is true. Unknown work is never automatically compensated.
 
-`axiz.saga.execution-lease` defaults to 30 seconds (100 ms–10 minutes). Lease renewal and
+`axiz.saga.execution-lease` defaults to 30 seconds (100 ms to 10 minutes). Lease renewal and
 expiration permit recovery but cannot prove remote work ended. Monitor old `IN_DOUBT` states.

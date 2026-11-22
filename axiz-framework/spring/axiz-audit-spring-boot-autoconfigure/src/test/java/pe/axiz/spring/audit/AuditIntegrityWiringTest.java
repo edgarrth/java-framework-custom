@@ -28,6 +28,7 @@ import pe.axiz.core.secrets.SecretValue;
 class AuditIntegrityWiringTest {
   private ApplicationContextRunner runner() {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=SYNC");
   }
@@ -73,9 +74,18 @@ class AuditIntegrityWiringTest {
 
   @Test
   void noneIsLocalOnlyAndHmacRequiresAnExplicitSeparateKey() {
+    for (String unkeyed : new String[] {"NONE", "HASH"})
+      runner()
+          .withPropertyValues(
+              "axiz.audit.integrity.mode=" + unkeyed, "axiz.config.environment=prod")
+          .run(
+              ctx ->
+                  assertThat(ctx.getStartupFailure())
+                      .hasStackTraceContaining(
+                          "Audit integrity " + unkeyed + " is restricted to local/test/ci"));
     runner()
-        .withPropertyValues("axiz.audit.integrity.mode=NONE")
-        .run(ctx -> assertThat(ctx).hasFailed());
+        .withPropertyValues("axiz.config.environment=prod")
+        .run(ctx -> assertThat(ctx).hasFailed()); // HASH is only the development default
     runner()
         .withPropertyValues("axiz.audit.integrity.mode=NONE", "axiz.config.environment=test")
         .run(ctx -> assertThat(ctx).hasNotFailed());

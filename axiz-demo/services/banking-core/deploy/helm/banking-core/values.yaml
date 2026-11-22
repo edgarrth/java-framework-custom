@@ -72,3 +72,4 @@ externalSecret:
   keys:
   - core-banking-client-secret
   - core-soap-password
+  - audit-hmac-key

@@ -24,12 +24,13 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizR2dbcConverters` | Column converters of axiz types for Spring Data R2DBC: `EncryptedText` is stored as AES-256-GCM ciphertext (an explicit entity.field or purpose:name context, shared with JPA only when the application declares that purpose) and `Money` as its text form (`PEN 150.00`). |
 | `AxizR2dbcEnvironmentPostProcessor` | R2DBC defaults (lowest precedence) suited to Aurora: connections are validated against the server when borrowed and renewed every 10 minutes, so a failover or an expired IAM token never leaves dead connections in the pool; acquiring a connection is bounded so an exhausted pool fails fast instead of queueing requests forever. |
 | `AxizR2dbcFlywayPasswordAutoConfiguration` | With IAM authentication, Flyway connects over JDBC with a token of its own. |
-| `AxizR2dbcIamAutoConfiguration` | IAM database authentication for Aurora (`axiz.r2dbc.iam.enabled=true`): every new connection of the pool, and the Flyway migration at startup, authenticate with a short-lived token signed with the pod's credentials. |
 | `AxizR2dbcProperties` | Aurora PostgreSQL over R2DBC (`axiz.r2dbc.*`). |
 | `DatabaseClientReactiveSql` | `ReactiveSql` over Spring's `DatabaseClient`: statements join the reactive transaction of the caller (`@Transactional` or `TransactionalOperator`) and are observed by the R2DBC instrumentation. |
 | `FlywayPasswordCustomizer` | Gives Flyway a JDBC connection authenticated with an IAM token (the migration runs once at startup, well within the token's lifetime). |
 | `ReaderDatabase` | The reader endpoint of the Aurora cluster (`axiz.r2dbc.reader.url`): a separate pool for queries that tolerate replica lag. |
 | `RequestReactiveAuditor` | Auditor of `createdBy`/`updatedBy` for reactive code: the end user, or the calling application for machine-to-machine requests, read from the request metadata that the web and security starters put in the Reactor context (or the thread-local of a consumer thread); `unattributed` otherwise. |
+
+Related types: `AxizR2dbcIamAutoConfiguration` live in `axiz-r2dbc-aws-spring-boot-autoconfigure`.
 
 ## Tests
 

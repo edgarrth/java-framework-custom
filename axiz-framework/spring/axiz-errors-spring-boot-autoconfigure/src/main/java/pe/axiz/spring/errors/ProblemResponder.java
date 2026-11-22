@@ -14,6 +14,7 @@ import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.errors.AxizException;
 import pe.axiz.core.errors.ErrorCategory;
 import pe.axiz.core.errors.ErrorType;
+import pe.axiz.core.errors.Failures;
 import pe.axiz.core.errors.Problem;
 import pe.axiz.core.errors.ProblemFactory;
 import pe.axiz.core.errors.ProblemJson;
@@ -94,10 +95,11 @@ public class ProblemResponder {
     }
     LOG.atLevel(level)
         .log(
-            "status={} code={} correlationId={} exceptionType={}",
+            "status={} code={} correlationId={} exceptionType={} failure={}",
             problem.status(),
             problem.code(),
             problem.correlationId(),
-            failure.getClass().getName());
+            failure.getClass().getName(),
+            Failures.describe(failure));
   }
 }

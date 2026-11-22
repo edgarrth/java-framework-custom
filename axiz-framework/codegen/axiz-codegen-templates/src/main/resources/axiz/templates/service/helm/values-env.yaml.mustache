@@ -36,6 +36,12 @@ externalSecret:
 config:
   axiz.config.environment: {{item.name}}
   management.tracing.sampling.probability: "{{item.samplingProbability}}"
+{{#caps.audit}}
+  # the audit chain is sealed with a keyed HMAC outside local/test/ci (secret audit-hmac-key)
+  axiz.audit.integrity.mode: HMAC
+  axiz.audit.integrity.hmac-secret: audit-hmac-key
+  axiz.audit.integrity.hmac-key-id: v1
+{{/caps.audit}}
   # Keys this service needs in {{item.name}} (set their values, then remove the comment):
 {{#config.configMapKeys}}
   # {{.}}:

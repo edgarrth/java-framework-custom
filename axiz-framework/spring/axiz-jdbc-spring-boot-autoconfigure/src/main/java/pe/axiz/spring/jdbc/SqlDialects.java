@@ -1,4 +1,4 @@
-package pe.axiz.spring.foundation.jdbc;
+package pe.axiz.spring.jdbc;
 
 import java.sql.Connection;
 import java.sql.SQLException;

@@ -63,7 +63,7 @@ Las integraciones inyectan `AwsIdentity`, una infraestructura declarativa y pasi
 Las aplicaciones pueden aportar beans singleton `AwsCredentialsProvider`. Un bean sin calificador
 es global. `@AwsIdentityFor(service = AwsService.S3)` limita un proveedor a S3;
 `@AwsIdentityFor(capability = AwsCapability.AUDIT)` lo limita a auditoría. Se declara exactamente
-uno de los dos atributos. La precedencia es capacidad → servicio → global → fuente del contexto.
+uno de los dos atributos. La precedencia es capacidad -> servicio -> global -> fuente del contexto.
 `@Primary` resuelve varios candidatos dentro del mismo alcance; una ambigüedad, declaración
 inválida o proveedor no singleton se rechaza al arrancar, aunque su alcance no esté en uso.
 No se exige que las capacidades declaradas estén activas.

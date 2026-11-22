@@ -19,9 +19,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizLockAutoConfiguration` | Leased locks with renewal (`LockTemplate`) on Redis or DynamoDB. |
-| `AxizLockDynamoDbAutoConfiguration` | DynamoDB locks (conditional writes with lease expiry). |
 | `AxizLockProperties` | Distributed locks (`axiz.lock.*`) to serialize work on one resource (e.g. |
-| `AxizLockRedisAutoConfiguration` | Redis locks (SET NX PX with owner token, atomic release and renewal). |
+
+Related types: `AxizLockDynamoDbAutoConfiguration` live in `axiz-lock-dynamodb-spring-boot-autoconfigure`; `AxizLockRedisAutoConfiguration` live in `axiz-lock-redis-spring-boot-autoconfigure`.
 
 ## Tests
 

@@ -255,15 +255,22 @@ public record AxizWebProperties(
   }
 
   /**
-   * JSON output.
+   * JSON reading and writing of the service's own API.
    *
    * @param includeNulls whether null properties are written
+   * @param maxNumberLength longest number accepted
+   * @param maxStringLength longest string accepted
+   * @param maxNestingDepth deepest nesting accepted
+   * @param rejectUnknownProperties whether a request body with a property its type does not declare
+   *     is rejected (400) instead of silently ignored (OWASP API3, mass assignment). HTTP clients
+   *     and event consumers keep reading other parties' payloads tolerantly.
    */
   public record Json(
       @DefaultValue("false") boolean includeNulls,
       @DefaultValue("100") int maxNumberLength,
       @DefaultValue("1048576") int maxStringLength,
-      @DefaultValue("64") int maxNestingDepth) {
+      @DefaultValue("64") int maxNestingDepth,
+      @DefaultValue("true") boolean rejectUnknownProperties) {
     @ConstructorBinding
     public Json {
       if (maxNumberLength < 1 || maxStringLength < 1 || maxNestingDepth < 1)
@@ -271,7 +278,7 @@ public record AxizWebProperties(
     }
 
     public Json(boolean includeNulls) {
-      this(includeNulls, 100, 1048576, 64);
+      this(includeNulls, 100, 1048576, 64, true);
     }
   }
 

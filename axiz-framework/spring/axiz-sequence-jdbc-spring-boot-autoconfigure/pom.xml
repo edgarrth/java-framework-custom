@@ -9,6 +9,7 @@
   <description>JDBC sequence integration</description>
   <properties><axiz.module.name>pe.axiz.spring.sequence.jdbc</axiz.module.name><axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity></properties>
   <dependencies>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId><version>${project.version}</version></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-sequence</artifactId><version>${project.version}</version></dependency>
 
 <dependency><groupId>io.projectreactor.tools</groupId><artifactId>blockhound</artifactId><scope>test</scope></dependency>

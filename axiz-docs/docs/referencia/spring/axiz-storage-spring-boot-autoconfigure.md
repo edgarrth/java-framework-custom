@@ -24,7 +24,8 @@ the caller must send every returned header along with the returned URI.
 | `ReactiveStorage` | Deferred native operations and automatic response cleanup via content(key). |
 | `AxizStorageAutoConfiguration` | In-memory storage for tests and local runs (`axiz.storage.type=memory`). |
 | `AxizStorageProperties` | Object storage (`axiz.storage.*`). |
-| `AxizStorageS3AutoConfiguration` | Amazon S3 storage: streaming upload/download, SSE-KMS, presigned URLs with bounded validity. |
+
+Related types: `AxizStorageS3AutoConfiguration` live in `axiz-storage-s3-spring-boot-autoconfigure`.
 
 ## Tests
 

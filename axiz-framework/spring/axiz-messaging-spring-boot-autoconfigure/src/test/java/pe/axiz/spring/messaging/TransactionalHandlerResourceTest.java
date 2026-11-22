@@ -32,8 +32,6 @@ import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
 import pe.axiz.core.messaging.HandlesEvent;
-import pe.axiz.spring.foundation.InboxCompletion;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import pe.axiz.spring.test.BlockHoundExtension;
 import pe.axiz.test.support.r2dbc.FakeR2dbc;
 import reactor.core.publisher.Mono;

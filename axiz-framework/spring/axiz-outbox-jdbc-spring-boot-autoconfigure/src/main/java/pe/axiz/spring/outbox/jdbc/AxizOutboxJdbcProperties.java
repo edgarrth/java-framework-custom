@@ -3,7 +3,7 @@ package pe.axiz.spring.outbox.jdbc;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
+import pe.axiz.spring.jdbc.SchemaInitializer;
 
 /** JDBC schema and statement settings. */
 @ConfigurationProperties("axiz.outbox")

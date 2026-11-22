@@ -11,7 +11,7 @@ axiz add secrets
 |---|---|
 | Starter | `pe.axiz:axiz-secrets-spring-boot-starter` |
 | Stacks del catálogo | servlet, reactive |
-| Incluida por defecto en | business, core, gateway |
+| Incluida por defecto en | business, core, gateway, batch |
 
 ## Uso
 

@@ -86,9 +86,11 @@ public final class pe.axiz.core.messaging.EventDispatcher$Outcome extends java.l
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
+public java.lang.String failure();
 public java.time.Duration retryAfter();
 public pe.axiz.core.messaging.DeliveryDecision decision();
 public pe.axiz.core.messaging.EventDispatcher$Outcome(pe.axiz.core.messaging.DeliveryDecision, java.time.Duration);
+public pe.axiz.core.messaging.EventDispatcher$Outcome(pe.axiz.core.messaging.DeliveryDecision, java.time.Duration, java.lang.String);
 }
 
 public final class pe.axiz.core.messaging.EventEnvelope {

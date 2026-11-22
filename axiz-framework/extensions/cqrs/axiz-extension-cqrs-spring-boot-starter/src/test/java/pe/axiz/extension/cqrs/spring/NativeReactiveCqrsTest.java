@@ -24,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.core.audit.AuditEvent;
-import pe.axiz.core.audit.AuditTrail;
 import pe.axiz.core.context.RequestContext;
 import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.errors.BusinessException;
@@ -33,9 +32,7 @@ import pe.axiz.core.idempotency.AsyncIdempotencyService;
 import pe.axiz.core.idempotency.AsyncIdempotencyStore;
 import pe.axiz.core.idempotency.IdempotencyErrors;
 import pe.axiz.core.idempotency.IdempotencyRecord;
-import pe.axiz.core.idempotency.IdempotencyService;
 import pe.axiz.core.idempotency.InMemoryAsyncIdempotencyStore;
-import pe.axiz.core.idempotency.InMemoryIdempotencyStore;
 import pe.axiz.core.idempotency.StoredResponse;
 import pe.axiz.core.sensitive.ObjectMasker;
 import pe.axiz.extension.cqrs.AccessPolicies;
@@ -174,26 +171,7 @@ class NativeReactiveCqrsTest {
   }
 
   @Test
-  void imperativeConstructorsFailBeforeCallingAnyIo() {
-    var imperative =
-        new IdempotencyService(
-            new InMemoryIdempotencyStore(),
-            Duration.ofSeconds(30),
-            Duration.ofHours(1),
-            Clock.systemUTC());
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> new ReactiveBehaviors.Idempotency(imperative, JsonMapper.builder().build()));
-    var syncTrail =
-        new AuditTrail(
-            "svc",
-            event -> {
-              throw new AssertionError("imperative publisher invoked");
-            },
-            ObjectMasker.defaults(),
-            IdGenerator.uuidV7(),
-            Clock.systemUTC());
-    assertThrows(IllegalArgumentException.class, () -> new ReactiveBehaviors.Audit(syncTrail));
+  void imperativeAccessPoliciesFailBeforeCallingAnyIo() {
     var blocking =
         new AccessPolicy<Action>() {
           public Class<Action> requestType() {

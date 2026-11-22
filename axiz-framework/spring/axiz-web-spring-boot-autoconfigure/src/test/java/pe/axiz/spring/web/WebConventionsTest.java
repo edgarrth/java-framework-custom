@@ -314,6 +314,31 @@ class WebConventionsTest {
   }
 
   @Test
+  void requestBodiesWithUndeclaredPropertiesAreRejectedUnlessConfigured() {
+    String massAssignment = "{\"id\":\"1\",\"note\":\"n\",\"status\":\"APPROVED\"}";
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizWebAutoConfiguration.class))
+        .run(
+            ctx -> {
+              JsonMapper.Builder builder = JsonMapper.builder();
+              ctx.getBean(JsonMapperBuilderCustomizer.class).customize(builder);
+              JsonMapper mapper = builder.build();
+              org.junit.jupiter.api.Assertions.assertThrows(
+                  tools.jackson.databind.exc.UnrecognizedPropertyException.class,
+                  () -> mapper.readValue(massAssignment, Body.class));
+            });
+    new WebApplicationContextRunner()
+        .withConfiguration(AutoConfigurations.of(AxizWebAutoConfiguration.class))
+        .withPropertyValues("axiz.web.json.reject-unknown-properties=false")
+        .run(
+            ctx -> {
+              JsonMapper.Builder builder = JsonMapper.builder();
+              ctx.getBean(JsonMapperBuilderCustomizer.class).customize(builder);
+              assertEquals("1", builder.build().readValue(massAssignment, Body.class).id());
+            });
+  }
+
+  @Test
   void reactiveServicesGetTheWebFilterAndTheConventionsCanBeSwitchedOff() {
     new ReactiveWebApplicationContextRunner()
         .withConfiguration(AutoConfigurations.of(AxizWebAutoConfiguration.class))

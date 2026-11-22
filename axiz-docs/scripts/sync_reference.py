@@ -4,6 +4,9 @@ the help of the axiz CLI), so the documentation of each version matches the code
 
     python3 scripts/sync_reference.py --framework ../axiz-framework [--cli-help cli-help.txt]
 
+Fails when a "Main types" table of a module README lists a type that the module does not declare
+in src/main/java: the reference must describe the code of that module, not of its neighbours.
+
 Writes (and overwrites) only generated files, all marked with GENERATED:
     docs/capacidades/index.md, docs/capacidades/<capability>.md
     docs/arquetipos/catalogo.md
@@ -62,6 +65,34 @@ def module_readmes(framework):
     return out
 
 
+TYPE_DECLARATION = re.compile(r'\b(?:class|interface|record|enum|@interface)\s+([A-Z]\w*)')
+MAIN_TYPES = re.compile(r'## Main types\n(.*?)(?=\n## |\Z)', re.S)
+TYPE_ROW = re.compile(r'^\|\s*`([A-Z]\w*)`', re.M)
+
+
+def main_type_problems(framework):
+    """Rows of README "Main types" tables whose type is not declared by that module."""
+    problems = []
+    for layer, _ in LAYERS:
+        for dirpath, dirnames, filenames in os.walk(os.path.join(framework, layer)):
+            dirnames[:] = sorted(d for d in dirnames if d not in ('target', 'src', 'node_modules'))
+            if 'README.md' not in filenames or 'pom.xml' not in filenames:
+                continue
+            sources = Path(dirpath) / 'src' / 'main' / 'java'
+            if not sources.is_dir():
+                continue
+            declared = set()
+            for source in sources.rglob('*.java'):
+                declared.update(TYPE_DECLARATION.findall(source.read_text(encoding='utf-8', errors='replace')))
+            section = MAIN_TYPES.search(open(os.path.join(dirpath, 'README.md'), encoding='utf-8').read())
+            if not section:
+                continue
+            for name in TYPE_ROW.findall(section.group(1)):
+                if name not in declared:
+                    problems.append(f'{os.path.relpath(dirpath, framework)}/README.md: {name}')
+    return problems
+
+
 def core_dependencies(framework, starter):
     """axiz core modules the autoconfigure module of a starter depends on."""
     autoconfigure = starter.replace('-starter', '-autoconfigure')
@@ -105,7 +136,7 @@ def capabilities(framework, out, modules):
         name = c['name']
         description = html.escape(c.get('description', ''), quote=False)
         rows.append([f'[`{name}`]({name}.md)', description,
-                     ', '.join(included.get(name, [])) or '–'])
+                     ', '.join(included.get(name, [])) or 'ninguno'])
         autoconfigure, core = core_dependencies(framework, c['starter'])
         parts = [f'# {name}\n', description + '\n']
         parts.append(f'```bash\naxiz add {name}\n```\n')
@@ -170,7 +201,7 @@ def capabilities(framework, out, modules):
 def archetype_catalog(archetypes, out):
     rows = []
     for a in archetypes:
-        persistence = ', '.join(a.get('persistence') or []) or '–'
+        persistence = ', '.join(a.get('persistence') or []) or 'no aplica'
         rows.append([f'`{a["name"]}`', a['role'], ', '.join(a['structures']), ', '.join(a.get('extensions') or []), ', '.join(a['stacks']),
                      persistence, a['deployment'], 'sí' if a.get('rest') else 'no'])
     parts = ['# Catálogo de arquetipos\n',
@@ -289,6 +320,9 @@ def main():
     a = p.parse_args()
     if not os.path.isdir(os.path.join(a.framework, 'codegen')):
         sys.exit(f'{a.framework} is not an axiz-framework checkout')
+    problems = main_type_problems(a.framework)
+    if problems:
+        sys.exit('Main types not declared by their module:\n  ' + '\n  '.join(problems))
     modules = module_readmes(a.framework)
     _, archetypes = capabilities(a.framework, a.docs, modules)
     archetype_catalog(archetypes, a.docs)

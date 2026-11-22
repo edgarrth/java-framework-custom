@@ -29,10 +29,9 @@ public final java.lang.String toString();
 public java.lang.String nextCursor();
 public java.time.Instant observedAt();
 public java.util.List<java.lang.String> invalidEntryDigests();
-public java.util.List<java.util.UUID> legacyReservations();
 public java.util.List<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation> reservations();
 public long total();
-public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Inventory(java.lang.String, long, java.time.Instant, java.util.List<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation>, java.util.List<java.util.UUID>, java.util.List<java.lang.String>);
+public pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Inventory(java.lang.String, long, java.time.Instant, java.util.List<pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$Reservation>, java.util.List<java.lang.String>);
 }
 
 public interface pe.axiz.adapter.tokenization.redis.RedisTokenBudgetRecovery$RecoveryJournal {

@@ -31,6 +31,7 @@ import reactor.test.StepVerifier;
 class StrictAuditWiringTest {
   private ApplicationContextRunner imperative() {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizStrictAuditAutoConfiguration.class))
@@ -39,6 +40,7 @@ class StrictAuditWiringTest {
 
   private ReactiveWebApplicationContextRunner reactive() {
     return new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class,

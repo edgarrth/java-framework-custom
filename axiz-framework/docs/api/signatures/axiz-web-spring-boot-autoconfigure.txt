@@ -121,6 +121,7 @@ public pe.axiz.spring.web.AxizWebProperties$Header(java.lang.String, boolean, ja
 
 public final class pe.axiz.spring.web.AxizWebProperties$Json extends java.lang.Record {
 public boolean includeNulls();
+public boolean rejectUnknownProperties();
 public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
@@ -128,7 +129,7 @@ public int maxNestingDepth();
 public int maxNumberLength();
 public int maxStringLength();
 public pe.axiz.spring.web.AxizWebProperties$Json(boolean);
-public pe.axiz.spring.web.AxizWebProperties$Json(boolean, int, int, int);
+public pe.axiz.spring.web.AxizWebProperties$Json(boolean, int, int, int, boolean);
 }
 
 public final class pe.axiz.spring.web.AxizWebProperties$Pagination extends java.lang.Record {

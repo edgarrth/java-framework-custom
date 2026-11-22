@@ -556,9 +556,10 @@ capabilities:
   - name: audit
     stacks: [servlet, reactive]
     starter: axiz-audit-spring-boot-starter
-    description: '@Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery'
+    description: '@Auditable business audit trail, sanitized by sensitivity, with explicit ASYNC/DURABLE/SYNC delivery and a keyed HMAC chain outside local/test/ci'
     properties:
       axiz.audit.mode: ASYNC
+    secrets: [audit-hmac-key]
     example: |
       @Auditable(action = "create", resource = "order", resourceIdArgument = "id")
 

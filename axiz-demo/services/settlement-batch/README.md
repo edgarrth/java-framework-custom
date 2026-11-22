@@ -6,7 +6,7 @@ Daily settlement and reconciliation.
 |---|---|
 | Archetype | `batch`: Scheduled batch processing |
 | Structure | `batch` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `aurora` |
 | axiz | `2.0.0` |

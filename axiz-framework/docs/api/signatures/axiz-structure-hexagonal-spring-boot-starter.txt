@@ -43,7 +43,7 @@ public reactor.core.publisher.Mono<java.lang.Void> publish(java.util.Collection<
 
 public final class pe.axiz.structure.hexagonal.spring.ReactiveUseCaseInterceptor implements org.aopalliance.intercept.MethodInterceptor {
 public java.lang.Object invoke(org.aopalliance.intercept.MethodInvocation);
-public pe.axiz.structure.hexagonal.spring.ReactiveUseCaseInterceptor(java.util.function.Supplier<org.springframework.transaction.ReactiveTransactionManager>, io.micrometer.observation.ObservationRegistry);
+public pe.axiz.structure.hexagonal.spring.ReactiveUseCaseInterceptor(java.util.function.Supplier<org.springframework.transaction.ReactiveTransactionManager>, java.util.function.Supplier<io.micrometer.observation.ObservationRegistry>);
 }
 
 public final class pe.axiz.structure.hexagonal.spring.SpringUseCaseTransaction implements pe.axiz.structure.hexagonal.UseCaseTransaction {

@@ -18,9 +18,9 @@ import org.springframework.transaction.TransactionDefinition;
 import pe.axiz.adapter.sequence.jdbc.JdbcSequenceStore;
 import pe.axiz.core.sequence.SequenceStore;
 import pe.axiz.spring.foundation.ConditionalOnImperativeApplication;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
-import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
+import pe.axiz.spring.jdbc.SchemaInitializer;
+import pe.axiz.spring.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.jdbc.SpringTransactionRunner;
 import pe.axiz.spring.sequence.AxizSequenceProperties;
 
 /** JDBC sequence resources; common policies remain in the base capability. */

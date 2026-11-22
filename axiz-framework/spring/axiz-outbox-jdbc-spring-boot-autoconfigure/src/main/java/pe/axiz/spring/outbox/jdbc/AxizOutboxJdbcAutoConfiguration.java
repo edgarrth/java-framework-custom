@@ -21,10 +21,10 @@ import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.outbox.OutboxStore;
 import pe.axiz.core.outbox.OutboxWriteTracing;
 import pe.axiz.core.outbox.OutboxWriter;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
-import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
-import pe.axiz.spring.foundation.jdbc.SqlDialects;
+import pe.axiz.spring.jdbc.SchemaInitializer;
+import pe.axiz.spring.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.jdbc.SpringTransactionRunner;
+import pe.axiz.spring.jdbc.SqlDialects;
 import pe.axiz.spring.outbox.OutboxRelayTransactions;
 
 /** JDBC persistence only; scheduling and relay budgets are owned by the neutral base. */

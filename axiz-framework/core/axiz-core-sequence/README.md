@@ -42,9 +42,9 @@ counter after `Long.MAX_VALUE`. Formatting and reservation use the same captured
 
 Unit tests live in `src/test/java` and document the expected behavior; run them with `./mvnw -pl core/axiz-core-sequence verify`.
 
-## JDBC extraction in 2.0
+## JDBC
 
-The JDBC implementation and SQL resources now live in `axiz-adapter-sequence-jdbc`; this module contains
-framework-neutral contracts and orchestration. `TransactionRunner` remains in
-`pe.axiz.core.commons.tx`. Use the capability catalog/`axiz upgrade` to add JDBC adapters with
-`runtime` scope in a service. See [JDBC migration](../../docs/architecture/JDBC.md).
+The JDBC implementation and SQL resources live in `axiz-adapter-sequence-jdbc`; this module contains
+framework-neutral contracts and orchestration, and `TransactionRunner` lives in
+`pe.axiz.core.commons.tx`. A service adds the JDBC adapter of a capability with `axiz add` (or the
+Initializr); see [JDBC boundaries](../../docs/architecture/JDBC.md).

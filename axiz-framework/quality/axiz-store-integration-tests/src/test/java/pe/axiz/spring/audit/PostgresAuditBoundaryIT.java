@@ -192,6 +192,7 @@ class PostgresAuditBoundaryIT {
         new R2dbcOutboxStore(
             new DatabaseClientReactiveSql(client), "axiz_outbox", Duration.ofSeconds(5));
     return new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class,

@@ -26,9 +26,10 @@ generales, fallando con **todas** las violaciones a la vez.
 | Inyección solo por constructor (sin `@Autowired` en campos) | dependencias explícitas y beans inmutables |
 | Sin estado mutable en singletons (campos no `final` en beans) | los datos de una request nunca se guardan en un campo compartido |
 | Tipos mutables en singletons requieren `@ReviewedState` | `final` no hace inmutable una colección; incluye instancias creadas mediante `@Bean` |
-| Sin campos `float`/`double` en modelos y negocio | preservar cantidades decimales exactas |
+| Sin `float`/`double` en campos, parámetros ni resultados de dominio, aplicación, puertos y DTO de adaptadores | preservar cantidades decimales exactas también en las fronteras |
 | Sin construir `BigDecimal` desde `double` | evitar introducir aproximaciones binarias |
-| Reloj inyectado en dominio y negocio | pruebas reproducibles y una fuente de tiempo explícita |
+| Reloj inyectado en dominio y negocio: prohíbe `now()`, `now(ZoneId)` y `Clock.systemUTC()`/`systemDefaultZone()`/`system()`; se usa `now(clock)` | pruebas reproducibles y una fuente de tiempo explícita |
+| Sin motores JCA directos (`MessageDigest`, `Cipher`, `Mac`, `Signature`, `KeyGenerator`, `SecretKeyFactory`, `KeyPairGenerator`) ni `java.util.Random`/`Math.random` | algoritmo, modo y aleatoriedad se revisan una vez en `axiz-core-crypto` (`Hashing`, `AesGcm`, `FieldEncryptor`, `SecureRandoms`): nada de MD5, ECB o semillas predecibles |
 | Sin `@Transactional` en clases de dominio o transporte | la transacción pertenece al servicio de aplicación |
 | Sin `@Transactional` en métodos de dominio o transporte | el control también cubre anotaciones en métodos |
 | Sin `System.out` / `System.err` | logs estructurados |
@@ -53,7 +54,7 @@ La tabla cubre las 24 reglas de `GeneralRules.all()`; `System.out` y `System.err
 
 | Selector | Reglas |
 |---|---|
-| Layered | `controller → service → repository`; controladores y repositorios en su paquete |
+| Layered | `controller -> service -> repository`; controladores y repositorios en su paquete |
 | Hexagonal | dependencias hacia adentro; dominio sin Spring, JPA, AWS SDK ni Jackson; aplicación sin Spring Web, JPA ni AWS SDK; nombres en su paquete |
 | Extensión CQRS | las de hexagonal; commands y queries como records; queries (bloqueantes o reactivas) sin depender de commands ni del `ReactiveCommandBus` |
 | EDA | handlers en `handler`; sin controladores REST |

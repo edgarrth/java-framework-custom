@@ -5,5 +5,7 @@ Transaction-aware JDBC connections, SQLSTATE helpers and local transactions.
 
 Java/JDBC technology belongs here; business ports remain in `axiz-core-commons`.
 Use through the matching Spring capability, or provide a transaction-aware `ConnectionProvider`.
+`AutoCommitConnectionProvider` gives stores whose writes must be visible at once (leases, process
+state) their own auto-commit connection, independent of any caller transaction.
 
 Run `./mvnw -pl kits/axiz-kit-jdbc -am verify` from the framework root.

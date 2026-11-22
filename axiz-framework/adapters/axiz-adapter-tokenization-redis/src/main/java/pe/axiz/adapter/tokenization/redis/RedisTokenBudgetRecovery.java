@@ -111,11 +111,9 @@ public final class RedisTokenBudgetRecovery {
       long total,
       Instant observedAt,
       List<Reservation> reservations,
-      List<UUID> legacyReservations,
       List<String> invalidEntryDigests) {
     public Inventory {
       reservations = List.copyOf(reservations);
-      legacyReservations = List.copyOf(legacyReservations);
       invalidEntryDigests = List.copyOf(invalidEntryDigests);
     }
   }
@@ -144,15 +142,12 @@ public final class RedisTokenBudgetRecovery {
     if (page.getMap().size() > 4096)
       throw new IllegalStateException("Reservation scan exceeds bounded response");
     List<Reservation> reservations = new ArrayList<>();
-    List<UUID> legacy = new ArrayList<>();
     List<String> invalid = new ArrayList<>();
     page.getMap()
         .forEach(
             (lease, value) -> {
               try {
-                UUID id = UUID.fromString(lease);
-                if (value.matches("[0-9]{1,20}\\.[0-9]{1,6}")) legacy.add(id);
-                else reservations.add(parse(prefix, id, value));
+                reservations.add(parse(prefix, UUID.fromString(lease), value));
               } catch (IllegalArgumentException
                   | IllegalStateException
                   | DateTimeException malformed) {
@@ -163,15 +158,13 @@ public final class RedisTokenBudgetRecovery {
     List<String> now = redis.time();
     Instant observed =
         Instant.ofEpochSecond(Long.parseLong(now.get(0)), Long.parseLong(now.get(1)) * 1000);
-    return new Inventory(
-        page.getCursor(), redis.hlen(key), observed, reservations, legacy, invalid);
+    return new Inventory(page.getCursor(), redis.hlen(key), observed, reservations, invalid);
   }
 
   /**
    * Verifies external proof, journals intent, then atomically compares all three stored values. A
-   * changed, partial or legacy reservation is never removed. Repeating a confirmed removal is
-   * idempotent. An unavailable proof/journal/Redis retains uncertainty instead of inventing
-   * success.
+   * changed or partial reservation is never removed. Repeating a confirmed removal is idempotent.
+   * An unavailable proof/journal/Redis retains uncertainty instead of inventing success.
    */
   public Stage reconcile(VaultScope scope, Reservation reservation, UUID evidence) {
     Objects.requireNonNull(evidence);

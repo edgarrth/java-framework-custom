@@ -34,7 +34,7 @@ cada token; los tokens efímeros se limitan al rol y repositorio de destino. Los
 release son `RELEASE_APP_CLIENT_ID` y `RELEASE_APP_PRIVATE_KEY`; GitOps usa
 `GITOPS_APP_CLIENT_ID` y `GITOPS_APP_PRIVATE_KEY`.
 
-En Settings → Secrets and variables → Actions, guardar `RELEASE_APP_CLIENT_ID` como variable
+En Settings > Secrets and variables > Actions, guardar `RELEASE_APP_CLIENT_ID` como variable
 de repositorio y `RELEASE_APP_PRIVATE_KEY` como secreto. El Client ID también puede guardarse
 como secreto. La App debe estar instalada en este repositorio y su instalación debe tener los
 permisos de la tabla. `release-self` comprueba ambos valores antes de solicitar un token; nunca
@@ -57,10 +57,10 @@ Una divergencia bloquea el control; los permisos no se amplían automáticamente
 1. Configurar GitHub Packages, el registro OCI, las GitHub Apps, los entornos protegidos y GitHub Pages
    según los productos que se publiquen.
 2. Exigir inicialmente `axiz-workflows-policy`, `axiz-security-pr` y `axiz-docs-site-pr`.
-3. En Actions → release-self → Run workflow, seleccionar `main`. Esto también permite reintentar
+3. En Actions > release-self > Run workflow, seleccionar `main`. Esto también permite reintentar
    después de configurar las credenciales, sin crear un commit vacío. Revisar y fusionar primero
    el PR de release de `axiz-workflows`; la siguiente ejecución de `release-self` publica su tag
-   y release. Habilitar previamente las releases inmutables en Settings → General → Releases.
+   y release. Habilitar previamente las releases inmutables en Settings > General > Releases.
    El manifiesto vacío representa componentes sin publicaciones previas.
 4. Verificar que el guard `axiz-workflows-trust` acepta esa release. Activar los checks de
    framework, herramientas, demo y documentación.

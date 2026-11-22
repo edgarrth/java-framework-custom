@@ -65,3 +65,7 @@ public static java.lang.String stripAccents(java.lang.String);
 public static java.lang.String trimToNull(java.lang.String);
 public static java.lang.String truncate(java.lang.String, int);
 }
+
+public final class pe.axiz.core.lang.ValueSnapshots {
+public static java.util.Map<java.lang.String, java.lang.Object> map(java.util.Map<java.lang.String, ?>);
+}

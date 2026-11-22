@@ -66,7 +66,7 @@ secuencia 0 y un hash de 64 ceros.
 | 5 | Secuencia |
 | 6 | Hash anterior |
 | 7 | Presencia de intento anterior: un byte `0` o `1` |
-| 8–11 | Solo si existe: cadena, secuencia, hash y resultado del intento anterior |
+| 8 a 11 | Solo si existe: cadena, secuencia, hash y resultado del intento anterior |
 | 12 | JSON canónico del evento, excluidos `integrity` y `persistence` |
 
 El resultado del intento anterior ocupa un byte: `1` para `ROLLED_BACK`, `2` para `UNKNOWN`.
@@ -119,7 +119,7 @@ El codec rechaza campos desconocidos y una entrada que requiera sanitización co
 `EventEnvelope` contiene bytes ya codificados. Su formato estructurado utiliza `data_base64`
 y mantiene `datacontenttype=application/json` cuando corresponde. Así preserva los bytes del
 registro al pasar por SQS, SNS u outbox. Esta selección sigue la regla para valores de tipo
-Binary del [formato JSON de CloudEvents 1.0.2, §3.1.1](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md#311-payload-serialization).
+Binary del [formato JSON de CloudEvents 1.0.2, sección 3.1.1](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/formats/json-format.md#311-payload-serialization).
 Los consumidores siguen pudiendo recibir eventos externos con `data`; una entrada que combine
 `data` y `data_base64` se rechaza. Base64 no es cifrado: `data_base64` se oculta por completo
 cuando pasa por el enmascarador de logs o auditoría.
@@ -131,11 +131,16 @@ intento mantiene su identidad. Cambiar solo `persistence` no cambia esa identida
 
 ## Configuración Spring y entrega transaccional
 
-La integridad predeterminada es `HASH`. `NONE` solo se permite con
-`axiz.config.environment=local`, `test` o `ci`. Cada instancia genera una cadena por vía con
-formato servicio/vía/UUID; no se reutiliza una cadena en memoria tras un reinicio.
+La integridad predeterminada es `HASH`, y `HASH` y `NONE` solo se permiten con
+`axiz.config.environment=local`, `test` o `ci`. En cualquier otro ambiente (o sin ambiente
+declarado) el servicio exige `HMAC` y no arranca con otro modo: una cadena sin clave la puede
+recalcular quien pueda escribir el almacén de auditoría, así que no evidencia una manipulación
+(PCI DSS 10.3.2). Los servicios generados con la capacidad `audit` declaran el secreto
+`audit-hmac-key` (ExternalSecret y `local/dev-secrets.sh`) y configuran `HMAC` en los valores de
+cada ambiente del chart. Cada instancia genera una cadena por vía con formato servicio/vía/UUID; no
+se reutiliza una cadena en memoria tras un reinicio.
 
-Para autenticar la evidencia con una clave independiente:
+Configuración con clave independiente:
 
 ```yaml
 axiz:

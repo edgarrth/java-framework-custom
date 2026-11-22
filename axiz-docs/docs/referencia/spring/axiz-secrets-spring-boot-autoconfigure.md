@@ -19,13 +19,10 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizSecretsAutoConfiguration` | `SecretResolver` over mounted files, environment variables and the AWS adapters, with a TTL cache. |
-| `AxizSecretsAwsAutoConfiguration` | AWS Secrets Manager and Parameter Store sources, each enabled explicitly. |
 | `AxizSecretsProperties` | Secret resolution (`axiz.secrets.*`). |
 | `SecretSource` | A secret source contributed by an adapter; sources are queried in bean order after mounted files and the environment. |
-| `SecretsConfigTreeEnvironmentPostProcessor` | Imports the mounted secret files as a config tree (`optional:configtree:`), so a file named `spring.datasource.password` becomes that property. |
 | `ReactiveSecrets` | Deferred native lookup; `resolve` completes empty for absence and `require` fails explicitly. |
 | `AsyncSecretSource` | Ordered native source contributed through a core port. |
-| `AxizSecretsNativeAwsAutoConfiguration` | Reactive Secrets Manager and SSM clients with shared owned resources and custom-client backoff. |
 
 In a reactive application use `ReactiveSecrets` or the core `AsyncSecretResolver` port. Source
 priority is mounted-file snapshot, environment, then ordered remote sources (Secrets Manager
@@ -37,6 +34,8 @@ The synchronous resolver remains available for bootstrap consumers such as field
 An application-provided asynchronous resolver replaces the native source chain and its resources.
 `axiz.secrets.enabled=false` disables both synchronous and native AWS configuration. Owned
 clients and the file refresher close with the Spring context; custom clients retain their ownership.
+
+Related types: `AxizSecretsAwsAutoConfiguration`, `AxizSecretsNativeAwsAutoConfiguration` live in `axiz-secrets-aws-spring-boot-autoconfigure`; `SecretsConfigTreeEnvironmentPostProcessor` live in `axiz-secrets-file-spring-boot-autoconfigure`.
 
 ## Tests
 

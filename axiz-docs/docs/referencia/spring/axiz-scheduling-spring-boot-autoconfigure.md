@@ -19,9 +19,9 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `AxizSchedulingAutoConfiguration` | `@Scheduled` with ShedLock: annotate tasks with `@SchedulerLock(name = ...)` so only one replica runs them. |
-| `AxizSchedulingDynamoDbAutoConfiguration` | ShedLock on DynamoDB (`axiz.scheduling.store=dynamodb`). |
 | `AxizSchedulingProperties` | Scheduled tasks with a single execution per cluster (`axiz.scheduling.*`). |
-| `AxizSchedulingR2dbcAutoConfiguration` | ShedLock on Aurora over R2DBC (`axiz.scheduling.store=r2dbc`) for reactive services; the lock table comes from the service's Flyway migrations. |
+
+Related types: `AxizSchedulingDynamoDbAutoConfiguration` live in `axiz-scheduling-dynamodb-spring-boot-autoconfigure`; `AxizSchedulingR2dbcAutoConfiguration` live in `axiz-scheduling-r2dbc-spring-boot-autoconfigure`.
 
 ## Tests
 

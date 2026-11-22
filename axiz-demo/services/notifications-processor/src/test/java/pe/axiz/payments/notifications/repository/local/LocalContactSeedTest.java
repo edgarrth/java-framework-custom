@@ -66,6 +66,19 @@ class LocalContactSeedTest {
                   URI.create("https://dynamodb.us-east-1.amazonaws.com"),
                   "local",
                   "local-"));
+      assertThat(
+              seed.seedLocalContacts(
+                  repositories, cipher, URI.create("http://localstack:4566"), "local", "local-"))
+          .isNotNull();
+      assertThrows(
+          IllegalStateException.class,
+          () ->
+              seed.seedLocalContacts(
+                  repositories,
+                  cipher,
+                  URI.create("http://localstack.example.com:4566"),
+                  "local",
+                  "local-"));
       assertThrows(
           IllegalStateException.class,
           () ->

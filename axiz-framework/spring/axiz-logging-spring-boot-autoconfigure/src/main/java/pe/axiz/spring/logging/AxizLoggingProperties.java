@@ -20,7 +20,8 @@ public record AxizLoggingProperties(@Nullable Boolean json, @DefaultValue Http h
    * @param enabled whether one line per request is written (logger {@code axiz.http})
    * @param headers allow-listed headers to include ({@code traceparent} shows which trace the
    *     caller sent); Authorization and Cookie are never written
-   * @param bodies whether JSON bodies are included (masked and then truncated; servlet only)
+   * @param bodies whether JSON bodies are included (masked and then truncated; servlet only;
+   *     allowed only when axiz.config.environment is local, test or ci)
    * @param maxBodyLength maximum logged body length, applied after masking
    * @param excludedPaths path patterns not logged
    * @param maxMaskedBodyLength largest body that is kept to be masked; a larger one is logged by

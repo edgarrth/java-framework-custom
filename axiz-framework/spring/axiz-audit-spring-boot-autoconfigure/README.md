@@ -1,8 +1,8 @@
 <!-- generated -->
 # axiz-audit-spring-boot-autoconfigure
 
-`axiz.audit.mode=ASYNC|DURABLE|SYNC` is the only delivery selector. Removed boolean selectors
-are invalid configuration. Framework-owned publishers require an explicit mode outside local/test.
+`axiz.audit.mode=ASYNC|DURABLE|SYNC` is the only delivery selector; boolean selectors are
+invalid configuration. Framework-owned publishers require an explicit mode outside local/test.
 DURABLE requires a compatible outbox, transaction resource and relay destination; a writer-only
 instance explicitly disables its local relay. Empty configured Kafka topics or SQS queue URLs fail
 startup. Route support validates addressing, not remote resource existence or permissions.

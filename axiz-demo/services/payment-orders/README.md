@@ -22,7 +22,7 @@ Owner of payment orders (CQRS on Aurora).
   `payment-order.created.v1` through the transactional outbox, all in one transaction.
 - Creditor accounts are stored encrypted (KMS envelope keys) with a blind index for searches; the
   API returns them masked.
-- payment-process moves orders through `PROCESSING → COMPLETED | REJECTED`; every change publishes
+- payment-process moves orders through `PROCESSING -> COMPLETED | REJECTED`; every change publishes
   `payment-order.status-changed.v1`. The audit trail goes to MSK.
 
 ## Encrypted columns

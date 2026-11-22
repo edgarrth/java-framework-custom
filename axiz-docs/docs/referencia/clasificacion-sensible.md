@@ -29,6 +29,8 @@ Extraída de `SensitiveKeys.java`; las anotaciones del modelo y los tipos con `S
 | cvc2 | CRITICAL | FULL |
 | cid | CRITICAL | FULL |
 | securitycode | CRITICAL | FULL |
+| codigoseguridad | CRITICAL | FULL |
+| codigodeseguridad | CRITICAL | FULL |
 | cardverificationvalue | CRITICAL | FULL |
 | track1 | CRITICAL | FULL |
 | track2 | CRITICAL | FULL |
@@ -52,6 +54,13 @@ Extraída de `SensitiveKeys.java`; las anotaciones del modelo y los tipos con `S
 | expirydate | HIGH | FULL |
 | expirationdate | HIGH | FULL |
 | cardexpiry | HIGH | FULL |
+| expiry | HIGH | FULL |
+| vencimiento | HIGH | FULL |
+| fechavencimiento | HIGH | FULL |
+| fechaexpiracion | HIGH | FULL |
+| cardholder | HIGH | NAME |
+| cardholdername | HIGH | NAME |
+| titulartarjeta | HIGH | NAME |
 | email | MEDIUM | EMAIL |
 | phone | MEDIUM | PHONE |
 | mobile | MEDIUM | PHONE |

@@ -1,3 +1,10 @@
+public final class pe.axiz.kit.jdbc.AutoCommitConnectionProvider implements pe.axiz.kit.jdbc.ConnectionProvider {
+public boolean isTransactionActive(java.sql.Connection);
+public java.sql.Connection get() throws java.sql.SQLException;
+public pe.axiz.kit.jdbc.AutoCommitConnectionProvider(javax.sql.DataSource);
+public void release(java.sql.Connection) throws java.sql.SQLException;
+}
+
 public interface pe.axiz.kit.jdbc.ConnectionProvider {
 public abstract java.sql.Connection get() throws java.sql.SQLException;
 public abstract void release(java.sql.Connection) throws java.sql.SQLException;

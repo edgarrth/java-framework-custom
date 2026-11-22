@@ -7,6 +7,6 @@ public final boolean equals(java.lang.Object);
 public final int hashCode();
 public final java.lang.String toString();
 public java.lang.String table();
-public pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode initializeSchema();
-public pe.axiz.spring.inbox.jdbc.AxizInboxJdbcProperties(java.lang.String, pe.axiz.spring.foundation.jdbc.SchemaInitializer$Mode);
+public pe.axiz.spring.inbox.jdbc.AxizInboxJdbcProperties(java.lang.String, pe.axiz.spring.jdbc.SchemaInitializer$Mode);
+public pe.axiz.spring.jdbc.SchemaInitializer$Mode initializeSchema();
 }

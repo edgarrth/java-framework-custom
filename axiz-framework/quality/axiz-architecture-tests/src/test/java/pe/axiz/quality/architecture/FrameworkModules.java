@@ -52,8 +52,15 @@ final class FrameworkModules {
       return own.equals("pe.axiz.spring.messaging.msk");
     if (other.equals("pe.axiz.spring.httpclient")) return own.equals("pe.axiz.spring.tokenization");
     if (other.equals("pe.axiz.spring.sensitive")) return own.equals("pe.axiz.spring.httpclient");
+    // Spring JDBC support (transaction-bound connections, schema initialization, dialects) serves
+    // the relational technologies and every capability's JDBC integration.
     if (other.equals("pe.axiz.spring.jdbc"))
-      return Set.of("pe.axiz.spring.jpa", "pe.axiz.spring.r2dbc").contains(own);
+      return Set.of("pe.axiz.spring.jpa", "pe.axiz.spring.r2dbc").contains(own)
+          || own.matches("pe\\.axiz\\.spring\\.[^.]+\\.jdbc");
+    // Messaging owns the inbox completion ports its transactional handlers use; inbox stores
+    // implement them.
+    if (other.equals("pe.axiz.spring.messaging"))
+      return own.equals("pe.axiz.spring.inbox") || own.startsWith("pe.axiz.spring.inbox.");
     return false;
   }
 

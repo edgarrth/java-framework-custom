@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pe.axiz.core.crypto.PayloadProtector;
 import pe.axiz.core.errors.BusinessException;
+import pe.axiz.core.errors.Failures;
 import pe.axiz.core.lock.LockErrors;
 import pe.axiz.core.lock.LockLease;
 import pe.axiz.core.lock.LockObserver;
@@ -296,7 +297,7 @@ public final class SagaOrchestrator {
           definition.name(),
           state.sagaId(),
           step.name(),
-          e.getClass().getSimpleName());
+          Failures.describe(e));
       check = StepCheck.unknown();
     }
     return switch (check) {
@@ -373,10 +374,11 @@ public final class SagaOrchestrator {
                     clock.instant()),
                 lease);
     LOG.warn(
-        "Saga {} {} IN_DOUBT at step {}: outcome unknown, nothing compensated",
+        "Saga {} {} IN_DOUBT at step {}: outcome unknown, nothing compensated; failure={}",
         definition.name(),
         state.sagaId(),
-        step.name());
+        step.name(),
+        Failures.describe(cause));
     String stepName = step.name();
     notifyListener(() -> listener.inDoubt(definition.name(), state.sagaId(), stepName));
     return Resolution.done(
@@ -403,7 +405,7 @@ public final class SagaOrchestrator {
         definition.name(),
         state.sagaId(),
         failed.name(),
-        cause.getClass().getSimpleName());
+        Failures.describe(cause));
     SagaState compensating =
         save(
             state.next(
@@ -444,11 +446,11 @@ public final class SagaOrchestrator {
       } catch (Exception e) {
         lease.ensureHeld();
         LOG.error(
-            "Saga {} {} could not compensate step {}: manual intervention required; failureType={}",
+            "Saga {} {} could not compensate step {}: manual intervention required; failure={}",
             definition.name(),
             state.sagaId(),
             step.name(),
-            e.getClass().getSimpleName());
+            Failures.describe(e));
         state =
             save(
                 state.next(
@@ -483,8 +485,7 @@ public final class SagaOrchestrator {
     try {
       call.run();
     } catch (RuntimeException e) {
-      LOG.warn(
-          "Saga listener failed; outcome unchanged; failureType={}", e.getClass().getSimpleName());
+      LOG.warn("Saga listener failed; outcome unchanged; failure={}", Failures.describe(e));
     }
   }
 

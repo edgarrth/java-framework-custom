@@ -1,6 +1,24 @@
 # axiz-jdbc-spring-boot-autoconfigure
 
-Shared JDBC transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector.
+Spring side of JDBC for the capabilities that use it (outbox, inbox, saga, sequence, scheduling):
+transaction-bound connections and runners, explicit schema initialization, SQL dialects and the
+shared transport guard. It does not create business clients or add a new store selector.
+
+## Main types
+
+| Type | Purpose |
+|---|---|
+| `SpringConnectionProvider` | Connection provider bound to Spring transactions: inside a transaction the transaction's connection is returned and left open on release. |
+| `SpringTransactionRunner` | Runs work in a new or joined Spring transaction; checked exceptions roll back too. |
+| `SchemaInitializer` | Creates framework tables from `axiz/sql/<name>-<dialect>.sql` (development and tests). |
+| `SqlDialects` | Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). |
+| `JdbcDataSourceTlsValidator` | Extension point that validates the transport of a custom data source before it connects. |
+| `AxizJdbcTransportAutoConfiguration` | Fail-closed TLS validation of managed JDBC clients and Flyway. |
+
+Stores whose writes must be visible to other workers at once (saga state and leases) use
+`AutoCommitConnectionProvider` from `axiz-kit-jdbc` instead of `SpringConnectionProvider`.
+
+## Transport guard
 
 Outside explicit local/test/ci environments, require TLS with certificate and hostname verification. Local plaintext additionally requires `axiz.transport.allow-insecure-data-stores=true`; the environment alone is insufficient. Never include connection URLs, credentials or secret names in failure diagnostics.
 

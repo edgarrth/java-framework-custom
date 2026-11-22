@@ -3,7 +3,7 @@ protected pe.axiz.structure.layered.spring.CrudController(pe.axiz.structure.laye
 public ResponseT get(I);
 public ResponseT update(I, RequestT);
 public org.springframework.http.ResponseEntity<ResponseT> create(RequestT);
-public org.springframework.http.ResponseEntity<java.lang.Void> delete(I);
+public org.springframework.http.ResponseEntity<java.lang.Void> delete(I, java.lang.String);
 public pe.axiz.core.api.PageResponse<ResponseT> list(pe.axiz.core.api.PageRequest);
 }
 
@@ -21,5 +21,5 @@ public ResponseT update(I, RequestT);
 public java.lang.String resourceName();
 public java.util.Optional<ResponseT> find(I);
 public pe.axiz.core.api.Page<ResponseT> list(pe.axiz.core.api.PageRequest);
-public void delete(I);
+public void delete(I, java.lang.String);
 }

@@ -17,6 +17,7 @@ class AuditProviderValidationTest {
     for (String key : List.of("axiz.audit.sqs.queue-url", "axiz.audit.kafka.topic")) {
       for (String value : List.of("", " ", "${AXIZ_MISSING_AUDIT_DESTINATION}")) {
         new ApplicationContextRunner()
+            .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withConfiguration(
                 AutoConfigurations.of(
@@ -30,6 +31,7 @@ class AuditProviderValidationTest {
                     assertThat(ctx.getStartupFailure())
                         .hasStackTraceContaining("must not be blank"));
         new ReactiveWebApplicationContextRunner()
+            .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
             .withConfiguration(
                 AutoConfigurations.of(

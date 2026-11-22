@@ -18,7 +18,7 @@ axiz:
 Son obligatorios también los tipos/claims de la [base](../axiz-tokenization-vault-spring-boot-autoconfigure/README.md),
 las claves HMAC, el enrutamiento explícito de claves del sobre, el presupuesto distribuido,
 la política de acceso y la vía estricta de auditoría. No se crean tabla, controles ni claves al arrancar.
-El plazo por petición admite 1 ms–30 s. La tabla se aprovisiona mediante el proceso de infraestructura.
+El plazo por petición admite 1 ms a 30 s. La tabla se aprovisiona mediante el proceso de infraestructura.
 
 El cliente operativo tiene nombre `axizTokenVaultDynamoClient` en servlet/no-web y
 `axizTokenVaultDynamoAsyncClient` en WebFlux. No toma un `DynamoDbClient` genérico de los repositorios.

@@ -61,4 +61,5 @@ externalSecret:
   storeName: aws-secrets-manager
   refreshInterval: 1h
   remotePrefix: dev/settlement-batch
-  keys: []
+  keys:
+  - audit-hmac-key

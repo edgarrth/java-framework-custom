@@ -47,7 +47,7 @@ var nativeBudget = new RedisAsyncTokenBudget(nativeConnection, "vault-production
     new RedisAsyncRateLimiter(nativeConnection.async(), ""), owner);
 ```
 
-Timeout permitido: 1 ms–3 s por comando. Cola: 1–10 000 comandos. Mantener auto-flush activo.
+Timeout permitido: 1 ms a 3 s por comando. Cola: 1 a 10 000 comandos. Mantener auto-flush activo.
 El límite total de la operación debe considerar las nueve ventanas y la reserva; configurar
 los plazos del servicio de forma coherente. La variante nativa no usa `join`, esperas bloqueantes
 ni un ejecutor que envuelva la variante síncrona. El callback de alarma debe ser acotado y

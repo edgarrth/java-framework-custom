@@ -62,6 +62,7 @@ class AuditBehaviourTest {
 
   private ApplicationContextRunner sync() {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=payments", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add));
@@ -72,6 +73,7 @@ class AuditBehaviourTest {
     var interrupted = new CountDownLatch(1);
     var release = new CountDownLatch(1);
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=ASYNC", "axiz.audit.async.delivery-timeout=200ms")
         .withBean(
@@ -222,6 +224,7 @@ class AuditBehaviourTest {
     assertEquals(1, second.size());
 
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.config.environment=test")
         .run(
@@ -260,6 +263,7 @@ class AuditBehaviourTest {
   @Test
   void durableAuditNeedsTheOutboxAndKeepsTheQueueAsFallback() {
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=DURABLE", "axiz.outbox.relay.enabled=false")
         .run(
@@ -270,6 +274,7 @@ class AuditBehaviourTest {
                     .hasStackTraceContaining("needs the outbox capability"));
 
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues(
             "axiz.audit.mode=DURABLE",
@@ -345,6 +350,7 @@ class AuditBehaviourTest {
   @Test
   void theServletAuditRecordsChangesByRoutePatternAndStatus() throws Exception {
     new WebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.mode=SYNC", "axiz.audit.http.enabled=true")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))
@@ -391,6 +397,7 @@ class AuditBehaviourTest {
   @Test
   void theReactiveAuditRecordsTheCallerAddressAndStatus() {
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))

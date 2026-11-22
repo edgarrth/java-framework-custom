@@ -188,11 +188,6 @@ public final class ReactiveBehaviors {
                 + "not copied.")
     private final JsonMapper mapper;
 
-    /** Retained descriptor; reactive buses reject an imperative service at construction. */
-    public Idempotency(IdempotencyService service, JsonMapper mapper) {
-      throw new IllegalArgumentException("Reactive CQRS requires AsyncIdempotencyService");
-    }
-
     public Idempotency(AsyncIdempotencyService service, JsonMapper mapper) {
       this.service = Objects.requireNonNull(service);
       this.mapper = Objects.requireNonNull(mapper);
@@ -327,11 +322,6 @@ public final class ReactiveBehaviors {
   /** Records {@link AuditedCommand} outcomes through native delivery in the Reactor context. */
   public static final class Audit implements ReactivePipelineBehavior {
     private final ReactiveAuditTrail trail;
-
-    /** Retained descriptor; reactive buses reject an imperative publisher at construction. */
-    public Audit(AuditTrail trail) {
-      throw new IllegalArgumentException("Reactive CQRS requires ReactiveAuditTrail");
-    }
 
     public Audit(ReactiveAuditTrail trail) {
       this.trail = Objects.requireNonNull(trail);

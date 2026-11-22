@@ -428,6 +428,7 @@ class VaultAcceptanceIT {
   void servletComposesSignedIdentityEncryptedVaultDistributedBudgetAndDurableSealedAudit() {
     try (var f = new Fixture()) {
       new WebApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withConfiguration(configurations())
           .withUserConfiguration(Servlet.class)
           .withPropertyValues(f.settings(false))
@@ -484,6 +485,7 @@ class VaultAcceptanceIT {
   void reactiveComposesTheSameContractsWithoutBlockingProviderBridges() {
     try (var f = new Fixture()) {
       new ReactiveWebApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withConfiguration(configurations())
           .withUserConfiguration(Reactive.class)
           .withPropertyValues(f.settings(true))

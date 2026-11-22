@@ -20,6 +20,7 @@ import pe.axiz.core.api.HeaderCatalog;
 import pe.axiz.core.api.HeaderDefinition;
 import pe.axiz.core.errors.ProblemFactory;
 import tools.jackson.core.StreamReadConstraints;
+import tools.jackson.databind.DeserializationFeature;
 
 /**
  * Web conventions for servlet and reactive applications: request context, header catalog, paging,
@@ -64,7 +65,7 @@ public class AxizWebAutoConfiguration {
         properties.pagination().defaultSize(), properties.pagination().maxSize());
   }
 
-  /** Jackson: omits nulls unless configured otherwise. */
+  /** Jackson: omits nulls and rejects undeclared request properties unless configured otherwise. */
   @Configuration(proxyBeanMethods = false)
   @ConditionalOnClass(
       name = "org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer")
@@ -88,6 +89,9 @@ public class AxizWebAutoConfiguration {
         if (!properties.json().includeNulls()) {
           builder.changeDefaultPropertyInclusion(
               i -> i.withValueInclusion(JsonInclude.Include.NON_NULL));
+        }
+        if (properties.json().rejectUnknownProperties()) {
+          builder.enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         }
       };
     }

@@ -180,7 +180,8 @@ class ContractDiffTest {
         removed.toString());
     List<ContractDiff.Change> retyped =
         diff(
-            "        amount: {type: number}\n        currency: {type: string}\n        status",
+            "        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99,"
+                + " multipleOf: 0.01}\n        currency: {type: string}\n        status",
             "        amount: {type: string}\n        currency: {type: string}\n        status");
     assertTrue(
         retyped.stream().anyMatch(c -> c.breaking() && c.message().startsWith("type changed")),

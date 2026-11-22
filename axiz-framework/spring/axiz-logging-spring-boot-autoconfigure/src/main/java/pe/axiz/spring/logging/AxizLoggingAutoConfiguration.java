@@ -15,7 +15,9 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.env.Environment;
 import pe.axiz.core.api.HttpPayloadPolicy;
+import pe.axiz.core.commons.Environments;
 import pe.axiz.core.logging.HttpLogFormatter;
 import pe.axiz.core.logging.LogOperation;
 import pe.axiz.core.logging.OperationLogger;
@@ -75,7 +77,17 @@ public class AxizLoggingAutoConfiguration {
     HttpLoggingFilter axizHttpLoggingFilter(
         HttpLogFormatter formatter,
         AxizLoggingProperties properties,
-        ObjectProvider<HttpPayloadPolicy> policies) {
+        ObjectProvider<HttpPayloadPolicy> policies,
+        Environment environment) {
+      if (properties.http().bodies()) {
+        // masking by key name and card-number pattern is a safety net, not a guarantee: free-form
+        // bodies may carry authentication data that must never be written (PCI DSS 3.3.1)
+        Environments.requireSingleProcess(
+            environment.getProperty("axiz.config.environment"),
+            "axiz.logging.http.bodies=true",
+            "@LogOperation with masked arguments or audit events",
+            "request and response bodies may carry cardholder or authentication data");
+      }
       return new HttpLoggingFilter(formatter, properties.http(), policies.orderedStream().toList());
     }
   }

@@ -16,6 +16,8 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.crypto.CryptoException;
 import pe.axiz.core.crypto.DataKeyProvider;
 import pe.axiz.core.crypto.EnvelopeEncryptor;
@@ -120,6 +122,37 @@ class SagaTest {
                 AxizSagaAutoConfiguration.class, AxizSagaJdbcAutoConfiguration.class))
         .withBean(DataSource.class, () -> h2)
         .withBean(MeterRegistry.class, SimpleMeterRegistry::new);
+  }
+
+  /**
+   * Use cases and transactional event handlers call the orchestrator inside an application
+   * transaction: the store must commit its state on its own connection, so another worker sees it
+   * at once and a later rollback of the caller does not erase it.
+   */
+  @Test
+  void runsInsideAnApplicationTransactionAndCommitsIndependently() {
+    List<String> log = new CopyOnWriteArrayList<>();
+    runner("saga-in-transaction")
+        .run(
+            ctx -> {
+              DataSource dataSource = ctx.getBean(DataSource.class);
+              var transactions =
+                  new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+              SagaDefinition<String> transfer =
+                  new SagaDefinition<>(
+                      "transfer", List.of(new Step("debit", log, Outcome.APPLIED)));
+              SagaStateStore store = ctx.getBean(SagaStateStore.class);
+              transactions.executeWithoutResult(
+                  status -> {
+                    assertTrue(store.find("s-tx").isEmpty());
+                    SagaResult<String> result =
+                        ctx.getBean(SagaOrchestrator.class).start(transfer, CODEC, "s-tx", "start");
+                    assertTrue(result.completed());
+                    status.setRollbackOnly();
+                  });
+              assertEquals(SagaStatus.COMPLETED, store.find("s-tx").orElseThrow().status());
+              assertEquals(List.of("do:debit"), log);
+            });
   }
 
   @Test

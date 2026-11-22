@@ -151,7 +151,8 @@ poll() {
 # infrastructure of local/compose.yaml
 
 sql() { "${compose[@]}" exec -T postgres psql -U app -d "$1" -tAc "$2" 2>&1; }
-awsl() { "${compose[@]}" exec -T localstack awslocal "$@" 2>&1; }
+# JSON on stdout only: the CLI also writes notices (deprecation banners) to stderr
+awsl() { "${compose[@]}" exec -T localstack awslocal "$@" 2>/dev/null; }
 kafka() { local tool=$1; shift; "${compose[@]}" exec -T kafka "/opt/kafka/bin/$tool" --bootstrap-server localhost:9092 "$@" 2>/dev/null; }
 
 # messages written to a topic (sum of the end offsets of its partitions)
@@ -606,7 +607,9 @@ g_notifications() {
     entries=$(jq -c '[.Messages[]? | {Id: .MessageId, ReceiptHandle}]' <<<"$out" 2>/dev/null)
     [ -n "$entries" ] && [ "$entries" != "[]" ] \
       && awsl sqs delete-message-batch --queue-url "$q" --entries "$entries" >/dev/null
-    seen+=$(jq -r '.Messages[]?.Body' <<<"$out" 2>/dev/null)
+    # structured CloudEvents (SNS/SQS) carry the payload in data_base64: decode it to search it
+    seen+=$(jq -r '.Messages[]?.Body | ., ((fromjson? | .data_base64? // empty) | @base64d)' \
+      <<<"$out" 2>/dev/null)
     { [ -z "${PAY:-}" ] || grep -q "$PAY" <<<"$seen"; } && { [ -z "${NOFUNDS:-}" ] || grep -q "$NOFUNDS" <<<"$seen"; } && break
   done
   if [ -n "${PAY:-}" ]; then

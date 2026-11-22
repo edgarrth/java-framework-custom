@@ -44,7 +44,6 @@ public final class pe.axiz.extension.cqrs.spring.ReactiveBehaviors {
 public final class pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Audit implements pe.axiz.extension.cqrs.spring.ReactivePipelineBehavior {
 public <R> reactor.core.publisher.Mono<R> handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.spring.ReactivePipelineBehavior$Next<R>);
 public int order();
-public pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Audit(pe.axiz.core.audit.AuditTrail);
 public pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Audit(pe.axiz.spring.audit.ReactiveAuditTrail);
 }
 
@@ -60,7 +59,6 @@ public final class pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Idempotency i
 public <R> reactor.core.publisher.Mono<R> handle(pe.axiz.extension.cqrs.Invocation<R>, pe.axiz.extension.cqrs.spring.ReactivePipelineBehavior$Next<R>);
 public int order();
 public pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Idempotency(pe.axiz.core.idempotency.AsyncIdempotencyService, tools.jackson.databind.json.JsonMapper);
-public pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Idempotency(pe.axiz.core.idempotency.IdempotencyService, tools.jackson.databind.json.JsonMapper);
 }
 
 public final class pe.axiz.extension.cqrs.spring.ReactiveBehaviors$Metrics implements pe.axiz.extension.cqrs.spring.ReactivePipelineBehavior {

@@ -24,7 +24,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `BlindIndex` | Blind index for searching encrypted columns by equality: HMAC-SHA256 of the normalized value with a dedicated key (never the encryption key), truncated to limit leakage. |
 | `CryptoException` | Cryptographic operation failed (wrong key, tampered data, unavailable provider). |
 | `DataKeyProvider` | Port for envelope encryption data keys (AWS KMS in production). |
-| `EncryptionRegistry` | Field encryptor and blind index used by persistence converters (JPA, DynamoDB) when the provider creates them without dependency injection. |
 | `EnvelopeEncryptor` | Envelope encryption: data is encrypted locally with a data key that is itself encrypted by the master key (KMS). |
 | `FieldEncryptor` | Encrypts individual values (database fields) with AES-256-GCM. |
 | `Hashing` | SHA-2 hashes and HMAC with constant-time verification. |

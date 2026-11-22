@@ -19,8 +19,8 @@ las referencian: un servicio no copia archivos de configuración.
 | Errores y nulos | Error Prone + NullAway sobre JSpecify, `@NullMarked` en cada paquete (`-Pquality`) | falla el build |
 | Bytecode y seguridad | SpotBugs + FindSecBugs | sin hallazgos de prioridad alta |
 | Modernización | OpenRewrite (análisis estático) en modo informe en cada PR | informativo |
-| Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | ≥ 80 % líneas, ≥ 70 % ramas |
-| Calidad de pruebas | PIT en la capa 1 | ≥ 81 % de mutantes eliminados |
+| Cobertura | JaCoCo por módulo, sobre el código escrito: los modelos que genera openapi-generator llevan `@Generated` de axiz (retención en el bytecode) y JaCoCo los deja fuera, como a todo lo marcado así. Ver [Cobertura de fuentes y modelos](#cobertura-de-fuentes-y-modelos) | al menos 80 % de líneas y 70 % de ramas |
+| Calidad de pruebas | PIT en la capa 1 | al menos 81 % de mutantes eliminados |
 | Integración | Failsafe + Testcontainers + LocalStack; BlockHound en reactivo | obligatorio por starter |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo | nocturno en verde |
 | SAST | SonarQube (quality gate) y Semgrep (reglas públicas y de axiz) | sin bloqueantes ni críticos |

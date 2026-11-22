@@ -14,11 +14,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore;
-import pe.axiz.spring.foundation.InboxCompletion;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
 import pe.axiz.spring.inbox.AxizInboxProperties;
 import pe.axiz.spring.inbox.InboxPurger;
+import pe.axiz.spring.jdbc.SchemaInitializer;
+import pe.axiz.spring.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.messaging.InboxCompletion;
 
 /** JDBC inbox resources; common policies remain in the base capability. */
 @AutoConfiguration(

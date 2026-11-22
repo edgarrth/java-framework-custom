@@ -35,6 +35,7 @@ class AuditTest {
   void auditableRecordsSanitizedEventsWithRequestContext() {
     List<AuditEvent> events = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("spring.application.name=orders", "axiz.audit.mode=SYNC")
         .withBean(AuditSink.class, () -> new AuditSink("memory", events::add))

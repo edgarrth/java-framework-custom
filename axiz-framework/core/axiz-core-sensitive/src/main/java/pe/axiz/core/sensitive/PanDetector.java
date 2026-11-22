@@ -66,85 +66,126 @@ public final class PanDetector {
         + digits.substring(digits.length() - 4);
   }
 
-  /** Replaces every 12-19 digit run (single spaces or hyphens allowed inside) that passes Luhn. */
+  /** Longest run of separator characters accepted between two digit groups. */
+  private static final int MAX_SEPARATOR_RUN = 2;
+
+  /**
+   * Replaces every 12-19 digit run that passes Luhn. Digits may be any Unicode decimal digit
+   * (fullwidth, Arabic-Indic...) and groups may be joined by up to two separator characters:
+   * spaces, tabs, no-break spaces, hyphens and dashes, {@code .}, {@code /} or {@code _}. The kept
+   * first six and last four digits are written as ASCII.
+   */
   public static String redact(String text) {
-    int n = text.length();
-    StringBuilder out = null;
-    int copied = 0; // text[0, copied) is already in out
-    int i = 0;
-    while (i < n) {
-      boolean groupStart = digit(text.charAt(i)) && (i == 0 || !digit(text.charAt(i - 1)));
-      if (!groupStart) {
-        i++;
-        continue;
-      }
-      // Candidate: this digit group plus the following ones joined by one space or hyphen.
-      StringBuilder digits = new StringBuilder(20);
-      int matchEnd = -1; // exclusive end of the longest valid PAN
-      int matchLength = 0;
-      int j = i;
-      while (j < n && digits.length() <= 19) {
-        char c = text.charAt(j);
-        if (digit(c)) {
-          digits.append(c);
-          j++;
-          boolean groupEnds = j == n || !digit(text.charAt(j));
-          if (groupEnds && isPan(digits.toString())) {
-            matchEnd = j;
-            matchLength = digits.length();
-          }
-        } else if ((c == ' ' || c == '-') && j + 1 < n && digit(text.charAt(j + 1))) {
-          j++;
-        } else {
-          break;
-        }
-      }
-      if (matchEnd < 0) {
-        i++; // try again from the next group
-        continue;
-      }
-      if (out == null) {
-        out = new StringBuilder(n);
-      }
-      out.append(text, copied, i)
-          .append(digits, 0, 6)
-          .append("*".repeat(matchLength - 10))
-          .append(digits, matchLength - 4, matchLength);
-      copied = matchEnd;
-      i = matchEnd;
-    }
-    return out == null ? text : out.append(text, copied, n).toString();
+    StringBuilder out = new StringBuilder(text.length());
+    return scan(text, out) ? out.toString() : text;
   }
 
   /** Whether the bounded digit scanner finds any PAN-like candidate. */
   public static boolean containsPan(String text) {
-    return !text.equals(redact(text));
+    return scan(text, null);
   }
 
-  /** Detects the same bounded digit groups without allocating immutable plaintext copies. */
+  /** Detects the same candidates as {@link #redact(String)} without copying the input. */
   public static boolean containsPan(char[] text) {
-    char[] digits = new char[MAX_DIGITS];
+    return scan(CharBuffer.wrap(text), null);
+  }
+
+  /**
+   * Scans {@code text}; when {@code out} is not null it receives the redacted text. Returns whether
+   * a candidate was found (with a null {@code out} it stops at the first one).
+   */
+  private static boolean scan(CharSequence text, @Nullable StringBuilder out) {
+    int n = text.length();
+    char[] digits = new char[MAX_DIGITS + 1];
+    boolean found = false;
+    int copied = 0; // text[0, copied) is already in out
     try {
-      for (int start = 0; start < text.length; start++) {
-        if (!digit(text[start]) || (start > 0 && digit(text[start - 1]))) continue;
-        int count = 0;
-        for (int j = start; j < text.length && count < MAX_DIGITS; j++) {
-          char c = text[j];
-          if (digit(c)) {
-            digits[count++] = c;
-            if ((j + 1 == text.length || !digit(text[j + 1]))
-                && count >= MIN_DIGITS
-                && CheckDigits.luhn(CharBuffer.wrap(digits, 0, count))) return true;
-          } else if (!((c == ' ' || c == '-') && j + 1 < text.length && digit(text[j + 1]))) break;
+      int i = 0;
+      while (i < n) {
+        if (!digit(text.charAt(i)) || (i > 0 && digit(text.charAt(i - 1)))) {
+          i++;
+          continue;
         }
+        // Candidate: this digit group plus the following ones joined by short separator runs.
+        int count = 0;
+        int matchEnd = -1; // exclusive end of the longest valid PAN
+        int matchLength = 0;
+        int j = i;
+        while (j < n && count <= MAX_DIGITS) {
+          char c = text.charAt(j);
+          if (digit(c)) {
+            digits[count++] = (char) ('0' + Character.digit(c, 10));
+            j++;
+            boolean groupEnds = j == n || !digit(text.charAt(j));
+            if (groupEnds
+                && count >= MIN_DIGITS
+                && count <= MAX_DIGITS
+                && CheckDigits.luhn(CharBuffer.wrap(digits, 0, count))) {
+              matchEnd = j;
+              matchLength = count;
+            }
+          } else {
+            int run = separatorRun(text, j);
+            if (run == 0 || j + run >= n || !digit(text.charAt(j + run))) break;
+            j += run;
+          }
+        }
+        if (matchEnd < 0) {
+          i++; // try again from the next group
+          continue;
+        }
+        found = true;
+        if (out == null) return true;
+        out.append(text, copied, i)
+            .append(digits, 0, 6)
+            .append("*".repeat(matchLength - 10))
+            .append(digits, matchLength - 4, 4);
+        copied = matchEnd;
+        i = matchEnd;
       }
-      return false;
+      if (found && out != null) out.append(text, copied, n);
+      return found;
     } finally {
       Arrays.fill(digits, '\0');
     }
   }
 
+  /** Separator characters at {@code from}, or 0 when there are none or more than allowed. */
+  private static int separatorRun(CharSequence text, int from) {
+    int run = 0;
+    while (from + run < text.length() && separator(text.charAt(from + run))) {
+      if (++run > MAX_SEPARATOR_RUN) return 0;
+    }
+    return run;
+  }
+
+  private static boolean separator(char c) {
+    return switch (c) {
+      case ' ',
+          '\t',
+          '\u00A0',
+          '\u2007',
+          '\u202F',
+          '\u3000',
+          '-',
+          '.',
+          '/',
+          '_',
+          '\u2010',
+          '\u2011',
+          '\u2012',
+          '\u2013',
+          '\u2014',
+          '\u2212',
+          '\uFF0D',
+          '\uFF0E',
+          '\uFF0F' ->
+          true;
+      default -> false;
+    };
+  }
+
   private static boolean digit(char c) {
-    return c >= '0' && c <= '9';
+    return Character.isDigit(c);
   }
 }

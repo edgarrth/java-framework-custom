@@ -59,6 +59,26 @@ jobs:
         sleep 3
         scripts/smoke.sh
       working-directory: axiz-demo
+    - name: Authenticated DAST (OWASP ZAP API scan of every REST contract)
+      env:
+        KC_URL: http://localhost:9180
+      run: |
+        for pair in payment-orders:9081 banking-core:9083 payment-process:9084 payment-network-gateway:9087; do
+          kubectl -n axiz-demo port-forward "svc/${pair%%:*}" "${pair##*:}:80" &
+        done
+        sleep 3
+        DAST_TARGETS="payments-ux=http://localhost:9080 payment-orders=http://localhost:9081 \
+          beneficiaries=http://localhost:9082 banking-core=http://localhost:9083 \
+          payment-process=http://localhost:9084 payments-history=http://localhost:9086 \
+          payment-network-gateway=http://localhost:9087" scripts/dast.sh
+      working-directory: axiz-demo
+    - name: DAST reports
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: dast-reports
+        path: axiz-demo/target/dast
+        if-no-files-found: ignore
     - name: Diagnostics
       if: failure()
       run: |

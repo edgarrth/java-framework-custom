@@ -43,5 +43,6 @@ axiz.messaging.sqs.queues: [https://sqs.<region>.amazonaws.com/<account>/orders]
 
 - [`axiz-messaging-sqs-spring-boot-autoconfigure`](../referencia/spring/axiz-messaging-sqs-spring-boot-autoconfigure.md)
 - [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
+- [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-messaging`](../referencia/core/axiz-core-messaging.md)
 - [`axiz-core-resilience`](../referencia/core/axiz-core-resilience.md)

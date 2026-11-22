@@ -71,3 +71,4 @@ externalSecret:
   remotePrefix: dev/payment-network-gateway
   keys:
   - payment-network-api-key
+  - audit-hmac-key

@@ -54,3 +54,8 @@ The effective Boot `JsonMapper` receives explicit `axiz.web.json` stream constra
 `max-number-length=100`, `max-string-length=1048576`, `max-nesting-depth=64`. All values must be
 positive. The mapper is customized through Boot's factory builder rather than replaced, preserving
 other framework and application modules.
+
+`axiz.web.json.reject-unknown-properties` (default `true`) makes the service reject a request body
+with a property its type does not declare (400) instead of ignoring it, so a client cannot set
+fields the contract does not expose. HTTP clients created by the framework and event consumers
+read other parties' payloads tolerantly and accept added fields.

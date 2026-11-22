@@ -12,7 +12,7 @@
 
   <artifactId>axiz-core-commons</artifactId>
   <name>axiz :: core :: commons</name>
-  <description>Shared request/page/header contracts, concurrency utilities and transaction boundaries</description>
+  <description>Framework-neutral operational contracts: transaction boundaries and outcomes, deployment environments, transport security policies, and generated-code and reviewed-state markers</description>
 
   <properties>
     <axiz.errorprone.fqn.severity>ERROR</axiz.errorprone.fqn.severity>

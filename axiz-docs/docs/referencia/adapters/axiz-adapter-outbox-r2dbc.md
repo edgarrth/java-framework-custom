@@ -19,7 +19,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | Type | Purpose |
 |---|---|
 | `R2dbcOutboxStore` | Outbox store on Aurora PostgreSQL over R2DBC, same table as the JDBC store (`axiz/sql/outbox-postgresql.sql`). |
-| `ReactiveOutboxWriter` | Registers events in the outbox inside the caller's reactive transaction: they are published if and only if that transaction commits. |
+
+Related types: `ReactiveOutboxWriter` live in `axiz-kit-outbox-reactor`.
 
 ## Tests
 

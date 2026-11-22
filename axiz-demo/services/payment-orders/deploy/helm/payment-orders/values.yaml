@@ -72,3 +72,4 @@ externalSecret:
   keys:
   - field-key-v1
   - blind-index-key
+  - audit-hmac-key

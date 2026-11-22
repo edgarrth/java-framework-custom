@@ -6,7 +6,7 @@ Customer notifications and audit archive.
 |---|---|
 | Archetype | `event-processor`: Processes subscribed events |
 | Structure | `eda` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `dynamodb` |
 | axiz | `2.0.0` |

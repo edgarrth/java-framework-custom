@@ -18,4 +18,19 @@ class CardDataClientMapperTest {
     assertEquals("\"411111******1111\"", ordinary.writeValueAsString(pan));
     assertEquals("\"411111******1111\"", base.writeValueAsString(pan));
   }
+
+  record Quote(String id) {}
+
+  @Test
+  void clientsReadProviderResponsesTolerantlyEvenWhenTheServiceIsStrict() {
+    JsonMapper strict =
+        JsonMapper.builder()
+            .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
+    JsonMapper client = CardDataClientMapper.forClient(strict, false);
+    assertEquals("q-1", client.readValue("{\"id\":\"q-1\",\"added\":true}", Quote.class).id());
+    org.junit.jupiter.api.Assertions.assertThrows(
+        tools.jackson.databind.exc.UnrecognizedPropertyException.class,
+        () -> strict.readValue("{\"id\":\"q-1\",\"added\":true}", Quote.class));
+  }
 }

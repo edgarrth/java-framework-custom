@@ -10,7 +10,6 @@ import org.springframework.r2dbc.connection.R2dbcTransactionManager;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 
 /**
  * Wraps every {@link ReactiveTypedEventHandler} bean in {@link ReactiveTransactionalEventHandler}:

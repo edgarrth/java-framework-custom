@@ -37,6 +37,7 @@ class AuditDestinationValidationTest {
   void unprovenReactiveWriterCannotParticipateInStrictDurableAudit() {
     ReactiveOutboxWriter unattested = (destination, event, aggregate) -> Mono.empty();
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))
@@ -54,6 +55,7 @@ class AuditDestinationValidationTest {
   void dottedScalarMapKeysRespectBothSpellingsAndSourcePrecedence() {
     for (String spelling : List.of(".audit.v2", "[audit.v2]")) {
       new ApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
           .withPropertyValues(
               "axiz.audit.mode=DURABLE",
@@ -91,6 +93,7 @@ class AuditDestinationValidationTest {
             "https://user:secret@example.test/audit?token=hidden")) {
       var relay = mock(OutboxRelay.class);
       new ApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
           .withPropertyValues(
               "axiz.audit.mode=DURABLE", "axiz.messaging.destinations.audit=" + destination)
@@ -123,6 +126,7 @@ class AuditDestinationValidationTest {
       when(relay.supportsDestination("audit")).thenReturn(supported);
       var imperative =
           new ApplicationContextRunner()
+              .withPropertyValues("axiz.config.environment=test")
               .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
               .withPropertyValues("axiz.audit.mode=DURABLE")
               .withBean(OutboxWriter.class, AuditDestinationValidationTest::writer)
@@ -147,6 +151,7 @@ class AuditDestinationValidationTest {
               });
       var reactive =
           new ReactiveWebApplicationContextRunner()
+              .withPropertyValues("axiz.config.environment=test")
               .withConfiguration(
                   AutoConfigurations.of(
                       AxizAuditAutoConfiguration.class, AxizNativeAuditAutoConfiguration.class))

@@ -35,6 +35,9 @@ public class DataShapes {
 
   public record Unsupported(String pinBlock) {}
 
+  /** Card secrets whose name does not end with the sensitive term. */
+  public record InnerTerms(String cvvCode, String pinCode) {}
+
   public record CardToken(Token cardToken) {}
 
   public record SafeFields(EncryptedValue documentNumber, KeyedHash documentIndex) {}

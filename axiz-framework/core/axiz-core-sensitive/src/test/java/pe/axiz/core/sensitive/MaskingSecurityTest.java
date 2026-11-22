@@ -63,13 +63,69 @@ class MaskingSecurityTest {
             "newPassword",
             "password2",
             "track2",
-            "clave")) {
+            "clave",
+            "cvvCode",
+            "pinCode",
+            "passwordConfirmation",
+            "privateKeyPem",
+            "tokenValue",
+            "codigoSeguridad",
+            "fechaVencimiento",
+            "expiry",
+            "cardHolderName",
+            "authorizationCode",
+            "passwordHash")) {
       assertTrue(keys.find(name).isPresent(), name);
     }
     for (String name :
-        List.of("span", "shipping", "tokenCount", "pinAttempts", "company", "expand")) {
+        List.of(
+            "span",
+            "shipping",
+            "tokenCount",
+            "pinAttempts",
+            "company",
+            "expand",
+            "tokenUrl",
+            "secretArn",
+            "passwordPolicy",
+            "pinBlockFormat",
+            "tokenId",
+            "clientSecretName",
+            "signatureAlgorithm",
+            "creditorCciIndex",
+            "panMasked")) {
       assertTrue(keys.find(name).isEmpty(), name);
     }
+  }
+
+  @Test
+  void theMostSensitiveTermDecidesAndInnerTermsAreFound() {
+    SensitiveKeys keys = SensitiveKeys.defaults();
+    assertEquals(SensitivityLevel.CRITICAL, keys.find("cvvCode").orElseThrow().level());
+    assertEquals(SensitivityLevel.CRITICAL, keys.find("cardPinBlock").orElseThrow().level());
+    assertEquals(MaskType.NAME, keys.find("cardHolderName").orElseThrow().mask());
+    assertEquals(
+        SensitivityLevel.CRITICAL, keys.find("emailVerificationToken").orElseThrow().level());
+  }
+
+  @Test
+  void cardNumbersWithOtherSeparatorsAndUnicodeDigitsAreRedacted() {
+    for (String input :
+        List.of(
+            "4111.1111.1111.1111",
+            "4111/1111/1111/1111",
+            "4111_1111_1111_1111",
+            "4111\t1111\t1111\t1111",
+            "4111  1111  1111  1111",
+            "4111\u00A01111\u00A01111\u00A01111",
+            "4111\u20131111\u20131111\u20131111",
+            "\uFF14\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11\uFF11"
+                + "\uFF11\uFF11\uFF11")) {
+      assertEquals("pan " + MASKED, PanDetector.redact("pan " + input), input);
+      assertTrue(PanDetector.containsPan(input.toCharArray()), input);
+    }
+    assertEquals("4111   1111 1111 1111", PanDetector.redact("4111   1111 1111 1111"));
+    assertEquals("2026.11.21", PanDetector.redact("2026.11.21"));
   }
 
   @Test

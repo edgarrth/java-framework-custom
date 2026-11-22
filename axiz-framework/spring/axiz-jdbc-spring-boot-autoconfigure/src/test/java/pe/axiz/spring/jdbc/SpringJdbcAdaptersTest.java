@@ -1,4 +1,4 @@
-package pe.axiz.spring.foundation.jdbc;
+package pe.axiz.spring.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

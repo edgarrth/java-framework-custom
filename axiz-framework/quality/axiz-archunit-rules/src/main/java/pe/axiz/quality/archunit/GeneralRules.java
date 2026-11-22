@@ -8,8 +8,12 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.library.GeneralCodingRules;
 import java.math.BigDecimal;
 import java.util.List;
@@ -75,19 +79,64 @@ public final class GeneralRules {
           .haveRawType(ReviewedFields.MUTABLE)
           .should(new ReviewedFields());
 
-  /** Binary floating point cannot model business money fields. */
+  /**
+   * Packages that hold business data or carry it across a boundary: domain and application models
+   * and the transport records of inbound and outbound adapters.
+   */
+  private static final String[] DATA_PACKAGES = {
+    "..domain..",
+    "..application..",
+    "..usecase..",
+    "..model..",
+    "..service..",
+    "..port..",
+    "..adapter..",
+    "..controller..",
+    "..dto..",
+    "..api..",
+    "..web..",
+    "..rest..",
+    "..client..",
+    "..messaging..",
+    "..handler.."
+  };
+
+  private static final DescribedPredicate<JavaClass> BINARY_FLOATING_POINT =
+      DescribedPredicate.describe(
+          "binary floating point",
+          type ->
+              Set.of("float", "double", "java.lang.Float", "java.lang.Double")
+                  .contains(type.getName()));
+
+  /** Binary floating point cannot model money or other business quantities, nor carry them. */
   public static final ArchRule NO_FLOATING_POINT_IN_BUSINESS_MODELS =
       noFields()
           .that()
           .areDeclaredInClassesThat()
-          .resideInAnyPackage("..domain..", "..application..", "..model..", "..service..")
+          .resideInAnyPackage(DATA_PACKAGES)
           .should()
-          .haveRawType(
-              DescribedPredicate.describe(
-                  "binary floating point",
-                  type ->
-                      Set.of("float", "double", "java.lang.Float", "java.lang.Double")
-                          .contains(type.getName())));
+          .haveRawType(BINARY_FLOATING_POINT);
+
+  /** The same for method parameters and results: a {@code double amount} argument loses cents. */
+  public static final ArchRule NO_FLOATING_POINT_IN_BUSINESS_SIGNATURES =
+      methods()
+          .that()
+          .areDeclaredInClassesThat()
+          .resideInAnyPackage(DATA_PACKAGES)
+          .should(
+              new ArchCondition<JavaMethod>("not take or return binary floating point") {
+                @Override
+                public void check(JavaMethod method, ConditionEvents events) {
+                  boolean floating =
+                      BINARY_FLOATING_POINT.test(method.getRawReturnType())
+                          || method.getRawParameterTypes().stream().anyMatch(BINARY_FLOATING_POINT);
+                  if (floating)
+                    events.add(
+                        SimpleConditionEvent.violated(
+                            method,
+                            method.getFullName() + " uses binary floating point; use BigDecimal"));
+                }
+              });
 
   public static final ArchRule NO_DOUBLE_DECIMAL_CONSTRUCTION =
       noClasses()
@@ -96,7 +145,24 @@ public final class GeneralRules {
           .orShould()
           .callMethod(BigDecimal.class, "valueOf", double.class);
 
-  /** Ambient clocks prevent reproducible domain and application behavior. */
+  private static final Set<String> TEMPORAL_TYPES =
+      Set.of(
+          "java.time.Instant",
+          "java.time.LocalDate",
+          "java.time.LocalDateTime",
+          "java.time.ZonedDateTime",
+          "java.time.OffsetDateTime",
+          "java.time.OffsetTime",
+          "java.time.LocalTime",
+          "java.time.Year",
+          "java.time.YearMonth",
+          "java.time.MonthDay");
+
+  /**
+   * Ambient clocks prevent reproducible domain and application behavior. {@code now()} and {@code
+   * now(ZoneId)} read the system clock, as do {@code Clock.systemUTC()} and its siblings; {@code
+   * now(clock)} with an injected {@link java.time.Clock} is the intended form.
+   */
   public static final ArchRule BUSINESS_USES_INJECTED_CLOCK =
       noClasses()
           .that()
@@ -114,19 +180,53 @@ public final class GeneralRules {
                   "ambient clock",
                   call -> {
                     String owner = call.getTargetOwner().getName();
+                    List<JavaClass> parameters = call.getTarget().getRawParameterTypes();
                     return (owner.equals("java.lang.System")
                             && call.getName().equals("currentTimeMillis"))
-                        || (Set.of(
-                                    "java.time.Instant",
-                                    "java.time.LocalDate",
-                                    "java.time.LocalDateTime",
-                                    "java.time.ZonedDateTime",
-                                    "java.time.OffsetDateTime",
-                                    "java.time.LocalTime")
-                                .contains(owner)
+                        || (owner.equals("java.time.Clock")
+                            && Set.of("systemUTC", "systemDefaultZone", "system")
+                                .contains(call.getName()))
+                        || (TEMPORAL_TYPES.contains(owner)
                             && call.getName().equals("now")
-                            && call.getTarget().getRawParameterTypes().isEmpty());
+                            && (parameters.isEmpty()
+                                || parameters.get(0).getName().equals("java.time.ZoneId")));
                   }));
+
+  private static final Set<String> JCA_ENGINES =
+      Set.of(
+          "java.security.MessageDigest",
+          "java.security.Signature",
+          "java.security.KeyPairGenerator",
+          "javax.crypto.Cipher",
+          "javax.crypto.Mac",
+          "javax.crypto.KeyGenerator",
+          "javax.crypto.SecretKeyFactory");
+
+  /**
+   * Services hash, sign, encrypt and draw random values through {@code axiz-core-crypto} ({@code
+   * Hashing}, {@code AesGcm}, {@code FieldEncryptor}, {@code SecureRandoms}): algorithm, mode and
+   * randomness are reviewed once there, instead of choosing MD5, ECB or {@code java.util.Random} at
+   * each call site.
+   */
+  public static final ArchRule NO_RAW_CRYPTOGRAPHY_OR_PREDICTABLE_RANDOMNESS =
+      noClasses()
+          .should()
+          .callMethodWhere(
+              DescribedPredicate.describe(
+                  "a JCA engine or Math.random",
+                  call ->
+                      (JCA_ENGINES.contains(call.getTargetOwner().getName())
+                              && call.getName().equals("getInstance"))
+                          || (call.getTargetOwner().getName().equals("java.lang.Math")
+                              && call.getName().equals("random"))))
+          .orShould()
+          .callConstructorWhere(
+              DescribedPredicate.describe(
+                  "java.util.Random",
+                  call -> call.getTargetOwner().getName().equals("java.util.Random")))
+          .because(
+              "algorithms, modes and random sources are reviewed once in axiz-core-crypto"
+                  + " (Hashing, AesGcm, FieldEncryptor, SecureRandoms)");
 
   public static final ArchRule NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_CLASSES =
       noClasses()
@@ -279,8 +379,10 @@ public final class GeneralRules {
     return List.of(
         SINGLETON_FIELDS_OF_MUTABLE_TYPE_ARE_REVIEWED,
         NO_FLOATING_POINT_IN_BUSINESS_MODELS,
+        NO_FLOATING_POINT_IN_BUSINESS_SIGNATURES,
         NO_DOUBLE_DECIMAL_CONSTRUCTION,
         BUSINESS_USES_INJECTED_CLOCK,
+        NO_RAW_CRYPTOGRAPHY_OR_PREDICTABLE_RANDOMNESS,
         NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_CLASSES,
         NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_METHODS,
         NO_FIELD_INJECTION,

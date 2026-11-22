@@ -1,7 +1,7 @@
 public interface pe.axiz.structure.layered.CommandService<RequestT, ResponseT, I> {
 public abstract ResponseT create(RequestT);
 public abstract ResponseT update(I, RequestT);
-public abstract void delete(I);
+public abstract void delete(I, java.lang.String);
 }
 
 public final class pe.axiz.structure.layered.CrudAction extends java.lang.Enum<pe.axiz.structure.layered.CrudAction> {

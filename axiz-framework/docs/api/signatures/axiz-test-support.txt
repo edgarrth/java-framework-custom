@@ -61,9 +61,9 @@ public java.lang.String resourceName();
 public java.util.Optional find(java.lang.Object);
 public java.util.Optional<T> find(I);
 public pe.axiz.core.api.Page<T> list(pe.axiz.core.api.PageRequest);
-public pe.axiz.test.support.layered.InMemoryCrudService(java.lang.String, java.util.function.Function<T, I>, java.util.function.BiFunction<I, T, T>);
-public void delete(I);
-public void delete(java.lang.Object);
+public pe.axiz.test.support.layered.InMemoryCrudService(java.lang.String, java.util.function.Function<T, I>, java.util.function.BiFunction<I, T, T>, java.util.function.Function<T, java.lang.String>);
+public void delete(I, java.lang.String);
+public void delete(java.lang.Object, java.lang.String);
 }
 
 public final class pe.axiz.test.support.r2dbc.FakeR2dbc implements io.r2dbc.spi.ConnectionFactory {

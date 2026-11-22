@@ -110,6 +110,7 @@ Una reserva vencida impide nuevos avances del orquestador anterior, pero no canc
 Una consulta vacía nunca autoriza compensar una petición todavía en vuelo.
 
 La reserva se renueva y su duración se configura con `axiz.saga.execution-lease` (30 s por defecto).
-JDBC exige las columnas `execution_owner` y `execution_until`, incorporadas por una migración nueva
-(V2 en el demo). Las conexiones del store deben confirmar independientemente: invocar el orquestador
-fuera de transacciones de la aplicación; el adaptador rechaza conexiones ligadas a ellas.
+JDBC usa las columnas `execution_owner` y `execution_until` de la tabla `axiz_saga`. El store
+confirma el estado y la reserva en conexiones propias en auto-commit (`AutoCommitConnectionProvider`),
+independientes de la transacción del llamante: el orquestador funciona igual dentro de un `@UseCase`
+o de un handler de eventos transaccional, y un rollback del llamante no borra el estado de la saga.

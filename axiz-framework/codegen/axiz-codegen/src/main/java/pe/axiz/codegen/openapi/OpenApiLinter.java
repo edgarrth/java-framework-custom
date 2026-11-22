@@ -107,7 +107,111 @@ public final class OpenApiLinter {
         }
       }
     }
+    checkAccess(doc, out);
+    checkSchemas(doc, out);
     return out;
+  }
+
+  private static final Pattern MONEY =
+      Pattern.compile("^(amount|[a-z]+Amount|price|total|balance|fee)$");
+
+  /**
+   * Component schemas: monetary numbers declare their scale and range (error); objects decide on
+   * unknown fields and strings are bounded (warnings). Same ids as the Spectral ruleset.
+   */
+  private static void checkSchemas(OpenApiDocument doc, List<LintFinding> out) {
+    Map<String, Object> schemas =
+        OpenApiDocument.map(OpenApiDocument.map(doc.raw().get("components")).get("schemas"));
+    for (Map.Entry<String, Object> s : schemas.entrySet()) {
+      String loc = "$.components.schemas." + s.getKey();
+      Map<String, Object> schema = OpenApiDocument.map(s.getValue());
+      if ("object".equals(schema.get("type")) && !schema.containsKey("additionalProperties")) {
+        out.add(
+            new LintFinding(
+                "axiz-closed-objects",
+                "warn",
+                loc,
+                "Object schemas declare additionalProperties (false for requests)"));
+      }
+      for (Map.Entry<String, Object> p : OpenApiDocument.map(schema.get("properties")).entrySet()) {
+        Map<String, Object> property = OpenApiDocument.map(p.getValue());
+        String where = loc + ".properties." + p.getKey();
+        Object type = property.get("type");
+        if ("number".equals(type)
+            && MONEY.matcher(p.getKey()).matches()
+            && !(property.containsKey("multipleOf") && property.containsKey("maximum"))) {
+          out.add(
+              new LintFinding(
+                  "axiz-exact-amounts",
+                  "error",
+                  where,
+                  "Monetary numbers declare multipleOf (their decimal scale) and maximum"));
+        }
+        if ("string".equals(type)
+            && !property.containsKey("maxLength")
+            && !property.containsKey("enum")
+            && !property.containsKey("format")
+            && !property.containsKey("pattern")
+            && !property.containsKey("const")) {
+          out.add(
+              new LintFinding(
+                  "axiz-bounded-strings",
+                  "warn",
+                  where,
+                  "String properties declare maxLength, an enum, a format or a pattern"));
+        }
+      }
+    }
+  }
+
+  /**
+   * Every operation declares how it is accessed: OAuth2/OpenID Connect scopes or bearer
+   * authentication, inherited from the document or its own, or {@code security: []} for explicit
+   * public access. The generator, {@code axiz contract lint}, {@code axiz doctor} and the
+   * Initializr apply this same rule.
+   */
+  private static void checkAccess(OpenApiDocument doc, List<LintFinding> out) {
+    for (var operation : doc.operations()) {
+      if (operation.access() == ApiOperation.Access.UNDECLARED
+          || operation.access() == ApiOperation.Access.UNSUPPORTED)
+        out.add(
+            new LintFinding(
+                "axiz-explicit-http-access",
+                "error",
+                "$.paths['" + operation.path() + "']." + operation.method(),
+                "Operation "
+                    + operation.operationId()
+                    + " must declare a supported security requirement (OAuth2/OpenID Connect"
+                    + " scopes or bearer authentication), inherited or per operation; use"
+                    + " security: [] only for explicit public access"));
+    }
+    for (var publicOperation : doc.operations()) {
+      if (publicOperation.access() != ApiOperation.Access.PUBLIC) continue;
+      for (var authenticated : doc.operations()) {
+        if (authenticated.access() == ApiOperation.Access.AUTHENTICATED
+            && overlappingPaths(publicOperation.path(), authenticated.path()))
+          out.add(
+              new LintFinding(
+                  "axiz-explicit-http-access",
+                  "error",
+                  "$.paths['" + publicOperation.path() + "']." + publicOperation.method(),
+                  "Public operation "
+                      + publicOperation.operationId()
+                      + " overlaps authenticated-only operation "
+                      + authenticated.operationId()
+                      + "; public-paths are path based: use distinct paths or explicit scoped"
+                      + " authorization"));
+      }
+    }
+  }
+
+  private static boolean overlappingPaths(String left, String right) {
+    String[] a = left.split("/", -1);
+    String[] b = right.split("/", -1);
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++)
+      if (!a[i].equals(b[i]) && !a[i].startsWith("{") && !b[i].startsWith("{")) return false;
+    return true;
   }
 
   private static void checkResponses(Map<String, Object> op, String loc, List<LintFinding> out) {

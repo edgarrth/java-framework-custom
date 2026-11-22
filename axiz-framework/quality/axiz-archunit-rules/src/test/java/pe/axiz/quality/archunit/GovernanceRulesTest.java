@@ -11,8 +11,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import pe.axiz.quality.archunit.sample.badstart.Bad;
 import pe.axiz.quality.archunit.sample.guarded.FakeApplication;
+import pe.axiz.quality.archunit.sample.guarded.adapter.in.web.PaymentRequest;
 import pe.axiz.quality.archunit.sample.guarded.controller.TransactionalController;
 import pe.axiz.quality.archunit.sample.guarded.domain.Ambient;
+import pe.axiz.quality.archunit.sample.guarded.domain.AmbientVariants;
+import pe.axiz.quality.archunit.sample.guarded.domain.InjectedTime;
 import pe.axiz.quality.archunit.sample.guarded.handler.BareRoute;
 import pe.axiz.quality.archunit.sample.guarded.handler.HttpHandler;
 import pe.axiz.quality.archunit.sample.guarded.model.Amount;
@@ -91,6 +94,25 @@ class GovernanceRulesTest {
         fails(
             GeneralRules.NO_TRANSACTIONAL_TRANSPORT_OR_DOMAIN_METHODS,
             TransactionalController.class));
+  }
+
+  @Test
+  void everyAmbientClockFloatingPointBoundaryAndRawCryptoIsRejected() {
+    assertTrue(fails(GeneralRules.BUSINESS_USES_INJECTED_CLOCK, AmbientVariants.class));
+    assertFalse(fails(GeneralRules.BUSINESS_USES_INJECTED_CLOCK, InjectedTime.class));
+    assertTrue(fails(GeneralRules.NO_FLOATING_POINT_IN_BUSINESS_MODELS, PaymentRequest.class));
+    assertTrue(fails(GeneralRules.NO_FLOATING_POINT_IN_BUSINESS_SIGNATURES, PaymentRequest.class));
+    assertFalse(fails(GeneralRules.NO_FLOATING_POINT_IN_BUSINESS_SIGNATURES, Amount.class));
+    String report =
+        GeneralRules.NO_RAW_CRYPTOGRAPHY_OR_PREDICTABLE_RANDOMNESS
+            .evaluate(types(AmbientVariants.class))
+            .getFailureReport()
+            .toString();
+    assertTrue(report.contains("MessageDigest.getInstance"), report);
+    assertTrue(report.contains("Cipher.getInstance"), report);
+    assertTrue(report.contains("Random.<init>"), report);
+    assertFalse(
+        fails(GeneralRules.NO_RAW_CRYPTOGRAPHY_OR_PREDICTABLE_RANDOMNESS, InjectedTime.class));
   }
 
   @Test

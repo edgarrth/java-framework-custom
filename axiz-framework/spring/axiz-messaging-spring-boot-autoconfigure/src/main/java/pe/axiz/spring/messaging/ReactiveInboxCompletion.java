@@ -1,4 +1,4 @@
-package pe.axiz.spring.foundation;
+package pe.axiz.spring.messaging;
 
 import reactor.core.publisher.Mono;
 

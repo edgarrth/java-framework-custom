@@ -2,9 +2,6 @@
 
 The public API inventory records the public and protected signatures and constants of every published JAR. CI compares each build with this inventory and applies the publication mode selected in `release-policy.json`. The initial framework release is 2.0.0.
 
-The [initial API review](review-2.0.0.md) explains the accepted module moves, breaking changes
-from the unpublished design snapshot, and the limits of this local review.
-
 `release-policy.json` explicitly selects one of two modes:
 
 - `first-release`: only version 2.0.0 with no baseline. The gate authenticates to the GitHub API and enumerates Maven packages and their versions,

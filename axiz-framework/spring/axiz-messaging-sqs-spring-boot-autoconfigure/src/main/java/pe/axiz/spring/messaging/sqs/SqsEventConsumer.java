@@ -2,6 +2,7 @@ package pe.axiz.spring.messaging.sqs;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.SmartLifecycle;
 import pe.axiz.adapter.messaging.sqs.SqsEnvelopes;
+import pe.axiz.core.errors.Failures;
 import pe.axiz.core.messaging.DeliveryDecision;
 import pe.axiz.core.messaging.EventDispatcher;
 import pe.axiz.core.messaging.EventEnvelope;
@@ -24,6 +26,7 @@ import pe.axiz.spring.foundation.lifecycle.WorkerStatus;
 import pe.axiz.spring.messaging.ObservedDispatcher;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
 import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
@@ -43,6 +46,13 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest;
 public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
 
   private static final Logger LOG = LoggerFactory.getLogger(SqsEventConsumer.class);
+
+  /** SQS accepts at most ten message attributes; the failure is added when there is room. */
+  private static final int MAX_MESSAGE_ATTRIBUTES = 10;
+
+  /** Attribute that records why the message was dead-lettered ({@code Failures.describe}). */
+  static final String FAILURE_ATTRIBUTE = "axiz-failure";
+
   private static final int MAX_VISIBILITY_SECONDS = 43_200;
   private static final Duration SHUTDOWN_TIMEOUT = Duration.ofSeconds(15);
 
@@ -255,9 +265,9 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
       envelope = SqsEnvelopes.from(m);
     } catch (RuntimeException e) {
       // a message that cannot be read never will be: permanent
-      LOG.warn(
-          "Unreadable message {} on {}: {}", m.messageId(), queue, e.getClass().getSimpleName());
-      settle(m, () -> deadLetter(queue, m, null));
+      String failure = "unreadable message: " + Failures.describe(e);
+      LOG.warn("Unreadable message {} on {}: {}", m.messageId(), queue, failure);
+      settle(m, () -> deadLetter(queue, m, null, failure));
       return;
     }
     EventDispatcher.Outcome outcome;
@@ -276,7 +286,7 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
           case ACK -> () -> delete(queue, m);
           case RETRY -> () -> delay(queue, m, backoff.delay(attempt));
           case DEFER -> () -> delay(queue, m, decided.retryAfter().plusSeconds(1));
-          case DEAD_LETTER -> () -> deadLetter(queue, m, envelope);
+          case DEAD_LETTER -> () -> deadLetter(queue, m, envelope, decided.failure());
         };
     settle(m, action);
   }
@@ -300,7 +310,8 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
         b -> b.queueUrl(queue).receiptHandle(m.receiptHandle()).visibilityTimeout(seconds));
   }
 
-  private void deadLetter(String queue, Message m, @Nullable EventEnvelope envelope) {
+  private void deadLetter(
+      String queue, Message m, @Nullable EventEnvelope envelope, @Nullable String failure) {
     String dlq = settings.deadLetterQueues().get(queue);
     if (dlq == null) {
       // the queue's redrive policy moves it after maxReceiveCount; make it visible again now
@@ -310,9 +321,12 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
     }
     sqs.sendMessage(
         b -> {
-          b.queueUrl(dlq)
-              .messageBody(m.body())
-              .messageAttributes(Map.copyOf(m.messageAttributes()));
+          Map<String, MessageAttributeValue> attributes = new HashMap<>(m.messageAttributes());
+          if (failure != null && attributes.size() < MAX_MESSAGE_ATTRIBUTES)
+            attributes.put(
+                FAILURE_ATTRIBUTE,
+                MessageAttributeValue.builder().dataType("String").stringValue(failure).build());
+          b.queueUrl(dlq).messageBody(m.body()).messageAttributes(Map.copyOf(attributes));
           if (dlq.endsWith(".fifo")) {
             b.messageGroupId(
                     m.attributes()
@@ -323,7 +337,9 @@ public final class SqsEventConsumer implements SmartLifecycle, WorkerStatus {
         });
     delete(queue, m);
     LOG.warn(
-        "Event {} moved to dead-letter queue", envelope != null ? envelope.id() : m.messageId());
+        "Event {} moved to dead-letter queue; failure={}",
+        envelope != null ? envelope.id() : m.messageId(),
+        failure != null ? failure : "unknown");
   }
 
   private void delete(String queue, Message m) {

@@ -10,10 +10,14 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore;
 import pe.axiz.core.saga.SagaStateStore;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
+import pe.axiz.kit.jdbc.AutoCommitConnectionProvider;
+import pe.axiz.spring.jdbc.SchemaInitializer;
 
-/** JDBC integration selected explicitly by installing the provider starter. */
+/**
+ * JDBC integration selected explicitly by installing the provider starter. The store borrows its
+ * own auto-commit connections: saga state and execution leases must be committed and visible to
+ * other workers at once, whether or not the orchestrator runs inside an application transaction.
+ */
 @AutoConfiguration(
     beforeName = "pe.axiz.spring.saga.AxizSagaAutoConfiguration",
     afterName = "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration")
@@ -31,6 +35,6 @@ public class AxizSagaJdbcAutoConfiguration {
   @ConditionalOnMissingBean
   SagaStateStore axizSagaStateStore(
       DataSource dataSource, AxizSagaJdbcProperties p, SchemaInitializer axizSagaSchema) {
-    return new JdbcSagaStateStore(new SpringConnectionProvider(dataSource), p.table());
+    return new JdbcSagaStateStore(new AutoCommitConnectionProvider(dataSource), p.table());
   }
 }

@@ -20,16 +20,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 |---|---|
 | `CachingSecretResolver` | Caches resolved secrets for a TTL to avoid calling the secret store on every use while still picking up rotations. |
 | `CompositeSecretResolver` | Tries resolvers in order; the first one that has the secret wins. |
-| `EnvironmentSecretResolver` | Resolves secrets from environment variables (populated by External Secrets in Kubernetes). |
-| `FileSecretResolver` | Resolves secrets mounted as files (Kubernetes Secret volume): `<dir>/<name>`. |
 | `SecretNotFoundException` | A required secret is not available in any source. |
 | `SecretResolver` | Resolves secrets by name. |
 | `SecretValue` | A secret value. |
 | `AsyncSecretResolver` | Native asynchronous lookup and required lookup, with cancellation of the active source. |
 | `CompositeAsyncSecretResolver` | Tries the next source only for absence; failures stop the chain. |
 | `CachingAsyncSecretResolver` | Bounded coalesced remote loads; missing and failed values are not retained. |
-| `EnvironmentAsyncSecretResolver` | CPU-only lookup from an immutable environment snapshot. |
-| `RefreshingFileSecretResolver` | Mounted-file snapshot read at startup and refreshed by an owned background worker. |
 
 Reactive requests use `AsyncSecretResolver`. Mounted-file lookup reads an immutable memory
 snapshot; filesystem access occurs at startup and on the refresh worker. Close the file resolver
@@ -39,6 +35,8 @@ Snapshots allow at most 1,000 files, 1 MiB per file and 16 MiB total. Invalid UT
 Logical names such as `database#password` select a JSON field in Secrets Manager. File sources
 map `/` and `#` to `.`, allowing mounted overrides such as `database.password`. Environment
 sources use their documented uppercase underscore mapping. Never log `SecretValue.reveal()`.
+
+Related types: `EnvironmentAsyncSecretResolver`, `EnvironmentSecretResolver`, `FileSecretResolver`, `RefreshingFileSecretResolver` live in `axiz-adapter-secrets-file`.
 
 ## Tests
 

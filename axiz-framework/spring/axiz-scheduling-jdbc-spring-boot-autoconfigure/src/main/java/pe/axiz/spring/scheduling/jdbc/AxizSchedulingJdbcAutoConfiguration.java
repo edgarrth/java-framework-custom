@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import pe.axiz.spring.foundation.jdbc.SchemaInitializer;
+import pe.axiz.spring.jdbc.SchemaInitializer;
 import pe.axiz.spring.scheduling.AxizSchedulingProperties;
 
 /** JDBC scheduling resources; common policies remain in the base capability. */

@@ -8,6 +8,7 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.errors.Failures;
 
 /**
  * Routes envelopes to handlers by type, decoding the payload and deduplicating through the inbox.
@@ -73,10 +74,22 @@ public final class EventDispatcher {
    *
    * @param decision what to do
    * @param retryAfter suggested delay (zero when not deferred)
+   * @param failure log-safe description of the failure behind a RETRY or DEAD_LETTER ({@link
+   *     Failures#describe}), for transports that record why a message was dead-lettered; null
+   *     otherwise
    */
-  public record Outcome(DeliveryDecision decision, Duration retryAfter) {
+  public record Outcome(DeliveryDecision decision, Duration retryAfter, @Nullable String failure) {
+
+    public Outcome(DeliveryDecision decision, Duration retryAfter) {
+      this(decision, retryAfter, null);
+    }
+
     static Outcome of(DeliveryDecision decision) {
       return new Outcome(decision, Duration.ZERO);
+    }
+
+    static Outcome failed(DeliveryDecision decision, String failure) {
+      return new Outcome(decision, Duration.ZERO, failure);
     }
   }
 
@@ -89,7 +102,8 @@ public final class EventDispatcher {
         return Outcome.of(DeliveryDecision.ACK);
       }
       LOG.warn("No handler for event type {}; dead-lettering {}", envelope.type(), envelope.id());
-      return Outcome.of(DeliveryDecision.DEAD_LETTER);
+      return Outcome.failed(
+          DeliveryDecision.DEAD_LETTER, "no handler for event type " + envelope.type());
     }
     // CloudEvents identity is source + id: the same id from another producer is another event
     String key = MessageKeys.of(envelope);
@@ -98,7 +112,7 @@ public final class EventDispatcher {
       claim = deduplicator.claim(consumer, key);
     } catch (RuntimeException e) {
       // the inbox is unavailable: the message is fine, try again later
-      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), e.getClass().getSimpleName());
+      LOG.warn("Inbox unavailable for event {}: {}", envelope.id(), Failures.describe(e));
       return Outcome.of(DeliveryDecision.RETRY);
     }
     // exhaustive: a new claim status must decide here what happens to the delivery
@@ -125,14 +139,15 @@ public final class EventDispatcher {
     } catch (Exception e) {
       release(envelope, key, claim);
       DeliveryDecision decision = retryPolicy.onFailure(e, attempt);
+      String failure = Failures.describe(e);
       LOG.warn(
           "Event {} type {} failed on attempt {}: {} -> {}",
           envelope.id(),
           envelope.type(),
           attempt,
-          e.getClass().getSimpleName(),
+          failure,
           decision);
-      return Outcome.of(decision);
+      return Outcome.failed(decision, failure);
     }
     if (handler instanceof CompletesInTransaction<?> atomic && atomic.completesInTransaction())
       return Outcome.of(DeliveryDecision.ACK);
@@ -146,8 +161,7 @@ public final class EventDispatcher {
       }
     } catch (RuntimeException e) {
       // the effects happened: acknowledge; the registration expires with its retention
-      LOG.warn(
-          "Could not mark event {} processed: {}", envelope.id(), e.getClass().getSimpleName());
+      LOG.warn("Could not mark event {} processed: {}", envelope.id(), Failures.describe(e));
     }
     return Outcome.of(DeliveryDecision.ACK);
   }
@@ -158,9 +172,7 @@ public final class EventDispatcher {
     } catch (RuntimeException e) {
       // the lease expires on its own; a redelivery then takes it over
       LOG.warn(
-          "Could not release inbox claim of event {}: {}",
-          envelope.id(),
-          e.getClass().getSimpleName());
+          "Could not release inbox claim of event {}: {}", envelope.id(), Failures.describe(e));
     }
   }
 

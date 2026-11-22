@@ -41,7 +41,7 @@ class AuditMemoryCheckpointsTest {
   private AuditIntegritySupport integrity() {
     return new AuditIntegritySupport(
         new AxizAuditProperties.Integrity(AuditSealer.Mode.HASH, null, null),
-        new MockEnvironment(),
+        new MockEnvironment().withProperty("axiz.config.environment", "test"),
         new DefaultListableBeanFactory(),
         Clock.systemUTC());
   }
@@ -225,6 +225,7 @@ class AuditMemoryCheckpointsTest {
   void springLifecyclePublishesPeriodicallyWithoutAnExplicitTick() {
     List<AuditEvent> received = new CopyOnWriteArrayList<>();
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(configurations())
         .withPropertyValues("axiz.audit.mode=ASYNC", "axiz.audit.strict.checkpoint-interval=1s")
         .withBean(StrictAuditPublisher.class, () -> received::add)
@@ -242,6 +243,7 @@ class AuditMemoryCheckpointsTest {
     List<AuditEvent> received = new CopyOnWriteArrayList<>();
     var runner =
         new ApplicationContextRunner()
+            .withPropertyValues("axiz.config.environment=test")
             .withConfiguration(configurations())
             .withPropertyValues("axiz.audit.mode=ASYNC");
     runner.run(ctx -> assertThat(ctx).hasNotFailed().doesNotHaveBean(AuditMemoryCheckpoints.class));
@@ -272,6 +274,7 @@ class AuditMemoryCheckpointsTest {
     var confirmation = new CompletableFuture<Void>();
     var received = new AtomicInteger();
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(configurations())
         .withPropertyValues("axiz.audit.mode=ASYNC")
         .withBean(

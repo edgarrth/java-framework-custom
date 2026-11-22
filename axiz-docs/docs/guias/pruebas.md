@@ -31,8 +31,8 @@ class PaymentOrdersIT { ... }
 
 | Qué | Umbral |
 |---|---|
-| Cobertura (JaCoCo, por módulo) | ≥ 80 % de líneas y ≥ 70 % de ramas (`-Pquality`) |
-| Mutation testing (PIT, capa 1) | ≥ 81 % de mutantes eliminados |
+| Cobertura (JaCoCo, por módulo) | al menos 80 % de líneas y 70 % de ramas (`-Pquality`) |
+| Mutation testing (PIT, capa 1) | al menos 81 % de mutantes eliminados |
 | Nativo | compilación y pruebas nativas del demo y de un servicio por arquetipo, cada noche |
 
 Ninguna prueba puede afirmar un comportamiento defectuoso para subir cobertura: una prueba

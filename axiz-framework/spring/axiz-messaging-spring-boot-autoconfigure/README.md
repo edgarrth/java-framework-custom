@@ -29,18 +29,17 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `ObservedAsyncEventPublisher` | Native producer spans, logical routing and continuation of stored outbox traces; scopes never cross the asynchronous wait. |
 | `AsyncEventPublisherAdapter` | Named native broker adapter, separate from imperative poll/relay adapters. |
 | `AxizNativeMessagingAutoConfiguration` | Reactive publisher/facade wiring and startup validation of configured destinations. |
-| `AxizNativeMessagingAwsAutoConfiguration` | SQS/SNS native clients only for configured destinations or supplied clients; resources close with the context. |
 | `AxizEvents` | Entry point for publishing: builds the CloudEvents envelope with the current request context and publishes it, confirming the broker acknowledgement or failing visibly. |
 | `AxizMessagingAutoConfiguration` | CloudEvents messaging: envelope factory, JSON codec, observed publisher routed to the broker adapters, and the dispatcher over all `EventHandler` beans with retries, dead-lettering and de-duplication (inbox starter). |
-| `AxizMessagingAwsAutoConfiguration` | Amazon SQS and SNS publishers (FIFO deduplication id = event id) and SQS consumers. |
-| `AxizMessagingKafkaAutoConfiguration` | Amazon MSK: IAM-authenticated idempotent producer for `kafka:` destinations, and listener containers for `axiz.messaging.kafka.topics` with exponential redelivery and a dead-letter topic. |
 | `AxizMessagingProperties` | Messaging (`axiz.messaging.*`): CloudEvents 1.0 envelopes over MSK, SQS and SNS. |
 | `EventPublisherAdapter` | A broker publisher contributed by an adapter auto-configuration (MSK, SQS, SNS). |
 | `JacksonPayloadCodec` | Copies the application's Jackson mapper and modules for event payloads. Accepts additive fields and preserves decimals in untyped nested maps/lists as `BigDecimal`; the HTTP mapper keeps its own configuration. |
-| `KafkaConsumers` | Starts the listener containers after the context is ready and stops them on shutdown. |
 | `ObservedDispatcher` | Runs the dispatcher inside a CONSUMER observation continuing the producer's trace, with the request context (correlation id, tenant, channel) restored from the envelope. |
 | `ObservedEventPublisher` | Publishes inside a PRODUCER observation. |
-| `SqsEventConsumer` | Long-polling SQS consumer, one virtual thread per queue. |
+| `InboxCompletion` | Port the inbox stores implement so a transactional event handler completes its inbox entry in the business transaction (JDBC). |
+| `ReactiveInboxCompletion` | Same port for reactive transactions (R2DBC). |
+
+Related types: `AxizMessagingKafkaAutoConfiguration`, `KafkaConsumers` live in `axiz-messaging-kafka-spring-boot-autoconfigure`; `SqsEventConsumer` live in `axiz-messaging-sqs-spring-boot-autoconfigure`.
 
 ## Reactive producers
 

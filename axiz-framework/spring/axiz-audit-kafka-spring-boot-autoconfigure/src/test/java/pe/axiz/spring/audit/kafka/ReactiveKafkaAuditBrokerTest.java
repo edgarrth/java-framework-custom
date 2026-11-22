@@ -60,6 +60,7 @@ class ReactiveKafkaAuditBrokerTest {
             new StringSerializer());
     try {
       new ReactiveWebApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withBean(ProducerFactory.class, () -> factory)
           .withConfiguration(
               AutoConfigurations.of(
@@ -173,6 +174,7 @@ class ReactiveKafkaAuditBrokerTest {
             original, new StringSerializer(), new StringSerializer());
     try {
       new ApplicationContextRunner()
+          .withPropertyValues("axiz.config.environment=test")
           .withBean(ProducerFactory.class, () -> factory)
           .withConfiguration(
               AutoConfigurations.of(

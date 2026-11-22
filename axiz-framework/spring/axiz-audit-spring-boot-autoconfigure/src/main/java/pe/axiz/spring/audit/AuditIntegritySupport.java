@@ -33,8 +33,14 @@ final class AuditIntegritySupport implements AutoCloseable {
       BeanFactory beans,
       Clock clock) {
     this.properties = properties;
-    if (properties.mode() == AuditSealer.Mode.NONE && !AuditModeSelection.development(environment))
-      throw new IllegalStateException("Audit integrity NONE is restricted to local/test/ci");
+    if (properties.mode() != AuditSealer.Mode.HMAC && !AuditModeSelection.development(environment))
+      // an unkeyed hash chain can be recomputed by anyone who can write the audit store, so it
+      // does not show tampering (PCI DSS 10.3.2); NONE seals nothing at all
+      throw new IllegalStateException(
+          "Audit integrity "
+              + properties.mode()
+              + " is restricted to local/test/ci; set axiz.audit.integrity.mode=HMAC with"
+              + " hmac-secret and hmac-key-id");
     String service = environment.getProperty("spring.application.name", "application");
     if (!service.matches("[A-Za-z0-9._-]{1,128}"))
       throw new IllegalArgumentException(

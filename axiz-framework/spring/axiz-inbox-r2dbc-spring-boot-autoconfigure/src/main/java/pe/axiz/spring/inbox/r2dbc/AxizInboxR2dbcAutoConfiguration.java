@@ -16,10 +16,10 @@ import pe.axiz.adapter.inbox.r2dbc.R2dbcReactiveInboxStore;
 import pe.axiz.adapter.inbox.r2dbc.ReactiveInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.r2dbc.ReactiveSql;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import pe.axiz.spring.inbox.AxizInboxProperties;
 import pe.axiz.spring.inbox.InboxPurger;
 import pe.axiz.spring.inbox.ReactiveInbox;
+import pe.axiz.spring.messaging.ReactiveInboxCompletion;
 import reactor.core.publisher.Mono;
 
 /**

@@ -1,4 +1,4 @@
-package pe.axiz.spring.foundation.jdbc;
+package pe.axiz.spring.jdbc;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;

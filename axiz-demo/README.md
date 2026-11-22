@@ -1,8 +1,12 @@
 # axiz demo: payments
 
 A small payment processor built with the axiz framework: nine services, generated with
-`axiz new` and grown with `axiz add` / `axiz generate`, that together use **every capability of
-the axiz catalog** (checked by `coverage/`). Business flow: a customer pays a frequent beneficiary
+`axiz new` and grown with `axiz add` / `axiz generate`. The services, together with the executable
+examples in `examples/` (provider variants the services do not need: other stores, brokers and
+key providers), use **every capability of the axiz catalog**; `coverage/` checks it and the
+[capability matrix](coverage/CAPABILITIES.md) shows which service or example proves each one.
+The archetypes `support`, `library` and `starter` are not part of this business flow: the CLI and
+the Initializr generate and verify them in the framework build. Business flow: a customer pays a frequent beneficiary
 from the web or mobile app; the payment is debited from their account in the core banking system,
 sent to the inter-bank network, notified, audited and reconciled with the daily settlement file.
 
@@ -13,11 +17,11 @@ All names, accounts and data are fictitious. Local credentials are placeholders 
 
 | Service | Role / structure + extensions / stack | Persistence | What it shows |
 |---|---|---|---|
-| [payments-ux](services/payments-ux) | ux / bff / reactive | – | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
+| [payments-ux](services/payments-ux) | ux / bff / reactive | None | Channel API, compositions with optional parts, token relay, Redis cache and idempotency, feature flags, masking, error translation |
 | [payment-orders](services/payment-orders) | business / hexagonal + cqrs / servlet | Aurora | Domain rules, business calendar and cut-off, sequences, field encryption + blind index, transactional outbox, audit to MSK |
 | [beneficiaries](services/beneficiaries) | business / layered / servlet | DynamoDB | Repositories with cursor pagination, soft delete, atomic registration, strongly consistent reads, idempotency on DynamoDB |
-| [banking-core](services/banking-core) | core / hexagonal / servlet | – | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
-| [payment-network-gateway](services/payment-network-gateway) | gateway / hexagonal / servlet | – | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
+| [banking-core](services/banking-core) | core / hexagonal / servlet | None | Anti-corruption layer: REST with client credentials, SOAP with WS-Security, Redis locks, audit to SQS |
+| [payment-network-gateway](services/payment-network-gateway) | gateway / hexagonal / servlet | None | Payment network isolation, API key from secrets, transfer idempotency with Redis, audit to SQS |
 | [payment-process](services/payment-process) | business / hexagonal + saga / servlet | Aurora | Saga with compensations and recovery, Kafka consumer, ShedLock, tenancy |
 | [notifications-processor](services/notifications-processor) | event-processor / eda | DynamoDB | Kafka and SQS handlers, inbox, notifications to SNS, audit archive on S3 with DynamoDB locks |
 | [settlement-batch](services/settlement-batch) | batch / batch / CronJob | Aurora | Spring Batch over a fixed-width S3 file, control totals, idempotent load, job exit codes |
@@ -31,36 +35,44 @@ events and the (simulated) external systems in `contracts/external`.
 [`docs/architecture.drawio`](docs/architecture.drawio) holds C4 container diagrams, one per flow
 (the initiator on the left, arrows to the right):
 
-1. **Payment from the channel**: app → payments-ux → beneficiaries and payment-orders.
-2. **Payment execution**: payment-orders → MSK → payment-process (saga) → banking-core → core banking; payment-process → payment-network-gateway → payment network.
+1. **Payment from the channel**: app -> payments-ux -> beneficiaries and payment-orders.
+2. **Payment execution**: payment-orders -> MSK -> payment-process (saga) -> banking-core -> core banking; payment-process -> payment-network-gateway -> payment network.
 3. **Closing, notification and audit**: status changes and audit events reach notifications-processor (SNS, S3).
-4. **Daily settlement**: network file on S3 → settlement-batch → Aurora and a summary on S3.
-5. **Payment history**: payment-orders → MSK → payments-history → Aurora (R2DBC); API consumers read it without blocking a thread.
+4. **Daily settlement**: network file on S3 -> settlement-batch -> Aurora and a summary on S3.
+5. **Payment history**: payment-orders -> MSK -> payments-history -> Aurora (R2DBC); API consumers read it without blocking a thread.
 
 The saga of payment-process:
 
 | Step | Action | Compensation |
 |---|---|---|
-| `processing` | order → PROCESSING (payment-orders) | order → REJECTED |
+| `processing` | order -> PROCESSING (payment-orders) | order -> REJECTED |
 | `debit` | debit the customer account (banking-core) | reverse the debit |
-| `transfer` | send the transfer (pivot) | – |
-| `complete` | order → COMPLETED (never fails the saga; settlement reconciles it) | – |
+| `transfer` | send the transfer (pivot) | None |
+| `complete` | order -> COMPLETED (never fails the saga; settlement reconciles it) | None |
 
 Every downstream call carries an idempotency key derived from the order and the step, so retries,
 redelivered events and sagas resumed after a crash never repeat an effect.
 
 ## Run it locally
 
-Requirements: JDK 25, Docker, `jq`; Bruno to explore the APIs. The axiz artifacts must be
-reachable: `./mvnw install -DskipTests` in axiz-framework once, or the GitHub Packages repository in
-`~/.m2/settings.xml`. The README at the root of the delivery walks through a clean installation
-and every test with `curl`, including what to check in each response.
+Requirements: JDK 25, Docker, `curl` and `jq`; Bruno to explore the APIs. The axiz artifacts must
+be reachable: `scripts/build.sh --skip-tests` at the repository root once, or the GitHub Packages
+repository in `~/.m2/settings.xml`. The [root README](../README.md) walks through the build, both
+ways of running the demo and a `curl` call for every endpoint with its real response.
+
+There are two ways to run it, with the same infrastructure (`local/compose.yaml`):
+
+- services on the host (`scripts/demo.sh`), debuggable from the IDE and needed by the functional
+  scenarios, which read the service logs;
+- everything in Docker Compose (`scripts/compose.sh`): infrastructure, the eight services as Jib
+  images (`local/compose.apps.yaml`, profile `apps`), dev secrets and seed data in one command,
+  which prints every route at the end.
 
 ```bash
 scripts/demo.sh up       # checks (Docker, JDK 25, free ports), builds stale jars, infrastructure
-                         # (local/compose.yaml), dev secrets, every service; waits for 7/7 UP
+                         # (local/compose.yaml), dev secrets, every service; waits for 8/8 UP
 scripts/demo.sh status   # state of every service: UP, STARTING, EXITED, BUSY (port taken), STOPPED
-scripts/demo.sh smoke    # waits for 7/7 UP, pays a beneficiary through the channel API, waits for
+scripts/demo.sh smoke    # waits for 8/8 UP, pays a beneficiary through the channel API, waits for
                          # COMPLETED and for the history; a failing step prints its HTTP response
 scripts/demo.sh scenarios   # every functional scenario (about 8 minutes, see below)
 scripts/demo.sh up --attach   # same, then stays showing the logs of every service (Ctrl+C stops them)
@@ -68,6 +80,20 @@ scripts/demo.sh logs          # follows the logs of every service (scripts/demo.
 scripts/demo.sh restart payments-ux --debug   # one service again, Spring web and axiz at DEBUG
 scripts/demo.sh stop          # stops the services, keeps the infrastructure
 scripts/demo.sh down     # stops services, removes containers and volumes
+```
+
+```bash
+scripts/compose.sh up --build      # jars and images (tests skipped), infrastructure, services, routes
+scripts/compose.sh up --no-build   # the images already built
+scripts/compose.sh status | routes | logs [service] | down
+```
+
+Both ways are checked with the same commands:
+
+```bash
+scripts/curl-tests.sh    # every endpoint in the order of the payment flow: HTTP status and final state
+scripts/test-all.sh      # endpoint checks, smoke test and (services on the host) functional scenarios
+scripts/test-all.sh --dast   # also the authenticated OWASP ZAP scan of every contract
 ```
 
 `up` runs each service from its jar (`services/<service>/target`), rebuilding the jars that are
@@ -124,8 +150,8 @@ SCENARIOS_SKIP="recovery" scripts/demo.sh scenarios
 ```
 
 The scenarios read the local infrastructure (PostgreSQL, Kafka, LocalStack, WireMock, Grafana), so
-they run against `demo.sh up`, not kind. They need the realm and the LocalStack init of this
-version: after an upgrade, `scripts/demo.sh down` and `scripts/demo.sh up` once.
+they run against `demo.sh up`, not kind or Compose. They need the realm and the LocalStack init of
+the current sources: after changing them, `scripts/demo.sh down` and `scripts/demo.sh up` once.
 
 ### Inside Kubernetes (kind)
 
@@ -160,7 +186,7 @@ channel flow, M2M calls to business, process and banking-core, and error cases
 - `services/<service>/deploy/helm/<service>/values-<env>.yaml`: environment values (no secrets).
 - `deploy/platform/axiz-common.yaml`: configuration shared by every service of a namespace
   (zone and business calendar).
-- Secrets: AWS Secrets Manager → External Secrets Operator → files in `/var/run/secrets/axiz`.
+- Secrets: AWS Secrets Manager -> External Secrets Operator -> files in `/var/run/secrets/axiz`.
 
 ## Quality
 
@@ -173,7 +199,7 @@ The application integration tests own their Spring context and Testcontainers re
 still running, so container cleanup finishes before the test JVM exits. Generated application
 tests use the same lifecycle.
 
-- `coverage/`: fails when a capability of the axiz catalog is no longer used by the demo, or when
+- `coverage/`: fails when a capability of the axiz catalog is not used by the demo, or when
   its successful JUnit evidence is missing, skipped or stale, or a required provider/stack variant is absent.
   See the [executable capability matrix](coverage/CAPABILITIES.md) and [gate rules](coverage/README.md).
 - `.github/workflows/ci.yaml`: each service through the shared `service-build` pipeline (build,
@@ -192,8 +218,8 @@ The [protected-data executable examples](examples/protected-data/README.md) demo
 PAN/DNI tokenization and independent encrypted DNI lookup with LocalStack and Valkey.
 They run as part of the demo reactor and are not deployed with the payment services.
 
-El ejemplo [`sqs-consumer`](examples/sqs-consumer/README.md) tiene un classpath mínimo y usa
-descubrimiento automático del starter. Ejecuta consumo, reintentos, DLQ, redrive y FIFO en ambas
-pilas. La [matriz ejecutable](coverage/CAPABILITIES.md) exige las pilas del catálogo y las
-variantes de persistencia; la prueba HTTP de `payments-history` abre un servidor real en un puerto
-aleatorio y verifica el 401 RFC 9457 con BlockHound activo.
+The [`sqs-consumer`](examples/sqs-consumer/README.md) example has a minimal classpath and relies on
+starter autodiscovery. It runs consumption, retries, DLQ, redrive and FIFO on both stacks. The
+[executable matrix](coverage/CAPABILITIES.md) requires the catalog stacks and the persistence
+variants; the HTTP test of `payments-history` opens a real server on a random port and checks the
+RFC 9457 401 with BlockHound active.

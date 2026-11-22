@@ -19,4 +19,4 @@ servicio debe aplicar las migraciones antes de iniciar tráfico.
 El outbox durable necesita también la tabla `axiz_audit_chain`: su cabecera se confirma en
 la misma transacción que los eventos. Un arranque saludable sin ejecutar comandos no prueba
 que una migración incluya esa tabla. La demo de órdenes lo verifica registrando una orden
-real y conserva una migración adicional para instalaciones que ya aplicaron `V1`.
+real.

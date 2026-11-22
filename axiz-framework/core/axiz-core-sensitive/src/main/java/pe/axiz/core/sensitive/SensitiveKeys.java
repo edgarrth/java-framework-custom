@@ -6,11 +6,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Sensitivity by property or JSON key name, for data without annotations (maps, raw HTTP bodies,
  * headers). Matching is case-insensitive and ignores {@code _} and {@code -}.
+ *
+ * <p>A name is split into words (camelCase, separators) and a sensitive term may appear in any
+ * position: {@code cvvCode}, {@code pinCode}, {@code passwordConfirmation} and {@code
+ * privateKeyPem} are sensitive like {@code cvv} or {@code newPassword}. A term followed by a word
+ * that describes metadata about it ({@code tokenCount}, {@code pinAttempts}, {@code
+ * passwordPolicy}, {@code tokenUrl}) is not. When several terms match, the most sensitive one
+ * decides.
  */
 public final class SensitiveKeys {
 
@@ -40,6 +49,8 @@ public final class SensitiveKeys {
           entry("cvc2", SensitivityLevel.CRITICAL, MaskType.FULL),
           entry("cid", SensitivityLevel.CRITICAL, MaskType.FULL),
           entry("securitycode", SensitivityLevel.CRITICAL, MaskType.FULL),
+          entry("codigoseguridad", SensitivityLevel.CRITICAL, MaskType.FULL),
+          entry("codigodeseguridad", SensitivityLevel.CRITICAL, MaskType.FULL),
           entry("cardverificationvalue", SensitivityLevel.CRITICAL, MaskType.FULL),
           entry("track1", SensitivityLevel.CRITICAL, MaskType.FULL),
           entry("track2", SensitivityLevel.CRITICAL, MaskType.FULL),
@@ -63,11 +74,104 @@ public final class SensitiveKeys {
           entry("expirydate", SensitivityLevel.HIGH, MaskType.FULL),
           entry("expirationdate", SensitivityLevel.HIGH, MaskType.FULL),
           entry("cardexpiry", SensitivityLevel.HIGH, MaskType.FULL),
+          entry("expiry", SensitivityLevel.HIGH, MaskType.FULL),
+          entry("vencimiento", SensitivityLevel.HIGH, MaskType.FULL),
+          entry("fechavencimiento", SensitivityLevel.HIGH, MaskType.FULL),
+          entry("fechaexpiracion", SensitivityLevel.HIGH, MaskType.FULL),
+          entry("cardholder", SensitivityLevel.HIGH, MaskType.NAME),
+          entry("cardholdername", SensitivityLevel.HIGH, MaskType.NAME),
+          entry("titulartarjeta", SensitivityLevel.HIGH, MaskType.NAME),
           entry("email", SensitivityLevel.MEDIUM, MaskType.EMAIL),
           entry("phone", SensitivityLevel.MEDIUM, MaskType.PHONE),
           entry("mobile", SensitivityLevel.MEDIUM, MaskType.PHONE),
           entry("celular", SensitivityLevel.MEDIUM, MaskType.PHONE),
           entry("telefono", SensitivityLevel.MEDIUM, MaskType.PHONE));
+
+  /**
+   * Words that, right after a sensitive term, describe metadata about it or a derived, protected
+   * form rather than the value itself ({@code tokenCount}, {@code passwordPolicy}, {@code
+   * secretArn}, the blind index {@code creditorCciIndex}, {@code panMasked}).
+   */
+  private static final Set<String> METADATA =
+      Set.of(
+          "count",
+          "counter",
+          "attempts",
+          "attempt",
+          "retries",
+          "retry",
+          "length",
+          "len",
+          "size",
+          "type",
+          "types",
+          "kind",
+          "format",
+          "status",
+          "state",
+          "enabled",
+          "disabled",
+          "required",
+          "policy",
+          "rules",
+          "rule",
+          "id",
+          "ids",
+          "name",
+          "names",
+          "ref",
+          "reference",
+          "arn",
+          "url",
+          "uri",
+          "endpoint",
+          "path",
+          "file",
+          "location",
+          "version",
+          "algorithm",
+          "alg",
+          "ttl",
+          "timeout",
+          "lifetime",
+          "duration",
+          "expiry",
+          "expires",
+          "expiration",
+          "expired",
+          "at",
+          "time",
+          "created",
+          "updated",
+          "issued",
+          "changed",
+          "rotated",
+          "rotation",
+          "last",
+          "valid",
+          "validity",
+          "present",
+          "provided",
+          "used",
+          "missing",
+          "mode",
+          "strategy",
+          "provider",
+          "source",
+          "store",
+          "issuer",
+          "audience",
+          "scope",
+          "scopes",
+          "enforced",
+          "verified",
+          "index",
+          "masked",
+          "mask",
+          "truncated");
+
+  /** Longest default term, in words; windows beyond it cannot match. */
+  private static final int MAX_WINDOW = 4;
 
   private static final Pattern SEPARATORS = Pattern.compile("[_\\-.\\s]+");
   private static final Pattern CAMEL =
@@ -100,11 +204,39 @@ public final class SensitiveKeys {
     }
     int size = words.size();
     if (size == 0) return Optional.empty();
-    SensitiveField hit = keys.get(String.join("", words));
-    if (hit == null && size > 1) hit = keys.get(words.get(size - 2) + words.get(size - 1));
-    if (hit == null) hit = keys.get(words.get(size - 1));
-    if (hit == null) hit = keys.get(TRAILING_DIGITS.matcher(words.get(size - 1)).replaceFirst(""));
-    return Optional.ofNullable(hit);
+    SensitiveField whole = lookup(String.join("", words));
+    if (whole != null) return Optional.of(whole);
+    SensitiveField best = null;
+    List<int[]> described = new ArrayList<>(); // terms followed by a metadata word, and their parts
+    for (int length = Math.min(size, MAX_WINDOW); length >= 1; length--) {
+      for (int start = 0; start + length <= size; start++) {
+        int end = start + length;
+        SensitiveField hit = lookup(String.join("", words.subList(start, end)));
+        if (hit == null || within(described, start, end)) continue;
+        if (end < size && METADATA.contains(stripDigits(words.get(end)))) {
+          described.add(new int[] {start, end});
+          continue;
+        }
+        if (best == null || hit.level().compareTo(best.level()) > 0) best = hit;
+      }
+    }
+    return Optional.ofNullable(best);
+  }
+
+  private @Nullable SensitiveField lookup(String joined) {
+    SensitiveField hit = keys.get(joined);
+    return hit != null ? hit : keys.get(stripDigits(joined));
+  }
+
+  private static boolean within(List<int[]> spans, int start, int end) {
+    for (int[] span : spans) {
+      if (start >= span[0] && end <= span[1]) return true;
+    }
+    return false;
+  }
+
+  private static String stripDigits(String word) {
+    return TRAILING_DIGITS.matcher(word).replaceFirst("");
   }
 
   static String normalize(String key) {

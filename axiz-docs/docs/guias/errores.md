@@ -88,15 +88,24 @@ Si la dependencia no contesta, `ExternalErrorDetail` lleva status `-1` y el tipo
 
 ## Qué se registra
 
-`ProblemResponder` registra cada error una sola vez, en el logger `axiz.errors`:
+`ProblemResponder` registra cada error una sola vez, en el logger `axiz.errors`, con
+`status`, `code`, `correlationId`, `exceptionType` y `failure`:
 
-| Error | Nivel | Stack trace |
-|---|---|---|
-| Falla interna (5xx, tipo `TECHNICAL`) | ERROR | sí |
-| Falla de una dependencia (5xx, tipo `EXTERNAL`) | WARN, con `cause=<tipo>: <mensaje>` | no |
-| Acceso denegado (tipo `SECURITY`) | WARN | no |
-| Conflicto (409) | INFO | no |
-| Otros errores del cliente (400, 404, 422...) | DEBUG | no |
+| Error | Nivel |
+|---|---|
+| Falla interna (5xx, tipo `TECHNICAL`) | ERROR |
+| Falla de una dependencia (5xx, tipo `EXTERNAL`) | WARN |
+| Acceso denegado (tipo `SECURITY`) | WARN |
+| Conflicto (409) | INFO |
+| Otros errores del cliente (400, 404, 422...) | DEBUG |
+
+`failure` es `Failures.describe`: la cadena de causas con el tipo de cada una y el frame que la
+lanzó (más el primer frame fuera del JDK cuando nace dentro de él), por ejemplo
+`java.lang.IllegalStateException at pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore.run(JdbcSagaStateStore.java:232) | caused by org.postgresql.util.PSQLException at ...`.
+Nunca incluye mensajes: un driver, un parser o el propio servicio pueden repetir los valores que
+rechazaron. La misma descripción aparece en los logs de consumo de eventos, saga y outbox, en el
+mensaje de la excepción que acompaña a un registro enviado a la DLQ de Kafka y en el atributo
+`axiz-failure` de los mensajes enviados a la DLQ de SQS.
 
 Una dependencia caída no es un defecto del servicio: su stack trace no agrega nada y, con cada
 request, inundaría el log con ERROR. El cliente HTTP ya registró cada intento

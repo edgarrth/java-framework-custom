@@ -362,7 +362,7 @@ public class AxizMessagingKafkaAutoConfiguration {
             case ACK -> null;
             case RETRY -> new RetryLaterException(where);
             case DEFER -> new DeferredException(where);
-            case DEAD_LETTER -> new DeadLetterException(where);
+            case DEAD_LETTER -> new DeadLetterException(where, outcome.failure());
           };
       if (failure != null) {
         throw failure;
@@ -416,8 +416,12 @@ public class AxizMessagingKafkaAutoConfiguration {
   static final class DeadLetterException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
-    DeadLetterException(String where) {
-      super("Dead-lettering " + where);
+    /**
+     * The message carries the log-safe failure description, so the dead-letter record's exception
+     * headers say why it was moved.
+     */
+    DeadLetterException(String where, @Nullable String failure) {
+      super("Dead-lettering " + where + (failure != null ? ": " + failure : ""));
     }
   }
 }

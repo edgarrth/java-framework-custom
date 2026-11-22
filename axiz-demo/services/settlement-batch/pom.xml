@@ -74,6 +74,14 @@
     </dependency>
     <dependency>
       <groupId>pe.axiz</groupId>
+      <artifactId>axiz-secrets-spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
+      <artifactId>axiz-secrets-file-spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pe.axiz</groupId>
       <artifactId>axiz-jpa-spring-boot-starter</artifactId>
     </dependency>
     <dependency>

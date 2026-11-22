@@ -20,6 +20,7 @@ class AuditProvidersTest {
     ProducerFactory<String, String> producers =
         new DefaultKafkaProducerFactory<>(Map.of("bootstrap.servers", "localhost:9092"));
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(
             AutoConfigurations.of(
@@ -43,6 +44,7 @@ class AuditProvidersTest {
                   .containsExactlyInAnyOrder("kafka", "sqs");
             });
     new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAwsIdentityAutoConfiguration.class))
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withPropertyValues("axiz.audit.enabled=false")

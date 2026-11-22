@@ -252,7 +252,11 @@ class SqsEventConsumerTest {
     var dispatcher = mock(ObservedDispatcher.class);
     when(dispatcher.dispatch(anyString(), any(EventEnvelope.class), anyInt()))
         .thenThrow(new IllegalStateException("dispatch unavailable"))
-        .thenReturn(new EventDispatcher.Outcome(DeliveryDecision.DEAD_LETTER, Duration.ZERO));
+        .thenReturn(
+            new EventDispatcher.Outcome(
+                DeliveryDecision.DEAD_LETTER,
+                Duration.ZERO,
+                "java.lang.IllegalStateException at pe.axiz.Handler.handle(Handler.java:1)"));
     var consumer =
         new SqsEventConsumer(
             sqs,
@@ -270,6 +274,13 @@ class SqsEventConsumerTest {
     sqs.calls.clear();
     consumer.process("https://sqs/q", message(validBody()));
     assertEquals(List.of("dlq", "delete"), sqs.calls);
+    assertEquals(
+        "java.lang.IllegalStateException at pe.axiz.Handler.handle(Handler.java:1)",
+        sqs.sent
+            .getLast()
+            .messageAttributes()
+            .get(SqsEventConsumer.FAILURE_ATTRIBUTE)
+            .stringValue());
     sqs.calls.clear();
     consumer.process("https://sqs/unmapped", message("invalid"));
     assertEquals(List.of("visibility:0"), sqs.calls);

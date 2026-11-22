@@ -32,7 +32,16 @@ class SafeFailureLoggingTest {
             }
 
             public void handle(String value, EventEnvelope event) {
-              throw new IllegalStateException(marker, new IllegalArgumentException(marker));
+              // a service handler: its messages may echo business data and are never logged
+              var serviceFrame =
+                  new StackTraceElement[] {
+                    new StackTraceElement("com.example.payments.Handler", "handle", "H.java", 7)
+                  };
+              var cause = new IllegalArgumentException(marker);
+              cause.setStackTrace(serviceFrame);
+              var failure = new IllegalStateException(marker, cause);
+              failure.setStackTrace(serviceFrame);
+              throw failure;
             }
           };
       var codec =
@@ -71,6 +80,11 @@ class SafeFailureLoggingTest {
       assertTrue(
           capture.list.stream()
               .anyMatch(e -> e.getFormattedMessage().contains("IllegalStateException")));
+      assertTrue(
+          capture.list.stream()
+              .anyMatch(
+                  e -> e.getFormattedMessage().contains("at com.example.payments.Handler.handle")),
+          "the origin frame locates the failure");
       for (var logged : capture.list) {
         assertFalse(logged.getFormattedMessage().contains(marker));
         assertNull(logged.getThrowableProxy());

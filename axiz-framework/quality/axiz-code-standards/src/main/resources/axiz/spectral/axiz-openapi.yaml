@@ -72,3 +72,58 @@ rules:
     then:
       field: parameters
       function: truthy
+  axiz-explicit-http-access:
+    description: >-
+      Every operation declares its access: security inherited from the root or its own, with an
+      OAuth2/OpenID Connect or bearer scheme, or security: [] for explicit public access. The
+      generator, axiz contract lint, axiz doctor and the Initializr apply the same rule.
+    severity: error
+    formats: [oas3]
+    given: $
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required: [security]
+            - properties:
+                paths:
+                  additionalProperties:
+                    properties:
+                      get: {required: [security]}
+                      put: {required: [security]}
+                      post: {required: [security]}
+                      delete: {required: [security]}
+                      patch: {required: [security]}
+  axiz-exact-amounts:
+    description: >-
+      Monetary numbers (amount, *Amount, price, total, balance, fee) declare multipleOf (their
+      decimal scale) and maximum, so clients and servers agree on precision and range.
+    severity: error
+    formats: [oas3]
+    given: $..properties[?(@property.match(/^(amount|[a-z]+Amount|price|total|balance|fee)$/) && @.type == 'number')]
+    then:
+      - field: multipleOf
+        function: defined
+      - field: maximum
+        function: defined
+  axiz-closed-objects:
+    description: >-
+      Object schemas declare additionalProperties, so unknown fields are an explicit decision
+      (OWASP API3: mass assignment and excessive data exposure).
+    severity: warn
+    formats: [oas3]
+    given: $.components.schemas[?(@.type == 'object')]
+    then:
+      field: additionalProperties
+      function: defined
+  axiz-bounded-strings:
+    description: >-
+      String properties declare maxLength, an enum, a format or a pattern (OWASP API4: unbounded
+      input).
+    severity: warn
+    formats: [oas3]
+    given: $.components.schemas[*].properties[?(@.type == 'string' && !@.enum && !@.format && !@.pattern && !@.const)]
+    then:
+      field: maxLength
+      function: defined

@@ -45,6 +45,10 @@ final class ApplicationModels {
             Map.of(
                 "name",
                 name,
+                "record",
+                false,
+                "imports",
+                "",
                 "declaration",
                 "public enum "
                     + name

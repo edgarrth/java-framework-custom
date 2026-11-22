@@ -42,8 +42,8 @@ import pe.axiz.core.audit.InMemoryAuditChainState;
 import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.outbox.OutboxWriter;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
-import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
+import pe.axiz.spring.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.jdbc.SpringTransactionRunner;
 
 /** Faults around a real database commit must not erase or misclassify sealed attempts. */
 @Timeout(15)

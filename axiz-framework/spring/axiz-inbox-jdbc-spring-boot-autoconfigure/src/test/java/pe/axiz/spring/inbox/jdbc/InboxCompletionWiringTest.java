@@ -17,9 +17,9 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import pe.axiz.adapter.inbox.jdbc.JdbcInboxStore;
 import pe.axiz.core.inbox.InboxStore;
 import pe.axiz.kit.jdbc.JdbcTransactions;
-import pe.axiz.spring.foundation.InboxCompletion;
 import pe.axiz.spring.inbox.AxizInboxAutoConfiguration;
 import pe.axiz.spring.inbox.AxizInboxProperties;
+import pe.axiz.spring.messaging.InboxCompletion;
 
 class InboxCompletionWiringTest {
   private JdbcDataSource source() {

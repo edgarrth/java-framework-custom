@@ -94,6 +94,11 @@ public pe.axiz.core.messaging.EventPublisher publisher();
 public pe.axiz.spring.messaging.EventPublisherAdapter(java.lang.String, pe.axiz.core.messaging.EventPublisher);
 }
 
+public interface pe.axiz.spring.messaging.InboxCompletion {
+public abstract boolean complete(java.lang.String, java.lang.String, java.lang.String);
+public abstract java.lang.Object transactionResource();
+}
+
 public final class pe.axiz.spring.messaging.JacksonPayloadCodec implements pe.axiz.core.messaging.PayloadCodec {
 public <T> T decode(byte[], java.lang.Class<T>);
 public byte[] encode(java.lang.Object);
@@ -123,8 +128,8 @@ public pe.axiz.spring.messaging.ObservedEventPublisher(pe.axiz.core.messaging.Ev
 public final class pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
 public java.lang.Object postProcessAfterInitialization(java.lang.Object, java.lang.String);
 public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration);
-public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.ReactiveInboxCompletion>, java.lang.String);
-public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.ReactiveInboxCompletion>, java.lang.String, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.ReactiveDispatchBoundary>);
+public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.messaging.ReactiveInboxCompletion>, java.lang.String);
+public pe.axiz.spring.messaging.ReactiveEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.ReactiveTransactionManager>, boolean, java.time.Duration, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.messaging.ReactiveInboxCompletion>, java.lang.String, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.ReactiveDispatchBoundary>);
 }
 
 public final class pe.axiz.spring.messaging.ReactiveEvents {
@@ -134,13 +139,18 @@ public reactor.core.publisher.Mono<pe.axiz.core.messaging.PublishResult> publish
 public reactor.core.publisher.Mono<pe.axiz.core.messaging.PublishResult> publish(java.lang.String, pe.axiz.core.messaging.EventEnvelope);
 }
 
+public interface pe.axiz.spring.messaging.ReactiveInboxCompletion {
+public abstract java.lang.Object transactionResource();
+public abstract reactor.core.publisher.Mono<java.lang.Boolean> complete(java.lang.String, java.lang.String, java.lang.String);
+}
+
 public final class pe.axiz.spring.messaging.ReactiveTransactionalEventHandler<T> implements pe.axiz.core.messaging.CompletesInTransaction<T> {
 public boolean completesInTransaction();
 public java.lang.Class<T> payloadType();
 public java.lang.String eventType();
 public pe.axiz.spring.messaging.ReactiveTransactionalEventHandler(pe.axiz.spring.messaging.ReactiveTypedEventHandler<T>, org.springframework.transaction.reactive.TransactionalOperator, java.time.Duration);
-public pe.axiz.spring.messaging.ReactiveTransactionalEventHandler(pe.axiz.spring.messaging.ReactiveTypedEventHandler<T>, org.springframework.transaction.reactive.TransactionalOperator, java.time.Duration, pe.axiz.spring.foundation.ReactiveInboxCompletion);
-public pe.axiz.spring.messaging.ReactiveTransactionalEventHandler(pe.axiz.spring.messaging.ReactiveTypedEventHandler<T>, org.springframework.transaction.reactive.TransactionalOperator, java.time.Duration, pe.axiz.spring.foundation.ReactiveInboxCompletion, java.util.List<pe.axiz.spring.foundation.ReactiveDispatchBoundary>);
+public pe.axiz.spring.messaging.ReactiveTransactionalEventHandler(pe.axiz.spring.messaging.ReactiveTypedEventHandler<T>, org.springframework.transaction.reactive.TransactionalOperator, java.time.Duration, pe.axiz.spring.messaging.ReactiveInboxCompletion);
+public pe.axiz.spring.messaging.ReactiveTransactionalEventHandler(pe.axiz.spring.messaging.ReactiveTypedEventHandler<T>, org.springframework.transaction.reactive.TransactionalOperator, java.time.Duration, pe.axiz.spring.messaging.ReactiveInboxCompletion, java.util.List<pe.axiz.spring.foundation.ReactiveDispatchBoundary>);
 public pe.axiz.spring.messaging.ReactiveTypedEventHandler<T> delegate();
 public void handle(T, pe.axiz.core.messaging.EventEnvelope) throws java.lang.Exception;
 public void handleClaimed(T, pe.axiz.core.messaging.EventEnvelope, java.lang.String, java.lang.String, java.lang.String) throws java.lang.Exception;
@@ -164,7 +174,7 @@ public java.lang.Class<T> payloadType();
 public java.lang.String eventType();
 public pe.axiz.core.messaging.EventHandler<T> delegate();
 public pe.axiz.spring.messaging.TransactionalEventHandler(pe.axiz.core.messaging.EventHandler<T>, org.springframework.transaction.support.TransactionTemplate);
-public pe.axiz.spring.messaging.TransactionalEventHandler(pe.axiz.core.messaging.EventHandler<T>, org.springframework.transaction.support.TransactionTemplate, pe.axiz.spring.foundation.InboxCompletion);
+public pe.axiz.spring.messaging.TransactionalEventHandler(pe.axiz.core.messaging.EventHandler<T>, org.springframework.transaction.support.TransactionTemplate, pe.axiz.spring.messaging.InboxCompletion);
 public void handle(T, pe.axiz.core.messaging.EventEnvelope) throws java.lang.Exception;
 public void handleClaimed(T, pe.axiz.core.messaging.EventEnvelope, java.lang.String, java.lang.String, java.lang.String) throws java.lang.Exception;
 }
@@ -172,5 +182,5 @@ public void handleClaimed(T, pe.axiz.core.messaging.EventEnvelope, java.lang.Str
 public final class pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor implements org.springframework.beans.factory.config.BeanPostProcessor {
 public java.lang.Object postProcessAfterInitialization(java.lang.Object, java.lang.String);
 public pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.PlatformTransactionManager>);
-public pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.PlatformTransactionManager>, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.foundation.InboxCompletion>, java.lang.String);
+public pe.axiz.spring.messaging.TransactionalEventHandlerPostProcessor(org.springframework.beans.factory.ObjectProvider<org.springframework.transaction.PlatformTransactionManager>, org.springframework.beans.factory.ObjectProvider<pe.axiz.spring.messaging.InboxCompletion>, java.lang.String);
 }

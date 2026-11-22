@@ -24,13 +24,12 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `AxizFoundationAutoConfiguration` | Clock, business calendar, id generation, identifier registry and Money JSON support. |
 | `AxizFoundationProperties` | Foundation settings (`axiz.foundation.*`), normally in the `axiz-common` ConfigMap. |
 | `IdentifierConstraintValidator` | Validator of `ValidIdentifier` backed by the identifier registry. |
-| `IdentifierValidation` | Registry used by `IdentifierConstraintValidator`. |
 | `MoneyJacksonModule` | Jackson module for `Money`: the amount is written as a string so clients never parse it as a binary floating point number. |
 | `ValidIdentifier` | Bean Validation constraint for any registered identifier type, e.g. |
-| `SchemaInitializer` | Creates framework tables from `axiz/sql/<name>-<dialect>.sql`. |
-| `SpringConnectionProvider` | Connection provider bound to Spring transactions: inside a transaction the transaction's connection is returned and left open on release. |
-| `SpringTransactionRunner` | Runs work in a new or joined Spring transaction; checked exceptions roll back too. |
-| `SqlDialects` | Detects the database product to choose SQL dialects (PostgreSQL in clusters, H2 in tests). |
+
+JDBC integration (`SpringConnectionProvider`, `SpringTransactionRunner`, `SchemaInitializer`,
+`SqlDialects`) lives in `axiz-jdbc-spring-boot-autoconfigure`; the inbox completion ports used by
+transactional event handlers live in `axiz-messaging-spring-boot-autoconfigure`.
 
 ## AWS identity extension
 
@@ -54,7 +53,7 @@ Import `AwsIdentityFor`, `AwsService` and `AwsCapability` from
 `pe.axiz.spring.aws`. The application configures the STS client and role permissions.
 Declare exactly one of `service` or `capability`:
 `@AwsIdentityFor(capability = AwsCapability.AUDIT)` targets audit, for example.
-Selection order is capability → AWS service → unqualified global bean → context SDK source.
+Selection order is capability -> AWS service -> unqualified global bean -> context SDK source.
 A unique `@Primary` resolves multiple beans within one scope. Invalid declarations, ambiguous
 scopes and non-singleton providers fail startup, including declarations for unused scopes.
 An unqualified `defaultCandidate=false` bean is excluded from the global scope; a typed scoped

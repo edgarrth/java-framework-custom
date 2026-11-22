@@ -84,6 +84,10 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: local-only
+      # tokens always carry the issuer the services trust, also when a container asks for them
+      # through the internal network name (back channel)
+      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports: ["127.0.0.1:8180:8080"]
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro

@@ -205,6 +205,41 @@ class ProjectGeneratorTest {
   }
 
   @Test
+  void hexagonalApplicationModelsIncludeSharedEnumSchemas() {
+    var base =
+        Fixtures.request("business", Structure.HEXAGONAL, Stack.SERVLET, "aurora", List.of());
+    String contract =
+        Fixtures.orders()
+            .replace(
+                "\n  schemas:\n",
+                "\n  schemas:\n    OrderStatus:\n      type: string\n      enum: [OPEN, CLOSED]\n");
+    var request =
+        ProjectRequest.builder()
+            .name(base.name())
+            .groupId(base.groupId())
+            .basePackage(base.basePackage())
+            .description(base.description())
+            .archetype(base.archetype())
+            .structure(base.structure())
+            .stack(base.stack())
+            .persistence(base.persistence())
+            .capabilities(base.capabilities())
+            .openApi(contract)
+            .asyncApi(null)
+            .frameworkVersion("2.0.0")
+            .extensions(List.of())
+            .build();
+    GeneratedProject p = generator.generate(request);
+    String status =
+        p.text("src/main/java/pe/axiz/orders/orders/application/model/OrderStatus.java");
+    assertTrue(status.contains("public enum OrderStatus"), status);
+    assertFalse(status.contains("import org.jspecify"), status);
+    assertFalse(
+        p.files().keySet().stream()
+            .anyMatch(f -> f.endsWith("OrderStatusApplicationModelTest.java")));
+  }
+
+  @Test
   void hexagonalServiceHasUseCasesControllersAndDeployment() {
     GeneratedProject p =
         generator.generate(

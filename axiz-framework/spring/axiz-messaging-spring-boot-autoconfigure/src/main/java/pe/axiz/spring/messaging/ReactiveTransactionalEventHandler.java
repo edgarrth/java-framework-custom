@@ -10,7 +10,6 @@ import pe.axiz.core.context.RequestMetadata;
 import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.spring.foundation.ReactiveDispatchBoundary;
-import pe.axiz.spring.foundation.ReactiveInboxCompletion;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
 

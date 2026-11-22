@@ -89,8 +89,6 @@ public final class ContractSync {
     String text = Files.readString(SafePaths.target(dir, contractPath), StandardCharsets.UTF_8);
     OpenApiDocument contract = OpenApiDocument.parse(text);
     List<LintFinding> findings = new ArrayList<>(OpenApiLinter.lint(contract));
-    for (String problem : RequestValidator.accessProblems(contract))
-      findings.add(new LintFinding("axiz-explicit-http-access", "error", "$.paths", problem));
     Path snapshot = SafePaths.target(dir, SNAPSHOT);
     List<ContractDiff.Change> changes =
         Files.isRegularFile(snapshot)

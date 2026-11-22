@@ -151,6 +151,7 @@ class LocalStackAuditIT {
   void nativeSpringTrailDeliversColdThenReconnectsWithParentAndSanitization() {
     var parent = Observation.start("caller.audit", OBSERVATIONS);
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditSqsAutoConfiguration.class,

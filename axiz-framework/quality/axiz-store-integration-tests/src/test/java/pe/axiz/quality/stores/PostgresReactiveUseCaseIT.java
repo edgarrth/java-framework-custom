@@ -177,7 +177,7 @@ class PostgresReactiveUseCaseIT {
     factory.setProxyTargetClass(true);
     factory.addAdvice(
         new ReactiveUseCaseInterceptor(
-            () -> new R2dbcTransactionManager(connections), ObservationRegistry.NOOP));
+            () -> new R2dbcTransactionManager(connections), () -> ObservationRegistry.NOOP));
     return (Change) factory.getProxy();
   }
 
@@ -428,6 +428,7 @@ class PostgresReactiveUseCaseIT {
     var writer =
         new R2dbcOutboxWriter(new R2dbcOutboxStore(sql, "axiz_outbox", T), Clock.systemUTC());
     new ReactiveWebApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class,

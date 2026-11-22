@@ -41,6 +41,6 @@ public void headers(org.springframework.http.HttpHeaders, pe.axiz.core.errors.Pr
 }
 
 public class pe.axiz.spring.errors.ProblemWebExceptionHandler implements org.springframework.web.server.WebExceptionHandler {
-public pe.axiz.spring.errors.ProblemWebExceptionHandler(pe.axiz.spring.errors.ProblemResponder);
+public pe.axiz.spring.errors.ProblemWebExceptionHandler(pe.axiz.spring.errors.ProblemResponder, reactor.core.scheduler.Scheduler);
 public reactor.core.publisher.Mono<java.lang.Void> handle(org.springframework.web.server.ServerWebExchange, java.lang.Throwable);
 }

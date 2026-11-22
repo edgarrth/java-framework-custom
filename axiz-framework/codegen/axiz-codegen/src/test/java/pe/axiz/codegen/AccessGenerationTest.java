@@ -122,7 +122,12 @@ class AccessGenerationTest {
       var result = ProjectGenerator.withDefaults().validate(request(contract, Stack.SERVLET));
       assertFalse(result.valid(), policy);
       assertTrue(
-          result.problems().stream().anyMatch(problem -> problem.contains("readScoped")),
+          result.findings().stream()
+              .anyMatch(
+                  finding ->
+                      finding.error()
+                          && finding.rule().equals("axiz-explicit-http-access")
+                          && finding.message().contains("readScoped")),
           result.toString());
     }
   }
@@ -132,8 +137,10 @@ class AccessGenerationTest {
     var generator = ProjectGenerator.withDefaults();
     String overlap = CONTRACT.replace("/v1/policies/public:", "/v1/policies/{policy}:");
     assertTrue(
-        generator.validate(request(overlap, Stack.REACTIVE)).problems().stream()
-            .anyMatch(problem -> problem.contains("overlaps authenticated-only")));
+        generator.validate(request(overlap, Stack.REACTIVE)).findings().stream()
+            .anyMatch(
+                finding ->
+                    finding.error() && finding.message().contains("overlaps authenticated-only")));
     String disjoint = CONTRACT.replace("/v1/policies/public:", "/v1/status:");
     assertTrue(generator.validate(request(disjoint, Stack.REACTIVE)).valid());
   }

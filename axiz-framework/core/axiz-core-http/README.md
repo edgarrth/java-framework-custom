@@ -25,7 +25,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `ClientCredentialsAsyncTokenProvider` | Coalesces native renewal and asynchronous secret lookup through the HTTP port. |
 | `AuthSettings` | Outbound authentication settings. |
 | `AuthType` | Outbound authentication of an HTTP client. |
-| `ClientCredentialsTokenProvider` | OAuth2 client credentials with cache and early renewal: the token is renewed when less than `renewBefore` remains. |
 | `ClientSettings` | Settings of one logical HTTP client (`axiz.http-client.clients.<name>`). |
 | `ExternalErrorTranslator` | Translates an error response from a dependency into an `ExternalServiceException`. |
 | `HeaderPropagation` | Computes the headers forwarded to a dependency: correlation id and Accept-Language always, plus the client's allow-list. |
@@ -42,6 +41,8 @@ The native provider borrows `AsyncHttpExchange`; core has no dependency on React
 The transport must enforce the request timeout, byte limit and cancellation without following
 redirects. The Spring capability supplies an owned WebClient/Netty implementation. Unit tests use
 a local JDK HTTP driver independently of that production transport.
+
+Related types: `ClientCredentialsTokenProvider` live in `axiz-adapter-http-jdk`.
 
 ## Tests
 

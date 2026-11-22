@@ -296,7 +296,8 @@ class FrameworkArchitectureTest {
   /**
    * A capability starter only uses its own package and the shared foundation adapters; capabilities
    * talk to each other through core ports. Audit and messaging may share the Kafka transport
-   * validator, which contains no capability or business behavior.
+   * validator, which contains no capability or business behavior; JDBC integrations use the Spring
+   * JDBC support, and inbox stores implement the completion ports messaging defines.
    */
   @ArchTest
   static final ArchRule STARTERS_ARE_ISOLATED =

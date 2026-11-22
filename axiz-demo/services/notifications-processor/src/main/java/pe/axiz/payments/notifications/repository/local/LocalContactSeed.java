@@ -14,11 +14,17 @@ import pe.axiz.payments.notifications.repository.CustomerContact;
 import pe.axiz.spring.dynamodb.DynamoRepositories;
 import software.amazon.awssdk.services.dynamodb.model.ConditionalCheckFailedException;
 
-/** Fictitious contacts only for the explicitly enabled, loopback LocalStack demo. */
+/**
+ * Fictitious contacts only for the explicitly enabled local demo: LocalStack on loopback (services
+ * on the host) or the {@code localstack} container of the demo Compose network.
+ */
 @Configuration(proxyBeanMethods = false)
 @Profile("local")
 @ConditionalOnProperty(name = "demo.local.seed-contacts", havingValue = "true")
 class LocalContactSeed {
+  private static final List<String> LOCAL_STACK_HOSTS =
+      List.of("localhost", "127.0.0.1", "[::1]", "localstack");
+
   @Bean
   ApplicationRunner seedLocalContacts(
       DynamoRepositories repositories,
@@ -28,9 +34,9 @@ class LocalContactSeed {
       @Value("${axiz.dynamodb.table-prefix}") String tablePrefix) {
     if (!environment.equals("local")
         || !tablePrefix.equals("local-")
-        || !List.of("localhost", "127.0.0.1", "[::1]").contains(endpoint.getHost())) {
+        || !LOCAL_STACK_HOSTS.contains(endpoint.getHost())) {
       throw new IllegalStateException(
-          "Demo contact seed requires loopback LocalStack and local tables");
+          "Demo contact seed requires the local LocalStack and local tables");
     }
     return args -> {
       var table = repositories.create("notification-contacts", ContactItem.class);

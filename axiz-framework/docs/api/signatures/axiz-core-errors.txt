@@ -156,6 +156,12 @@ public static pe.axiz.core.errors.ExternalServiceException from(pe.axiz.core.err
 public static pe.axiz.core.errors.ExternalServiceException from(pe.axiz.core.errors.ExternalErrorDetail, java.lang.Throwable);
 }
 
+public final class pe.axiz.core.errors.Failures {
+public static final int MAX_CAUSES = 6;
+public static java.lang.String describe(java.lang.Throwable);
+public static java.lang.Throwable rootCause(java.lang.Throwable);
+}
+
 public final class pe.axiz.core.errors.FieldViolation extends java.lang.Record implements java.io.Serializable {
 public final boolean equals(java.lang.Object);
 public final int hashCode();

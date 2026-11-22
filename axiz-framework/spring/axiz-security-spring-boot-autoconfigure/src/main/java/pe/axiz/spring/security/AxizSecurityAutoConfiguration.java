@@ -22,8 +22,11 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationManagerResolver;
@@ -32,6 +35,8 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
+import org.springframework.security.authorization.method.PreAuthorizeAuthorizationManager;
+import org.springframework.security.authorization.method.PreAuthorizeReactiveAuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -61,6 +66,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authorization.AuthorizationContext;
 import org.springframework.security.web.server.header.CrossOriginResourcePolicyServerHttpHeadersWriter;
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.util.pattern.PathPattern;
 import pe.axiz.core.commons.Environments;
 import pe.axiz.core.errors.ProblemFactory;
@@ -297,6 +304,25 @@ public class AxizSecurityAutoConfiguration {
       return new JwtIssuerAuthenticationManagerResolver(byIssuer);
     }
 
+    /**
+     * Argument-free {@code @PreAuthorize} decides before the request body is read (403, not 400).
+     */
+    @Bean
+    WebMvcConfigurer axizPreBindingAuthorization(
+        ApplicationContext context,
+        ObjectProvider<MethodSecurityExpressionHandler> expressionHandlers) {
+      var manager = new PreAuthorizeAuthorizationManager();
+      manager.setExpressionHandler(expressionHandler(context, expressionHandlers));
+      manager.setApplicationContext(context);
+      var interceptor = new PreBindingAuthorizationInterceptor(manager);
+      return new WebMvcConfigurer() {
+        @Override
+        public void addInterceptors(InterceptorRegistry registry) {
+          registry.addInterceptor(interceptor).order(Ordered.HIGHEST_PRECEDENCE);
+        }
+      };
+    }
+
     @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     SecurityFilterChain axizSecurityFilterChain(
@@ -427,6 +453,26 @@ public class AxizSecurityAutoConfiguration {
           });
     }
 
+    /**
+     * Argument-free {@code @PreAuthorize} decides before the request body is read (403, not 400).
+     */
+    @Bean
+    PreBindingAuthorizationWebFilter axizPreBindingAuthorizationWebFilter(
+        ApplicationContext context,
+        ObjectProvider<MethodSecurityExpressionHandler> expressionHandlers) {
+      var manager =
+          new PreAuthorizeReactiveAuthorizationManager(
+              expressionHandler(context, expressionHandlers));
+      manager.setApplicationContext(context);
+      return new PreBindingAuthorizationWebFilter(
+          () ->
+              context.getBean(
+                  "requestMappingHandlerMapping",
+                  org.springframework.web.reactive.result.method.annotation
+                      .RequestMappingHandlerMapping.class),
+          manager);
+    }
+
     @Bean
     @ConditionalOnMissingBean(SecurityWebFilterChain.class)
     SecurityWebFilterChain axizSecurityWebFilterChain(
@@ -502,5 +548,16 @@ public class AxizSecurityAutoConfiguration {
       }
       return new VerifiedReactiveSecurityChain(http.build());
     }
+  }
+
+  /** The application's method security expression handler, or the default one. */
+  static MethodSecurityExpressionHandler expressionHandler(
+      ApplicationContext context, ObjectProvider<MethodSecurityExpressionHandler> handlers) {
+    return handlers.getIfAvailable(
+        () -> {
+          var handler = new DefaultMethodSecurityExpressionHandler();
+          handler.setApplicationContext(context);
+          return handler;
+        });
   }
 }

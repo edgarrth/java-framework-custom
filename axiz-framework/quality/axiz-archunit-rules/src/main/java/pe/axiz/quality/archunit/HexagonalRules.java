@@ -175,7 +175,11 @@ public final class HexagonalRules {
                 "pe.axiz.extension.cqrs.spring..",
                 "pe.axiz.adapter..",
                 "pe.axiz.kit..")
-            .because("application code uses ports instead of infrastructure or transport models"),
+            .because(
+                "application code uses ports instead of infrastructure or transport models; reactive"
+                    + " use cases call the core Async* ports (AsyncTokenizer, AsyncAuditTrail,"
+                    + " AsyncIdempotencyService, AsyncEventPublisher) through"
+                    + " Mono.fromCompletionStage instead of the Spring Reactive* facades"),
         noClasses()
             .that()
             .resideInAPackage(basePackage + ".adapter.in..")

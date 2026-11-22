@@ -30,7 +30,7 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `HttpClientGenerator` | `axiz generate http-client <name> --contract <openapi>`: a declarative client (`@HttpExchange` interface, one method per operation) of a third-party or downstream API, its models as records and its registration in the HTTP service group `<name>`, which the http-client capability configures from `axiz.http-client.clients.<name>.*` (base URL, timeouts, retries, circuit breaker, OAuth2 client credentials, observations). |
 | `Names` | Naming conventions for generated code. |
 | `ProjectGenerator` | Generates a complete project (service, library or starter) from a request: validation, context and templates. |
-| `RequestValidator` | Compatibility rules of archetype × structure × extensions × stack × persistence × capabilities. |
+| `RequestValidator` | Compatibility rules of archetype, structure, extensions, stack, persistence, capabilities. |
 | `Archetype` | Role of a service in the ecosystem and the defaults it preselects. |
 | `Capability` | A capability that the initializr and `axiz add` can add to a service. |
 | `Catalog` | Archetypes and capabilities shipped with the framework (`axiz/archetypes/catalog.yaml` and `axiz/archetypes/capabilities.yaml`). |

@@ -31,6 +31,7 @@ log.atInfo().addKeyValue("orderId", id).log("order created");
 
 - [`axiz-logging-spring-boot-autoconfigure`](../referencia/spring/axiz-logging-spring-boot-autoconfigure.md)
 - [`axiz-core-api`](../referencia/core/axiz-core-api.md)
+- [`axiz-core-commons`](../referencia/core/axiz-core-commons.md)
 - [`axiz-core-errors`](../referencia/core/axiz-core-errors.md)
 - [`axiz-core-logging`](../referencia/core/axiz-core-logging.md)
 - [`axiz-core-sensitive`](../referencia/core/axiz-core-sensitive.md)

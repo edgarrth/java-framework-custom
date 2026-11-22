@@ -21,8 +21,8 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `KafkaEventRecords` | Shared binary CloudEvents encoding for synchronous and asynchronous Kafka publication. |
 | `KafkaEnvelopes` | Maps consumed Kafka records back to envelopes. |
 | `KafkaEventPublisher` | Publishes CloudEvents (binary mode) to Amazon MSK. |
-| `AxizIamClientCallbackHandler` | AWS IAM callback: exclusive workload identity when IRSA is declared; standard SDK options otherwise. |
-| `MskIam` | Client properties for Amazon MSK with IAM authentication. |
+
+Related types: `AxizIamClientCallbackHandler`, `MskIam` live in `axiz-adapter-kafka-msk`.
 
 ## AWS authentication
 

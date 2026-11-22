@@ -25,6 +25,8 @@ capabilities:
   - config
   - storage-s3
   - audit
+  - secrets
+  - secrets-file
   - jpa
   - scheduling
 operations:

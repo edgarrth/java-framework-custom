@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pe.axiz.core.errors.Failures;
 
 /**
  * Resumes sagas left unfinished by a crash or a redeploy: non-terminal sagas not updated for a
@@ -55,10 +56,7 @@ public final class SagaRecovery {
       } catch (SagaConcurrencyException e) {
         LOG.info("Saga {} is being resumed by another instance", s.sagaId());
       } catch (RuntimeException e) {
-        LOG.error(
-            "Saga {} could not be resumed; failureType={}",
-            s.sagaId(),
-            e.getClass().getSimpleName());
+        LOG.error("Saga {} could not be resumed; failure={}", s.sagaId(), Failures.describe(e));
       }
     }
     return resumed;

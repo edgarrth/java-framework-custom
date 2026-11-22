@@ -6,7 +6,7 @@ Payment saga.
 |---|---|
 | Archetype | `business`: Business rules and ownership of domain data |
 | Structure | `hexagonal` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `aurora` |
 | axiz | `2.0.0` |

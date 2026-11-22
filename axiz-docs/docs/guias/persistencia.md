@@ -113,7 +113,7 @@ de 30 dígitos enteros en **todas** sus fábricas y resultados: si una operació
 falla con `MoneyErrors.INVALID_AMOUNT` antes de devolver un valor. Todo resultado exitoso admite
 el recorrido `Money.parse(value.toString())`, incluido el acarreo al redondear y las asignaciones.
 
-En fronteras externas —HTTP, mensajes, archivos, configuración y lectura de importes persistidos—
+En fronteras externas (HTTP, mensajes, archivos, configuración y lectura de importes persistidos)
 se usa `Money.of(amount, currency)`. Acepta `150.5` y `150.000` en PEN como `150.50` y `150.00`,
 pero rechaza `150.005`. Para cálculos que requieren redondeo se usa `Money.rounded`; `multiply`,
 `divide`, `percentage` y las conversiones exigen un `RoundingMode` explícito, sin valor por defecto.
@@ -139,7 +139,7 @@ Enviar datos de usuarios con `SqlParams.bind`, incluidos los textos que contiene
 dos puntos o delimitadores `$tag$`. `NamedSql` transforma los nombres de los parámetros y
 conserva los literales, identificadores y comentarios; no concatena valores en la consulta.
 
-El driver PostgreSQL R2DBC 1.1.3 rechaza los literales `E'…'` que contienen una comilla escapada
+El driver PostgreSQL R2DBC 1.1.3 rechaza los literales `E'...'` que contienen una comilla escapada
 con barra invertida, tanto en una línea como en continuaciones. PostgreSQL admite esa sintaxis,
 pero el analizador del driver no reconoce ese escape de comilla. Para consultas R2DBC,
 usar comillas duplicadas (`'it''s'`) o, preferentemente, un parámetro enlazado.

@@ -26,7 +26,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-core-audit`](core/axiz-core-audit.md) | Immutable audit events, publication policies, sanitization and asynchronous publishers. |
 | [`axiz-core-cache`](core/axiz-core-cache.md) | Cache port, two-level cache and in-memory implementation. |
 | [`axiz-core-carddata`](core/axiz-core-carddata.md) | Card data value types with controlled reveal and masked representations. |
-| [`axiz-core-commons`](core/axiz-core-commons.md) | Request/page/header metadata, JSON, concurrency and transaction contracts. |
+| [`axiz-core-commons`](core/axiz-core-commons.md) | Framework-neutral operational contracts: transaction boundaries and outcomes, deployment environments, transport security policies, and generated-code and reviewed-state markers. |
 | [`axiz-core-concurrent`](core/axiz-core-concurrent.md) | Bounded concurrency and asynchronous composition. |
 | [`axiz-core-context`](core/axiz-core-context.md) | Immutable request metadata and explicit context scopes. |
 | [`axiz-core-crypto`](core/axiz-core-crypto.md) | AES-256-GCM, envelope encryption, RSA-OAEP, HMAC, hashing, password hashing, blind index and key rotation. |
@@ -122,7 +122,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 |---|---|
 | [`axiz-audit-kafka-spring-boot-autoconfigure`](spring/axiz-audit-kafka-spring-boot-autoconfigure.md) | KAFKA audit destination with native synchronous and reactive publication. |
 | [`axiz-audit-kafka-spring-boot-starter`](spring/axiz-audit-kafka-spring-boot-starter.md) | KAFKA audit publishing. |
-| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode=ASYNC\|DURABLE\|SYNC` is the only delivery selector. Removed boolean selectors |
+| [`axiz-audit-spring-boot-autoconfigure`](spring/axiz-audit-spring-boot-autoconfigure.md) | `axiz.audit.mode=ASYNC\|DURABLE\|SYNC` is the only delivery selector; boolean selectors are |
 | [`axiz-audit-spring-boot-starter`](spring/axiz-audit-spring-boot-starter.md) | @Auditable, sanitized audit events and asynchronous publishers (log, MSK, SQS). |
 | [`axiz-audit-sqs-spring-boot-autoconfigure`](spring/axiz-audit-sqs-spring-boot-autoconfigure.md) | SQS audit destination with native synchronous and reactive publication. |
 | [`axiz-audit-sqs-spring-boot-starter`](spring/axiz-audit-sqs-spring-boot-starter.md) | SQS audit publishing. |
@@ -165,7 +165,7 @@ Tipos públicos principales de cada módulo, generados desde los README del fram
 | [`axiz-inbox-r2dbc-spring-boot-starter`](spring/axiz-inbox-r2dbc-spring-boot-starter.md) | Opt-in R2DBC inbox. |
 | [`axiz-inbox-spring-boot-autoconfigure`](spring/axiz-inbox-spring-boot-autoconfigure.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB (auto-configuration). |
 | [`axiz-inbox-spring-boot-starter`](spring/axiz-inbox-spring-boot-starter.md) | Idempotent consumers: inbox on Aurora PostgreSQL or DynamoDB. |
-| [`axiz-jdbc-spring-boot-autoconfigure`](spring/axiz-jdbc-spring-boot-autoconfigure.md) | Shared JDBC transport guard, installed by the capabilities that use this technology. It does not create business clients or add a new store selector. |
+| [`axiz-jdbc-spring-boot-autoconfigure`](spring/axiz-jdbc-spring-boot-autoconfigure.md) | Spring side of JDBC for the capabilities that use it (outbox, inbox, saga, sequence, scheduling): |
 | [`axiz-jpa-aws-spring-boot-autoconfigure`](spring/axiz-jpa-aws-spring-boot-autoconfigure.md) | AWS JDBC wrapper failover and IAM authentication for JPA. |
 | [`axiz-jpa-aws-spring-boot-starter`](spring/axiz-jpa-aws-spring-boot-starter.md) | Opt-in AWS JDBC wrapper and IAM credentials. |
 | [`axiz-jpa-spring-boot-autoconfigure`](spring/axiz-jpa-spring-boot-autoconfigure.md) | Provider-neutral JPA conventions. Consumers select `axiz-jpa-spring-boot-starter`; |

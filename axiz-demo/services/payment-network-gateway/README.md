@@ -6,7 +6,7 @@ Facade and security for external systems.
 |---|---|
 | Archetype | `gateway`: Facade for the external payment network |
 | Structure | `hexagonal` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `none` |
 | axiz | `2.0.0` |

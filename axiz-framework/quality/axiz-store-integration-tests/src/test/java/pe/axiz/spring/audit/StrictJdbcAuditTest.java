@@ -38,6 +38,7 @@ class StrictJdbcAuditTest {
   private ApplicationContextRunner runner(
       JdbcDataSource source, PlatformTransactionManager transactions) {
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(
             AutoConfigurations.of(
                 AxizAuditAutoConfiguration.class, AxizStrictAuditAutoConfiguration.class,

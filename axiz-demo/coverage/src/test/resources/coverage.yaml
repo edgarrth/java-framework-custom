@@ -144,6 +144,11 @@ saga:
   test: pe.axiz.payments.process.application.saga.PaymentSagaTest#aTransferWithALostAnswerNeverReversesTheDebit
   level: consumer-contract
   variant: servlet
+- service: payment-process
+  file: src/test/java/pe/axiz/payments/process/PaymentProcessApplicationTest.java
+  test: pe.axiz.payments.process.PaymentProcessApplicationTest#theSagaCompletesThroughTheTransactionalUseCasesOnTheJdbcStore
+  level: integration
+  variant: aurora,servlet
 notification:
 - example: provider-recipes
   file: src/test/java/pe/axiz/demo/providers/MessagingRecipesTest.java

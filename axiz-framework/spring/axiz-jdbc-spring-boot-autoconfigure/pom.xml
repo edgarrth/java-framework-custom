@@ -3,20 +3,25 @@
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>pe.axiz</groupId><artifactId>axiz-parent-spring</artifactId><version>${revision}</version><relativePath>../../platform/axiz-parent-spring/pom.xml</relativePath></parent>
   <artifactId>axiz-jdbc-spring-boot-autoconfigure</artifactId>
-  <name>axiz :: spring :: jdbc :: transport validation</name>
-  <description>Fail-closed transport validation for managed jdbc clients</description>
+  <name>axiz :: spring :: jdbc</name>
+  <description>Spring JDBC integration: transaction-bound connection providers and runners, explicit schema initialization, SQL dialects and fail-closed transport validation</description>
   <properties><axiz.module.name>pe.axiz.spring.jdbc</axiz.module.name></properties>
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-commons</artifactId><version>${project.version}</version></dependency>
 
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-jdbc</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>pe.axiz</groupId><artifactId>axiz-kit-sql</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-tx</artifactId></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-beans</artifactId></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-core</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-autoconfigure</artifactId></dependency>
-    <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId><optional>true</optional></dependency>
+    <dependency><groupId>org.springframework</groupId><artifactId>spring-jdbc</artifactId></dependency>
     <dependency><groupId>net.ttddyy</groupId><artifactId>datasource-proxy</artifactId><optional>true</optional></dependency>
     <dependency><groupId>com.zaxxer</groupId><artifactId>HikariCP</artifactId><optional>true</optional></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-core</artifactId><optional>true</optional></dependency>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-test-spring-boot-starter</artifactId><version>${project.version}</version><scope>test</scope></dependency>
     <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.flywaydb</groupId><artifactId>flyway-database-postgresql</artifactId><scope>test</scope></dependency>
     <dependency><groupId>net.ttddyy.observation</groupId><artifactId>datasource-micrometer-spring-boot</artifactId><scope>test</scope></dependency>
   </dependencies>

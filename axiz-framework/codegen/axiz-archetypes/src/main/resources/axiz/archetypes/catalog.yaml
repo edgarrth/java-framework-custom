@@ -203,6 +203,7 @@ archetypes:
   - storage
   - storage-s3
   - audit
+  - secrets
   deployment: cronjob
   rest: false
   properties:

@@ -50,7 +50,10 @@ class StrictDurableTargetTest {
     var properties = properties();
     try (var integrity =
         new AuditIntegritySupport(
-            properties.integrity(), new MockEnvironment(), beans, Clock.systemUTC())) {
+            properties.integrity(),
+            new MockEnvironment().withProperty("axiz.config.environment", "test"),
+            beans,
+            Clock.systemUTC())) {
       StrictAuditTargets.durable(beans, properties, integrity)
           .apply(DurableAuditTest.event(AuditEvent.Outcome.SUCCESS))
           .toCompletableFuture()
@@ -83,7 +86,10 @@ class StrictDurableTargetTest {
     var properties = properties();
     try (var integrity =
         new AuditIntegritySupport(
-            properties.integrity(), new MockEnvironment(), beans, Clock.systemUTC())) {
+            properties.integrity(),
+            new MockEnvironment().withProperty("axiz.config.environment", "test"),
+            beans,
+            Clock.systemUTC())) {
       ReactiveStrictAuditTargets.durable(beans, properties, integrity)
           .apply(DurableAuditTest.event(AuditEvent.Outcome.SUCCESS))
           .toCompletableFuture()

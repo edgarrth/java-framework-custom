@@ -1,4 +1,5 @@
 public final class pe.axiz.codegen.ArtifactGenerator {
+public java.util.Map<java.lang.String, byte[]> persistenceAcceptanceTest(pe.axiz.codegen.project.ProjectManifest, java.lang.String);
 public pe.axiz.codegen.ArtifactGenerator$Result generate(pe.axiz.codegen.project.ProjectManifest, java.lang.String, java.lang.String, pe.axiz.codegen.ArtifactGenerator$Options, java.lang.String);
 public pe.axiz.codegen.ArtifactGenerator$Result generate(pe.axiz.codegen.project.ProjectManifest, java.lang.String, java.lang.String, pe.axiz.codegen.ArtifactGenerator$Options, java.lang.String, java.lang.String);
 public pe.axiz.codegen.ArtifactGenerator(java.time.Clock);
@@ -491,6 +492,7 @@ public static pe.axiz.codegen.openapi.OpenApiDocument parse(java.lang.String);
 }
 
 public final class pe.axiz.codegen.openapi.OpenApiLinter {
+public static boolean safeParameterName(java.lang.String);
 public static java.util.List<pe.axiz.codegen.openapi.LintFinding> lint(pe.axiz.codegen.openapi.OpenApiDocument);
 }
 
@@ -631,6 +633,12 @@ public final class pe.axiz.codegen.render.JavaFormatter {
 public static boolean available();
 public static java.lang.String format(java.lang.String);
 public static java.util.Map<java.lang.String, byte[]> formatAll(java.util.Map<java.lang.String, byte[]>);
+}
+
+public final class pe.axiz.codegen.render.JavaSourceText {
+public static java.lang.String javadoc(java.lang.String);
+public static java.lang.String literal(java.lang.String);
+public static java.lang.String parameterLiteral(java.lang.String);
 }
 
 public final class pe.axiz.codegen.render.TemplateSet {

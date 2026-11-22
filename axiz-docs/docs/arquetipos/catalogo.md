@@ -12,8 +12,8 @@ La primera estructura, stack y persistencia de cada lista es el valor por defect
 | `support` | Reusable cross-domain support service | hexagonal, layered |  | servlet, reactive | none, aurora, dynamodb | deployment | sí |
 | `event-processor` | Consumes domain events without a public REST API | eda, hexagonal | cqrs | servlet, reactive | none, aurora, dynamodb | deployment | no |
 | `batch` | Scheduled file processing and reconciliation | batch |  | servlet | aurora | cronjob | no |
-| `library` | Plain Java library for the ecosystem (layer 1 rules apply) | none |  | servlet | – | none | no |
-| `starter` | New axiz capability (layer 1 library + layer 3 Spring Boot starter) | none |  | servlet | – | none | no |
+| `library` | Plain Java library for the ecosystem (layer 1 rules apply) | none |  | servlet | no aplica | none | no |
+| `starter` | New axiz capability (layer 1 library + layer 3 Spring Boot starter) | none |  | servlet | no aplica | none | no |
 
 ## business
 
@@ -69,7 +69,7 @@ axiz.messaging.kafka.topics:
 
 Scheduled file processing and reconciliation
 
-Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`errors`](../capacidades/errors.md), [`logging`](../capacidades/logging.md), [`observability`](../capacidades/observability.md), [`metrics`](../capacidades/metrics.md), [`config`](../capacidades/config.md), [`sensitive`](../capacidades/sensitive.md), [`storage`](../capacidades/storage.md), [`storage-s3`](../capacidades/storage-s3.md), [`audit`](../capacidades/audit.md)
+Capacidades incluidas: [`foundation`](../capacidades/foundation.md), [`errors`](../capacidades/errors.md), [`logging`](../capacidades/logging.md), [`observability`](../capacidades/observability.md), [`metrics`](../capacidades/metrics.md), [`config`](../capacidades/config.md), [`sensitive`](../capacidades/sensitive.md), [`storage`](../capacidades/storage.md), [`storage-s3`](../capacidades/storage-s3.md), [`audit`](../capacidades/audit.md), [`secrets`](../capacidades/secrets.md)
 
 ```yaml
 spring.main.web-application-type: none

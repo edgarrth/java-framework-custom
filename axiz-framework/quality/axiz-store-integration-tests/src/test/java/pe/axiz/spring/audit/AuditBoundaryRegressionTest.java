@@ -49,8 +49,8 @@ import pe.axiz.core.commons.TransactionOutcome;
 import pe.axiz.core.messaging.CloudEventJson;
 import pe.axiz.core.outbox.OutboxWriter;
 import pe.axiz.spring.foundation.DispatchBoundary;
-import pe.axiz.spring.foundation.jdbc.SpringConnectionProvider;
-import pe.axiz.spring.foundation.jdbc.SpringTransactionRunner;
+import pe.axiz.spring.jdbc.SpringConnectionProvider;
+import pe.axiz.spring.jdbc.SpringTransactionRunner;
 
 /** Real commits and rollbacks with one connection expose publication at the wrong boundary. */
 @Timeout(20)
@@ -100,6 +100,7 @@ class AuditBoundaryRegressionTest {
     var jdbc = new JdbcTemplate(source);
     jdbc.execute("CREATE TABLE effects (id VARCHAR(64) PRIMARY KEY)");
     return new ApplicationContextRunner()
+        .withPropertyValues("axiz.config.environment=test")
         .withConfiguration(AutoConfigurations.of(AxizAuditAutoConfiguration.class))
         .withUserConfiguration(Config.class)
         .withPropertyValues(

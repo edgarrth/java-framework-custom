@@ -23,7 +23,10 @@ public record AxizAuditProperties(
     @DefaultValue Integrity integrity,
     @DefaultValue Strict strict,
     @Nullable Mode mode) {
-  /** Hash chains by default; HMAC uses an independent Base64 secret and explicit rotation id. */
+  /**
+   * Hash chains by default in local/test/ci; every other environment must use HMAC, with an
+   * independent Base64 secret and an explicit rotation id (an unkeyed chain can be recomputed).
+   */
   public record Integrity(
       @DefaultValue("HASH") AuditSealer.Mode mode,
       @Nullable String hmacSecret,

@@ -25,7 +25,6 @@ The version is managed by `axiz-bom` (services inherit `axiz-parent-service`).
 | `IdempotencyBehavior` | Idempotent commands: the first result is stored (JSON) and returned again for the same key, the same command and the same caller; a different command with the same key is a 422 problem. |
 | `MetricsBehavior` | Counts and times every command and query as a generic event named after the request (`create-card`); requests and results implementing `MetricSource` add amounts and tags. |
 | `ObservationBehavior` | Outermost step: a span `axiz.command` or `axiz.query` around the whole pipeline. |
-| `ReactiveAccessPolicy` | Deprecated compatibility bridge; application policies implement `pe.axiz.extension.cqrs.ReactiveAccessPolicy` from the API module. |
 | `ReactiveBehaviors` | The standard reactive pipeline behaviors, one per cross-cutting concern. |
 | `ReactiveBuses` | Reactive command and query buses: the same pipeline as the blocking buses (observation, validation, authorization, idempotency, transaction, audit, metrics) composed as operators on the handler's `Mono`, so no step blocks an event loop. |
 | `ReactiveCommandBus` | Sends commands through the reactive pipeline to their `ReactiveCommandHandler`. |
@@ -44,8 +43,7 @@ Missing native ports fail startup rather than silently omitting a behavior.
 The pipeline performs no elastic scheduler offload. Native completion cancellation reaches the
 active transport, and cancelled idempotency executions release their owner-fenced lease without
 removing completed replay records. Audit executes inside the reactive transaction and waits for
-delivery. Old constructors taking imperative services retain their descriptors but reject those
-arguments explicitly; migrate callers to the native overloads.
+delivery.
 
 ## Tests
 

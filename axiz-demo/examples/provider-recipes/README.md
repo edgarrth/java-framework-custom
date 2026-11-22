@@ -48,7 +48,7 @@ capability; `variants.yaml` adds explicit stack/provider obligations. These are 
 checks, separate from the framework's own unit, integration and architecture tests.
 
 The notification recipe invokes `NotificationSender` and `ReactiveNotifications`, then verifies the
-actual `notification.requested.v1` envelopes received through SNS → SQS. The delivery application
+actual `notification.requested.v1` envelopes received through SNS -> SQS. The delivery application
 owns email/SMS/push providers; Axiz publishes the request, correlation and template parameters.
 
 Las recetas comunes se ejecutan en contextos servlet y reactivos. `PolicyRecipesTest` muestra

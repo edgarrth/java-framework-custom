@@ -7,7 +7,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pe.axiz.core.messaging.CompletesInTransaction;
 import pe.axiz.core.messaging.EventEnvelope;
 import pe.axiz.core.messaging.EventHandler;
-import pe.axiz.spring.foundation.InboxCompletion;
 
 /**
  * Runs a handler in one transaction, so its writes and the events it enqueues in the outbox commit

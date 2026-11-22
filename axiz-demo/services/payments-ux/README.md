@@ -6,7 +6,7 @@ Payments API for the channels.
 |---|---|
 | Archetype | `ux`: Channel API that composes downstream services |
 | Structure | `bff` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `reactive` |
 | Persistence | `none` |
 | axiz | `2.0.0` |

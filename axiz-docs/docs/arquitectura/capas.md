@@ -35,6 +35,14 @@ conservan el contexto de transacción sin traer drivers ni implementaciones de a
 El control de capas prohíbe añadirles dependencias de proveedor. Los adaptadores AWS pueden interoperar internamente con Reactive
 Streams, pero sus APIs públicas exponen los tipos neutrales del puerto.
 
+**Código reactivo de aplicación.** Un caso de uso reactivo depende de los puertos `Async*` de
+core (`AsyncTokenizer`, `AsyncAuditTrail`, `AsyncIdempotencyService`, `AsyncEventPublisher`...) y
+los adapta con `Mono.fromCompletionStage`; no importa `pe.axiz.spring..` ni `pe.axiz.kit..`. Las
+fachadas con tipos de Reactor de la capa Spring (`ReactiveTokenizer`, `ReactiveAuditTrail`,
+`ReactiveEvents`, `ReactiveInbox`) son integraciones para adaptadores, controladores y
+configuración, y los contratos `Reactive*` de kits y adaptadores R2DBC son SPIs de persistencia.
+Así cada capacidad tiene un único contrato de aplicación, en core, para servlet y reactivo.
+
 ## Integración y estructura
 
 Spring registra autoconfiguraciones en `AutoConfiguration.imports`, usa propiedades tipadas,

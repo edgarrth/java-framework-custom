@@ -6,7 +6,7 @@ Anti-corruption layer of the core banking system (REST and SOAP). Transfers belo
 |---|---|
 | Archetype | `core`: Anti-corruption layer for the core banking system |
 | Structure | `hexagonal` |
-| Extensions | – |
+| Extensions | None |
 | Stack | `servlet` |
 | Persistence | `none` |
 | axiz | `2.0.0` |

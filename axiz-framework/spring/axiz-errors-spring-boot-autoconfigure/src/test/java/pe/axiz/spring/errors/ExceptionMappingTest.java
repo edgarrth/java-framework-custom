@@ -209,13 +209,15 @@ class ExceptionMappingTest {
             "WARN", "status=503", "exceptionType=pe.axiz.core.errors.ExternalServiceException")
         .contains("ERROR", "status=500", "exceptionType=pe.axiz.core.errors.AxizException")
         .contains("correlationId=corr-12345678")
+        // the chain of types and origin frames locates the cause; messages never appear
+        .contains("| caused by java.net.ConnectException at ")
         .doesNotContain(
             "path=/transfers",
             "Call to core-banking",
             "cause=",
-            "ConnectException",
             "ledger posting failed",
-            "IllegalStateException: db");
+            "IllegalStateException: db",
+            "\"db\"");
   }
 
   @Test

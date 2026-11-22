@@ -5,6 +5,8 @@ info:
   description: Owner of payment orders (fictitious payment processor of the axiz demo).
 tags:
   - name: payment-orders
+# Callers with payments:channel, payments:read or payments:process; the service checks which.
+security: [{oauth2: []}]
 paths:
   /v1/payment-orders:
     post:
@@ -98,6 +100,22 @@ paths:
             application/problem+json:
               schema: {$ref: '#/components/schemas/Problem'}
 components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: Bearer access token issued by the payments identity provider (Keycloak in the demo).
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/auth
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Customer channel operations on the caller's own data
+        clientCredentials:
+          tokenUrl: http://localhost:8180/realms/axiz/protocol/openid-connect/token
+          scopes:
+            payments:channel: Channel applications acting for customers
+            payments:read: Read-only access to payment data
+            payments:process: Payment processing between internal services
   parameters:
     IdempotencyKey:
       name: Idempotency-Key
@@ -110,34 +128,38 @@ components:
       enum: [RECEIVED, PROCESSING, COMPLETED, REJECTED]
     PaymentOrderRequest:
       type: object
+      additionalProperties: false
       required: [customerId, debtorAccount, creditorCci, amount, currency]
       properties:
         customerId: {type: string, maxLength: 20}
         debtorAccount: {type: string, pattern: '^[0-9]{10,20}$'}
         creditorCci: {type: string, pattern: '^[0-9]{20}$'}
-        amount: {type: number, minimum: 0.01}
+        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99, multipleOf: 0.01}
         currency: {type: string, pattern: '^(PEN|USD)$'}
         description: {type: string, maxLength: 140}
     StatusChange:
       type: object
+      additionalProperties: false
       required: [status]
       properties:
         status: {$ref: '#/components/schemas/PaymentStatus'}
         reason: {type: string, maxLength: 200}
     PaymentOrder:
       type: object
+      additionalProperties: true
       properties:
         id: {type: string}
         operationNumber: {type: string}
         customerId: {type: string}
         status: {$ref: '#/components/schemas/PaymentStatus'}
-        amount: {type: number}
+        amount: {type: number, minimum: 0.01, maximum: 9999999999999999.99, multipleOf: 0.01}
         currency: {type: string}
         creditorCci: {type: string, description: masked}
         processingDate: {type: string, format: date}
         createdAt: {type: string, format: date-time}
     PaymentOrderPage:
       type: object
+      additionalProperties: true
       properties:
         items:
           type: array
@@ -147,6 +169,7 @@ components:
         totalElements: {type: integer, format: int64}
     Problem:
       type: object
+      additionalProperties: true
       properties:
         type: {type: string}
         title: {type: string}
