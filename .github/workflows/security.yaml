@@ -77,11 +77,14 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+      # Los parents declaran dependencias del framework (por ejemplo, el starter de pruebas en
+      # axiz-parent-service); -am instala también esos módulos, sin pruebas, para que Trivy
+      # resuelva los POM padre desde el repositorio local sin consultar repositorios públicos.
       - name: Install this checkout's parent and BOM metadata
         run: >-
           mvn -B -ntp -f axiz-framework/pom.xml
           -pl :axiz-bom,:axiz-parent,:axiz-parent-core,:axiz-parent-api,:axiz-parent-test,:axiz-parent-tooling,:axiz-parent-technology,:axiz-parent-spring,:axiz-parent-service
-          install
+          -am -DskipTests -Dpit.skip=true install
       - name: Trivy 0.76.2 on the complete checkout
         env:
           # Maven SBOM gates resolve the complete dependency graph during the build.
