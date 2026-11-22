@@ -73,12 +73,14 @@ Un tag local no sustituye una release inmutable publicada. Para repositorios pri
 
 Antes de esa primera publicación, GitHub no puede resolver las llamadas a la release de
 workflows de framework, tools y demo: valida las referencias antes de ejecutar los
-jobs, incluso si tienen una condición `if`. Completar primero los controles independientes
-`workflows-ci`, `security` y `docs-docs`, publicar los workflows y después ejecutar los CI de los
-productos. Un tag vacío o una referencia a `main` no cumple el contrato de publicación.
+jobs, incluso si tienen una condición `if`. Los controles independientes `workflows-ci`,
+`security` y `docs-docs` no dependen de esa release y se completan primero; después se publican
+los workflows y se ejecutan los CI de los productos. Un tag vacío o una referencia a `main` no cumple el contrato de publicación.
 
 Los scripts se ejecutan por rutas locales. GitHub también admite llamadas locales entre
-workflows del mismo commit; se usan para controles internos. Los builds y deploys firmados
+workflows y acciones del mismo commit; se usan para controles internos como `security`, de modo
+que un cambio en un control se verifica con su propio PR. Las excepciones de riesgo aprobadas se
+leen siempre de la rama base protegida. Los builds y deploys firmados
 consumen la release inmutable de workflows porque el manifiesto y sus verificadores exigen
 esa identidad. Cambiar esas llamadas requiere adaptar y validar también el contrato de firma.
 

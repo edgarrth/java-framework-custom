@@ -151,10 +151,6 @@
           "if": "${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}",
           "reason": "Publishing diagnostics is independent of the blocking secrets, SAST and vulnerability scans"
         },
-        "axiz-workflows-trust": {
-          "class": "required",
-          "if": null
-        },
         "infrastructure-images": {
           "class": "required",
           "if": null

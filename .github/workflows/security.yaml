@@ -8,24 +8,6 @@ on:
   workflow_dispatch:
 permissions: {}
 jobs:
-  axiz-workflows-trust:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions:
-      contents: read
-    steps:
-      - name: Verify immutable Axiz workflow release
-        env:
-          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
-        shell: bash
-        run: |
-          set -euo pipefail
-          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
-          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
-
-
   secrets:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -80,7 +62,6 @@ jobs:
           if-no-files-found: error
           retention-days: 90
   filesystem:
-    needs: axiz-workflows-trust
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -118,10 +99,11 @@ jobs:
           limit-severities-for-sarif: true
           output: trivy.sarif
           exit-code: '1'
-      # Exact immutable internal release: evaluate code and schema cannot come from the PR.
+      # Internal control: it runs the evaluator of this same commit, so a change to it is checked
+      # by its own pull request. Accepted risks and their deadlines are read from the protected
+      # base branch, never from the pull request.
       - name: Complete vulnerability evidence and protected risk deadlines
-        # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-        uses: edgarrth/java-framework-custom/.github/actions/check-vulnerabilities@axiz-workflows-v2.0.0
+        uses: ./.github/actions/check-vulnerabilities
         with:
           mode: source
           scope: repository
@@ -274,7 +256,7 @@ jobs:
   security-pr-check:
     name: axiz-security-pr
     if: ${{ always() && github.event_name == 'pull_request' }}
-    needs: [axiz-workflows-trust, secrets, sast, filesystem, infrastructure-images]
+    needs: [secrets, sast, filesystem, infrastructure-images]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}

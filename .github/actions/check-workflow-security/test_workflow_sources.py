@@ -108,8 +108,8 @@ class WorkflowSourcesTest(unittest.TestCase):
         self.assertTrue(any('outside .github/workflows' in e for e in self.check()[0]))
 
     def test_repository_executable_scope_and_full_scope_both_pass(self):
-        self.assertEqual(([], 17, 23), check_tree(ROOT, ROOT, scope='executable'))
-        self.assertEqual(([], 68, 93), check_tree(ROOT, ROOT, scope='all'))
+        self.assertEqual(([], 18, 22), check_tree(ROOT, ROOT, scope='executable'))
+        self.assertEqual(([], 68, 92), check_tree(ROOT, ROOT, scope='all'))
 
     def test_local_audit_copies_are_not_product_sources_but_called_actions_are_checked(self):
         self.workflow()
