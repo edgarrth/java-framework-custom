@@ -10,7 +10,7 @@ import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 
-/** Ambient time, weak crypto and predictable randomness that the rules must reject. */
+/** Ambient time, direct crypto engines and predictable randomness that the rules must reject. */
 public class AmbientVariants {
 
   public LocalDate today() {
@@ -26,7 +26,7 @@ public class AmbientVariants {
   }
 
   public byte[] digest(byte[] data) throws NoSuchAlgorithmException {
-    return MessageDigest.getInstance("MD5").digest(data);
+    return MessageDigest.getInstance("SHA-256").digest(data); // the rule rejects any direct engine
   }
 
   public Cipher cipher() throws NoSuchAlgorithmException, NoSuchPaddingException {

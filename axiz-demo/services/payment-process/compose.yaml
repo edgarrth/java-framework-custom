@@ -10,7 +10,7 @@ services:
     ports: ["127.0.0.1:3000:3000", "127.0.0.1:4317:4317", "127.0.0.1:4318:4318"]
 
   postgres:
-    image: axiz-local/postgres:17.12-r1
+    image: axiz-local/postgres:17.12-r2
     build: {context: ../../local/images/postgres}
     environment:
       POSTGRES_DB: payment_process

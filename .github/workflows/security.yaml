@@ -145,7 +145,7 @@ jobs:
       max-parallel: 3
       matrix:
         include:
-          - {name: postgres, image: 'axiz-local/postgres:17.12-r1', recipe: postgres}
+          - {name: postgres, image: 'axiz-local/postgres:17.12-r2', recipe: postgres}
           - {name: valkey, image: 'axiz-local/valkey:8.1.8-r1', recipe: valkey}
           - {name: kafka, image: 'axiz-local/kafka:4.2.2-r1', recipe: kafka}
           - {name: localstack, image: 'axiz-local/localstack:4.14.0-r1', recipe: localstack}
@@ -253,10 +253,24 @@ jobs:
         with:
           pattern: security-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: security-sarif
+      - name: One code scanning category per report
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Code scanning accepts one run per tool and category: each report keeps its own, stable
+          # across runs (the artifact folder without the run suffix, e.g. infrastructure-postgres).
+          suffix="-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          while IFS= read -r -d '' report; do
+            folder=$(basename "$(dirname "$report")")
+            folder=${folder#security-}
+            name=${folder%"$suffix"}
+            jq --arg id "monorepo-security/$name/" '.runs |= map(.automationDetails.id = $id)' \
+              "$report" > "$report.tmp"
+            mv "$report.tmp" "$report"
+          done < <(find security-sarif -name '*.sarif' -print0)
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: security-sarif
-          category: monorepo-security
   security-pr-check:
     name: axiz-security-pr
     if: ${{ always() && github.event_name == 'pull_request' }}

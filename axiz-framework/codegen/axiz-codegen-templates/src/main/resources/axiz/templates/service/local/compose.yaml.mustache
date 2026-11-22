@@ -11,7 +11,7 @@ services:
 {{#infra.postgres}}
 
   postgres:
-    image: axiz-local/postgres:17.12-r1
+    image: axiz-local/postgres:17.12-r2
     build: {context: ./local/images/postgres}
     environment:
       POSTGRES_DB: {{project.databaseName}}
