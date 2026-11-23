@@ -1,0 +1,138 @@
+# Framework: compilación, pruebas y calidad en cada cambio; publicación en GitHub Packages con el
+# tag axiz-framework-v* que crea release-please. Los proyectos de ejemplo generados se construyen
+# con el perfil quality de los consumidores.
+name: framework
+
+on:
+  pull_request:
+    paths: ['axiz-framework/**', '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+  push:
+    branches: [main]
+    paths: ['axiz-framework/**', '.github/workflows/framework.yaml', '.github/workflows/lib-build.yaml']
+    tags: ['axiz-framework-v*']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: framework-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    uses: ./.github/workflows/lib-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      working-directory: axiz-framework
+      bootstrap: true
+      maven-args: -Daxiz.it.requireDocker=true
+      publish: ${{ startsWith(github.ref, 'refs/tags/axiz-framework-v') }}
+
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Las recetas de contenedores locales coinciden en sus tres copias
+        run: python3 .github/scripts/sync_container_recipes.py --check
+      - name: La receta de WireMock coincide con su lock de librerías
+        run: python3 .github/scripts/update_wiremock_image.py --check
+      - name: El Maven wrapper fija el checksum de su distribución
+        run: |
+          for f in axiz-framework/.mvn/wrapper/maven-wrapper.properties \
+                   axiz-framework/codegen/axiz-codegen-templates/src/main/resources/axiz/templates/shared/mvn/wrapper/maven-wrapper.properties; do
+            grep -q '^distributionSha512Sum=' "$f" || { echo "::error::$f: ./mvnw --pin-checksum"; exit 1; }
+          done
+      - name: El wrapper nunca ejecuta una distribución sin verificar
+        run: bash axiz-framework/.github/scripts/test-mvnw.sh
+      - name: Reglas Spectral distribuidas a los contratos
+        run: node axiz-framework/.github/scripts/test-contracts.cjs
+
+  api-compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Versión publicada que sirve de base
+        id: baseline
+        run: echo "version=$(jq -r '."axiz-framework" // empty' .release-please-manifest.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        if: steps.baseline.outputs.version != ''
+        with:
+          distribution: temurin
+          java-version: '25'
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+      - name: Compatibilidad binaria y de código fuente con japicmp
+        if: steps.baseline.outputs.version != ''
+        working-directory: axiz-framework
+        env:
+          BASELINE: ${{ steps.baseline.outputs.version }}
+        run: ./mvnw --bootstrap -B -ntp -Papi-compat -DskipTests verify "-Daxiz.api.baseline=$BASELINE"
+
+  samples:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Framework instalado y proyectos de ejemplo generados
+        working-directory: axiz-framework
+        run: .github/scripts/samples.sh
+      - name: La autorización generada rechaza scopes faltantes antes del código de aplicación
+        working-directory: axiz-framework
+        run: bash .github/scripts/authorization-samples.sh
+      - name: La infraestructura local generada es repetible
+        working-directory: axiz-framework
+        run: bash .github/scripts/localstack-init-sample.sh
+      - name: Cada ejemplo compila con el perfil quality de los consumidores
+        working-directory: axiz-framework
+        run: |
+          failed=()
+          for dir in target/samples/*/ target/audit-samples/*/; do
+            echo "::group::$dir"
+            (cd "$dir" && ./mvnw -B -ntp -Pquality spotless:check verify) || failed+=("$dir")
+            echo "::endgroup::"
+          done
+          if [[ "${#failed[@]}" -gt 0 ]]; then
+            echo "::error::Ejemplos con fallas: ${failed[*]}"
+            exit 1
+          fi
+
+  axiz-framework-pr:
+    if: always()
+    needs: [build, checks, api-compat, samples]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Todos los jobs del framework terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

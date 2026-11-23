@@ -1,3 +1,0 @@
-public final class pe.axiz.kit.sql.SqlIdentifiers {
-public static java.lang.String require(java.lang.String);
-}

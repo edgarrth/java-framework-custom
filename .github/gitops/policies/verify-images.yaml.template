@@ -1,60 +1,50 @@
-# Admission policy: the registry prefix must match BUILD_DESTINATION's build namespace.
-# Images require keyless signatures and SLSA provenance from the exact immutable service-build
-# release. Keep the subject and builder version aligned when adopting a new workflow release.
+# Política de admisión de Kyverno: en los namespaces de los servicios solo se admiten imágenes de
+# GHCR del owner, referenciadas por digest y con la atestación de procedencia SLSA que publica el
+# workflow service-build de Axiz (atestaciones de artefactos de GitHub, formato Sigstore bundle).
+# Requiere Kyverno 1.13 o posterior. Se reemplaza OWNER.
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: axiz-verify-images
   annotations:
-    policies.kyverno.io/title: Signed axiz images
-    policies.kyverno.io/description: Only images signed by the axiz CI run in the service namespaces.
+    policies.kyverno.io/title: Imágenes atestiguadas por axiz
+    policies.kyverno.io/description: Solo se ejecutan imágenes construidas por el workflow service-build de Axiz.
 spec:
   validationFailureAction: Enforce
   webhookTimeoutSeconds: 15
   background: false
   rules:
-    - name: signed-by-axiz-ci
+    - name: provenance-from-axiz-service-build
       match:
         any:
           - resources:
               kinds: [Pod]
               namespaces: [axiz-dev, axiz-qa, axiz-prod]
       verifyImages:
-        - imageReferences:
-            - "UNCONFIGURED_IMAGE_REFERENCES"
+        - type: SigstoreBundle
+          imageReferences:
+            - "ghcr.io/OWNER/*"
           mutateDigest: false
           verifyDigest: true
           required: true
-          attestors:
-            - entries:
-                - keyless:
-                    subject: https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/axiz-workflows-v2.0.0 # x-release-please-version
-                    issuer: https://token.actions.githubusercontent.com
-                    rekor:
-                      url: https://rekor.sigstore.dev
           attestations:
             - type: https://slsa.dev/provenance/v1
               attestors:
                 - entries:
                     - keyless:
-                        subject: https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/axiz-workflows-v2.0.0 # x-release-please-version
                         issuer: https://token.actions.githubusercontent.com
+                        subjectRegExp: '^https://github\.com/edgarrth/java-framework-custom/\.github/workflows/service-build\.yaml@.+$'
                         rekor:
                           url: https://rekor.sigstore.dev
-              conditions:
-                - all:
-                    - key: "{{ runDetails.builder.id }}"
-                      operator: Equals
-                      value: https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/axiz-workflows-v2.0.0 # x-release-please-version
-    - name: only-build-registry
+    - name: only-ghcr-by-digest
       match:
         any:
           - resources:
               kinds: [Pod]
               namespaces: [axiz-dev, axiz-qa, axiz-prod]
       validate:
-        message: Images must come from the approved build registry and use a content digest.
+        message: Las imágenes deben venir de GHCR del owner y usar un digest de contenido.
         pattern:
           spec:
             containers:
-              - image: "UNCONFIGURED_IMAGE_REFERENCES@sha256:*"
+              - image: "ghcr.io/OWNER/*@sha256:*"

@@ -26,8 +26,7 @@
     <skipTests>false</skipTests>
   </properties>
 
-  <!-- cada módulo con código de producción, generado a partir del reactor y verificado por
-       .github/scripts/check-coverage-aggregate.py. El scope es provided: report-aggregate toma
+  <!-- cada módulo del reactor con código de producción. El scope es provided: report-aggregate toma
        clases y fuentes solo de las dependencias compile, runtime y provided; una dependencia
        test añadiría sus datos de ejecución y nada contra lo que medirlos. -->
   <dependencies>

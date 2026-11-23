@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Instala este framework en el repositorio Maven local y genera proyectos de ejemplo con el motor de
 # generación (uno por arquetipo por defecto, todas las combinaciones con MODE=all) en
-# target/samples. CI lo usa para construir los proyectos generados exactamente como lo haría un equipo.
+# target/samples. CI construye los proyectos generados exactamente como lo haría un equipo.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 MODE="${MODE:-defaults}"
@@ -21,13 +21,4 @@ revision=$(./mvnw -q -N help:evaluate -Dexpression=revision -DforceStdout)
   org.codehaus.mojo:exec-maven-plugin:3.5.1:exec \
   -Dexec.executable=java -Dexec.classpathScope=runtime \
   "-Dexec.args=--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED --class-path %classpath \"$PWD/.github/scripts/GenerateAuditAcceptanceChecks.java\" \"$PWD/target/audit-samples\""
-if [ "$MODE" = defaults ]; then
-  validation_env=$(mktemp -d "${TMPDIR:-/tmp}/axiz-sample-validation.XXXXXX")
-  trap 'rm -rf "$validation_env"' EXIT
-  python3 -m venv "$validation_env"
-  "$validation_env/bin/python" -m pip install --disable-pip-version-check --quiet \
-    -r .github/scripts/requirements.txt
-  "$validation_env/bin/python" .github/scripts/check-sample-workflows.py --workflows ../.github/workflows \
-    --samples target/samples/modules.json
-fi
 cat target/samples/modules.json

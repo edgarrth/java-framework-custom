@@ -36,6 +36,14 @@ class ProcessViewsTest {
   }
 
   @Test
+  void aStepInFlightIsRunningAndOnlyAnUncertainOutcomeIsVerifying() {
+    assertThat(ProcessViews.of(state(SagaStatus.IN_DOUBT, null)))
+        .isEqualTo(new PaymentProcess("O-1", ProcessStatus.RUNNING, null));
+    assertThat(ProcessViews.of(state(SagaStatus.IN_DOUBT, "debit: in doubt, TimeoutException")))
+        .isEqualTo(new PaymentProcess("O-1", ProcessStatus.VERIFYING, "debit"));
+  }
+
+  @Test
   void theFailedStepComesFromTheStoredErrorAndNoContextLeaves() {
     PaymentProcess failed =
         ProcessViews.of(state(SagaStatus.COMPENSATED, "transfer: network rejected"));

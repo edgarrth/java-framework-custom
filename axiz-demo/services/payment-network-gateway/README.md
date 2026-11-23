@@ -128,33 +128,25 @@ Claves que cada ambiente debe definir:
 `deploy/helm/payment-network-gateway` contiene el chart: Deployment con probes, Service, HPA, PDB,
 ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
 requieren permisos sobre la API de Kubernetes para leer su configuración montada.
-Los workflows usan los contratos inmutables de Axiz 2.0.0:
 
-- `ci.yaml` compila y valida el producto. Registra el commit de origen, la versión final, la variante
-  JVM o nativa, las plataformas y la imagen base fijada en un manifiesto de build firmado.
-  `AXIZ_JVM_BASE_IMAGE` y `AXIZ_NATIVE_BASE_IMAGE` se configuran con referencias de registro con digest SHA-256;
-  un build manual puede entregar un `base-image` específico. Las entradas opcionales de candidato del
-  framework ligan la dependencia a la ejecución que la produjo, su intento y el hash de su manifiesto firmado.
-- `deploy.yaml` también escucha las ejecuciones completadas de `ci` y promueve a dev un build verificado
-  del servicio mediante una prueba firmada del productor. Exige que el origen sea el HEAD vigente de la
-  rama main protegida y un secreto de repositorio `GITOPS_READ_TOKEN` con acceso de solo lectura a GitOps.
-  El resolvedor lee el predecesor sin usar la credencial de escritura de la GitHub App; el despliegue
-  independiente vuelve a comprobar ese predecesor antes de escribir. Las ejecuciones de CI sin prueba de
-  producto no despliegan.
-- `deploy.yaml` promueve o revierte un build completado con éxito. Recibe su run id, el intento, el
-  SHA-256 del manifiesto, el ambiente, el commit completo de values y el hash del manifiesto desplegado
-  anterior (`initial-deployment` para el primer despliegue). Reutiliza los digests de imagen y de chart,
-  actualiza GitOps y espera a Argo CD; el despliegue nunca recompila. Los ambientes protegidos aportan la aprobación.
-- La compilación usa `GITHUB_TOKEN` con `packages: read`; `PACKAGES_READ_USERNAME` y
-  `PACKAGES_READ_TOKEN`, opcionales, permiten leer dependencias de otro repositorio. Un publicador aislado
-  verifica el worker y sube los bytes originales OCI y del chart con `packages: write`.
-  Los pull requests compilan y escanean sin publicar ni firmar. El despliegue lee GHCR con su
-  `GITHUB_TOKEN` y usa la GitOps App y el token de lectura de Argo. Se usa el mismo `BUILD_DESTINATION`
-  para el build, la resolución automática y el despliegue; `ARGOCD_SERVER` se configura como variable del repositorio.
+Los workflows de `.github/workflows` llaman a los workflows reutilizables de Axiz, fijados al tag
+inmutable de su release:
+
+- `ci.yaml`: cada pull request compila con todos los controles de calidad, revisa la compatibilidad
+  del contrato OpenAPI, valida el chart y escanea las dependencias. En `main` y en los tags
+  publica la imagen (Jib) y el chart en GHCR con atestaciones de procedencia y SBOM; en `main`
+  despliega en dev cuando el repositorio define la variable `AXIZ_GITOPS_REPOSITORY`.
+- `deploy.yaml`: promueve a un ambiente un digest ya construido y atestiguado; las reglas de
+  protección del ambiente de GitHub aportan la aprobación. Volver atrás es desplegar el digest
+  anterior; el despliegue nunca recompila.
 - `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
   changelog; al fusionarlo se crea el tag. `version.txt` y `.release-please-manifest.json` guardan
   la última versión publicada (`0.0.0`: nada publicado todavía); el pom guarda la siguiente
-  (`2.0.0`). La primera release es `2.0.0` (`initial-version` en
+  (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
   `release-please-config.json`); las siguientes siguen Conventional Commits.
+
+Variables opcionales del repositorio: `AXIZ_BASE_IMAGE` (imagen base fijada por digest) y
+`AXIZ_NATIVE` (`true` para la imagen nativa). Secretos del despliegue: `GITOPS_APP_CLIENT_ID` y
+`GITOPS_APP_PRIVATE_KEY`, de una GitHub App que solo escribe en el repositorio GitOps.
 
 ## Decisiones

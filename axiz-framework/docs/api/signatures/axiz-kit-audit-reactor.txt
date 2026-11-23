@@ -1,5 +1,0 @@
-public interface pe.axiz.kit.reactor.audit.ReactiveAuditChainState {
-public abstract java.lang.Object transactionResource();
-public abstract reactor.core.publisher.Mono<pe.axiz.core.audit.AuditIntegrity> advance(java.lang.String, java.util.function.UnaryOperator<pe.axiz.core.audit.AuditIntegrity>);
-public abstract reactor.core.publisher.Mono<pe.axiz.core.audit.ChainCheckpoint> checkpoint(java.lang.String);
-}

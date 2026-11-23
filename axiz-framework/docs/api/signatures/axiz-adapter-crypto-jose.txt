@@ -1,6 +1,0 @@
-public final class pe.axiz.adapter.crypto.jose.Jose {
-public static java.lang.String decrypt(java.lang.String, java.security.interfaces.RSAPrivateKey);
-public static java.lang.String encrypt(java.lang.String, java.security.interfaces.RSAPublicKey, java.lang.String);
-public static java.lang.String sign(java.lang.String, java.security.PrivateKey, java.lang.String);
-public static java.util.Optional<java.lang.String> verify(java.lang.String, java.security.PublicKey);
-}

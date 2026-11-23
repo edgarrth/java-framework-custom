@@ -8,6 +8,11 @@ scan:
 # Los motores de regresión son herramientas privadas de desarrollo; sus vulnerabilidades siguen escaneándose.
 pkg:
   include-dev-deps: true
+# Declaraciones VEX revisadas: componentes cuyo código ya contiene la corrección aunque el escáner
+# los atribuya a una versión vulnerable.
+vulnerability:
+  vex:
+    - .github/security/tempo-fixed.openvex.json
 
 # El escaneo del registry sigue el backend de publicación seleccionado; la admisión exige además namespace,
 # digest y firma. El reconocimiento del registry por parte del escáner no sustituye a la admisión.

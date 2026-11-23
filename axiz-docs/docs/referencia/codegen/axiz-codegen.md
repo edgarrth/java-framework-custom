@@ -130,7 +130,7 @@ de prueba del SDK y detiene su contenedor, y se ejecuta aislada cuando la ejecuc
 está activada. El fixture genérico de LocalStack del framework no aprovisiona en silencio ningún
 recurso de la aplicación.
 
-Los jobs regulares `samples` y nocturnos `samples-matrix` verifican seis consumidores adicionales:
+El job `samples` de `framework.yaml` y el job nocturno `samples-matrix` de `framework-nightly.yaml` verifican seis consumidores adicionales:
 servlet y reactivo, cada uno con outbox/SQS, outbox/SNS y `audit-sqs`. Su manifiesto está separado de
 los nueve arquetipos por defecto para que la selección de módulos nativos conserve su alcance
 explícito. El job de aceptación HTTP también ejercita peticiones con scopes, solo autenticadas y

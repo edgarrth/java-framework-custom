@@ -1,9 +1,0 @@
-public final class pe.axiz.adapter.inbox.jdbc.JdbcInboxStore implements pe.axiz.core.inbox.InboxStore {
-public boolean markProcessed(java.lang.String, java.lang.String, java.lang.String, java.time.Instant);
-public boolean release(java.lang.String, java.lang.String, java.lang.String);
-public int purgeExpired(java.time.Instant);
-public pe.axiz.adapter.inbox.jdbc.JdbcInboxStore(pe.axiz.kit.jdbc.ConnectionProvider, java.lang.String);
-public pe.axiz.core.inbox.InboxStore$Acquisition tryAcquire(java.lang.String, java.lang.String, java.lang.String, java.time.Instant, java.time.Instant, java.time.Instant);
-public pe.axiz.kit.jdbc.ConnectionProvider connectionProvider();
-public void verifySchema();
-}

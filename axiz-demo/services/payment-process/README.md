@@ -137,14 +137,25 @@ Claves que cada ambiente debe definir:
 `deploy/helm/payment-process` contiene el chart: Deployment con probes, Service, HPA, PDB,
 ConfigMaps montados como archivos, ExternalSecret, ServiceAccount y una NetworkPolicy. Los pods no
 requieren permisos sobre la API de Kubernetes para leer su configuración montada.
-Los pipelines de `.github/workflows` llaman a los workflows compartidos de axiz, fijados a una release inmutable (`@axiz-workflows-vX.Y.Z`; Renovate propone actualizaciones agrupadas hacia el siguiente tag de release inmutable):
 
-- `ci.yaml`: los pull requests ejecutan las comprobaciones compartidas y el build con todos los controles
-  de calidad; `main` construye la imagen (Jib, firmada con cosign) y la despliega en dev y luego en qa;
-  un tag `v*` despliega en prod tras la aprobación del ambiente `prod`.
-- Los despliegues son GitOps: el pipeline registra la release (commit del chart, tag y digest de la imagen)
-  en el repositorio GitOps y Argo CD la aplica. `cd.yaml` vuelve a desplegar o revierte una imagen existente.
+Los workflows de `.github/workflows` llaman a los workflows reutilizables de Axiz, fijados al tag
+inmutable de su release:
+
+- `ci.yaml`: cada pull request compila con todos los controles de calidad, revisa la compatibilidad
+  del contrato OpenAPI, valida el chart y escanea las dependencias. En `main` y en los tags
+  publica la imagen (Jib) y el chart en GHCR con atestaciones de procedencia y SBOM; en `main`
+  despliega en dev cuando el repositorio define la variable `AXIZ_GITOPS_REPOSITORY`.
+- `deploy.yaml`: promueve a un ambiente un digest ya construido y atestiguado; las reglas de
+  protección del ambiente de GitHub aportan la aprobación. Volver atrás es desplegar el digest
+  anterior; el despliegue nunca recompila.
 - `release.yaml`: release-please mantiene un pull request de release con la siguiente versión y el
-  changelog; al fusionarlo se crea el tag.
+  changelog; al fusionarlo se crea el tag. `version.txt` y `.release-please-manifest.json` guardan
+  la última versión publicada (`0.0.0`: nada publicado todavía); el pom guarda la siguiente
+  (`0.1.0-SNAPSHOT`). La primera release es `0.1.0` (`initial-version` en
+  `release-please-config.json`); las siguientes siguen Conventional Commits.
+
+Variables opcionales del repositorio: `AXIZ_BASE_IMAGE` (imagen base fijada por digest) y
+`AXIZ_NATIVE` (`true` para la imagen nativa). Secretos del despliegue: `GITOPS_APP_CLIENT_ID` y
+`GITOPS_APP_PRIVATE_KEY`, de una GitHub App que solo escribe en el repositorio GitOps.
 
 ## Decisiones

@@ -1,8 +1,0 @@
-public final class pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore implements pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore {
-public pe.axiz.adapter.sequence.r2dbc.R2dbcSequenceStore(io.r2dbc.spi.ConnectionFactory, java.lang.String);
-public reactor.core.publisher.Mono<java.lang.Long> increment(java.lang.String, java.lang.String, int);
-}
-
-public interface pe.axiz.adapter.sequence.r2dbc.ReactiveSequenceStore {
-public abstract reactor.core.publisher.Mono<java.lang.Long> increment(java.lang.String, java.lang.String, int);
-}

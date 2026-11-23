@@ -205,19 +205,12 @@ salga la JVM de pruebas. Las pruebas de aplicación generadas usan el mismo cicl
 - `coverage/`: falla cuando la demo no usa una capacidad del catálogo de axiz, cuando falta su resultado
   exitoso de JUnit, está omitido o desactualizado, o cuando falta una variante obligatoria de proveedor o
   de stack. Ver la [matriz ejecutable de capacidades](coverage/CAPABILITIES.md) y las [reglas del control](coverage/README.md).
-- `.github/workflows/ci.yaml`: cada servicio pasa por el pipeline compartido `service-build` (build,
-  Spotless, Checkstyle, Error Prone + NullAway, SpotBugs, pruebas, lint de OpenAPI y cambios
-  incompatibles, validación de Helm, imagen, SBOM); `e2e.yaml`: toda la demo en kind cada noche.
-
-El CI raíz y el CI de cada servicio independiente solo compilan. Sus workflows independientes
-`deploy.yaml` consumen una ejecución completada con éxito, su intento y el hash del manifiesto firmado
-externo, además de un ambiente, el hash del predecesor y la revisión completa de values. El servicio se
-toma del manifiesto verificado; cada servicio compilado en la matriz raíz tiene su propio hash. Ningún
-job de CI promueve un servicio de forma automática. Se configuran credenciales separadas de lectura de
-dependencias, build del registro, lectura del registro y GitOps según se describe en
-[la documentación de pipelines](../.github/docs/pipelines.md).
-El workflow de extremo a extremo con kind despliega un ambiente de prueba efímero como parte de su
-escenario de prueba.
+- `.github/workflows/demo.yaml` (en la raíz del repositorio): cada servicio pasa por el workflow
+  reutilizable `service-build` (calidad completa, pruebas, compatibilidad del contrato OpenAPI,
+  validación del chart y escaneo de dependencias); en `main` publica las imágenes con sus
+  atestaciones. `demo-nightly.yaml` despliega toda la demo en kind cada noche, con prueba de humo
+  y DAST, y compila las imágenes nativas. `demo-deploy.yaml` promueve un digest atestiguado a dev,
+  qa o prod.
 
 Los [ejemplos ejecutables de datos protegidos](examples/protected-data/README.md) muestran la
 tokenización de PAN y DNI y la búsqueda independiente de DNI cifrado con LocalStack y Valkey.

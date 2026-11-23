@@ -1,8 +1,0 @@
-public final class pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore implements pe.axiz.core.saga.SagaStateStore {
-public java.util.List<pe.axiz.core.saga.SagaState> findStale(java.time.Instant, int);
-public java.util.Optional<pe.axiz.core.lock.LockHandle> tryAcquire(java.lang.String, java.time.Duration);
-public java.util.Optional<pe.axiz.core.saga.SagaState> find(java.lang.String);
-public pe.axiz.adapter.saga.jdbc.JdbcSagaStateStore(pe.axiz.kit.jdbc.ConnectionProvider, java.lang.String);
-public void create(pe.axiz.core.saga.SagaState);
-public void update(pe.axiz.core.saga.SagaState, java.lang.String);
-}

@@ -20,20 +20,6 @@
     <axiz.module.name>pe.axiz.codegen</axiz.module.name>
   </properties>
 
-  <build>
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-      </testResource>
-      <testResource>
-        <directory>../../../.github/policies</directory>
-        <includes>
-          <include>workflow-release-v2.json</include>
-        </includes>
-        <targetPath>workflow-contracts</targetPath>
-      </testResource>
-    </testResources>
-  </build>
 
   <dependencies>
     <dependency><groupId>pe.axiz</groupId><artifactId>axiz-core-lang</artifactId><version>${project.version}</version><scope>test</scope></dependency>

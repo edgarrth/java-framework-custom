@@ -1,0 +1,102 @@
+# Verificaciones nocturnas de la demo: despliegue completo en un clúster kind con prueba de humo y
+# escaneo DAST autenticado, y compilación nativa de cada servicio.
+name: demo-nightly
+
+on:
+  schedule:
+    - cron: '17 6 * * 1-5'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
+        with:
+          install_only: true
+      - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v3.19.0
+      - name: Framework del mismo commit
+        working-directory: axiz-framework
+        run: ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      - name: Clúster kind con la demo completa
+        working-directory: axiz-demo
+        run: kind/up.sh
+      - name: Prueba de humo
+        working-directory: axiz-demo
+        env:
+          SMOKE_LOCAL: '0'
+          KC_URL: http://localhost:9180
+          CHANNEL_URL: http://localhost:9080
+          CRUD_URL: http://localhost:9082
+          HISTORY_URL: http://localhost:9086
+        run: |
+          kubectl -n axiz-demo port-forward svc/beneficiaries 9082:80 &
+          kubectl -n axiz-demo port-forward svc/payments-history 9086:80 &
+          sleep 3
+          scripts/smoke.sh
+      - name: DAST autenticado (OWASP ZAP) de cada contrato REST
+        working-directory: axiz-demo
+        env:
+          KC_URL: http://localhost:9180
+        run: |
+          for pair in payment-orders:9081 banking-core:9083 payment-process:9084 payment-network-gateway:9087; do
+            kubectl -n axiz-demo port-forward "svc/${pair%%:*}" "${pair##*:}:80" &
+          done
+          sleep 3
+          DAST_TARGETS="payments-ux=http://localhost:9080 payment-orders=http://localhost:9081 \
+            beneficiaries=http://localhost:9082 banking-core=http://localhost:9083 \
+            payment-process=http://localhost:9084 payments-history=http://localhost:9086 \
+            payment-network-gateway=http://localhost:9087" scripts/dast.sh
+      - name: Reportes DAST
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dast-reports
+          path: axiz-demo/target/dast
+          if-no-files-found: ignore
+      - name: Diagnóstico
+        if: failure()
+        run: |
+          kubectl -n axiz-demo get pods -o wide
+          for d in $(kubectl -n axiz-demo get deploy -o name); do kubectl -n axiz-demo logs "$d" --tail=200 || true; done
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [payments-ux, payment-orders, beneficiaries, banking-core, payment-process,
+                  payments-history, notifications-processor, settlement-batch]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: graalvm/setup-graalvm@27b360dbb857524eaf0b4c4cef364d38e5b4f173 # v1.6.7
+        with:
+          java-version: '25'
+          distribution: graalvm-community
+          cache: maven
+      - name: Framework del mismo commit
+        working-directory: axiz-framework
+        run: ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      - name: Imagen nativa y pruebas nativas
+        working-directory: axiz-demo/services/${{ matrix.service }}
+        run: ./mvnw -B -ntp -Pnative package native:compile native:test

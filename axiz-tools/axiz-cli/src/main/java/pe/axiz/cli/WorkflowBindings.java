@@ -43,7 +43,6 @@ final class WorkflowBindings {
     result.put("service", manifest.name());
     result.put("module", module.isEmpty() ? "." : module);
     result.put("pom", root.relativize(layout.pom()).toString().replace('\\', '/'));
-    result.put("SOURCE_POM", result.get("pom"));
     if (layout.charts().size() == 1)
       result.put(
           "chart", root.relativize(layout.charts().getFirst()).toString().replace('\\', '/'));
@@ -135,9 +134,13 @@ final class WorkflowBindings {
           && (ref.startsWith(
                   "edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.")
               || ref.startsWith(
-                  "edgarrth/java-framework-custom/.github/actions/resolve-service-build@axiz-workflows-v2."))
+                  "edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2."))
           && map.get("with") instanceof Map<?, ?> parameters) {
+        // service-deploy solo recibe el nombre del servicio: imagen, chart y versión son salidas
+        // del build o valores derivados del nombre, no rutas del proyecto.
+        boolean deploy = ref.contains("/service-deploy.yaml@");
         for (var value : values.entrySet()) {
+          if (deploy && !"service".equals(value.getKey())) continue;
           Object old = parameters.get(value.getKey());
           if (old instanceof String oldValue && !oldValue.equals(value.getValue())) {
             String conflict = previous.putIfAbsent(value.getKey(), oldValue);
@@ -147,14 +150,6 @@ final class WorkflowBindings {
             changed = true;
           }
         }
-      }
-      if ("version".equals(map.get("id"))
-          && map.get("env") instanceof Map<?, ?> env
-          && env.get("SOURCE_POM") instanceof String old
-          && !old.equals(values.get("SOURCE_POM"))) {
-        previous.put("SOURCE_POM", old);
-        ((Map<Object, Object>) env).put("SOURCE_POM", values.get("SOURCE_POM"));
-        changed = true;
       }
       for (Object value : map.values()) changed |= alignBindings(value, values, previous);
     } else if (node instanceof List<?> list) {

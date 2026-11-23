@@ -1,0 +1,78 @@
+# Documentación: en cada pull request se comprueba que la referencia generada está al día, el lint
+# de Markdown y el build estricto de MkDocs. Con el tag axiz-docs-v* el sitio se publica en GitHub
+# Pages con las acciones nativas de Pages.
+name: docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['axiz-docs-v*']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: axiz-docs
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Dependencias fijadas por hash
+        run: 'pip install --require-hashes --only-binary=:all: --requirement requirements.txt'
+      - name: La referencia y los dashboards generados están al día
+        run: |
+          python scripts/sync_reference.py --framework ../axiz-framework --cli-help scripts/cli-help.txt
+          python scripts/dashboards.py
+          git diff --exit-code -- docs dashboards
+      - uses: DavidAnson/markdownlint-cli2-action@3ce8f712b5d8f31acd8e201be6d97e3d2bb23eb7 # v25.1.0
+        with:
+          globs: |
+            axiz-docs/README.md
+            axiz-docs/docs/**/*.md
+      - name: Build estricto
+        run: mkdocs build --strict
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        if: startsWith(github.ref, 'refs/tags/axiz-docs-v')
+        with:
+          path: axiz-docs/site
+
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/axiz-docs-v')
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+        id: pages
+
+  axiz-docs-site-pr:
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: La documentación se construye sin errores
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

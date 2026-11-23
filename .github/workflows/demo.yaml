@@ -1,0 +1,69 @@
+# Demo: cada servicio se verifica con el workflow reutilizable service-build contra el framework del
+# mismo commit. En main se publican las imágenes con sus atestaciones y, si hay un repositorio
+# GitOps configurado, se despliegan en dev.
+name: demo
+
+on:
+  pull_request:
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml']
+  push:
+    branches: [main]
+    paths: ['axiz-demo/**', 'axiz-framework/**', '.github/workflows/demo.yaml', '.github/workflows/service-build.yaml']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: demo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  service:
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [beneficiaries, banking-core, notifications-processor, payment-process,
+                  payment-network-gateway, payment-orders, payments-ux, payments-history, settlement-batch]
+    uses: ./.github/workflows/service-build.yaml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    with:
+      service: ${{ matrix.service }}
+      working-directory: axiz-demo/services/${{ matrix.service }}
+      setup-command: cd axiz-framework && ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      publish: ${{ github.event_name == 'push' }}
+
+  coverage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Framework del mismo commit
+        working-directory: axiz-framework
+        run: ./mvnw --bootstrap -B -ntp -q -DskipTests install
+      - name: La demo usa todas las capacidades del catálogo
+        working-directory: axiz-demo
+        run: ./mvnw -B -ntp -Pquality -Daxiz.it.requireDocker=true -pl examples/protected-data,coverage verify
+
+  axiz-demo-pr:
+    if: always()
+    needs: [service, coverage]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    steps:
+      - name: Todos los jobs de la demo terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

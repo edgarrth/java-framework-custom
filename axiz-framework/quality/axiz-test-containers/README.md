@@ -111,7 +111,7 @@ El resultado de cada construcción debe pasar el escaneo M/H/C con una base vige
 vulnerabilidades. Una receta corregida hoy no garantiza que futuras vulnerabilidades no la afecten.
 
 CI conserva el escaneo bruto y el resultado VEX. La única clasificación de código ya
-corregido está en `.github/policies/tempo-fixed.openvex.json`: dos CVE de Tempo que el
+corregido está en `.github/security/tempo-fixed.openvex.json`: dos CVE de Tempo que el
 escáner atribuye a una pseudo-versión anterior a v2, cuyo commit ya contiene ambos
 parches oficiales. La declaración identifica CVE y PURL/version exactos, enlaces a
 los commits y fecha límite de revisión. No autoriza aceptar una vulnerabilidad

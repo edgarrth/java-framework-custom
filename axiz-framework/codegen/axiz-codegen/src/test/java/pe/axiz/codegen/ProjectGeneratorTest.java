@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -30,6 +31,8 @@ import pe.axiz.codegen.output.GeneratedProject;
 import pe.axiz.codegen.render.TemplateSet;
 
 class ProjectGeneratorTest {
+  /** Release de los workflows reutilizables de Axiz que usan los proyectos generados. */
+  private static final String WORKFLOWS = "axiz-workflows-v2.0.0";
 
   private static final Pattern UNRENDERED = Pattern.compile("(?<!\\$)\\{\\{");
   private static final Pattern PACKAGE = Pattern.compile("^package ([\\w.]+);", Pattern.MULTILINE);
@@ -280,38 +283,20 @@ class ProjectGeneratorTest {
     assertTrue(p.text(".mvn/jvm.config").contains("jdk.compiler"), "Error Prone needs the exports");
     String ci = p.text(".github/workflows/ci.yaml");
     assertTrue(ci.contains("service: orders"), ci);
-    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
-    Map<?, ?> jobs = (Map<?, ?>) workflow.get("jobs");
-    assertTrue(
-        jobs.values().stream()
-            .map(job -> (Map<?, ?>) job)
-            .noneMatch(
-                job -> {
-                  String ref = String.valueOf(job.get("uses"));
-                  return List.of(
-                          "/service-deploy.yaml@",
-                          "/service-cd.yaml@",
-                          "/lib-deploy.yaml@",
-                          "/lib-promote.yaml@")
-                      .stream()
-                      .anyMatch(ref::contains);
-                }),
-        "the producer run must never invoke deployment");
-    assertTrue(ci.contains("service-build.yaml@" + WorkflowRelease.expected()), ci);
-    assertTrue(ci.contains("source-sha: ${{ github.sha }}"), ci);
-    assertTrue(ci.contains("version: ${{ needs.parameters.outputs.version }}"), ci);
-    assertTrue(ci.contains("base-image:"), ci);
+    assertTrue(ci.contains("service-build.yaml@" + WORKFLOWS), ci);
+    assertTrue(ci.contains("publish: ${{ github.event_name == 'push' }}"), ci);
+    // dev recibe el digest que acaba de atestiguar el build; nunca se recompila para desplegar
+    assertTrue(ci.contains("service-deploy.yaml@" + WORKFLOWS), ci);
+    assertTrue(ci.contains("digest: ${{ needs.build.outputs.digest }}"), ci);
     assertFalse(ci.contains("<%"), "delimiters fully rendered");
-    assertSeparatedDeployment(p, "service-deploy");
-    assertFalse(p.files().containsKey(".github/workflows/cd.yaml"));
-    assertTrue(
-        p.text(".github/workflows/release.yaml")
-            .contains("release.yaml@" + WorkflowRelease.expected()));
+    Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(ci);
+    assertEquals(Set.of("build", "deploy-dev"), ((Map<?, ?>) workflow.get("jobs")).keySet());
+    assertManualPromotion(p);
+    assertTrue(p.text(".github/workflows/release.yaml").contains("release.yaml@" + WORKFLOWS));
     assertTrue(p.files().containsKey("release-please-config.json"));
     assertTrue(p.files().containsKey(".release-please-manifest.json"));
     // sin releases publicadas: la primera release es la versión a la que apunta el pom
-    // (release-please propondría 1.0.0 sin initial-version; .github/scripts/release-version la
-    // calcula)
+    // (release-please propondría 1.0.0 sin initial-version)
     assertTrue(p.text(".release-please-manifest.json").contains("\"0.0.0\""));
     assertEquals("0.0.0", p.text("version.txt").strip());
     assertTrue(
@@ -629,10 +614,11 @@ class ProjectGeneratorTest {
         generator.generate(
             Fixtures.request("library", Structure.NONE, Stack.SERVLET, "none", List.of()));
     assertTrue(lib.text("pom.xml").contains("<artifactId>axiz-parent-core</artifactId>"));
-    assertSeparatedDeployment(lib, "lib-deploy");
-    assertTrue(
-        lib.text(".github/workflows/ci.yaml")
-            .contains("lib-build.yaml@" + WorkflowRelease.expected()));
+    String libCi = lib.text(".github/workflows/ci.yaml");
+    assertTrue(libCi.contains("lib-build.yaml@" + WORKFLOWS), libCi);
+    assertTrue(libCi.contains("publish: ${{ startsWith(github.ref, 'refs/tags/v') }}"), libCi);
+    // una librería se publica con su tag; no tiene workflow de despliegue
+    assertFalse(lib.files().containsKey(".github/workflows/deploy.yaml"));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -658,7 +644,9 @@ class ProjectGeneratorTest {
             .extensions(List.of())
             .build();
     GeneratedProject s = generator.generate(starter);
-    assertSeparatedDeployment(s, "lib-deploy");
+    // un starter se publica con su tag, igual que una librería
+    assertTrue(s.text(".github/workflows/ci.yaml").contains("lib-build.yaml@" + WORKFLOWS));
+    assertFalse(s.files().containsKey(".github/workflows/deploy.yaml"));
     assertEquals(
         Boolean.TRUE,
         new Yaml(new SafeConstructor(new LoaderOptions()))
@@ -742,52 +730,21 @@ class ProjectGeneratorTest {
     }
   }
 
-  private static void assertSeparatedDeployment(GeneratedProject project, String reusable) {
-    WorkflowRelease.assertProject(project);
-    assertEquals(
-        Boolean.TRUE,
-        new Yaml(new SafeConstructor(new LoaderOptions()))
-            .<Map<?, ?>>load(project.text("release-please-config.json"))
-            .get("force-tag-creation"));
+  /** La promoción manual despliega un digest ya construido, nunca recompila. */
+  private static void assertManualPromotion(GeneratedProject project) {
     String deploy = project.text(".github/workflows/deploy.yaml");
-    assertTrue(deploy.contains("workflow_dispatch"));
-    assertTrue(deploy.contains("/" + reusable + ".yaml@" + WorkflowRelease.expected()));
-    assertFalse(deploy.contains("image-tag:"));
-    assertFalse(deploy.contains("mvnw"));
-    assertFalse(deploy.contains("/setup-maven@"));
+    assertTrue(deploy.contains("service-deploy.yaml@" + WORKFLOWS), deploy);
+    assertFalse(deploy.contains("mvnw"), deploy);
     Map<?, ?> workflow = new Yaml(new SafeConstructor(new LoaderOptions())).load(deploy);
     Object trigger = workflow.containsKey("on") ? workflow.get("on") : workflow.get(Boolean.TRUE);
     Map<?, ?> dispatch = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_dispatch");
     Map<?, ?> inputs = (Map<?, ?>) dispatch.get("inputs");
+    for (String key : List.of("environment", "digest", "version")) {
+      assertEquals(Boolean.TRUE, ((Map<?, ?>) inputs.get(key)).get("required"), key);
+    }
     Map<?, ?> job = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("deploy");
     Map<?, ?> forwarded = (Map<?, ?>) job.get("with");
-    for (String key :
-        List.of(
-            "build-run-id",
-            "build-run-attempt",
-            "manifest-sha256",
-            "environment",
-            "previous-manifest-sha256")) {
-      assertEquals(Boolean.TRUE, ((Map<?, ?>) inputs.get(key)).get("required"), key);
-      String source = "service-deploy".equals(reusable) ? " || needs.automatic.outputs." + key : "";
-      assertEquals("${{ inputs." + key + source + " }}", forwarded.get(key), key);
-    }
-    if ("service-deploy".equals(reusable)) {
-      assertEquals(
-          "${{ inputs.values-revision || needs.automatic.outputs.values-revision }}",
-          forwarded.get("values-revision"));
-      Map<?, ?> automaticTrigger = (Map<?, ?>) ((Map<?, ?>) trigger).get("workflow_run");
-      assertEquals(List.of("ci"), automaticTrigger.get("workflows"));
-      assertEquals(List.of("completed"), automaticTrigger.get("types"));
-      Map<?, ?> automatic = (Map<?, ?>) ((Map<?, ?>) workflow.get("jobs")).get("automatic");
-      assertEquals(Map.of("contents", "read", "actions", "read"), automatic.get("permissions"));
-      Map<?, ?> step = (Map<?, ?>) ((List<?>) automatic.get("steps")).getFirst();
-      assertEquals(
-          "edgarrth/java-framework-custom/.github/actions/resolve-service-build@"
-              + WorkflowRelease.expected(),
-          step.get("uses"));
-      assertEquals("dev", ((Map<?, ?>) step.get("with")).get("environment"));
-      assertTrue(job.get("if").toString().contains("needs.automatic.result == 'success'"));
-    } else assertEquals("${{ inputs.destination }}", forwarded.get("destination"));
+    assertEquals("${{ inputs.digest }}", forwarded.get("digest"));
+    assertEquals("${{ inputs.environment }}", forwarded.get("environment"));
   }
 }

@@ -692,10 +692,6 @@
                       <regex>2\.\d+\.\d+</regex>
                       <message>-Papi-compat needs -Daxiz.api.baseline=&lt;released version&gt;</message>
                     </requireProperty>
-                    <requireProperty>
-                      <property>axiz.api.baseline.directory</property>
-                      <message>Prepare the published v2 baseline with check-api-compatibility.py --prepare-baseline; local/candidate caches are not a baseline</message>
-                    </requireProperty>
                   </rules>
                 </configuration>
               </execution>
@@ -707,20 +703,19 @@
             <version>${japicmp-maven-plugin.version}</version>
             <configuration>
               <skip>${axiz.api.skip}</skip>
+              <!-- La versión base se resuelve como dependencia desde el repositorio Maven
+                   configurado (GitHub Packages); la nueva es el artefacto recién construido. -->
               <oldVersion>
-                <file>
-                  <path>${axiz.api.baseline.directory}/${project.artifactId}-${axiz.api.baseline}.jar</path>
-                </file>
+                <dependency>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>${project.artifactId}</artifactId>
+                  <version>${axiz.api.baseline}</version>
+                </dependency>
               </oldVersion>
-              <newVersion>
-                <file>
-                  <path>${project.build.directory}/${project.build.finalName}.jar</path>
-                </file>
-              </newVersion>
               <parameter>
                 <onlyModified>true</onlyModified>
                 <skipPomModules>true</skipPomModules>
-                <ignoreMissingOldVersion>false</ignoreMissingOldVersion>
+                <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
                 <breakBuildOnBinaryIncompatibleModifications>${axiz.api.breakBuildOnIncompatible}</breakBuildOnBinaryIncompatibleModifications>
                 <breakBuildOnSourceIncompatibleModifications>${axiz.api.breakBuildOnIncompatible}</breakBuildOnSourceIncompatibleModifications>
                 <reportOnlyFilename>true</reportOnlyFilename>

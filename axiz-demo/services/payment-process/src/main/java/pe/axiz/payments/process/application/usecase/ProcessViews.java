@@ -15,7 +15,19 @@ final class ProcessViews {
   private ProcessViews() {}
 
   static PaymentProcess of(SagaState state) {
-    return new PaymentProcess(state.sagaId(), status(state.status()), failedStep(state.error()));
+    return new PaymentProcess(state.sagaId(), status(state), failedStep(state.error()));
+  }
+
+  /**
+   * Estado visible de una saga persistida. Antes de cada llamada a un participante, el orquestador
+   * guarda la intención como {@code IN_DOUBT} sin error: el paso está en curso, no verificándose.
+   * Solo un {@code IN_DOUBT} con el error del paso es un resultado incierto que se verifica.
+   */
+  static ProcessStatus status(SagaState state) {
+    if (state.status() == SagaStatus.IN_DOUBT && state.error() == null) {
+      return ProcessStatus.RUNNING;
+    }
+    return status(state.status());
   }
 
   static ProcessStatus status(SagaStatus s) {

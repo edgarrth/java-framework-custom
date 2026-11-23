@@ -1,0 +1,12 @@
+# Configuración de zizmor. Los workflows reutilizables propios se referencian con la forma estable
+# documentada ./.github/workflows/<archivo>. Los consumidores fijan los workflows de Axiz por el tag
+# de su release, que es inmutable (releases inmutables de GitHub); las acciones de terceros siempre
+# se fijan por SHA.
+rules:
+  self-repository:
+    disable: true
+  unpinned-uses:
+    config:
+      policies:
+        edgarrth/java-framework-custom/*: ref-pin
+        "*": hash-pin

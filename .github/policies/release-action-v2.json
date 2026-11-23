@@ -1,8 +1,0 @@
-{
-  "schema": 1,
-  "repository": "googleapis/release-please-action",
-  "commit": "45996ed1f6d02564a971a2fa1b5860e934307cf7",
-  "releasePlease": "17.6.0",
-  "lockSha256": "e9b82ebdef8b0efc1d9bb62c8b605e07f863544cd124cb6cb0362dd55c79d3aa",
-  "metadataSha256": "b284178f59056d983a8237833118a6b32aa49701bba60e56ffe7599e43ff6197"
-}

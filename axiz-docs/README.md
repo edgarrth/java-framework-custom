@@ -38,9 +38,9 @@ versión del código. Los enlaces y la estructura del sitio se verifican durante
 
 ## GitHub Pages
 
-Configurar Pages con GitHub Actions, el repositorio indicado en `mkdocs.yml` y los entornos
-protegidos `docs-publication` y `github-pages`. El workflow `docs-docs.yaml` valida PR y publica
-los tags `axiz-docs-vX.Y.Z`.
+Pages se configura con GitHub Actions como fuente y el ambiente `github-pages`. El workflow
+`docs.yaml` valida cada pull request y, con un tag `axiz-docs-vX.Y.Z`, publica el sitio con las
+acciones nativas de Pages.
 
 La URL configurada del sitio es `https://edgarrth.github.io/java-framework-custom/`.
 

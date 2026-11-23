@@ -1,122 +1,49 @@
-# Solo build. deploy.yaml consume de forma independiente una ejecución completada con éxito y el hash del manifiesto.
+# Pipeline del servicio con los workflows reutilizables de Axiz: verificación en cada cambio,
+# imagen y chart publicados en GHCR con atestaciones de procedencia y SBOM en main y en los tags, y
+# despliegue automático en dev cuando el repositorio define AXIZ_GITOPS_REPOSITORY.
 name: ci
 on:
   pull_request:
   push:
-    branches: [main, develop, "release/**", "hotfix/**"]
-    tags: ["v*", "candidate/**"]
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
-    inputs:
-      version: {description: Optional final build coordinate; defaults to the source POM without -SNAPSHOT, type: string, default: ''}
-      variant: {type: choice, options: [jvm, native], default: jvm}
-      platforms: {description: JSON image platforms, type: string, default: '["linux/amd64"]'}
-      base-image: {description: Registry base image pinned by digest; overrides the platform variable, type: string, default: ''}
-      candidate-repository: {description: Optional framework candidate producer repository, type: string, default: ''}
-      candidate-build-run-id: {type: string, default: ''}
-      candidate-build-run-attempt: {type: string, default: ''}
-      candidate-manifest-sha256: {description: External signed framework candidate manifest SHA256, type: string, default: ''}
 permissions: {}
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  axiz-workflows-trust:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 3
-    permissions:
-      contents: read
-    steps:
-      - name: Verify immutable Axiz workflow release
-        env:
-          GH_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN || github.token }}
-          GH_HOST: github.com
-          AXIZ_WORKFLOWS_VERSION: axiz-workflows-v2.0.0
-        shell: bash
-        run: |
-          set -euo pipefail
-          release=$(gh api "repos/edgarrth/java-framework-custom/releases/tags/$AXIZ_WORKFLOWS_VERSION")
-          jq -e --arg tag "$AXIZ_WORKFLOWS_VERSION" '.tag_name == $tag and .immutable == true and .draft == false' <<< "$release" >/dev/null
-
-  parameters:
-    permissions:
-      contents: read
-    runs-on: ubuntu-24.04
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      candidate: ${{ steps.version.outputs.candidate }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-      - name: Resolve final coordinates and candidate identity
-        id: version
-        env:
-          REQUESTED_VERSION: ${{ inputs.version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="$REQUESTED_VERSION"
-          if [[ -z "$version" ]]; then
-            version=$(python3 -c 'import xml.etree.ElementTree as E; p=E.parse("pom.xml").getroot(); print(p.findtext("{*}version") or p.findtext("{*}properties/{*}revision") or "")')
-            version=${version%-SNAPSHOT}
-          fi
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
-          candidate=
-          if [[ "$GITHUB_REF" == refs/tags/candidate/* ]]; then
-            candidate=${GITHUB_REF#refs/tags/candidate/}
-            [[ "$candidate" =~ ^([0-9]+\.[0-9]+\.[0-9]+)/[1-9][0-9]*$ && "${BASH_REMATCH[1]}" == "$version" ]]
-          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            [[ "${GITHUB_REF#refs/tags/v}" == "$version" ]]
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "candidate=$candidate" >> "$GITHUB_OUTPUT"
-
-  pr:
-    permissions:
-      packages: read
-      contents: read
-      pull-requests: read
-      security-events: write
-      actions: read
-    needs: axiz-workflows-trust
-    if: ${{ needs.axiz-workflows-trust.result == 'success' && (github.event_name == 'pull_request') }}
-    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: edgarrth/java-framework-custom/.github/workflows/pr.yaml@axiz-workflows-v2.0.0
-    secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
-      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
-      AXIZ_NAMING_GUARD: ${{ secrets.AXIZ_NAMING_GUARD }}
-
   build:
+    uses: edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.0.0 # x-release-please-version
     permissions:
-      packages: write
       contents: read
-      actions: read
+      packages: write
       id-token: write
-    needs: [axiz-workflows-trust, parameters]
-    # Release interna inmutable: axiz-workflows-trust debe completarse con éxito antes.
-    # nosemgrep: yaml.github-actions.security.github-actions-mutable-action-tag.github-actions-mutable-action-tag
-    uses: edgarrth/java-framework-custom/.github/workflows/service-build.yaml@axiz-workflows-v2.0.0
+      attestations: write
     with:
       service: payment-orders
       module: '.'
       chart: deploy/helm/payment-orders
-      version: ${{ needs.parameters.outputs.version }}
-      source-sha: ${{ github.sha }}
-      variant: ${{ inputs.variant || 'jvm' }}
-      platforms: ${{ inputs.platforms || '["linux/amd64"]' }}
-      base-image: ${{ inputs.base-image || (inputs.variant == 'native' && vars.AXIZ_NATIVE_BASE_IMAGE || vars.AXIZ_JVM_BASE_IMAGE) }}
-      axiz-version: 2.0.0
-      candidate-repository: ${{ inputs.candidate-repository }}
-      candidate-build-run-id: ${{ inputs.candidate-build-run-id }}
-      candidate-build-run-attempt: ${{ inputs.candidate-build-run-attempt }}
-      candidate-manifest-sha256: ${{ inputs.candidate-manifest-sha256 }}
+      native: ${{ vars.AXIZ_NATIVE == 'true' }}
+      base-image: ${{ vars.AXIZ_BASE_IMAGE }}
+      publish: ${{ github.event_name == 'push' }}
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/main' && vars.AXIZ_GITOPS_REPOSITORY != ''
+    needs: build
+    uses: edgarrth/java-framework-custom/.github/workflows/service-deploy.yaml@axiz-workflows-v2.0.0 # x-release-please-version
+    permissions:
+      contents: write
+      packages: read
+      attestations: read
+    with:
+      service: payment-orders
+      environment: dev
+      image: ${{ needs.build.outputs.image }}
+      digest: ${{ needs.build.outputs.digest }}
+      chart: ${{ needs.build.outputs.chart }}
+      version: ${{ needs.build.outputs.version }}
+      gitops-repository: ${{ vars.AXIZ_GITOPS_REPOSITORY }}
     secrets:
-      AXIZ_WORKFLOWS_READ_TOKEN: ${{ secrets.AXIZ_WORKFLOWS_READ_TOKEN }}
-      CANDIDATE_READ_TOKEN: ${{ secrets.CANDIDATE_READ_TOKEN }}
-      PACKAGES_READ_USERNAME: ${{ secrets.PACKAGES_READ_USERNAME }}
-      PACKAGES_READ_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
-      BUILD_DESTINATION: ${{ secrets.BUILD_DESTINATION }}
+      GITOPS_APP_CLIENT_ID: ${{ secrets.GITOPS_APP_CLIENT_ID }}
+      GITOPS_APP_PRIVATE_KEY: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}

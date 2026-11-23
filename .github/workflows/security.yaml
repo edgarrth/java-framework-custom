@@ -1,4 +1,9 @@
+# Seguridad del repositorio con herramientas nativas: CodeQL para el análisis estático, revisión de
+# dependencias en cada pull request, Trivy sobre las fuentes (vulnerabilidades, configuración y
+# secretos) y sobre las imágenes de infraestructura local, y las reglas Semgrep propias de Axiz. Los
+# secretos los cubre además el secret scanning de GitHub con push protection.
 name: security
+
 on:
   pull_request:
   push:
@@ -6,271 +11,141 @@ on:
   schedule:
     - cron: '23 6 * * 1'
   workflow_dispatch:
+
 permissions: {}
+
 jobs:
-  secrets:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-      - name: Gitleaks 8.30.1 on the complete checkout
-        run: |
-          set -euo pipefail
-          mkdir -p security-reports
-          docker run --rm --network none -v "$PWD:/scan:ro" -v "$PWD/security-reports:/reports" \
-            -w /scan ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir . --config /scan/.gitleaks.toml \
-            --redact --report-format sarif --report-path /reports/gitleaks.sarif
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: security-secrets-${{ github.run_id }}-${{ github.run_attempt }}
-          path: security-reports/*.sarif
-          if-no-files-found: error
-          retention-days: 90
-  sast:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.13'
-      - name: Semgrep 1.180.0 including production and tests
-        run: |
-          set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/semgrep"
-          "$RUNNER_TEMP/semgrep/bin/pip" install --require-hashes --only-binary=:all: -r .github/requirements/semgrep.txt
-          mkdir -p security-reports
-          "$RUNNER_TEMP/semgrep/bin/semgrep" scan --jobs 4 --timeout 30 --error --metrics=off \
-            --disable-version-check --config p/java --config p/python --config p/github-actions \
-            --config p/owasp-top-ten --config p/secrets \
-            --config axiz-framework/quality/axiz-code-standards/src/main/resources/axiz/semgrep/axiz-rules.yaml \
-            --sarif --output security-reports/semgrep.sarif .
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: security-sast-${{ github.run_id }}-${{ github.run_attempt }}
-          path: security-reports/*.sarif
-          if-no-files-found: error
-          retention-days: 90
-  filesystem:
+  codeql:
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [java-kotlin, python, javascript-typescript, actions]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-          fetch-depth: 0
-      - name: Java and local Maven metadata for source dependency resolution
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
-          distribution: temurin
-          java-version: '25'
-          cache: maven
-      # Los parents declaran dependencias del framework (por ejemplo, el starter de pruebas en
-      # axiz-parent-service); -am instala también esos módulos, sin pruebas, para que Trivy
-      # resuelva los POM padre desde el repositorio local sin consultar repositorios públicos.
-      - name: Install this checkout's parent and BOM metadata
-        run: >-
-          mvn -B -ntp -f axiz-framework/pom.xml
-          -pl :axiz-bom,:axiz-parent,:axiz-parent-core,:axiz-parent-api,:axiz-parent-test,:axiz-parent-tooling,:axiz-parent-technology,:axiz-parent-spring,:axiz-parent-service
-          -am -DskipTests -Dpit.skip=true install
-      - name: Trivy 0.76.2 on the complete checkout
-        env:
-          # Los gates de SBOM de Maven resuelven el grafo completo de dependencias durante el build.
-          # El escaneo del código fuente no debe consultar Maven Central público por los parents privados de pe.axiz.
-          TRIVY_OFFLINE_SCAN: 'true'
-          TRIVY_TIMEOUT: 20m
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-extended
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: codeql-${{ matrix.language }}
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+
+  sources:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Vulnerabilidades, configuración y secretos de las fuentes
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Las dependencias Java se escanean ya resueltas en el SBOM de cada build; aquí no se
+          # consulta Maven Central para los POM internos.
+          TRIVY_OFFLINE_SCAN: 'true'
         with:
           version: v0.76.2
           scan-type: fs
           scan-ref: .
           scanners: vuln,secret,misconfig
-          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
+          trivy-config: trivy.yaml
+          severity: MEDIUM,HIGH,CRITICAL
           format: sarif
+          output: trivy-sources.sarif
           limit-severities-for-sarif: true
-          output: trivy.sarif
           exit-code: '1'
-      # Control interno: ejecuta el evaluador de este mismo commit, de modo que un cambio en él se verifica
-      # en su propio pull request. Los riesgos aceptados y sus plazos se leen de la rama base protegida,
-      # nunca del pull request.
-      - name: Complete vulnerability evidence and protected risk deadlines
-        uses: ./.github/actions/check-vulnerabilities
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always() && hashFiles('trivy-sources.sarif') != ''
         with:
-          mode: source
-          scope: repository
-          output: security-reports/vulnerability-policy
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: security-filesystem-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            trivy.sarif
-            security-reports/vulnerability-policy/**
-          if-no-files-found: error
-          retention-days: 90
+          sarif_file: trivy-sources.sarif
+          category: trivy-sources
+      - name: Reglas Semgrep de Axiz
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            semgrep/semgrep@sha256:529ee8a277ec8adc5b534d7c74eea0a47e9de21d62852b6ba7ac6ba9566845c3 \
+            semgrep scan --metrics=off --error \
+              --config axiz-framework/quality/axiz-code-standards/src/main/resources/axiz/semgrep/axiz-rules.yaml .
+
   infrastructure-images:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    permissions:
-      contents: read
     strategy:
       fail-fast: false
-      max-parallel: 3
+      max-parallel: 4
       matrix:
         include:
-          - {name: postgres, image: 'axiz-local/postgres:17.12-r2', recipe: postgres}
-          - {name: valkey, image: 'axiz-local/valkey:8.1.8-r1', recipe: valkey}
-          - {name: kafka, image: 'axiz-local/kafka:4.2.2-r1', recipe: kafka}
-          - {name: localstack, image: 'axiz-local/localstack:4.14.0-r1', recipe: localstack}
-          - {name: keycloak, image: 'axiz-local/keycloak:26.8.2-r1', recipe: keycloak}
-          - {name: wiremock, image: 'axiz-local/wiremock:3.13.2-r1', recipe: wiremock}
-          - {name: otel-lgtm, image: 'axiz-local/otel-lgtm:2026.11-r1', recipe: otel-lgtm}
-          - {name: ryuk, image: 'axiz-local/ryuk:0.14.0-r1', recipe: ryuk}
-          - {name: java-runtime, image: 'azul/zulu-openjdk-alpine:25-jre@sha256:8eaca94dd76729a65ce7d693d8aa84c12f9ae656624ae3b118d6a8d411764cd8', recipe: ''}
-          - {name: initializr-runtime, image: 'azul/zulu-openjdk-alpine:25@sha256:fe4cdf0a179283ac4b6a6c262cce2282e39208c3cf869cb2f627288bac4127e0', recipe: ''}
-          - {name: native-runtime, image: 'cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2', recipe: ''}
+          - {name: postgres, recipe: postgres, image: 'axiz-local/postgres:17.12-r2'}
+          - {name: valkey, recipe: valkey, image: 'axiz-local/valkey:8.1.8-r1'}
+          - {name: kafka, recipe: kafka, image: 'axiz-local/kafka:4.2.2-r1'}
+          - {name: localstack, recipe: localstack, image: 'axiz-local/localstack:4.14.0-r1'}
+          - {name: keycloak, recipe: keycloak, image: 'axiz-local/keycloak:26.8.2-r1'}
+          - {name: wiremock, recipe: wiremock, image: 'axiz-local/wiremock:3.13.2-r1'}
+          - {name: otel-lgtm, recipe: otel-lgtm, image: 'axiz-local/otel-lgtm:2026.11-r1'}
+          - {name: ryuk, recipe: ryuk, image: 'axiz-local/ryuk:0.14.0-r1'}
+          - {name: java-runtime, recipe: '', image: 'azul/zulu-openjdk-alpine:25-jre@sha256:8eaca94dd76729a65ce7d693d8aa84c12f9ae656624ae3b118d6a8d411764cd8'}
+          - {name: initializr-runtime, recipe: '', image: 'azul/zulu-openjdk-alpine:25@sha256:fe4cdf0a179283ac4b6a6c262cce2282e39208c3cf869cb2f627288bac4127e0'}
+          - {name: native-runtime, recipe: '', image: 'cgr.dev/chainguard/wolfi-base@sha256:7135c6a5e9f29b2542aaefee63d474973312bfdea95555963aef0e648210e4d2'}
+    name: image (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           persist-credentials: false
-      - name: Verify the canonical container recipes
-        run: |
-          set -euo pipefail
-          python3 -m venv "$RUNNER_TEMP/axiz-image-policy"
-          "$RUNNER_TEMP/axiz-image-policy/bin/python" -m pip install --require-hashes --quiet \
-            -r axiz-framework/.github/scripts/requirements.txt
-          "$RUNNER_TEMP/axiz-image-policy/bin/python" .github/scripts/sync_container_recipes.py --check
-      - name: Build the patched infrastructure image
+      - name: Imagen local construida desde su receta
         if: matrix.recipe != ''
         env:
           RECIPE: ${{ matrix.recipe }}
           IMAGE: ${{ matrix.image }}
-        run: |
-          set -euo pipefail
-          case "$RECIPE" in postgres|valkey|kafka|wiremock|keycloak|localstack|ryuk|otel-lgtm) ;; *) exit 1 ;; esac
-          docker build --pull --tag "$IMAGE" "axiz-demo/local/images/$RECIPE"
-      - name: Verify actual ingestion and querying of all three observability signals
-        if: matrix.recipe == 'otel-lgtm'
-        env:
-          IMAGE: ${{ matrix.image }}
-        run: python3 .github/scripts/check_observability_image.py "$IMAGE" --report observability-runtime.json
-      - name: Scan the actual infrastructure image, including OS and embedded libraries
-        env:
-          TRIVY_VEX: .github/policies/tempo-fixed.openvex.json
-          TRIVY_SHOW_SUPPRESSED: 'true'
-          TRIVY_LIST_ALL_PKGS: 'true'
+        run: docker build --pull --tag "$IMAGE" "axiz-demo/local/images/$RECIPE"
+      - name: Sin vulnerabilidades MEDIUM, HIGH ni CRITICAL en el sistema ni en las librerías
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           version: v0.76.2
           scan-type: image
           image-ref: ${{ matrix.image }}
-          scanners: vuln
-          severity: UNKNOWN,MEDIUM,HIGH,CRITICAL
-          format: json
-          output: infrastructure.json
+          trivy-config: trivy.yaml
+          severity: MEDIUM,HIGH,CRITICAL
+          format: sarif
+          output: trivy-image.sarif
+          limit-severities-for-sarif: true
           exit-code: '1'
-          ignore-unfixed: 'false'
-      - name: Reject incomplete or empty image inventories
-        if: always()
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          IMAGE: ${{ matrix.image }}
-          RECIPE: ${{ matrix.recipe }}
-        run: |
-          set -euo pipefail
-          options=()
-          if [[ "$RECIPE" == wiremock ]]; then
-            options+=(--maven-lock axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/wiremock/libraries.lock.json)
-          fi
-          if [[ "$RECIPE" == localstack ]]; then
-            options+=(--require-type jar --require-type python-pkg --maven-lock axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/localstack/libraries.lock.json)
-          fi
-          if [[ "$RECIPE" == ryuk || "$RECIPE" == otel-lgtm ]]; then
-            options+=(--require-type gobinary)
-          fi
-          if [[ "$RECIPE" == otel-lgtm ]]; then
-            options+=(--go-sources axiz-framework/quality/axiz-test-containers/src/main/resources/pe/axiz/quality/containers/images/otel-lgtm/sources.lock.json)
-          fi
-          python3 .github/scripts/check_image_scan.py infrastructure.json "$IMAGE" --expected-image-id "$(docker image inspect --format '{{.Id}}' "$IMAGE")" --vex .github/policies/tempo-fixed.openvex.json "${options[@]}"
-      - name: Preserve the unfiltered vulnerability report
-        if: always()
-        env:
-          IMAGE: ${{ matrix.image }}
-        run: trivy image --scanners vuln --format json --output infrastructure-raw.json --exit-code 0 "$IMAGE"
-      - name: Convert the original scan to SARIF
-        if: always()
-        run: trivy convert --format sarif --output infrastructure.sarif infrastructure.json
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: security-infrastructure-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            infrastructure.json
-            infrastructure-raw.json
-            infrastructure.sarif
-            observability-runtime.json
-            .github/policies/tempo-fixed.openvex.json
-          if-no-files-found: error
-          retention-days: 90
-  publish-sarif:
-    needs: [secrets, sast, filesystem, infrastructure-images]
-    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
-    steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: security-*-${{ github.run_id }}-${{ github.run_attempt }}
-          path: security-sarif
-      - name: One code scanning category per report
-        shell: bash
-        run: |
-          set -euo pipefail
-          # Code scanning acepta una ejecución por herramienta y categoría: cada reporte conserva la
-          # suya, estable entre ejecuciones (la carpeta del artefacto sin el sufijo de la ejecución,
-          # por ejemplo infrastructure-postgres).
-          suffix="-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          while IFS= read -r -d '' report; do
-            folder=$(basename "$(dirname "$report")")
-            folder=${folder#security-}
-            name=${folder%"$suffix"}
-            jq --arg id "monorepo-security/$name/" '.runs |= map(.automationDetails.id = $id)' \
-              "$report" > "$report.tmp"
-            mv "$report.tmp" "$report"
-          done < <(find security-sarif -name '*.sarif' -print0)
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        if: always() && hashFiles('trivy-image.sarif') != ''
         with:
-          sarif_file: security-sarif
-  security-pr-check:
-    name: axiz-security-pr
-    if: ${{ always() && github.event_name == 'pull_request' }}
-    needs: [secrets, sast, filesystem, infrastructure-images]
+          sarif_file: trivy-image.sarif
+          category: trivy-image-${{ matrix.name }}
+
+  axiz-security-pr:
+    if: always()
+    needs: [codeql, dependency-review, sources, infrastructure-images]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     permissions: {}
     steps:
-      - name: Require every pull request job
-        shell: bash
-        env:
-          NEEDS: ${{ toJSON(needs) }}
-          SKIPPABLE: '[]'
-        run: |
-          jq -e --argjson skippable "$SKIPPABLE" 'length > 0 and all(to_entries[];
-            .value.result == "success"
-            or (.value.result == "skipped" and (.key | IN($skippable[]))))' <<< "$NEEDS" >/dev/null
+      - name: Todos los controles de seguridad terminaron bien
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

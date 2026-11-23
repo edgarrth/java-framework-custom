@@ -1,16 +1,16 @@
-# Argo CD project of the axiz services: sources limited to the organization's repositories and
-# GHCR, destinations limited to the service namespaces, no cluster-scoped resources.
+# Proyecto de Argo CD de los servicios axiz: fuentes limitadas al repositorio GitOps y a los charts
+# de GHCR del owner, destinos limitados a los namespaces de los servicios y sin recursos de clúster.
+# Se reemplazan OWNER y GITOPS_REPOSITORY.
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: axiz-services
   namespace: argocd
 spec:
-  description: axiz microservices (one Application per service and environment)
+  description: Microservicios axiz (una Application por servicio y ambiente)
   sourceRepos:
-    - UNCONFIGURED_GIT_REPOSITORIES
-    # Generated from the explicit BUILD_DESTINATION configuration; never apply this template.
-    - UNCONFIGURED_CHART_REPOSITORIES
+    - https://github.com/OWNER/GITOPS_REPOSITORY.git
+    - ghcr.io/OWNER/charts/*
   destinations:
     - server: https://kubernetes.default.svc
       namespace: axiz-dev
@@ -36,12 +36,7 @@ spec:
       kind: PodDisruptionBudget
     - group: networking.k8s.io
       kind: NetworkPolicy
-    # no Role/RoleBinding: service charts never grant Kubernetes API permissions (configuration is
-    # mounted as files), so a service repository cannot escalate its own access
+    # sin Role ni RoleBinding: los charts de servicio nunca otorgan permisos sobre la API de
+    # Kubernetes (la configuración se monta como archivos), así que un servicio no puede ampliar su acceso
     - group: external-secrets.io
       kind: ExternalSecret
-  roles:
-    - name: ci-read
-      description: Read-only token used by service-deploy to confirm immutable sources and health
-      policies:
-        - p, proj:axiz-services:ci-read, applications, get, axiz-services/*, allow

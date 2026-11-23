@@ -837,7 +837,11 @@ g_recovery() {
   fi
   id=$paid
   note "payment $id: its debit times out in the core (12 s answer, 4 s read timeout)"
-  if poll 240 process_stopped "$id" && process_is "$id" VERIFYING; then
+  # VERIFYING solo aparece cuando el orquestador confirma que el resultado del débito es incierto
+  # (agotados los reintentos del cliente HTTP); un paso en curso se ve como RUNNING. La demora del
+  # core se mantiene hasta entonces para que el reintento no complete el débito.
+  if poll 240 process_stopped "$id" && process_is "$id" VERIFYING \
+    && [ "$(curl -s "$PROC/v1/payment-processes/$id" -H "Authorization: Bearer $M2M" | jq -r '.failedStep // empty')" = debit ]; then
     pass "uncertain debit: the process waits VERIFYING, nothing compensated"
     s=$(order_status "$id" "$ANA")
     [ "$s" = PROCESSING ] && pass "  ... the order stays PROCESSING" || bad "  ... the order stays PROCESSING" "status $s"

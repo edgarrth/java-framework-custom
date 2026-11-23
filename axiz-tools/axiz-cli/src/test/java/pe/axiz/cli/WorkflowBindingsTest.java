@@ -51,7 +51,7 @@ class WorkflowBindingsTest {
   }
 
   @Test
-  void renameKeepsCurrentBuildDeployBindingsAndSecurityCommentsConsistent(@TempDir Path root)
+  void renameKeepsCurrentBuildDeployBindingsAndCommentsConsistent(@TempDir Path root)
       throws Exception {
     Path project = CliHarness.service(root);
     ProjectManifest before = ProjectManifest.read(project);
@@ -62,8 +62,8 @@ class WorkflowBindingsTest {
     assertTrue(ci.contains("service: payment-orders"));
     assertTrue(deploy.contains("service: payment-orders"));
     assertTrue(ci.contains("chart: deploy/helm/orders"));
-    assertTrue(ci.contains("# nosemgrep:"));
-    assertTrue(deploy.contains("# nosemgrep:"));
+    assertTrue(ci.contains("# Pipeline del servicio"));
+    assertTrue(deploy.contains("# Promoción manual"));
   }
 
   @Test

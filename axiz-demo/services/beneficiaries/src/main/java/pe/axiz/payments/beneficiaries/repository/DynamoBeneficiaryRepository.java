@@ -29,15 +29,23 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.TransactionCanceledException;
 
 /**
- * Implementación en DynamoDB sobre la tabla {@code beneficiaries} (con prefijo por entorno). Los
- * elementos eliminados se omiten con una expresión de filtro, por lo que una página puede contener
- * menos elementos que los solicitados mientras exista un cursor siguiente; los clientes siguen
- * {@code nextCursor} hasta que sea null.
+ * Implementación en DynamoDB sobre la tabla {@code beneficiaries} (con prefijo por entorno). La
+ * barrera de versión del directorio ({@link DirectoryVersion#KEY}) comparte la partición del
+ * cliente, pero su clave de ordenamiento empieza con {@code !}, que ordena antes que cualquier
+ * identificador de beneficiario: las consultas la excluyen con la condición de clave. Los elementos
+ * eliminados se omiten con una expresión de filtro; como DynamoDB aplica el límite antes del
+ * filtro, cada página se completa en rondas acotadas. Si se agotan las rondas, la página puede
+ * traer menos elementos que los solicitados con un cursor siguiente; los clientes siguen {@code
+ * nextCursor} hasta que sea null.
  */
 @Repository
 class DynamoBeneficiaryRepository implements BeneficiaryRepository {
 
   static final String TABLE = "beneficiaries";
+
+  /** Consultas máximas por página: acota el costo cuando hay muchos eliminados seguidos. */
+  static final int MAX_ROUNDS = 10;
+
   private static final Expression ACTIVE =
       Expression.builder()
           .expression("attribute_not_exists(deletedAt) AND attribute_exists(cci)")
@@ -67,21 +75,30 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
 
   @Override
   public Page<Beneficiary> listActive(String customerId, int size, @Nullable String cursor) {
-    QueryEnhancedRequest.Builder request =
-        QueryEnhancedRequest.builder()
-            .queryConditional(partition(customerId))
-            .consistentRead(true)
-            .filterExpression(ACTIVE)
-            .limit(size);
-    Map<String, AttributeValue> start = startKey(customerId, cursor);
-    if (start != null) {
-      request.exclusiveStartKey(start);
+    List<Beneficiary> content = new ArrayList<>(size);
+    Map<String, AttributeValue> next = startKey(customerId, cursor);
+    for (int round = 0; round < MAX_ROUNDS && content.size() < size; round++) {
+      // El límite es lo que falta: una ronda nunca devuelve más elementos que los pedidos, y el
+      // cursor (la última clave evaluada) continúa justo después de lo entregado.
+      QueryEnhancedRequest.Builder request =
+          QueryEnhancedRequest.builder()
+              .queryConditional(beneficiaries(customerId))
+              .consistentRead(true)
+              .filterExpression(ACTIVE)
+              .limit(size - content.size());
+      if (next != null) {
+        request.exclusiveStartKey(next);
+      }
+      var page = items.table().query(request.build()).iterator().next();
+      page.items().forEach(item -> content.add(restore(item)));
+      next = page.lastEvaluatedKey();
+      if (next == null || next.isEmpty()) {
+        next = null;
+        break;
+      }
     }
-    var page = items.table().query(request.build()).iterator().next();
     return new Page<>(
-        page.items().stream().map(this::restore).toList(),
-        new PageMetadata(0, size, -1, -1),
-        cursors.encode(page.lastEvaluatedKey(), binding(customerId)));
+        content, new PageMetadata(0, size, -1, -1), cursors.encode(next, binding(customerId)));
   }
 
   @Override
@@ -91,7 +108,7 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
         .table()
         .query(
             QueryEnhancedRequest.builder()
-                .queryConditional(partition(customerId))
+                .queryConditional(beneficiaries(customerId))
                 .consistentRead(true)
                 .filterExpression(ACTIVE)
                 .build())
@@ -235,8 +252,10 @@ class DynamoBeneficiaryRepository implements BeneficiaryRepository {
     return target;
   }
 
-  private static QueryConditional partition(String customerId) {
-    return QueryConditional.keyEqualTo(Key.builder().partitionValue(customerId).build());
+  /** Beneficiarios del cliente, sin la barrera del directorio que comparte su partición. */
+  private static QueryConditional beneficiaries(String customerId) {
+    return QueryConditional.sortGreaterThan(
+        Key.builder().partitionValue(customerId).sortValue(DirectoryVersion.KEY).build());
   }
 
   private String binding(String customerId) {

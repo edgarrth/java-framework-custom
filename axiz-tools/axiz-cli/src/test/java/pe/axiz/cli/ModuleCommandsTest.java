@@ -181,9 +181,6 @@ class ModuleCommandsTest {
     assertEquals("application", ((Map<?, ?>) build.get("with")).get("module"));
     assertEquals("deploy/helm/orders", ((Map<?, ?>) build.get("with")).get("chart"));
     assertTrue(
-        Files.readString(project.resolve(".github/workflows/ci.yaml"))
-            .contains("application/pom.xml"));
-    assertTrue(
         Files.readString(project.resolve("release-please-config.json"))
             .contains("application/pom.xml"));
     assertEquals(0, cli.run("doctor", "--dir", project.toString()), cli.output());

@@ -213,6 +213,27 @@ class DynamoBeneficiaryRepositoryTest {
   }
 
   @Test
+  void aPageIsFilledAcrossRoundsAndNeverReadsTheDirectoryBarrier() {
+    // Primera ronda: DynamoDB evaluó una fila eliminada y la filtró; aún hay más claves.
+    dynamo.pages.add(page(key("C-1", "B-0"), List.of()));
+    dynamo.pages.add(page(key("C-1", "B-1"), List.of(row("C-1", "B-1", false))));
+
+    Page<Beneficiary> first = repository.listActive("C-1", 1, null);
+
+    assertThat(first.content()).extracting(Beneficiary::getBeneficiaryId).containsExactly("B-1");
+    assertThat(dynamo.queries()).hasSize(2);
+    QueryRequest second = dynamo.last(QueryRequest.class);
+    assertThat(second.exclusiveStartKey()).isEqualTo(key("C-1", "B-0"));
+    assertThat(second.limit()).isEqualTo(1);
+    assertThat(second.keyConditionExpression()).contains(">");
+    assertThat(second.expressionAttributeValues())
+        .containsValue(AttributeValue.fromS(DirectoryVersion.KEY));
+    assertThat(
+            cursors.decode(first.nextCursor(), "local-beneficiaries/primary/active/customer=C-1"))
+        .isEqualTo(key("C-1", "B-1"));
+  }
+
+  @Test
   void aCursorOfAnotherCustomerOrMalformedIsRefusedBeforeReading() {
     String foreign =
         cursors.encode(key("C-2", "B-9"), "local-beneficiaries/primary/active/customer=C-1");

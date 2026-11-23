@@ -10,7 +10,9 @@ demo y workflows compartidos. Mantienen el repositorio seguro para servicios ban
   code owner, documentación de uso actualizada y las comprobaciones de compatibilidad e integración
   correspondientes.
 - Nunca se hace commit de secretos, datos reales de clientes ni endpoints de producción. Los ejemplos
-  locales usan solo los marcadores del ambiente local. gitleaks se ejecuta en cada pull request.
+  locales usan solo los marcadores del ambiente local. El secret scanning de GitHub con push
+  protection bloquea un secreto antes de que llegue al repositorio, y el hook de gitleaks de
+  `.pre-commit-config.yaml` lo detecta antes del commit.
 - No se agregan librerías deprecadas ni APIs o versiones que aún no se han publicado.
 
 ## Ramas y commits
@@ -45,30 +47,20 @@ demo y workflows compartidos. Mantienen el repositorio seguro para servicios ban
 
 | Componente | Comando |
 |---|---|
-| `axiz-framework` | `./mvnw -B -ntp clean verify -Pquality` |
+| Todo | `scripts/build.sh` desde la raíz del repositorio |
+| `axiz-framework` | `./mvnw --bootstrap -B -ntp clean verify -Pquality` |
 | `axiz-tools` | `./mvnw -B -ntp clean verify -Pquality` |
-| `axiz-demo` | `./mvnw -B -ntp clean verify` y `scripts/smoke.sh` |
+| `axiz-demo` | `./mvnw -B -ntp clean verify` y `scripts/test-all.sh` con la demo levantada |
 | `axiz-docs` | `mkdocs build --strict` |
-| `.github` | `actionlint` y `python .github/scripts/workflows_policy_checks.py --output <directory>` |
+| `.github` | `actionlint` y `zizmor .github/workflows` |
 
-Los scripts de políticas del framework usan las dependencias fijadas en
-`axiz-framework/.github/scripts/requirements.txt`. Desde `axiz-framework`:
-
-```bash
-python3 -m venv /tmp/axiz-framework-policy
-/tmp/axiz-framework-policy/bin/python -m pip install -r .github/scripts/requirements.txt
-/tmp/axiz-framework-policy/bin/python -m unittest discover -s .github/scripts -p 'test_*.py'
-```
-
-`axiz-framework/.github/scripts/samples.sh` genera los valores por defecto del catálogo y comprueba que
-`native-nightly.yaml` seleccione exactamente los proyectos de servicio generados. `MODE=all` genera la
-matriz completa de estructuras, extensiones, stacks y persistencia. `reactive-native-sample.sh` requiere
-GraalVM JDK 25 y Docker; genera un servicio reactivo, ejecuta sus pruebas en la JVM y arranca el
-ejecutable nativo contra dependencias desechables.
+`axiz-framework/.github/scripts/samples.sh` genera los proyectos de ejemplo por defecto del
+catálogo; `MODE=all` genera la matriz completa de estructuras, extensiones, stacks y persistencia.
+`reactive-native-sample.sh` requiere GraalVM JDK 25 y Docker: genera un servicio reactivo, ejecuta
+sus pruebas en la JVM y luego compila la imagen nativa con sus pruebas nativas.
 
 ## Compatibilidad
 
-Las APIs y SPIs públicas siguen versionado semántico. El control de API compara las firmas de los
-archivos de clase con el inventario aprobado y, después de la primera publicación, con la línea base
-publicada. Ver la [política de API](../axiz-framework/docs/api/README.md). Los cambios se documentan en
+Las APIs y SPIs públicas siguen versionado semántico. japicmp compara cada módulo con la última
+versión publicada; ver la [política de API](../axiz-framework/docs/api/README.md). Los cambios se documentan en
 el README del módulo y se aporta una receta de OpenRewrite cuando la transformación puede automatizarse.

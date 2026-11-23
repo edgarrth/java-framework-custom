@@ -1,9 +1,0 @@
-public final class pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock implements pe.axiz.core.lock.AsyncDistributedLock {
-public java.util.concurrent.CompletionStage<java.util.Optional<pe.axiz.core.lock.AsyncLockHandle>> tryAcquire(java.lang.String, java.time.Duration);
-public pe.axiz.adapter.lock.dynamodb.DynamoDbAsyncDistributedLock(software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient, java.lang.String, java.time.Clock);
-}
-
-public final class pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock implements pe.axiz.core.lock.DistributedLock {
-public java.util.Optional<pe.axiz.core.lock.LockHandle> tryAcquire(java.lang.String, java.time.Duration);
-public pe.axiz.adapter.lock.dynamodb.DynamoDbDistributedLock(software.amazon.awssdk.services.dynamodb.DynamoDbClient, java.lang.String, java.time.Clock);
-}

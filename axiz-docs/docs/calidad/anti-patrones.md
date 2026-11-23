@@ -17,7 +17,7 @@ puede reaparecer y cada una tiene su verificación.
 | Auto-configuración por `spring.factories`; escaneo de paquetes desde starters | `AutoConfiguration.imports` | pruebas de contexto de cada starter, revisión |
 | Beans de Boot reemplazados sin `@ConditionalOnMissingBean` (`ObjectMapper`, `WebClient.Builder`) | customizers | pruebas de contexto |
 | `@SpringBootApplication`, `main()` o `application.yaml` dentro de una librería | solo en servicios | arquetipos `library` y `starter`, revisión |
-| Lógica o datos de un cliente, banco o producto concreto dentro del framework | configuración o servicio propio | guardia de nombres, revisión |
+| Lógica o datos de un cliente, banco o producto concreto dentro del framework | configuración o servicio propio | revisión de código |
 | AES-ECB, CBC sin MAC, IV fijo, RSA PKCS#1 v1.5 | AES-GCM, RSA-OAEP, KMS | Semgrep `axiz-weak-cipher-mode`, `axiz-fixed-iv` |
 | Descifrar mutando entidades gestionadas por JPA | `AttributeConverter` (`EncryptedConverter`) | pruebas del starter |
 | Id de deduplicación FIFO aleatorio; envíos sin manejo del resultado | id del evento; confirmación o error visible | Semgrep `axiz-random-fifo-dedup-id`, pruebas del starter |
