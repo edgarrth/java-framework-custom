@@ -33,7 +33,7 @@ class DocumentationPublicationTest(unittest.TestCase):
             control.git(self.repo,'tag',source['tag'])
         data=prepare.prepare(self.repo,destination,source,generate=False,mike=MIKE)
         tar=destination/'artifact.tar'
-                # Ejecuta el empaquetado con GNU tar que usa el uploader oficial fijado en Ubuntu,
+        # Ejecuta el empaquetado con GNU tar que usa el uploader oficial fijado en Ubuntu,
         # con include-hidden-files=true (por eso no se excluyen los dotfiles).
         subprocess.run(['tar','--dereference','--hard-dereference','--directory',str(destination/'site'),
                         '-cf',str(tar),'--exclude=.git','--exclude=.github','.'],check=True)
@@ -134,7 +134,7 @@ class DocumentationPublicationTest(unittest.TestCase):
 class DocumentationControlExecutionTest(unittest.TestCase):
     setUp=DocumentationPublicationTest.setUp
     publication=DocumentationPublicationTest.publication
-        # Ejercita el entrypoint real con fixtures de datos de la API. No se contacta ningún remoto de producción.
+    # Ejercita el entrypoint real con fixtures de datos de la API. No se contacta ningún remoto de producción.
     def test_pages_retry_rechecks_metadata_tar_and_current_head(self):
         destination,data,expected=self.publication()
         artifact={'id':456,'name':expected['pages_name'],'expired':False,'expires_at':'2999-01-01T00:00:00Z','workflow_run':{'id':123,'head_sha':self.sha}}

@@ -19,7 +19,7 @@ def docker(*args):
 def request(url, payload=None, authenticated=False):
     headers = {'Content-Type': 'application/json'}
     if authenticated:
-                # Un contenedor de desarrollo desechable y solo de loopback; sin credenciales externas.
+        # Un contenedor de desarrollo desechable y solo de loopback; sin credenciales externas.
         headers['Authorization'] = 'Basic ' + base64.b64encode(b'admin:local-only').decode()
     body = json.dumps(payload).encode() if payload is not None else None
     with urllib.request.urlopen(urllib.request.Request(url, body, headers), timeout=10) as response:

@@ -99,7 +99,7 @@ def executable_files(root):
                 queue.append(metadata)
         except (OSError, ValueError, AttributeError, TypeError, yaml.YAMLError) as error:
             errors.append(str(path.relative_to(root)) + ": " + str(error))
-        # El algoritmo de Kahn detecta ciclos sin recursión y sin seguir repetidamente una llamada compuesta.
+    # El algoritmo de Kahn detecta ciclos sin recursión y sin seguir repetidamente una llamada compuesta.
     indegree = {path: 0 for path in visited}
     for targets in graph.values():
         for target in targets:

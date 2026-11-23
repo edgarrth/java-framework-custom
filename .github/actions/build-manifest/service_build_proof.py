@@ -132,7 +132,7 @@ def verify_proof(directory, repository, source_sha, run_id, attempt, service, mo
     signature = safe_file(directory, SIGNATURE)
     if proof.stat().st_size > LIMIT or signature.stat().st_size > LIMIT:
         raise ValueError("Oversized service proof")
-        # Se autentica antes de interpretar o exponer el hash del manifiesto. Ningún checksum aportado por el propio
+    # Se autentica antes de interpretar o exponer el hash del manifiesto. Ningún checksum aportado por el propio
     # emisor se convierte en aprobación: esta es una declaración firmada e independiente del workflow de build inmutable.
     subprocess.run(["cosign", "verify-blob", "--bundle", str(signature),
                     "--certificate-identity", "https://github.com/edgarrth/java-framework-custom/.github/workflows/service-build.yaml@refs/tags/" + tag,
@@ -162,7 +162,7 @@ def predecessor(repository, branch, service, environment, token):
     ref = api(f"repos/{repository}/git/ref/heads/{quote(branch, safe='')}", token).get("object", {})
     if ref.get("type") != "commit" or not re.fullmatch(r"[0-9a-f]{40}", ref.get("sha", "")):
         raise ValueError("GitOps branch did not resolve to a commit")
-        # Se recorren los árboles de Git en un commit inmutable: una ruta ausente es distinta de un error de API o de autenticación.
+    # Se recorren los árboles de Git en un commit inmutable: una ruta ausente es distinta de un error de API o de autenticación.
     commit = api(f"repos/{repository}/git/commits/{ref['sha']}", token)
     tree = commit["tree"]["sha"]
     parts = [GITOPS_STATE_ROOT, environment, service + ".yaml"]

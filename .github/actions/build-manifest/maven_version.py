@@ -97,7 +97,7 @@ def update(root, version):
 
         for coordinate in coordinates:
             planned_version(coordinate, set())
-                # Se planifica cada edición antes de modificar un archivo. Los parents y BOM externos de Axiz permanecen fijados.
+        # Se planifica cada edición antes de modificar un archivo. Los parents y BOM externos de Axiz permanecen fijados.
         for document in documents.values():
             project = document.documentElement
             parent = child(project, "parent")

@@ -97,7 +97,7 @@ def create(root, metadata, spec, target, output):
     executable = spec["binary"] + (".exe" if target == "windows-x64" else "")
     path = safe_file(root, str(PurePosixPath(spec["module"]) / "target" / executable))
     data = target_binary(path, target)
-        # Los comandos de smoke no heredan credenciales del repositorio.
+    # Los comandos de smoke no heredan credenciales del repositorio.
     allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR", "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG"}
     environment = {key: value for key, value in os.environ.items() if key in allowed}
     commands = [[str(path), "--version"]]
@@ -257,7 +257,7 @@ def merge(root, metadata_path, components, staging, reports):
         planned.append((target, component, directory, relative))
     if {item.name for item in components.iterdir()} != {f"native-component-{data['build']['run_attempt']}-{target}" for target in spec["platforms"]}:
         raise ValueError("Unexpected native platform bundle")
-        # Se verifica previamente cada plataforma y firma antes de modificar el staging de Maven.
+    # Se verifica previamente cada plataforma y firma antes de modificar el staging de Maven.
     records = []
     for target, component, directory, relative in planned:
         source = safe_file(directory, component["archive"]["path"])

@@ -21,9 +21,9 @@ def check(documents, service, repository, digest):
         for container in spec.get("containers", []):
             reference = container.get("image", "")
             image, separator, content_digest = reference.partition("@")
-                        # Se admite un tag legible antes de @digest, pero no puede seleccionar el contenido.
+            # Se admite un tag legible antes de @digest, pero no puede seleccionar el contenido.
             image_repository = image.rsplit("/", 1)[0] + "/" + image.rsplit("/", 1)[1].split(":", 1)[0] if "/" in image else image.split(":", 1)[0]
-                        # nameOverride puede conservar una identidad de workload existente durante el renombrado de un servicio.
+            # nameOverride puede conservar una identidad de workload existente durante el renombrado de un servicio.
             if container.get("name") != service and image_repository != repository:
                 continue
             if separator != "@" or content_digest != digest or image_repository != repository:

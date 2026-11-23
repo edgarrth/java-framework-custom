@@ -55,7 +55,7 @@ def complete(data, bundle):
 
 def inventory(root, version):
     entries = []
-        # GitHub Packages gestiona los metadatos del repositorio; nunca se copian sobre el índice de versiones existente del repositorio.
+    # GitHub Packages gestiona los metadatos del repositorio; nunca se copian sobre el índice de versiones existente del repositorio.
     for path in sorted(root.rglob("*")):
         if not path.is_file() and not path.is_symlink():
             continue

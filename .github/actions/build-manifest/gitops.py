@@ -85,7 +85,7 @@ def publish(remote, branch, prepared, manifest_hash, environment, previous, reco
                GIT_CONFIG_COUNT="2", GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
                GIT_CONFIG_VALUE_0="AUTHORIZATION: basic " + base64.b64encode(("x-access-token:" + token).encode()).decode(),
                GIT_CONFIG_KEY_1="core.hooksPath", GIT_CONFIG_VALUE_1=os.devnull)
-        # La autenticación es local al proceso: ni la URL de clonado ni .git/config guardan el token.
+    # La autenticación es local al proceso: ni la URL de clonado ni .git/config guardan el token.
     with tempfile.TemporaryDirectory(prefix="axiz-gitops-") as temporary:
         root = Path(temporary) / "repository"
         subprocess.run(["git", "clone", "--quiet", "--depth", "1", "--branch", branch,

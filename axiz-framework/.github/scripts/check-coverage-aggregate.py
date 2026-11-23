@@ -65,7 +65,7 @@ def check_report(path, root=None):
     if not os.path.isfile(path):
         print(f'::error::{path} missing')
         return 1
-        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
+    # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     tree = ET.parse(path).getroot()
     packages = tree.findall('.//package')

@@ -12,12 +12,12 @@ def validate(path, pom):
     if document.get('bomFormat') != 'CycloneDX' or not document.get('components'):
         raise ValueError('A nonempty CycloneDX components inventory is required')
     names = {c.get('name') for c in document['components']}
-        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
+    # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     root = ET.parse(pom).getroot()
     expected = set()
     for module in root.findall('m:modules/m:module', NS):
-                # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
+        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         child = ET.parse(Path(pom).parent / module.text / 'pom.xml').getroot()
         if child.findtext('m:packaging', 'jar', NS) == 'jar':

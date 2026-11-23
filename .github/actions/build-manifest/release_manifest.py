@@ -48,7 +48,7 @@ def retain(repository, tag, manifest_hash, bundle, publish=False):
         else:
             raise ValueError("Published release lacks the verified signed manifest; prepare it as a draft before promotion")
     if publish and release["draft"]:
-                # Un intento previo completado parcialmente se compara y se reutiliza, nunca se sobrescribe.
+        # Un intento previo completado parcialmente se compara y se reutiliza, nunca se sobrescribe.
         with tempfile.TemporaryDirectory(prefix="axiz-release-manifest-") as temporary:
             files = []
             for name, content in missing:

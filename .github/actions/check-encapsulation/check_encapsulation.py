@@ -49,7 +49,7 @@ def analysis_errors(document):
 
 
 def filter_errors(path):
-        # Configuración de build de confianza incluida en el repositorio, nunca XML del servicio o de la petición.
+    # Configuración de build de confianza incluida en el repositorio, nunca XML del servicio o de la petición.
     # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
     # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
     root = ET.parse(path).getroot()
@@ -57,7 +57,7 @@ def filter_errors(path):
         node.tag = node.tag.rsplit('}', 1)[-1]
     errors = []
     for match in root.findall('Match'):
-                # Solo está exento el contrato de colecciones mutables de los DTO generados marcados de forma exacta.
+        # Solo está exento el contrato de colecciones mutables de los DTO generados marcados de forma exacta.
         children = list(match)
         annotation = match.find('Annotation')
         generated_bug = match.find('Bug')
@@ -117,7 +117,7 @@ def declared_filters(root):
                 if not file.is_absolute():
                     file = pom.parent / file
                 if not file.is_file():
-                                        # El parent usa un recurso del classpath incluido en axiz-build-rules.
+                    # El parent usa un recurso del classpath incluido en axiz-build-rules.
                     candidates = list(root.glob('**/src/main/resources/' + value)) if not Path(value).is_absolute() else []
                     candidates = [p for p in candidates if 'target' not in p.parts]
                     if len(candidates) != 1:

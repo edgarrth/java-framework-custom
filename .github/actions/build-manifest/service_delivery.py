@@ -106,7 +106,7 @@ def publish(data, public, root, output):
     output.mkdir(parents=True)
     with tempfile.TemporaryDirectory(prefix="axiz-service-data-", dir=os.environ["RUNNER_TEMP"]) as temporary:
         temporary = Path(temporary)
-                # Las credenciales de la CLI son privadas de esta invocación y se eliminan tanto si termina bien como si falla.
+        # Las credenciales de la CLI son privadas de esta invocación y se eliminan tanto si termina bien como si falla.
         credentials = temporary / "credentials"
         credentials.mkdir(mode=0o700)
         docker_config = credentials / "docker"
@@ -117,7 +117,7 @@ def publish(data, public, root, output):
         transfer = download(receipt, f"service-transfer-{service}-{variant}-{data['build']['run_attempt']}",
                             receipt["producer_job"], temporary / "transfer")
         images, chart = validate_transfer(transfer, data, temporary / "oci")
-                # Toda la validación termina antes de obtener acceso de escritura al registry o de subir bytes.
+        # Toda la validación termina antes de obtener acceso de escritura al registry o de subir bytes.
         client = oci_publish.Registry(image.removeprefix("ghcr.io/"),
                                       os.environ["REGISTRY_USERNAME"], os.environ["REGISTRY_PASSWORD"])
         image_digest = oci_publish.publish(client, images, tag)

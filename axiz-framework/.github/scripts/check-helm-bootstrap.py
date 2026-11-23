@@ -87,7 +87,7 @@ def main():
                 if "when" in item and not active[item["when"]]:
                     continue
                 shutil.copyfile(template_root / template, templates / Path(template).name)
-                        # Fixture de valores concretos; las plantillas de recursos y la selección de roles provienen del manifiesto del SDK.
+            # Fixture de valores concretos; las plantillas de recursos y la selección de roles provienen del manifiesto del SDK.
             values = yaml.load((demo / f"services/{service}/deploy/helm/{service}/values.yaml").read_text(), Loader=UniqueKeys)
             values.setdefault("monitoring", {"prometheusRules": {"enabled": False}})
             (chart / "values.yaml").write_text(yaml.safe_dump(values))

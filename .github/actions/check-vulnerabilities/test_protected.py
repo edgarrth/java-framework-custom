@@ -41,6 +41,32 @@ class ProtectedHistoryTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "cannot be deleted"):
                 from_base(root, git("rev-parse", "HEAD"))
 
+    def test_policy_absent_from_base_history_is_empty_but_a_deleted_one_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def git(*args):
+                return subprocess.check_output(["git", "-C", str(root), "-c", "user.name=Policy Test",
+                                                "-c", "user.email=policy-test@example.invalid", *args], text=True).strip()
+
+            git("init", "--quiet")
+            (root / "README.md").write_text("base")
+            git("add", "README.md")
+            git("commit", "--quiet", "-m", "Base without policy")
+            accepted, history = from_base(root, git("rev-parse", "HEAD"))
+            self.assertEqual(accepted["findings"], [])
+            self.assertEqual(accepted["authorizedOwners"], [])
+            self.assertEqual(history, [])
+            path = root / POLICY
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(policy()))
+            git("add", POLICY)
+            git("commit", "--quiet", "-m", "Synthetic protected inventory")
+            git("rm", "--quiet", POLICY)
+            git("commit", "--quiet", "-m", "Synthetic policy removal")
+            with self.assertRaisesRegex(ValueError, "cannot be deleted"):
+                from_base(root, git("rev-parse", "HEAD"))
+
     def test_missing_base_inventory_and_nonimmutable_reference_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(ValueError):

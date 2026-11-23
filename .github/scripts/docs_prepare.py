@@ -88,7 +88,7 @@ def prepare(root, destination, source, *, generate=True, mike='mike'):
         tree = git(work, 'rev-parse', commit+'^{tree}').decode().strip()
         files = git_files(work, commit)
         git(work, 'bundle', 'create', str(state/'site.bundle'), 'refs/heads/gh-pages')
-                # Las rutas las verificó git_files. Solo se extraen archivos regulares de Git, sin enlaces.
+        # Las rutas las verificó git_files. Solo se extraen archivos regulares de Git, sin enlaces.
         for row in files:
             target = site/row['path']; target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(git(work, 'show', commit+':'+row['path']))

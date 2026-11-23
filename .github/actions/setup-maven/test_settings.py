@@ -65,7 +65,7 @@ class SettingsTest(unittest.TestCase):
                                  [r.findtext("id") for r in root.find("profiles/profile/" + section)])
             self.assertEqual(str(local), root.findtext("localRepository"))
             self.assertEqual([], list(local.iterdir()))
-                        # Una segunda ejecución con coordenadas finales idénticas debe tener su propio repositorio local vacío.
+            # Una segunda ejecución con coordenadas finales idénticas debe tener su propio repositorio local vacío.
             other_copy, other_local = settings.create(base / "settings2.xml", "https://maven.pkg.github.com/owner/repo", base,
                 bundle, expected, "example/payments")
             self.assertNotEqual(local, other_local)
@@ -74,7 +74,7 @@ class SettingsTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "content hash"):
                 settings.create(base / "bad.xml", "https://maven.pkg.github.com/owner/repo", base,
                     bundle, expected, "example/payments")
-                        # Las copias temporales son de solo lectura por contrato; se vuelven escribibles para la limpieza.
+            # Las copias temporales son de solo lectura por contrato; se vuelven escribibles para la limpieza.
             for copy in [copied, other_copy]:
                 copy.chmod(0o755)
                 for path in copy.rglob("*"):

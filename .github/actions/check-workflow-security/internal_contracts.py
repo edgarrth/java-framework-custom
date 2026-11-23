@@ -65,7 +65,7 @@ def local_contract(reference, root=ROOT, *, snapshot=True):
             object_name = "refs/tags/" + revision
         else:
             raise ValueError("internal reference requires an exact v2 version or commit SHA")
-                # Un archivo comprimido de una acción puede estar dentro de otro checkout de Git. Nunca se toma prestado ese historial.
+        # Un archivo comprimido de una acción puede estar dentro de otro checkout de Git. Nunca se toma prestado ese historial.
         top = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel"],
                              capture_output=True, text=True)
         if top.returncode or Path(top.stdout.strip()).resolve() != root.resolve():

@@ -82,7 +82,7 @@ def resolve_workflow(tag):
     if release.get("tag_name") != tag or release.get("immutable") is not True or release.get("draft") is not False:
         raise ValueError("Workflow release must exist, be immutable and not be a draft")
     obj = api("repos/edgarrth/java-framework-custom/git/ref/tags/" + tag)["object"]
-        # Los tags anotados pueden apuntar a otros tags; se rechazan los ciclos en lugar de iterar indefinidamente.
+    # Los tags anotados pueden apuntar a otros tags; se rechazan los ciclos en lugar de iterar indefinidamente.
     seen = set()
     while obj["type"] == "tag":
         if obj["sha"] in seen:
@@ -95,7 +95,7 @@ def resolve_workflow(tag):
 
 
 def oidc_claims():
-        # Los claims se obtienen directamente de GitHub mediante TLS autenticado. Los consumidores verifican
+    # Los claims se obtienen directamente de GitHub mediante TLS autenticado. Los consumidores verifican
     # de forma independiente la firma de cosign; decodificar un JWT descargado nunca es una verificación de firma.
     url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
     if urllib.parse.urlsplit(url).scheme != "https":
@@ -146,7 +146,7 @@ def main():
         raise ValueError("A framework source build cannot consume another framework candidate")
     bind_candidate(data, candidate, candidate_hash)
     tag = os.environ["WORKFLOWS_TAG"]
-        # La preparación del worker no tiene privilegios. Son metadatos sin firmar, no una atestación OIDC.
+    # La preparación del worker no tiene privilegios. Son metadatos sin firmar, no una atestación OIDC.
     # Un firmante separado debe establecer la identidad y los gates desde su propio contexto de confianza.
     paths = {"maven-library": "lib-build", "service": "service-build", "native-component": "native"}
     identity = {"repository": "edgarrth/java-framework-custom", "path": ".github/workflows/" + paths[kind] + ".yaml",

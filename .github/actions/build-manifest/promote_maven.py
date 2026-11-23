@@ -53,7 +53,7 @@ class GitHubMaven:
             raise ValueError(f"GitHub Packages preflight failed with HTTP {error.code}") from None
 
     def upload(self, path, content):
-                # Una instantánea privada y verificada permanece abierta durante toda la subida: ninguna ruta se vuelve a abrir.
+        # Una instantánea privada y verificada permanece abierta durante toda la subida: ninguna ruta se vuelve a abrir.
         content.seek(0, os.SEEK_END)
         size = content.tell()
         content.seek(0)
@@ -71,7 +71,7 @@ def promote(data, bundle, registry):
     if data["kind"] != "maven-library" or "-" in data["version"]:
         raise ValueError("Only final Maven release coordinates can be promoted")
     pending = []
-        # Se completa la verificación previa de cada archivo antes de subir cualquier archivo.
+    # Se completa la verificación previa de cada archivo antes de subir cualquier archivo.
     for item in data["artifacts"]["maven"]:
         local = safe_file(Path(bundle) / "maven", item["path"])
         if hashlib.sha256(local.read_bytes()).hexdigest() != item["sha256"]:
@@ -83,7 +83,7 @@ def promote(data, bundle, registry):
             pending.append(item)
     for item in sorted(pending, key=lambda item: (item["path"].endswith(".pom"), item["path"])):
         file = safe_file(Path(bundle) / "maven", item["path"])
-                # Se copian y se calcula el hash de los mismos bytes en un archivo privado sin enlace. Modificar el
+        # Se copian y se calcula el hash de los mismos bytes en un archivo privado sin enlace. Modificar el
         # inodo original o su entrada de directorio después de la verificación no puede cambiar el cuerpo del PUT.
         with (tempfile.TemporaryDirectory(prefix="axiz-maven-", dir=os.environ.get("RUNNER_TEMP")) as temporary,
               tempfile.TemporaryFile(dir=temporary) as snapshot):
@@ -98,7 +98,7 @@ def promote(data, bundle, registry):
             registry.upload(item["path"], snapshot)
         if registry.current_hash(item["path"]) != item["sha256"]:
             raise ValueError("GitHub Packages stored content differs from the approved build")
-        # Las subidas de Maven a GitHub no son atómicas entre archivos: nunca se confirma una publicación parcial.
+    # Las subidas de Maven a GitHub no son atómicas entre archivos: nunca se confirma una publicación parcial.
     # Reintentar este mismo build verificado completa los archivos faltantes sin modificar los bytes existentes.
     for item in data["artifacts"]["maven"]:
         if registry.current_hash(item["path"]) != item["sha256"]:

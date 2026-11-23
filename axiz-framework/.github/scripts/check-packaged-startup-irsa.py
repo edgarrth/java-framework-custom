@@ -79,7 +79,7 @@ def main():
                     command += ['--axiz.config.environment=prod']
                 log_path = output / f'packaged-startup-{mode}.log'
                 with log_path.open('w') as log:
-                                        # JAR local validado, opciones de JVM fijas, lista argv y entorno de fixture de IRSA saneado.
+                    # JAR local validado, opciones de JVM fijas, lista argv y entorno de fixture de IRSA saneado.
                     # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
                     process = subprocess.Popen(command, env=environment, stdout=log, stderr=subprocess.STDOUT)
                     try:

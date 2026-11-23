@@ -164,7 +164,7 @@ class ImageScanTest(unittest.TestCase):
 
     def test_suppressed_findings_require_an_exact_fixed_source_review(self):
         vex = json.loads((Path(__file__).parents[1] / 'policies/tempo-fixed.openvex.json').read_text())
-                # Prueba el intervalo de validez de la política, con independencia del reloj real.
+        # Prueba el intervalo de validez de la política, con independencia del reloj real.
         self.now = datetime.fromisoformat(vex['timestamp'].replace('Z', '+00:00')) + timedelta(hours=1)
         self.report['CreatedAt'] = self.now.isoformat()
         statement = vex['statements'][0]

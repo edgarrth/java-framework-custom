@@ -28,7 +28,7 @@ def main():
     real_output = subprocess.check_output
 
     def local_helm(command, **kwargs):
-                # Solo este fixture de loopback, activado de forma explícita, permite transporte OCI sin cifrar.
+        # Solo este fixture de loopback, activado de forma explícita, permite transporte OCI sin cifrar.
         if command[:3] == ["helm", "show", "chart"]:
             command = [*command, "--plain-http"]
         return real_output(command, **kwargs)
@@ -53,7 +53,7 @@ def main():
             data["parameters_sha256"] = manifest.canonical_hash(data["parameters"])
             tag = "single" if len(platforms) == 1 else "multi"
             repository = args.registry + "/builds/payments"
-                        # Sin instrucción RUN: cada arquitectura se construye sin emulación y sin modificar el
+            # Sin instrucción RUN: cada arquitectura se construye sin emulación y sin modificar el
             # almacén de imágenes Docker del host. El producto multiplataforma es un índice real del registry.
             references = []
             for platform in platforms:

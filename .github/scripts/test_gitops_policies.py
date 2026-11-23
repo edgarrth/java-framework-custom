@@ -66,7 +66,7 @@ def main():
     args = parser.parse_args()
     binary = verified_binary(args.kyverno)
     version = json.loads((ROOT / '.github/gitops/kyverno.json').read_text())['version']
-        # argv fijo; el ejecutable es el archivo verificado por checksum, nunca un comando de shell ni una búsqueda en PATH.
+    # argv fijo; el ejecutable es el archivo verificado por checksum, nunca un comando de shell ni una búsqueda en PATH.
     observed = subprocess.check_output(['kyverno', 'version'], executable=str(binary), text=True)
     if not re.search(r'^Version: ' + re.escape(version) + r'$', observed, re.MULTILINE):
         raise ValueError('Kyverno CLI does not match the pinned policy version')
@@ -77,7 +77,7 @@ def main():
     configuration.render(ROOT / '.github/gitops', rendered)
     shutil.copytree(ROOT / '.github/gitops/tests', rendered / 'tests', dirs_exist_ok=True)
     results = evaluate(binary, rendered / 'tests', output / 'kyverno-results.log')
-        # Demuestra que este gate falla si se pierde la autogeneración del controlador, aunque las verificaciones de Pod pasen.
+    # Demuestra que este gate falla si se pierde la autogeneración del controlador, aunque las verificaciones de Pod pasen.
     path = rendered / 'policies/verify-images.yaml'
     original = path.read_text()
     policy = yaml.safe_load(original)

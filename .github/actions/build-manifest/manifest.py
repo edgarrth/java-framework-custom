@@ -63,7 +63,7 @@ def verify_maven_files(artifacts, root):
 
 
 def validate_maven_arguments(arguments):
-        # Los flags adicionales no pueden reducir pruebas en silencio, alterar la publicación, inyectar credenciales ni saltarse gates.
+    # Los flags adicionales no pueden reducir pruebas en silencio, alterar la publicación, inyectar credenciales ni saltarse gates.
     allowed = re.compile(r"^-D(?:user\.timezone=[A-Za-z0-9_+:/.-]+|file\.encoding=UTF-8|"
                          r"project\.build\.outputTimestamp=[0-9]+|axiz\.it\.requireDocker=true|"
                          r"axiz\.api\.baseline=[0-9]+\.[0-9]+\.[0-9]+)$")

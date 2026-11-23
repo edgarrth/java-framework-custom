@@ -33,12 +33,12 @@ def reports(project, relative_to=None, allow_empty=False):
         for tool in ("surefire-reports", "failsafe-reports"):
             for report in sorted((module / "target" / tool).glob("TEST-*.xml")):
                 suite = ET.parse(report).getroot()
-                                # Maven escribe testsuite; se acepta un envoltorio testsuites sin contarlo dos veces.
+                # Maven escribe testsuite; se acepta un envoltorio testsuites sin contarlo dos veces.
                 suites = [suite] if suite.tag == "testsuite" else list(suite.iter("testsuite"))
                 for entry in suites:
                     for key in counts:
                         counts[key] += int(entry.get(key, "0"))
-                                        # Surefire incluye los tipos de los parámetros inyectados en los nombres de los métodos de JUnit.
+                    # Surefire incluye los tipos de los parámetros inyectados en los nombres de los métodos de JUnit.
                     harness += sum(test.get("name", "").partition("(")[0] == "verifiesFrameworkOwnedAuditTransport"
                                    for test in entry.findall("testcase"))
                 hashes[str(report.relative_to(root))] = hashlib.sha256(report.read_bytes()).hexdigest()

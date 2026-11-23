@@ -93,7 +93,7 @@ def validate(report, expected_image, now=None, maven_lock=None, required_types=(
         if not isinstance(packages, list):
             raise ValueError('Invalid component inventory')
         for package in packages:
-                        # Los builds de Go desde el código fuente incluyen un nodo del grafo del módulo principal sin versión.
+            # Los builds de Go desde el código fuente incluyen un nodo del grafo del módulo principal sin versión.
             # No es una dependencia: la receta fija su archivo de código fuente y su SHA-256.
             # Se conserva en el reporte, pero nunca se cuenta como inventario versionado.
             if (result.get('Type') == 'gobinary' and package.get('Relationship') == 'root'

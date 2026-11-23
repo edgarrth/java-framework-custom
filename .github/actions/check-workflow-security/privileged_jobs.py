@@ -13,7 +13,7 @@ NORMALIZED='__IMMUTABLE_WORKFLOWS_RELEASE__'
 TOKEN=re.compile(r'(?<![A-Za-z0-9_.-])'+TAG_PATTERN+r'(?![A-Za-z0-9_.-])',re.ASCII)
 
 def fingerprint(value):
-        # Las claves JSON son strings en la representación YAML normalizada (incluida la clave on de YAML 1.1).
+    # Las claves JSON son strings en la representación YAML normalizada (incluida la clave on de YAML 1.1).
     text=json.dumps(value,sort_keys=True,separators=(',',':'))
     return hashlib.sha256(TOKEN.sub(NORMALIZED,text).encode()).hexdigest()
 

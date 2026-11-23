@@ -42,7 +42,7 @@ def contracts(root, module):
 
 
 def git_text(root, revision, path):
-        # Una ruta ausente es legítima; el historial ausente, los objetos corruptos o las revisiones inválidas no lo son.
+    # Una ruta ausente es legítima; el historial ausente, los objetos corruptos o las revisiones inválidas no lo son.
     subprocess.run(["git", "-C", str(root), "cat-file", "-e", revision + "^{commit}"], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
     entry = subprocess.check_output(["git", "-C", str(root), "ls-tree", revision, "--", path], text=True)
@@ -80,7 +80,7 @@ def compatibility(root, module, found, baseline):
 def baseline(root, explicit):
     if explicit:
         return explicit
-        # Un build por tag o manual compara igualmente la versión publicada previa. En repositorios sin
+    # Un build por tag o manual compara igualmente la versión publicada previa. En repositorios sin
     # ninguna release se usa el padre del código fuente; un commit raíz es la única excepción sin historial.
     tags = subprocess.check_output(["git", "-C", str(root), "tag", "--merged", "HEAD", "--sort=-version:refname"], text=True)
     head = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()

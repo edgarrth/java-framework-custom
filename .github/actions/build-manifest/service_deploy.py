@@ -18,7 +18,7 @@ import service
 
 def raw_manifest(reference, expected):
     raw = subprocess.check_output(["docker", "buildx", "imagetools", "inspect", reference, "--raw"])
-        # Las versiones de buildx pueden añadir un salto de línea de presentación al manifiesto original.
+    # Las versiones de buildx pueden añadir un salto de línea de presentación al manifiesto original.
     for content in (raw, raw.removesuffix(b"\n")):
         if "sha256:" + hashlib.sha256(content).hexdigest() == expected:
             return json.loads(content)

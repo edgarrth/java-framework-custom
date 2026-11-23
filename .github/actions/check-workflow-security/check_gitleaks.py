@@ -18,7 +18,7 @@ def check(configuration):
         api = root / "docs/api/public-api.json"
         api.parent.mkdir(parents=True)
         digest = secrets.token_hex(32)
-                # Datos aleatorios sintéticos, nunca una credencial real de una cuenta. Los reportes siempre se ocultan.
+        # Datos aleatorios sintéticos, nunca una credencial real de una cuenta. Los reportes siempre se ocultan.
         canary = secrets.token_urlsafe(32)
         api.write_text('"keySha256": "' + digest + '"\n'
                        '"api_key": "' + canary + '"\n'

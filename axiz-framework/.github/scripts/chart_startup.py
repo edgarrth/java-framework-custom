@@ -77,7 +77,7 @@ def verify_chart_startup(jar, chart, endpoint, output):
                 "MANAGEMENT_TRACING_ENABLED": "false", "MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED": "false",
                 "MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENABLED": "false", "AXIZ_LOGGING_JSON": "false",
             })
-                        # El propio chart exporta el entorno; una entrada env duplicada ocultaría un contrato roto.
+            # El propio chart exporta el entorno; una entrada env duplicada ocultaría un contrato roto.
             process_variables.pop("AXIZ_CONFIG_ENVIRONMENT")
             remote = case in {"chart-bootstrap", "chart-missing-selector"}
             if case == "chart-late-selector":
@@ -102,7 +102,7 @@ def verify_chart_startup(jar, chart, endpoint, output):
             log_path = output / (case + ".log")
             healthy = case in {"chart-bootstrap", "chart-local-profile"}
             with log_path.open("w") as log:
-                                # Un comando java -jar fijo, un JAR local real y solo variables del SO/IRSA + variables del chart renderizado.
+                # Un comando java -jar fijo, un JAR local real y solo variables del SO/IRSA + variables del chart renderizado.
                 # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
                 process = subprocess.Popen(command, env=environment, stdout=log, stderr=subprocess.STDOUT)
                 try:

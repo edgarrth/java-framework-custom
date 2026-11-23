@@ -129,7 +129,7 @@ class ManifestTest(unittest.TestCase):
             file.write_bytes(b"tampered")
             with self.assertRaisesRegex(ValueError, "content hash"):
                 manifest.verify(location, expected, root, "example/payments")
-                        # Un atacante que actualiza el archivo, el manifiesto y el checksum dentro de un mismo archivo comprimido sigue sin superar la identidad externa.
+            # Un atacante que actualiza el archivo, el manifiesto y el checksum dentro de un mismo archivo comprimido sigue sin superar la identidad externa.
             artifact["sha256"] = manifest.sha256(file.read_bytes())
             (root / "maven/SHA256SUMS").write_text(artifact["sha256"] + "  " + artifact["path"] + "\n")
             location.write_text(json.dumps(data))

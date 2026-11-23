@@ -87,7 +87,7 @@ def validate(document, contracts_root=ROOT, *, snapshot=True, permission_excepti
             if GUARD not in needs:
                 errors.append(f"{name}: no direct dependency on {GUARD}")
             condition = job.get("if")
-                        # Las condiciones personalizadas deben colocar la verificación de éxito fuera de toda la expresión original.
+            # Las condiciones personalizadas deben colocar la verificación de éxito fuera de toda la expresión original.
             if condition and not guarded_condition(str(condition)):
                 errors.append(f"{name}: condition may bypass failed release verification")
             expected = {

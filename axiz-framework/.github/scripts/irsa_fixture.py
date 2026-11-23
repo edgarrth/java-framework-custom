@@ -76,7 +76,7 @@ class IrsaFixture:
         self.thread.start()
 
     def environment(self):
-                # Solo los ajustes del SO y del runtime llegan al ejecutable bajo prueba. En particular, no se hereda
+        # Solo los ajustes del SO y del runtime llegan al ejecutable bajo prueba. En particular, no se hereda
         # ningún token de CI, token de registry o de paquetes, ruta de importación de Python ni opción de JVM inyectada.
         allowed = {"PATH", "JAVA_HOME", "SYSTEMROOT", "SystemRoot", "COMSPEC", "WINDIR",
                    "TMP", "TEMP", "TMPDIR", "HOME", "USERPROFILE", "LANG", "LC_ALL"}

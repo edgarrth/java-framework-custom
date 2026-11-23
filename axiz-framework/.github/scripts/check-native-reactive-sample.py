@@ -80,7 +80,7 @@ try:
         reservation.bind(('127.0.0.1', 0))
         service_port = reservation.getsockname()[1]
     environment = irsa.environment()
-        # Los clientes propios del framework deben descubrir STS en este ELF y resolver web identity, no claves estáticas.
+    # Los clientes propios del framework deben descubrir STS en este ELF y resolver web identity, no claves estáticas.
     # El ELF no recibe ningún flag de PRNG: su valor por defecto compilado debe provenir del parent.
     args = [*command, '--axiz.acceptance.default-identity-probe=true', '--server.address=127.0.0.1', f'--server.port={service_port}',
             f'--axiz.aws.endpoint={aws_endpoint}', '--axiz.aws.region=us-east-1',
@@ -95,7 +95,7 @@ try:
             '--spring.flyway.user=app', '--spring.flyway.password=native-acceptance-only']
     service_log = (logs / f'{runtime_prefix}-service.log').open('w')
     started = time.monotonic()
-        # JVM o ELF propios del proyecto validado; lista argv, sin shell; solo la allowlist del SO y el fixture local de IRSA.
+    # JVM o ELF propios del proyecto validado; lista argv, sin shell; solo la allowlist del SO y el fixture local de IRSA.
     # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
     process = subprocess.Popen(args, cwd=project, env=environment,
                                stdout=service_log, stderr=subprocess.STDOUT)
@@ -135,7 +135,7 @@ try:
     irsa.succeed = False
     previous_sts = irsa.sts_calls
     with (logs / f'{runtime_prefix}-invalid-irsa.log').open('w') as rejected_log:
-                # Ejecutable propio; entorno de fixture saneado, lista argv y sin shell.
+        # Ejecutable propio; entorno de fixture saneado, lista argv y sin shell.
         # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
         process = subprocess.Popen(args, cwd=project, env=environment,
                                    stdout=rejected_log, stderr=subprocess.STDOUT)

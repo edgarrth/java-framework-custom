@@ -84,7 +84,7 @@ def component(value):
     text(value)
     if not value.startswith("pkg:") or len(value) > 2048:
         raise ValueError("A package URL is required for component identity")
-        # Se conservan el ecosistema y el namespace del paquete; los calificadores de versión o de distribución no pueden reiniciar la antigüedad del riesgo.
+    # Se conservan el ecosistema y el namespace del paquete; los calificadores de versión o de distribución no pueden reiniciar la antigüedad del riesgo.
     coordinate = value.split("?", 1)[0].split("#", 1)[0]
     return coordinate.rsplit("@", 1)[0] if coordinate.rfind("@") > coordinate.rfind("/") else coordinate
 
@@ -115,7 +115,8 @@ def validate_policy(policy, now):
     for day in calendar["holidays"]:
         if date.fromisoformat(day).isoformat() != day:
             raise ValueError("Invalid calendar holiday")
-    strings(policy["authorizedOwners"])
+    # Los responsables solo se exigen cuando hay hallazgos que gestionar.
+    strings(policy["authorizedOwners"], allow_empty=not policy["findings"])
     seen = set()
     for finding in policy["findings"]:
         fields(finding, FINDING_KEYS)
@@ -221,7 +222,7 @@ def scan_findings(report, descriptor, now):
             identifier = text(vulnerability.get("VulnerabilityID"))
             package = vulnerability.get("PkgIdentifier", {}).get("PURL")
             if package is None:
-                                # Ningún fallback ambiguo por nombre de paquete puede autorizar una excepción.
+                # Ningún fallback ambiguo por nombre de paquete puede autorizar una excepción.
                 package = "pkg:unresolved/" + text(vulnerability.get("PkgName"))
             aliases = vulnerability.get("VendorIDs") or []
             strings(aliases, allow_empty=True)
@@ -292,7 +293,7 @@ def main():
     parser.add_argument("--output", required=True)
     parser.add_argument("--minor-release", action="store_true")
     args = parser.parse_args()
-        # Sin opción --now controlada por quien invoca: los plazos usan el reloj del runner.
+    # Sin opción --now controlada por quien invoca: los plazos usan el reloj del runner.
     now = datetime.now(UTC)
     try:
         historical = read_json(args.history)

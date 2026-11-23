@@ -39,7 +39,7 @@ def create(settings, packages_url, temporary, candidate=None, expected_hash=None
         isolated = Path(tempfile.mkdtemp(prefix="axiz-candidate-", dir=temporary))
         candidate_copy = isolated / "repository"
         shutil.copytree(Path(candidate) / "maven", candidate_copy)
-                # Se revalidan los bytes copiados antes de permitir que Maven resuelva algo a partir de ellos.
+        # Se revalidan los bytes copiados antes de permitir que Maven resuelva algo a partir de ellos.
         verify_maven_files(manifest["artifacts"]["maven"], candidate_copy)
         for path in candidate_copy.rglob("*"):
             path.chmod(0o555 if path.is_dir() else 0o444)
@@ -56,7 +56,7 @@ def create(settings, packages_url, temporary, candidate=None, expected_hash=None
                 ET.SubElement(policy_node, "enabled").text = "true"
                 ET.SubElement(policy_node, "updatePolicy").text = "always"
                 ET.SubElement(policy_node, "checksumPolicy").text = "fail"
-        # Packages es un repositorio Maven alojado, no un proxy. Maven Central se mantiene disponible.
+    # Packages es un repositorio Maven alojado, no un proxy. Maven Central se mantiene disponible.
     for section, element in [("repositories", "repository"), ("pluginRepositories", "pluginRepository")]:
         remote = ET.SubElement(repositories[section], element)
         ET.SubElement(remote, "id").text = "github"
@@ -67,7 +67,7 @@ def create(settings, packages_url, temporary, candidate=None, expected_hash=None
             ET.SubElement(node, "checksumPolicy").text = "fail"
     ET.SubElement(active, "activeProfile").text = "axiz-github"
     servers = ET.SubElement(root, "servers")
-        # Las credenciales de build son de solo lectura; los workflows de despliegue usan credenciales de destino separadas.
+    # Las credenciales de build son de solo lectura; los workflows de despliegue usan credenciales de destino separadas.
     for server_id in ["github"]:
         server = ET.SubElement(servers, "server")
         ET.SubElement(server, "id").text = server_id

@@ -11,7 +11,7 @@ def check(root):
     totals = Counter()
     files = sorted(Path(root).glob('**/target/pit-reports/mutations.xml'))
     for path in files:
-                # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
+        # POM o reporte de build de confianza, tras ejecutar el mismo checkout; no se analiza XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         statuses = Counter(m.get('status') for m in ET.parse(path).getroot().findall('mutation'))
         totals.update(statuses)

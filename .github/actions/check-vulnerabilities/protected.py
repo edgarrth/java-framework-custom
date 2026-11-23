@@ -28,6 +28,14 @@ def from_base(root, base):
         raise ValueError("The protected base must be an exact commit from trusted workflow context")
     if git(root, "rev-parse", base + "^{commit}").strip() != base:
         raise ValueError("Invalid protected commit")
+    if git(root, "cat-file", "-e", base + ":" + POLICY, missing=True) is None:
+        # Una política que nunca existió en la base equivale a no tener riesgos aceptados: es el estado
+        # más restrictivo y el PR no puede aportar sus propias excepciones. Si existió y se borró, el
+        # historial no se reinicia: se falla de forma cerrada.
+        if git(root, "log", "--format=%H", "--max-count=1", base, "--", POLICY).strip():
+            raise ValueError("The protected vulnerability policy cannot be deleted")
+        return {"schema": 2, "calendar": {"weekend": [6, 7], "holidays": []},
+                "authorizedOwners": [], "findings": []}, []
     raw = git(root, "show", base + ":" + POLICY)
     policy = json.loads(raw, object_pairs_hook=unique)
     now = datetime.now(timezone.utc)

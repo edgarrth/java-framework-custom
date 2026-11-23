@@ -62,7 +62,7 @@ def check(root, samples=None, workflows_directory=None):
             if 'spotless:apply' in content or not re.search(r'\./mvnw[^\n]*spotless:check\s+' + goal, content):
                 errors.append(f'{name}: acceptance must check formatting without apply')
     if samples is not None:
-                # Se lee la salida real del generador; nunca se infieren sus nombres con un segundo algoritmo de nombrado.
+        # Se lee la salida real del generador; nunca se infieren sus nombres con un segundo algoritmo de nombrado.
         generated = json.loads(Path(samples).read_text())
         if not isinstance(generated, list) or not generated or any(not isinstance(p, str) for p in generated):
             raise ValueError('modules.json must contain a nonempty list of generated project paths')

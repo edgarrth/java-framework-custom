@@ -48,7 +48,7 @@ def check(directory):
         require(pom)
         if not pom.is_file():
             return
-                # Configuración de Maven de confianza incluida en el repositorio, nunca XML de la petición.
+        # Configuración de Maven de confianza incluida en el repositorio, nunca XML de la petición.
         # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         project = ET.parse(pom).getroot()
         for module in project.findall('m:modules/m:module', NS):
